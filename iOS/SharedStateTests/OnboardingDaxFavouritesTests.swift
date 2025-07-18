@@ -33,6 +33,7 @@ import Common
 
 // swiftlint:disable force_try
 
+@MainActor
 final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
     private var tutorialSettingsMock: MockTutorialSettings!
@@ -70,35 +71,66 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        let tabsPersistence = try TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
+        let historyManager = MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true)
+        let syncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
+        let featureFlagger = MockFeatureFlagger()
+        let fireproofing = MockFireproofing()
+        let textZoomCoordinator = MockTextZoomCoordinator()
+        let subscriptionCookieManager = SubscriptionCookieManagerMock()
+        let privacyProDataReporter = MockPrivacyProDataReporter()
+        let onboardingPixelReporter = OnboardingPixelReporterMock()
+        let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
+        let variantManager = MockVariantManager()
+        let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
+        let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
+                                                                      contextualOnboardingPixelReporter: onboardingPixelReporter)
+        let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
+        let tabManager = TabManager(model: tabsModel,
+                                    persistence: tabsPersistence,
+                                    previewsSource: MockTabPreviewsSource(),
+                                    interactionStateSource: interactionStateSource,
+                                    bookmarksDatabase: db,
+                                    historyManager: historyManager,
+                                    syncService: syncService,
+                                    privacyProDataReporter: privacyProDataReporter,
+                                    contextualOnboardingPresenter: contextualOnboardingPresenter,
+                                    contextualOnboardingLogic: contextualOnboardingLogicMock,
+                                    onboardingPixelReporter: onboardingPixelReporter,
+                                    featureFlagger: featureFlagger,
+                                    contentScopeExperimentManager: MockContentScopeExperimentManager(),
+                                    subscriptionCookieManager: subscriptionCookieManager,
+                                    appSettings: AppDependencyProvider.shared.appSettings,
+                                    textZoomCoordinator: textZoomCoordinator,
+                                    websiteDataManager: mockWebsiteDataManager,
+                                    fireproofing: fireproofing,
+                                    maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
+                                    maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
+                                    featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard))
         sut = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
-            historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
+            historyManager: historyManager,
             homePageConfiguration: homePageConfiguration,
-            syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
+            syncService: syncService,
             syncDataProviders: dataProviders,
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),
-            tabsModel: tabsModel,
-            tabsPersistence: tabsPersistence,
+            tabManager: tabManager,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
-            privacyProDataReporter: MockPrivacyProDataReporter(),
-            variantManager: MockVariantManager(),
-            contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),
+            privacyProDataReporter: privacyProDataReporter,
+            variantManager: variantManager,
             contextualOnboardingLogic: contextualOnboardingLogicMock,
-            contextualOnboardingPixelReporter: OnboardingPixelReporterMock(),
+            contextualOnboardingPixelReporter: onboardingPixelReporter,
             tutorialSettings: tutorialSettingsMock,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
-            fireproofing: MockFireproofing(),
-            subscriptionCookieManager: SubscriptionCookieManagerMock(),
-            textZoomCoordinator: MockTextZoomCoordinator(),
+            fireproofing: fireproofing,
+            subscriptionCookieManager: subscriptionCookieManager,
+            textZoomCoordinator: textZoomCoordinator,
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
-            maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             themeManager: MockThemeManager(),

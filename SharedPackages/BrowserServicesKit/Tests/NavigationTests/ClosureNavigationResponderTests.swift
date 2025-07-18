@@ -399,14 +399,12 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
 
     @MainActor
     func testWhenWebContentProcessIsTerminated_webProcessDidTerminateAndNavigationDidFailReceived() throws {
-        throw XCTSkip("termination handler broken on macOS 15.5+")
-
         let eDidFail = expectation(description: "onDidFail")
         let eDidTerminate = expectation(description: "onDidTerminate")
         let responder = ClosureNavigationResponder(decidePolicy: { _, _ in
             .allow
         }, navigationResponse: { [unowned self] _ in
-            self._webView.perform(NSSelectorFromString("_killWebContentProcess"))
+            self._webView.killWebContentProcess()
             return .next
         }, navigationDidFail: { nav, error in
             XCTAssertTrue(nav.isCurrent)
@@ -428,7 +426,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
             _=webView.load(req(urls.local1))
         }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations(timeout: 10)
     }
 
 }

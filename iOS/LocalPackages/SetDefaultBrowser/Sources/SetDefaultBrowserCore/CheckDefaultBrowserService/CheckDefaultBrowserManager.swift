@@ -71,7 +71,7 @@ public final class DefaultBrowserManager: DefaultBrowserManaging {
             defaultBrowserEventMapper.fire(.rateLimitReached)
             return .failure(.rateLimitReached(updatedStoredInfo: defaultBrowserInfo))
         case let .failure(.unknownError(error)):
-            defaultBrowserEventMapper.fire(.unknownError)
+            defaultBrowserEventMapper.fire(.unknownError, error: error)
             return .failure(.unknownError(error))
         case .failure(.notSupportedOnThisOSVersion):
             return .failure(.notSupportedOnCurrentOSVersion)

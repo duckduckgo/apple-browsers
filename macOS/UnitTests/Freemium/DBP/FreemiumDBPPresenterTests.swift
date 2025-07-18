@@ -25,6 +25,11 @@ final class FreemiumDBPPresenterTests: XCTestCase {
     private var mockWindowControllerManager: MockWindowControllerManager!
     private var mockFreemiumDBPStateManager: MockFreemiumDBPUserStateManager!
 
+    override func tearDown() {
+        mockWindowControllerManager = nil
+        mockFreemiumDBPStateManager = nil
+    }
+
     @MainActor
     func testWhenCallShowFreemiumDBPThenShowPIRTabIsCalledAndActivatedStateIsSet() async throws {
         // Given
@@ -62,6 +67,8 @@ private final class MockWindowControllerManager: WindowControllersManagerProtoco
     func showTab(with content: Tab.TabContent) {
         showTabContent = content
     }
+
+    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {}
 
     func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {}
 

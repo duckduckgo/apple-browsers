@@ -145,7 +145,8 @@ final class AutofillSettingsViewController: UIViewController {
     }
     
     private func segueToFileImport() {
-        let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
+        let dataImportManager = DataImportManager(vault: viewModel.secureVault,
+                                                  reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)

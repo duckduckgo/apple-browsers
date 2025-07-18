@@ -85,9 +85,13 @@ protocol DuckPlayerNavigationHandling: AnyObject {
 
     /// Handles URL changes in the web view.
     ///
-    /// - Parameter webView: The web view where the URL change occurred.
+    /// - Parameters:
+    ///   - webView: The web view where the URL change occurred.
+    ///   - previousURL: The previous URL before the change.
+    ///   - newURL: The new URL after the change.
+    ///   - isNavigationError: Whether there was a navigation error.
     /// - Returns: The result of handling the URL change.
-    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult
+    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?, isNavigationError: Bool) -> DuckPlayerNavigationHandlerURLChangeResult
 
     /// Handles the back navigation action in the web view.
     ///

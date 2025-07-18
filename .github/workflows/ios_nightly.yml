@@ -109,3 +109,21 @@ jobs:
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+
+  notify-failure:
+    name: Notify on failure
+    if: ${{ always() && (needs.atb-ui-tests.result == 'failure' || needs.atb-ui-tests.result == 'cancelled' || needs.fingerprinting-ui-tests.result == 'failure' || needs.fingerprinting-ui-tests.result == 'cancelled') }}
+    needs: [atb-ui-tests, fingerprinting-ui-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+    - name: Create Asana task when workflow failed
+      uses: duckduckgo/native-github-asana-sync@v1.1
+      with:
+        action: create-asana-task
+        asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        asana-project: ${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}
+        asana-task-name: GH Workflow Failure - iOS Nightly Tests
+        asana-task-description: The iOS Nightly Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

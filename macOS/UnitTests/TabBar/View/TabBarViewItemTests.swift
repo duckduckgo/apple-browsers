@@ -42,6 +42,10 @@ final class TabBarViewItemTests: XCTestCase {
 
     override func tearDown() {
         delegate.clear()
+        delegate = nil
+        fireproofDomains = nil
+        menu = nil
+        tabBarViewItem = nil
     }
 
     @MainActor

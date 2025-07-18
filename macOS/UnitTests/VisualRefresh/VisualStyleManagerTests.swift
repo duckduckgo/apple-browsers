@@ -316,22 +316,4 @@ class VisualStyleManagerTests: XCTestCase {
         style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
     }
-
-    // MARK: - Should Send Pixel Tests
-
-    func testWhenNotInternalUserAndNewStyleThenPixelShouldBeSent() {
-        mockInternalUserDecider.isInternalUser = false
-        XCTAssertTrue(visualStyleDecider.shouldFirePixel(style: VisualStyle.current))
-    }
-
-    func testWhenInternalUserAndNewStyleThenPixelShouldNotBeSent() {
-        mockInternalUserDecider.isInternalUser = true
-        XCTAssertFalse(visualStyleDecider.shouldFirePixel(style: VisualStyle.current))
-    }
-
-    func testWhenNotInternalUserAndLegacyStyleThenPixelShouldNotBeSent() {
-        mockInternalUserDecider.isInternalUser = false
-        XCTAssertFalse(visualStyleDecider.shouldFirePixel(style: VisualStyle.legacy))
-    }
-
 }

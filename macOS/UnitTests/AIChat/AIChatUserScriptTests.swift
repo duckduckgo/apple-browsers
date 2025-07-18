@@ -99,6 +99,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didRecordChat = false
     var didRestoreChat = false
     var didRemoveChat = false
+    var didOpenSummarizationSourceLink = false
 
     var didSubmitAIChatNativePrompt = false
     var aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
@@ -160,6 +161,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> {
         aiChatNativePromptSubject.eraseToAnyPublisher()
+    }
+
+    func openSummarizationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        didOpenSummarizationSourceLink = true
+        return nil
     }
 }
 

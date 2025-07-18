@@ -57,6 +57,9 @@ public protocol DataBrokerProtectionDataManagerDelegate: AnyObject {
     func dataBrokerProtectionDataManagerWillOpenSendFeedbackForm()
     func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(_ bypass: Bool) async
     func isAuthenticatedUser() -> Bool
+    /// Returns whether the user is eligible for a free trial.
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    func isUserEligibleForFreeTrial() -> Bool
 }
 
 public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
@@ -215,6 +218,13 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         delegate?.isAuthenticatedUser() ?? true
     }
 
+    /// Determines whether the current user is eligible for a free trial.
+    ///
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    public func isUserEligibleForFreeTrial() -> Bool {
+        delegate?.isUserEligibleForFreeTrial() ?? false
+    }
+
     public func willRemoveOptOutFromDashboard(_ id: Int64) {
         if let extractedProfile = try? database.fetchExtractedProfile(with: id) {
             let event = HistoryEvent(extractedProfileId: id,
@@ -232,6 +242,10 @@ public protocol UserProfileDelegate: AnyObject {
     func saveCachedProfileToDatabase(_ profile: DataBrokerProtectionProfile) async throws
     func removeAllData() throws
     func isAuthenticatedUser() -> Bool
+    /// Determines whether the current user is eligible for a free trial.
+    ///
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    func isUserEligibleForFreeTrial() -> Bool
 }
 
 public protocol UserActionDelegate: AnyObject {
@@ -272,7 +286,8 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
         let isAuthenticatedUser = delegate?.isAuthenticatedUser() ?? true
-        return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser)
+        let isUserEligibleForFreeTrial = delegate?.isUserEligibleForFreeTrial() ?? false
+        return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser, isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
     }
 
     public func saveProfile() async throws {

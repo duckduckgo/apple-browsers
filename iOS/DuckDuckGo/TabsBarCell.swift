@@ -45,7 +45,9 @@ class TabsBarCell: UICollectionViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        removeButton.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
+        faviconImage.layer.cornerRadius = 4
+        faviconImage.layer.masksToBounds = false
+        removeButton.setImage(DesignSystemImages.Glyphs.Size16.closeSolidAlt, for: .normal)
         removeButton.isPointerInteractionEnabled = true
         
         contentView.addInteraction(UIPointerInteraction(delegate: self))

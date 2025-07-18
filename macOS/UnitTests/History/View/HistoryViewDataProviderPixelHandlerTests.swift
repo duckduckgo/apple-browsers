@@ -23,12 +23,16 @@ final class HistoryViewDataProviderPixelHandlerTests: XCTestCase {
     var handler: HistoryViewDataProviderPixelHandler!
     var firePixelCalls: [HistoryViewPixel] = []
 
-    override func setUp() async throws {
+    override func setUp() {
         firePixelCalls = []
         handler = HistoryViewDataProviderPixelHandler(
             firePixel: { self.firePixelCalls.append($0) },
             debounce: .milliseconds(100)
         )
+    }
+
+    override func tearDown() {
+        firePixelCalls = []
     }
 
     func testThatAllRangeFilterFiresFilterClearedPixel() {

@@ -52,6 +52,7 @@ final class LocalBookmarkManagerTests: XCTestCase {
         context.performAndWait { }
         context = nil
         container = nil
+        foldersStore = nil
         Logger.tests.debug("LocalBookmarkManagerTests.\(self.name).tearDown end")
     }
 

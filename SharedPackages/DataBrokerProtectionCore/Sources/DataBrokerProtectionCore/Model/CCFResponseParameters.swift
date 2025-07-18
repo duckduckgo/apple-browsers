@@ -106,6 +106,8 @@ struct CCFSuccessResponse: Decodable {
             self.response = .getCaptchaInfo(try container.decode(GetCaptchaInfoResponse.self, forKey: .response))
         case .solveCaptcha:
             self.response = .solveCaptcha(try container.decode(SolveCaptchaResponse.self, forKey: .response))
+        case .condition:
+            self.response = nil
         }
     }
 }

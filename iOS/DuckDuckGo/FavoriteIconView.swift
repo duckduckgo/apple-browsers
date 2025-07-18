@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 protocol FavoritesFaviconLoading {
     func loadFavicon(for favorite: Favorite, size: CGFloat) async -> Favicon?
@@ -34,9 +35,9 @@ struct FavoriteIconView: View {
     let isExperimentalAppearanceEnabled: Bool
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .center) {
             Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
-                .fill(Color(designSystemColor: .surface))
+                .fill(bgFillColor())
                 .if(!isExperimentalAppearanceEnabled) {
                     $0.shadow(color: .shade(0.12), radius: 0.5, y: 1)
                 }
@@ -47,6 +48,8 @@ struct FavoriteIconView: View {
                 .aspectRatio(1.0, contentMode: .fit)
                 .if(favicon.isUsingBorder) {
                     $0.padding(Constant.borderSize)
+                        .frame(maxWidth: Constant.faviconSize, maxHeight: Constant.faviconSize)
+                        .fixedSize()
                 }
                 .clipShape(Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled))
         }
@@ -55,6 +58,10 @@ struct FavoriteIconView: View {
                 self.favicon = favicon
             }
         }
+    }
+
+    private func bgFillColor() -> Color {
+        favicon.isFake ? Color(UIColor.forDomain(favorite.domain)) :  Color(designSystemColor: .surface)
     }
 
     static func itemShape(isExperimentalAppearanceEnabled: Bool) -> RoundedRectangle {

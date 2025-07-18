@@ -37,6 +37,12 @@ final class ZoomPopoverViewModelTests: XCTestCase {
         window.contentView = tabVM.tab.webView
     }
 
+    override func tearDown() {
+        tabVM = nil
+        zoomPopover = nil
+        accessibilityPreferences = nil
+    }
+
     @MainActor
     func test_WhenZoomInFromPopover_ThenWebViewIsZoomedIn() async {
         var increasableDefaultValue = DefaultZoomValue.allCases

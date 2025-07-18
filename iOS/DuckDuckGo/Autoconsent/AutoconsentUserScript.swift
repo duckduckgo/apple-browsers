@@ -358,7 +358,10 @@ extension AutoconsentUserScript {
         guard let messageData: AutoconsentDoneMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url),
               let host = url.host else {
-            assertionFailure("Received a malformed message from autoconsent")
+            if ![.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
+                assertionFailure("Received a malformed message from autoconsent")
+            }
+
             replyHandler(nil, "cannot decode message")
             return
         }

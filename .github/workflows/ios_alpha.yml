@@ -55,6 +55,7 @@ jobs:
       build_version: ${{ steps.build-alpha.outputs.build_version }}
       ipa_path: ${{ steps.build-alpha.outputs.ipa_path }}
       dsyms_path: ${{ steps.build-alpha.outputs.dsyms_path }}
+      should_skip: ${{ steps.check-upload.outputs.should_skip }}
 
     steps:
 
@@ -97,12 +98,15 @@ jobs:
         
         if [ "$upload_in_progress" = true ]; then
           echo "🚫 Bailing out early - the rerun logic will handle this commit once upload completes."
-          exit 0
+          echo "should_skip=true" >> $GITHUB_OUTPUT
         else
           echo "✅ No active upload jobs found. Proceeding with build..."
+          echo "should_skip=false" >> $GITHUB_OUTPUT
         fi
+      id: check-upload
 
     - name: Set cache key hash
+      if: steps.check-upload.outputs.should_skip != 'true'
       id: cache-key
       run: |
          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
@@ -115,7 +119,7 @@ jobs:
          fi
 
     - name: Cache SPM
-      if: env.cache_key_hash
+      if: env.cache_key_hash && steps.check-upload.outputs.should_skip != 'true'
       uses: actions/cache@v4
       with:
         path: iOS/DerivedData/SourcePackages
@@ -124,15 +128,18 @@ jobs:
           ${{ runner.os }}-ios-
 
     - name: Select Xcode
+      if: steps.check-upload.outputs.should_skip != 'true'
       uses: ./.github/actions/select-xcode-version
 
     - name: Setup Ruby and dependencies
+      if: steps.check-upload.outputs.should_skip != 'true'
       uses: ./.github/actions/setup-ruby
       with:
         working-directory: iOS
         cache-key-prefix: ios-ruby
 
     - name: Archive the app
+      if: steps.check-upload.outputs.should_skip != 'true'
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -152,6 +159,7 @@ jobs:
       id: build-alpha
 
     - name: Upload build artifacts
+      if: steps.check-upload.outputs.should_skip != 'true'
       uses: actions/upload-artifact@v4
       with:
         name: alpha-build-${{ steps.build-alpha.outputs.app_version }}-${{ steps.build-alpha.outputs.build_version }}
@@ -162,6 +170,7 @@ jobs:
 
   upload:
     needs: build
+    if: needs.build.outputs.should_skip != 'true'
     runs-on: macos-15
     name: Upload to TestFlight
     timeout-minutes: 15

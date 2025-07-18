@@ -837,7 +837,7 @@ final class NavigationBarViewController: NSViewController {
         bookmarkListButton.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         bookmarkListButton.delegate = self
         bookmarkListButton.setAccessibilityIdentifier("NavigationBarViewController.bookmarkListButton")
-        bookmarkListButton.setAccessibilityTitle("UserText.bookmarksShortcutTooltip")
+        bookmarkListButton.setAccessibilityTitle(UserText.bookmarksShortcutTooltip)
         bookmarkListButton.toolTip = UserText.bookmarksShortcutTooltip
 
         optionsButton.sendAction(on: .leftMouseDown)

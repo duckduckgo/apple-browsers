@@ -250,13 +250,15 @@ jobs:
         TAG: ${{ env.app-version }}
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      if: always() && ${{ steps.upload-app-to-appstore.conclusion == 'success' }} && ${{ env.asana-task-url != '' }}
+      if: always() && ${{ steps.upload-app-to-appstore.conclusion == 'success' }}
       run: |
-        bundle exec fastlane run asana_log_message \
-          task_url:"${{ env.asana-task-url }}" \
-          template_name:"debug-symbols-uploaded" \
-          github_handle:"${{ github.actor }}" \
-          is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+        if [[ "${{ env.asana-task-url }}" != "" ]]; then
+          bundle exec fastlane run asana_log_message \
+            task_url:"${{ env.asana-task-url }}" \
+            template_name:"debug-symbols-uploaded" \
+            github_handle:"${{ github.actor }}" \
+            is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+        fi
 
     - name: Send Mattermost message
       if: success() || failure() # Don't execute when cancelled

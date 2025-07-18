@@ -128,7 +128,7 @@ struct NavigationActionBarView: View {
 
     private var searchButton: some View {
         let icon: Image = {
-            if viewModel.isSearchMode && viewModel.isCurrentTextValidURL {
+            if viewModel.isCurrentTextValidURL {
                 return Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
             } else if viewModel.isSearchMode {
                 return Image(uiImage: DesignSystemImages.Glyphs.Size24.searchFind)

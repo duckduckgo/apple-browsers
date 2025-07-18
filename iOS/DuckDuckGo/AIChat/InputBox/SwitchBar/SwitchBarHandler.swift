@@ -120,7 +120,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - SwitchBarHandling Implementation
     func updateCurrentText(_ text: String) {
         currentText = text
-        isCurrentTextValidURL = URL.webUrl(from: text) != nil
+        /// URL.webUrl converts spaces to %20, but this is not a concern in this context, as we are validating the user's input in the address bar to ensure it is a valid URL.
+        isCurrentTextValidURL = !text.contains(where: { $0.isWhitespace }) && URL.webUrl(from: text) != nil
     }
 
     func submitText(_ text: String) {

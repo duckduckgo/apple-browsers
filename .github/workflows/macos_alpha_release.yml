@@ -27,7 +27,7 @@ jobs:
     runs-on: macos-15
 
     outputs:
-      build-number: ${{ steps.build-number.outputs.next_build_number }}
+      build-number: ${{ steps.update-build-number.outputs.next_build_number }}
 
     steps:
     - name: Check out the code
@@ -53,12 +53,24 @@ jobs:
           config:alpha \
           bundle_id:com.duckduckgo.mobile.ios.alpha
 
-    - name: Store and report build number
+    - name: Update stored build number if needed
+      id: update-build-number
       env:
         GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
       run: |
-        gh variable set MACOS_ALPHA_BUILD_NUMBER --body "${{ steps.build-number.outputs.next_build_number }}"
-        echo "::notice::Using build number ${{ steps.build-number.outputs.next_build_number }}"
+        current_build_number="${{ vars.MACOS_ALPHA_BUILD_NUMBER }}"
+        next_build_number="${{ steps.build-number.outputs.next_build_number }}"
+
+        if [[ "$next_build_number" -gt "$current_build_number" ]]; then
+          gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$next_build_number"
+          echo "Updated build number from $current_build_number to $next_build_number"
+          echo "::notice::Using build number $next_build_number"
+          echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
+        else
+          echo "Build number $next_build_number is not higher than current $current_build_number, skipping update"
+          echo "::notice::Using build number $current_build_number"
+          echo "build-number=$current_build_number" >> $GITHUB_OUTPUT
+        fi
 
   dmg-release:
     name: Prepare DMG Release

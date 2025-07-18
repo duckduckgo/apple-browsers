@@ -919,7 +919,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         updateImageButton()
-        updateprivacyDashboardButton()
+        updatePrivacyDashboardButton()
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
@@ -1440,7 +1440,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
-    private func updateprivacyDashboardButton() {
+    private func updatePrivacyDashboardButton() {
         guard let tabViewModel else { return }
 
         let url = tabViewModel.tab.content.userEditableUrl

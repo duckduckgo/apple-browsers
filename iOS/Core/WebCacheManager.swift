@@ -21,12 +21,15 @@ import Common
 import WebKit
 import os.log
 
+import WKAbstractions
+
 /// This is effectively a wrapper around a system singleton which returns abstracted wrapper.
 ///
 ///  We should turn this into a protocol and inject it where needed.
 public enum DDGWebsiteDataStoreProvider {
 
     // Don't call this in tests.
+    @MainActor
     public static func current(dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> DDGWebsiteDataStore {
         guard !ProcessInfo().arguments.contains("testing") else {
             fatalError("Don't call this from tests")
@@ -216,90 +219,5 @@ extension WebCacheManager {
             await cookieStore.deleteCookie(cookie)
         }
     }
-
-}
-
-@MainActor
-public protocol DDGWebsiteDataStore {
-
-    var httpCookieStore: DDGHTTPCookieStore { get }
-
-    func removeData(ofTypes types: Set<String>, modifiedSince: Date) async
-    func dataRecords(ofTypes types: Set<String>) async -> [DDGWebsiteDataRecord]
-    func removeData(ofTypes types: Set<String>, for records: [DDGWebsiteDataRecord]) async
-
-}
-
-@MainActor
-public protocol DDGHTTPCookieStore {
-
-    func setCookie(_ cookie: HTTPCookie) async
-    func allCookies() async -> [HTTPCookie]
-    func deleteCookie(_ cookie: HTTPCookie) async
-
-}
-
-@MainActor
-public protocol DDGWebsiteDataRecord {
-
-    var displayName: String { get }
-
-}
-
-struct WebsiteDataStoreWrapper: DDGWebsiteDataStore {
-
-    let wrapped: WKWebsiteDataStore
-
-    var httpCookieStore: any DDGHTTPCookieStore {
-        return HTTPCookieStoreWrapper(wrapped: wrapped.httpCookieStore)
-    }
-
-    func removeData(ofTypes types: Set<String>, modifiedSince: Date) async {
-        await wrapped.removeData(ofTypes: types, modifiedSince: modifiedSince)
-    }
-    
-    func dataRecords(ofTypes types: Set<String>) async -> [any DDGWebsiteDataRecord] {
-        await wrapped.dataRecords(ofTypes: types).map { record in
-            WebsiteDataRecordWrapper(wrapped: record)
-        }
-    }
-    
-    func removeData(ofTypes types: Set<String>, for records: [any DDGWebsiteDataRecord]) async {
-        let unwrappedRecords = records.compactMap { ($0 as? WebsiteDataRecordWrapper)?.wrapped }
-        assert(unwrappedRecords.count == records.count)
-        await wrapped.removeData(ofTypes: types, for: unwrappedRecords)
-    }
-
-}
-
-public struct HTTPCookieStoreWrapper: DDGHTTPCookieStore {
-
-    public let wrapped: WKHTTPCookieStore
-
-    public init(wrapped: WKHTTPCookieStore) {
-        self.wrapped = wrapped
-    }
-
-    public func setCookie(_ cookie: HTTPCookie) async {
-        await wrapped.setCookie(cookie)
-    }
-    
-    public func allCookies() async -> [HTTPCookie] {
-        await wrapped.allCookies()
-    }
-    
-    public func deleteCookie(_ cookie: HTTPCookie) async {
-        await wrapped.deleteCookie(cookie)
-    }
-
-}
-
-struct WebsiteDataRecordWrapper: DDGWebsiteDataRecord {
-
-    var displayName: String {
-        wrapped.displayName
-    }
-
-    let wrapped: WKWebsiteDataRecord
 
 }

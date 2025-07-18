@@ -22,6 +22,7 @@ import Combine
 import BrowserServicesKit
 import WebKit
 import Core
+import WKAbstractions
 
 final class SubscriptionService {
 

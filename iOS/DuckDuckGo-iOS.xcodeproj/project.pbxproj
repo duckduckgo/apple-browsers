@@ -687,6 +687,7 @@
 		856B2A682DCCF66B0075ED44 /* EnlargedHitAreaButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856B2A672DCCF6550075ED44 /* EnlargedHitAreaButton.swift */; };
 		856B2A6A2DCCFC2D0075ED44 /* EnlargedHitAreaButtonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856B2A692DCCFC250075ED44 /* EnlargedHitAreaButtonTests.swift */; };
 		856F28D72D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 856F28D62D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift */; };
+		857074D22E2A57F800099511 /* WKAbstractions in Frameworks */ = {isa = PBXBuildFile; productRef = 857074D12E2A57F800099511 /* WKAbstractions */; };
 		857229882BBEE74100E2E802 /* AppRatingPromptDatabaseMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857229872BBEE74100E2E802 /* AppRatingPromptDatabaseMigrationTests.swift */; };
 		8572298A2BBEF0C800E2E802 /* AppRatingPrompt_v1 in Resources */ = {isa = PBXBuildFile; fileRef = 857229892BBEF0C800E2E802 /* AppRatingPrompt_v1 */; };
 		8577A1C5255D2C0D00D43FCD /* HitTestingToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8577A1C4255D2C0D00D43FCD /* HitTestingToolbar.swift */; };
@@ -4251,6 +4252,7 @@
 				4BC95EA12D741767002FAB32 /* PixelKit in Frameworks */,
 				4BC95EA32D74176D002FAB32 /* PixelExperimentKit in Frameworks */,
 				4BC95E832D7416DD002FAB32 /* BrowserServicesKit in Frameworks */,
+				857074D22E2A57F800099511 /* WKAbstractions in Frameworks */,
 				F486D33425069BBB002D07D7 /* Kingfisher in Frameworks */,
 				D61CDA182B7CF78300A0FBB9 /* ZIPFoundation in Frameworks */,
 				4BC95E9B2D741754002FAB32 /* Subscription in Frameworks */,
@@ -9194,6 +9196,7 @@
 				4BC95E9E2D741761002FAB32 /* RemoteMessaging */,
 				4BC95EA02D741767002FAB32 /* PixelKit */,
 				4BC95EA22D74176D002FAB32 /* PixelExperimentKit */,
+				857074D12E2A57F800099511 /* WKAbstractions */,
 			);
 			productName = Core;
 			productReference = F143C2E41E4A4CD400CFDE3A /* Core.framework */;
@@ -14773,6 +14776,10 @@
 		856086622DE47E7700AA3DC7 /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DesignResourcesKitIcons;
+		};
+		857074D12E2A57F800099511 /* WKAbstractions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WKAbstractions;
 		};
 		984249C02CED4F430071C7DB /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -42,6 +42,7 @@ import Onboarding
 import os.log
 import Navigation
 import Subscription
+import WKAbstractions
 
 class TabViewController: UIViewController {
 

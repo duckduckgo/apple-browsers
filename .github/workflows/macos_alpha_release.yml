@@ -15,14 +15,14 @@ on:
     #   - 'SharedPackages/**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
 
   calculate-alpha-build-number:
     name: Calculate Alpha Build Number
-
-    concurrency:
-      group: ${{ github.workflow }}
-      cancel-in-progress: true
 
     runs-on: macos-15
 
@@ -100,10 +100,6 @@ jobs:
   dmg-release:
     name: Prepare DMG Release
 
-    concurrency:
-      group: ${{ github.workflow }}
-      cancel-in-progress: true
-
     needs: calculate-alpha-build-number
 
     uses: ./.github/workflows/macos_build_notarized.yml
@@ -128,10 +124,6 @@ jobs:
   appstore-release:
     name: Prepare AppStore Release
 
-    concurrency:
-      group: ${{ github.workflow }}-appstore
-      cancel-in-progress: true
-
     needs: calculate-alpha-build-number
 
     uses: ./.github/workflows/macos_build_appstore.yml
@@ -152,10 +144,6 @@ jobs:
 
   publish-alpha-dmg:
     name: Publish Alpha DMG
-
-    concurrency:
-      group: ${{ github.workflow }}
-      cancel-in-progress: true
 
     needs: dmg-release
 

@@ -17,36 +17,40 @@
 //
 
 import Foundation
+import Combine
 import Common
 @testable import Networking
 @testable import Subscription
 import NetworkingTestingUtils
 
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
+
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
+
     public var email: String?
 
     public var isEligibleForFreeTrialResult: Bool = false
 
     public init() {}
 
-    public static var environment: Subscription.SubscriptionEnvironment?
-    public static func loadEnvironmentFrom(userDefaults: UserDefaults) -> Subscription.SubscriptionEnvironment? {
+    public static var environment: SubscriptionEnvironment?
+    public static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment? {
         return environment
     }
 
-    public static func save(subscriptionEnvironment: Subscription.SubscriptionEnvironment, userDefaults: UserDefaults) {
+    public static func save(subscriptionEnvironment: SubscriptionEnvironment, userDefaults: UserDefaults) {
         environment = subscriptionEnvironment
     }
 
-    public var currentEnvironment: Subscription.SubscriptionEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+    public var currentEnvironment: SubscriptionEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
     public func loadInitialData() async {}
 
     public func refreshCachedSubscription(completion: @escaping (Bool) -> Void) {}
 
-    public var resultSubscription: Subscription.PrivacyProSubscription?
+    public var resultSubscription: PrivacyProSubscription?
 
-    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> Subscription.PrivacyProSubscription? {
+    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription? {
         guard let resultSubscription else {
             throw OAuthClientError.missingTokenContainer
         }
@@ -55,14 +59,14 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public var canPurchase: Bool = true
 
-    public var resultStorePurchaseManager: (any Subscription.StorePurchaseManagerV2)?
-    public func storePurchaseManager() -> any Subscription.StorePurchaseManagerV2 {
+    public var resultStorePurchaseManager: (any StorePurchaseManagerV2)?
+    public func storePurchaseManager() -> any StorePurchaseManagerV2 {
         return resultStorePurchaseManager!
     }
 
     public var resultURL: URL!
     public var subscriptionURL: SubscriptionURL?
-    public func url(for type: Subscription.SubscriptionURL) -> URL {
+    public func url(for type: SubscriptionURL) -> URL {
         subscriptionURL = type
         return resultURL
     }
@@ -127,8 +131,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     }
 
-    public var confirmPurchaseResponse: Result<Subscription.PrivacyProSubscription, Error>?
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> Subscription.PrivacyProSubscription {
+    public var confirmPurchaseResponse: Result<PrivacyProSubscription, Error>?
+    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription {
         switch confirmPurchaseResponse! {
         case .success(let result):
             return result
@@ -146,15 +150,15 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         }
     }
 
-    public func getSubscription(cachePolicy: Subscription.SubscriptionCachePolicy) async throws -> Subscription.PrivacyProSubscription {
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
         guard let resultSubscription else {
             throw SubscriptionEndpointServiceError.noData
         }
         return resultSubscription
     }
 
-    public var productsResponse: Result<[Subscription.GetProductsItem], Error>?
-    public func getProducts() async throws -> [Subscription.GetProductsItem] {
+    public var productsResponse: Result<[GetProductsItem], Error>?
+    public func getProducts() async throws -> [GetProductsItem] {
         switch productsResponse! {
         case .success(let result):
             return result
@@ -167,21 +171,21 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         self.resultTokenContainer = tokenContainer
     }
 
-    public var resultFeatures: [Subscription.SubscriptionFeatureV2] = []
-    public func currentSubscriptionFeatures(forceRefresh: Bool) async -> [Subscription.SubscriptionFeatureV2] {
+    public var resultFeatures: [SubscriptionEntitlement] = []
+    public func currentSubscriptionFeatures(forceRefresh: Bool) async -> [SubscriptionEntitlement] {
         resultFeatures
     }
 
     public func isSubscriptionFeatureEnabled(_ entitlement: Networking.SubscriptionEntitlement) async throws -> Bool {
-        resultFeatures.contains { $0.entitlement == entitlement }
+        resultFeatures.contains { $0 == entitlement }
     }
 
-    public func isFeatureAvailableAndEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
-        resultFeatures.contains { $0.entitlement == feature.subscriptionEntitlement }
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
+        resultFeatures.contains { $0 == feature.subscriptionEntitlement }
     }
 
-    public func isFeatureEnabledForUser(feature: Subscription.Entitlement.ProductName) async -> Bool {
-        resultFeatures.contains { $0.entitlement == feature.subscriptionEntitlement }
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async -> Bool {
+        resultFeatures.contains { $0 == feature.subscriptionEntitlement }
     }
 
     // MARK: - Subscription Token Provider
@@ -197,26 +201,26 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         resultTokenContainer = nil
     }
 
-    public func isEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
+    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
         switch feature {
         case .networkProtection:
-            return await isFeatureEnabledForUser(feature: .networkProtection)
+            return await isFeatureEnabled(.networkProtection)
         case .dataBrokerProtection:
-            return await isFeatureEnabledForUser(feature: .dataBrokerProtection)
+            return await isFeatureEnabled(.dataBrokerProtection)
         case .identityTheftRestoration:
-            return await isFeatureEnabledForUser(feature: .identityTheftRestoration)
+            return await isFeatureEnabled(.identityTheftRestoration)
         case .identityTheftRestorationGlobal:
-            return await isFeatureEnabledForUser(feature: .identityTheftRestorationGlobal)
+            return await isFeatureEnabled(.identityTheftRestorationGlobal)
         case .paidAIChat:
-            return await isFeatureEnabledForUser(feature: .paidAIChat)
+            return await isFeatureEnabled(.paidAIChat)
         case .unknown:
             return false
         }
     }
 
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
-            switch subscriptionFeatureV2.entitlement {
+        await currentSubscriptionFeatures(forceRefresh: false).compactMap { feature in
+            switch feature {
             case .networkProtection:
                 return .networkProtection
             case .dataBrokerProtection:

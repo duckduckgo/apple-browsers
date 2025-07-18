@@ -28,7 +28,7 @@ protocol WebExtensionInternalSiteHandlerDataSource {
 @available(macOS 15.4, *)
 final class WebExtensionInternalSiteHandler {
 
-    let navigationDelegate = WebExtensionInternalSiteNavigationDelegate()
+    let navigationDelegate = WebExtensionInternalSiteNavigationDelegate() // swiftlint:disable:this weak_delegate
     var dataSource: WebExtensionInternalSiteHandlerDataSource?
 
     private var webViewTabCache: Tab?

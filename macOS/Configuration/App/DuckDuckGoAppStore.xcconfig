@@ -23,6 +23,7 @@ CODE_SIGN_ENTITLEMENTS = DuckDuckGo/DuckDuckGoAppStore.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Debug][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreDebug.entitlements
 CODE_SIGN_ENTITLEMENTS[config=CI][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreCI.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Review][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreReview.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Alpha][arch=*][sdk=*] = DuckDuckGo/DuckDuckGoAppStoreAlpha.entitlements
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = 3rd Party Mac Developer Application
 CODE_SIGN_IDENTITY[config=Debug][sdk=macosx*] = Apple Development
@@ -42,6 +43,7 @@ PROVISIONING_PROFILE_SPECIFIER[config=Debug][sdk=macosx*] =
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckduckgo.mobile.ios.debug macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.review macos
+PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.alpha macos
 
 // Install to /Applications/DEBUG/
 DEPLOYMENT_LOCATION[config=Debug] = YES;

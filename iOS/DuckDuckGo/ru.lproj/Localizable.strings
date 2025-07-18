@@ -59,10 +59,7 @@
 "action.title.downloads" = "Загрузки";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Чат с ИИ";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Запустить AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Редактировать закладку";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Доступ к любимым сайтам в одно касание.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Функции ИИ";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Существующие закладки дублироваться не будут.";
@@ -268,15 +268,6 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Разблокируйте DuckDuckGo.";
 
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Вы точно хотите удалить все закладки? Это действие нельзя отменить.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Вы точно хотите удалить этот чат? Это необратимая операция.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Спросите о чем угодно...";
-
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Войти";
 
@@ -321,6 +312,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Если DuckDuckGo обнаружит всплывающее окно выбора куки-файлов на каком-либо сайте, мы попытаемся автоматически выбрать минимум куки, максимально защитив ваши данные, а затем закроем окно. Некоторые сайты не позволяют контролировать настройки куки-файлов. В этом случае мы можем их только скрыть.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Карта сохранена";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Карта удалена";
@@ -409,6 +403,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Для хранения карт нужна защита устройства";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Не сохранять";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Сохранить карту";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Реквизиты карт надежно хранятся на вашем устройстве.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Хотите, чтобы DuckDuckGo сохранил реквизиты карты?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Чтобы заполнить реквизиты, выполните авторизацию";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Использовать сохраненную карту?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Хранение реквизитов платежных карт можно отключить в любой момент.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -469,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Синхронизировать с компьютером";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Как импортировать пароли";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Как синхронизировать пароли из настольного браузера";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Выключить";
@@ -1117,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Как экспортировать пароли из Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Выбрать файл...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Выберите файл с паролями, экспортированными из браузера Safari или Chrome. Обычно он имеет формат ZIP или CSV.";
 
@@ -1143,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Импортирование завершено.";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Платежные карты";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Пропущенные дубликаты";
@@ -1185,9 +1206,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Отладка";
-
-/* No comment provided by engineer. */
-"Delete All" = "Удалить все";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "устройстве";
@@ -1273,8 +1291,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Работа проигрывателя Duck Player пострадала в результате недавних изменений на YouTube. Мы уже ищем решение и благодарим вас за понимание.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai — дополнительная функция, позволяющая анонимно беседовать с популярными сторонними чат-моделями на базе искусственного интеллекта. Содержимое чатов не применяется для обучения ИИ.\n[Подробнее...](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Адресная строка";
@@ -1288,7 +1306,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Голосовой поиск";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Узнать больше";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1840,6 +1861,15 @@
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Код: %1$@ | %2$@ | %3$@";
 
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Импорт паролей";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Быстрый и безопасный способ перенести пароли из другого браузера.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Импорт паролей в DuckDuckGo";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Включите VPN в приложении DuckDuckGo.";
 
@@ -2234,7 +2264,7 @@
 "new.tab.page.settings.title" = "Страница новой вкладки";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Чат с ИИ";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Закладки";
@@ -2332,15 +2362,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Кстати, пока не забыл...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "В DuckDuckGo также есть встроенный %1$@!\n\nДля его активации требуется %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "платная подписка Privacy Pro";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Начать просмотр";
 
@@ -2352,6 +2373,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Понятно. Тогда мы пропустим остальные советы.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Ознакомление бесплатное!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo также предлагает надежный сервис %1$@ по %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "платной подписке";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + еще два вида дополнительной защиты";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Добавить виджет";
@@ -2633,7 +2666,16 @@
 "settings.address.full.url" = "Показывать полный адрес сайта";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Ярлыки";
+"settings.aichat.shortcuts" = "Ярлыки Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Поисковый запрос";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Выполнить поиск в интернете или задать вопрос ИИ-ассистенту Duck.ai можно прямо из адресной строки.";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Настройки Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Всегда включено";
@@ -2711,13 +2753,19 @@
 "settings.emailProtection.description" = "Блокировка почтовых трекеров и скрытие адреса";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Включить Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Общайтесь в приватном чате с популярными сторонними моделями искусственного интеллекта";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Включите защиту электронной почты";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Включить голосовой поиск";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Выберите, как часто вы хотите видеть ответы от ИИ в результатах поиска.";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Оставьте нам отзыв";
@@ -2782,6 +2830,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Политика конфиденциальности и условия обслуживания";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Включает услуги: VPN и и Identity Theft Restoration (восстановление данных после «кражи личности»).";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Включает услуги: VPN, Personal Information Removal (удаление личной информации) и Identity Theft Restoration (восстановление данных после «кражи личности»).";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Предпросмотр долгим нажатием";
 
@@ -2842,17 +2896,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Настройки подписки";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Включает услуги: VPN и и Identity Theft Restoration (восстановление данных после «кражи личности»).";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Тариф Privacy Pro для защиты соединения и личных данных";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Попробуйте Privacy Pro бесплатно";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Включает услуги: VPN, Personal Information Removal (удаление личной информации) и Identity Theft Restoration (восстановление данных после «кражи личности»).";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2919,9 +2967,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "На каком сайте возникает проблема?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Остановить генерацию...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
@@ -3573,6 +3618,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Продолжить";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Платежные карты";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Пароли";

@@ -36,10 +36,10 @@ struct PreferencesSection: Hashable, Identifiable {
         ]
 
         let regularPanes: [PreferencePaneIdentifier] = {
-            var panes: [PreferencePaneIdentifier] = [.general, .appearance, .autofill, .accessibility, .dataClearing]
+            var panes: [PreferencePaneIdentifier] = [.appearance, .autofill, .accessibility, .dataClearing]
 
             if includingSync {
-                panes.insert(.sync, at: 1)
+                panes.append(.sync)
             }
 
             if includingDuckPlayer {
@@ -50,7 +50,7 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.aiChat)
             }
 
-            return panes
+            return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
         }()
 
 #if APPSTORE
@@ -220,7 +220,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .duckPlayer:
             return UserText.duckPlayer
         case .aiChat:
-            return UserText.aiChat
+            return UserText.aiFeatures
         case .about:
             return UserText.about
         case .otherPlatforms:

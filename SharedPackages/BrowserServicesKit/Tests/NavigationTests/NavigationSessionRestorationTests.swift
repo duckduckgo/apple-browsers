@@ -29,6 +29,7 @@ import XCTest
 class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase {
 
     func testWhenSessionIsRestored_navigationTypeIsSessionRestoration() throws {
+
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         let eDidFinish = expectation(description: "onDidFinish")
         responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }

@@ -23,6 +23,7 @@ import AppKit
 ///
 /// This delegate is responsible for handling tab selection and tab list updates
 /// that occur within the AI Chat sidebar interface.
+@MainActor
 protocol AIChatSidebarHostingDelegate: AnyObject {
     /// Called when a tab is selected in the AI Chat sidebar.
     /// - Parameter tabID: The unique identifier of the selected tab.
@@ -30,16 +31,20 @@ protocol AIChatSidebarHostingDelegate: AnyObject {
 
     /// Called when the list of tabs in the AI Chat sidebar is updated.
     /// - Parameter currentTabIDs: An array of tab identifiers representing the current state of tabs.
-    func sidebarHostDidUpdateTabs(_ currentTabIDs: [TabIdentifier])
+    func sidebarHostDidUpdateTabs()
 }
 
 /// A protocol that defines the requirements for hosting the AI Chat sidebar in a view controller.
 ///
 /// This protocol provides the necessary properties and methods to manage the AI Chat sidebar's
 /// layout, embedding, and tab-related functionality within a host view controller.
+@MainActor
 protocol AIChatSidebarHosting: AnyObject  {
     /// The delegate that receives tab-related events from the sidebar.
     var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate? { get set }
+
+    /// Tells if the sidebar host is in the key application window.
+    var isInKeyWindow: Bool { get }
 
     /// The identifier of the currently active tab, if any.
     var currentTabID: TabIdentifier? { get }
@@ -53,16 +58,27 @@ protocol AIChatSidebarHosting: AnyObject  {
     /// Embeds the provided view controller as the sidebar content.
     /// - Parameter vc: The view controller to embed as the sidebar content.
     func embedSidebarViewController(_ vc: NSViewController)
+
+    /// The burner mode status of the current tab (private browsing mode).
+    var burnerMode: BurnerMode { get }
 }
 
 extension BrowserTabViewController: AIChatSidebarHosting {
 
+    var isInKeyWindow: Bool {
+        view.window?.isKeyWindow ?? false
+    }
+
     var currentTabID: TabIdentifier? {
-        tabViewModel?.tab.id
+        tabViewModel?.tab.uuid
     }
 
     func embedSidebarViewController(_ sidebarViewController: NSViewController) {
         addAndLayoutChild(sidebarViewController, into: sidebarContainer)
+    }
+
+    var burnerMode: BurnerMode {
+        tabViewModel?.tab.burnerMode ?? .regular
     }
 
 }

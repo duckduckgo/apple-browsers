@@ -38,12 +38,10 @@ class FindInPageTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         loremIpsumWebView = app.windows.webViews["Lorem Ipsum"]
         findInPageCloseButton = app.windows.buttons["FindInPageController.closeButton"]
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
         app.typeKey("n", modifierFlags: .command)
     }

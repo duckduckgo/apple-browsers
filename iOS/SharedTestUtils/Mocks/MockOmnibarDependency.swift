@@ -23,17 +23,21 @@ import BrowserServicesKit
 @testable import DuckDuckGo
 
 struct MockOmnibarDependency: OmnibarDependencyProvider {
+    var suggestionTrayDependencies: SuggestionTrayDependencies?
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
     var aiChatSettings: AIChatSettingsProvider
     var themingProperties: ExperimentalThemingProperties = ExperimentalThemingProperties(isExperimentalThemingEnabled: false,
                                                                                          isRoundedCornersTreatmentEnabled: false)
+    var appSettings: any AppSettings
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
-         aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider() ) {
+         aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
+         appSettings: AppSettings = AppSettingsMock()) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
+        self.appSettings = appSettings
     }
 }

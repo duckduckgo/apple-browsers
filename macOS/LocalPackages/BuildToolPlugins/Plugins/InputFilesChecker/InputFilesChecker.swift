@@ -36,15 +36,12 @@ let extensionsInputFiles: [InputFile] = [
 ]
 
 let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
-    .init("BWEncryption.swift", .source),
-    .init("BWEncryptionOutput.swift", .source),
     .init("InfoPlist.xcstrings", .resource),
     .init("DeveloperID.xcstrings", .resource),
     .init("BWManager.swift", .source),
     .init("UpdateController.swift", .source),
     .init("UpdateUserDriver.swift", .source),
     .init("DuckDuckGo VPN.app", .unknown),
-    .init("DuckDuckGo Notifications.app", .unknown),
     .init("DuckDuckGo Personal Information Removal.app", .unknown),
 ] + extensionsInputFiles)
 

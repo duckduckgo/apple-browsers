@@ -42,7 +42,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
             appSettings: AppSettingsMock(),
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             configurationStore: MockConfigurationStoring(),
             database: db,
             errorEvents: nil,
@@ -59,7 +59,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             newTabDialogFactory: dialogFactory,
             newTabDialogTypeProvider: specProvider,
             faviconLoader: EmptyFaviconLoading(),
-            messageNavigationDelegate: MockMessageNavigationDelegate()
+            messageNavigationDelegate: MockMessageNavigationDelegate(),
+            appSettings: AppSettingsMock()
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)

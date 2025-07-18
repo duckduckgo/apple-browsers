@@ -264,7 +264,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - User Notifications
 
-    private let notificationsPresenter: NetworkProtectionNotificationsPresenter
+    private let notificationsPresenter: VPNNotificationsPresenting
 
     // MARK: - Registration Key
 
@@ -273,12 +273,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private let tokenHandlerProvider: () -> any SubscriptionTokenHandling
     @objc
-    public static var isAuthV2Enabled: Bool {
+    public static var isUsingAuthV2: Bool {
         get {
-            UserDefaults.standard.bool(forKey: #keyPath(isAuthV2Enabled))
+            UserDefaults.standard.bool(forKey: #keyPath(isUsingAuthV2))
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: #keyPath(isAuthV2Enabled))
+            UserDefaults.standard.set(newValue, forKey: #keyPath(isUsingAuthV2))
         }
     }
 
@@ -326,11 +326,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     ///
     public func updateBandwidthAnalyzer() async {
         guard let (rx, tx) = try? await adapter.getBytesTransmitted() else {
-            self.bandwidthAnalyzer.preventIdle()
+            await self.bandwidthAnalyzer.preventIdle()
             return
         }
 
-        bandwidthAnalyzer.record(rxBytes: rx, txBytes: tx)
+        await bandwidthAnalyzer.record(rxBytes: rx, txBytes: tx)
     }
 
     // MARK: - Connection tester
@@ -347,7 +347,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.userBecameActive)
 
             await updateBandwidthAnalyzer()
-            return bandwidthAnalyzer.isConnectionIdle()
+            return await bandwidthAnalyzer.isConnectionIdle()
         } rekey: { @MainActor [weak self] in
             try await self?.rekey()
         }
@@ -393,7 +393,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
 
                 self.tunnelHealth.isHavingConnectivityIssues = true
-                self.bandwidthAnalyzer.reset()
+
+                Task {
+                    await self.bandwidthAnalyzer.reset()
+                }
             }
         }
     }()
@@ -433,7 +436,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
 
-    public init(notificationsPresenter: NetworkProtectionNotificationsPresenter,
+    public init(notificationsPresenter: VPNNotificationsPresenting,
                 tunnelHealthStore: NetworkProtectionTunnelHealthStore,
                 controllerErrorStore: NetworkProtectionTunnelErrorStore,
                 knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore(),
@@ -512,7 +515,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         loadTesterEnabled(from: options)
 #if os(macOS)
         loadAuthVersion(from: options)
-        if !Self.isAuthV2Enabled {
+        if !Self.isUsingAuthV2 {
             try await loadAuthToken(from: options)
         } else {
             try await loadTokenContainer(from: options)
@@ -599,13 +602,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         switch options.isAuthV2Enabled {
         case .set(let newAuthVersion):
             Logger.networkProtection.log("Set new isAuthV2Enabled")
-            Self.isAuthV2Enabled = newAuthVersion
+            Self.isUsingAuthV2 = newAuthVersion
         case .useExisting:
             Logger.networkProtection.log("Use existing isAuthV2Enabled")
         case .reset:
             Logger.networkProtection.log("Reset isAuthV2Enabled")
         }
-        Logger.networkProtection.log("Load isAuthV2Enabled: \(Self.isAuthV2Enabled, privacy: .public)")
+        Logger.networkProtection.log("Load isAuthV2Enabled: \(Self.isUsingAuthV2, privacy: .public)")
     }
 
     private func loadAuthToken(from options: StartupOptions) async throws {

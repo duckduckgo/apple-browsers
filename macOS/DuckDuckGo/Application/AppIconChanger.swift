@@ -33,6 +33,8 @@ final class AppIconChanger {
             icon = .internalChannelIconDebug
 #elseif REVIEW
             icon = .internalChannelIconReview
+#elseif ALPHA
+            icon = nil // Don't override icon for alpha builds
 #else
             icon = .internalChannelIcon
 #endif

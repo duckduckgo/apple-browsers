@@ -75,6 +75,8 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsOpeningSettings: Bool
     public let supportsNativePrompt: Bool
     public let supportsNativeChatInput: Bool
+    public let supportsURLChatIDRestoration: Bool
+    public let supportsFullChatRestoration: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -82,7 +84,9 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: false,
-                                        supportsNativeChatInput: false)
+                                        supportsNativeChatInput: false,
+                                        supportsURLChatIDRestoration: false,
+                                        supportsFullChatRestoration: false)
 #endif
 
 #if os(macOS)
@@ -90,7 +94,9 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: true,
-                                        supportsNativeChatInput: false)
+                                        supportsNativeChatInput: false,
+                                        supportsURLChatIDRestoration: false,
+                                        supportsFullChatRestoration: false)
 #endif
     }
 
@@ -98,28 +104,98 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsClosingAIChat: Bool,
                 supportsOpeningSettings: Bool,
                 supportsNativePrompt: Bool,
-                supportsNativeChatInput: Bool) {
+                supportsNativeChatInput: Bool,
+                supportsURLChatIDRestoration: Bool,
+                supportsFullChatRestoration: Bool) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
         self.supportsOpeningSettings = supportsOpeningSettings
         self.supportsNativePrompt = supportsNativePrompt
         self.supportsNativeChatInput = supportsNativeChatInput
+        self.supportsURLChatIDRestoration = supportsURLChatIDRestoration
+        self.supportsFullChatRestoration = supportsFullChatRestoration
     }
 }
 
 public struct AIChatNativePrompt: Codable, Equatable {
+    public let platform: String
+    public let tool: Tool?
+
+    public enum Tool: Equatable {
+        case query(Query)
+        case summary(TextSummary)
+    }
+
     public struct Query: Codable, Equatable {
+        public static let tool = "query"
+
         public let prompt: String
         public let autoSubmit: Bool
     }
 
-    public let platform: String
-    public let query: Query?
+    public struct TextSummary: Codable, Equatable {
+        public static let tool = "summary"
+
+        public let text: String
+        public let sourceURL: String?
+        public let sourceTitle: String?
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case platform
+        case tool
+        case query
+        case summary
+    }
+
+    public init(platform: String, tool: Tool?) {
+        self.platform = platform
+        self.tool = tool
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        platform = try container.decode(String.self, forKey: .platform)
+
+        let toolString = try container.decodeIfPresent(String.self, forKey: .tool)
+
+        switch toolString {
+        case Query.tool:
+            let query = try container.decode(Query.self, forKey: .query)
+            tool = .query(query)
+        case TextSummary.tool:
+            let summary = try container.decode(TextSummary.self, forKey: .summary)
+            tool = .summary(summary)
+        default:
+            tool = nil
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(platform, forKey: .platform)
+
+        switch tool {
+        case .query(let query):
+            try container.encode(Query.tool, forKey: .tool)
+            try container.encode(query, forKey: .query)
+        case .summary(let summary):
+            try container.encode(TextSummary.tool, forKey: .tool)
+            try container.encode(summary, forKey: .summary)
+        case .none:
+            try container.encodeNil(forKey: .tool)
+        }
+    }
 
     public static func queryPrompt(_ prompt: String, autoSubmit: Bool) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, query: .init(prompt: prompt,
-                                                                 autoSubmit: autoSubmit))
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit)))
+    }
+
+    public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .summary(.init(text: text, sourceURL: url?.absoluteString, sourceTitle: title)))
     }
 }
 

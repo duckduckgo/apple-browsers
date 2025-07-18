@@ -32,6 +32,10 @@ final class DataImportViewModelTests: XCTestCase {
 
     var model: DataImportViewModel!
 
+    override var allowedNonNilVariables: Set<String> {
+        ["bookmarksResults", "passwordsResults"]
+    }
+
     override func tearDown() {
         model = nil
         importTask = nil
@@ -1797,6 +1801,56 @@ final class DataImportViewModelTests: XCTestCase {
             self.model = try await task.value ?? { throw CancellationError() }()
             await fulfillment(of: [taskStarted, taskCompleted], timeout: 0.0)
         }
+    }
+
+    // MARK: - DataTypesSelection Tests
+
+    func testDataTypesSelectionWhenAllDataTypesSelected_returnsAll() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = [.bookmarks, .passwords]
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .all)
+    }
+
+    func testDataTypesSelectionWhenOnlyBookmarksSelected_returnsSingleBookmarks() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = [.bookmarks]
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .single(.bookmarks))
+    }
+
+    func testDataTypesSelectionWhenOnlyPasswordsSelected_returnsSinglePasswords() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = [.passwords]
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .single(.passwords))
+    }
+
+    func testDataTypesSelectionWhenNoDataTypesSelected_returnsNone() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = []
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .none)
     }
 
 }

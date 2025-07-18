@@ -30,7 +30,7 @@ struct MenuPreview: View {
     let menu: NSMenu
 
     var body: some View {
-        guard #available(macOS 13.0, *) else { fatalError() }
+        guard #available(macOS 13.0, *) else { fatalError("Not supported on macOS versions prior to 13") }
 
         return HStack(spacing: 0) {
             ForEach(menu.items.indices, id: \.self) { idx in

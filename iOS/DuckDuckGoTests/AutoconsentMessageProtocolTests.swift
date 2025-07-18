@@ -25,7 +25,7 @@ import BrowserServicesKit
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 
-    let userScript: AutoconsentUserScript = {
+    var userScript: AutoconsentUserScript! = {
         let embeddedConfig =
         """
         {
@@ -61,7 +61,7 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
         return AutoconsentUserScript(config: manager.privacyConfig, preferences: MockAutoconsentPreferences())
     }()
 

@@ -37,7 +37,6 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case cantCalculatePreferredRunDate
     case httpError(code: Int)
     case dataNotInDatabase
-    case vaultNotAvailable
 
     static func parse(params: Any) -> DataBrokerProtectionError {
         let errorDataResult = try? JSONSerialization.data(withJSONObject: params)
@@ -86,8 +85,6 @@ extension DataBrokerProtectionError {
             return "httpError"
         case .dataNotInDatabase:
             return "dataNotInDatabase"
-        case .vaultNotAvailable:
-            return "vaultNotAvailable"
         }
     }
 }
@@ -109,7 +106,6 @@ extension DataBrokerProtectionError: CustomNSError {
         case .cantCalculatePreferredRunDate: return 111
         case .httpError: return 112
         case .dataNotInDatabase: return 113
-        case .vaultNotAvailable: return 114
         }
     }
 }

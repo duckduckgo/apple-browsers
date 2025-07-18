@@ -86,6 +86,9 @@
                <Test
                   Identifier = "FireButtonReferenceTests/testClearDataUsingLegacyContainer()">
                </Test>
+               <Test
+                  Identifier = "SpecialErrorPageNavigationHandlerTests/whenWebViewIsNilled_ThenWebViewIsDeallocated()">
+               </Test>
             </SkippedTests>
          </TestableReference>
          <TestableReference
@@ -154,6 +157,26 @@
                BuildableName = "AIChatTests"
                BlueprintName = "AIChatTests"
                ReferencedContainer = "container:../SharedPackages/AIChat">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SetDefaultBrowserTests"
+               BuildableName = "SetDefaultBrowserTests"
+               BlueprintName = "SetDefaultBrowserTests"
+               ReferencedContainer = "container:LocalPackages/SetDefaultBrowser">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "VPNTests"
+               BuildableName = "VPNTests"
+               BlueprintName = "VPNTests"
+               ReferencedContainer = "container:../SharedPackages/VPN">
             </BuildableReference>
          </TestableReference>
       </Testables>

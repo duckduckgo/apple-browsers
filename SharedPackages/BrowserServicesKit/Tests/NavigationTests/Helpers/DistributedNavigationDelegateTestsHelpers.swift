@@ -20,6 +20,7 @@
 
 import Combine
 import Common
+import os.log
 import Swifter
 import WebKit
 import XCTest
@@ -33,7 +34,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     var navigationDelegate: DistributedNavigationDelegate { navigationDelegateProxy.delegate }
     var testSchemeHandler: TestNavigationSchemeHandler! = TestNavigationSchemeHandler()
-    var server: HttpServer!
+    var server: SafeHttpServer!
 
     var currentHistoryItemIdentityCancellable: AnyCancellable!
     var history = [UInt64: HistoryItemIdentity]()
@@ -52,25 +53,47 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     var usedWebViews = [WKWebView]()
     var usedDelegates = [NavigationDelegateProxy]()
 
-    let data = DataSource()
-    let urls = URLs()
+    static let data = DataSource()
+    var data: DataSource { Self.data }
+    static let urls = URLs()
+    var urls: URLs { Self.urls }
 
     override func setUp() {
         NavigationAction.resetIdentifier()
-        server = HttpServer()
+
+        server?.stop()
+        server = SafeHttpServer()
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        self.navigationDelegate.responders.forEach { responder in
+            (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
+                XCTFail("[\(testName)] unexpected event received: \($0)")
+            })
+        }
     }
 
     override func tearDown() {
         self.testSchemeHandler = nil
         server.stop()
-        self.navigationDelegate.responders.forEach { ($0 as? NavigationResponderMock)?.reset() }
+        server = nil
+        self.navigationDelegate.responders.forEach { responder in
+            (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
+                XCTFail("[\(testName)] event received after test completed: \($0)")
+            })
+        }
         if let _webView {
             usedWebViews.append(_webView)
             self._webView = nil
         }
         self.usedDelegates.append(navigationDelegateProxy)
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        currentHistoryItemIdentityCancellable = nil
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.usedWebViews = []
+            self?.usedDelegates = []
+            self?.navigationDelegateProxy = nil
+            self?.history.removeAll()
+        }
     }
 
 }
@@ -461,18 +484,20 @@ extension DistributedNavigationDelegateTestsBase {
         var rhs = rhs
         var lastEventLine = line
         let rhsMap = rhs.enumerated().reduce(into: [Int: TestsNavigationEvent]()) { $0[$1.offset] = $1.element }
+        var idx2subst = 0
         for idx in 0..<max(lhs.count, rhs.count) {
             let event1 = lhs.indices.contains(idx) ? lhs[idx] : nil
             var idx2: Int! = (event1 != nil ? rhs.firstIndex(where: { event2 in compare("", event1, event2) == nil }) : nil)
             if let idx2 {
                 // events are equal
                 rhs.remove(at: idx2)
+                idx2subst += 1
                 continue
             } else if let originalEvent2 = rhsMap[idx], originalEvent2.type == event1?.type,
                       let idx = rhs.firstIndex(where: { event2 in compare("", originalEvent2, event2) == nil }) {
                 idx2 = idx
             } else {
-                idx2 = idx
+                idx2 = idx - idx2subst
             }
 
             let event2 = rhs.indices.contains(idx2) ? rhs.remove(at: idx2) : nil
@@ -501,8 +526,9 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func printEncoded(responder idx: Int = 0) {
-        print("Responder #\(idx) history encoded:")
-        print(encodedResponderHistory(at: idx))
+        Logger.navigation.error("Responder #\(idx) history encoded:")
+        let encodedHistory = encodedResponderHistory(at: idx)
+        Logger.navigation.error("\(encodedHistory)")
     }
 
 }

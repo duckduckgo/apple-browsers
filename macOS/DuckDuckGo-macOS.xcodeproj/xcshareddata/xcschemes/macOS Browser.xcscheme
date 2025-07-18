@@ -157,6 +157,9 @@
                   Identifier = "SyncPreferencesTests/test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage()">
                </Test>
                <Test
+                  Identifier = "SyncPreferencesTests/test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode()">
+               </Test>
+               <Test
                   Identifier = "TabSnapshotExtensionTests/testWhenSnapshotIsRestored_ThenRenderingIsSkippedAfterLoading()">
                </Test>
                <Test
@@ -178,43 +181,13 @@
             </BuildableReference>
             <SkippedTests>
                <Test
-                  Identifier = "AutoconsentIntegrationTests/testFilterlistRule_whenFakeCookieBannerIsDisplayed_bannerIsHidden()">
-               </Test>
-               <Test
-                  Identifier = "AutoconsentIntegrationTests/testWhenAutoconsentDisabled_promptIsDisplayed()">
-               </Test>
-               <Test
                   Identifier = "ConfigurationManagerIntegrationTests/testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment()">
                </Test>
                <Test
                   Identifier = "CoreDataEncryptionTests/testSavingIncorrectValueTypes()">
                </Test>
                <Test
-                  Identifier = "DownloadsIntegrationTests/testWhenDownloadIsStartedAfterAppOpensURL_tabIsClosed()">
-               </Test>
-               <Test
-                  Identifier = "DownloadsIntegrationTests/testWhenDownloadIsStartedInNewTab_tabIsClosed()">
-               </Test>
-               <Test
                   Identifier = "EncryptionKeyStoreTests">
-               </Test>
-               <Test
-                  Identifier = "HTTPSUpgradeIntegrationTests">
-               </Test>
-               <Test
-                  Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
-               </Test>
-               <Test
-                  Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
-               </Test>
-               <Test
-                  Identifier = "TabContentTests/testWhenPDFContextMenuPrintChosen_printDialogOpens()">
-               </Test>
-               <Test
-                  Identifier = "TabContentTests/testWhenPDFContextMenuSaveAsChosen_saveDialogOpens()">
-               </Test>
-               <Test
-                  Identifier = "TabContentTests/testWhenPDFMainMenuPrintChosen_printDialogOpens()">
                </Test>
             </SkippedTests>
          </TestableReference>
@@ -296,6 +269,16 @@
                BuildableName = "DataBrokerProtection-macOSTests"
                BlueprintName = "DataBrokerProtection-macOSTests"
                ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "VPNTests"
+               BuildableName = "VPNTests"
+               BlueprintName = "VPNTests"
+               ReferencedContainer = "container:../SharedPackages/VPN">
             </BuildableReference>
          </TestableReference>
       </Testables>

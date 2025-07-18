@@ -49,11 +49,21 @@ final class BrowserTabViewController: NSViewController {
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: NewTabPageActionsManager
-    private(set) lazy var newTabPageWebViewModel: NewTabPageWebViewModel = NewTabPageWebViewModel(
-        featureFlagger: featureFlagger,
-        actionsManager: newTabPageActionsManager,
-        activeRemoteMessageModel: activeRemoteMessageModel
-    )
+
+    private var _newTabPageWebViewModel: NewTabPageWebViewModel?
+    var newTabPageWebViewModel: NewTabPageWebViewModel {
+        if let newTabPageWebViewModel = _newTabPageWebViewModel {
+            return newTabPageWebViewModel
+        }
+
+        let newTabPageWebViewModel = NewTabPageWebViewModel(
+            featureFlagger: featureFlagger,
+            actionsManager: newTabPageActionsManager,
+            activeRemoteMessageModel: activeRemoteMessageModel
+        )
+        _newTabPageWebViewModel = newTabPageWebViewModel
+        return newTabPageWebViewModel
+    }
 
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -169,19 +179,17 @@ final class BrowserTabViewController: NSViewController {
         hoverLabelContainer.trailingAnchor.constraint(equalTo: hoverLabel.trailingAnchor, constant: 8).isActive = true
         hoverLabel.topAnchor.constraint(equalTo: hoverLabelContainer.topAnchor, constant: 6).isActive = true
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            view.addSubview(sidebarContainer)
+        view.addSubview(sidebarContainer)
 
-            sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
-            sidebarContainerWidthConstraint = sidebarContainer.widthAnchor.constraint(equalToConstant: 0)
+        sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
+        sidebarContainerWidthConstraint = sidebarContainer.widthAnchor.constraint(equalToConstant: 0)
 
-            NSLayoutConstraint.activate([
-                sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
-                sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),
-                sidebarContainerLeadingConstraint!,
-                sidebarContainerWidthConstraint!
-            ])
-        }
+        NSLayoutConstraint.activate([
+            sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
+            sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),
+            sidebarContainerLeadingConstraint!,
+            sidebarContainerWidthConstraint!
+        ])
     }
 
     override func viewDidLoad() {
@@ -219,7 +227,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         self.removeWebViewFromHierarchy()
-        self.newTabPageWebViewModel.removeUserScripts()
+        _newTabPageWebViewModel?.removeUserScripts()
     }
 
     @objc
@@ -323,6 +331,12 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
+    @objc
+    private func onAutofillScriptDebugSettingsDidChange(_ notification: Notification) {
+        contentOverlayPopover?.viewController.closeContentOverlayPopover()
+        contentOverlayPopover = nil
+    }
+
     private func subscribeToSelectedTabViewModel() {
         tabCollectionViewModel.$selectedTabViewModel
             .sink { [weak self] selectedTabViewModel in
@@ -353,7 +367,14 @@ final class BrowserTabViewController: NSViewController {
                 guard let self else { return }
                 setDelegate(for: tabs)
                 removeDataBrokerViewIfNecessary(for: tabs)
-                cleanUpSidebarsForClosedTabs(for: tabs)
+            }
+            .store(in: &cancellables)
+
+        tabCollectionViewModel.tabCollection.$tabs
+            .dropFirst()
+            .sink {  [weak self] _ in
+                guard let self else { return }
+                aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs()
             }
             .store(in: &cancellables)
     }
@@ -408,6 +429,10 @@ final class BrowserTabViewController: NSViewController {
                                                selector: #selector(onSubscriptionUpgradeFromFreemium),
                                                name: .subscriptionUpgradeFromFreemium,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAutofillScriptDebugSettingsDidChange),
+                                               name: .autofillScriptDebugSettingsDidChange,
+                                               object: nil)
     }
 
     private func removeDataBrokerViewIfNecessary(for tabs: [Tab]) {
@@ -424,12 +449,6 @@ final class BrowserTabViewController: NSViewController {
             tab.autofill?.setDelegate(self)
             tab.downloads?.delegate = self
         }
-    }
-
-    private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
-        let currentTabIDs = currentTabs.map { $0.id }
-        let currentPinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map { $0.id } ?? []
-        aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs(currentTabIDs + currentPinnedTabIDs)
     }
 
     private func removeWebViewFromHierarchy(webView: WebView? = nil,
@@ -478,12 +497,8 @@ final class BrowserTabViewController: NSViewController {
         NSLayoutConstraint.activate([
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerStackView.topAnchor.constraint(equalTo: view.topAnchor),
-            containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        let constraint =  featureFlagger.isFeatureOn(.aiChatSidebar) ? sidebarContainer.leadingAnchor : view.trailingAnchor
-        NSLayoutConstraint.activate([
-            containerStackView.trailingAnchor.constraint(equalTo: constraint)
+            containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            containerStackView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor)
         ])
 
         containerStackView.addArrangedSubview(container)
@@ -675,7 +690,7 @@ final class BrowserTabViewController: NSViewController {
                             .filter { $0 == true }
                             .asVoid(),
                         tabViewModel.tab.navigationStatePublisher.compactMap { $0 }
-                            .filter{ $0 >= .started }
+                            .filter { $0 >= .started }
                             .asVoid()
                     )
                     // take the first such event and move forward.
@@ -712,14 +727,25 @@ final class BrowserTabViewController: NSViewController {
             let dialog: Tab.UserDialog?
             let isDisplayingSnapshot: Bool
         }
-        Publishers.CombineLatest3(
+        // AI Chat sidebar user interaction dialog
+        let aiChatSidebarUserDialog = NotificationCenter.default.publisher(for: .aiChatSidebarUserInteractionDialogChanged)
+            .map { notification in
+                notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
+            }
+            .prepend(nil)
+
+        Publishers.CombineLatest4(
             tabViewModel.tab.$userInteractionDialog,
             tabViewModel.tab.downloads?.savePanelDialogPublisher ?? Just(nil).eraseToAnyPublisher(),
             // when switching to a window containing a pinned tab snapshot re-display an already-presented dialog in this window
-            $webViewSnapshot.map { $0 != nil }
+            $webViewSnapshot.map { $0 != nil },
+            aiChatSidebarUserDialog
         )
-        .map { userDialog, saveDialog, isDisplayingSnapshot in
-            return CombinedArg(dialog: saveDialog ?? userDialog, isDisplayingSnapshot: isDisplayingSnapshot)
+        .map { userDialog, saveDialog, isDisplayingSnapshot, aiChatSidebarUserDialog in
+            return CombinedArg(
+                dialog: saveDialog ?? userDialog ?? aiChatSidebarUserDialog,
+                isDisplayingSnapshot: isDisplayingSnapshot
+            )
         }
         .removeDuplicates()
         .sink { [weak self] arg in
@@ -892,6 +918,10 @@ final class BrowserTabViewController: NSViewController {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
         }
 
+        if let tabID = tabViewModel?.tab.uuid {
+            aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
+        }
+
         switch tabViewModel?.tab.content {
         case .bookmarks:
             removeAllTabContent()
@@ -950,10 +980,6 @@ final class BrowserTabViewController: NSViewController {
         if shouldReplaceWebView(for: tabViewModel) {
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
-
-            if let tabID = tabViewModel?.tab.id {
-                aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
-            }
         }
     }
 

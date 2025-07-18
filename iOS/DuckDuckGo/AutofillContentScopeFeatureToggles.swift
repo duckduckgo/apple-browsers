@@ -27,19 +27,22 @@ extension ContentScopeFeatureToggles {
 
     static var supportedFeaturesOniOS: ContentScopeFeatureToggles {
         let isAutofillEnabledInSettings = AutofillSettingStatus.isAutofillEnabledInSettings
+        let isCreditCardAutofillEnabledInSettings = AutofillSettingStatus.isCreditCardAutofillEnabledInSettings
         return ContentScopeFeatureToggles(
             emailProtection: true,
             emailProtectionIncontextSignup: featureFlagger.isFeatureOn(.incontextSignup) && Locale.current.isEnglishLanguage,
             credentialsAutofill: featureFlagger.isFeatureOn(.autofillCredentialInjecting) && isAutofillEnabledInSettings,
             identitiesAutofill: false,
-            creditCardsAutofill: false,
+            creditCardsAutofill: featureFlagger.isFeatureOn(.autofillCreditCards) && isCreditCardAutofillEnabledInSettings,
             credentialsSaving: featureFlagger.isFeatureOn(.autofillCredentialsSaving) && isAutofillEnabledInSettings,
             passwordGeneration: featureFlagger.isFeatureOn(.autofillPasswordGeneration) && isAutofillEnabledInSettings,
             inlineIconCredentials: featureFlagger.isFeatureOn(.autofillInlineIconCredentials) && isAutofillEnabledInSettings,
             thirdPartyCredentialsProvider: false,
             unknownUsernameCategorization: featureFlagger.isFeatureOn(.autofillUnknownUsernameCategorization) && isAutofillEnabledInSettings,
             partialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves) && isAutofillEnabledInSettings,
-            passwordVariantCategorization: featureFlagger.isFeatureOn(.autofillPasswordVariantCategorization) && isAutofillEnabledInSettings
+            passwordVariantCategorization: featureFlagger.isFeatureOn(.autofillPasswordVariantCategorization) && isAutofillEnabledInSettings,
+            inputFocusApi: featureFlagger.isFeatureOn(.autofillCreditCards) && isCreditCardAutofillEnabledInSettings,
+            autocompleteAttributeSupport: featureFlagger.isFeatureOn(.autocompleteAttributeSupport)
         )
     }
 }

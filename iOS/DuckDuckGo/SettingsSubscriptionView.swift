@@ -19,6 +19,7 @@
 
 import Core
 import Subscription
+import DataBrokerProtection_iOS
 import SwiftUI
 import UIKit
 import DesignResourcesKit
@@ -263,12 +264,25 @@ struct SettingsSubscriptionView: View {
 
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
+            let hasValidStoredProfile = settingsViewModel.dataBrokerProtectionIOSManager
+                .flatMap { try? $0.meetsProfileRunPrequisite } ?? false
+            var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
-            NavigationLink(destination: LazyView(SubscriptionPIRView()), isActive: $isShowingDBP) {
+            let destination: LazyView<AnyView> = {
+                if let dbpManager = settingsViewModel.dataBrokerProtectionIOSManager,
+                   DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)))
+                } else {
+                    statusIndicator = .on
+                    return LazyView(AnyView(SubscriptionPIRMoveToDesktopView()))
+                }
+            }()
+
+            NavigationLink(destination: destination, isActive: $isShowingDBP) {
                 SettingsCellView(
                     label: UserText.settingsPProDBPTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                    statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
+                    statusIndicator: StatusIndicatorView(status: statusIndicator),
                     isGreyedOut: !hasDBPEntitlement
                 )
             }

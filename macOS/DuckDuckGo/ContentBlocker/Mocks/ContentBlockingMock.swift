@@ -78,11 +78,11 @@ final class HTTPSUpgradeStoreMock: NSObject, HTTPSUpgradeStore {
     }
 
     func persistBloomFilter(specification: BrowserServicesKit.HTTPSBloomFilterSpecification, data: Data) throws {
-        fatalError()
+        fatalError("Not implemented")
     }
 
     func persistExcludedDomains(_ domains: [String]) throws {
-        fatalError()
+        fatalError("Not implemented")
     }
 
 }

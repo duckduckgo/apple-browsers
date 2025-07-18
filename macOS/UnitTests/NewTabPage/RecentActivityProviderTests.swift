@@ -80,6 +80,14 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        duckPlayerHistoryEntryTitleProvider = nil
+        historyCoordinator = nil
+        provider = nil
+        urlFavoriteStatusProvider = nil
+        visibilityProvider = nil
+    }
+
     func testWhenHistoryIsEmptyThenActivityIsEmpty() throws {
         historyCoordinator.history = []
 

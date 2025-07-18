@@ -27,6 +27,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MaliciousSiteProtectionTests: XCTestCase {
+    var featureFlagger: MockFeatureFlagger! = MockFeatureFlagger()
     lazy var phishingDetection: MaliciousSiteProtectionManager! = { () -> MaliciousSiteProtectionManager in
         let configManager = MockPrivacyConfigurationManager()
         let privacyConfig = MockPrivacyConfiguration()
@@ -34,7 +35,7 @@ final class MaliciousSiteProtectionTests: XCTestCase {
             if case MaliciousSiteProtectionSubfeature.onByDefault = subfeature { true } else { false }
         }
         configManager.mockPrivacyConfig = privacyConfig
-        return MaliciousSiteProtectionManager(apiService: apiService, dataManager: dataManager, detector: MockMaliciousSiteDetector(), featureFlagger: MockFeatureFlagger())
+        return MaliciousSiteProtectionManager(apiService: apiService, dataManager: dataManager, detector: MockMaliciousSiteDetector(), featureFlagger: featureFlagger)
     }()
     var apiService: MockAPIService!
     var mockDetector: MockMaliciousSiteDetector!
@@ -42,6 +43,7 @@ final class MaliciousSiteProtectionTests: XCTestCase {
     var dataManager: MaliciousSiteProtection.DataManager!
 
     override func setUp() async throws {
+        featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection]
         apiService = MockAPIService(apiResponse: .failure(CancellationError()))
         let mockFileStore = MockMaliciousSiteFileStore()
         mockDataProvider = MockMaliciousSiteDataProvider()
@@ -53,6 +55,8 @@ final class MaliciousSiteProtectionTests: XCTestCase {
         mockDataProvider = nil
         mockDetector = nil
         dataManager = nil
+        featureFlagger = nil
+        apiService = nil
     }
 
     func testDidLoadAndStartDataActivities() async {

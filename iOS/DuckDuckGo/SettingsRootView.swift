@@ -19,6 +19,7 @@
 
 import SwiftUI
 import UIKit
+import DataBrokerProtection_iOS
 import DesignResourcesKit
 import Subscription
 
@@ -97,6 +98,12 @@ struct SettingsRootView: View {
                 return
             }
 
+            // Check if navigation is valid before triggering it
+            if case .subscriptionSettings = link, !canNavigateToSubscriptionSettings() {
+                // Don't navigate if there's no valid subscription settings to show
+                return
+            }
+
             self.deepLinkTarget = link
 
             switch link.type {
@@ -160,11 +167,45 @@ struct SettingsRootView: View {
         }
     }
 
+    /// Determines the subscription settings view configuration based on current subscription state
+    private func subscriptionSettingsConfiguration() -> SubscriptionSettingsViewConfiguration? {
+        let isSignedIn = viewModel.state.subscription.isSignedIn
+        let hasSubscription = viewModel.state.subscription.hasSubscription
+        let hasActiveSubscription = viewModel.state.subscription.hasActiveSubscription
+        let hasAnyEntitlements = !viewModel.state.subscription.entitlements.isEmpty
+        let isActiveTrialOffer = viewModel.state.subscription.isActiveTrialOffer
+
+        // Signed out - no configuration needed
+        guard isSignedIn else { return nil }
+
+        // Signed in, no subscription
+        guard hasSubscription else { return .activating }
+
+        // Signed in, has subscription but not active
+        guard hasActiveSubscription else { return .expired }
+
+        // Signed in, active subscription but no entitlements
+        guard hasAnyEntitlements else { return .activating }
+
+        // Signed in, active subscription with entitlements
+        // Check if it's a trial or regular subscription
+        return isActiveTrialOffer ? .trial : .subscribed
+    }
+
+    /// Checks if navigation to subscription settings is valid
+    private func canNavigateToSubscriptionSettings() -> Bool {
+        return subscriptionSettingsConfiguration() != nil && viewModel.isAuthV2Enabled
+    }
+
     /// Navigation Views for DeepLink and programmatic navigation
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
         case .dbp:
-            SubscriptionPIRView()
+            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)
+            } else {
+                SubscriptionPIRMoveToDesktopView()
+            }
         case .itr:
             SubscriptionITPView()
         case let .subscriptionFlow(redirectURLComponents):
@@ -177,7 +218,12 @@ struct SettingsRootView: View {
         case .netP:
             NetworkProtectionRootView()
         case .aiChat:
-            SettingsAIChatView().environmentObject(viewModel)
+            SettingsAIFeaturesView().environmentObject(viewModel)
+        case .subscriptionSettings:
+            if let configuration = subscriptionSettingsConfiguration() {
+                SubscriptionSettingsViewV2(configuration: configuration, settingsViewModel: viewModel)
+                    .environmentObject(subscriptionNavigationCoordinator)
+            }
         }
     }
 }

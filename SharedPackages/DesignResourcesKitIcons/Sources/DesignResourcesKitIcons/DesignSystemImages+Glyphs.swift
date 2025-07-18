@@ -86,6 +86,7 @@ public extension DesignSystemImages {
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
+            public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
             public static var alert: DesignSystemImage { .init(resource: .alert16) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable16) }
             public static var arrowCircleRight: DesignSystemImage { .init(resource: .arrowCircleRight16) }
@@ -138,6 +139,7 @@ public extension DesignSystemImages {
             public static var emailLocked: DesignSystemImage { .init(resource: .emailLocked16) }
             public static var emailUnlocked: DesignSystemImage { .init(resource: .emailUnlocked16) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation16) }
+            public static var exclamationRecolorable: DesignSystemImage { .init(resource: .exclamationRecolorable16) }
             public static var expand: DesignSystemImage { .init(resource: .expand16) }
             public static var export: DesignSystemImage { .init(resource: .export16) }
             public static var exportRight: DesignSystemImage { .init(resource: .exportRight16) }
@@ -150,8 +152,10 @@ public extension DesignSystemImages {
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
+            public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }
             public static var fire: DesignSystemImage { .init(resource: .fire16) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid16) }
+            public static var fireTab: DesignSystemImage { .init(resource: .fireTab16) }
             public static var fireproof: DesignSystemImage { .init(resource: .fireproof16) }
             public static var fireproofSolid: DesignSystemImage { .init(resource: .fireproofSolid16) }
             public static var fireWindow: DesignSystemImage { .init(resource: .fireWindow16) }
@@ -310,6 +314,7 @@ public extension DesignSystemImages {
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
+            public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown24) }
             public static var arrowDownLeft: DesignSystemImage { .init(resource: .arrowDownLeft24) }
             public static var arrowDownRight: DesignSystemImage { .init(resource: .arrowDownRight24) }
             public static var arrowDownLeftSmall: DesignSystemImage { .init(resource: .arrowDownLeft24Small) }
@@ -318,6 +323,7 @@ public extension DesignSystemImages {
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight24) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp24) }
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight24) }
+            public static var assist: DesignSystemImage { .init(resource: .assist24) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt24) }
             public static var bell: DesignSystemImage { .init(resource: .bell24) }
             public static var bookmark: DesignSystemImage { .init(resource: .bookmark24) }
@@ -366,14 +372,14 @@ public extension DesignSystemImages {
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation24) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid24) }
+            public static var expand: DesignSystemImage { .init(resource: .expand24) }
             public static var favorite: DesignSystemImage { .init(resource: .favorite24) }
             public static var favoriteRemove: DesignSystemImage { .init(resource: .favoriteRemove24) }
             public static var favoriteSolid: DesignSystemImage { .init(resource: .favoriteSolid24) }
             public static var findSearchSmall: DesignSystemImage { .init(resource: .findSearchSmall24) }
             public static var fire: DesignSystemImage { .init(resource: .fire24) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid24) }
-            public static var fireproof: DesignSystemImage { .init(resource: .fireproof24) }
-            public static var fireproof1: DesignSystemImage { .init(resource: .fireproof241) }
+            public static var fireproofSolid: DesignSystemImage { .init(resource: .fireproofSolid24) }
             public static var folder: DesignSystemImage { .init(resource: .folder24) }
             public static var folderAdd: DesignSystemImage { .init(resource: .folderAdd24) }
             public static var folderGoTo: DesignSystemImage { .init(resource: .folderGoTo24) }
@@ -393,6 +399,8 @@ public extension DesignSystemImages {
             public static var location: DesignSystemImage { .init(resource: .location24) }
             public static var locationBlocked: DesignSystemImage { .init(resource: .locationBlocked24) }
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid24) }
+            public static var menuDotsVertical: DesignSystemImage { .init(resource: .menuDotsVertical24) }
+            public static var menuDotsHorizontal: DesignSystemImage { .init(resource: .menuDotsHorizontal24) }
             public static var menuHamburger: DesignSystemImage { .init(resource: .menuHamburger24) }
             public static var menuHamburgerAlertRecolorable: DesignSystemImage { .init(resource: .menuHamburgerAlertRecolorable24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone24) }
@@ -421,6 +429,7 @@ public extension DesignSystemImages {
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
+            public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
             public static var subItemRecolorable: DesignSystemImage { .init(resource: .subItemRecolorable24) }
             public static var subtraction: DesignSystemImage { .init(resource: .subtraction24) }
             public static var support: DesignSystemImage { .init(resource: .support24) }

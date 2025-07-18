@@ -30,6 +30,7 @@ import Crashes
 import Subscription
 import VPN
 import AIChat
+import DataBrokerProtection_iOS
 
 final class SettingsViewModel: ObservableObject {
 
@@ -54,6 +55,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
     private let urlOpener: URLOpener
+    let dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager?
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -515,7 +517,8 @@ final class SettingsViewModel: ObservableObject {
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager? = .shared
     ) {
 
         self.state = SettingsState.defaults
@@ -541,6 +544,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
         self.keyValueStore = keyValueStore
+        self.dataBrokerProtectionIOSManager = dataBrokerProtectionIOSManager
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -582,6 +586,8 @@ extension SettingsViewModel {
             longPressPreviews: appSettings.longPressPreviews,
             allowUniversalLinks: appSettings.allowUniversalLinks,
             activeWebsiteAccount: nil,
+            activeWebsiteCreditCard: nil,
+            showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
             debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
@@ -798,11 +804,13 @@ extension SettingsViewModel {
         updateCompleteSetupSectionVisiblity()
     }
 
-    @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
+        state.activeWebsiteCreditCard = card
+        state.showCreditCardManagement = showCreditCardManagement
         state.autofillSource = source
         
-        presentLegacyView(.logins)
+        presentLegacyView(.autofill)
     }
 
     @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
@@ -829,6 +837,11 @@ extension SettingsViewModel {
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
         urlOpener.open(URL.searchSettings)
+    }
+
+    func openAssistSettings() {
+        Pixel.fire(pixel: .settingsOpenAssistSettings)
+        urlOpener.open(URL.assistSettings)
     }
 
     func openAIChat() {
@@ -881,10 +894,12 @@ extension SettingsViewModel {
             
         case .feedback:
             presentViewController(legacyViewProvider.feedback, modal: false)
-        case .logins:
+        case .autofill:
             pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                                 selectedAccount: state.activeWebsiteAccount,
+                                                                selectedCard: state.activeWebsiteCreditCard,
                                                                 showPasswordManagement: false,
+                                                                showCreditCardManagement: state.showCreditCardManagement,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -926,7 +941,9 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
         AppDependencyProvider.shared.autofillLoginSession.startSession()
         pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                             selectedAccount: nil,
+                                                            selectedCard: nil,
                                                             showPasswordManagement: true,
+                                                            showCreditCardManagement: false,
                                                             source: state.autofillSource))
     }
 }
@@ -943,6 +960,7 @@ extension SettingsViewModel {
         case restoreFlow
         case duckPlayer
         case aiChat
+        case subscriptionSettings
         // Add other cases as needed
 
         var id: String {
@@ -954,6 +972,7 @@ extension SettingsViewModel {
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
+            case .subscriptionSettings: return "subscriptionSettings"
             // Ensure all cases are covered
             }
         }
@@ -962,7 +981,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .subscriptionSettings:
                 return .navigationLink
             }
         }
@@ -1020,9 +1039,9 @@ extension SettingsViewModel {
             subscriptionStateCache.set(state.subscription) // Sync cache
             return
         }
-        
+
         do {
-            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
             state.subscription.platform = subscription.platform
             state.subscription.hasSubscription = true
             state.subscription.hasActiveSubscription = subscription.isActive
@@ -1033,14 +1052,17 @@ extension SettingsViewModel {
             let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
-                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),
+                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isFeatureEnabled(entitlement),
                     hasEntitlement {
                     currentEntitlements.append(entitlement)
                 }
             }
 
             self.state.subscription.entitlements = currentEntitlements
-            self.state.subscription.subscriptionFeatures = await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()
+
+            // This requires follow-up work:
+            // https://app.asana.com/1/137249556945/task/1210799126744217
+            self.state.subscription.subscriptionFeatures = (try? await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()) ?? []
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.debug("No subscription data available")
             state.subscription.hasSubscription = false
@@ -1245,6 +1267,15 @@ extension SettingsViewModel {
         )
     }
 
+    var aiChatSearchInputEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+            }
+        )
+    }
+
     var aiChatVoiceSearchEnabledBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
@@ -1279,6 +1310,10 @@ extension SettingsViewModel {
                 self.experimentalAIChatManager.toggleExperimentalTransition()
                 self.state.isExperimentalAIChatTransitionEnabled = self.experimentalAIChatManager.isExperimentalTransitionEnabled
             })
+    }
+
+    func launchAIFeaturesLearnMore() {
+        urlOpener.open(URL.aiFeaturesLearnMore)
     }
 
 }

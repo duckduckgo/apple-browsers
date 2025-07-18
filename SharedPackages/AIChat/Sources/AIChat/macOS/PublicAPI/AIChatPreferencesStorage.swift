@@ -27,6 +27,9 @@ public protocol AIChatPreferencesStorage {
     var showShortcutInAddressBar: Bool { get set }
     var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> { get }
 
+    var openAIChatInSidebar: Bool { get set }
+    var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> { get }
+
     func reset()
 }
 
@@ -40,6 +43,10 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     public var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
         userDefaults.showAIChatShortcutInAddressBarPublisher
+    }
+
+    public var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
+        userDefaults.openAIChatInSidebarPublisher
     }
 
     public init(userDefaults: UserDefaults = .standard,
@@ -58,9 +65,15 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.showAIChatShortcutInAddressBar = newValue }
     }
 
+    public var openAIChatInSidebar: Bool {
+        get { userDefaults.openAIChatInSidebar }
+        set { userDefaults.openAIChatInSidebar = newValue }
+    }
+
     public func reset() {
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
         userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
+        userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
     }
 }
 
@@ -68,10 +81,12 @@ private extension UserDefaults {
     enum Keys {
         static let showAIChatShortcutInApplicationMenuKey = "aichat.showAIChatShortcutInApplicationMenu"
         static let showAIChatShortcutInAddressBarKey = "aichat.showAIChatShortcutInAddressBar"
+        static let openAIChatInSidebarKey = "aichat.openAIChatInSidebar"
     }
 
     static let showAIChatShortcutInApplicationMenuDefaultValue = true
     static let showAIChatShortcutInAddressBarDefaultValue = true
+    static let openAIChatInSidebarDefaultValue = true
 
     @objc dynamic var showAIChatShortcutInApplicationMenu: Bool {
         get {
@@ -95,12 +110,27 @@ private extension UserDefaults {
         }
     }
 
+    @objc dynamic var openAIChatInSidebar: Bool {
+        get {
+            value(forKey: Keys.openAIChatInSidebarKey) as? Bool ?? Self.openAIChatInSidebarDefaultValue
+        }
+
+        set {
+            guard newValue != openAIChatInSidebar else { return }
+            set(newValue, forKey: Keys.openAIChatInSidebarKey)
+        }
+    }
+
     var showAIChatShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.showAIChatShortcutInApplicationMenu).eraseToAnyPublisher()
     }
 
     var showAIChatShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.showAIChatShortcutInAddressBar).eraseToAnyPublisher()
+    }
+
+    var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.openAIChatInSidebar).eraseToAnyPublisher()
     }
 }
 #endif

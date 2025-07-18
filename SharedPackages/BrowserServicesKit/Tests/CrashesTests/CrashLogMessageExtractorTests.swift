@@ -77,11 +77,12 @@ final class CrashLogMessageExtractorTests: XCTestCase {
 
     func testCrashDiagnosticWritingAndReading() throws {
         let fm = FileManager.default
-        let date = formatter.string(from: Date())
+        let referenceDate = Date()
+        let date = formatter.string(from: referenceDate)
         let fileName = "\(date)-\(ProcessInfo().processIdentifier).log"
         let dir = fm.temporaryDirectory
         let url = dir.appendingPathComponent(fileName)
-        extractor = CrashLogMessageExtractor(diagnosticsDirectory: dir)
+        extractor = CrashLogMessageExtractor(diagnosticsDirectory: dir, dateProvider: { referenceDate })
 
         let exception =  NSException(name: NSExceptionName(rawValue: "TestException"), reason: "Test crash message /with/file/path", userInfo: ["key1": "value1"])
         exception.setValue(["callStackSymbols": [
@@ -92,7 +93,7 @@ final class CrashLogMessageExtractorTests: XCTestCase {
 
         try extractor.writeDiagnostic(for: exception)
 
-        guard let diag = extractor.crashDiagnostic(for: Date(), pid: ProcessInfo().processIdentifier) else {
+        guard let diag = extractor.crashDiagnostic(for: referenceDate, pid: ProcessInfo().processIdentifier) else {
             XCTFail("could not find crash diagnostic")
             return
         }

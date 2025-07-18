@@ -131,6 +131,8 @@ final class RoundedPageSheetContainerViewController: UIViewController {
         contentViewController.didMove(toParent: self)
 
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
+        panGesture.minimumNumberOfTouches = 1
+        panGesture.maximumNumberOfTouches = 1
         contentViewController.view.addGestureRecognizer(panGesture)
     }
 }

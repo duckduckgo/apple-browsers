@@ -97,10 +97,14 @@ class TabLazyLoaderTests: XCTestCase {
     private var dataSource: TabLazyLoaderDataSourceMock!
     var cancellables = Set<AnyCancellable>()
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
+    override func setUp() {
         dataSource = TabLazyLoaderDataSourceMock()
         cancellables.removeAll()
+    }
+
+    override func tearDown() {
+        cancellables = []
+        dataSource = nil
     }
 
     func testWhenThereAreNoTabsThenLazyLoaderIsNotInstantiated() throws {

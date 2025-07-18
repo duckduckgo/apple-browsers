@@ -21,35 +21,60 @@ import UIKit
 import SwiftUI
 import Combine
 import DesignResourcesKitIcons
+import UIComponents
 
 class SwitchBarViewController: UIViewController {
-
     private struct Constants {
         static let segmentedControlHeight: CGFloat = 36
         static let segmentedControlTopPadding: CGFloat = 20
         static let textEntryViewTopPadding: CGFloat = 16
         static let textEntryViewSidePadding: CGFloat = 16
         static let backButtonHorizontalPadding: CGFloat = 16
+        static let backButtonSize: CGFloat = 44
     }
 
-    private let segmentedControl = UISegmentedControl(items: ["Search", "Duck.ai"])
+    private var segmentedPickerHostingController: UIHostingController<PickerWrapper>?
     let textEntryViewController: SwitchBarTextEntryViewController
     let backButton = BrowserChromeButton(.secondary)
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
-
-    private var collapsedStateConstraint: NSLayoutConstraint?
-    private var expandedStateConstraint: NSLayoutConstraint?
+    
     private var segmentedControlTopConstraint: NSLayoutConstraint?
 
     private var isExpanded = false
+    
+    // Items for the segmented picker
+    private let pickerItems = [
+        ImageSegmentedPickerItem(
+            text: "Search",
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
+        ),
+        ImageSegmentedPickerItem(
+            text: "Duck.ai",
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
+        )
+    ]
+    
+    private var pickerViewModel: ImageSegmentedPickerViewModel!
 
     // MARK: - Initialization
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         self.textEntryViewController = SwitchBarTextEntryViewController(handler: switchBarHandler)
         super.init(nibName: nil, bundle: nil)
+        
+        let currentToggleState = switchBarHandler.currentToggleState
+        let initialSelection = currentToggleState == .search ? pickerItems[0] : pickerItems[1]
+        
+        self.pickerViewModel = ImageSegmentedPickerViewModel(
+            items: pickerItems,
+            selectedItem: initialSelection,
+            configuration: ImageSegmentedPickerConfiguration(),
+            scrollProgress: nil
+        )
     }
 
     required init?(coder: NSCoder) {
@@ -67,36 +92,33 @@ class SwitchBarViewController: UIViewController {
         setExpanded(isExpanded)
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut]) {
-            self.setExpanded(false)
-            self.view.layoutIfNeeded()
-        }
-    }
-
     private func setupSubscriptions() {
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newState in
-                let segmentIndex = newState == .search ? 0 : 1
-                if self?.segmentedControl.selectedSegmentIndex != segmentIndex {
-                    self?.segmentedControl.selectedSegmentIndex = segmentIndex
+                guard let self = self else { return }
+                
+                let targetItem = newState == .search ? self.pickerItems[0] : self.pickerItems[1]
+                if self.pickerViewModel.selectedItem.text != targetItem.text {
+                    self.pickerViewModel.selectItem(targetItem)
                 }
-                self?.updateLayouts()
+                
+                self.updateLayouts()
+            }
+            .store(in: &cancellables)
+        
+        // Listen for picker selection changes to notify SwipeContainerManager
+        pickerViewModel.$selectedItem
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedItem in
+                guard let self = self else { return }
+                self.segmentedPickerSelectionChanged(selectedItem)
             }
             .store(in: &cancellables)
     }
 
     private func updateLayouts() {
         self.view.layoutIfNeeded()
-        self.textEntryViewController.updateConstraintsForCurrentMode()
-
-        // AICHATFUTURE: Fix issue
-        // UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut], animations: {
-        //     self.view.layoutIfNeeded()
-        // })
     }
 
     func focusTextField() {
@@ -109,20 +131,26 @@ class SwitchBarViewController: UIViewController {
 
     private func setupViews() {
         view.backgroundColor = UIColor.systemBackground
+        
+        let pickerWrapper = PickerWrapper(
+            viewModel: pickerViewModel
+        )
+        let hostingController = UIHostingController(rootView: pickerWrapper)
+        segmentedPickerHostingController = hostingController
+        hostingController.view.backgroundColor = UIColor.clear
 
-        segmentedControl.selectedSegmentIndex = 0
-        segmentedControl.addTarget(self, action: #selector(segmentedControlValueChanged), for: .valueChanged)
-        segmentedControl.setContentHuggingPriority(.required, for: .horizontal)
-
-        view.addSubview(segmentedControl)
         view.addSubview(backButton)
+        
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: self)
 
         addChild(textEntryViewController)
         view.addSubview(textEntryViewController.view)
         textEntryViewController.didMove(toParent: self)
 
         backButton.translatesAutoresizingMaskIntoConstraints = false
-        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         textEntryViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
         backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
@@ -131,50 +159,58 @@ class SwitchBarViewController: UIViewController {
     func setExpanded(_ isExpanded: Bool) {
         self.isExpanded = isExpanded
 
-        if isExpanded {
-            collapsedStateConstraint?.isActive = false
-            segmentedControlTopConstraint?.isActive = true
-            expandedStateConstraint?.isActive = true
-        } else {
-            expandedStateConstraint?.isActive = false
-            segmentedControlTopConstraint?.isActive = false
-            collapsedStateConstraint?.isActive = true
-        }
+        segmentedControlTopConstraint?.isActive = isExpanded
 
-        segmentedControl.alpha = isExpanded ? 1 : 0
+        backButton.alpha = isExpanded ? 1 : 0
+        segmentedPickerHostingController?.view.alpha = isExpanded ? 1 : 0
 
         textEntryViewController.setExpanded(isExpanded)
     }
 
     private func setupConstraints() {
 
-        collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-        expandedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: Constants.textEntryViewTopPadding)
-        
-        segmentedControlTopConstraint = segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+        guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
 
-        // Create bottom constraint with lower priority to avoid conflicts with parent constraints
-        let textEntryBottomConstraint = textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        textEntryBottomConstraint.priority = UILayoutPriority(999) // High priority but not required
+        segmentedControlTopConstraint = segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
 
         NSLayoutConstraint.activate([
-            segmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            segmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
+            segmentedPickerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            segmentedPickerView.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 
+            textEntryViewController.view.topAnchor.constraint(equalTo: segmentedPickerView.bottomAnchor, constant: Constants.textEntryViewTopPadding),
             textEntryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.textEntryViewSidePadding),
             textEntryViewController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
-            textEntryBottomConstraint,
+            // Create bottom constraint with lower priority to avoid conflicts with parent constraints
+            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor), // .withPriority(.init(999)),
 
             backButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.backButtonHorizontalPadding),
-            backButton.centerYAnchor.constraint(equalTo: segmentedControl.centerYAnchor)
+            backButton.centerYAnchor.constraint(equalTo: segmentedPickerView.centerYAnchor),
+            backButton.heightAnchor.constraint(equalToConstant: Constants.backButtonSize),
+            backButton.widthAnchor.constraint(equalToConstant: Constants.backButtonSize)
         ])
     }
 
     // MARK: - Actions
-    @objc private func segmentedControlValueChanged() {
-        let selectedIndex = segmentedControl.selectedSegmentIndex
-        let newMode: TextEntryMode = selectedIndex == 0 ? .search : .aiChat
-
+    private func segmentedPickerSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
+        let newMode: TextEntryMode = pickerItems.first == selectedItem ? .search : .aiChat
         switchBarHandler.setToggleState(newMode)
+    }
+    
+    // MARK: - Scroll Progress
+    func updateScrollProgress(_ progress: CGFloat) {
+        pickerViewModel.updateScrollProgress(progress)
+    }
+}
+
+private struct PickerWrapper: View {
+    @ObservedObject var viewModel: ImageSegmentedPickerViewModel
+
+    init(viewModel: ImageSegmentedPickerViewModel) {
+        self.viewModel = viewModel
+    }
+
+    var body: some View {
+        ImageSegmentedPickerView(viewModel: viewModel)
+            .frame(width: 230)
     }
 }

@@ -25,6 +25,9 @@ import NewTabPage
 import Persistence
 import PixelKit
 import PrivacyStats
+import Suggestions
+
+typealias HistoryProviderCoordinating = HistoryCoordinating & SuggestionContainer.HistoryProvider
 
 final class NewTabPageCoordinator {
     let actionsManager: NewTabPageActionsManager
@@ -33,8 +36,9 @@ final class NewTabPageCoordinator {
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
+        faviconManager: FaviconManagement,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
-        historyCoordinator: HistoryCoordinating,
+        historyCoordinator: HistoryProviderCoordinating,
         contentBlocking: ContentBlockingProtocol,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
@@ -44,6 +48,10 @@ final class NewTabPageCoordinator {
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
+        visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
+        featureFlagger: FeatureFlagger,
+        windowControllersManager: WindowControllersManagerProtocol,
+        tabsPreferences: TabsPreferences,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -51,14 +59,17 @@ final class NewTabPageCoordinator {
         let protectionsReportModel = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
             keyValueStore: keyValueStore,
+            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
+            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
             getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
-            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed,
         )
 
         actionsManager = NewTabPageActionsManager(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: bookmarkManager,
+            faviconManager: faviconManager,
             contentBlocking: contentBlocking,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
@@ -67,7 +78,11 @@ final class NewTabPageCoordinator {
             protectionsReportModel: protectionsReportModel,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
-            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
+            fire: { @MainActor in fireCoordinator.fireViewModel.fire },
+            keyValueStore: keyValueStore,
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: tabsPreferences
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

@@ -56,6 +56,8 @@ final class WindowsManager {
 
     @discardableResult
     class func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
+                             aiChatSidebarProvider: AIChatSidebarProviding = Application.appDelegate.aiChatSidebarProvider,
+                             fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
                              burnerMode: BurnerMode = .regular,
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
@@ -68,7 +70,9 @@ final class WindowsManager {
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
                                                  popUp: popUp,
                                                  burnerMode: burnerMode,
-                                                 autofillPopoverPresenter: autofillPopoverPresenter)
+                                                 autofillPopoverPresenter: autofillPopoverPresenter,
+                                                 fireCoordinator: fireCoordinator,
+                                                 aiChatSidebarProvider: aiChatSidebarProvider)
 
         if let contentSize {
             mainWindowController.window?.setContentSize(contentSize)
@@ -186,11 +190,12 @@ final class WindowsManager {
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
                                      autofillPopoverPresenter: AutofillPopoverPresenter,
-                                     fireCoordinator: FireCoordinator? = nil) -> MainWindowController {
-        let fireCoordinator = fireCoordinator ?? NSApp.delegateTyped.fireCoordinator
+                                     fireCoordinator: FireCoordinator,
+                                     aiChatSidebarProvider: AIChatSidebarProviding) -> MainWindowController {
         let mainViewController = MainViewController(
             tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
             autofillPopoverPresenter: autofillPopoverPresenter,
+            aiChatSidebarProvider: aiChatSidebarProvider,
             fireCoordinator: fireCoordinator
         )
 

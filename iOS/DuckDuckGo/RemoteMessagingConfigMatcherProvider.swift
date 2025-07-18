@@ -72,6 +72,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let activationDateStore = DefaultVPNActivationDateStore()
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
+        let autofillUsageStore = AutofillUsageStore()
 
         var privacyProDaysSinceSubscribed: Int = -1
         var privacyProDaysUntilExpiry: Int = -1
@@ -89,7 +90,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
-        if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad) {
+        if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) {
             privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             privacyProPurchasePlatform = subscription.platform.rawValue
@@ -107,11 +108,13 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: subscription)
+                                                                        subscription: subscription,
+                                                                        autofillUsageStore: autofillUsageStore)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: nil)
+                                                                        subscription: nil,
+                                                                        autofillUsageStore: autofillUsageStore)
         }
 
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()

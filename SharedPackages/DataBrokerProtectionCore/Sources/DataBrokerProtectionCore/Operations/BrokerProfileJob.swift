@@ -32,7 +32,6 @@ public protocol BrokerProfileJobErrorDelegate: AnyObject {
     func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?)
 }
 
-// swiftlint:disable explicit_non_final_class
 public class BrokerProfileJob: Operation, @unchecked Sendable {
 
     private let dataBrokerID: Int64
@@ -162,6 +161,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 if jobData is ScanJobData {
                     try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                         brokerProfileQueryData: brokerProfileData,
+                        showWebView: showWebView,
+                        isManual: jobType == .manualScan,
                         shouldRunNextStep: { [weak self] in
                             guard let self = self else { return false }
                             return !self.isCancelled
@@ -170,6 +171,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                         for: optOutJobData.extractedProfile,
                         brokerProfileQueryData: brokerProfileData,
+                        showWebView: showWebView,
                         shouldRunNextStep: { [weak self] in
                             guard let self = self else { return false }
                             return !self.isCancelled
@@ -206,7 +208,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
     }
 }
-// swiftlint:enable explicit_non_final_class
 
 private extension Array where Element == BrokerJobData {
     /// Filters jobs based on their preferred run date:

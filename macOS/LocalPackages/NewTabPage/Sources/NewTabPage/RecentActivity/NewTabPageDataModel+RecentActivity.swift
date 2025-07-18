@@ -96,12 +96,6 @@ extension NewTabPageDataModel {
         let id: String?
         let url: String
         let target: OpenTarget
-
-        enum OpenTarget: String, Codable {
-            case sameTab = "same-tab"
-            case newTab = "new-tab"
-            case newWindow = "new-window"
-        }
     }
 
     struct ActivityItemAction: Codable, Equatable {

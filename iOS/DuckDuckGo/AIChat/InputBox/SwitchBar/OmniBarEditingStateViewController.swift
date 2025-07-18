@@ -20,28 +20,62 @@
 import UIKit
 import DesignResourcesKit
 import Combine
+import BrowserServicesKit
+import Bookmarks
+import Persistence
+import History
+import Core
+import Suggestions
+import SwiftUI
+import AIChat
+import UIComponents
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
     func onQuerySubmitted(_ query: String)
-    func onPromptSubmitted(_ query: String)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
+    func onSelectFavorite(_ favorite: BookmarkEntity)
+    func onSelectSuggestion(_ suggestion: Suggestion)
+    func onVoiceSearchRequested(from mode: TextEntryMode)
+
+    func onAppear()
+    func onDismiss()
 }
 
-/// Later: Inject auto suggestions here.
-final class OmniBarEditingStateViewController: UIViewController {
+/// Main coordinator for the OmniBar editing state, managing multiple specialized components
+final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitionDelegate {
+
+    // MARK: - Properties
+    
     var textAreaView: UIView {
         switchBarVC.textEntryViewController.textEntryView
     }
-    private var cancellables = Set<AnyCancellable>()
-    private let switchBarHandler: SwitchBarHandling
-    private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
+
+    var rootView: UIView { view }
+    var logoView: UIView? { daxLogoManager.logoView }
+
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
-
     var expectedStartFrame: CGRect?
-
+    var suggestionTrayDependencies: SuggestionTrayDependencies?
+    
+    // MARK: - Core Components
+    
+    private let switchBarHandler: SwitchBarHandling
+    private var cancellables = Set<AnyCancellable>()
+    private let transitionAnimator = OmniBarEditingStateAnimator()
+    
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
-    private var topSwitchBarConstraint: NSLayoutConstraint?
+    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
+    
+    // MARK: - Manager Components
+    
+    private var swipeContainerManager: SwipeContainerManager?
+    private var navigationActionBarManager: NavigationActionBarManager?
+    private var suggestionTrayManager: SuggestionTrayManager?
+    private let daxLogoManager = DaxLogoManager()
 
+    // MARK: - Initialization
+    
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         super.init(nibName: nil, bundle: nil)
@@ -51,106 +85,38 @@ final class OmniBarEditingStateViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        installSwitchBarVC()
-        self.view.backgroundColor = .clear
+        setupView()
+        installComponents()
+        setupSubscriptions()
+        setupTransitionAnimator()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        switchBarVC.focusTextField()
+        transitionAnimator.animateAppearance()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        animateAppearance()
+        DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
     }
 
-    private func animateAppearance() {
-
-        guard let expectedStartFrame else {
-            self.switchBarVC.setExpanded(true)
-            return
-        }
-
-        // Prepare initial state
-        let heightConstraint = switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
-        if isTopBarPosition {
-            heightConstraint.isActive = true
-            topPositionAppearance(expectedStartFrame: expectedStartFrame, heightConstraint: heightConstraint)
-        } else {
-            bottomPositionAppearance()
-        }
-
-    }
-
-    private func topPositionAppearance(expectedStartFrame: CGRect, heightConstraint: NSLayoutConstraint) {
-        topSwitchBarConstraint = switchBarVC.view.topAnchor.constraint(equalTo: view.topAnchor, constant: expectedStartFrame.minY)
-        topSwitchBarConstraint?.isActive = true
-        self.switchBarVC.setExpanded(false)
-        self.switchBarVC.view.alpha = 0.0
-
-        self.view.layoutIfNeeded()
-
-        // Create animators
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
-            self.view.backgroundColor = UIColor(designSystemColor: .background)
-        }
-
-        let fadeInAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeIn) {
-            self.switchBarVC.view.alpha = 1.0
-        }
-
-        let expandAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
-            self.switchBarVC.setExpanded(true)
-            heightConstraint.isActive = false
-
-            self.switchBarVC.view.layoutIfNeeded()
-        }
-
-        // Schedule animations
-        backgroundFadeAnimator.addCompletion { _ in
-            expandAnimator.startAnimation()
-            self.switchBarVC.focusTextField()
-        }
-
-        // Start animations
-        backgroundFadeAnimator.startAnimation()
-        fadeInAnimator.startAnimation()
-    }
-
-    private func bottomPositionAppearance() {
-
-        topSwitchBarConstraint = switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 80)
-        topSwitchBarConstraint?.isActive = true
-        self.switchBarVC.setExpanded(true)
-        self.switchBarVC.view.alpha = 0.0
-
-        self.view.layoutIfNeeded()
-
-        // Create animators
-        let animator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.75) {
-            self.view.backgroundColor = UIColor(designSystemColor: .background)
-            self.switchBarVC.view.alpha = 1.0
-            self.topSwitchBarConstraint?.constant = 20
-
-            self.view.layoutIfNeeded()
-        }
-
-        // Schedule animations
-        animator.addCompletion { _ in
-            self.switchBarVC.focusTextField()
-        }
-
-        // Start animations
-        animator.startAnimation()
-    }
-
-    @objc private func dismissButtonTapped(_ sender: UIButton) {
-        switchBarVC.unfocusTextField()
-        dismissAnimated()
-    }
-
+    // MARK: - Public Methods
+    
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
-        animateDismissal {
+        transitionAnimator.animateDismissal {
             DispatchQueue.main.async {
                 if self.presentingViewController != nil {
                     self.dismiss(animated: false)
@@ -159,63 +125,47 @@ final class OmniBarEditingStateViewController: UIViewController {
             }
         }
     }
-
-    private func animateDismissal(_ completion: (() -> Void)? = nil) {
-
-        self.view.layoutIfNeeded()
-
-        if isTopBarPosition {
-            topPositionDismissal(completion)
-        } else {
-            bottomPositionDismissal(completion)
-        }
-
+    
+    func setUpForInitialSelectedState() {
+        switchBarVC.textEntryViewController.selectAllText()
+        suggestionTrayManager?.showInitialSuggestions()
+        swipeContainerManager?.updateLayout(viewBounds: view.bounds)
     }
 
-    private func topPositionDismissal(_ completion: (() -> Void)?) {
-        // Create animators
-        let collapseAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
-            self.switchBarVC.setExpanded(false)
-            if let expectedStartFrame = self.expectedStartFrame {
-                let heightConstraint = self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
-                heightConstraint.isActive = true
-            }
-
-            self.view.layoutIfNeeded()
-        }
-
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
-            self.view.backgroundColor = .clear
-        }
-
-        let fadeOutAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
-            self.switchBarVC.view.alpha = 0.0
-        }
-
-        fadeOutAnimator.addCompletion { _ in
-            completion?()
-        }
-
-        // Start animations
-        collapseAnimator.startAnimation()
-        backgroundFadeAnimator.startAnimation()
-        fadeOutAnimator.startAnimation(afterDelay: 0.15)
+    func adjustForAppearance() {
+        delegate?.onAppear()
     }
 
-    private func bottomPositionDismissal(_ completion: (() -> Void)?) {
-        let animator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
-            self.view.backgroundColor = .clear
-            self.switchBarVC.view.alpha = 0.0
-            self.topSwitchBarConstraint?.constant = 80
+    func adjustForDismissal() {
+        delegate?.onDismiss()
+    }
 
-            self.view.layoutIfNeeded()
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate { _ in
+            self.swipeContainerManager?.updateLayout(viewBounds: CGRect(origin: .zero, size: size))
         }
+    }
 
-        animator.addCompletion { _ in
-            completion?()
-        }
+    // MARK: - Private Methods
+    
+    private func setupView() {
+        view.backgroundColor = UIColor(designSystemColor: .background)
+    }
+    
+    private func installComponents() {
+        installSwitchBarVC()
+        installSwipeContainer()
+        installSuggestionsTray()
+        installDaxLogoView()
+        installNavigationActionBar()
 
-        animator.startAnimation()
+        view.bringSubviewToFront(switchBarVC.view)
+    }
+    
+    private func setupTransitionAnimator() {
+        transitionAnimator.transitionDelegate = self
     }
 
     private func installSwitchBarVC() {
@@ -229,10 +179,35 @@ final class OmniBarEditingStateViewController: UIViewController {
         ])
 
         switchBarVC.didMove(toParent: self)
-
         switchBarVC.backButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
-        setupSubscriptions()
+    }
 
+    private func installSwipeContainer() {
+        let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
+        manager.delegate = self
+        manager.installInView(view, belowView: switchBarVC.view)
+        swipeContainerManager = manager
+    }
+
+    private func installSuggestionsTray() {
+        guard let dependencies = suggestionTrayDependencies,
+              let searchContainer = swipeContainerManager?.searchPageContainer else { return }
+        
+        let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
+        manager.delegate = self
+        manager.installInContainerView(searchContainer, parentViewController: self)
+        suggestionTrayManager = manager
+    }
+
+    private func installDaxLogoView() {
+        daxLogoManager.installInViewController(self, belowView: switchBarVC.view)
+    }
+    
+    private func installNavigationActionBar() {
+        let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
+        manager.delegate = self
+        manager.installInViewController(self, safeAreaGuide: view.safeAreaLayoutGuide)
+        navigationActionBarManager = manager
     }
 
     private func setupSubscriptions() {
@@ -240,38 +215,113 @@ final class OmniBarEditingStateViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] currentText in
                 self?.delegate?.onQueryUpdated(currentText)
-            }
-            .store(in: &cancellables)
-
-        switchBarHandler.toggleStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { newState in
-                switch newState {
-                case .search:
-                    print("search mode")
-                case .aiChat:
-                    print("AI chat mode")
-                }
+                self?.suggestionTrayManager?.handleQueryUpdate(currentText)
             }
             .store(in: &cancellables)
 
         switchBarHandler.textSubmissionPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
-                switch submission.mode {
-                case .search:
-                    self?.delegate?.onQuerySubmitted(submission.text)
-                case .aiChat:
-                    self?.delegate?.onPromptSubmitted(submission.text)
+                guard let self = self else { return }
+                defer { self.switchBarHandler.clearText() }
+
+                let text = submission.text
+
+                if self.switchBarHandler.isCurrentTextValidURL {
+                    self.delegate?.onQuerySubmitted(text)
+                    return
                 }
 
-                self?.switchBarHandler.clearText()
+                switch submission.mode {
+                case .search:
+                    self.delegate?.onQuerySubmitted(text)
+
+                case .aiChat:
+                    let tools: [AIChatRAGTool]? = self.switchBarHandler.forceWebSearch ? [.webSearch] : nil
+                    self.delegate?.onPromptSubmitted(text, tools: tools)
+                }
             }
             .store(in: &cancellables)
 
+        switchBarHandler.microphoneButtonTappedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.handleMicrophoneButtonTapped()
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Action Handlers
+
+    @objc private func dismissButtonTapped(_ sender: UIButton) {
+        switchBarVC.unfocusTextField()
+        dismissAnimated()
+    }
+
+    private func handleMicrophoneButtonTapped() {
+        delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
+    }
+}
+
+// MARK: - SwipeContainerManagerDelegate
+
+extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
+    
+    func swipeContainerManager(_ manager: SwipeContainerManager, didSwipeToMode mode: TextEntryMode) {
+        switchBarHandler.setToggleState(mode)
     }
     
-    func selectAllText() {
-        switchBarVC.textEntryViewController.selectAllText()
+    func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat) {
+        // Forward the scroll progress to the switch bar to animate the toggle
+        switchBarVC.updateScrollProgress(progress)
+
+        if let logoView {
+            if suggestionTrayManager?.isShowingSuggestionTray == true {
+                logoView.alpha = Easing.inOutCirc(progress)
+                logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
+            } else {
+                logoView.alpha = 1.0
+                logoView.transform = .identity
+            }
+        }
+    }
+}
+
+// MARK: - SuggestionTrayManagerDelegate
+
+extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
+    
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectSuggestion suggestion: Suggestion) {
+        delegate?.onSelectSuggestion(suggestion)
+    }
+    
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity) {
+        delegate?.onSelectFavorite(favorite)
+    }
+    
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
+        switchBarHandler.updateCurrentText(text)
+    }
+}
+
+// MARK: - NavigationActionBarManagerDelegate
+
+extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate {
+    
+    func navigationActionBarManagerDidTapMicrophone(_ manager: NavigationActionBarManager) {
+        handleMicrophoneButtonTapped()
+    }
+    
+    func navigationActionBarManagerDidTapNewLine(_ manager: NavigationActionBarManager) {
+        let currentText = switchBarHandler.currentText
+        let newText = currentText + "\n"
+        switchBarHandler.updateCurrentText(newText)
+    }
+    
+    func navigationActionBarManagerDidTapSearch(_ manager: NavigationActionBarManager) {
+        let currentText = switchBarHandler.currentText
+        if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            switchBarHandler.submitText(currentText)
+        }
     }
 }

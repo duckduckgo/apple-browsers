@@ -25,12 +25,13 @@ struct SettingsCellComponents {
     static var chevron: some View {
         Image(systemName: "chevron.forward")
             .font(Font.system(.footnote).weight(.bold))
+            // Bypasses the design system to match the system chevron color
             .foregroundColor(Color(UIColor.tertiaryLabel))
     }
     static var link: some View {
         Image(uiImage: DesignSystemImages.Glyphs.Size16.openIn)
             .font(Font.system(.footnote).weight(.bold))
-            .foregroundColor(Color(UIColor.tertiaryLabel))
+            .foregroundColor(Color(designSystemColor: .iconsSecondary))
     }
 }
 
@@ -327,120 +328,6 @@ struct SettingsCustomCell<Content: View>: View {
             if disclosureIndicator {
                 SettingsCellComponents.chevron
             }
-        }
-    }
-}
-
-enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
-    case optionOne = "Lorem"
-    case optionTwo = "Ipsum"
-    case optionThree = "Dolor"
-
-    var description: String {
-        return self.rawValue
-    }
-}
-
-#Preview {
-    Group {
-        List {
-            SettingsCellView(label: "Cell with disclosure",
-                             disclosureIndicator: true)
-            .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Multi-line Cell with disclosure \nLine 2\nLine 3",
-                             subtitle: "Curabitur erat massa, cursus sed velit",
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                             disclosureIndicator: true)
-            .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Image cell with disclosure ",
-                             accessory: .image(Image(systemName: "person.circle")),
-                             disclosureIndicator: true)
-            .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Subtitle image cell with disclosure",
-                             subtitle: "This is the subtitle",
-                             accessory: .image(Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)),
-                             disclosureIndicator: true)
-            .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Greyed out cell",
-                             subtitle: "This is the subtitle",
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
-                             accessory: .image(Image(uiImage: DesignSystemImages.Color.Size24.exclamation)),
-                             disclosureIndicator: true,
-                             isGreyedOut: true)
-            .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Right Detail cell with disclosure",
-                             accessory: .rightDetail("Detail"),
-                             disclosureIndicator: true)
-            .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Switch Cell",
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
-                             accessory: .toggle(isOn: .constant(true)))
-            .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Switch Cell",
-                             subtitle: "Subtitle goes here",
-                             accessory: .toggle(isOn: .constant(true)))
-            .previewLayout(.sizeThatFits)
-
-
-            @State var selectedOption: SampleOption = .optionOne
-            SettingsPickerCellView(label: "Proin tempor urna", options: SampleOption.allCases, selectedOption: $selectedOption)
-                .previewLayout(.sizeThatFits)
-
-            let cellContent: () -> some View = {
-                HStack(spacing: 15) {
-                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
-                        .foregroundColor(.orange)
-                        .imageScale(.large)
-                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
-                        .foregroundColor(.orange)
-                        .imageScale(.medium)
-
-                    Spacer()
-                    VStack(alignment: .center) {
-                        Text("LOREM IPSUM")
-                            .font(.headline)
-                    }
-                    Spacer()
-                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
-                        .foregroundColor(.orange)
-                        .imageScale(.medium)
-                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
-                        .foregroundColor(.orange)
-                        .imageScale(.large)
-                }
-            }
-            // For some unknown reason, this breaks on CI, but works normally
-            // Perhaps an XCODE version issue?
-            SettingsCustomCell(content: cellContent)
-                .previewLayout(.sizeThatFits)
-
-            SettingsCellView(label: "Cell with image",
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
-                             statusIndicator: StatusIndicatorView(status: .off),
-                             disclosureIndicator: true
-            )
-
-
-            SettingsCellView(label: "Cell a long long long long long long long title",
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
-                             statusIndicator: StatusIndicatorView(status: .alwaysOn),
-                             disclosureIndicator: true
-            )
-
-            SettingsCellView(label: "Cell with everything Lorem ipsum dolor sit amet, consectetur",
-                             subtitle: "Long subtitle Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation",
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
-                             accessory: .toggle(isOn: .constant(true)),
-                             statusIndicator: StatusIndicatorView(status: .on),
-                             disclosureIndicator: true
-            )
         }
     }
 }

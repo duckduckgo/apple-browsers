@@ -30,22 +30,28 @@ extension NewTabPageActionsManager {
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
+        faviconManager: FaviconManagement,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
-        historyCoordinator: HistoryCoordinating,
+        historyCoordinator: HistoryProviderCoordinating,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         protectionsReportModel: NewTabPageProtectionsReportModel,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
         fire: @escaping () async -> Fire,
-        keyValueStore: KeyValueStoring = UserDefaults.standard
+        keyValueStore: ThrowingKeyValueStoring,
+        featureFlagger: FeatureFlagger,
+        windowControllersManager: WindowControllersManagerProtocol,
+        tabsPreferences: TabsPreferences
     ) {
+        let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
             favoritesPublisher: favoritesPublisher,
+            faviconsDidLoadPublisher: faviconManager.faviconsLoadedPublisher.filter({ $0 }).asVoid().eraseToAnyPublisher(),
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 
@@ -73,9 +79,22 @@ extension NewTabPageActionsManager {
                 burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains, tld: tld, fire: fire)
             )
         )
+        let suggestionContainer = SuggestionContainer(
+            historyProvider: historyCoordinator,
+            bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: bookmarkManager),
+            burnerMode: .regular,
+            isUrlIgnored: { _ in false }
+        )
+        let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
+        let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: tabsPreferences
+        )
+        let omnibarModeProvider = NewTabPageOmnibarModeProvider(keyValueStore: keyValueStore)
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
+                sectionsAvailabilityProvider: availabilityProvider,
                 sectionsVisibilityProvider: appearancePreferences,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
@@ -97,7 +116,10 @@ extension NewTabPageActionsManager {
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
-            NewTabPageRecentActivityClient(model: recentActivityModel)
+            NewTabPageRecentActivityClient(model: recentActivityModel),
+            NewTabPageOmnibarClient(modeProvider: omnibarModeProvider,
+                                    suggestionsProvider: suggestionsProvider,
+                                    actionHandler: omnibarActionHandler)
         ])
     }
 }

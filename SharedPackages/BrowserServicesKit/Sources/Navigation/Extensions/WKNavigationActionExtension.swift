@@ -187,19 +187,10 @@ extension WKNavigationAction: WebViewNavigationAction {
 
         switch navigationType {
         case .linkActivated, .other:
-            let isSameDocumentNavigation = self.isRedirect != true && newURL.absoluteString.hashedSuffix != nil && currentURL.isSameDocument(newURL)
-            if #available(iOS 18.5, macOS 15.5, *) {
-                assert(!isSameDocumentNavigation || targetFrame?.webView?.committedURL?.absoluteString != targetFrame?.safeRequest?.url?.absoluteString,
-                """
-                If the issue is fixed in the future macOS/iOS versions,
-                please add version check to only use `targetFrame.webView?.committedURL`
-                in the `currentURL` property above when macOS >= 15.5 and less than the one where this was fixed
-                and iOS >= 18.5 and less than with the same WebKit version.
-                Otherwise we should just use `targetFrame.safeRequest?.url` which got broken for same-document navigations.
-                This assertion should be removed afterwards.
-                Also update NavigationAction.init checking source/target frames urls.
-                """)
-            }
+            let isSameDocumentNavigation = self.isRedirect != true
+            && newURL.absoluteString.hashedSuffix != nil
+            && currentURL.isSameDocument(newURL)
+
             return isSameDocumentNavigation
         case .backForward:
             return (newURL.absoluteString.hashedSuffix != nil || currentURL.absoluteString.hashedSuffix != nil) && currentURL.isSameDocument(newURL)

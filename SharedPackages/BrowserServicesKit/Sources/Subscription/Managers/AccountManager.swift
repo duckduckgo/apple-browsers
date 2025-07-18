@@ -209,7 +209,7 @@ public final class DefaultAccountManager: AccountManager {
     private func fetchRemoteEntitlements() async -> Result<[Entitlement], Error> {
         guard let accessToken else {
             entitlementsCache.reset()
-            return .failure(EntitlementsError.noAccessToken)
+            return .success([])
         }
 
         switch await authEndpointService.validateToken(accessToken: accessToken) {
@@ -227,13 +227,14 @@ public final class DefaultAccountManager: AccountManager {
     public func updateCache(with entitlements: [Entitlement]) {
         let cachedEntitlements: [Entitlement] = entitlementsCache.get() ?? []
 
-        if entitlements != cachedEntitlements {
+        if Set(entitlements) != Set(cachedEntitlements) {
             if entitlements.isEmpty {
                 entitlementsCache.reset()
             } else {
                 entitlementsCache.set(entitlements)
             }
-            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+            let payload = EntitlementsDidChangePayload(entitlements: EntitlementsBridging.v2EntitlementsFrom(v1Entitlements: entitlements))
+            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
         }
     }
 
@@ -254,13 +255,6 @@ public final class DefaultAccountManager: AccountManager {
                 return .success(cachedEntitlements)
             } else {
                 return await fetchRemoteEntitlements()
-            }
-
-        case .returnCacheDataDontLoad:
-            if let cachedEntitlements: [Entitlement] = entitlementsCache.get() {
-                return .success(cachedEntitlements)
-            } else {
-                return .failure(EntitlementsError.noCachedData)
             }
         }
 

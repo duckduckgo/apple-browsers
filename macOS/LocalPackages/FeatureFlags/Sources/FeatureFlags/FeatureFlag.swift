@@ -52,6 +52,8 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     case autoUpdateInDEBUG
+
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1210099321661462?focus=true
     case updatesWontAutomaticallyRestartApp
 
     case autofillPartialFormSaves
@@ -106,6 +108,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
     case aiChatSidebar
 
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
+    case aiChatTextSummarization
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
 
@@ -117,6 +122,27 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
+
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case importChromeShortcuts
+
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case updateSafariBookmarksImport
+
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case updateFirefoxBookmarksImport
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210522798790015?focus=true
+    case disableFireAnimation
+
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
+    case newTabPageOmnibar
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
+    case newFeedbackForm
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
+    case vpnToolbarUpsell
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -168,7 +194,15 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
 				.aiChatSidebar,
-                .shortHistoryMenu:
+                .aiChatTextSummarization,
+                .shortHistoryMenu,
+                .importChromeShortcuts,
+                .updateSafariBookmarksImport,
+                .updateFirefoxBookmarksImport,
+                .disableFireAnimation,
+                .newTabPageOmnibar,
+                .newFeedbackForm,
+                .vpnToolbarUpsell:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -210,7 +244,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autocompleteTabs:
@@ -256,7 +290,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
+        case .aiChatTextSummarization:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -265,6 +301,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
+        case .importChromeShortcuts:
+            return .disabled
+        case .updateSafariBookmarksImport:
+            return .disabled
+        case .updateFirefoxBookmarksImport:
+            return .disabled
+        case .disableFireAnimation:
+            return .remoteReleasable(.feature(.disableFireAnimation))
+        case .newTabPageOmnibar:
+            return .disabled
+        case .newFeedbackForm:
+            return .disabled
+        case .vpnToolbarUpsell:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         }
     }
 }

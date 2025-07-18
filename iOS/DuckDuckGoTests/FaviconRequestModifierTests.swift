@@ -56,7 +56,7 @@ class FaviconRequestModifierTests: XCTestCase {
     }
     """.data(using: .utf8)!
     
-    private var userAgentManager: UserAgentManager!
+    private var userAgentManager: UserAgentManaging!
     
     override func setUp() {
         super.setUp()
@@ -68,7 +68,7 @@ class FaviconRequestModifierTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: mockProtectionStore,
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         let config = manager.privacyConfig
         

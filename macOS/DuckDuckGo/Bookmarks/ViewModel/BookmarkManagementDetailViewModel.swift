@@ -28,6 +28,7 @@ final class BookmarkManagementDetailViewModel {
 
     private let bookmarkManager: BookmarkManager
     private let bookmarksSearchAndSortMetrics: BookmarksSearchAndSortMetrics
+    private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
 
     private var currentSelectionState: BookmarkManagementSidebarViewController.SelectionState = .empty
     private var searchQuery = ""
@@ -38,9 +39,10 @@ final class BookmarkManagementDetailViewModel {
         !searchQuery.isBlank
     }
 
-    init(bookmarkManager: BookmarkManager, metrics: BookmarksSearchAndSortMetrics, mode: BookmarksSortMode = .manual) {
+    init(bookmarkManager: BookmarkManager, metrics: BookmarksSearchAndSortMetrics, navigationEngagementMetrics: BookmarksNavigationEngagementMetrics, mode: BookmarksSortMode = .manual) {
         self.bookmarkManager = bookmarkManager
         self.bookmarksSearchAndSortMetrics = metrics
+        self.navigationEngagementMetrics = navigationEngagementMetrics
         self.mode = mode
     }
 
@@ -109,6 +111,10 @@ final class BookmarkManagementDetailViewModel {
         if !searchQuery.isBlank {
             bookmarksSearchAndSortMetrics.fireSearchResultClicked(origin: .manager)
         }
+    }
+
+    func onNavigateToBookmark(_ bookmark: Bookmark) {
+        navigationEngagementMetrics.fireNavigateToBookmark(isFavorite: bookmark.isFavorite)
     }
 
     // MARK: - Private

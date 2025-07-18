@@ -32,6 +32,7 @@ jobs:
 
       outputs:
         commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+        pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
       steps:
 
@@ -72,6 +73,16 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
+      - name: Configure system logging
+        run: |
+          sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+          sudo killall logd || true
+
+      - name: Start log stream in background
+        run: |
+          log stream --debug --info --predicate 'process == "xctest" OR process == "swiftpm-xctest-helper"' --style syslog > xctest.log 2>&1 &
+          echo $! > log_stream.pid
+
       - name: Build BSK
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
@@ -88,6 +99,22 @@ jobs:
           pixel-name: m_ci_apple_duration_dbp_unit_tests_macos
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
+
+      - name: Stop log stream
+        if: always()
+        run: |
+          if [ -f log_stream.pid ]; then
+            kill $(cat log_stream.pid) || true
+          fi
+
+      - name: Upload XCTest log stream output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbp-xctest-log-stream.log
+          path: |
+            SharedPackages/DataBrokerProtectionCore/xctest.log
+          retention-days: 7
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
@@ -124,15 +151,28 @@ jobs:
           name: build-log.txt
           path: SharedPackages/DataBrokerProtectionCore/build-log.txt
 
-      - name: Fetch latest commit author
-        if: always() && github.ref_name == 'main'
-        id: fetch_commit_author
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Wait for crash reports to be generated
+        if: failure()
         run: |
-          head_commit=$(git rev-parse HEAD)
-          author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
-          echo "commit_author=${author}" >> $GITHUB_OUTPUT
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "dbp-crash-reports-macOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Fetch latest commit author and PR reviewers
+        if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+        id: fetch_commit_author
+        uses: ./.github/actions/fetch-commit-info
+        with:
+          github-token: ${{ github.token }}
 
   unit-tests-ios:
 
@@ -250,6 +290,22 @@ jobs:
           name: ios-build-log.txt
           path: SharedPackages/DataBrokerProtectionCore/ios-build-log.txt
 
+      - name: Wait for crash reports to be generated
+        if: failure()
+        run: |
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "dbp-crash-reports-iOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
+
   create-asana-task:
     name: Create Asana Task
     needs: [unit-tests, unit-tests-ios]
@@ -268,6 +324,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:

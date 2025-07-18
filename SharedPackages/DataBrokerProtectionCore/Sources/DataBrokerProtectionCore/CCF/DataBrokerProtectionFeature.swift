@@ -51,9 +51,19 @@ public class DataBrokerProtectionFeature: Subfeature {
     private var actionResponseTimer: Timer?
     private let actionResponseTimeout: TimeInterval
 
-    public init(delegate: CCFCommunicationDelegate, actionResponseTimeout: TimeInterval = .seconds(60)) {
+    public struct Constants {
+        /// Default timeout for C-S-S action responses that can hang due to page reloads or script context loss
+        public static let defaultActionResponseTimeout: TimeInterval = 60
+    }
+
+    public init(delegate: CCFCommunicationDelegate,
+                actionResponseTimeout: TimeInterval = Constants.defaultActionResponseTimeout) {
         self.delegate = delegate
         self.actionResponseTimeout = actionResponseTimeout
+    }
+
+    deinit {
+        removeTimer()
     }
 
     public func handler(forMethodNamed methodName: String) -> Handler? {
@@ -162,7 +172,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         removeTimer()
         Task {
             await delegate?.onError(error: DataBrokerProtectionError.actionFailed(actionID: action.id,
-                                                                                  message: "Request timed out"))
+                                                                                  message: "Action timed out"))
         }
     }
 

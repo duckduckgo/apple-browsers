@@ -56,6 +56,7 @@ class FavoritesHomeViewSectionRenderer {
     private weak var reorderingCell: FavoriteHomeCell?
 
     var isEditing = false
+    var isUsingSearchInputCustomStyling = false
 
     var onFaviconMissing: ((String) -> Void)?
 
@@ -150,6 +151,8 @@ class FavoritesHomeViewSectionRenderer {
             self?.onFaviconMissing?(domain)
         })
         cell.isEditing = isEditing
+        cell.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
+        
         return cell
 
     }

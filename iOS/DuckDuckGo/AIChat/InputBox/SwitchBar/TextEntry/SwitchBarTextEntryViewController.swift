@@ -20,19 +20,19 @@
 import UIKit
 import SwiftUI
 import Combine
+import UIComponents
 
 class SwitchBarTextEntryViewController: UIViewController {
 
     // MARK: - Properties
     let textEntryView: SwitchBarTextEntryView
     private let handler: SwitchBarHandling
-    private var actionViewController: UIHostingController<SwitchBarActionView>?
-    private let containerView = UIView()
+    private let containerView = CompositeShadowView()
 
     // Constraint references for dynamic sizing
-    private var actionViewHeightConstraint: NSLayoutConstraint?
-    private var actionViewBottomConstraint: NSLayoutConstraint?
     private var textEntryBottomConstraint: NSLayoutConstraint?
+    private var containerHeightConstraint: NSLayoutConstraint?
+    private var containerStaticHeightConstraint: NSLayoutConstraint?
 
     private var cancellables = Set<AnyCancellable>()
     private var isExpanded = false
@@ -54,14 +54,15 @@ class SwitchBarTextEntryViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
-        setupSubscriptions()
-        updateConstraintsForCurrentMode()
         self.view.layoutIfNeeded()
     }
 
     func setExpanded(_ expanded: Bool) {
         isExpanded = expanded
-        updateConstraintsForCurrentMode()
+        
+        containerStaticHeightConstraint?.isActive = !expanded
+        containerHeightConstraint?.isActive = expanded
+        textEntryView.alpha = expanded ? 1 : 0
     }
 
     func focusTextField() {
@@ -74,11 +75,10 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     private func setupViews() {
         setupContainerViewAppearance()
+
         view.addSubview(containerView)
 
         containerView.addSubview(textEntryView)
-        containerView.backgroundColor = UIColor(designSystemColor: .surface)
-        setupActionView()
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
         textEntryView.translatesAutoresizingMaskIntoConstraints = false
@@ -86,84 +86,20 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     private func setupContainerViewAppearance() {
 
-        containerView.layer.cornerRadius = 16
+        containerView.layer.cornerRadius = Metrics.containerCornerRadius
         containerView.layer.masksToBounds = false
 
-        containerView.layer.shadowColor = UIColor.label.cgColor
-        containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        containerView.layer.shadowRadius = 8
-        containerView.layer.shadowOpacity = 0.1
-
-        containerView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor // TODO: observe trait collection changes
-        containerView.layer.borderWidth = 2
-
-        updateShadowPath()
-    }
-
-    private func updateShadowPath() {
-        containerView.layer.shadowPath = UIBezierPath(
-            roundedRect: containerView.bounds,
-            cornerRadius: containerView.layer.cornerRadius
-        ).cgPath
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        updateShadowPath()
-    }
-
-    private func setupActionView() {
-        let hasText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        let actionView = SwitchBarActionView(
-            hasText: hasText,
-            onImageUpload: { [weak self] in
-                self?.handleImageUpload()
-            },
-            onSend: { [weak self] in
-                self?.handleSend()
-            }
-        )
-
-        actionViewController = UIHostingController(rootView: actionView)
-
-        if let actionVC = actionViewController {
-            addChild(actionVC)
-            containerView.addSubview(actionVC.view)
-            actionVC.didMove(toParent: self)
-
-            actionVC.view.backgroundColor = UIColor.clear
-            actionVC.view.translatesAutoresizingMaskIntoConstraints = false
-
-            let isSearchMode = handler.currentToggleState == .search
-            actionVC.view.alpha = isSearchMode ? 0 : 1
-        }
-    }
-
-    private func updateActionView() {
-        let hasText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        let updatedActionView = SwitchBarActionView(
-            hasText: hasText,
-            onImageUpload: { [weak self] in
-                self?.handleImageUpload()
-            },
-            onSend: { [weak self] in
-                self?.handleSend()
-            }
-        )
-
-        actionViewController?.rootView = updatedActionView
+        containerView.backgroundColor = UIColor(designSystemColor: .surface)
+        containerView.applyActiveShadow()
     }
 
     private func setupConstraints() {
-        guard let actionView = actionViewController?.view else { return }
-
-        actionViewBottomConstraint = actionView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         textEntryBottomConstraint = textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         textEntryBottomConstraint?.priority = UILayoutPriority(999)
+        textEntryBottomConstraint?.isActive = true
 
-        let spacingConstraint = actionView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor, constant: 8)
+        containerHeightConstraint = containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 70).withPriority(.init(999))
+        containerStaticHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 44)
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -174,38 +110,12 @@ class SwitchBarTextEntryViewController: UIViewController {
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-
-            actionView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            actionView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            spacingConstraint
         ])
-
-        updateConstraintsForCurrentMode()
-    }
-
-    func updateConstraintsForCurrentMode() {
-        if showsActionView {
-            textEntryBottomConstraint?.isActive = false
-            actionViewBottomConstraint?.isActive = true
-            actionViewController?.view.alpha = 1
-        } else {
-            actionViewBottomConstraint?.isActive = false
-            textEntryBottomConstraint?.isActive = true
-            actionViewController?.view.alpha = 0
-        }
-    }
-
-    private func setupSubscriptions() {
-        handler.currentTextPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateActionView()
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Action Handlers
-    private func handleImageUpload() {
+    private func handleWebSearchToggle() {
+        handler.toggleForceWebSearch()
     }
 
     private func handleSend() {
@@ -229,5 +139,9 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     func selectAllText() {
         textEntryView.selectAllText()
+    }
+
+    private struct Metrics {
+        static let containerCornerRadius: CGFloat = 16
     }
 }

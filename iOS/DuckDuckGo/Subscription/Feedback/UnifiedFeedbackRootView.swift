@@ -89,6 +89,13 @@ struct UnifiedFeedbackRootView: View {
                             IssueDescriptionFormView(viewModel: viewModel,
                                                      placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)
                         }
+                    case .duckAi:
+                        UnifiedFeedbackCategoryView(UserText.pproFeedbackFormReportProblemTitle,
+                                                    options: PaidAIChatFeedbackSubcategory.allCases,
+                                                    selection: $viewModel.selectedSubcategory) {
+                            IssueDescriptionFormView(viewModel: viewModel,
+                                                     placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)
+                        }
                     }
                 }
             }
@@ -400,7 +407,7 @@ private struct UnifiedFeedbackFormButtonStyle: ButtonStyle {
             .padding(.horizontal)
             .frame(height: 50)
             .background(Color(designSystemColor: .accent))
-            .cornerRadius(8)
+            .cornerRadius(12)
             .daxButton()
             .opacity(isEnabled ? 1.0 : 0.4)
 

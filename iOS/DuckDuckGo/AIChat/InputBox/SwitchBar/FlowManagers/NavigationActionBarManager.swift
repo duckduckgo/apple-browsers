@@ -19,7 +19,6 @@
 
 import Foundation
 import UIKit
-import SwiftUI
 
 /// Protocol for handling navigation action bar events
 protocol NavigationActionBarManagerDelegate: AnyObject {
@@ -36,13 +35,21 @@ final class NavigationActionBarManager {
     weak var delegate: NavigationActionBarManagerDelegate?
     
     private let switchBarHandler: SwitchBarHandling
-    private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
+    private var navigationActionBarViewController: NavigationActionBarViewController?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
+    private var bottomConstraint: NSLayoutConstraint?
+    private var isAnimating = false
+    private var lastKeyboardHeight: CGFloat = 0
     
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
+        setupKeyboardObserver()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Public Methods
@@ -67,31 +74,110 @@ final class NavigationActionBarManager {
         )
         navigationActionBarViewModel = viewModel
         
-        let actionBarView = NavigationActionBarView(viewModel: viewModel)
+        let actionBarViewController = NavigationActionBarViewController(viewModel: viewModel)
+        navigationActionBarViewController = actionBarViewController
         
-        let hostingController = UIHostingController(rootView: actionBarView)
-        navigationActionBarHostingController = hostingController
+        viewController.addChild(actionBarViewController)
+        viewController.view.addSubview(actionBarViewController.view)
+        actionBarViewController.view.translatesAutoresizingMaskIntoConstraints = false
         
-        hostingController.view.backgroundColor = .clear
-        viewController.addChild(hostingController)
-        viewController.view.addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        // Store the bottom constraint for keyboard adjustments
+        let bottomConstraint = actionBarViewController.view.bottomAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.bottomAnchor)
+        self.bottomConstraint = bottomConstraint
         
         NSLayoutConstraint.activate([
-            hostingController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
+            actionBarViewController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
+            actionBarViewController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
+            bottomConstraint
         ])
         
-        hostingController.didMove(toParent: viewController)
+        actionBarViewController.didMove(toParent: viewController)
     }
     
     /// Removes the navigation action bar from its parent
     func removeFromParent() {
-        navigationActionBarHostingController?.willMove(toParent: nil)
-        navigationActionBarHostingController?.view.removeFromSuperview()
-        navigationActionBarHostingController?.removeFromParent()
-        navigationActionBarHostingController = nil
+        navigationActionBarViewController?.willMove(toParent: nil)
+        navigationActionBarViewController?.view.removeFromSuperview()
+        navigationActionBarViewController?.removeFromParent()
+        navigationActionBarViewController = nil
         navigationActionBarViewModel = nil
+        bottomConstraint = nil
+        isAnimating = false
+        lastKeyboardHeight = 0
+    }
+    
+    // MARK: - Private Methods
+    
+    private func setupKeyboardObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow(_:)),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide(_:)),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+        
+        // Also observe frame changes to handle keyboard accessories
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillChangeFrame(_:)),
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        updateKeyboardPosition(from: notification)
+    }
+    
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        updateKeyboardPosition(from: notification)
+    }
+    
+    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        updateKeyboardPosition(from: notification)
+    }
+    
+    private func updateKeyboardPosition(from notification: Notification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let animationDuration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let bottomConstraint = bottomConstraint,
+              let parentView = navigationActionBarViewController?.view.superview else { return }
+        
+        // Check if keyboard is visible (not off-screen)
+        let screenHeight = UIScreen.main.bounds.height
+        let isKeyboardVisible = keyboardFrame.origin.y < screenHeight
+        
+        let targetKeyboardHeight: CGFloat
+        if isKeyboardVisible {
+            // Calculate keyboard height relative to the parent view
+            let keyboardTopInParentView = parentView.convert(CGPoint(x: 0, y: keyboardFrame.origin.y), from: nil).y
+            let parentViewHeight = parentView.bounds.height
+            let calculatedHeight = parentViewHeight - keyboardTopInParentView
+            targetKeyboardHeight = max(0, calculatedHeight)
+        } else {
+            targetKeyboardHeight = 0
+        }
+        
+        // Avoid unnecessary updates
+        let heightDifference = abs(targetKeyboardHeight - lastKeyboardHeight)
+        guard heightDifference > 1.0 || !isAnimating else { return }
+        
+        lastKeyboardHeight = targetKeyboardHeight
+        isAnimating = true
+        
+        bottomConstraint.constant = -targetKeyboardHeight
+        
+        UIView.animate(withDuration: animationDuration, animations: {
+            parentView.layoutIfNeeded()
+        }) { _ in
+            self.isAnimating = false
+        }
     }
 }

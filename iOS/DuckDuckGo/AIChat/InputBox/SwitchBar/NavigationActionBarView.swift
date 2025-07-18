@@ -17,199 +17,434 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import DesignResourcesKitIcons
+import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Combine
 
-// MARK: - NavigationActionBarView
-
-struct NavigationActionBarView: View {
-
-    // MARK: - Properties
-    @ObservedObject var viewModel: NavigationActionBarViewModel
-    @StateObject private var keyboardObserver = KeyboardObserver()
-
+final class NavigationActionBarView: UIView {
+    
     // MARK: - Constants
-    private enum Constants {
+    enum Constants {
         static let barHeight: CGFloat = 76
         static let buttonSize: CGFloat = 44
         static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
-
+        
         static let shadowRadius1: CGFloat = 6
         static let shadowOffset1Y: CGFloat = 2
         static let shadowRadius2: CGFloat = 16
         static let shadowOffset2Y: CGFloat = 16
     }
-
-    // MARK: - Initializer
+    
+    // MARK: - Properties
+    private let viewModel: NavigationActionBarViewModel
+    private var cancellables = Set<AnyCancellable>()
+    private var isKeyboardVisible = false
+    
+    // MARK: - UI Elements
+    private let mainStackView = UIStackView()
+    private let rightStackView = UIStackView()
+    private let webSearchToggleButton = CircularButton()
+    private let microphoneButton = CircularButton()
+    private let newLineButton = CircularButton()
+    private let searchButton = CircularButton()
+    private let backgroundGradientView = GradientBackgroundView()
+    
+    // MARK: - Initialization
     init(viewModel: NavigationActionBarViewModel) {
         self.viewModel = viewModel
+        super.init(frame: .zero)
+        setupUI()
+        setupBindings()
+        setupKeyboardObserver()
+        updateUI()
     }
-
-    var body: some View {
-        HStack(spacing: Constants.buttonSpacing) {
-            if !viewModel.isSearchMode {
-                webSearchToggleButton
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // MARK: - Setup
+    private func setupUI() {
+        // Setup stack views
+        mainStackView.axis = .horizontal
+        mainStackView.spacing = Constants.buttonSpacing
+        mainStackView.alignment = .center
+        mainStackView.distribution = .fill
+        
+        rightStackView.axis = .horizontal
+        rightStackView.spacing = Constants.buttonSpacing
+        rightStackView.alignment = .center
+        rightStackView.distribution = .fill
+        
+        // Setup buttons
+        setupWebSearchToggleButton()
+        setupMicrophoneButton()
+        setupNewLineButton()
+        setupSearchButton()
+        
+        // Add to stack views
+        rightStackView.addArrangedSubview(microphoneButton)
+        rightStackView.addArrangedSubview(newLineButton)
+        rightStackView.addArrangedSubview(searchButton)
+        
+        mainStackView.addArrangedSubview(webSearchToggleButton)
+        
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        mainStackView.addArrangedSubview(spacer)
+        
+        mainStackView.addArrangedSubview(rightStackView)
+        
+        // Add to view
+        addSubview(backgroundGradientView)
+        addSubview(mainStackView)
+        
+        // Setup constraints
+        mainStackView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            // Main stack view constraints
+            mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.padding),
+            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.padding),
+            mainStackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.padding),
+            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.padding),
+            
+            // Background gradient constraints
+            backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            backgroundGradientView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            backgroundGradientView.topAnchor.constraint(equalTo: topAnchor),
+            backgroundGradientView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
+            // Button size constraints
+            webSearchToggleButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            webSearchToggleButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newLineButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            searchButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
+        ])
+        
+        backgroundGradientView.isHidden = !isKeyboardVisible
+    }
+    
+    private func setupWebSearchToggleButton() {
+        webSearchToggleButton.setIcon(DesignSystemImages.Glyphs.Size24.globe)
+        webSearchToggleButton.addTarget(self, action: #selector(webSearchToggleTapped), for: .touchUpInside)
+    }
+    
+    private func setupMicrophoneButton() {
+        microphoneButton.setIcon(DesignSystemImages.Glyphs.Size24.microphone)
+        microphoneButton.addTarget(self, action: #selector(microphoneTapped), for: .touchUpInside)
+    }
+    
+    private func setupNewLineButton() {
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        let returnImage = UIImage(systemName: "return", withConfiguration: config)
+        newLineButton.setIcon(returnImage)
+        newLineButton.addTarget(self, action: #selector(newLineTapped), for: .touchUpInside)
+    }
+    
+    private func setupSearchButton() {
+        searchButton.addTarget(self, action: #selector(searchTapped), for: .touchUpInside)
+    }
+    
+    private func setupBindings() {
+        // Observe view model changes
+        viewModel.$isSearchMode
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateUI()
             }
-
-            Spacer()
-
-            HStack(spacing: Constants.buttonSpacing) {
-                if viewModel.shouldShowMicButton {
-                    microphoneButton
-                }
-                newLineButton
-                if viewModel.hasText {
-                    searchButton
-                }
+            .store(in: &cancellables)
+        
+        viewModel.$hasText
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateUI()
             }
-        }
-        .padding(Constants.padding)
-        .background(
-            Group {
-                if keyboardObserver.isKeyboardVisible {
-                    VStack (spacing: 0) {
-                        Spacer()
-                            .frame(height: Constants.padding)
-
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(designSystemColor: .surface).opacity(0.0),
-                                Color(designSystemColor: .surface).opacity(0.8)
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                         .frame(height: Constants.barHeight)
-
-                        /// Add a color bellow the top gradient so it doesn't show a cut-off during keyboard animations
-                        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210809108643486?focus=true
-                        Color(designSystemColor: .surface).opacity(0.8)
-                    }
-                    /// Overflow the color
-                    .frame(height: 140)
-                    .clipped()
-                    .ignoresSafeArea(.container, edges: .horizontal)
-                }
+            .store(in: &cancellables)
+        
+        viewModel.$isWebSearchEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateUI()
             }
+            .store(in: &cancellables)
+        
+        viewModel.$isVoiceSearchEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateUI()
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$isCurrentTextValidURL
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateUI()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func setupKeyboardObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
         )
     }
-
-    // MARK: - Button Views
-
-    private var webSearchToggleButton: some View {
-        CircularButton(
-            action: viewModel.handleWebSearchToggle,
-            icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
-            foregroundColor: viewModel.isWebSearchEnabled ? .white : .primary,
-            backgroundColor: viewModel.isWebSearchEnabled ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface)
-        )
-        .transition(.scale.combined(with: .opacity))
+    
+    // MARK: - Actions
+    @objc private func webSearchToggleTapped() {
+        viewModel.handleWebSearchToggle()
     }
-
-    private var microphoneButton: some View {
-        CircularButton(
-            action: viewModel.onMicrophoneTapped,
-            icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone),
-            isEnabled: viewModel.isVoiceSearchEnabled
-        )
-        .opacity(viewModel.isVoiceSearchEnabled ? 1.0 : 0.5)
+    
+    @objc private func microphoneTapped() {
+        viewModel.onMicrophoneTapped()
     }
-
-    private var newLineButton: some View {
-        CircularButton(
-            action: viewModel.onNewLineTapped,
-            icon: Image(systemName: "return")
+    
+    @objc private func newLineTapped() {
+        viewModel.onNewLineTapped()
+    }
+    
+    @objc private func searchTapped() {
+        viewModel.onSearchTapped()
+    }
+    
+    @objc private func keyboardWillShow() {
+        isKeyboardVisible = true
+        updateBackgroundVisibility()
+    }
+    
+    @objc private func keyboardWillHide() {
+        isKeyboardVisible = false
+        updateBackgroundVisibility()
+    }
+    
+    // MARK: - UI Updates
+    private func updateUI() {
+        updateWebSearchToggleButton()
+        updateMicrophoneButton()
+        updateSearchButton()
+        updateButtonVisibility()
+    }
+    
+    private func updateWebSearchToggleButton() {
+        let isEnabled = viewModel.isWebSearchEnabled
+        webSearchToggleButton.setColors(
+            foreground: isEnabled ? .white : UIColor(designSystemColor: .textPrimary),
+            background: isEnabled ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
         )
     }
-
-    private var searchButton: some View {
-        let icon: Image = {
-            if viewModel.isCurrentTextValidURL {
-                return Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
-            } else if viewModel.isSearchMode {
-                return Image(uiImage: DesignSystemImages.Glyphs.Size24.searchFind)
+    
+    private func updateMicrophoneButton() {
+        let isEnabled = viewModel.isVoiceSearchEnabled
+        microphoneButton.alpha = isEnabled ? 1.0 : 0.5
+        microphoneButton.isEnabled = isEnabled
+        microphoneButton.setColors(
+            foreground: UIColor(designSystemColor: .textPrimary),
+            background: UIColor(designSystemColor: .surface)
+        )
+    }
+    
+    private func updateSearchButton() {
+        let hasText = viewModel.hasText
+        let isValidURL = viewModel.isCurrentTextValidURL
+        let isSearchMode = viewModel.isSearchMode
+        
+        // Determine icon
+        let icon: UIImage? = {
+            if isValidURL {
+                return DesignSystemImages.Glyphs.Size24.globe
+            } else if isSearchMode {
+                return DesignSystemImages.Glyphs.Size24.searchFind
             } else {
-                return Image(uiImage: DesignSystemImages.Glyphs.Size24.arrowUp)
+                return DesignSystemImages.Glyphs.Size24.arrowUp
             }
         }()
         
-        return CircularButton(
-            action: viewModel.onSearchTapped,
-            icon: icon,
-            foregroundColor: viewModel.hasText ? .white : Color(designSystemColor: .textPlaceholder),
-            backgroundColor: viewModel.hasText ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface),
-            isEnabled: viewModel.hasText
+        searchButton.setIcon(icon)
+        searchButton.setColors(
+            foreground: hasText ? .white : UIColor(designSystemColor: .textPlaceholder),
+            background: hasText ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
         )
-        .animation(.easeInOut(duration: 0.2), value: viewModel.hasText)
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isCurrentTextValidURL)
-    }
-
-    // MARK: - CircularButton
-
-    private struct CircularButton<Icon: View>: View {
-        let action: () -> Void
-        let icon: Icon
-        var foregroundColor: Color = .primary
-        var backgroundColor: Color = Color(designSystemColor: .surface)
-        var isEnabled: Bool = true
-
-        var body: some View {
-            Button(action: action) {
-                icon
-                    .font(.system(size: 18))
-                    .foregroundColor(foregroundColor)
-                    .frame(width: Constants.buttonSize,
-                           height: Constants.buttonSize)
-                    .background(
-                        Circle()
-                            .fill(backgroundColor)
-                    )
-                    .shadow(
-                        color: Color(designSystemColor: .shadowSecondary),
-                        radius: Constants.shadowRadius1,
-                        x: 0,
-                        y: Constants.shadowOffset1Y
-                    )
-                    .shadow(
-                        color: Color(designSystemColor: .shadowSecondary),
-                        radius: Constants.shadowRadius2,
-                        x: 0,
-                        y: Constants.shadowOffset2Y
-                    )
-            }
-            .buttonStyle(PlainButtonStyle())
-            .disabled(!isEnabled)
+        searchButton.isEnabled = hasText
+        
+        // Animate changes
+        UIView.animate(withDuration: 0.2) {
+            self.searchButton.alpha = hasText ? 1.0 : 1.0
         }
+    }
+    
+    private func updateButtonVisibility() {
+        // Update web search toggle visibility
+        let shouldShowWebSearchToggle = !viewModel.isSearchMode
+        webSearchToggleButton.isHidden = !shouldShowWebSearchToggle
+        
+        // Update microphone button visibility  
+        let shouldShowMicButton = viewModel.shouldShowMicButton
+        microphoneButton.isHidden = !shouldShowMicButton
+        
+        // Update search button visibility
+        let shouldShowSearchButton = viewModel.hasText
+        searchButton.isHidden = !shouldShowSearchButton
+    }
+    
+    private func updateBackgroundVisibility() {
+        UIView.animate(withDuration: 0.3) {
+            self.backgroundGradientView.isHidden = !self.isKeyboardVisible
+        }
+    }
+    
+    // MARK: - Touch Handling
+    
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // First let the default hit test happen
+        guard let hitView = super.hitTest(point, with: event) else {
+            return nil
+        }
+        
+        // If the hit view is one of our buttons or their subviews, allow the touch
+        let buttons: [UIView] = [webSearchToggleButton, microphoneButton, newLineButton, searchButton]
+        
+        for button in buttons {
+            if !button.isHidden && (hitView == button || hitView.isDescendant(of: button)) {
+                return hitView
+            }
+        }
+        
+        // Otherwise, pass through the touch
+        return nil
     }
 }
 
-// MARK: - KeyboardObserver
+// MARK: - CircularButton
 
-private final class KeyboardObserver: ObservableObject {
-    @Published private(set) var isKeyboardVisible = false
-    private var cancellables = Set<AnyCancellable>()
+private class CircularButton: UIButton {
     
-    init() {
-        observeKeyboard()
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupButton()
     }
     
-    private func observeKeyboard() {
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.isKeyboardVisible = true
-            }
-            .store(in: &cancellables)
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupButton()
+    }
+    
+    private func setupButton() {
+        layer.cornerRadius = NavigationActionBarView.Constants.buttonSize / 2
+        layer.masksToBounds = false
         
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.isKeyboardVisible = false
-            }
-            .store(in: &cancellables)
+        // Add shadows
+        layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+        layer.shadowOpacity = 1.0
+        layer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset1Y)
+        layer.shadowRadius = NavigationActionBarView.Constants.shadowRadius1
+        
+        // Add second shadow layer
+        let secondShadowLayer = CALayer()
+        secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+        secondShadowLayer.shadowOpacity = 1.0
+        secondShadowLayer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset2Y)
+        secondShadowLayer.shadowRadius = NavigationActionBarView.Constants.shadowRadius2
+        layer.insertSublayer(secondShadowLayer, at: 0)
+        
+        imageView?.contentMode = .scaleAspectFit
+        adjustsImageWhenHighlighted = false
+    }
+    
+    func setIcon(_ image: UIImage?) {
+        setImage(image, for: .normal)
+        imageView?.tintColor = UIColor(designSystemColor: .textPrimary)
+    }
+    
+    func setColors(foreground: UIColor, background: UIColor) {
+        backgroundColor = background
+        imageView?.tintColor = foreground
+        setTitleColor(foreground, for: .normal)
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = min(bounds.width, bounds.height) / 2
+    }
+}
+
+// MARK: - GradientBackgroundView
+
+private class GradientBackgroundView: UIView {
+    
+    private let gradientLayer = CAGradientLayer()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupGradient()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupGradient()
+    }
+    
+    private func setupGradient() {
+        gradientLayer.colors = [
+            UIColor(designSystemColor: .surface).withAlphaComponent(0.0).cgColor,
+            UIColor(designSystemColor: .surface).withAlphaComponent(0.8).cgColor
+        ]
+        gradientLayer.locations = [0.0, 1.0]
+        gradientLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
+        gradientLayer.endPoint = CGPoint(x: 0.5, y: 1.0)
+        
+        layer.insertSublayer(gradientLayer, at: 0)
+        
+        // Add solid color below gradient
+        let solidLayer = CALayer()
+        solidLayer.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8).cgColor
+        layer.insertSublayer(solidLayer, at: 0)
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        let gradientHeight = NavigationActionBarView.Constants.barHeight
+        let totalHeight: CGFloat = 140
+        
+        // Position gradient layer
+        gradientLayer.frame = CGRect(
+            x: 0,
+            y: NavigationActionBarView.Constants.padding,
+            width: bounds.width,
+            height: gradientHeight
+        )
+        
+        // Position solid layer below gradient
+        if let solidLayer = layer.sublayers?.first {
+            solidLayer.frame = CGRect(
+                x: 0,
+                y: NavigationActionBarView.Constants.padding + gradientHeight,
+                width: bounds.width,
+                height: totalHeight - NavigationActionBarView.Constants.padding - gradientHeight
+            )
+        }
     }
 }

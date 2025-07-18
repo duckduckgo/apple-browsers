@@ -33,7 +33,7 @@ class RequeryLogic {
         case changedQuery
     }
 
-    private let userAgentManager: UserAgentManager = DefaultUserAgentManager.shared
+    private let userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared
     private var serpState: SerpState = .notLoaded
 
     func onNewNavigation(url: URL) {

@@ -21,6 +21,7 @@ struct AppDependencies {
 
     let mainCoordinator: MainCoordinator
     let services: AppServices
+    let launchTaskManager: LaunchTaskManager
 
 }
 

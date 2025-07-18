@@ -168,7 +168,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             guard internalUserDecider.isInternalUser else {
                 return UserText.sendFeedback
             }
-            return "\(UserText.sendFeedback) (version: \(AppVersion.shared.versionNumber).\(AppVersion.shared.buildNumber))"
+            return "\(UserText.sendFeedback) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
         }()
         let feedbackMenuItem = NSMenuItem(title: feedbackString, action: nil, keyEquivalent: "")
             .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon)

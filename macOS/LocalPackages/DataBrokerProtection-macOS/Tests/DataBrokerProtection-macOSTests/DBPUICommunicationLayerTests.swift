@@ -21,6 +21,7 @@ import WebKit
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import BrowserServicesKit
 
 final class DBPUICommunicationLayerTests: XCTestCase {
 
@@ -142,6 +143,38 @@ final class DBPUICommunicationLayerTests: XCTestCase {
 
         XCTAssertEqual(resultUserData.userdata.isAuthenticatedUser, true)
         XCTAssertEqual(resultUserData.userdata.isUserEligibleForFreeTrial, false)
+    }
+
+    func testWhenGetFeatureConfigCalled_thenReturnsProperObjectStructure() async throws {
+        // Given
+        let mockPrivacyConfig = PrivacyConfigurationManagingMock()
+        let mockVPNBypassService = VPNBypassServiceProviderMock()
+
+        (mockPrivacyConfig.privacyConfig as! PrivacyConfigurationMock).isSubfeatureEnabledCheck = { subfeature in
+            if let proSubfeature = subfeature as? PrivacyProSubfeature {
+                return proSubfeature == .useUnifiedFeedback
+            }
+            return false
+        }
+        mockVPNBypassService.isSupported = true
+
+        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(),
+                                          vpnBypassService: mockVPNBypassService,
+                                          privacyConfig: mockPrivacyConfig)
+        let scriptMessage = await WKScriptMessage()
+
+        // When
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)
+        let result = try await handler?([:], scriptMessage)
+
+        // Then
+        guard let featureConfig = result as? DBPUIFeatureConfigurationResponse else {
+            XCTFail("Expected DBPUIFeatureConfigurationResponse to be returned, got \(type(of: result))")
+            return
+        }
+
+        XCTAssertEqual(featureConfig.useUnifiedFeedback, true)
+        XCTAssertEqual(featureConfig.excludeVpnTraffic, true)
     }
 }
 

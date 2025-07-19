@@ -91,6 +91,7 @@ public protocol BrokerProfileJobQueueManaging {
                                                  jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
+    func stop()
 
     func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand)
     var debugRunningStatusString: String { get }
@@ -185,6 +186,10 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                       errorHandler: errorHandler,
                       completion: completion)
     }
+
+    public func stop() {
+        cancelCurrentModeAndResetIfNeeded()
+    }
 }
 
 private extension BrokerProfileJobQueueManager {
@@ -227,6 +232,7 @@ private extension BrokerProfileJobQueueManager {
 
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode
+
         addJobs(for: type,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,

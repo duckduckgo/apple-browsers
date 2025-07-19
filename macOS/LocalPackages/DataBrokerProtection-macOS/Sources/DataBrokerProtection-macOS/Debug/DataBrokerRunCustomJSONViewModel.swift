@@ -389,6 +389,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 captchaService: self.captchaService,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
                                 pixelHandler: fakePixelHandler,
+                                executionConfig: .init(),
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
@@ -441,6 +442,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     captchaService: self.captchaService,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
+                    executionConfig: .init(),
                     shouldRunNextStep: { true }
                 )
 

@@ -97,7 +97,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         }
     }
 
-    static func eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: [BrokerProfileQueryData], jobType: JobType, priorityDate: Date?) -> [BrokerJobData] {
+    public static func eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: [BrokerProfileQueryData], jobType: JobType, priorityDate: Date?) -> [BrokerJobData] {
         let jobsData: [BrokerJobData]
 
         switch jobType {
@@ -155,27 +155,31 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 continue
             }
 
-            do {
-                Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
+            Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
+            do {
                 if jobData is ScanJobData {
-                    try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
-                        brokerProfileQueryData: brokerProfileData,
-                        showWebView: showWebView,
-                        isManual: jobType == .manualScan,
-                        shouldRunNextStep: { [weak self] in
-                            guard let self = self else { return false }
-                            return !self.isCancelled
-                        })
+                    try await withTimeout(jobDependencies.executionConfig.scanJobTimeout) { [self] in
+                        try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
+                            brokerProfileQueryData: brokerProfileData,
+                            showWebView: showWebView,
+                            isManual: jobType == .manualScan,
+                            shouldRunNextStep: { [weak self] in
+                                guard let self = self else { return false }
+                                return !self.isCancelled && !Task.isCancelled
+                            })
+                    }
                 } else if let optOutJobData = jobData as? OptOutJobData {
-                    try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
-                        for: optOutJobData.extractedProfile,
-                        brokerProfileQueryData: brokerProfileData,
-                        showWebView: showWebView,
-                        shouldRunNextStep: { [weak self] in
-                            guard let self = self else { return false }
-                            return !self.isCancelled
-                        })
+                    try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout) { [self] in
+                        try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
+                            for: optOutJobData.extractedProfile,
+                            brokerProfileQueryData: brokerProfileData,
+                            showWebView: showWebView,
+                            shouldRunNextStep: { [weak self] in
+                                guard let self = self else { return false }
+                                return !self.isCancelled && !Task.isCancelled
+                            })
+                    }
                 } else {
                     assertionFailure("Unsupported job data type")
                 }
@@ -191,11 +195,11 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                            version: brokerProfileQueriesData.first?.dataBroker.version)
             }
         }
-
-        finish()
     }
 
     private func finish() {
+        Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
+
         willChangeValue(forKey: #keyPath(isExecuting))
         willChangeValue(forKey: #keyPath(isFinished))
 
@@ -204,8 +208,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         didChangeValue(forKey: #keyPath(isExecuting))
         didChangeValue(forKey: #keyPath(isFinished))
-
-        Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
     }
 }
 

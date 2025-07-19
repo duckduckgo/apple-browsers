@@ -5,14 +5,13 @@ defaults:
     working-directory: macOS
 
 on:
-  # To be enabled later
   push:
     branches:
       - main
-      - dominik/alpha-build
-    # paths:
-    #   - 'macOS/**'
-    #   - 'SharedPackages/**'
+      - dominik/alpha-build # to be removed
+    paths:
+      - 'macOS/**'
+      - 'SharedPackages/**'
   workflow_dispatch:
 
 concurrency:
@@ -65,14 +64,13 @@ jobs:
         if [[ "$next_build_number" -gt "$current_build_number" ]]; then
           gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$next_build_number"
           echo "Updated build number from $current_build_number to $next_build_number"
-          echo "::notice::Using build number $next_build_number"
-          echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
         else
           gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$current_build_number"
           echo "Build number $next_build_number is not higher than current $current_build_number, skipping update"
-          echo "::notice::Using build number $current_build_number"
-          echo "build-number=$current_build_number" >> $GITHUB_OUTPUT
+          next_build_number=$current_build_number
         fi
+        echo "::notice::Using build number $next_build_number"
+        echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
 
   dmg-release:
     name: Prepare DMG Release

@@ -132,6 +132,45 @@ platform :mac do
   #         for it a couple of times during the process.
   #
   desc 'Makes App Store release build'
+  lane :build_appstore do |options|
+    build_release(options)
+  end
+
+  # Uploads App Store release build to TestFlight and prepares App Store listing for submission.
+  #
+  # - it first uploads just the build, and only then attempts uploading metadata.
+  # - since metadata upload may fail if there's an iOS submission in Pending Developer Release,
+  #   it catches upload_metadata error and prints further instructions.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store release build to App Store Connect'
+  lane :upload_appstore do |options|
+    deliver(common_deliver_arguments(options))
+
+    begin
+      upload_metadata(options)
+    rescue => exception
+      UI.user_error! %{Failed to upload metadata: #{exception}
+1. Your build has been successfully uploaded, it's only a problem with App Store metadata.
+2. It's possible that there is a submission for another platform (iOS) in a non-editable state
+  (e.g. Pending Developer Release, Developer Rejected, Rejected or Metadata Rejected).
+3. Before you retry, ensure that the pending iOS release is completed (Ready for Sale) or moved
+  back to "Prepare for Submission". If it can't be done at the moment and you can't wait, you'll need
+  to update metadata manually.
+4. Use upload_metadata lane to only handle metadata (without building the release and uploading a build):
+  $ bundle exec fastlane upload_metadata
+      }
+    end
+  end
+
+  # Makes App Store release build.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store release build'
   lane :build_testflight do |options|
     build_release(options)
   end
@@ -223,45 +262,6 @@ platform :mac do
       app_version: latest_build_version.to_s,
     }))
 
-  end
-
-  # Makes App Store release build.
-  #
-  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
-  #         for it a couple of times during the process.
-  #
-  desc 'Makes App Store release build'
-  lane :build_appstore do |options|
-    build_release(options)
-  end
-
-  # Uploads App Store release build to TestFlight and prepares App Store listing for submission.
-  #
-  # - it first uploads just the build, and only then attempts uploading metadata.
-  # - since metadata upload may fail if there's an iOS submission in Pending Developer Release,
-  #   it catches upload_metadata error and prints further instructions.
-  #
-  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
-  #         for it a couple of times during the process.
-  #
-  desc 'Uploads App Store release build to App Store Connect'
-  lane :upload_appstore do |options|
-    deliver(common_deliver_arguments(options))
-
-    begin
-      upload_metadata(options)
-    rescue => exception
-      UI.user_error! %{Failed to upload metadata: #{exception}
-1. Your build has been successfully uploaded, it's only a problem with App Store metadata.
-2. It's possible that there is a submission for another platform (iOS) in a non-editable state
-  (e.g. Pending Developer Release, Developer Rejected, Rejected or Metadata Rejected).
-3. Before you retry, ensure that the pending iOS release is completed (Ready for Sale) or moved
-  back to "Prepare for Submission". If it can't be done at the moment and you can't wait, you'll need
-  to update metadata manually.
-4. Use upload_metadata lane to only handle metadata (without building the release and uploading a build):
-  $ bundle exec fastlane upload_metadata
-      }
-    end
   end
 
   desc 'Creates a new Kechain to use on UI tests'

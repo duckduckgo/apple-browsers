@@ -80,6 +80,9 @@ jobs:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
       branch: ${{ inputs.branch || github.ref_name }}
 
+    outputs:
+      upload-to: ${{ steps.is-official-release.outputs.upload-to }}
+
     steps:
 
     - name: Check out the code
@@ -171,6 +174,7 @@ jobs:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
+      upload-to: ${{ needs.build.outputs.upload-to }}
 
     steps:
 

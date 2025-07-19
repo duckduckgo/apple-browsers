@@ -270,7 +270,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func copyVersion(_ sender: Any?) {
-        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+        NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
     }
 
 #endif

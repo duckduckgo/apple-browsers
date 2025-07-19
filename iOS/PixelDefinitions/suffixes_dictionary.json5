@@ -7,4 +7,14 @@
         description: 'Pixel schedule type',
         enum: ['first', 'daily', 'count'],
     },
+    daily: {
+        type: 'string',
+        description: 'Daily pixel suffix',
+        enum: ['daily'],
+    },
+    form_factor: {
+        type: 'string',
+        description: 'Device form-factor',
+        enum: ['phone', 'tablet'],
+    },
 }

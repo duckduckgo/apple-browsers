@@ -71,14 +71,28 @@ struct NavigationActionBarView: View {
         .background(
             Group {
                 if keyboardObserver.isKeyboardVisible {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(designSystemColor: .surface).opacity(0.0),
-                            Color(designSystemColor: .surface).opacity(0.8)
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                    VStack (spacing: 0) {
+                        Spacer()
+                            .frame(height: Constants.padding)
+
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(designSystemColor: .surface).opacity(0.0),
+                                Color(designSystemColor: .surface).opacity(0.8)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                         .frame(height: Constants.barHeight)
+
+                        /// Add a color bellow the top gradient so it doesn't show a cut-off during keyboard animations
+                        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210809108643486?focus=true
+                        Color(designSystemColor: .surface).opacity(0.8)
+                    }
+                    /// Overflow the color
+                    .frame(height: 140)
+                    .clipped()
+                    .ignoresSafeArea(.container, edges: .horizontal)
                 }
             }
         )
@@ -114,7 +128,7 @@ struct NavigationActionBarView: View {
 
     private var searchButton: some View {
         let icon: Image = {
-            if viewModel.isSearchMode && viewModel.isCurrentTextValidURL {
+            if viewModel.isCurrentTextValidURL {
                 return Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
             } else if viewModel.isSearchMode {
                 return Image(uiImage: DesignSystemImages.Glyphs.Size24.searchFind)

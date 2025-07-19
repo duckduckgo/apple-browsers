@@ -140,6 +140,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         delegate?.onDismiss()
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate { _ in
+            self.swipeContainerManager?.updateLayout(viewBounds: CGRect(origin: .zero, size: size))
+        }
+    }
+
     // MARK: - Private Methods
     
     private func setupView() {
@@ -215,17 +223,23 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
                 guard let self = self else { return }
+                defer { self.switchBarHandler.clearText() }
+
+                let text = submission.text
+
+                if self.switchBarHandler.isCurrentTextValidURL {
+                    self.delegate?.onQuerySubmitted(text)
+                    return
+                }
+
                 switch submission.mode {
                 case .search:
-                    self.delegate?.onQuerySubmitted(submission.text)
+                    self.delegate?.onQuerySubmitted(text)
+
                 case .aiChat:
-                    if self.switchBarHandler.forceWebSearch {
-                        self.delegate?.onPromptSubmitted(submission.text, tools: [.webSearch])
-                    } else {
-                        self.delegate?.onPromptSubmitted(submission.text, tools: nil)
-                    }
+                    let tools: [AIChatRAGTool]? = self.switchBarHandler.forceWebSearch ? [.webSearch] : nil
+                    self.delegate?.onPromptSubmitted(text, tools: tools)
                 }
-                self.switchBarHandler.clearText()
             }
             .store(in: &cancellables)
 

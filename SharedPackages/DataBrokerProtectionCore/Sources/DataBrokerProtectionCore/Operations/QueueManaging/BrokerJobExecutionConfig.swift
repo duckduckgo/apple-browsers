@@ -23,17 +23,13 @@ public struct BrokerJobExecutionConfig {
     public struct Constants {
         /// Minimum time interval between consecutive jobs for the same broker
         public static let defaultIntervalBetweenSameBrokerJobs: TimeInterval = .seconds(2)
-        /// Maximum time allowed for a scan job to complete
+
+        /// Maximum time allowed for a scan/opt-out job to complete
         #if os(iOS)
         public static let defaultScanJobTimeout: TimeInterval = .minutes(5)
-        #else
-        public static let defaultScanJobTimeout: TimeInterval = .minutes(30)
-        #endif
-
-        /// Maximum time allowed for an opt-out job to complete
-        #if os(iOS)
         public static let defaultOptOutJobTimeout: TimeInterval = .minutes(5)
         #else
+        public static let defaultScanJobTimeout: TimeInterval = .minutes(30)
         public static let defaultOptOutJobTimeout: TimeInterval = .minutes(30)
         #endif
 

@@ -20,7 +20,7 @@
 import UIKit
 import Lottie
 
-class PrivacyInfoContainerView: UIView {
+class PrivacyInfoContainerView: UIView, NibLoading {
     
     @IBOutlet var privacyIcon: PrivacyIconView!
     @IBOutlet var maskingView: UIView!

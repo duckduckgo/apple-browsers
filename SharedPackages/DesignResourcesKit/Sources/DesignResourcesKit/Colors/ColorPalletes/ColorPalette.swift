@@ -29,7 +29,7 @@ public enum ColorPalette {
     var paletteDefinition: ColorPaletteDefinition.Type {
         switch self {
         case .default:
-            return ExperimentalColorPalette.self // DefaultColorPalette.self
+            return DefaultColorPalette.self
         }
     }
 }

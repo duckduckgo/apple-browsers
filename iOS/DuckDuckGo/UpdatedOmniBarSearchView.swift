@@ -24,10 +24,7 @@ import DesignResourcesKitIcons
 final class UpdatedOmniBarSearchView: UIView {
 
     let privacyInfoContainer: PrivacyInfoContainerView! = {
-        // This view is constructed inside an original OmniBar xib, so let's extract it from there.
-        let omniBarNib = DefaultOmniBarView.create()
-        omniBarNib.privacyInfoContainer.removeFromSuperview()
-        return omniBarNib.privacyInfoContainer
+        return PrivacyInfoContainerView.load(nibName: "PrivacyInfoContainer")
     }()
     let notificationContainer: OmniBarNotificationContainerView! = OmniBarNotificationContainerView()
 

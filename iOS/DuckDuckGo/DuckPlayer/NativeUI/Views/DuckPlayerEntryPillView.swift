@@ -89,7 +89,7 @@ struct DuckPlayerEntryPillView: View {
                     }
                     .padding(Constants.regularPadding)
                     .background(
-                        Color(designSystemColor: colorScheme == .dark ? .container : .backgroundSheets)
+                        Color(designSystemColor: colorScheme == .dark ? .controlsFillPrimary : .backgroundSheets)
                     )
 
                 }

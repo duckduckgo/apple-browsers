@@ -23,6 +23,21 @@ import DesignResourcesKitIcons
 import SwiftUI
 import UIComponents
 
+public enum OmniBarIcon {
+    case duckPlayer
+    case specialError
+
+    var image: UIImage {
+        switch self {
+        case .duckPlayer:
+            return UIImage(resource: .duckPlayerURLIcon)
+        case .specialError:
+            return DesignSystemImages.Glyphs.Size24.globe
+        }
+    }
+
+}
+
 final class UpdatedOmniBarView: UIView, OmniBarView {
 
     var textField: TextFieldWithInsets! { searchAreaView.textField }

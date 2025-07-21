@@ -1,9 +1,13 @@
 appId: com.duckduckgo.mobile.ios
 ---
 
-- tapOn: "Browsing Menu"
-- tapOn: "Settings"
+# Load constants
+- runFlow:
+    file: constants.yaml
+
+- tapOn: ${output.browsingMenuLabel}
+- tapOn: ${output.settingsLabel}
 - scrollUntilVisible: 
-    element: "Duck Player"
+    element: ${output.duckPlayerLabel}
     direction: DOWN
-- tapOn: "Duck Player"
+- tapOn: ${output.duckPlayerLabel}

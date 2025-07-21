@@ -4,6 +4,10 @@ tags:
 
 ---
 
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
 # Set up 
 - runFlow: 
     file: ../shared/setup.yaml
@@ -12,8 +16,9 @@ tags:
 - runFlow: 
     file: shared/open_settings.yaml
 
-# Turn DuckPlayer off
-- tapOn: "Let me choose"
+# Turn DuckPlayer to Auto
+- tapOn:
+    id: chevron.up.chevron.down
 - tapOn: "Don't Show"
 
 # Close Settings
@@ -26,18 +31,17 @@ tags:
     file: shared/load_youtube_url.yaml
 
   # Assert Youtube Search Page opens and open the video
-- assertVisible: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
-- tapOn: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
+- assertVisible: ${output.videoTitle}
+- tapOn: ${output.videoTitle}
 
 # Validate YouTube opens
-- assertVisible: "m.youtube.com"
+- assertVisible: ${output.youtubeMobileDomain}
 
 # Assert Duck Player Welcome Pill is present
 - assertNotVisible:
     id: duckPlayerWelcomePill
 
-- runFlow: 
-    file: shared/load_youtube_url.yaml
-
 # Assert Duck Player Welcome Pill is not present
+- assertNotVisible: "Play in Duck Player"
 - assertNotVisible: "Resume in Duck Player"
+

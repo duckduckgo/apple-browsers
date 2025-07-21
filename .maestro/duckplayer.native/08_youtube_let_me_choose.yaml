@@ -12,6 +12,19 @@ tags:
 - runFlow: 
     file: ../shared/setup.yaml
 
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+# Turn DuckPlayer to Auto
+- tapOn:
+    id: chevron.up.chevron.down
+- tapOn: "Let me choose"
+
+# Close Settings
+- runFlow: 
+    file: shared/close_settings.yaml
+
 # Navigate to a video
 # Load Site
 - runFlow: 
@@ -57,7 +70,7 @@ tags:
 
 # Check for the pill
 - assertVisible: "Resume in Duck Player"
-- tapOn: Resume in Duck Player
+- tapOn: "Resume in Duck Player"
 
 # Assert Duck Player is Visible
 - runFlow: 

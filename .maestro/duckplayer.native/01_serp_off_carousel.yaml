@@ -4,6 +4,10 @@ tags:
 
 ---
 
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
 # Set up 
 - runFlow: 
     file: ../shared/setup.yaml
@@ -27,8 +31,12 @@ tags:
     file: shared/load_serp_url.yaml
 
   # Assert Youtube Search Page opens and open the video
-- assertVisible: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
-- tapOn: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
+- assertVisible: ${output.videoTitle}
+- tapOn: ${output.videoTitle}
 
 # Validate YouTube opens
-- assertVisible: "m.youtube.com"
+- assertVisible: ${output.youtubeMobileDomain}
+
+# Assert Duck Player Welcome Pill is present
+- assertVisible:
+    id: duckPlayerWelcomePill

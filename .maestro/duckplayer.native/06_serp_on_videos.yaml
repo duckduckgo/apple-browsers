@@ -4,24 +4,32 @@ tags:
 
 ---
 
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
 # Set up 
 - runFlow: 
     file: ../shared/setup.yaml
 
+# Navigate to a video
 # Load Site
 - runFlow: 
     file: shared/load_serp_url.yaml
 
+- assertVisible: "Videos"
+- tapOn: "Videos"
+
 # Open Specific Video
-- assertVisible: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
-- tapOn: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
+- assertVisible: ${output.videoTitle}
+- tapOn: ${output.videoTitle}
 
 # Validate Duck Player is Visible
 - runFlow: 
     file: shared/duckplayer_is_visible.yaml
 
 # Validate this is SERP View
-- assertVisible: "Watch on YouTube"
+- assertVisible: ${output.watchOnYoutubeLabel}
 
 # Validate Duck Player Closes
 - runFlow: 

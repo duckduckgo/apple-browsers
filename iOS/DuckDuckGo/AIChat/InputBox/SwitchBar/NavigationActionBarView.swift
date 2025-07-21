@@ -358,6 +358,7 @@ final class NavigationActionBarView: UIView {
 private class CircularButton: UIButton {
 
     private let secondShadowLayer = CALayer()
+    private var definedBackgroundColor: UIColor?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -387,6 +388,15 @@ private class CircularButton: UIButton {
         layer.insertSublayer(secondShadowLayer, at: 0)
         
         imageView?.contentMode = .scaleAspectFit
+        adjustsImageWhenHighlighted = false
+    }
+
+    override var isHighlighted: BooleanLiteralType {
+        didSet {
+            UIView.animate(withDuration: 0.15) {
+                self.backgroundColor = self.isHighlighted ? self.definedBackgroundColor?.withAlphaComponent(0.8) : self.definedBackgroundColor
+            }
+        }
     }
 
     func setIcon(_ image: UIImage?) {
@@ -395,6 +405,7 @@ private class CircularButton: UIButton {
     }
     
     func setColors(foreground: UIColor, background: UIColor) {
+        definedBackgroundColor = background
         backgroundColor = background
         imageView?.tintColor = foreground
         setTitleColor(foreground, for: .normal)

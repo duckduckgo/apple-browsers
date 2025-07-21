@@ -102,23 +102,13 @@
 		1EDE39D22705D4A200C99C72 /* FileSizeDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */; };
 		1EE411F12857C3640003FE64 /* TrackerAnimationImageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EE411F02857C3640003FE64 /* TrackerAnimationImageProvider.swift */; };
 		1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411F628587AC50003FE64 /* PrivacyIcon.xcassets */; };
-		1EE411FD2858B9300003FE64 /* dark-trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411F82858B92F0003FE64 /* dark-trackers-2.json */; };
-		1EE411FE2858B9300003FE64 /* dark-shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411F92858B92F0003FE64 /* dark-shield.json */; };
-		1EE411FF2858B9300003FE64 /* dark-trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411FA2858B92F0003FE64 /* dark-trackers-1.json */; };
-		1EE412002858B9300003FE64 /* dark-shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411FB2858B92F0003FE64 /* dark-shield-dot.json */; };
-		1EE412012858B9300003FE64 /* dark-trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EE411FC2858B9300003FE64 /* dark-trackers-3.json */; };
 		1EE52ABB28FB1D6300B750C1 /* UIImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */; };
 		1EE7C299294227EC0026C8CB /* AutoconsentSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EE7C298294227EC0026C8CB /* AutoconsentSettingsViewController.swift */; };
 		1EEC460627A9499600E75FCB /* DownloadsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEC460527A9499600E75FCB /* DownloadsList.swift */; };
 		1EEF123F2850A68A003DDE57 /* PrivacyInfoContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEF123E2850A68A003DDE57 /* PrivacyInfoContainerView.swift */; };
-		1EEF12452850A923003DDE57 /* shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EEF12402850A922003DDE57 /* shield.json */; };
-		1EEF12462850A923003DDE57 /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EEF12412850A922003DDE57 /* trackers-3.json */; };
-		1EEF12472850A923003DDE57 /* shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EEF12422850A922003DDE57 /* shield-dot.json */; };
 		1EEF124C2850A93F003DDE57 /* Trackers.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1EEF124B2850A93F003DDE57 /* Trackers.xcassets */; };
 		1EEF124E2850EADE003DDE57 /* PrivacyIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEF124D2850EADE003DDE57 /* PrivacyIconView.swift */; };
 		1EEF12502851016B003DDE57 /* PrivacyIconAndTrackersAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEF124F2851016B003DDE57 /* PrivacyIconAndTrackersAnimator.swift */; };
-		1EEF12532851D32B003DDE57 /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EEF12512851D32A003DDE57 /* trackers-2.json */; };
-		1EEF12542851D32B003DDE57 /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 1EEF12522851D32A003DDE57 /* trackers-1.json */; };
 		1EEF387D285B1A1100383393 /* TrackerImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEF387C285B1A1100383393 /* TrackerImageCache.swift */; };
 		1EF24235273BB9D200DE3D02 /* IntervalSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF24234273BB9D200DE3D02 /* IntervalSlider.swift */; };
 		1EFDCBC127D2393C00916BC5 /* DownloadsDeleteHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFDCBC027D2393C00916BC5 /* DownloadsDeleteHelper.swift */; };
@@ -507,16 +497,16 @@
 		6FE127432C204DF700EB5724 /* FavoriteItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE127422C204DF700EB5724 /* FavoriteItemView.swift */; };
 		6FE127462C2054A900EB5724 /* NewTabPageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE127452C2054A900EB5724 /* NewTabPageViewController.swift */; };
 		6FE1274B2C20943500EB5724 /* ShortcutItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE1274A2C20943500EB5724 /* ShortcutItemView.swift */; };
-		6FE3AEFB2D9D8933001AE6B8 /* trackers-2-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */; };
-		6FE3AEFC2D9D8933001AE6B8 /* dark-trackers-3-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3-new.json */; };
-		6FE3AEFD2D9D8933001AE6B8 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF32D9D8933001AE6B8 /* dark-shield-new.json */; };
-		6FE3AEFE2D9D8933001AE6B8 /* dark-trackers-1-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1-new.json */; };
-		6FE3AEFF2D9D8933001AE6B8 /* shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF72D9D8933001AE6B8 /* shield-new.json */; };
-		6FE3AF002D9D8933001AE6B8 /* trackers-1-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */; };
-		6FE3AF012D9D8933001AE6B8 /* dark-trackers-2-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */; };
-		6FE3AF022D9D8933001AE6B8 /* trackers-3-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */; };
-		6FE3AF462D9ECF6B001AE6B8 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */; };
-		6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */; };
+		6FE3AEFB2D9D8933001AE6B8 /* trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF92D9D8933001AE6B8 /* trackers-2.json */; };
+		6FE3AEFC2D9D8933001AE6B8 /* dark-trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3.json */; };
+		6FE3AEFD2D9D8933001AE6B8 /* dark-shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF32D9D8933001AE6B8 /* dark-shield.json */; };
+		6FE3AEFE2D9D8933001AE6B8 /* dark-trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1.json */; };
+		6FE3AEFF2D9D8933001AE6B8 /* shield.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF72D9D8933001AE6B8 /* shield.json */; };
+		6FE3AF002D9D8933001AE6B8 /* trackers-1.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF82D9D8933001AE6B8 /* trackers-1.json */; };
+		6FE3AF012D9D8933001AE6B8 /* dark-trackers-2.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2.json */; };
+		6FE3AF022D9D8933001AE6B8 /* trackers-3.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEFA2D9D8933001AE6B8 /* trackers-3.json */; };
+		6FE3AF462D9ECF6B001AE6B8 /* shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF452D9ECF6B001AE6B8 /* shield-dot.json */; };
+		6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot.json */; };
 		6FEC0B852C999352006B4F6E /* FavoriteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B842C999352006B4F6E /* FavoriteItem.swift */; };
 		6FEC0B882C999961006B4F6E /* FavoritesListInteractingAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */; };
 		6FF4943F2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF4943E2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift */; };
@@ -2053,22 +2043,12 @@
 		1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSizeDebugViewController.swift; sourceTree = "<group>"; };
 		1EE411F02857C3640003FE64 /* TrackerAnimationImageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerAnimationImageProvider.swift; sourceTree = "<group>"; };
 		1EE411F628587AC50003FE64 /* PrivacyIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = PrivacyIcon.xcassets; sourceTree = "<group>"; };
-		1EE411F82858B92F0003FE64 /* dark-trackers-2.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "dark-trackers-2.json"; sourceTree = "<group>"; };
-		1EE411F92858B92F0003FE64 /* dark-shield.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "dark-shield.json"; sourceTree = "<group>"; };
-		1EE411FA2858B92F0003FE64 /* dark-trackers-1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "dark-trackers-1.json"; sourceTree = "<group>"; };
-		1EE411FB2858B92F0003FE64 /* dark-shield-dot.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "dark-shield-dot.json"; sourceTree = "<group>"; };
-		1EE411FC2858B9300003FE64 /* dark-trackers-3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "dark-trackers-3.json"; sourceTree = "<group>"; };
 		1EE7C298294227EC0026C8CB /* AutoconsentSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentSettingsViewController.swift; sourceTree = "<group>"; };
 		1EEC460527A9499600E75FCB /* DownloadsList.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DownloadsList.swift; sourceTree = "<group>"; };
 		1EEF123E2850A68A003DDE57 /* PrivacyInfoContainerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivacyInfoContainerView.swift; sourceTree = "<group>"; };
-		1EEF12402850A922003DDE57 /* shield.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = shield.json; sourceTree = "<group>"; };
-		1EEF12412850A922003DDE57 /* trackers-3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "trackers-3.json"; sourceTree = "<group>"; };
-		1EEF12422850A922003DDE57 /* shield-dot.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "shield-dot.json"; sourceTree = "<group>"; };
 		1EEF124B2850A93F003DDE57 /* Trackers.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Trackers.xcassets; sourceTree = "<group>"; };
 		1EEF124D2850EADE003DDE57 /* PrivacyIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyIconView.swift; sourceTree = "<group>"; };
 		1EEF124F2851016B003DDE57 /* PrivacyIconAndTrackersAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyIconAndTrackersAnimator.swift; sourceTree = "<group>"; };
-		1EEF12512851D32A003DDE57 /* trackers-2.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "trackers-2.json"; sourceTree = "<group>"; };
-		1EEF12522851D32A003DDE57 /* trackers-1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "trackers-1.json"; sourceTree = "<group>"; };
 		1EEF387C285B1A1100383393 /* TrackerImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerImageCache.swift; sourceTree = "<group>"; };
 		1EF24234273BB9D200DE3D02 /* IntervalSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntervalSlider.swift; sourceTree = "<group>"; };
 		1EFDCBC027D2393C00916BC5 /* DownloadsDeleteHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsDeleteHelper.swift; sourceTree = "<group>"; };
@@ -2408,16 +2388,16 @@
 		6FE127422C204DF700EB5724 /* FavoriteItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteItemView.swift; sourceTree = "<group>"; };
 		6FE127452C2054A900EB5724 /* NewTabPageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageViewController.swift; sourceTree = "<group>"; };
 		6FE1274A2C20943500EB5724 /* ShortcutItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemView.swift; sourceTree = "<group>"; };
-		6FE3AEF32D9D8933001AE6B8 /* dark-shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-new.json"; sourceTree = "<group>"; };
-		6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-1-new.json"; sourceTree = "<group>"; };
-		6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-2-new.json"; sourceTree = "<group>"; };
-		6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-3-new.json"; sourceTree = "<group>"; };
-		6FE3AEF72D9D8933001AE6B8 /* shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-new.json"; sourceTree = "<group>"; };
-		6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-1-new.json"; sourceTree = "<group>"; };
-		6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-2-new.json"; sourceTree = "<group>"; };
-		6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-3-new.json"; sourceTree = "<group>"; };
-		6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-new.json"; sourceTree = "<group>"; };
-		6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
+		6FE3AEF32D9D8933001AE6B8 /* dark-shield.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield.json"; sourceTree = "<group>"; };
+		6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-1.json"; sourceTree = "<group>"; };
+		6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-2.json"; sourceTree = "<group>"; };
+		6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-3.json"; sourceTree = "<group>"; };
+		6FE3AEF72D9D8933001AE6B8 /* shield.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = shield.json; sourceTree = "<group>"; };
+		6FE3AEF82D9D8933001AE6B8 /* trackers-1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-1.json"; sourceTree = "<group>"; };
+		6FE3AEF92D9D8933001AE6B8 /* trackers-2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-2.json"; sourceTree = "<group>"; };
+		6FE3AEFA2D9D8933001AE6B8 /* trackers-3.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-3.json"; sourceTree = "<group>"; };
+		6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot.json"; sourceTree = "<group>"; };
+		6FE3AF452D9ECF6B001AE6B8 /* shield-dot.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot.json"; sourceTree = "<group>"; };
 		6FEC0B842C999352006B4F6E /* FavoriteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteItem.swift; sourceTree = "<group>"; };
 		6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesListInteractingAdapter.swift; sourceTree = "<group>"; };
 		6FF4943E2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSLayoutConstraintExtension.swift; sourceTree = "<group>"; };
@@ -4524,17 +4504,16 @@
 		1EEF124A2850A92B003DDE57 /* Animations */ = {
 			isa = PBXGroup;
 			children = (
-				6FE3AEF22D9D8901001AE6B8 /* New */,
-				1EE411FB2858B92F0003FE64 /* dark-shield-dot.json */,
-				1EE411F92858B92F0003FE64 /* dark-shield.json */,
-				1EE411FA2858B92F0003FE64 /* dark-trackers-1.json */,
-				1EE411F82858B92F0003FE64 /* dark-trackers-2.json */,
-				1EE411FC2858B9300003FE64 /* dark-trackers-3.json */,
-				1EEF12422850A922003DDE57 /* shield-dot.json */,
-				1EEF12402850A922003DDE57 /* shield.json */,
-				1EEF12522851D32A003DDE57 /* trackers-1.json */,
-				1EEF12512851D32A003DDE57 /* trackers-2.json */,
-				1EEF12412850A922003DDE57 /* trackers-3.json */,
+				6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot.json */,
+				6FE3AF452D9ECF6B001AE6B8 /* shield-dot.json */,
+				6FE3AEF32D9D8933001AE6B8 /* dark-shield.json */,
+				6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1.json */,
+				6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2.json */,
+				6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3.json */,
+				6FE3AEF72D9D8933001AE6B8 /* shield.json */,
+				6FE3AEF82D9D8933001AE6B8 /* trackers-1.json */,
+				6FE3AEF92D9D8933001AE6B8 /* trackers-2.json */,
+				6FE3AEFA2D9D8933001AE6B8 /* trackers-3.json */,
 			);
 			name = Animations;
 			sourceTree = "<group>";
@@ -5358,23 +5337,6 @@
 				6F64AA5E2C49463C00CF4489 /* ShortcutsModel.swift */,
 			);
 			name = Shortcuts;
-			sourceTree = "<group>";
-		};
-		6FE3AEF22D9D8901001AE6B8 /* New */ = {
-			isa = PBXGroup;
-			children = (
-				6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */,
-				6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */,
-				6FE3AEF32D9D8933001AE6B8 /* dark-shield-new.json */,
-				6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1-new.json */,
-				6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */,
-				6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3-new.json */,
-				6FE3AEF72D9D8933001AE6B8 /* shield-new.json */,
-				6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */,
-				6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */,
-				6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */,
-			);
-			path = New;
 			sourceTree = "<group>";
 		};
 		6FF9157F2B88E04F0042AC87 /* AdAttribution */ = {
@@ -9321,14 +9283,12 @@
 				F4F7F10B25813FE200045D62 /* 02_Water_swirl_really_small.json in Resources */,
 				9880723825FA4E450039EF4B /* menu_light.json in Resources */,
 				85371D242121B9D500920548 /* new_tab.json in Resources */,
-				1EE411FF2858B9300003FE64 /* dark-trackers-1.json in Resources */,
-				1EEF12452850A923003DDE57 /* shield.json in Resources */,
 				85DFEDF724CB1CAB00973FE7 /* ShareSheet.xcassets in Resources */,
 				98DA6B3322243CC3006EA9EB /* Feedback.xcassets in Resources */,
 				1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */,
 				6553AFF72D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json in Resources */,
-				6FE3AF462D9ECF6B001AE6B8 /* shield-dot-new.json in Resources */,
-				6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot-new.json in Resources */,
+				6FE3AF462D9ECF6B001AE6B8 /* shield-dot.json in Resources */,
+				6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot.json in Resources */,
 				8548D96825262C33005AAE49 /* view_highlight.json in Resources */,
 				85F0E97329952D7A003D5181 /* DuckDuckGo Recovery Document.pdf in Resources */,
 				9880723725FA4E450039EF4B /* menu_dark.json in Resources */,
@@ -9346,27 +9306,20 @@
 				C15516062D47D2EF001B94E9 /* burst-blob-passwords.json in Resources */,
 				6F64AA5B2C481AAA00CF4489 /* Shortcuts.xcassets in Resources */,
 				984147B424F0264B00362052 /* Authentication.storyboard in Resources */,
-				1EE411FD2858B9300003FE64 /* dark-trackers-2.json in Resources */,
 				98D98A9B25ED954100D8E3DF /* BrowsingMenuButton.xib in Resources */,
 				D664C7B72B289AA200CBFA76 /* Subscription.storekit in Resources */,
-				1EE412002858B9300003FE64 /* dark-shield-dot.json in Resources */,
-				1EE412012858B9300003FE64 /* dark-trackers-3.json in Resources */,
-				1EEF12462850A923003DDE57 /* trackers-3.json in Resources */,
 				85AE668E2097206E0014CF04 /* NotificationView.xib in Resources */,
 				85A313972028E78A00327D00 /* release_notes.txt in Resources */,
 				9865DFFD22A84CF300D27829 /* FavoriteHomeCell.xib in Resources */,
-				1EE411FE2858B9300003FE64 /* dark-shield.json in Resources */,
 				1DDF402B2BA05A65006850D9 /* Settings.xcassets in Resources */,
 				984147A824F0259000362052 /* Onboarding.storyboard in Resources */,
 				984147AE24F0261A00362052 /* Feedback.storyboard in Resources */,
 				984147B724F0268D00362052 /* PrivacyDashboard.storyboard in Resources */,
-				1EEF12532851D32B003DDE57 /* trackers-2.json in Resources */,
 				9F0311402DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 in Resources */,
 				F176699F1E40BC86003D3222 /* Settings.storyboard in Resources */,
 				854A012F2A5563A400FCC628 /* FindInPage.xib in Resources */,
 				1E8AD1DD27C653F800ABA377 /* Downloads.xcassets in Resources */,
 				F1F533841F26ABAC00D80D4F /* Localizable.strings in Resources */,
-				1EEF12472850A923003DDE57 /* shield-dot.json in Resources */,
 				6F8348E32D01E401005872E3 /* AlternateAppIcons.xcassets in Resources */,
 				F1ED309D1EDC2EA400651986 /* TabSwitcher.storyboard in Resources */,
 				8524AAAC2A3888FE00EEC6D2 /* Waitlist.xcassets in Resources */,
@@ -9380,21 +9333,20 @@
 				B6BA95E828924730004ABA20 /* JSAlertController.storyboard in Resources */,
 				85EE7F55224667DD000FE757 /* WebContainer.storyboard in Resources */,
 				858566E8252E4F56007501B8 /* Debug.storyboard in Resources */,
-				6FE3AEFB2D9D8933001AE6B8 /* trackers-2-new.json in Resources */,
-				6FE3AEFC2D9D8933001AE6B8 /* dark-trackers-3-new.json in Resources */,
-				6FE3AEFD2D9D8933001AE6B8 /* dark-shield-new.json in Resources */,
-				6FE3AEFE2D9D8933001AE6B8 /* dark-trackers-1-new.json in Resources */,
-				6FE3AEFF2D9D8933001AE6B8 /* shield-new.json in Resources */,
-				6FE3AF002D9D8933001AE6B8 /* trackers-1-new.json in Resources */,
-				6FE3AF012D9D8933001AE6B8 /* dark-trackers-2-new.json in Resources */,
-				6FE3AF022D9D8933001AE6B8 /* trackers-3-new.json in Resources */,
+				6FE3AEFB2D9D8933001AE6B8 /* trackers-2.json in Resources */,
+				6FE3AEFC2D9D8933001AE6B8 /* dark-trackers-3.json in Resources */,
+				6FE3AEFD2D9D8933001AE6B8 /* dark-shield.json in Resources */,
+				6FE3AEFE2D9D8933001AE6B8 /* dark-trackers-1.json in Resources */,
+				6FE3AEFF2D9D8933001AE6B8 /* shield.json in Resources */,
+				6FE3AF002D9D8933001AE6B8 /* trackers-1.json in Resources */,
+				6FE3AF012D9D8933001AE6B8 /* dark-trackers-2.json in Resources */,
+				6FE3AF022D9D8933001AE6B8 /* trackers-3.json in Resources */,
 				0A6CC0EF23904D5400E4F627 /* Settings.bundle in Resources */,
 				85A9C37920E0E00C00073340 /* HomeRow.xcassets in Resources */,
 				B6BA95C528894A28004ABA20 /* BrowsingMenuViewController.storyboard in Resources */,
 				850ABD032AC4D46C00A733DF /* SuggestionTray.storyboard in Resources */,
 				1E908BF229827C480008C8F3 /* autoconsent-bundle.js in Resources */,
 				F143C2B21E49D78C00CFDE3A /* Assets.xcassets in Resources */,
-				1EEF12542851D32B003DDE57 /* trackers-1.json in Resources */,
 				9F72FE272CD223A000BA35F5 /* add-to-dock-promo.json in Resources */,
 				C17BDC702E16D9290082485E /* password-keys.json in Resources */,
 				1EEF124C2850A93F003DDE57 /* Trackers.xcassets in Resources */,

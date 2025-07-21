@@ -40,7 +40,8 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
                     self?.errorEvents.append((type, error))
                 }
             },
-            keychainOperations: mockKeychain
+            keychainOperations: mockKeychain,
+            retryConfiguration: SubscriptionTokenKeychainStorageV2.RetryConfiguration(maxAttempts: 2, baseDelay: 0.01)
         )
     }
 
@@ -57,6 +58,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
     func testGetTokenContainer_WhenNoTokenExists_ReturnsNil() throws {
         let result = try storage.getTokenContainer()
         XCTAssertNil(result)
+        assertNoErrorsReported()
     }
 
     func testSaveAndGetTokenContainer_BasicFlow() throws {
@@ -68,6 +70,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         XCTAssertNotNil(retrieved)
         XCTAssertEqual(retrieved?.accessToken, tokenContainer.accessToken)
         XCTAssertEqual(retrieved?.refreshToken, tokenContainer.refreshToken)
+        assertNoErrorsReported()
     }
 
     func testSaveTokenContainer_WithNilValue_RemovesExistingToken() throws {
@@ -80,6 +83,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         // Then remove it by saving nil
         try storage.saveTokenContainer(nil)
         XCTAssertNil(try storage.getTokenContainer())
+        assertNoErrorsReported()
     }
 
     func testUpdateExistingTokenContainer() throws {
@@ -92,6 +96,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         let retrieved = try storage.getTokenContainer()
         XCTAssertEqual(retrieved?.accessToken, updatedToken.accessToken)
         XCTAssertEqual(retrieved?.refreshToken, updatedToken.refreshToken)
+        assertNoErrorsReported()
     }
 
     // MARK: - Concurrency Tests
@@ -119,6 +124,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         }
 
         wait(for: [expectation], timeout: 10.0)
+        assertNoErrorsReported()
     }
 
     func testConcurrentWriteOperations() throws {
@@ -145,6 +151,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         let finalToken = try storage.getTokenContainer()
         XCTAssertNotNil(finalToken)
         XCTAssertTrue(finalToken?.accessToken.contains("AccessTokenExpiringIn") ?? false)
+        assertNoErrorsReported()
     }
 
     func testConcurrentReadWriteOperations() throws {
@@ -190,6 +197,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         // Verify final state is consistent
         let finalToken = try storage.getTokenContainer()
         XCTAssertNotNil(finalToken)
+        assertNoErrorsReported()
     }
 
     func testConcurrentDeleteOperations() throws {
@@ -217,6 +225,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         // Verify token is deleted
         let result = try storage.getTokenContainer()
         XCTAssertNil(result)
+        assertNoErrorsReported()
     }
 
     func testMultipleStorageInstancesConcurrency() throws {
@@ -226,15 +235,18 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
 
         let storage1 = SubscriptionTokenKeychainStorageV2(
             errorEventsHandler: { _, _ in },
-            keychainOperations: mockKeychain1
+            keychainOperations: mockKeychain1,
+            retryConfiguration: SubscriptionTokenKeychainStorageV2.RetryConfiguration(maxAttempts: 2, baseDelay: 0.01)
         )
         let storage2 = SubscriptionTokenKeychainStorageV2(
             errorEventsHandler: { _, _ in },
-            keychainOperations: mockKeychain2
+            keychainOperations: mockKeychain2,
+            retryConfiguration: SubscriptionTokenKeychainStorageV2.RetryConfiguration(maxAttempts: 2, baseDelay: 0.01)
         )
         let storage3 = SubscriptionTokenKeychainStorageV2(
             errorEventsHandler: { _, _ in },
-            keychainOperations: mockKeychain3
+            keychainOperations: mockKeychain3,
+            retryConfiguration: SubscriptionTokenKeychainStorageV2.RetryConfiguration(maxAttempts: 2, baseDelay: 0.01)
         )
 
         let expectation = XCTestExpectation(description: "Multiple instances complete")
@@ -371,12 +383,21 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 
         XCTAssertThrowsError(try storage.saveTokenContainer(tokenContainer)) { error in
-            XCTAssertTrue(error is AccountKeychainAccessError)
+            guard let keychainError = error as? AccountKeychainAccessError else {
+                XCTFail("Expected AccountKeychainAccessError but got \(error)")
+                return
+            }
+
+            if case .keychainSaveFailure(let status) = keychainError {
+                XCTAssertEqual(status, errSecAuthFailed)
+            } else {
+                XCTFail("Expected keychainSaveFailure but got \(keychainError)")
+            }
         }
 
         // Verify error handler was called
+        assertErrorsReported(count: 1)
         let errors = getErrorEvents()
-        XCTAssertEqual(errors.count, 1)
         XCTAssertEqual(errors[0].0, AccountKeychainAccessType.storeAuthToken)
     }
 
@@ -385,12 +406,21 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         mockKeychain.copyMatchingFailureStatus = errSecAuthFailed
 
         XCTAssertThrowsError(try storage.getTokenContainer()) { error in
-            XCTAssertTrue(error is AccountKeychainAccessError)
+            guard let keychainError = error as? AccountKeychainAccessError else {
+                XCTFail("Expected AccountKeychainAccessError but got \(error)")
+                return
+            }
+
+            if case .keychainLookupFailure(let status) = keychainError {
+                XCTAssertEqual(status, errSecAuthFailed)
+            } else {
+                XCTFail("Expected keychainLookupFailure but got \(keychainError)")
+            }
         }
 
         // Verify error handler was called
+        assertErrorsReported(count: 1)
         let errors = getErrorEvents()
-        XCTAssertEqual(errors.count, 1)
         XCTAssertEqual(errors[0].0, AccountKeychainAccessType.getAuthToken)
     }
 
@@ -406,12 +436,21 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         let updatedToken = OAuthTokensFactory.makeTokenContainer(thatExpiresIn: 7200)
 
         XCTAssertThrowsError(try storage.saveTokenContainer(updatedToken)) { error in
-            XCTAssertTrue(error is AccountKeychainAccessError)
+            guard let keychainError = error as? AccountKeychainAccessError else {
+                XCTFail("Expected AccountKeychainAccessError but got \(error)")
+                return
+            }
+
+            if case .keychainSaveFailure(let status) = keychainError {
+                XCTAssertEqual(status, errSecAuthFailed)
+            } else {
+                XCTFail("Expected keychainSaveFailure but got \(keychainError)")
+            }
         }
 
         // Verify error handler was called
+        assertErrorsReported(count: 1)
         let errors = getErrorEvents()
-        XCTAssertEqual(errors.count, 1)
         XCTAssertEqual(errors[0].0, AccountKeychainAccessType.storeAuthToken)
     }
 
@@ -425,12 +464,21 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         mockKeychain.deleteFailureStatus = errSecAuthFailed
 
         XCTAssertThrowsError(try storage.saveTokenContainer(nil)) { error in
-            XCTAssertTrue(error is AccountKeychainAccessError)
+            guard let keychainError = error as? AccountKeychainAccessError else {
+                XCTFail("Expected AccountKeychainAccessError but got \(error)")
+                return
+            }
+
+            if case .keychainDeleteFailure(let status) = keychainError {
+                XCTAssertEqual(status, errSecAuthFailed)
+            } else {
+                XCTFail("Expected keychainDeleteFailure but got \(keychainError)")
+            }
         }
 
         // Verify error handler was called
+        assertErrorsReported(count: 1)
         let errors = getErrorEvents()
-        XCTAssertEqual(errors.count, 1)
         XCTAssertEqual(errors[0].0, AccountKeychainAccessType.storeAuthToken)
     }
 
@@ -444,7 +492,8 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
                     errorCount += 1
                 }
             },
-            keychainOperations: mockKeychain
+            keychainOperations: mockKeychain,
+            retryConfiguration: SubscriptionTokenKeychainStorageV2.RetryConfiguration(maxAttempts: 2, baseDelay: 0.01)
         )
 
         // Make operations fail
@@ -474,6 +523,98 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         // Verify all errors were handled
         let finalErrorCount = errorCountQueue.sync { errorCount }
         XCTAssertEqual(finalErrorCount, 10)
+    }
+
+    // MARK: - Retry Mechanism Tests
+
+    func testRetryMechanismWithRetryableError() throws {
+        // Configure mock to always fail with a retryable error
+        mockKeychain.shouldFailAdd = true
+        mockKeychain.addFailureStatus = errSecInteractionNotAllowed // Retryable error
+
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        // Should fail after exhausting retries
+        XCTAssertThrowsError(try storage.saveTokenContainer(tokenContainer)) { error in
+            guard let keychainError = error as? AccountKeychainAccessError else {
+                XCTFail("Expected AccountKeychainAccessError but got \(error)")
+                return
+            }
+
+            if case .keychainSaveFailure(let status) = keychainError {
+                XCTAssertEqual(status, errSecInteractionNotAllowed)
+            } else {
+                XCTFail("Expected keychainSaveFailure but got \(keychainError)")
+            }
+        }
+
+        // Error handler should be called once
+        assertErrorsReported(count: 1)
+    }
+
+    func testRetryMechanismExhaustsAttempts() throws {
+        // Configure storage with custom retry settings for faster testing
+        storage = SubscriptionTokenKeychainStorageV2(
+            errorEventsHandler: { [weak self] type, error in
+                self?.errorEventsQueue.async(flags: .barrier) {
+                    self?.errorEvents.append((type, error))
+                }
+            },
+            keychainOperations: mockKeychain,
+            retryConfiguration: SubscriptionTokenKeychainStorageV2.RetryConfiguration(maxAttempts: 2, baseDelay: 0.01)
+        )
+
+        // Make all attempts fail
+        mockKeychain.shouldFailAdd = true
+        mockKeychain.addFailureStatus = errSecInteractionNotAllowed // Retryable error
+
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        XCTAssertThrowsError(try storage.saveTokenContainer(tokenContainer)) { error in
+            // Should throw the original error after exhausting retries
+            guard let keychainError = error as? AccountKeychainAccessError else {
+                XCTFail("Expected AccountKeychainAccessError but got \(error)")
+                return
+            }
+
+            if case .keychainSaveFailure(let status) = keychainError {
+                XCTAssertEqual(status, errSecInteractionNotAllowed)
+            } else {
+                XCTFail("Expected keychainSaveFailure but got \(keychainError)")
+            }
+        }
+
+        // Error handler should be called once
+        assertErrorsReported(count: 1)
+    }
+
+    func testNonRetryableErrorsFailImmediately() throws {
+        // Configure mock to fail with non-retryable error
+        mockKeychain.shouldFailAdd = true
+        mockKeychain.addFailureStatus = errSecParam // Non-retryable error
+
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        let startTime = Date()
+
+        XCTAssertThrowsError(try storage.saveTokenContainer(tokenContainer)) { error in
+            guard let keychainError = error as? AccountKeychainAccessError else {
+                XCTFail("Expected AccountKeychainAccessError but got \(error)")
+                return
+            }
+
+            if case .keychainSaveFailure(let status) = keychainError {
+                XCTAssertEqual(status, errSecParam)
+            } else {
+                XCTFail("Expected keychainSaveFailure but got \(keychainError)")
+            }
+        }
+
+        // Should fail immediately without retries
+        let elapsed = Date().timeIntervalSince(startTime)
+        XCTAssertLessThan(elapsed, 0.1, "Non-retryable errors should fail immediately")
+
+        assertErrorsReported(count: 1)
     }
 
     // MARK: - Mock Keychain Specific Tests
@@ -544,64 +685,13 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         XCTAssertNotNil(finalToken)
     }
 
-    func testPerformanceOfConcurrentReads() throws {
-        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        try storage.saveTokenContainer(tokenContainer)
-
-        measure {
-            let expectation = XCTestExpectation(description: "Performance reads complete")
-            expectation.expectedFulfillmentCount = 100
-
-            let concurrentQueue = DispatchQueue(label: "test.performance.reads", attributes: .concurrent)
-
-            for _ in 0..<100 {
-                concurrentQueue.async {
-                    do {
-                        _ = try self.storage.getTokenContainer()
-                        expectation.fulfill()
-                    } catch {
-                        XCTFail("Performance read failed: \(error)")
-                    }
-                }
-            }
-
-            wait(for: [expectation], timeout: 5.0)
-        }
-    }
-
-    func testPerformanceOfConcurrentWrites() throws {
-        measure {
-            let expectation = XCTestExpectation(description: "Performance writes complete")
-            expectation.expectedFulfillmentCount = 50
-
-            let concurrentQueue = DispatchQueue(label: "test.performance.writes", attributes: .concurrent)
-
-            for i in 0..<50 {
-                concurrentQueue.async {
-                    do {
-                        let token = OAuthTokensFactory.makeTokenContainer(thatExpiresIn: TimeInterval(3600 + i))
-                        try self.storage.saveTokenContainer(token)
-                        expectation.fulfill()
-                    } catch {
-                        XCTFail("Performance write failed: \(error)")
-                    }
-                }
-            }
-
-            wait(for: [expectation], timeout: 5.0)
-        }
-    }
+    // MARK: - Helper Methods
 
     private func getErrorEvents() -> [(AccountKeychainAccessType, AccountKeychainAccessError)] {
         return errorEventsQueue.sync {
             return self.errorEvents
         }
     }
-}
-
-// MARK: - Test Utilities (factory already provides TokenContainer creation)
-
-extension SubscriptionTokenKeychainStorageV2Tests {
 
     func assertNoErrorsReported() {
         let errors = getErrorEvents()

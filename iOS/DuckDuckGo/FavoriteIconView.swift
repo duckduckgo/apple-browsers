@@ -42,6 +42,7 @@ struct FavoriteIconView: View {
                     $0.shadow(color: .shade(0.12), radius: 0.5, y: 1)
                 }
                 .aspectRatio(1, contentMode: .fit)
+                .frame(width: Constant.faviconSize, height: Constant.faviconSize)
 
             Image(uiImage: favicon.image)
                 .resizable()
@@ -75,6 +76,7 @@ struct FavoriteIconView: View {
 
 private struct Constant {
     static let faviconSize: CGFloat = 64
+    static let fakeFaviconSize: CGFloat = 40
     static let borderSize: CGFloat = 12
     static let cornerRadiusExperimental: CGFloat = 12
     static let cornerRadius: CGFloat = 8
@@ -97,7 +99,7 @@ private extension Favorite {
 extension FavoriteIconView {
     init(favorite: Favorite, isExperimentalAppearanceEnabled: Bool, faviconLoading: FavoritesFaviconLoading? = nil) {
         let favicon = faviconLoading?.existingFavicon(for: favorite, size: Constant.faviconSize)
-        ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.faviconSize)
+        ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.fakeFaviconSize)
         ?? .empty
         self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading, isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
     }

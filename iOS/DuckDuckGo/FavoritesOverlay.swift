@@ -41,9 +41,11 @@ class FavoritesOverlay: UIViewController {
     private var renderer: FavoritesHomeViewSectionRenderer!
     private let appSettings: AppSettings
 
-    var isUsingNTPCompatibleStyling: Bool {
-        get { renderer.isUsingNTPCompatibleStyling }
-        set { renderer.isUsingNTPCompatibleStyling = newValue }
+    private lazy var borderView = StyledTopBottomBorderView()
+
+    var isUsingSearchInputCustomStyling: Bool {
+        get { renderer.isUsingSearchInputCustomStyling }
+        set { renderer.isUsingSearchInputCustomStyling = newValue }
     }
 
     weak var delegate: FavoritesOverlayDelegate?
@@ -72,6 +74,11 @@ class FavoritesOverlay: UIViewController {
 
         view.addSubview(collectionView)
 
+        if !isUsingSearchInputCustomStyling {
+            borderView.insertSelf(into: view)
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
+
         renderer.install(into: self)
         
         registerForKeyboardNotifications()
@@ -95,7 +102,7 @@ class FavoritesOverlay: UIViewController {
             layout.minimumInteritemSpacing = 32
         } else {
             layout.minimumInteritemSpacing = 10
-            if isUsingNTPCompatibleStyling {
+            if isUsingSearchInputCustomStyling {
                 layout.minimumLineSpacing = 12
             }
         }
@@ -185,7 +192,7 @@ extension FavoritesOverlay: UICollectionViewDelegateFlowLayout {
             
             var insets = renderer.collectionView(collectionView, layout: collectionViewLayout, insetForSectionAt: section) ?? UIEdgeInsets.zero
             
-            insets.top += isUsingNTPCompatibleStyling ? Constants.ntpCompatibleMargin : Constants.margin
+            insets.top += isUsingSearchInputCustomStyling ? Constants.ntpCompatibleMargin : Constants.margin
             return insets
     }
 }

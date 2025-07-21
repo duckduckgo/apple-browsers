@@ -1270,6 +1270,10 @@
 		37B11B3928095E6600CBB621 /* TabLazyLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B11B3828095E6600CBB621 /* TabLazyLoader.swift */; };
 		37B16FFA2DBA3AF100910812 /* TabCrashIndicatorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B16FF92DBA3AEB00910812 /* TabCrashIndicatorModelTests.swift */; };
 		37B16FFB2DBA3AF100910812 /* TabCrashIndicatorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B16FF92DBA3AEB00910812 /* TabCrashIndicatorModelTests.swift */; };
+		37B904712E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B904702E2996F800E5DAF7 /* AppVersionModel.swift */; };
+		37B904722E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B904702E2996F800E5DAF7 /* AppVersionModel.swift */; };
+		37B904742E2A532000E5DAF7 /* NavigationPixelNavigationResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B904732E2A531C00E5DAF7 /* NavigationPixelNavigationResponder.swift */; };
+		37B904752E2A532000E5DAF7 /* NavigationPixelNavigationResponder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B904732E2A531C00E5DAF7 /* NavigationPixelNavigationResponder.swift */; };
 		37BE087A2D09C0F200C77B8E /* NewTabPageNextStepsCardsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */; };
 		37BE087B2D09C0F200C77B8E /* NewTabPageNextStepsCardsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */; };
 		37BF3F14286D8A6500BD9014 /* PinnedTabsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */; };
@@ -3450,7 +3454,6 @@
 		CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770C2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
 		CC87770D2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
-		CC87770E2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
 		CCC87D6D2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */; };
 		CCC87D6E2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */; };
 		CCC87D732E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */; };
@@ -4096,6 +4099,8 @@
 		3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Integration Tests App Store.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3706FEC7293F6F7500E42796 /* BWManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWManagement.swift; sourceTree = "<group>"; };
 		370A34B02AB24E3700C77F7C /* SyncDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDebugMenu.swift; sourceTree = "<group>"; };
+		370AB88A2E263AF100BBBDE0 /* DuckDuckGoAppStoreAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreAlpha.entitlements; sourceTree = "<group>"; };
+		370AB88B2E2641C500BBBDE0 /* DuckDuckGoAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAlpha.entitlements; sourceTree = "<group>"; };
 		370C23102C7747E200A80A3E /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
 		370DB6E12D521D0A0055D988 /* NewTabPageConfigurationErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageConfigurationErrorHandler.swift; sourceTree = "<group>"; };
 		370E70A22D46914A0077D4F3 /* RecentActivityProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentActivityProviderTests.swift; sourceTree = "<group>"; };
@@ -4130,6 +4135,7 @@
 		373D9B4729EEAC1B00381FDD /* SyncMetadataDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetadataDatabase.swift; sourceTree = "<group>"; };
 		373DE97A2D3916FD000577EE /* UserScriptActionsManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UserScriptActionsManager; sourceTree = "<group>"; };
 		373E477B2D809EF3006F3FEC /* AddBookmarkPopoverViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBookmarkPopoverViewModelTests.swift; sourceTree = "<group>"; };
+		374348BE2E26F21B00C37230 /* Sparkle.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Sparkle.xcconfig; sourceTree = "<group>"; };
 		37445F982A1566420029F789 /* SyncDataProviders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDataProviders.swift; sourceTree = "<group>"; };
 		37445F9B2A1569F00029F789 /* SyncBookmarksAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncBookmarksAdapter.swift; sourceTree = "<group>"; };
 		3745DE042D536DCA00024FC8 /* HistoryGroupingProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryGroupingProvider.swift; sourceTree = "<group>"; };
@@ -4249,6 +4255,8 @@
 		37AFCE9127DB8CAD00471A10 /* PreferencesAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAboutView.swift; sourceTree = "<group>"; };
 		37B11B3828095E6600CBB621 /* TabLazyLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLazyLoader.swift; sourceTree = "<group>"; };
 		37B16FF92DBA3AEB00910812 /* TabCrashIndicatorModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCrashIndicatorModelTests.swift; sourceTree = "<group>"; };
+		37B904702E2996F800E5DAF7 /* AppVersionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionModel.swift; sourceTree = "<group>"; };
+		37B904732E2A531C00E5DAF7 /* NavigationPixelNavigationResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationPixelNavigationResponder.swift; sourceTree = "<group>"; };
 		37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsProvider.swift; sourceTree = "<group>"; };
 		37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManager.swift; sourceTree = "<group>"; };
 		37BF3F1E286F0A7A00BD9014 /* PinnedTabsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PinnedTabsViewModel.swift; sourceTree = "<group>"; };
@@ -6636,6 +6644,7 @@
 				378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */,
 				37DD516C296EAEDC00837F27 /* DuckDuckGoAppStore.xcconfig */,
 				378E2799296F6FDE00FCADA2 /* ManualAppStoreRelease.xcconfig */,
+				374348BE2E26F21B00C37230 /* Sparkle.xcconfig */,
 				7B6EC5E32AE2D88C004FE6DF /* DBP */,
 				4B18E3222A1D31E4005D0AAA /* NetworkProtection */,
 			);
@@ -8856,6 +8865,7 @@
 				1D9A37662BD8EA8800EBC58D /* DockPositionProvider.swift */,
 				1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */,
 				1DF798992DBA2A20003148F3 /* AboutPanel.swift */,
+				37B904702E2996F800E5DAF7 /* AppVersionModel.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -8871,6 +8881,7 @@
 		AA585D75248FD31100E9A3E2 = {
 			isa = PBXGroup;
 			children = (
+				378B5886295CF2A4002C0CC0 /* Configuration */,
 				AA585D80248FD31100E9A3E2 /* DuckDuckGo */,
 				9D9AE9132AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgent */,
 				7B96D0D02ADFDA7F007E02C8 /* DuckDuckGoDBPTests */,
@@ -8885,7 +8896,6 @@
 				B6E6B9F42BA1FD90008AA7E1 /* sandbox-test-tool */,
 				565E46DE2B2725DD0013AC2A /* SyncE2EUITests */,
 				B6EC37E929B5DA2A001ACE79 /* tests-server */,
-				378B5886295CF2A4002C0CC0 /* Configuration */,
 				9D84E3F52CD4E6660046CD8B /* DBPE2ETests */,
 				7B4CE8DB26F02108009134B1 /* UITests */,
 				AA585D93248FD31400E9A3E2 /* UnitTests */,
@@ -8944,10 +8954,12 @@
 				3192EC862A4DCF0E001E97A5 /* DBP */,
 				4B379C1C27BDB7EA008A968E /* DeviceAuthentication */,
 				AA585D8B248FD31400E9A3E2 /* DuckDuckGo.entitlements */,
+				370AB88B2E2641C500BBBDE0 /* DuckDuckGoAlpha.entitlements */,
 				37D9BBA329376EE8000B99F9 /* DuckDuckGoAppStore.entitlements */,
 				377E54382937B7C400780A0A /* DuckDuckGoAppStoreCI.entitlements */,
 				37E1116C2C578F1B00583C19 /* DuckDuckGoAppStoreDebug.entitlements */,
 				4BA808FF2CDE78F600338EE4 /* DuckDuckGoAppStoreReview.entitlements */,
+				370AB88A2E263AF100BBBDE0 /* DuckDuckGoAppStoreAlpha.entitlements */,
 				EEAEA3F4294D05CF00D04DF3 /* JSAlert */,
 				4B5F15032A1570F10060320F /* DuckDuckGoDebug.entitlements */,
 				4B65143C26392483005B46EB /* Email */,
@@ -10068,6 +10080,7 @@
 				B6BF5D8829470BC4006742B1 /* HTTPSUpgradeTabExtension.swift */,
 				B66260E529ACAE4B00E9E3EE /* NavigationHotkeyHandler.swift */,
 				B66260DC29AC5D4300E9E3EE /* NavigationProtectionTabExtension.swift */,
+				37B904732E2A531C00E5DAF7 /* NavigationPixelNavigationResponder.swift */,
 				B6F1B0292BCE675C005E863C /* NetworkProtectionControllerTabExtension.swift */,
 				B6BF5D842946FFDA006742B1 /* PrivacyDashboardTabExtension.swift */,
 				37C9F78B2CF1C770004D73A1 /* PrivacyStatsTabExtension.swift */,
@@ -12151,7 +12164,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Embeds login items for the App Store build.\n\n# Skip login item embedding for release builds until they're ready to go live.\nif [ \"${CONFIGURATION}\" = \"Release\" ]; then\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_RELEASE_PRODUCT_NAME}\"\nelse\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_PRODUCT_NAME}\"\nfi\n\nVPN_AGENT_NAME=\"${AGENT_PRODUCT_NAME}\"\n\nif [ -z \"$VPN_AGENT_NAME\" ]; then\n    echo \"VPN_AGENT_NAME is empty.\"\n    exit 1\nelif [ -z \"$PIR_AGENT_NAME\" ]; then\n    echo \"PIR_AGENT_NAME is empty.\"\n    exit 1\nelse\n    echo \"Both VPN_AGENT_NAME and PIR_AGENT_NAME are set.\"\n    echo \"VPN_AGENT_NAME is set to '$VPN_AGENT_NAME'.\"\n    echo \"PIR_AGENT_NAME is set to '$PIR_AGENT_NAME'.\"\nfi\n\nVPN_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${VPN_AGENT_NAME}.app\")\nPIR_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${PIR_AGENT_NAME}.app\")\nAGENT_DESTINATION=\"${CONFIGURATION_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Library/LoginItems\"\n    \n# Make sure that Library/LoginItems exists before copying\nmkdir -p \"$AGENT_DESTINATION\"\n    \necho \"Copying VPN agent from $VPN_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$VPN_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n    \necho \"Copying Personal Information Removal agent from $PIR_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$PIR_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n";
+			shellScript = "# Embeds login items for the App Store build.\n\n# Skip login item embedding for release builds until they're ready to go live.\nif [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Alpha\" ]; then\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_RELEASE_PRODUCT_NAME}\"\nelse\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_PRODUCT_NAME}\"\nfi\n\nVPN_AGENT_NAME=\"${AGENT_PRODUCT_NAME}\"\n\nif [ -z \"$VPN_AGENT_NAME\" ]; then\n    echo \"VPN_AGENT_NAME is empty.\"\n    exit 1\nelif [ -z \"$PIR_AGENT_NAME\" ]; then\n    echo \"PIR_AGENT_NAME is empty.\"\n    exit 1\nelse\n    echo \"Both VPN_AGENT_NAME and PIR_AGENT_NAME are set.\"\n    echo \"VPN_AGENT_NAME is set to '$VPN_AGENT_NAME'.\"\n    echo \"PIR_AGENT_NAME is set to '$PIR_AGENT_NAME'.\"\nfi\n\nVPN_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${VPN_AGENT_NAME}.app\")\nPIR_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${PIR_AGENT_NAME}.app\")\nAGENT_DESTINATION=\"${CONFIGURATION_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Library/LoginItems\"\n    \n# Make sure that Library/LoginItems exists before copying\nmkdir -p \"$AGENT_DESTINATION\"\n    \necho \"Copying VPN agent from $VPN_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$VPN_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n    \necho \"Copying Personal Information Removal agent from $PIR_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$PIR_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n";
 		};
 		6A8856B31B2BC5078B61ED81 /* Run swiftlint */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -13163,6 +13176,7 @@
 				4B9DB0272A983B24000927DB /* WaitlistViewModel.swift in Sources */,
 				4B9DB03F2A983B24000927DB /* JoinWaitlistView.swift in Sources */,
 				1D710F4C2C48F1F200C3975F /* UpdateDialogHelper.swift in Sources */,
+				37B904742E2A532000E5DAF7 /* NavigationPixelNavigationResponder.swift in Sources */,
 				987799F22999993C005D8EB6 /* LegacyBookmarkStore.swift in Sources */,
 				37A6A8F72AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift in Sources */,
 				F1C70D7D2BFF510000599292 /* SubscriptionEnvironment+Default.swift in Sources */,
@@ -13328,6 +13342,7 @@
 				BB7BAAC02DDBADB2004A5A58 /* NavigationToolbarIconsProviding.swift in Sources */,
 				3706FEBE293F6EFF00E42796 /* BWMessageIdGenerator.swift in Sources */,
 				C1E961F02B87AA29001760E1 /* AutofillActionBuilder.swift in Sources */,
+				37B904722E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,
 				B6F1B0232BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */,
 				3706FC85293F65D500E42796 /* ShadowView.swift in Sources */,
 				3706FC86293F65D500E42796 /* FeedbackSender.swift in Sources */,
@@ -14120,7 +14135,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				842FE38B2E0C28EF00E4F9E4 /* PrintingTests.swift in Sources */,
-				CC87770E2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */,
 				BB4339DB2C7F9606005D7ED7 /* PinnedTabsTests.swift in Sources */,
 				EEBCE6842BA4643200B9DF00 /* NSSizeExtension.swift in Sources */,
 				BB5F46A32C8751F6005F72DF /* BookmarkSortTests.swift in Sources */,
@@ -14479,6 +14493,7 @@
 				4B4D60E22A0C883A00BCD287 /* AppMain.swift in Sources */,
 				7BCB90C22C18626E008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift in Sources */,
 				4B9DB0202A983B24000927DB /* ProductWaitlistRequest.swift in Sources */,
+				37B904752E2A532000E5DAF7 /* NavigationPixelNavigationResponder.swift in Sources */,
 				7B60B0022C5145EC008E32A3 /* VPNUIActionHandler.swift in Sources */,
 				98779A0029999B64005D8EB6 /* Bookmark.xcdatamodeld in Sources */,
 				4B4032842AAAC24400CCA602 /* WaitlistActivationDateStore.swift in Sources */,
@@ -14675,6 +14690,7 @@
 				BBB881882C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift in Sources */,
 				C1B1CBE12BE1915100B6049C /* DataImportShortcutsViewModel.swift in Sources */,
 				31521AC32CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
+				37B904712E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,
 				B6C0B23C26E87D900031CB7F /* NSAlert+ActiveDownloadsTermination.swift in Sources */,
 				AAECA42024EEA4AC00EFA63A /* IndexPathExtension.swift in Sources */,
 				4B9579212AC687170062CA31 /* HardwareModel.swift in Sources */,
@@ -15933,6 +15949,161 @@
 			};
 			name = Review;
 		};
+		370AB8752E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37717E66296B5A20002FAEDF /* Global.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8762E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
+			buildSettings = {
+				LOCALIZED_STRING_MACRO_NAMES = (
+					NSLocalizedString,
+					CFCopyLocalizedString,
+					"\" NSLocalizedStringWithDefaultValue\"",
+				);
+			};
+			name = Alpha;
+		};
+		370AB8772E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37DD516C296EAEDC00837F27 /* DuckDuckGoAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8782E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 378B588C295CF446002C0CC0 /* UITests.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8792E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB87A2E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB87B2E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9D02C9012CDA4A9E001A6E78 /* PIRE2ETests.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB87C2E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 378B588D295CF447002C0CC0 /* UnitTests.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB87D2E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 378B58C8295CF9A7002C0CC0 /* IntegrationTests.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB87E2E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37E75733296F4F0500E1C162 /* UnitTestsAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB87F2E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 37E75734296F4F0500E1C162 /* IntegrationTestsAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8802E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B6EC37FA29B6447F001ACE79 /* TestsServer.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8812E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* DuckDuckGoVPNAppexAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8822E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BDA36F62B7E06A300AD5388 /* VPNProxyExtension.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8832E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8842E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7B2E36722D6DF04000A08CB7 /* DuckDuckGoVPNSysexAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8852E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BA7CC0C2AD11D1E0042E5CE /* DuckDuckGoVPN.xcconfig */;
+			buildSettings = {
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSPrincipalClass = Application;
+			};
+			name = Alpha;
+		};
+		370AB8862E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BA7CC0B2AD11D1E0042E5CE /* DuckDuckGoVPNAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8872E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8882E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7B6EC5E42AE2D8AF004FE6DF /* DuckDuckGoDBPAgentAppStore.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
+		370AB8892E2635AE00BBBDE0 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = B6E6B9E82BA1FA1C008AA7E1 /* SandboxTestTool.xcconfig */;
+			buildSettings = {
+			};
+			name = Alpha;
+		};
 		376113D02B29CD5B00E794BB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */;
@@ -16478,6 +16649,7 @@
 				3706FCFB293F65D500E42796 /* Debug */,
 				3706FCFE293F65D500E42796 /* CI */,
 				3706FCFF293F65D500E42796 /* Release */,
+				370AB8772E2635AE00BBBDE0 /* Alpha */,
 				3706FD02293F65D500E42796 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16489,6 +16661,7 @@
 				3706FE93293F661700E42796 /* Debug */,
 				3706FE94293F661700E42796 /* CI */,
 				3706FE95293F661700E42796 /* Release */,
+				370AB87E2E2635AE00BBBDE0 /* Alpha */,
 				3706FE97293F661700E42796 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16500,6 +16673,7 @@
 				3706FEAC293F662100E42796 /* Debug */,
 				3706FEAD293F662100E42796 /* CI */,
 				3706FEAE293F662100E42796 /* Release */,
+				370AB87F2E2635AE00BBBDE0 /* Alpha */,
 				3706FEB0293F662100E42796 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16511,6 +16685,7 @@
 				376113D02B29CD5B00E794BB /* Debug */,
 				376113D12B29CD5B00E794BB /* CI */,
 				376113D22B29CD5B00E794BB /* Release */,
+				370AB87A2E2635AE00BBBDE0 /* Alpha */,
 				376113D32B29CD5B00E794BB /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16522,6 +16697,7 @@
 				4B1AD8A425FC27E200261379 /* Debug */,
 				4B1AD8B325FC322600261379 /* CI */,
 				4B1AD8A525FC27E200261379 /* Release */,
+				370AB87D2E2635AE00BBBDE0 /* Alpha */,
 				AAE814AE2716DFE8009D3531 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16533,6 +16709,7 @@
 				4B2537672A11BE7700610219 /* Debug */,
 				4B2537682A11BE7700610219 /* CI */,
 				4B2537692A11BE7700610219 /* Release */,
+				370AB8832E2635AE00BBBDE0 /* Alpha */,
 				4B25376A2A11BE7700610219 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16544,6 +16721,7 @@
 				4B2D06462A11CFBE00DE1F49 /* Debug */,
 				4B2D06472A11CFBE00DE1F49 /* CI */,
 				4B2D06482A11CFBE00DE1F49 /* Release */,
+				370AB8852E2635AE00BBBDE0 /* Alpha */,
 				4B2D06492A11CFBE00DE1F49 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16555,6 +16733,7 @@
 				4B2D06762A13318600DE1F49 /* Debug */,
 				4B2D06772A13318600DE1F49 /* CI */,
 				4B2D06782A13318600DE1F49 /* Release */,
+				370AB8862E2635AE00BBBDE0 /* Alpha */,
 				4B2D06792A13318600DE1F49 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16566,6 +16745,7 @@
 				4B4D60492A0B290300BCD287 /* Debug */,
 				4B4D604A2A0B290300BCD287 /* CI */,
 				4B4D604B2A0B290300BCD287 /* Release */,
+				370AB8812E2635AE00BBBDE0 /* Alpha */,
 				4B4D604C2A0B290300BCD287 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16577,6 +16757,7 @@
 				565E46E62B2725DD0013AC2A /* Debug */,
 				565E46E72B2725DD0013AC2A /* CI */,
 				565E46E82B2725DD0013AC2A /* Release */,
+				370AB8792E2635AE00BBBDE0 /* Alpha */,
 				565E46E92B2725DD0013AC2A /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16588,6 +16769,7 @@
 				7B2E366D2D6DEFBB00A08CB7 /* Debug */,
 				7B2E366E2D6DEFBB00A08CB7 /* CI */,
 				7B2E366F2D6DEFBB00A08CB7 /* Release */,
+				370AB8842E2635AE00BBBDE0 /* Alpha */,
 				7B2E36702D6DEFBB00A08CB7 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16599,6 +16781,7 @@
 				7B4CE8E126F02108009134B1 /* Debug */,
 				7B4CE8E226F02108009134B1 /* CI */,
 				7B4CE8E326F02108009134B1 /* Release */,
+				370AB8782E2635AE00BBBDE0 /* Alpha */,
 				AAE814AF2716DFE8009D3531 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16610,6 +16793,7 @@
 				7BDA36F02B7E037200AD5388 /* Debug */,
 				7BDA36F12B7E037200AD5388 /* CI */,
 				7BDA36F22B7E037200AD5388 /* Release */,
+				370AB8822E2635AE00BBBDE0 /* Alpha */,
 				7BDA36F32B7E037200AD5388 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16621,6 +16805,7 @@
 				9D84E4382CD4E66F0046CD8B /* Debug */,
 				9D84E4392CD4E66F0046CD8B /* CI */,
 				9D84E43A2CD4E66F0046CD8B /* Release */,
+				370AB87B2E2635AE00BBBDE0 /* Alpha */,
 				9D84E43B2CD4E66F0046CD8B /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16632,6 +16817,7 @@
 				9D9AE8CD2AAA39A70026E7DC /* Debug */,
 				9D9AE8CE2AAA39A70026E7DC /* CI */,
 				9D9AE8CF2AAA39A70026E7DC /* Release */,
+				370AB8872E2635AE00BBBDE0 /* Alpha */,
 				9D9AE8D02AAA39A70026E7DC /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16643,6 +16829,7 @@
 				9D9AE8EE2AAA39D30026E7DC /* Debug */,
 				9D9AE8EF2AAA39D30026E7DC /* CI */,
 				9D9AE8F02AAA39D30026E7DC /* Release */,
+				370AB8882E2635AE00BBBDE0 /* Alpha */,
 				9D9AE8F12AAA39D30026E7DC /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16654,6 +16841,7 @@
 				AA585DA2248FD31500E9A3E2 /* Debug */,
 				4B1AD8B025FC322600261379 /* CI */,
 				AA585DA3248FD31500E9A3E2 /* Release */,
+				370AB8752E2635AE00BBBDE0 /* Alpha */,
 				AAE814AB2716DFE8009D3531 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16665,6 +16853,7 @@
 				AA585DA5248FD31500E9A3E2 /* Debug */,
 				4B1AD8B125FC322600261379 /* CI */,
 				AA585DA6248FD31500E9A3E2 /* Release */,
+				370AB8762E2635AE00BBBDE0 /* Alpha */,
 				AAE814AC2716DFE8009D3531 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16676,6 +16865,7 @@
 				AA585DA8248FD31500E9A3E2 /* Debug */,
 				4B1AD8B225FC322600261379 /* CI */,
 				AA585DA9248FD31500E9A3E2 /* Release */,
+				370AB87C2E2635AE00BBBDE0 /* Alpha */,
 				AAE814AD2716DFE8009D3531 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16687,6 +16877,7 @@
 				B6E6BA002BA1FD91008AA7E1 /* Debug */,
 				B6E6BA012BA1FD91008AA7E1 /* CI */,
 				B6E6BA022BA1FD91008AA7E1 /* Release */,
+				370AB8892E2635AE00BBBDE0 /* Alpha */,
 				B6E6BA032BA1FD91008AA7E1 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -16698,6 +16889,7 @@
 				B6EC37ED29B5DA2A001ACE79 /* Debug */,
 				B6EC37EE29B5DA2A001ACE79 /* CI */,
 				B6EC37EF29B5DA2A001ACE79 /* Release */,
+				370AB8802E2635AE00BBBDE0 /* Alpha */,
 				B6EC37F029B5DA2A001ACE79 /* Review */,
 			);
 			defaultConfigurationIsVisible = 0;

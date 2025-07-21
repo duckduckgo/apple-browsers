@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Safari'den şifreleri dışa aktarma:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Dosya Seçin...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Safari veya Chrome'dan dışa aktarılan şifreleri içeren dosyayı seçin. Bu genellikle bir ZIP veya CSV dosyasıdır.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "İçe aktarma tamamlandı!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kredi Kartları";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Atlanan Kopyalar";
@@ -1855,6 +1861,15 @@
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Şifreleri İçe Aktar";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Şifrelerinizi başka bir tarayıcıdan hızlı ve güvenli bir şekilde aktarın.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Şifrelerinizi DuckDuckGo'ya aktarın";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "VPN'i DuckDuckGo Uygulamasından etkinleştirmeniz gerekir.";
 
@@ -2347,15 +2362,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ah, unutmadan...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo'nun ayrıca yerleşik bir %1$@! özelliği var.\n\nBunu %2$@ ile etkinleştirebilirsiniz.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "ücretli Privacy Pro aboneliği";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Gezinmeye Başla";
 
@@ -2367,6 +2373,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Anladım! Diğer ipuçlarını atlayacağım.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Ücretsiz dene!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo'nun ayrıca %2$@ ile kullanılabilen güvenli bir %1$@ var.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "isteğe bağlı ücretli abonelik";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN'i + 2 premium koruması daha";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Widget Ekle";
@@ -3600,6 +3618,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Devam et";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kredi Kartları";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Şifreler";

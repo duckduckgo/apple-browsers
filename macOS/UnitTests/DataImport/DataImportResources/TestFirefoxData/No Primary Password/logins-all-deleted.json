@@ -1,0 +1,36 @@
+{
+  "nextId": 10,
+  "logins": [
+    {
+      "id": 1,
+      "guid": "{a92b5f8d-125f-fc46-ba57-e90bbc4fa47e}",
+      "timePasswordChanged": 1740745502197,
+      "syncCounter": 0,
+      "everSynced": true,
+      "deleted": true
+    },
+    {
+      "id": 2,
+      "guid": "{b3c4d8e9-234f-5a67-ba89-f01c23d4e567}",
+      "timePasswordChanged": 1740745502198,
+      "syncCounter": 0,
+      "everSynced": true,
+      "deleted": true
+    },
+    {
+      "id": 3,
+      "guid": "{c4d5e9f0-345g-6b78-cb90-g12d34e5f678}",
+      "timePasswordChanged": 1740745502199,
+      "syncCounter": 0,
+      "everSynced": true,
+      "deleted": true
+    }
+  ],
+  "potentiallyVulnerablePasswords": [],
+  "dismissedBreachAlertsByLoginGUID": {},
+  "version": 3,
+  "sync": {
+    "syncID": "MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECLOmtnS0A6fGBBB3ROXhw32H6r9ipiBEbGJL",
+    "lastSync": 1627668886.4
+  }
+} 

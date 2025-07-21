@@ -19,15 +19,6 @@
       }
     },
     {
-      "identity" : "bloom_cpp",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/bloom_cpp.git",
-      "state" : {
-        "revision" : "8076199456290b61b4544bf2f4caf296759906a0",
-        "version" : "3.0.0"
-      }
-    },
-    {
       "identity" : "combine-schedulers",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/combine-schedulers.git",
@@ -41,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "40e84974805a910979961ded1d5003584d9d94b5",
-        "version" : "10.12.0"
+        "revision" : "4935471fe659cad802f0fe3d4c51c8cf1318ae86",
+        "version" : "10.13.0"
       }
     },
     {
@@ -50,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "7532135989abb6ddbde48632b7222e0abed7d253",
-        "version" : "18.1.0"
+        "revision" : "21abb6f36a0cefc238c7366c50144ca792ada305",
+        "version" : "18.2.0"
       }
     },
     {
@@ -230,8 +221,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-syntax",
       "state" : {
-        "revision" : "64889f0c732f210a935a0ad7cda38f77f876262d",
-        "version" : "509.1.1"
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
       }
     },
     {
@@ -257,8 +248,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/sync_crypto",
       "state" : {
-        "revision" : "4e383fa27d3386a48e01a43fd890540a7d8656aa",
-        "version" : "0.5.0"
+        "revision" : "8dfdea29e325c6611d9b2b556e1d380252d54ba6",
+        "version" : "0.7.0"
       }
     },
     {

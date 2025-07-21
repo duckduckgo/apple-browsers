@@ -20,6 +20,7 @@
 
 import Combine
 import Common
+import os.log
 import Swifter
 import WebKit
 import XCTest
@@ -33,7 +34,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     var navigationDelegate: DistributedNavigationDelegate { navigationDelegateProxy.delegate }
     var testSchemeHandler: TestNavigationSchemeHandler! = TestNavigationSchemeHandler()
-    var server: HttpServer!
+    var server: SafeHttpServer!
 
     var currentHistoryItemIdentityCancellable: AnyCancellable!
     var history = [UInt64: HistoryItemIdentity]()
@@ -61,7 +62,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
         NavigationAction.resetIdentifier()
 
         server?.stop()
-        server = HttpServer()
+        server = SafeHttpServer()
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
         self.navigationDelegate.responders.forEach { responder in
             (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
@@ -525,8 +526,9 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func printEncoded(responder idx: Int = 0) {
-        print("Responder #\(idx) history encoded:")
-        print(encodedResponderHistory(at: idx))
+        Logger.navigation.error("Responder #\(idx) history encoded:")
+        let encodedHistory = encodedResponderHistory(at: idx)
+        Logger.navigation.error("\(encodedHistory)")
     }
 
 }

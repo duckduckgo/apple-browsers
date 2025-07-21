@@ -168,7 +168,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             guard internalUserDecider.isInternalUser else {
                 return UserText.sendFeedback
             }
-            return "\(UserText.sendFeedback) (version: \(AppVersion.shared.versionNumber).\(AppVersion.shared.buildNumber))"
+            return "\(UserText.sendFeedback) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
         }()
         let feedbackMenuItem = NSMenuItem(title: feedbackString, action: nil, keyEquivalent: "")
             .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon)
@@ -1200,6 +1200,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
+    @MainActor
     private func addMenuItems() async {
         // This requires follow-up work:
         // https://app.asana.com/1/137249556945/task/1210799126744217

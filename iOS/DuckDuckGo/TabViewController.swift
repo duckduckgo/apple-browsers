@@ -52,7 +52,7 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
 
-    private lazy var borderView = TabBorderView()
+    lazy var borderView = StyledTopBottomBorderView()
 
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
@@ -220,7 +220,7 @@ class TabViewController: UIViewController {
     // Recent request's URL if its WKNavigationAction had shouldPerformDownload set to true
     private var recentNavigationActionShouldPerformDownloadURL: URL?
 
-    let userAgentManager: UserAgentManager = DefaultUserAgentManager.shared
+    let userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared
     
     let bookmarksDatabase: CoreDataDatabase
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
@@ -581,6 +581,7 @@ class TabViewController: UIViewController {
 
     @objc
     private func onAddressBarPositionChanged() {
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         updateWebViewBottomAnchor()
     }
 
@@ -650,17 +651,6 @@ class TabViewController: UIViewController {
     
     func applyInheritedAttribution(_ attribution: AdClickAttributionLogic.State?) {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
-    }
-
-    private func updateBorder(for webView: WKWebView) {
-        guard isExperimentalThemingEnabled else { return }
-
-        if !borderView.isDescendant(of: webView) {
-            webView.addSubview(borderView)
-
-            borderView.frame = webView.bounds
-            borderView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        }
     }
 
     @objc func updateRoundedCorners() {
@@ -790,7 +780,8 @@ class TabViewController: UIViewController {
 #endif
 
         updateRoundedCorners()
-        updateBorder(for: webView)
+        borderView.insertSelf(into: webView)
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 
     private func addObservers() {
@@ -2869,8 +2860,8 @@ extension TabViewController: ContentScopeUserScriptDelegate {
 // MARK: - AutoconsentUserScriptDelegate
 extension TabViewController: AutoconsentUserScriptDelegate {
     
-    func autoconsentUserScript(_ script: AutoconsentUserScript, didUpdateCookieConsentStatus cookieConsentStatus: PrivacyDashboard.CookieConsentInfo) {
-        privacyInfo?.cookieConsentManaged = cookieConsentStatus
+    func autoconsentUserScript(consentStatus: CookieConsentInfo) {
+        privacyInfo?.cookieConsentManaged = consentStatus
     }
 }
 

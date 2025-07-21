@@ -24,6 +24,8 @@ enum ShortcutTooltip {
     case downloads
     case home
     case bookmarkThisPage
+    case newAIChatTab
+    case askAIChat
 
     private var shortcut: String {
         switch self {
@@ -41,6 +43,10 @@ enum ShortcutTooltip {
             return "⇧⌘H"
         case .bookmarkThisPage:
             return "⌘D"
+        case .newAIChatTab:
+            return "⌥⌘N"
+        case .askAIChat:
+            return "⇧↵"
         }
     }
 
@@ -64,6 +70,10 @@ enum ShortcutTooltip {
             return UserText.homeButtonTooltip + spacedShortcut
         case .bookmarkThisPage:
             return UserText.addBookmarkTooltip + spacedShortcut
+        case .newAIChatTab:
+            return UserText.aiChatAddressBarTrustedIndicator + spacedShortcut
+        case .askAIChat:
+            return UserText.aiChatAddressBarTrustedIndicator + spacedShortcut
         }
     }
 }

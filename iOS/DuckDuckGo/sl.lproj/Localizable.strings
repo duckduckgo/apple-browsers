@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kako izvoziti gesla iz Safarija:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Izberi datoteko ...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Izberite datoteko z gesli, izvoženimi iz Safarija ali Chroma. To je običajno datoteka ZIP ali CSV.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Uvoz je dokončan!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kreditne kartice";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Preskočeni dvojniki";
@@ -1855,6 +1861,15 @@
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Uvozi gesla";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Hitro in varno prenesite gesla iz drugega brskalnika.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Uvozite gesla v DuckDuckGo";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "VPN morate omogočiti v aplikaciji DuckDuckGo.";
 
@@ -2347,15 +2362,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, preden pozabim ...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo ima tudi vgrajen %1$@!\n\nAktivirajte ga s %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "plačljivo naročnino Privacy Pro";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Začni brskanje";
 
@@ -2367,6 +2373,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Razumem! Druge nasvete bom preskočil/-a.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Preizkusite brezplačno!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo ima tudi varen %1$@, ki so na voljo z %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "neobvezno plačljivo naročnino";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN in 2 dodatni vrhunski zaščiti";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Dodaj gradnik";
@@ -3600,6 +3618,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Nadaljuj";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kreditne kartice";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Gesla";

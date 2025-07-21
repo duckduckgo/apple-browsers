@@ -407,6 +407,9 @@ class MainViewController: UIViewController {
             }
         }
 
+        // Always hide this, we use StyledTopBottomBorderView where needed instead
+        viewCoordinator.hideToolbarSeparator()
+
         // Needs to be called here because sometimes the frames are not the expected size during didLoad
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
@@ -692,15 +695,10 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.hideToolbarSeparator()
             viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
                     
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
-            // If this is called before the toolbar has shown it will not re-add the separator when moving to the top position
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self.viewCoordinator.hideToolbarSeparator()
-            }
         }
 
         omniBar.adjust(for: position)
@@ -712,12 +710,7 @@ class MainViewController: UIViewController {
         themeColorManager.updateThemeColor()
         let position = appSettings.currentAddressBarPosition
         switch position {
-        case .top:
-            if duckPlayerEntryPointVisible {
-                viewCoordinator.hideToolbarSeparator()
-            } else {
-                viewCoordinator.showToolbarSeparator()
-            }
+        case .top: break // no-op
         case .bottom:
             // Use higher delays then refreshViewsBasedOnAddressBarPosition
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.31) {

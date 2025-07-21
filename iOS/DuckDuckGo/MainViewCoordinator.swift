@@ -59,10 +59,6 @@ class MainViewCoordinator {
         self.superview = parentController.view
     }
     
-    func showToolbarSeparator() {
-        hideToolbarSeparator()
-    }
-
     func hideToolbarSeparator() {
         toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
     }

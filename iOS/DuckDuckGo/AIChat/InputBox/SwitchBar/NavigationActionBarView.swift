@@ -118,9 +118,9 @@ final class NavigationActionBarView: UIView {
         
         NSLayoutConstraint.activate([
             // Main stack view constraints
-            mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.padding),
-            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.padding),
-            mainStackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.padding),
+            mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Constants.padding),
+            mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Constants.padding),
+            mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: Constants.padding),
             mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -Constants.padding),
 
             // Background gradient should align with the keyboard (or bottom safe area)

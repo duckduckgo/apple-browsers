@@ -391,7 +391,7 @@ private class CircularButton: UIButton {
         adjustsImageWhenHighlighted = false
     }
 
-    override var isHighlighted: BooleanLiteralType {
+    override var isHighlighted: Bool {
         didSet {
             UIView.animate(withDuration: 0.15) {
                 self.backgroundColor = self.isHighlighted ? self.definedBackgroundColor?.withAlphaComponent(0.8) : self.definedBackgroundColor

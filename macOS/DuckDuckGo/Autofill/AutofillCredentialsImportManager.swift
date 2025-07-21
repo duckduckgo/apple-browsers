@@ -28,7 +28,7 @@ public protocol AutofillLoginImportStateProvider {
     var isEligibleDDGUser: Bool { get }
     var hasImportedLogins: Bool { get }
     var isAutofillEnabled: Bool { get }
-    var isCredentialsImportPromptPermanantlyDismissed: Bool { get }
+    var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool { get }
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool
 }
 
@@ -70,7 +70,7 @@ extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
     }
 
     public func autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal() {
-        loginImportStateProvider.isCredentialsImportPromptPermanantlyDismissed = true
+        loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed = true
         PixelKit.fire(AutofillPixelKitEvent.importCredentialsPromptNeverAgainClicked.withoutMacPrefix)
     }
 
@@ -78,7 +78,7 @@ extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
         if let data = serializedInputContext.data(using: .utf8),
            let decoded = try? JSONDecoder().decode(CredentialsImportInputContext.self, from: data) {
             if decoded.credentialsImport {
-                return !loginImportStateProvider.isCredentialsImportPromptPermanantlyDismissed
+                return !loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed
             }
         }
         return true
@@ -118,7 +118,7 @@ private extension AutofillLoginImportStateProvider {
         guard !hasNeverPromptWebsitesFor(domain) else {
             return false
         }
-        guard !isCredentialsImportPromptPermanantlyDismissed else {
+        guard !isCredentialsImportPromoInBrowserPermanentlyDismissed else {
             return false
         }
         return true

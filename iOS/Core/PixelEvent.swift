@@ -61,7 +61,6 @@ extension Pixel {
         
         case privacyDashboardReportBrokenSite
         
-        case tabSwitcherNewLayoutSeen
         case tabSwitcherListEnabled
         case tabSwitcherGridEnabled
         case tabSwitcherNewTab
@@ -691,8 +690,8 @@ extension Pixel {
         case remoteMessageSheet
         
         // MARK: debug pixels
-        case dbCrashDetected
-        case dbCrashDetectedDaily
+        case dbCrashDetected(appIdentifier: String?)
+        case dbCrashDetectedDaily(appIdentifier: String?)
         case crashOnCrashHandlersSetUp
 
         case crashReportCRCIDMissing
@@ -1195,6 +1194,14 @@ extension Pixel {
         case duckPlayerYouTubeAgeRestrictedErrorDaily
         case duckPlayerYouTubeNoEmbedErrorDaily
         case duckPlayerYouTubeUnknownErrorDaily
+        case duckPlayerNativeYouTubeSignInErrorImpression
+        case duckPlayerNativeYouTubeAgeRestrictedErrorImpression
+        case duckPlayerNativeYouTubeNoEmbedErrorImpression
+        case duckPlayerNativeYouTubeUnknownErrorImpression
+        case duckPlayerNativeYouTubeSignInErrorDaily
+        case duckPlayerNativeYouTubeAgeRestrictedErrorDaily
+        case duckPlayerNativeYouTubeNoEmbedErrorDaily
+        case duckPlayerNativeYouTubeUnknownErrorDaily
 
         // MARK: enhanced statistics
         case usageSegments
@@ -1354,7 +1361,6 @@ extension Pixel.Event {
         case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
         case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
 
-        case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
         case .tabSwitcherNewTab: return "m_tab_manager_new_tab_click"
@@ -1891,8 +1897,18 @@ extension Pixel.Event {
 
             // MARK: debug pixels
 
-        case .dbCrashDetected: return "m_d_crash"
-        case .dbCrashDetectedDaily: return "m_d_crash_daily"
+        case .dbCrashDetected(let appIdentifier):
+            if let appIdentifier {
+                return "m_d_crash_\(appIdentifier)"
+            } else {
+                return "m_d_crash"
+            }
+        case .dbCrashDetectedDaily(let appIdentifier):
+            if let appIdentifier {
+                return "m_d_crash_\(appIdentifier)_daily"
+            } else {
+                return "m_d_crash_daily"
+            }
         case .crashReportCRCIDMissing: return "m_crashreporting_crcid-missing"
         case .crashReportingSubmissionFailed: return "m_crashreporting_submission-failed"
         case .crashOnCrashHandlersSetUp: return "m_d_crash_on_handlers_setup"
@@ -2382,6 +2398,14 @@ extension Pixel.Event {
         case .duckPlayerYouTubeAgeRestrictedErrorDaily: return "duckplayer_youtube-age-restricted-error_daily-unique"
         case .duckPlayerYouTubeNoEmbedErrorDaily: return "duckplayer_youtube-no-embed-error_daily-unique"
         case .duckPlayerYouTubeUnknownErrorDaily: return "duckplayer_youtube-unknown-error_daily-unique"
+        case .duckPlayerNativeYouTubeSignInErrorImpression: return "duckplayer_native_youtube-signin-error_impression"
+        case .duckPlayerNativeYouTubeAgeRestrictedErrorImpression: return "duckplayer_native_youtube-age-restricted-error_impression"
+        case .duckPlayerNativeYouTubeNoEmbedErrorImpression: return "duckplayer_native_youtube-no-embed-error_impression"
+        case .duckPlayerNativeYouTubeUnknownErrorImpression: return "duckplayer_native_youtube-unknown-error_impression"
+        case .duckPlayerNativeYouTubeSignInErrorDaily: return "duckplayer_native_youtube-signin-error_daily-unique"
+        case .duckPlayerNativeYouTubeAgeRestrictedErrorDaily: return "duckplayer_native_youtube-age-restricted-error_daily-unique"
+        case .duckPlayerNativeYouTubeNoEmbedErrorDaily: return "duckplayer_native_youtube-no-embed-error_daily-unique"
+        case .duckPlayerNativeYouTubeUnknownErrorDaily: return "duckplayer_native_youtube-unknown-error_daily-unique"
 
         // MARK: Enhanced statistics
         case .usageSegments: return "m_retention_segments"

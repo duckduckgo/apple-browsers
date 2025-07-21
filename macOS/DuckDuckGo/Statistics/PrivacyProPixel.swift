@@ -31,7 +31,7 @@ fileprivate let appDistribution = "direct"
 
 enum PrivacyProPixel: PixelKitEventV2 {
     // Subscription
-    case privacyProSubscriptionActive
+    case privacyProSubscriptionActive(AuthVersion)
     case privacyProOfferScreenImpression
     case privacyProPurchaseAttempt
     case privacyProPurchaseFailureOther
@@ -80,6 +80,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
     case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
     case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
+    // Toolbar Button Upsell
+    case privacyProToolbarButtonShown
+    case privacyProToolbarButtonPopoverShown
+    case privacyProToolbarButtonPopoverDismissButtonClicked
+    case privacyProToolbarButtonPopoverProceedButtonClicked
 
     var name: String {
         switch self {
@@ -133,6 +138,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+            // Toolbar Button Upsell
+        case .privacyProToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
+        case .privacyProToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
+        case .privacyProToolbarButtonPopoverDismissButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked"
+        case .privacyProToolbarButtonPopoverProceedButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked"
         }
     }
 
@@ -158,6 +168,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed(let source, let error):
             return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
                     PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProSubscriptionActive(let authVersion):
+            return [AuthVersion.key: authVersion.rawValue]
         default:
             return nil
         }

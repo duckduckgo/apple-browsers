@@ -96,10 +96,7 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testSetupForAppStore() async throws {
         // Given
-        storePurchaseManager.onUpdateAvailableProducts = {
-            self.storePurchaseManager.areProductsAvailable = true
-        }
-
+        self.storePurchaseManager.areProductsAvailable = true
         // When
         // triggered on DefaultSubscriptionManager's init
         try await Task.sleep(seconds: 0.5)
@@ -240,9 +237,9 @@ final class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Tests for Free Trial Eligibility
 
-    func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsNotEligible() throws {
+    func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsEligible() throws {
         // Given
-        storePurchaseManager.isEligibleForFreeTrialResult = true
+        storePurchaseManager.isEligibleForFreeTrialResult = false
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                        accountManager: accountManager,
@@ -255,7 +252,7 @@ final class SubscriptionManagerTests: XCTestCase {
         let result = sut.isUserEligibleForFreeTrial()
 
         // Then
-        XCTAssertFalse(result)
+        XCTAssertTrue(result)
     }
 
     func testWhenPlatformIsAppStoreAndUserIsEligibleForFreeTrialThenReturnsEligible() throws {

@@ -29,7 +29,7 @@ struct SettingsAppearanceView: View {
         List {
             Section {
                 // App Icon
-                let image = Image(uiImage: viewModel.state.appIcon.smallImage ?? UIImage())
+                let image = Image(uiImage: viewModel.state.appIcon.smallImage)
                 SettingsCellView(label: UserText.settingsIcon,
                                  action: { viewModel.presentLegacyView(.appIcon ) },
                                  accessory: .image(image),

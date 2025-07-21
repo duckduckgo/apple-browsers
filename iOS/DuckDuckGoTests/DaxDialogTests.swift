@@ -1143,7 +1143,9 @@ final class DaxDialog: XCTestCase {
 }
 
 final class MockOnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping {
-
+    
+    var proceedButtonText = ""
+    
     var shouldDisplayValue: Bool = false
 
     var shouldDisplay: Bool {

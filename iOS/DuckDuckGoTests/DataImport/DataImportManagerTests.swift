@@ -28,15 +28,18 @@ final class DataImportManagerTests: XCTestCase {
 
     private var dataImportManager: DataImportManager!
     private var loginImporter: MockLoginImporter!
+    private var creditCardImporter: MockCreditCardImporter!
     private var reporter: SecureVaultReporting!
     private var mockDatabase: CoreDataDatabase!
     private var tld: TLD!
     private var htmlLoader: HtmlTestDataLoader!
+    private var vault = (try? MockSecureVaultFactory.makeVault(reporter: nil))!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
 
         loginImporter = MockLoginImporter()
+        creditCardImporter = MockCreditCardImporter()
         reporter = MockSecureVaultReporting()
         mockDatabase = MockBookmarksDatabase.make()
         tld = TLD()
@@ -44,6 +47,8 @@ final class DataImportManagerTests: XCTestCase {
 
         dataImportManager = DataImportManager(
             loginImporter: loginImporter,
+            creditCardImporter: creditCardImporter,
+            vault: vault,
             reporter: reporter,
             bookmarksDatabase: mockDatabase,
             favoritesDisplayMode: .displayNative(.mobile),
@@ -54,6 +59,7 @@ final class DataImportManagerTests: XCTestCase {
     override func tearDownWithError() throws {
         dataImportManager = nil
         loginImporter = nil
+        creditCardImporter = nil
         reporter = nil
         mockDatabase = nil
         tld = nil
@@ -74,6 +80,7 @@ final class DataImportManagerTests: XCTestCase {
         XCTAssertNil(DataImportManager.FileType(typeIdentifier: invalidIdentifier))
     }
 
+    // MARK: - CSV Import Tests
 
     func testWhenImportingCSVFileThenPasswordsSuccessfullyImported() async throws {
         let testURL = Bundle(for: DataImportManagerTests.self)
@@ -91,7 +98,7 @@ final class DataImportManagerTests: XCTestCase {
 
     func testWhenImportHtmlFileThenBookmarksSuccessfullyImport() async throws {
         let testURL = Bundle(for: DataImportManagerTests.self)
-                .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html")!
+            .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html")!
 
         let expectedSummary = DataImport.DataTypeSummary(successful: 29, duplicate: 0, failed: 0)
 
@@ -101,20 +108,61 @@ final class DataImportManagerTests: XCTestCase {
         XCTAssertEqual(summary, expectedSummary)
     }
 
+    // MARK: - JSON Import Tests
+
+    func testWhenImportingJSONFileThenCreditCardsSuccessfullyImported() async throws {
+        let testURL = Bundle(for: DataImportManagerTests.self)
+            .url(forResource: "MockFiles/creditcards/payment_cards", withExtension: "json")!
+
+        let expectedSummary = DataImport.DataTypeSummary(successful: 3, duplicate: 0, failed: 0)
+
+        let result = try await dataImportManager.importFile(at: testURL, for: .json)
+        let summary = try? result?[.creditCards]?.get()
+
+        XCTAssertEqual(summary, expectedSummary)
+    }
+
     // MARK: - ZIP Import Tests
+
+    func testWhenImportZipArchiveWithAllThreeDataTypesThenAllAreImported() async throws {
+        let contents = ImportArchiveContents(
+            passwords: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv")!)],
+            bookmarks: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html")!)],
+            creditCards: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/creditcards/payment_cards", withExtension: "json")!)]
+        )
+
+        let result = await dataImportManager.importZipArchive(from: contents, for: [.passwords, .bookmarks, .creditCards])
+
+        XCTAssertNotNil(result[.passwords])
+        XCTAssertNotNil(result[.bookmarks])
+        XCTAssertNotNil(result[.creditCards])
+
+        let passwordsSummary = try result[.passwords]?.get()
+        let bookmarksSummary = try result[.bookmarks]?.get()
+        let creditCardsSummary = try result[.creditCards]?.get()
+
+        XCTAssertEqual(passwordsSummary?.successful, 11)
+        XCTAssertEqual(bookmarksSummary?.successful, 29)
+        XCTAssertEqual(creditCardsSummary?.successful, 3)
+    }
 
     func testWhenImportZipArchiveWithBothPasswordsAndBookmarksThenBothAreImported() async throws {
         let contents = ImportArchiveContents(
-                passwords: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
-                        .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv")!)],
-                bookmarks: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
-                        .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html")!)]
+            passwords: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv")!)],
+            bookmarks: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html")!)],
+            creditCards: []
         )
 
         let result = await dataImportManager.importZipArchive(from: contents, for: [.passwords, .bookmarks])
 
         XCTAssertNotNil(result[.passwords])
         XCTAssertNotNil(result[.bookmarks])
+        XCTAssertNil(result[.creditCards])
 
         let passwordsSummary = try result[.passwords]?.get()
         let bookmarksSummary = try result[.bookmarks]?.get()
@@ -125,15 +173,17 @@ final class DataImportManagerTests: XCTestCase {
 
     func testWhenImportZipArchiveWithOnlyPasswordsThenPasswordsAreImported() async throws {
         let contents = ImportArchiveContents(
-                passwords: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
-                        .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv")!)],
-                bookmarks: []
+            passwords: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv")!)],
+            bookmarks: [],
+            creditCards: []
         )
 
         let result = await dataImportManager.importZipArchive(from: contents, for: [.passwords])
 
         XCTAssertNotNil(result[.passwords])
         XCTAssertNil(result[.bookmarks])
+        XCTAssertNil(result[.creditCards])
 
         let passwordsSummary = try result[.passwords]?.get()
         XCTAssertEqual(passwordsSummary?.successful, 11)
@@ -141,39 +191,104 @@ final class DataImportManagerTests: XCTestCase {
 
     func testWhenImportZipArchiveWithOnlyBookmarksThenBookmarksAreImported() async throws {
         let contents = ImportArchiveContents(
-                passwords: [],
-                bookmarks: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
-                    .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html")!)]
-       )
+            passwords: [],
+            bookmarks: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html")!)],
+            creditCards: []
+        )
 
         let result = await dataImportManager.importZipArchive(from: contents, for: [.bookmarks])
 
         XCTAssertNil(result[.passwords])
         XCTAssertNotNil(result[.bookmarks])
+        XCTAssertNil(result[.creditCards])
 
         let bookmarksSummary = try result[.bookmarks]?.get()
         XCTAssertEqual(bookmarksSummary?.successful, 29)
     }
 
-    func testImportZipArchiveIsEmptyThenNoDataIsImported() async throws {
-        let contents = ImportArchiveContents(passwords: [], bookmarks: [])
+    func testWhenImportZipArchiveWithOnlyCreditCardsThenCreditCardsAreImported() async throws {
+        let contents = ImportArchiveContents(
+            passwords: [],
+            bookmarks: [],
+            creditCards: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/creditcards/payment_cards", withExtension: "json")!)]
+        )
 
-        let result = await dataImportManager.importZipArchive(from: contents, for: [.passwords, .bookmarks])
+        let result = await dataImportManager.importZipArchive(from: contents, for: [.creditCards])
+
+        XCTAssertNil(result[.passwords])
+        XCTAssertNil(result[.bookmarks])
+        XCTAssertNotNil(result[.creditCards])
+
+        let creditCardsSummary = try result[.creditCards]?.get()
+        XCTAssertEqual(creditCardsSummary?.successful, 3)
+    }
+
+    func testWhenImportZipArchiveWithPasswordsAndCreditCardsThenBothAreImported() async throws {
+        let contents = ImportArchiveContents(
+            passwords: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv")!)],
+            bookmarks: [],
+            creditCards: [try String(contentsOf: Bundle(for: DataImportManagerTests.self)
+                .url(forResource: "MockFiles/creditcards/payment_cards", withExtension: "json")!)]
+        )
+
+        let result = await dataImportManager.importZipArchive(from: contents, for: [.passwords, .creditCards])
+
+        XCTAssertNotNil(result[.passwords])
+        XCTAssertNil(result[.bookmarks])
+        XCTAssertNotNil(result[.creditCards])
+
+        let passwordsSummary = try result[.passwords]?.get()
+        let creditCardsSummary = try result[.creditCards]?.get()
+
+        XCTAssertEqual(passwordsSummary?.successful, 11)
+        XCTAssertEqual(creditCardsSummary?.successful, 3)
+    }
+
+    func testImportZipArchiveIsEmptyThenNoDataIsImported() async throws {
+        let contents = ImportArchiveContents(passwords: [], bookmarks: [], creditCards: [])
+
+        let result = await dataImportManager.importZipArchive(from: contents, for: [.passwords, .bookmarks, .creditCards])
 
         XCTAssertTrue(result.isEmpty)
     }
 
     // MARK: - Preview Tests
 
-    func testWhenImportZipArchiveWithBothPasswordsAndBookmarksThePreviewCountsAreCorrect() throws {
+    func testWhenImportZipArchiveWithAllThreeDataTypesThePreviewCountsAreCorrect() throws {
         let passwordsURL = try XCTUnwrap(Bundle(for: DataImportManagerTests.self)
-                                                 .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv"))
+            .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv"))
         let bookmarksURL = try XCTUnwrap(Bundle(for: DataImportManagerTests.self)
-                                                 .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html"))
+            .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html"))
+        let creditCardsURL = try XCTUnwrap(Bundle(for: DataImportManagerTests.self)
+            .url(forResource: "MockFiles/creditcards/payment_cards", withExtension: "json"))
 
         let contents = ImportArchiveContents(
-                passwords: [try String(contentsOf: passwordsURL)],
-                bookmarks: [try String(contentsOf: bookmarksURL)]
+            passwords: [try String(contentsOf: passwordsURL)],
+            bookmarks: [try String(contentsOf: bookmarksURL)],
+            creditCards: [try String(contentsOf: creditCardsURL)]
+        )
+
+        let previews = DataImportManager.preview(contents: contents, tld: tld)
+
+        XCTAssertEqual(previews.count, 3)
+        XCTAssertEqual(previews.first(where: { $0.type == .passwords })?.count, 11)
+        XCTAssertEqual(previews.first(where: { $0.type == .bookmarks })?.count, 29)
+        XCTAssertNotNil(previews.first(where: { $0.type == .creditCards }))
+    }
+
+    func testWhenImportZipArchiveWithBothPasswordsAndBookmarksThePreviewCountsAreCorrect() throws {
+        let passwordsURL = try XCTUnwrap(Bundle(for: DataImportManagerTests.self)
+            .url(forResource: "MockFiles/passwords/passwords", withExtension: "csv"))
+        let bookmarksURL = try XCTUnwrap(Bundle(for: DataImportManagerTests.self)
+            .url(forResource: "MockFiles/bookmarks/bookmarks_safari", withExtension: "html"))
+
+        let contents = ImportArchiveContents(
+            passwords: [try String(contentsOf: passwordsURL)],
+            bookmarks: [try String(contentsOf: bookmarksURL)],
+            creditCards: []
         )
 
         let previews = DataImportManager.preview(contents: contents, tld: tld)
@@ -184,14 +299,31 @@ final class DataImportManagerTests: XCTestCase {
     }
 
     func testImportZipArchiveIsEmptyThenPreviewIsEmpty() {
-        let contents = ImportArchiveContents(passwords: [], bookmarks: [])
+        let contents = ImportArchiveContents(passwords: [], bookmarks: [], creditCards: [])
 
         let previews = DataImportManager.preview(contents: contents, tld: tld)
 
         XCTAssertTrue(previews.isEmpty)
     }
 
+    func testWhenPreviewWithOnlyCreditCardsThenCountIsCorrect() throws {
+        let creditCardsURL = try XCTUnwrap(Bundle(for: DataImportManagerTests.self)
+            .url(forResource: "MockFiles/creditcards/payment_cards", withExtension: "json"))
+
+        let contents = ImportArchiveContents(
+            passwords: [],
+            bookmarks: [],
+            creditCards: [try String(contentsOf: creditCardsURL)]
+        )
+
+        let previews = DataImportManager.preview(contents: contents, tld: tld)
+
+        XCTAssertEqual(previews.count, 1)
+        XCTAssertNotNil(previews.first(where: { $0.type == .creditCards }))
+    }
 }
+
+// MARK: - Mock Classes
 
 private class MockLoginImporter: LoginImporter {
     var importedLogins: DataImportSummary?
@@ -202,5 +334,15 @@ private class MockLoginImporter: LoginImporter {
         self.importedLogins = [.passwords: .success(summary)]
         return summary
     }
+}
 
+private class MockCreditCardImporter: CreditCardImporter {
+    var importedCreditCards: DataImportSummary?
+
+    func importCreditCards(_ cards: [BrowserServicesKit.ImportedCreditCard], vault: (any AutofillSecureVault)?, completion: @escaping (Int) throws -> Void) throws -> DataImport.DataTypeSummary {
+        let summary = DataImport.DataTypeSummary(successful: cards.count, duplicate: 0, failed: 0)
+
+        self.importedCreditCards = [.creditCards: .success(summary)]
+        return summary
+    }
 }

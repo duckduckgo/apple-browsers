@@ -29,6 +29,7 @@ protocol OmnibarDependencyProvider {
     var featureFlagger: FeatureFlagger { get }
     var aiChatSettings: AIChatSettingsProvider { get }
     var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
+    var appSettings: AppSettings { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -36,4 +37,5 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettingsProvider
     var suggestionTrayDependencies: SuggestionTrayDependencies?
+    let appSettings: any AppSettings
 }

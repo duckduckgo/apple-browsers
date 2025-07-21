@@ -92,8 +92,8 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     func onFirstAppear() {
         Task {
             // Load initial state from the cache
-            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .cacheOnly)
-            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheOnly,
+            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .cacheFirst)
+            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheFirst,
                                                                                                  loadingIndicator: false)
             let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
@@ -135,14 +135,13 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         Logger.subscription.log("Fetch and update account email")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        var tokensPolicy: AuthTokensCachePolicy = .local
+        let tokensPolicy: AuthTokensCachePolicy
+
         switch cachePolicy {
         case .remoteFirst:
             tokensPolicy = .localForceRefresh
         case .cacheFirst:
             tokensPolicy = .localValid
-        case .cacheOnly:
-            tokensPolicy = .local
         }
 
         do {

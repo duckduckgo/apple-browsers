@@ -25,7 +25,7 @@ import BrowserServicesKit
 
 final class AutoconsentMessageProtocolTests: XCTestCase {
 
-    let userScript: AutoconsentUserScript = {
+    var userScript: AutoconsentUserScript! = {
         let embeddedConfig =
         """
         {

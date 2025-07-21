@@ -47,13 +47,14 @@ class MainViewFactory {
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
-                                    suggestionTrayDependencies: SuggestionTrayDependencies? = nil) -> MainViewCoordinator {
+                                    suggestionTrayDependencies: SuggestionTrayDependencies? = nil,
+                                    appSettings: AppSettings) -> MainViewCoordinator {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      suggestionTrayDependencies: suggestionTrayDependencies)
-
+                                                      suggestionTrayDependencies: suggestionTrayDependencies,
+                                                      appSettings: appSettings)
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,

@@ -114,6 +114,7 @@ class MainViewController: UIViewController {
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
+    let featureFlagger: FeatureFlagger
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -139,7 +140,6 @@ class MainViewController: UIViewController {
     let privacyProDataReporter: PrivacyProDataReporting
 
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
-    private(set) lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
     private lazy var faviconsFetcherOnboarding = FaviconsFetcherOnboarding(syncService: syncService, syncBookmarksAdapter: syncDataProviders.bookmarksAdapter)
 
@@ -237,12 +237,10 @@ class MainViewController: UIViewController {
         syncDataProviders: SyncDataProviders,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
-        tabsModel: TabsModel,
-        tabsPersistence: TabsModelPersisting,
+        tabManager: TabManager,
         syncPausedStateManager: any SyncPausedStateManaging,
         privacyProDataReporter: PrivacyProDataReporting,
         variantManager: VariantManager,
-        contextualOnboardingPresenter: ContextualOnboardingPresenting,
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingPixelReporter: OnboardingPixelReporting,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
@@ -256,7 +254,6 @@ class MainViewController: UIViewController {
         textZoomCoordinator: TextZoomCoordinating,
         websiteDataManager: WebsiteDataManaging,
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
-        maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
@@ -276,31 +273,9 @@ class MainViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.experimentalAIChatManager = experimentalAIChatManager
         self.previewsSource = previewsSource
+        self.tabManager = tabManager
         self.featureDiscovery = featureDiscovery
         self.themeManager = themeManager
-
-        let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
-        self.tabManager = TabManager(model: tabsModel,
-                                     persistence: tabsPersistence,
-                                     previewsSource: previewsSource,
-                                     interactionStateSource: interactionStateSource,
-                                     bookmarksDatabase: bookmarksDatabase,
-                                     historyManager: historyManager,
-                                     syncService: syncService,
-                                     privacyProDataReporter: privacyProDataReporter,
-                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
-                                     contextualOnboardingLogic: contextualOnboardingLogic,
-                                     onboardingPixelReporter: contextualOnboardingPixelReporter,
-                                     featureFlagger: featureFlagger,
-                                     contentScopeExperimentManager: contentScopeExperimentsManager,
-                                     subscriptionCookieManager: subscriptionCookieManager,
-                                     appSettings: appSettings,
-                                     textZoomCoordinator: textZoomCoordinator,
-                                     websiteDataManager: websiteDataManager,
-                                     fireproofing: fireproofing,
-                                     maliciousSiteProtectionManager: maliciousSiteProtectionManager,
-                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                     featureDiscovery: featureDiscovery)
         self.syncPausedStateManager = syncPausedStateManager
         self.privacyProDataReporter = privacyProDataReporter
         self.homeTabManager = NewTabPageManager()
@@ -311,6 +286,7 @@ class MainViewController: UIViewController {
         self.statisticsStore = statisticsStore
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
+        self.featureFlagger = featureFlagger
         self.fireproofing = fireproofing
         self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator
@@ -318,7 +294,7 @@ class MainViewController: UIViewController {
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
-        self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
         
@@ -366,7 +342,8 @@ class MainViewController: UIViewController {
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
-                                                              suggestionTrayDependencies: suggestionTrayDependencies)
+                                                              suggestionTrayDependencies: suggestionTrayDependencies,
+                                                              appSettings: appSettings)
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -455,7 +432,8 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      appSettings: appSettings)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -576,7 +554,7 @@ class MainViewController: UIViewController {
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection), hasEntitlement {
+            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection), canShowVPNInUI {
                 segueToVPN()
             } else {
                 segueToPrivacyPro()
@@ -805,11 +783,25 @@ class MainViewController: UIViewController {
             if let currentTab {
                 let inset = intersection.height > 0 ? omniBarHeight : 0
                 currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+
+                let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
+                currentTab.borderView.bottomOffset = -bottomOffset
+            }
+
+            // This NTP stuff is to animate the bottom border divider, but also allow the logo to show.
+            //  If we hever have the bottom border and the logo visible at the same... we'll need to do something else.
+            if let ntp = self.newTabPageViewController, !ntp.isShowingLogo {
+                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
             }
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(omniBarHeight, containerHeight), right: 0)
+                if let ntp = self.newTabPageViewController, ntp.isShowingLogo {
+                    self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+                } else {
+                    self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
+                }
+                self.currentTab?.borderView.layoutIfNeeded()
             }
         }
 
@@ -966,7 +958,8 @@ class MainViewController: UIViewController {
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   newTabDialogTypeProvider: DaxDialogs.shared,
                                                   faviconLoader: faviconLoader,
-                                                  messageNavigationDelegate: self)
+                                                  messageNavigationDelegate: self,
+                                                  appSettings: appSettings)
 
         controller.delegate = self
         controller.shortcutsDelegate = self
@@ -1382,6 +1375,7 @@ class MainViewController: UIViewController {
             
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
+            self.newTabPageViewController?.widthChanged()
         }
     }
 
@@ -1411,7 +1405,8 @@ class MainViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
-            self.suggestionTrayController?.fill()
+            let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
+            self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
     }
     
@@ -1782,33 +1777,8 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.networkProtection.log("App foreground notification received, checking entitlements")
-                Task {
-                    guard let self else { return }
-
-                    let hasEntitlement = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-                    let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-                    let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
-
-                    if hasEntitlement && self.lastKnownEntitlementsExpired {
-                        PixelKit.fire(
-                            VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                                isSubscriptionActive: isSubscriptionActive,
-                                isAuthV2Enabled: isAuthV2Enabled,
-                                trigger: .clientForegrounded),
-                            frequency: .dailyAndCount)
-
-                        self.lastKnownEntitlementsExpired = false
-                    } else if !hasEntitlement && !self.lastKnownEntitlementsExpired {
-                        PixelKit.fire(
-                            VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                                isSubscriptionActive: isSubscriptionActive,
-                                isAuthV2Enabled: isAuthV2Enabled,
-                                trigger: .clientForegrounded),
-                            frequency: .dailyAndCount)
-
-                        self.lastKnownEntitlementsExpired = true
-                    }
-                }
+                guard let self else { return }
+                self.performClientCheck(trigger: .appForegrounded)
             }
             .store(in: &vpnCancellables)
 
@@ -1837,13 +1807,6 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.onNetworkProtectionEntitlementMessagingChange()
-            }
-            .store(in: &vpnCancellables)
-
-        NotificationCenter.default.publisher(for: .expiredRefreshTokenDetected)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                self?.onExpiredRefreshTokenDetected(notification)
             }
             .store(in: &vpnCancellables)
 
@@ -1913,55 +1876,71 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    trigger: .notification(sourceObject: notification.object)),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
             tunnelDefaults.resetEntitlementMessaging()
             Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
         }
     }
 
-    @objc
-    private func onExpiredRefreshTokenDetected(_ notification: Notification) {
-        // Not implemented : https://app.asana.com/0/1205842942115003/1209622270835329/f
-    }
-
     var networkProtectionTunnelController: NetworkProtectionTunnelController {
         AppDependencyProvider.shared.networkProtectionTunnelController
     }
 
-    func checkSubscriptionEntitlements() {
+    private func performClientCheck(trigger: VPNSubscriptionClientCheckPixel.Trigger) {
         Task {
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
-            let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
+            do {
+                let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+                let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+                let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
 
-            if hasEntitlement && lastKnownEntitlementsExpired {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: .clientCheck),
-                    frequency: .dailyAndCount)
-                
-                lastKnownEntitlementsExpired = false
-            } else if !hasEntitlement && !lastKnownEntitlementsExpired {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: .clientCheck),
-                    frequency: .dailyAndCount)
-                
-                lastKnownEntitlementsExpired = true
+                if hasEntitlement && lastKnownEntitlementsExpired {
+                    PixelKit.fire(
+                        VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
+                            isSubscriptionActive: isSubscriptionActive,
+                            isAuthV2Enabled: isAuthV2Enabled,
+                            trigger: trigger),
+                        frequency: .dailyAndCount)
+                    
+                    lastKnownEntitlementsExpired = false
+                } else if !hasEntitlement && !lastKnownEntitlementsExpired {
+                    PixelKit.fire(
+                        VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
+                            isSubscriptionActive: isSubscriptionActive,
+                            isAuthV2Enabled: isAuthV2Enabled,
+                            trigger: trigger),
+                        frequency: .dailyAndCount)
+                    
+                    lastKnownEntitlementsExpired = true
+                }
+            } catch {
+                await handleClientCheckFailure(error: error, trigger: trigger)
             }
         }
+    }
+
+    private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
+        let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+        
+        PixelKit.fire(
+            VPNSubscriptionClientCheckPixel.failed(
+                isSubscriptionActive: isSubscriptionActive,
+                isAuthV2Enabled: isAuthV2Enabled,
+                trigger: trigger,
+                error: error),
+            frequency: .daily)
+    }
+
+    func checkSubscriptionEntitlements() {
+        performClientCheck(trigger: .appStartup)
     }
 
     @objc
@@ -1973,17 +1952,16 @@ class MainViewController: UIViewController {
                 Logger.subscription.fault("Missing entitlements payload")
                 return
             }
-            let hasEntitlement = payload.entitlements.contains(.networkProtection)
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
-            let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
+            let hasEntitlements = payload.entitlements.contains(.networkProtection)
+            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             if hasEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: .notification(sourceObject: notification.object)),
+                        sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
                 if lastKnownEntitlementsExpired {
@@ -1996,7 +1974,7 @@ class MainViewController: UIViewController {
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: .notification(sourceObject: notification.object)),
+                        sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
                 if !lastKnownEntitlementsExpired {
@@ -2017,14 +1995,14 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    trigger: .notification(sourceObject: notification.object)),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             await networkProtectionTunnelController.stop()
@@ -2076,8 +2054,8 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
     }
 
-    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
-        aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
+    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
     }
 }
 
@@ -2279,12 +2257,16 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+    func isSuggestionTrayVisible() -> Bool {
+        suggestionTrayController?.isShowing == true
+    }
+
     func onSelectFavorite(_ favorite: BookmarkEntity) {
         handleFavoriteSelected(favorite)
     }
 
-    func onOmniPromptSubmitted(_ query: String) {
-        openAIChat(query, autoSend: true)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+        openAIChat(query, autoSend: true, tools: tools)
     }
 
     func didRequestCurrentURL() -> URL? {
@@ -3012,7 +2994,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestNewTab(tabSwitcher: TabSwitcherViewController) {
         newTab()
-        if newTabPageViewController != nil {
+        if newTabPageViewController?.isShowingLogo == true, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             animateLogoAppearance()
         }
         themeColorManager.updateThemeColor()
@@ -3521,19 +3503,6 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
             }
         } else {
             segueToSettingsAIChat()
-        }
-    }
-}
-
-extension MainViewController {
-    private func updateOmniBarSeparatorForDuckPlayer(addressBarPosition: AddressBarPosition, isDuckPlayerVisible: Bool) {
-        if isDuckPlayerVisible {
-            switch addressBarPosition {
-            case .top, .bottom:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    self.viewCoordinator.omniBar.hideSeparator()
-                }
-            }
         }
     }
 }

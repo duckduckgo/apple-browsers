@@ -108,6 +108,13 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
 
     }
 
+    override func tearDown() {
+        duckPlayer = nil
+        preferences = nil
+        tabExtension = nil
+        webView = nil
+    }
+
     func testNavigatingWhenNavigatingFromDuckPlayerToSameVideo_DisablesDuckPlayerForNextVideo() async {
         // Setup
         preferences.duckPlayerMode = .enabled

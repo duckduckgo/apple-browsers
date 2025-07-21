@@ -27,7 +27,7 @@ final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
     private var storage: AIChatPreferencesStorage
     private var cancellables = Set<AnyCancellable>()
-    private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/aichat/")!
+    private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/approach-to-ai")!
     private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
     private var windowControllersManager: WindowControllersManager
     private let featureFlagger: FeatureFlagger

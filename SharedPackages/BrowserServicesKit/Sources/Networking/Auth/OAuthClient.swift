@@ -23,8 +23,6 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
     case internalError(String)
     case missingTokenContainer
     case unauthenticated
-    /// When both access token and refresh token are expired
-    case refreshTokenExpired
     case invalidTokenRequest
     case authMigrationNotPerformed
     case unknownAccount
@@ -37,8 +35,6 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
             return "No tokens available"
         case .unauthenticated:
             return "The account is not authenticated, please re-authenticate"
-        case .refreshTokenExpired:
-            return "The refresh token is expired, the token is unrecoverable please re-authenticate"
         case .invalidTokenRequest:
             return "Invalid token request"
         case .authMigrationNotPerformed:
@@ -103,6 +99,10 @@ public protocol OAuthClient {
     /// - `.createIfNeeded`: Returns what's in the storage, if the stored token is expired refreshes it, if not token is available creates a new account/token
     /// All options store new or refreshed tokens via the tokensStorage
     func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer
+
+    /// Checks if the migration from V1 to V2 is possible
+    /// - Returns: true is possible, false otherwise
+    var isV1TokenPresent: Bool { get }
 
     /// Migrate access token v1 to auth token v2 if needed
     /// - Throws: An error in case of failures during the migration or a `OAuthClientError.authMigrationNotPerformed` if the migration is not needed or not possible
@@ -222,16 +222,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         let localTokenContainer = try tokenStorage.getTokenContainer()
-
-        if policy != .local,
-           let localTokenContainer,
-            localTokenContainer.decodedRefreshToken.isExpired() {
-            // The refresh token is expired, the token is un-refreshable
-            throw OAuthClientError.refreshTokenExpired
-        }
 
         switch policy {
         case .local:
@@ -255,9 +247,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             let expiresSoon = expirationInterval < Constants.tokenExpiryBufferInterval
             if localTokenContainer.decodedAccessToken.isExpired() || expiresSoon {
                 Logger.OAuthClient.log("Refreshing local already expired token")
-                return try await getTokens(policy: .localForceRefresh)
-            } else if expiresSoon {
-                Logger.OAuthClient.log("Refreshing local token expiring in \(expirationInterval)s")
                 return try await getTokens(policy: .localForceRefresh)
             } else {
                 return localTokenContainer
@@ -300,6 +289,15 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 }
             }
         }
+    }
+
+    public var isV1TokenPresent: Bool {
+        guard let legacyTokenStorage,
+              let legacyToken = legacyTokenStorage.token,
+              !legacyToken.isEmpty else {
+            return false
+        }
+        return true
     }
 
     /// Tries to retrieve the v1 auth token stored locally, if present performs a migration to v2

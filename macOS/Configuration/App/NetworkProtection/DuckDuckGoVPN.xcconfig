@@ -37,6 +37,7 @@ CODE_SIGN_ENTITLEMENTS[config=Review][sdk=macosx*] = DuckDuckGoVPN/DuckDuckGoVPN
 CODE_SIGN_ENTITLEMENTS[config=CI][sdk=macosx*] = DuckDuckGoVPN/DuckDuckGoVPN.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Debug][sdk=macosx*] = DuckDuckGoVPN/DuckDuckGoVPNDebug.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Release][sdk=macosx*] = DuckDuckGoVPN/DuckDuckGoVPN.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Alpha][sdk=macosx*] = DuckDuckGoVPN/DuckDuckGoVPN.entitlements
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = Developer ID Application
 CODE_SIGN_IDENTITY[config=Debug][sdk=macosx*] = Apple Development
@@ -48,6 +49,7 @@ PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] =
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.debug macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.review macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn macos
+PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.alpha macos
 
 FEATURE_FLAGS[arch=*][sdk=*] =
 FEATURE_FLAGS[config=CI][arch=*][sdk=*] =

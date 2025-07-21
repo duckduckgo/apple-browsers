@@ -25,12 +25,14 @@ final class AIChatSidebar: NSObject {
     /// The initial AI chat URL to be loaded.
     private let initialAIChatURL: URL
 
+    private let burnerMode: BurnerMode
+
     /// The view controller that displays the sidebar contents.
     /// This property is lazily created when first accessed.
     var sidebarViewController: AIChatSidebarViewController {
         get {
             guard let sidebarViewController = _sidebarViewController else {
-                let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: currentAIChatURL)
+                let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: currentAIChatURL, burnerMode: burnerMode)
                 _sidebarViewController = sidebarViewController
                 return sidebarViewController
             }
@@ -57,8 +59,9 @@ final class AIChatSidebar: NSObject {
 
     /// Creates a sidebar wrapper with the specified initial AI chat URL.
     /// - Parameter initialAIChatURL: The initial AI chat URL to load. If nil, defaults to the URL from AIChatRemoteSettings.
-    init(initialAIChatURL: URL? = nil) {
+    init(initialAIChatURL: URL? = nil, burnerMode: BurnerMode) {
         self.initialAIChatURL = initialAIChatURL ?? aiChatRemoteSettings.aiChatURL.forSidebar()
+        self.burnerMode = burnerMode
     }
 }
 
@@ -72,7 +75,7 @@ extension AIChatSidebar: NSSecureCoding {
 
     convenience init?(coder: NSCoder) {
         let initialAIChatURL = coder.decodeObject(of: NSURL.self, forKey: CodingKeys.initialAIChatURL) as URL?
-        self.init(initialAIChatURL: initialAIChatURL)
+        self.init(initialAIChatURL: initialAIChatURL, burnerMode: .regular)
     }
 
     func encode(with coder: NSCoder) {

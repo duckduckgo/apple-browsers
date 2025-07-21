@@ -29,7 +29,8 @@ extension Bundle {
         static let displayName = "CFBundleDisplayName"
         /// Custom key that may be added by the adhoc build workflow to append a suffix to the build version
         static let alphaBuildSuffix = "DDG_ALPHA_BUILD_SUFFIX"
-
+        /// Custom key that may be added by the build workflow to indicate a commit of the build
+        static let commitSHA = "DDG_COMMIT_SHA"
     }
 
     public var releaseVersionNumber: String? { infoDictionary?[Key.versionNumber] as? String }

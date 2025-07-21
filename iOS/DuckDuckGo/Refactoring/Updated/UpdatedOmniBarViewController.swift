@@ -21,8 +21,13 @@ import UIKit
 import PrivacyDashboard
 import Suggestions
 import Bookmarks
+import AIChat
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
+
+    var isSuggestionTrayVisible: Bool {
+        omniDelegate?.isSuggestionTrayVisible() == true
+    }
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
     private let aiChatSettings = AIChatSettings()
@@ -33,6 +38,21 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     }
 
     // MARK: - Initialization
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Handle address bar position changes to set the shadow correctly
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(addressBarPositionChanged),
+                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateShadowAppearanceByApplyingLayerMask()
+    }
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
@@ -90,6 +110,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         // Should show separator only when there is another button next to accessory button
         let isShowingSeparator = state.showAccessoryButton && (state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showShare)
         omniBarView.isShowingSeparator = isShowingSeparator
+
+        updateShadowAppearanceByApplyingLayerMask()
     }
 
     override func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -120,15 +142,23 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingSmallTopSpacing = false
     }
 
-    override func preventShadowsOnTop() {
-        omniBarView.updateMaskLayer(maskTop: true)
+    var shouldClipShadows: Bool {
+        state.isBrowsing
+            && !isSuggestionTrayVisible
     }
 
-    override func preventShadowsOnBottom() {
-        omniBarView.updateMaskLayer(maskTop: false)
+    // MARK: Notifications
+
+    @objc private func addressBarPositionChanged() {
+        updateShadowAppearanceByApplyingLayerMask()
     }
 
     // MARK: - Private Helper Methods
+
+    private func updateShadowAppearanceByApplyingLayerMask() {
+        omniBarView.updateMaskLayer(maskTop: dependencies.appSettings.currentAddressBarPosition.isBottom,
+                                    clip: shouldClipShadows)
+    }
 
     private func presentExperimentalEditingState(for textField: UITextField) {
         guard editingStateViewController == nil else { return }
@@ -188,10 +218,10 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onOmniQuerySubmitted(query)
     }
 
-    func onPromptSubmitted(_ query: String) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
         editingStateViewController?.dismissAnimated { [weak self] in
             guard let self else { return }
-            self.omniDelegate?.onOmniPromptSubmitted(query)
+            self.omniDelegate?.onPromptSubmitted(query, tools: tools)
         }
     }
 
@@ -212,5 +242,13 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
+    }
+
+    func onAppear() {
+        barView.hideButtons()
+    }
+
+    func onDismiss() {
+        barView.revealButtons()
     }
 }

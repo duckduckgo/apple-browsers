@@ -173,10 +173,6 @@ struct DuckPlayerWebView: UIViewRepresentable {
            contentScopeUserScripts = nil
        }
 
-       private func handleYouTubeWatchURL(_ url: URL) {
-           Logger.duckplayer.debug("Detected YouTube watch URL: \(url.absoluteString)")
-           viewModel?.handleYouTubeNavigation(url)
-       }
 
        @MainActor
       func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -193,11 +189,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
               return
           }
 
-          // Handle YouTube navigation attempts (from logo, links, etc)
-          if url.isYoutubeWatch {
-              handleYouTubeWatchURL(url)
-          } else if url.isYoutubeWatch == true {
-              Logger.duckplayer.log("[DuckPlayer] Blocked navigation to YouTube domain: \(url.absoluteString)")
+          // Handle navigation attempts to external URLs
+          if !url.isDuckPlayer && !url.absoluteString.contains("about:blank") {
+              viewModel?.handleYouTubeNavigation(url)
           }
 
           // Cancel all navigation outside of youtube-nocookie.com
@@ -207,8 +201,8 @@ struct DuckPlayerWebView: UIViewRepresentable {
        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
            // Prevent automatic opening of URLs in browser
            if let url = navigationAction.request.url {
-               if url.isYoutubeWatch {
-                   handleYouTubeWatchURL(url)
+               if !url.isDuckPlayer {
+                   viewModel?.handleYouTubeNavigation(url)
                } else {
                    Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.absoluteString)")
                }

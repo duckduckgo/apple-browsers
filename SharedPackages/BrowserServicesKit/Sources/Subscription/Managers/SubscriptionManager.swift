@@ -45,7 +45,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// Purchase page URL when launched as a result of intercepted `/pro` navigation.
     /// It is created based on current `SubscriptionURL.purchase` and inherits designated URL components from the source page that triggered redirect.
     func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
-    func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
+    func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName]
 }
 
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
@@ -203,14 +203,14 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     // MARK: - Current subscription's features
 
-    public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
+    public func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName] {
         guard let token = accountManager.accessToken else { return [] }
 
         switch await subscriptionEndpointService.getSubscription(accessToken: token, cachePolicy: .returnCacheDataElseLoad) {
         case .success(let subscription):
             return await subscriptionFeatureMappingCache.subscriptionFeatures(for: subscription.productId)
-        case .failure:
-            return []
+        case .failure(let error):
+            throw error
         }
     }
 }

@@ -58,110 +58,112 @@ final class SwitchBarHandlerTests: XCTestCase {
     }
 
     // MARK: - Toggle State Persistence Tests
+    /*
+     Disable Toggle states while new approach is being evaluated
+     https://app.asana.com/1/137249556945/project/72649045549333/task/1210814996510636?focus=true
+     func testRestoreToggleState_WhenNoStoredValue_ShouldDefaultToSearch() {
+     // Given: No stored value in storage
+     mockStorage.clearAll()
 
-    func testRestoreToggleState_WhenNoStoredValue_ShouldDefaultToSearch() {
-        // Given: No stored value in storage
-        mockStorage.clearAll()
+     // When: Creating a new handler
+     createSUT()
 
-        // When: Creating a new handler
-        createSUT()
+     // Then: Should default to search mode
+     XCTAssertEqual(sut.currentToggleState, .search)
+     }
 
-        // Then: Should default to search mode
-        XCTAssertEqual(sut.currentToggleState, .search)
-    }
+     func testRestoreToggleState_WhenStoredValueIsSearch_ShouldRestoreSearch() {
+     // Given: Stored value is "search"
+     mockStorage.set(TextEntryMode.search.rawValue, forKey: StorageKey.toggleState)
 
-    func testRestoreToggleState_WhenStoredValueIsSearch_ShouldRestoreSearch() {
-        // Given: Stored value is "search"
-        mockStorage.set(TextEntryMode.search.rawValue, forKey: StorageKey.toggleState)
+     // When: Creating a new handler
+     createSUT()
 
-        // When: Creating a new handler
-        createSUT()
+     // Then: Should restore search mode
+     XCTAssertEqual(sut.currentToggleState, .search)
+     }
 
-        // Then: Should restore search mode
-        XCTAssertEqual(sut.currentToggleState, .search)
-    }
+     func testRestoreToggleState_WhenStoredValueIsAIChat_ShouldRestoreAIChat() {
+     // Given: Stored value is "aiChat"
+     mockStorage.set(TextEntryMode.aiChat.rawValue, forKey: StorageKey.toggleState)
 
-    func testRestoreToggleState_WhenStoredValueIsAIChat_ShouldRestoreAIChat() {
-        // Given: Stored value is "aiChat"
-        mockStorage.set(TextEntryMode.aiChat.rawValue, forKey: StorageKey.toggleState)
+     // When: Creating a new handler
+     createSUT()
 
-        // When: Creating a new handler
-        createSUT()
+     // Then: Should restore aiChat mode
+     XCTAssertEqual(sut.currentToggleState, .aiChat)
+     }
 
-        // Then: Should restore aiChat mode
-        XCTAssertEqual(sut.currentToggleState, .aiChat)
-    }
+     func testRestoreToggleState_WhenStoredValueIsInvalid_ShouldDefaultToSearch() {
+     // Given: Stored value is invalid
+     mockStorage.set("invalidValue", forKey: StorageKey.toggleState)
 
-    func testRestoreToggleState_WhenStoredValueIsInvalid_ShouldDefaultToSearch() {
-        // Given: Stored value is invalid
-        mockStorage.set("invalidValue", forKey: StorageKey.toggleState)
+     // When: Creating a new handler
+     createSUT()
 
-        // When: Creating a new handler
-        createSUT()
+     // Then: Should default to search mode
+     XCTAssertEqual(sut.currentToggleState, .search)
+     }
 
-        // Then: Should default to search mode
-        XCTAssertEqual(sut.currentToggleState, .search)
-    }
+     func testRestoreToggleState_WhenStoredValueIsWrongType_ShouldDefaultToSearch() {
+     // Given: Stored value is wrong type (number instead of string)
+     mockStorage.set(123, forKey: StorageKey.toggleState)
 
-    func testRestoreToggleState_WhenStoredValueIsWrongType_ShouldDefaultToSearch() {
-        // Given: Stored value is wrong type (number instead of string)
-        mockStorage.set(123, forKey: StorageKey.toggleState)
+     // When: Creating a new handler
+     createSUT()
 
-        // When: Creating a new handler
-        createSUT()
+     // Then: Should default to search mode
+     XCTAssertEqual(sut.currentToggleState, .search)
+     }
 
-        // Then: Should default to search mode
-        XCTAssertEqual(sut.currentToggleState, .search)
-    }
+     func testSaveToggleState_WhenSetToSearch_ShouldPersistSearchValue() {
+     // Given: Handler is initialized
+     createSUT()
 
-    func testSaveToggleState_WhenSetToSearch_ShouldPersistSearchValue() {
-        // Given: Handler is initialized
-        createSUT()
+     // When: Setting toggle state to search
+     sut.setToggleState(.search)
 
-        // When: Setting toggle state to search
-        sut.setToggleState(.search)
+     // Then: Should save "search" to storage
+     XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
+     }
 
-        // Then: Should save "search" to storage
-        XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
-    }
+     func testSaveToggleState_WhenSetToAIChat_ShouldPersistAIChatValue() {
+     // Given: Handler is initialized
+     createSUT()
 
-    func testSaveToggleState_WhenSetToAIChat_ShouldPersistAIChatValue() {
-        // Given: Handler is initialized
-        createSUT()
+     // When: Setting toggle state to aiChat
+     sut.setToggleState(.aiChat)
 
-        // When: Setting toggle state to aiChat
-        sut.setToggleState(.aiChat)
+     // Then: Should save "aiChat" to storage
+     XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "aiChat")
+     }
 
-        // Then: Should save "aiChat" to storage
-        XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "aiChat")
-    }
+     func testToggleStatePersistence_WhenMultipleChanges_ShouldPersistLatestValue() {
+     // Given: Handler is initialized
+     createSUT()
 
-    func testToggleStatePersistence_WhenMultipleChanges_ShouldPersistLatestValue() {
-        // Given: Handler is initialized
-        createSUT()
+     // When: Making multiple changes
+     sut.setToggleState(.search)
+     sut.setToggleState(.aiChat)
+     sut.setToggleState(.search)
 
-        // When: Making multiple changes
-        sut.setToggleState(.search)
-        sut.setToggleState(.aiChat)
-        sut.setToggleState(.search)
+     // Then: Should persist the latest value
+     XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
+     XCTAssertEqual(sut.currentToggleState, .search)
+     }
 
-        // Then: Should persist the latest value
-        XCTAssertEqual(mockStorage.object(forKey: StorageKey.toggleState) as? String, "search")
-        XCTAssertEqual(sut.currentToggleState, .search)
-    }
+     func testToggleStatePersistenceAcrossInstances_ShouldMaintainState() {
+     // Given: First handler instance with aiChat mode
+     sut.setToggleState(.aiChat)
+     let firstInstanceState = sut.currentToggleState
 
-    func testToggleStatePersistenceAcrossInstances_ShouldMaintainState() {
-        // Given: First handler instance with aiChat mode
-        sut.setToggleState(.aiChat)
-        let firstInstanceState = sut.currentToggleState
+     // When: Creating a new handler instance
+     createSUT()
 
-        // When: Creating a new handler instance
-        createSUT()
-
-        // Then: New instance should restore the same state
-        XCTAssertEqual(firstInstanceState, .aiChat)
-        XCTAssertEqual(sut.currentToggleState, .aiChat)
-    }
+     // Then: New instance should restore the same state
+     XCTAssertEqual(firstInstanceState, .aiChat)
+     XCTAssertEqual(sut.currentToggleState, .aiChat)
+     }
 
     // MARK: - Toggle State Publisher Tests
 
@@ -388,4 +390,5 @@ final class SwitchBarHandlerTests: XCTestCase {
         // Then: Should emit with aiChat mode
         XCTAssertEqual(submissions.last?.mode, .aiChat)
     }
+     */
 }

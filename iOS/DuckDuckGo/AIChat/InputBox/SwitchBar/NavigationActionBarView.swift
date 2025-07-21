@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKitIcons
 import DesignResourcesKit
+import Combine
 
 // MARK: - NavigationActionBarView
 
@@ -27,16 +28,20 @@ struct NavigationActionBarView: View {
 
     // MARK: - Properties
     @ObservedObject var viewModel: NavigationActionBarViewModel
+    @StateObject private var keyboardObserver = KeyboardObserver()
 
     // MARK: - Constants
     private enum Constants {
         static let barHeight: CGFloat = 76
         static let buttonSize: CGFloat = 44
-        static let horizontalPadding: CGFloat = 16
+        static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
-        static let shadowRadius: CGFloat = 1
-        static let shadowOffset: CGFloat = 0
+
+        static let shadowRadius1: CGFloat = 6
+        static let shadowOffset1Y: CGFloat = 2
+        static let shadowRadius2: CGFloat = 16
+        static let shadowOffset2Y: CGFloat = 16
     }
 
     // MARK: - Initializer
@@ -57,11 +62,40 @@ struct NavigationActionBarView: View {
                     microphoneButton
                 }
                 newLineButton
-                searchButton
+                if viewModel.hasText {
+                    searchButton
+                }
             }
         }
-        .padding(.horizontal, Constants.horizontalPadding)
-        .frame(height: Constants.barHeight)
+        .padding(Constants.padding)
+        .background(
+            Group {
+                if keyboardObserver.isKeyboardVisible {
+                    VStack (spacing: 0) {
+                        Spacer()
+                            .frame(height: Constants.padding)
+
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(designSystemColor: .surface).opacity(0.0),
+                                Color(designSystemColor: .surface).opacity(0.8)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                         .frame(height: Constants.barHeight)
+
+                        /// Add a color bellow the top gradient so it doesn't show a cut-off during keyboard animations
+                        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210809108643486?focus=true
+                        Color(designSystemColor: .surface).opacity(0.8)
+                    }
+                    /// Overflow the color
+                    .frame(height: 140)
+                    .clipped()
+                    .ignoresSafeArea(.container, edges: .horizontal)
+                }
+            }
+        )
     }
 
     // MARK: - Button Views
@@ -69,7 +103,7 @@ struct NavigationActionBarView: View {
     private var webSearchToggleButton: some View {
         CircularButton(
             action: viewModel.handleWebSearchToggle,
-            icon: Image(systemName: "globe"),
+            icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
             foregroundColor: viewModel.isWebSearchEnabled ? .white : .primary,
             backgroundColor: viewModel.isWebSearchEnabled ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface)
         )
@@ -93,14 +127,25 @@ struct NavigationActionBarView: View {
     }
 
     private var searchButton: some View {
-        CircularButton(
+        let icon: Image = {
+            if viewModel.isCurrentTextValidURL {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+            } else if viewModel.isSearchMode {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.searchFind)
+            } else {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.arrowUp)
+            }
+        }()
+        
+        return CircularButton(
             action: viewModel.onSearchTapped,
-            icon: Image(uiImage: viewModel.isSearchMode ? DesignSystemImages.Glyphs.Size16.findSearch : DesignSystemImages.Glyphs.Size16.sendPlane),
+            icon: icon,
             foregroundColor: viewModel.hasText ? .white : Color(designSystemColor: .textPlaceholder),
             backgroundColor: viewModel.hasText ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface),
             isEnabled: viewModel.hasText
         )
         .animation(.easeInOut(duration: 0.2), value: viewModel.hasText)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isCurrentTextValidURL)
     }
 
     // MARK: - CircularButton
@@ -124,14 +169,47 @@ struct NavigationActionBarView: View {
                             .fill(backgroundColor)
                     )
                     .shadow(
-                        color: Color(designSystemColor: .shadowPrimary),
-                        radius: Constants.shadowRadius,
+                        color: Color(designSystemColor: .shadowSecondary),
+                        radius: Constants.shadowRadius1,
                         x: 0,
-                        y: Constants.shadowOffset
+                        y: Constants.shadowOffset1Y
+                    )
+                    .shadow(
+                        color: Color(designSystemColor: .shadowSecondary),
+                        radius: Constants.shadowRadius2,
+                        x: 0,
+                        y: Constants.shadowOffset2Y
                     )
             }
             .buttonStyle(PlainButtonStyle())
             .disabled(!isEnabled)
         }
+    }
+}
+
+// MARK: - KeyboardObserver
+
+private final class KeyboardObserver: ObservableObject {
+    @Published private(set) var isKeyboardVisible = false
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        observeKeyboard()
+    }
+    
+    private func observeKeyboard() {
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.isKeyboardVisible = true
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.isKeyboardVisible = false
+            }
+            .store(in: &cancellables)
     }
 }

@@ -31,6 +31,7 @@ struct AutofillViews {
     static let passwordGenerationMinHeight: CGFloat = 310.0
     static let emailSignupPromptMinHeight: CGFloat = 260.0
     static let deleteAllPromptMinHeight: CGFloat = 360.0
+    static let zipImportPromptMinHeight: CGFloat = 360.0
 
     struct CloseButtonHeader: View {
         let action: () -> Void

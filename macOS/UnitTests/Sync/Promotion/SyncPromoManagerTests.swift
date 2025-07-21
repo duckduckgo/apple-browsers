@@ -24,8 +24,8 @@ import XCTest
 final class SyncPromoManagerTests: XCTestCase {
 
     var syncService: MockDDGSyncing!
-    let privacyConfigurationManager = MockPrivacyConfigurationManager()
-    let config = MockPrivacyConfiguration()
+    var privacyConfigurationManager: MockPrivacyConfigurationManager! = MockPrivacyConfigurationManager()
+    var config: MockPrivacyConfiguration! = MockPrivacyConfiguration()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -36,11 +36,12 @@ final class SyncPromoManagerTests: XCTestCase {
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
     }
 
-    override func tearDownWithError() throws {
+    @MainActor
+    override func tearDown() {
         UserDefaultsWrapper<Any>.clearAll()
         syncService = nil
-
-        super.tearDown()
+        config = nil
+        privacyConfigurationManager = nil
     }
 
     func testWhenAllConditionsMetThenShouldPresentPromoForBookmarks() {

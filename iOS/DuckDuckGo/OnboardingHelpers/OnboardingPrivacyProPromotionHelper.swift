@@ -27,6 +27,9 @@ import Subscription
 /// Conforming types provide logic for determining when the Privacy Pro promotion should be shown during onboarding,
 /// as well as utilities for experiment tracking and pixel firing related to the promotion.
 protocol OnboardingPrivacyProPromotionHelping {
+    
+    /// Text to display on the promotion proceed button
+    var proceedButtonText: String { get }
 
     /// Indicates whether the Privacy Pro promotion should be displayed to the user during onboarding.
     var shouldDisplay: Bool { get }
@@ -77,6 +80,13 @@ struct OnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
         self.pixelFiring = pixelFiring
+    }
+    
+    /// Text to display on the promotion proceed button
+    ///
+    /// This property checks if the user is eligible for a free trial and returns a suitable string to match their free trial eligibility.
+    var proceedButtonText: String {
+        subscriptionManager.isUserEligibleForFreeTrial() ? UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
     }
 
     /// Indicates whether the Privacy Pro promotion should be displayed to the user during onboarding.

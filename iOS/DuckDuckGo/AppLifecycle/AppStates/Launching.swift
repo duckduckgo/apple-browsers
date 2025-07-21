@@ -52,6 +52,7 @@ struct Launching: LaunchingHandling {
     private let configuration = AppConfiguration()
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
+    private let launchTaskManager = LaunchTaskManager()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -90,6 +91,12 @@ struct Launching: LaunchingHandling {
                                                             privacyConfigurationManager: privacyConfigurationManager)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
+        // Service to display the Default Browser prompt.
+        let defaultBrowserPromptService = DefaultBrowserPromptService(
+            featureFlagger: featureFlagger,
+            privacyConfigManager: privacyConfigurationManager,
+            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -110,12 +117,10 @@ struct Launching: LaunchingHandling {
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-        )
+                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
-
-        let mainController = mainCoordinator.controller
 
         syncService.presenter = mainCoordinator.controller
         let vpnService = VPNService(mainCoordinator: mainCoordinator)
@@ -127,13 +132,6 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
-        // Set Default Browser Prompt Service to display SAD prompts to active users.
-        let defaultBrowserPromptService = DefaultBrowserPromptService(
-            presentingController: mainCoordinator.controller,
-            featureFlagger: featureFlagger,
-            privacyConfigManager: privacyConfigurationManager,
-            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore
-        )
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -159,12 +157,21 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService
         )
 
+        // Register background tasks that run after app is ready
+        launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
+                                                                   interactionStateSource: mainCoordinator.interactionStateSource,
+                                                                   tabManager: mainCoordinator.tabManager))
+
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
-        configuration.finalize(with: reportingService,
-                               autoClearService: autoClearService,
-                               mainViewController: mainCoordinator.controller)
+        configuration.finalize(
+            reportingService: reportingService,
+            mainViewController: mainCoordinator.controller,
+            launchTaskManager: launchTaskManager,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         setupWindow()
         logAppLaunchTime()
 
@@ -194,7 +201,8 @@ struct Launching: LaunchingHandling {
     private var appDependencies: AppDependencies {
         .init(
             mainCoordinator: mainCoordinator,
-            services: services
+            services: services,
+            launchTaskManager: launchTaskManager
         )
     }
     

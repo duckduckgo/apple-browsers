@@ -1200,6 +1200,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
+    @MainActor
     private func addMenuItems() async {
         // This requires follow-up work:
         // https://app.asana.com/1/137249556945/task/1210799126744217

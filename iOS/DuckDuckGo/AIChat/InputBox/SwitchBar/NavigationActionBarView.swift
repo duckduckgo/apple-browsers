@@ -291,7 +291,7 @@ final class NavigationActionBarView: UIView {
         
         // Animate changes
         UIView.animate(withDuration: 0.2) {
-            self.searchButton.alpha = hasText ? 1.0 : 1.0
+            self.searchButton.alpha = hasText ? 1.0 : 0.5
         }
     }
     

@@ -22710,55 +22710,115 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„Neuer Duck.ai-Chat“ in den Datei- und Anwendungsmenüs anzeigen"
+            "value" : "Duck.ai-Shortcuts in Menüs anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show “New Duck.ai Chat” in File and application menus"
+            "value" : "Show Duck.ai shortcuts in menus"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar «Nuevo Duck.ai» en los menús Archivo y Aplicación"
+            "value" : "Muestra los accesos directos de Duck.ai en los menús"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher « Nouveau chat Duck.ai » dans les menus Fichier et Application"
+            "value" : "Afficher les raccourcis Duck.ai dans les menus"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostra \"Duck.ai Chat\" nel menu File e in quello delle applicazioni"
+            "value" : "Mostra le scorciatoie Duck.ai nei menu"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "'Nieuwe Duck.ai-chat' weergeven in de menu's 'Bestand' en 'Toepassing'"
+            "value" : "Duck.ai-snelkoppelingen weergeven in menu's"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokaż „Nowy czat Duck.ai” w menu plików i aplikacji"
+            "value" : "Pokaż skróty Duck.ai w menu"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar “Novo Duck.ai Chat” nos menus de ficheiro e aplicação"
+            "value" : "Mostrar atalhos do Duck.ai nos menus"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показывать опцию «Запустить чат с Duck.ai» в меню «Файл» и меню приложения"
+            "value" : "Показывать ярлыки Duck.ai в меню"
+          }
+        }
+      }
+    },
+    "duckai.summarize.context-menu-action" : {
+      "comment" : "Context menu option that triggers Duck.ai-assisted summarization of selected text",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zusammenfassen mit Duck.ai"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summarize with Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumir con Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Résumer avec Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riassumi con Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Samenvatten met Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podsumuj z Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resumir com o Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Краткий пересказ от Duck.ai"
           }
         }
       }

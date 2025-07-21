@@ -1,14 +1,8 @@
 {
   "images" : [
     {
-      "filename" : "Icon-Alpha-96.png",
-      "idiom" : "mac",
-      "scale" : "1x"
-    },
-    {
-      "filename" : "Icon-Alpha-96@2x.png",
-      "idiom" : "mac",
-      "scale" : "2x"
+      "filename" : "Icon-Alpha-128.pdf",
+      "idiom" : "universal"
     }
   ],
   "info" : {

@@ -274,10 +274,10 @@ private extension BrokerProfileJobQueueManager {
         let jobs: [BrokerProfileJob]
         do {
             jobs = try jobProvider.createJobs(with: jobType,
-                                                    withPriorityDate: priorityDate,
-                                                    showWebView: showWebView,
-                                                    errorDelegate: self,
-                                                    jobDependencies: jobDependencies)
+                                              withPriorityDate: priorityDate,
+                                              showWebView: showWebView,
+                                              errorDelegate: self,
+                                              jobDependencies: jobDependencies)
 
             for job in jobs {
                 jobQueue.addOperation(job)

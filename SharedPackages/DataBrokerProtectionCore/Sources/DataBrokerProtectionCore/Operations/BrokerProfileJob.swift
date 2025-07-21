@@ -97,7 +97,12 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         }
     }
 
-    public static func eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: [BrokerProfileQueryData], jobType: JobType, priorityDate: Date?) -> [BrokerJobData] {
+    public static func sortedEligibleJobs(
+        brokerProfileQueriesData: [BrokerProfileQueryData],
+        jobType: JobType,
+        priorityDate: Date?,
+        sortPredicate areInIncreasingOrder: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
+    ) -> [BrokerJobData] {
         let jobsData: [BrokerJobData]
 
         switch jobType {
@@ -114,7 +119,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         if let priorityDate = priorityDate {
             filteredAndSortedJobData = jobsData
                 .filteredByNilOrEarlierPreferredRunDateThan(date: priorityDate)
-                .sortedByEarliestPreferredRunDateFirst()
+                .sorted(by: areInIncreasingOrder)
         } else {
             filteredAndSortedJobData = jobsData
                 .excludingUserRemoved()
@@ -135,9 +140,10 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
 
-        let filteredAndSortedJobData = Self.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: brokerProfileQueriesData,
-                                                                                  jobType: jobType,
-                                                                                  priorityDate: priorityDate)
+        let filteredAndSortedJobData = Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
+                                                               jobType: jobType,
+                                                               priorityDate: priorityDate,
+                                                               sortPredicate: jobDependencies.jobSortPredicate)
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
 
@@ -226,24 +232,6 @@ private extension Array where Element == BrokerJobData {
             }
 
             return preferredRunDate <= priorityDate
-        }
-    }
-
-    /// Sorts BrokerJobData array based on their preferred run dates.
-    /// - Jobs with non-nil preferred run dates are sorted in ascending order (earliest date first).
-    /// - Opt-out jobs with nil preferred run dates come last, maintaining their original relative order.
-    func sortedByEarliestPreferredRunDateFirst() -> [BrokerJobData] {
-        sorted { lhs, rhs in
-            switch (lhs.preferredRunDate, rhs.preferredRunDate) {
-            case (nil, nil):
-                return false
-            case (_, nil):
-                return true
-            case (nil, _):
-                return false
-            case (let lhsRunDate?, let rhsRunDate?):
-                return lhsRunDate < rhsRunDate
-            }
         }
     }
 

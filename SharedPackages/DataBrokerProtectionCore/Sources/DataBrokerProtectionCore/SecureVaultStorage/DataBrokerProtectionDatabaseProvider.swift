@@ -649,7 +649,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     }
 
     /// Returns the first eligible scan/opt-out job for scheduled background task
-    /// Same as the logic being used in eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData:jobType:priorityDate:)
+    /// Same as the logic being used in sortedEligibleJobs(brokerProfileQueriesData:jobType:priorityDate:)
     ///
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210758578775514?focus=true
     public func fetchFirstEligibleJobDate() throws -> Date? {

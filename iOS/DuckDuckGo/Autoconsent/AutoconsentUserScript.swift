@@ -356,12 +356,9 @@ extension AutoconsentUserScript {
     func handleAutoconsentDone(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         // report a managed popup
         guard let messageData: AutoconsentDoneMessage = decodeMessageBody(from: message.body),
-              let url = URL(string: messageData.url),
+              let url = URL(string: messageData.url.replacing(regex: "file://", with: "http://localhost")),
               let host = url.host else {
-            if ![.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
-                assertionFailure("Received a malformed message from autoconsent")
-            }
-
+            assertionFailure("Received a malformed message from autoconsent")
             replyHandler(nil, "cannot decode message")
             return
         }

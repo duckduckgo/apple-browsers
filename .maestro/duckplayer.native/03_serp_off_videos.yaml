@@ -18,7 +18,7 @@ tags:
 
 # Turn SERP off
 - tapOn:
-    text: "1"
+    text: ${output.serpToggleOn}
     index: 0
 
 # Close Settings

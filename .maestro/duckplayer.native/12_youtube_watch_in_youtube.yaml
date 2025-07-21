@@ -63,7 +63,7 @@ tags:
 - tapOn:
     id: ${output.chevronUpId}
 
-- tapOn: "0"
+- tapOn: ${output.watchInYoutubeOption}
 
 # Close Duck Player
 - runFlow: 

@@ -19,8 +19,14 @@ appId: com.duckduckgo.mobile.ios
 - evalScript: "${output.playInDuckPlayerLabel = 'Play in Duck Player'}"
 - evalScript: "${output.playThisVideoInDuckPlayerLabel = 'Play this video in Duck Player'}"
 - evalScript: "${output.resumeInDuckPlayerLabel = 'Resume in Duck Player'}"
-- evalScript: "${output.dontShowLabel = 'Don\\'t Show'}"
+- evalScript: "${output.dontShowLabel = \"Don't Show\"}"
 - evalScript: "${output.videosTabLabel = 'Videos'}"
 - evalScript: "${output.openAutomaticallyLabel = 'Open Automatically'}"
 - evalScript: "${output.letMeChooseLabel = 'Let me choose'}"
 - evalScript: "${output.closeTabsAndClearDataLabel = 'Close Tabs and Clear Data'}"
+# Toggle states
+- evalScript: "${output.toggleOff = '0'}"
+- evalScript: "${output.toggleOn = '1'}"
+# Settings toggle options
+- evalScript: "${output.serpToggleOn = '1'}"
+- evalScript: "${output.watchInYoutubeOption = '0'}"

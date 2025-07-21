@@ -161,6 +161,10 @@ final class NavigationActionBarView: UIView {
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
         let returnImage = UIImage(systemName: "return", withConfiguration: config)
         newLineButton.setIcon(returnImage)
+        newLineButton.setColors(
+            foreground: UIColor(designSystemColor: .textPrimary),
+            background: UIColor(designSystemColor: .surface)
+        )
         newLineButton.addTarget(self, action: #selector(newLineTapped), for: .touchUpInside)
     }
     

@@ -78,6 +78,21 @@ platform :mac do
     do_sync_signing(options.merge({readonly: true}))
   end
 
+  # Makes App Store release build, uploads it to TestFlight and prepares App Store listing for submission.
+  #
+  # - it first uploads just the build, and only then attempts uploading metadata.
+  # - since metadata upload may fail if there's an iOS submission in Pending Developer Release,
+  #   it catches upload_metadata error and prints further instructions.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store release build and uploads it to App Store Connect'
+  lane :release_appstore do |options|
+    build_appstore(options)
+    upload_appstore(options)
+  end
+
   # Makes App Store release build and uploads it to TestFlight without managing App Store listing.
   #
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
@@ -85,8 +100,88 @@ platform :mac do
   #
   desc 'Makes App Store release build and uploads it to TestFlight'
   lane :release_testflight do |options|
-    build_release(options)
+    build_testflight(options)
+    upload_testflight(options)
+  end
 
+  # Makes App Store Review build and uploads it to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store Review build and uploads it to TestFlight'
+  lane :release_testflight_review do |options|
+    build_testflight_review(options)
+    upload_testflight_review(options)
+  end
+
+  # Makes App Store Alpha build and uploads it to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store Alpha build and uploads it to TestFlight'
+  lane :release_testflight_alpha do |options|
+    build_testflight_alpha(options)
+    upload_testflight_alpha(options)
+  end
+
+  # Makes App Store release build.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store release build'
+  lane :build_appstore do |options|
+    build_release(options)
+  end
+
+  # Uploads App Store release build to TestFlight and prepares App Store listing for submission.
+  #
+  # - it first uploads just the build, and only then attempts uploading metadata.
+  # - since metadata upload may fail if there's an iOS submission in Pending Developer Release,
+  #   it catches upload_metadata error and prints further instructions.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store release build to App Store Connect'
+  lane :upload_appstore do |options|
+    deliver(common_deliver_arguments(options))
+
+    begin
+      upload_metadata(options)
+    rescue => exception
+      UI.user_error! %{Failed to upload metadata: #{exception}
+1. Your build has been successfully uploaded, it's only a problem with App Store metadata.
+2. It's possible that there is a submission for another platform (iOS) in a non-editable state
+  (e.g. Pending Developer Release, Developer Rejected, Rejected or Metadata Rejected).
+3. Before you retry, ensure that the pending iOS release is completed (Ready for Sale) or moved
+  back to "Prepare for Submission". If it can't be done at the moment and you can't wait, you'll need
+  to update metadata manually.
+4. Use upload_metadata lane to only handle metadata (without building the release and uploading a build):
+  $ bundle exec fastlane upload_metadata
+      }
+    end
+  end
+
+  # Makes App Store release build.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store release build'
+  lane :build_testflight do |options|
+    build_release(options)
+  end
+
+  # Uploads App Store release to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store release build to TestFlight'
+  lane :upload_testflight do |options|
     upload_to_testflight(
       options.merge(
         {
@@ -97,15 +192,23 @@ platform :mac do
     )
   end
 
-  # Makes App Store Review build and uploads it to TestFlight without managing App Store listing.
+  # Makes App Store Review build.
   #
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
   #         for it a couple of times during the process.
   #
-  desc 'Makes App Store Review build and uploads it to TestFlight'
-  lane :release_testflight_review do |options|
+  desc 'Makes App Store Review build'
+  lane :build_testflight_review do |options|
     build_review(options)
+  end
 
+  # Uploads App Store Review build to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store Review build to TestFlight'
+  lane :upload_testflight_review do |options|
     upload_to_testflight(
       options.merge(
         {
@@ -117,15 +220,23 @@ platform :mac do
     )
   end
 
-  # Makes App Store Alpha build and uploads it to TestFlight without managing App Store listing.
+  # Makes App Store Alpha build.
   #
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
   #         for it a couple of times during the process.
   #
-  desc 'Makes App Store Alpha build and uploads it to TestFlight'
-  lane :release_testflight_alpha do |options|
+  desc 'Makes App Store Alpha build'
+  lane :build_testflight_alpha do |options|
     build_alpha(options)
+  end
 
+  # Uploads App Store Alpha to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store Alpha build to TestFlight'
+  lane :upload_testflight_alpha do |options|
     upload_to_testflight(
       options.merge(
         {
@@ -151,37 +262,6 @@ platform :mac do
       app_version: latest_build_version.to_s,
     }))
 
-  end
-
-  # Makes App Store release build, uploads it to TestFlight, and prepares App Store listing for submission.
-  #
-  # - it first uploads just the build, and only then attempts uploading metadata.
-  # - since metadata upload may fail if there's an iOS submission in Pending Developer Release,
-  #   it catches upload_metadata error and prints further instructions.
-  #
-  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
-  #         for it a couple of times during the process.
-  #
-  desc 'Makes App Store release build and uploads it to App Store Connect'
-  lane :release_appstore do |options|
-    build_release(options)
-
-    deliver(common_deliver_arguments(options))
-
-    begin
-      upload_metadata(options)
-    rescue => exception
-      UI.user_error! %{Failed to upload metadata: #{exception}
-1. Your build has been successfully uploaded, it's only a problem with App Store metadata.
-2. It's possible that there is a submission for another platform (iOS) in a non-editable state
-  (e.g. Pending Developer Release, Developer Rejected, Rejected or Metadata Rejected).
-3. Before you retry, ensure that the pending iOS release is completed (Ready for Sale) or moved
-  back to "Prepare for Submission". If it can't be done at the moment and you can't wait, you'll need
-  to update metadata manually.
-4. Use upload_metadata lane to only handle metadata (without building the release and uploading a build):
-  $ bundle exec fastlane upload_metadata
-      }
-    end
   end
 
   desc 'Creates a new Kechain to use on UI tests'

@@ -35,7 +35,7 @@ class FavoriteHomeCell: UICollectionViewCell {
     @IBOutlet weak var iconSize: NSLayoutConstraint!
     @IBOutlet weak var deleteButton: UIButton!
 
-    var isUsingNTPCompatibleStyling: Bool = false {
+    var isUsingSearchInputCustomStyling: Bool = false {
         didSet {
             decorate()
         }
@@ -131,7 +131,7 @@ class FavoriteHomeCell: UICollectionViewCell {
         iconSize.constant = border ? -24 : 0
         iconImage.layer.masksToBounds = !border
 
-        let defaultCornerRadius = isUsingNTPCompatibleStyling ? Constant.cornerRadiusNTPCompatible : Constant.cornerRadius
+        let defaultCornerRadius = isUsingSearchInputCustomStyling ? Constant.cornerRadiusNTPCompatible : Constant.cornerRadius
         iconImage.layer.cornerRadius = border ? 3 : defaultCornerRadius
     }
   
@@ -179,7 +179,7 @@ private extension BookmarkEntity {
 extension FavoriteHomeCell {
     
     private func decorate() {
-        if isUsingNTPCompatibleStyling {
+        if isUsingSearchInputCustomStyling {
             titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
             titleLabel.font = .systemFont(ofSize: 12, weight: .regular)
             

@@ -3,7 +3,7 @@
     pixel_name: {
         description: 'Describe when the pixel fires and its purpose',
         // Github usernames of the people responsible for the pixel.
-        owners: ['username'],
+        owners: ['nshuba'],
         triggers: ['other'],
         suffixes: [
             // A suffix is a dynamic part of the pixel name, e.g. "some.pixel.[count|daily]"

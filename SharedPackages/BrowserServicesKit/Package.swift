@@ -18,6 +18,7 @@ let package = Package(
         .library(name: "BrowserServicesKitTestsUtils", targets: ["BrowserServicesKitTestsUtils"]),
         .library(name: "Persistence", targets: ["Persistence"]),
         .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
+        .library(name: "SecureStorageTestsUtils", targets: ["SecureStorageTestsUtils"]),
         .library(name: "Bookmarks", targets: ["Bookmarks"]),
         .library(name: "BloomFilterWrapper", targets: ["BloomFilterWrapper"]),
         .library(name: "UserScript", targets: ["UserScript"]),

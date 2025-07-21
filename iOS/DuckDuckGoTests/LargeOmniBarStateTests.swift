@@ -57,13 +57,6 @@ class LargeOmniBarStateTests: XCTestCase {
 
     }
 
-    func testWhenLargeEditingAndVisualUpdatesThenDontShowSearchLoupe() {
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.visualUpdates])
-
-        let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
-        XCTAssertFalse(testee.showSearchLoupe)
-    }
-
     func testWhenLargeEditingThenShowSearchLoupe() {
         let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertFalse(testee.showSearchLoupe)

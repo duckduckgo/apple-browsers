@@ -6,8 +6,7 @@ defaults:
 
 on:
   push:
-    # TODO: Replace with only `main`
-    branches: [ main, "sam/deploy-alpha-on-main-branch-updates" ]
+    branches: [ main ]
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
@@ -212,23 +211,13 @@ jobs:
         working-directory: iOS
         cache-key-prefix: ios-ruby
 
-    # ORIGINAL CODE (commented out for testing):
-    # - name: Upload app to TestFlight
-    #   env:
-    #     APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-    #     APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-    #     APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-    #   run: |
-    #     bundle exec fastlane upload_alpha groups:["${{ env.destination }}"] ipa_path:"${{ needs.build.outputs.ipa_path }}"
-
-    - name: Simulate upload to TestFlight (TEST MODE - 2 minute wait)
+    - name: Upload app to TestFlight
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
       run: |
-        echo "🧪 TEST MODE: Simulating TestFlight upload with 2-minute wait..."
-        echo "Would upload to group: ${{ env.destination }}"
-        echo "Would upload IPA: ${{ needs.build.outputs.ipa_path }}"
-        echo "Starting 2-minute simulation..."
-        sleep 120
-        echo "✅ Simulated upload complete!"
+        bundle exec fastlane upload_alpha groups:["${{ env.destination }}"] ipa_path:"${{ needs.build.outputs.ipa_path }}"
 
     - name: Upload dSYMs artifact
       uses: actions/upload-artifact@v4
@@ -236,25 +225,15 @@ jobs:
         name: DuckDuckGo-Alpha-dSYM-${{ needs.build.outputs.app_version }}
         path: ${{ needs.build.outputs.dsyms_path }}
 
-    # ORIGINAL CODE (commented out for testing):
-    # - name: Upload debug symbols to Asana
-    #   env:
-    #     ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-    #   run: |
-    #     asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ needs.build.outputs.app_version }}(${{ needs.build.outputs.build_version }})-dSYM.zip"
-    #     mv -f "${{ needs.build.outputs.dsyms_path }}" "$asana_dsyms_path"
-    #
-    #     curl -s "https://app.asana.com/api/1.0/tasks/1205344386326139/attachments" \
-    #       -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
-    #       --form "file=@${asana_dsyms_path};type=application/zip"
-
-    - name: Simulate upload debug symbols to Asana (TEST MODE)
+    - name: Upload debug symbols to Asana
+      env:
+        ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
-        echo "🧪 TEST MODE: Simulating Asana dSYM upload..."
         asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ needs.build.outputs.app_version }}(${{ needs.build.outputs.build_version }})-dSYM.zip"
-        echo "Would rename dSYM to: $asana_dsyms_path"
-        echo "Would upload to Asana task: 1205344386326139"
-        echo "✅ Simulated Asana upload complete!"
+        mv -f "${{ needs.build.outputs.dsyms_path }}" "$asana_dsyms_path"
+        curl -s "https://app.asana.com/api/1.0/tasks/1205344386326139/attachments" \
+          -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
+          --form "file=@${asana_dsyms_path};type=application/zip"
 
   rerun-check:
     needs: upload
@@ -273,7 +252,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         current_commit="${{ github.sha }}"
-        branch_name="sam/deploy-alpha-on-main-branch-updates"  # TODO: Replace with `main`
+        branch_name="main"
         
         echo "Fetching latest changes from origin/${branch_name}..."
         if ! git fetch origin "${branch_name}"; then

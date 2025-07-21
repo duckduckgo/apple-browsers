@@ -926,7 +926,7 @@ class AddressBarTests: XCTestCase {
         let result = await XCTWaiter().fulfillment(of: [becomesOwnFirstResponder], timeout: 5.0)
 
         XCTAssertTrue(isAddressBarFirstResponder)
-        XCTAssertEqual(result, .completed, "window2 never became its own first-responder")
+        XCTAssertEqual(result, .completed, "window2 never became its own first responder")
     }
 
     @MainActor

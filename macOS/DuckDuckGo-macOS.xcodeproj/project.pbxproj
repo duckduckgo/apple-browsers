@@ -100,6 +100,8 @@
 		1D6860552D370A40006FC53E /* WebExtensionPathsCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6860532D370A38006FC53E /* WebExtensionPathsCache.swift */; };
 		1D6860582D38FC73006FC53E /* WebExtensionLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6860562D38FC69006FC53E /* WebExtensionLoader.swift */; };
 		1D68605A2D39107D006FC53E /* WebExtensionEventsListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6860592D391077006FC53E /* WebExtensionEventsListener.swift */; };
+		1D69B7192E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */; };
+		1D69B71A2E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */; };
 		1D69C553291302F200B75945 /* BWVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D69C552291302F200B75945 /* BWVault.swift */; };
 		1D6A492029CF7A490011DF74 /* NSPopoverExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */; };
 		1D6A492129CF7A490011DF74 /* NSPopoverExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */; };
@@ -3928,6 +3930,7 @@
 		1D6860532D370A38006FC53E /* WebExtensionPathsCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPathsCache.swift; sourceTree = "<group>"; };
 		1D6860562D38FC69006FC53E /* WebExtensionLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionLoader.swift; sourceTree = "<group>"; };
 		1D6860592D391077006FC53E /* WebExtensionEventsListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionEventsListener.swift; sourceTree = "<group>"; };
+		1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSuggestionsProviderTests.swift; sourceTree = "<group>"; };
 		1D69C552291302F200B75945 /* BWVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWVault.swift; sourceTree = "<group>"; };
 		1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPopoverExtension.swift; sourceTree = "<group>"; };
 		1D6D041B2D9437ED005BC23F /* FullscreenController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenController.swift; sourceTree = "<group>"; };
@@ -6594,6 +6597,7 @@
 				3730F20E2D2E725A00239F96 /* NewTabPageCustomizationProviderTests.swift */,
 				377D7BC02D0AC7E000ADFD06 /* NewTabPageNextStepsCardsProviderTests.swift */,
 				1D2EE7072E267D4F00F51C57 /* NewTabPageModeProviderTests.swift */,
+				1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */,
 			);
 			path = NewTabPage;
 			sourceTree = "<group>";
@@ -13558,6 +13562,7 @@
 				3706FE23293F661700E42796 /* SuggestionLoadingMock.swift in Sources */,
 				3706FE24293F661700E42796 /* PasteboardFolderTests.swift in Sources */,
 				B603971229B9D67E00902A34 /* PublishersExtensions.swift in Sources */,
+				1D69B7192E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */,
 				BB10556F2E14350E00199F37 /* VisualizeFireAnimationDeciderTests.swift in Sources */,
 				B603975129C1FF6000902A34 /* TestsURLExtension.swift in Sources */,
 				3706FE25293F661700E42796 /* CoreDataTestUtilities.swift in Sources */,
@@ -15431,6 +15436,7 @@
 				6590DB562DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift in Sources */,
 				3798580A2D73034E008773F6 /* VisitIdentifierTests.swift in Sources */,
 				4B3F641E27A8D3BD00E0C118 /* BrowserProfileTests.swift in Sources */,
+				1D69B71A2E2E31AF00258E33 /* NewTabPageSuggestionsProviderTests.swift in Sources */,
 				37DB56EF2C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift in Sources */,
 				B6106BA026A7BE0B0013B453 /* PermissionManagerTests.swift in Sources */,
 				4B59CC8C290083240058F2F6 /* ConnectBitwardenViewModelTests.swift in Sources */,

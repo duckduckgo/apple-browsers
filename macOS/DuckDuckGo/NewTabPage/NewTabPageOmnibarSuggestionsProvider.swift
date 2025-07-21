@@ -22,9 +22,9 @@ import os.log
 
 final class NewTabPageOmnibarSuggestionsProvider: NewTabPageOmnibarSuggestionsProviding {
 
-    let suggestionContainer: SuggestionContainer
+    let suggestionContainer: SuggestionContainerProtocol
 
-    init(suggestionContainer: SuggestionContainer) {
+    init(suggestionContainer: SuggestionContainerProtocol) {
         self.suggestionContainer = suggestionContainer
     }
 
@@ -34,7 +34,7 @@ final class NewTabPageOmnibarSuggestionsProvider: NewTabPageOmnibarSuggestionsPr
                 continuation.resume(returning: .empty)
                 return
             }
-            self.suggestionContainer.getSuggestions(for: term) { result in
+            self.suggestionContainer.getSuggestions(for: term, useCachedData: false) { result in
                 guard let result else {
                     Logger.newTabPageOmnibar.error("Failed to get suggestions")
                     continuation.resume(returning: .empty)
@@ -59,7 +59,7 @@ private extension SuggestionResult {
 
 }
 
-private extension Suggestion {
+extension Suggestion {
 
     var newTabPageSuggestion: NewTabPageDataModel.Suggestion? {
         switch self {
@@ -73,7 +73,7 @@ private extension Suggestion {
             return .historyEntry(title: title, url: url.absoluteString, score: score)
         case .internalPage(let title, let url, let score):
             return .internalPage(title: title, url: url.absoluteString, score: score)
-        case .openTab(let title, let url, let tabId, let score):
+        case .openTab(let title, _, let tabId, let score):
             return .openTab(title: title, tabId: tabId, score: score)
         case .unknown:
             return nil

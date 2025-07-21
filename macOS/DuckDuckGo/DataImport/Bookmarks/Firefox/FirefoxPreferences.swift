@@ -64,7 +64,8 @@ final class FirefoxPreferences {
     private let preferences: [String: String]
 
     lazy var newTabFavoritesEnabled: Bool = {
-        (preferences[Constants.PreferenceKeys.topSites]?.lowercased() ?? "true") == "true" // Defaults to enabled
+        let topSitesEnabledString = preferences[Constants.PreferenceKeys.topSites]?.lowercased() ?? "true" // Defaults to enabled
+        return Bool(topSitesEnabledString) ?? true
     }()
 
     /// Maximum number of favorites shown on the new tab page.
@@ -84,8 +85,8 @@ final class FirefoxPreferences {
 
     /// The number of sponsored sites shown on the new tab page.
     private lazy var newTabSponsoredSitesCount: Int = {
-        let showSponsoredTopSites = preferences[Constants.PreferenceKeys.showSponsoredTopSites] ?? "true" // Defaults to enabled
-        return showSponsoredTopSites.lowercased() == "true" ? Constants.sponsoredSitesCount : 0
+        let showSponsoredTopSitesString = preferences[Constants.PreferenceKeys.showSponsoredTopSites]?.lowercased() ?? "true" // Defaults to enabled
+        return Bool(showSponsoredTopSitesString) ?? true ? Constants.sponsoredSitesCount : 0
     }()
 
     /// Sites pinned in favorites on the new tab page.

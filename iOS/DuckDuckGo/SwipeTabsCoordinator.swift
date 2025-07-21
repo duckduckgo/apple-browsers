@@ -111,7 +111,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var currentView: UIView?
 
     private var omniBarHeight: CGFloat {
-        UpdatedOmniBarView.expectedHeight
+        DefaultOmniBarView.expectedHeight
     }
 
     func invalidateLayout() {

@@ -199,7 +199,7 @@ final class DuckPlayerNativeUIPresenter {
         let addressBarPosition = self.appSettings.currentAddressBarPosition
         
         // Position pill above address bar when it's at bottom, or at screen bottom when address bar is at top
-        bottomConstraint.constant = addressBarPosition == .bottom ? -UpdatedOmniBarView.expectedHeight : 0
+        bottomConstraint.constant = addressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
     }
 
         /// Updates the UI based on Ombibar Notification
@@ -589,7 +589,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // If address bar is at the top, position the pill at the bottom of the screen
         let newBottomConstraint =
             appSettings.currentAddressBarPosition == .bottom
-            ? hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor, constant: -UpdatedOmniBarView.expectedHeight)
+            ? hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor, constant: -DefaultOmniBarView.expectedHeight)
             : hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor)
         
         bottomConstraint = newBottomConstraint

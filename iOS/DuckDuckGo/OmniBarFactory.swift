@@ -21,6 +21,6 @@ import UIKit
 
 final class OmniBarFactory {
     static func createOmniBarViewController(with dependencies: OmnibarDependencyProvider) -> OmniBarViewController {
-        UpdatedOmniBarViewController(dependencies: dependencies)
+        DefaultOmniBarViewController(dependencies: dependencies)
     }
 }

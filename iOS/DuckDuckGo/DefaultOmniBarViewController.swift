@@ -1,5 +1,5 @@
 //
-//  UpdatedOmniBarViewController.swift
+//  DefaultOmniBarViewController.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,13 +23,13 @@ import Suggestions
 import Bookmarks
 import AIChat
 
-final class UpdatedOmniBarViewController: OmniBarViewController {
+final class DefaultOmniBarViewController: OmniBarViewController {
 
     var isSuggestionTrayVisible: Bool {
         omniDelegate?.isSuggestionTrayVisible() == true
     }
 
-    private lazy var omniBarView = UpdatedOmniBarView.create()
+    private lazy var omniBarView = DefaultOmniBarView.create()
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
 
@@ -209,7 +209,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     }
 }
 
-extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
+extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
     func onQueryUpdated(_ query: String) {
     }
 

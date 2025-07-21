@@ -919,8 +919,7 @@ class AddressBarTests: XCTestCase {
                 guard let window2 else { return false }
                 return window2.firstResponder === window2
             },
-            evaluatedWith: nil,
-            handler: nil
+            evaluatedWith: nil
         )
 
         await fulfillment(of: [becomesOwnFirstResponder], timeout: 5.0)

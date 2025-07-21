@@ -1168,7 +1168,7 @@ Take back control of your personal information with the browser designed for dat
     public static let importPasswordsPromoTitle =  NSLocalizedString("import.passwords.promo.title", value: "Import your passwords to DuckDuckGo", comment: "Title for the Import Passwords Promotion banner")
     public static let importPasswordsPromoMessage =  NSLocalizedString("import.passwords.promo.message", value: "Quickly and securely transfer your passwords from another browser.", comment: "Message body for the Import Passwords Promotion banner")
     public static let importPasswordsPromoButtonTitle =  NSLocalizedString("import.passwords.promo.button.title", value: "Import Passwords", comment: "Title for button of the Import Passwords Promotion banner")
-    public static let importPasswordsPromoSetUpLaterButtonTitle =  NSLocalizedString("import.passwords.promo.later.button.title", value: "Set Up Later in Settings", comment: "Title for button to dismiss the Import Passwords Promotion banner")
+    public static let importPasswordsPromoDismissButtonTitle =  NSLocalizedString("import.passwords.promo.dismiss.button.title", value: "Don’t Ask Again", comment: "Title for button to dismiss the Import Passwords Promotion banner")
 
     static let preemptiveCrashTitle = NSLocalizedString("error.preemptive-crash.title", value: "App issue detected", comment: "Alert title")
     static let preemptiveCrashBody = NSLocalizedString("error.preemptive-crash.body", value: "Looks like there's an issue with the app and it needs to close. Please reopen to continue.", comment: "Alert message")

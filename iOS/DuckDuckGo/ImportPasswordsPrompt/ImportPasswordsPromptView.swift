@@ -114,7 +114,7 @@ struct ImportPasswordsPromptView: View {
             AutofillViews.PrimaryButton(title: UserText.importPasswordsPromoButtonTitle,
                                         action: viewModel.importPasswordsPressed)
 
-            AutofillViews.TertiaryButton(title: UserText.importPasswordsPromoSetUpLaterButtonTitle,
+            AutofillViews.TertiaryButton(title: UserText.importPasswordsPromoDismissButtonTitle,
                                          action: viewModel.setUpLaterButtonPressed)
         }
     }

@@ -1823,7 +1823,7 @@
 "import.passwords.promo.button.title" = "Import Passwords";
 
 /* Title for button to dismiss the Import Passwords Promotion banner */
-"import.passwords.promo.later.button.title" = "Set Up Later in Settings";
+"import.passwords.promo.dismiss.button.title" = "Don’t Ask Again";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Quickly and securely transfer your passwords from another browser.";

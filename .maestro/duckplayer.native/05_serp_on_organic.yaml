@@ -29,7 +29,8 @@ tags:
     file: shared/duckplayer_is_visible.yaml
 
 # Validate this is SERP View
-- assertVisible: ${output.watchOnYoutubeLabel}
+- assertVisible:
+    id: ${output.watchOnYoutubeLabel}
 
 # Validate Duck Player Closes
 - runFlow: 

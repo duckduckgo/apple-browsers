@@ -43,4 +43,5 @@ tags:
     file: shared/close_player.yaml
 
 # Assert Duck Player Welcome Pill is not present
-- assertVisible: ${output.resumeInDuckPlayerLabel}
+- assertVisible:
+    id: ${output.resumeInDuckPlayerLabel}

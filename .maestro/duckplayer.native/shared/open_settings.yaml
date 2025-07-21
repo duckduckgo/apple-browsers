@@ -7,7 +7,7 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: ${output.browsingMenuLabel}
 - tapOn: ${output.settingsLabel}
-- scrollUntilVisible: 
+- scrollUntilVisible:
     element: ${output.duckPlayerLabel}
     direction: DOWN
 - tapOn: ${output.duckPlayerLabel}

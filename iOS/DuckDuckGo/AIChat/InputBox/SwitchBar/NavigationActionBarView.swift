@@ -320,8 +320,10 @@ final class NavigationActionBarView: UIView {
     }
     
     private func updateBackgroundVisibility() {
-        UIView.animate(withDuration: 0.3) {
-            self.backgroundGradientView.isHidden = !self.isKeyboardVisible
+        let alpha = isKeyboardVisible ? 1.0 : 0.0
+        UIView.animate(withDuration: 0.25, delay: 0.0, options: .curveEaseOut) {
+            self.backgroundGradientView.alpha = alpha
+            self.solidView.alpha = alpha
         }
     }
     
@@ -350,7 +352,9 @@ final class NavigationActionBarView: UIView {
 // MARK: - CircularButton
 
 private class CircularButton: UIButton {
-    
+
+    private let secondShadowLayer = CALayer()
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupButton()
@@ -372,7 +376,6 @@ private class CircularButton: UIButton {
         layer.shadowRadius = NavigationActionBarView.Constants.shadowRadius1
         
         // Add second shadow layer
-        let secondShadowLayer = CALayer()
         secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         secondShadowLayer.shadowOpacity = 1.0
         secondShadowLayer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset2Y)
@@ -382,7 +385,7 @@ private class CircularButton: UIButton {
         imageView?.contentMode = .scaleAspectFit
         adjustsImageWhenHighlighted = false
     }
-    
+
     func setIcon(_ image: UIImage?) {
         setImage(image, for: .normal)
         imageView?.tintColor = UIColor(designSystemColor: .textPrimary)
@@ -396,7 +399,18 @@ private class CircularButton: UIButton {
     
     override func layoutSubviews() {
         super.layoutSubviews()
+
         layer.cornerRadius = min(bounds.width, bounds.height) / 2
+        secondShadowLayer.frame = bounds
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+            secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+        }
     }
 }
 

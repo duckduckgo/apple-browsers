@@ -49,8 +49,6 @@ class ToolbarHandlerTests: XCTestCase {
     
     func testUpdateToolbarWithStateNewTab() {
         // To prevent assertion for using experimental colors with the default theme
-        DesignSystemPalette.current = .experimental
-
         toolbarHandler.updateToolbarWithState(.newTab)
 
         XCTAssertEqual(mockToolbar.items?.count, 11)
@@ -63,8 +61,6 @@ class ToolbarHandlerTests: XCTestCase {
 
     func testUpdateToolbarWithStatePageLoaded() {
         // To prevent assertion for using experimental colors with the default theme
-        DesignSystemPalette.current = .experimental
-
         toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
 
         XCTAssertEqual(mockToolbar.items?.count, 11)

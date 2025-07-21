@@ -387,7 +387,6 @@ private class CircularButton: UIButton {
         layer.insertSublayer(secondShadowLayer, at: 0)
         
         imageView?.contentMode = .scaleAspectFit
-        adjustsImageWhenHighlighted = false
     }
 
     func setIcon(_ image: UIImage?) {

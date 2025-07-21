@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - main
-      - dominik/alpha-build # to be removed
     paths:
       - 'macOS/**'
       - 'SharedPackages/**'

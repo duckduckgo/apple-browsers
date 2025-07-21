@@ -162,7 +162,7 @@ jobs:
 
     needs: build
 
-    if: always() # cannot be cancelled
+    if: always() # cannot be cancelled while running
 
     concurrency:
       group: macos-appstore-upload-${{ github.event.inputs.destination || inputs.destination }}

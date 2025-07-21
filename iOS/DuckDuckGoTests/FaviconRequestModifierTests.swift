@@ -56,7 +56,7 @@ class FaviconRequestModifierTests: XCTestCase {
     }
     """.data(using: .utf8)!
     
-    private var userAgentManager: UserAgentManager!
+    private var userAgentManager: UserAgentManaging!
     
     override func setUp() {
         super.setUp()

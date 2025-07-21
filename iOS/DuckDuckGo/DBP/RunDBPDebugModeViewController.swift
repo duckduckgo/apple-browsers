@@ -356,7 +356,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     private let emailService: EmailService
     private let captchaService: CaptchaService
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    
+    private let executionConfig: BrokerJobExecutionConfig
+
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
     }
@@ -426,7 +427,9 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             settings: dbpSettings,
             servicePixel: backendServicePixels
         )
-        
+
+        self.executionConfig = BrokerJobExecutionConfig()
+
         loadBrokers()
     }
     
@@ -491,7 +494,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             emailService: emailService,
                             captchaService: captchaService,
                             stageDurationCalculator: FakeStageDurationCalculator(),
-                            pixelHandler: fakePixelHandler
+                            pixelHandler: fakePixelHandler,
+                            executionConfig: executionConfig
                         ) { true }
 
                         self.currentRunner = runner
@@ -618,7 +622,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     emailService: emailService,
                     captchaService: captchaService,
                     stageCalculator: FakeStageDurationCalculator(),
-                    pixelHandler: fakePixelHandler
+                    pixelHandler: fakePixelHandler,
+                    executionConfig: executionConfig
                 ) { true }
                 
                 self.currentOptOutRunner = runner

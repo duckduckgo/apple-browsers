@@ -220,7 +220,7 @@ class TabViewController: UIViewController {
     // Recent request's URL if its WKNavigationAction had shouldPerformDownload set to true
     private var recentNavigationActionShouldPerformDownloadURL: URL?
 
-    let userAgentManager: UserAgentManager = DefaultUserAgentManager.shared
+    let userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared
     
     let bookmarksDatabase: CoreDataDatabase
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
@@ -2860,8 +2860,8 @@ extension TabViewController: ContentScopeUserScriptDelegate {
 // MARK: - AutoconsentUserScriptDelegate
 extension TabViewController: AutoconsentUserScriptDelegate {
     
-    func autoconsentUserScript(_ script: AutoconsentUserScript, didUpdateCookieConsentStatus cookieConsentStatus: PrivacyDashboard.CookieConsentInfo) {
-        privacyInfo?.cookieConsentManaged = cookieConsentStatus
+    func autoconsentUserScript(consentStatus: CookieConsentInfo) {
+        privacyInfo?.cookieConsentManaged = consentStatus
     }
 }
 

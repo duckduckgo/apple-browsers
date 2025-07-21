@@ -1866,28 +1866,28 @@ Take back control of your personal information with the browser designed for dat
     public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
-    public enum PrivacyProPromotionOnboarding {
+    public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")
             static func message() -> NSAttributedString {
-                // Localized bold message parts
-                let vpnBold = NSLocalizedString(
-                    "onboarding.privacypro.promo.vpn.message.vpn-bold",
-                    value: "VPN",
-                    comment: "Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message."
+                
+                let vpnAndTwoMoreBold = NSLocalizedString(
+                    "onboarding.subscription.promo.message.vpn-two-more-bold",
+                    value: "VPN + 2 more premium protections",
+                    comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
                 )
 
-                let privacyProBold = NSLocalizedString(
-                    "onboarding.privacypro.promo.vpn.message.privacy-pro-bold",
-                    value: "paid Privacy Pro subscription",
-                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message."
+                let optionalSubscriptionBold = NSLocalizedString(
+                    "onboarding.subscription.promo.message.optional-subscription-bold",
+                    value: "optional paid subscription",
+                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
                 )
 
                 // Localized full message with numbered placeholders
                 let fullText = String(format: NSLocalizedString(
-                    "onboarding.privacypro.promo.vpn.message",
-                    value: "DuckDuckGo also has a built-in %1$@!\n\nActivate it with a %2$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold)."), vpnBold, privacyProBold)
+                    "onboarding.subscription.promo.message",
+                    value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
+                    comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."), vpnAndTwoMoreBold, optionalSubscriptionBold)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -1895,14 +1895,14 @@ Take back control of your personal information with the browser designed for dat
                     .font: UIFont.daxBodyBold()
                 ]
 
-                // Apply bold formatting to "VPN"
-                if let vpnRange = fullText.range(of: vpnBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(vpnRange, in: fullText))
+                // Apply bold formatting
+                if let vpnAndTwoMorRange = fullText.range(of: vpnAndTwoMoreBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(vpnAndTwoMorRange, in: fullText))
                 }
 
-                // Apply bold formatting to "paid Privacy Pro subscription."
-                if let privacyProRange = fullText.range(of: privacyProBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(privacyProRange, in: fullText))
+                // Apply bold formatting
+                if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
                 }
 
                 return attributedString
@@ -1910,6 +1910,7 @@ Take back control of your personal information with the browser designed for dat
         }
 
         public enum Buttons {
+            static let tryItForFree = NSLocalizedString("onboarding.subscription.promo.buttons.tryItForFree", value: "Try it for free!", comment: "Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall.")
             static let learnMore =  NSLocalizedString("onboarding.privacypro.promo.buttons.learnMore", value: "Learn More", comment: "Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall.")
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 

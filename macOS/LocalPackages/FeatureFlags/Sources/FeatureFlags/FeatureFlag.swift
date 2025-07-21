@@ -140,6 +140,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
     case newFeedbackForm
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
+    case vpnToolbarUpsell
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -198,7 +201,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateFirefoxBookmarksImport,
                 .disableFireAnimation,
                 .newTabPageOmnibar,
-                .newFeedbackForm:
+                .newFeedbackForm,
+                .vpnToolbarUpsell:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -309,6 +313,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .newFeedbackForm:
             return .disabled
+        case .vpnToolbarUpsell:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         }
     }
 }

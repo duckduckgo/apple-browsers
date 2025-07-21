@@ -59,4 +59,9 @@ final class AppVersionExtensionTests: XCTestCase {
         mockBundle.add(name: Bundle.Key.alphaBuildSuffix, value: suffix)
         XCTAssertEqual("2.0.4.14-adhoc-test", testee.versionAndBuildNumber)
     }
+
+    func testThatCommitSHAReturnsValueFromTheBundle() {
+        mockBundle.add(name: Bundle.Key.commitSHA, value: "abcd0123")
+        XCTAssertEqual("abcd0123", testee.commitSHA)
+    }
 }

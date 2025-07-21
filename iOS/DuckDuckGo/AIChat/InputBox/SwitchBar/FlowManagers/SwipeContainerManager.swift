@@ -71,8 +71,9 @@ final class SwipeContainerManager: NSObject {
     /// Updates the scroll view position and content size when bounds change
     func updateLayout(viewBounds: CGRect) {
         guard swipeScrollView != nil else { return }
-        swipeScrollView.contentSize = CGSize(width: viewBounds.width * 2, height: 0)
-        updateScrollViewPosition(animated: false)
+        let pageWidth = viewBounds.width
+        swipeScrollView.contentSize = CGSize(width: pageWidth * 2, height: 0)
+        updateScrollViewPosition(pageWidth: pageWidth, animated: false)
     }
     
     // MARK: - Private Methods
@@ -140,14 +141,18 @@ final class SwipeContainerManager: NSObject {
     
     private func configureInitialPosition() {
         guard let parentView = swipeScrollView.superview else { return }
-        
-        swipeScrollView.contentSize = CGSize(width: parentView.bounds.width * 2, height: 0)
-        updateScrollViewPosition(animated: false)
+
+        let pageWidth = parentView.bounds.width
+        swipeScrollView.contentSize = CGSize(width: pageWidth * 2, height: 0)
+        updateScrollViewPosition(pageWidth: pageWidth, animated: false)
     }
     
-    private func updateScrollViewPosition(animated: Bool) {
+    private func updateScrollViewPosition(pageWidth: CGFloat? = nil, animated: Bool) {
         guard let parentView = swipeScrollView.superview else { return }
-        let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : parentView.bounds.width
+
+        let pageWidth = pageWidth ?? parentView.bounds.width
+
+        let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : pageWidth
         swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: animated)
     }
     

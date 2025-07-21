@@ -57,7 +57,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     /// Returns whether the user is eligible for a free trial
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
     public func isUserEligibleForFreeTrial() -> Bool {
-        subscriptionManager.isUserEligibleForFreeTrialWithFreemiumPIR()
+        subscriptionManager.isUserEligibleForFreeTrial()
     }
 
     public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, runTypeProvider: AppRunTypeProviding, isAuthV2Enabled: Bool) {
@@ -81,17 +81,4 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
 public protocol DataBrokerProtectionAccountManaging {
     func accessToken() async -> String?
     func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, Error>
-}
-
-private extension SubscriptionAuthV1toV2Bridge {
-
-    /// Returns whether the user is eligible for a free trial, with special handling for Stripe platform
-    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
-    /// - Note: For Stripe platform, always returns `true`. For other platforms, delegates to the base implementation.
-    func isUserEligibleForFreeTrialWithFreemiumPIR() -> Bool {
-        if currentEnvironment.purchasePlatform == .stripe {
-            return true
-        }
-        return isUserEligibleForFreeTrial()
-    }
 }

@@ -51,7 +51,8 @@ final class NavigationActionBarView: UIView {
     private let newLineButton = CircularButton()
     private let searchButton = CircularButton()
     private let backgroundGradientView = GradientBackgroundView()
-    
+    private let solidView = UIView()
+
     // MARK: - Initialization
     init(viewModel: NavigationActionBarViewModel) {
         self.viewModel = viewModel
@@ -82,7 +83,9 @@ final class NavigationActionBarView: UIView {
         rightStackView.spacing = Constants.buttonSpacing
         rightStackView.alignment = .center
         rightStackView.distribution = .fill
-        
+
+        solidView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8)
+
         // Setup buttons
         setupWebSearchToggleButton()
         setupMicrophoneButton()
@@ -104,10 +107,12 @@ final class NavigationActionBarView: UIView {
         mainStackView.addArrangedSubview(rightStackView)
         
         // Add to view
+        addSubview(solidView)
         addSubview(backgroundGradientView)
         addSubview(mainStackView)
         
         // Setup constraints
+        solidView.translatesAutoresizingMaskIntoConstraints = false
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -116,14 +121,20 @@ final class NavigationActionBarView: UIView {
             mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.padding),
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.padding),
             mainStackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.padding),
-            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.padding),
-            
-            // Background gradient constraints
+            mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -Constants.padding),
+
+            // Background gradient should align with the keyboard (or bottom safe area)
             backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
             backgroundGradientView.trailingAnchor.constraint(equalTo: trailingAnchor),
             backgroundGradientView.topAnchor.constraint(equalTo: topAnchor),
-            backgroundGradientView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            
+            backgroundGradientView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
+
+            // Position the solid view under gradient and extend to the bottom of the view
+            solidView.topAnchor.constraint(equalTo: backgroundGradientView.bottomAnchor),
+            solidView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            solidView.leadingAnchor.constraint(equalTo: backgroundGradientView.leadingAnchor),
+            solidView.trailingAnchor.constraint(equalTo: backgroundGradientView.trailingAnchor),
+
             // Button size constraints
             webSearchToggleButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             webSearchToggleButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
@@ -134,8 +145,6 @@ final class NavigationActionBarView: UIView {
             searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             searchButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
         ])
-        
-        backgroundGradientView.isHidden = !isKeyboardVisible
     }
     
     private func setupWebSearchToggleButton() {
@@ -246,6 +255,7 @@ final class NavigationActionBarView: UIView {
         updateMicrophoneButton()
         updateSearchButton()
         updateButtonVisibility()
+        updateBackgroundVisibility()
     }
     
     private func updateWebSearchToggleButton() {
@@ -395,7 +405,7 @@ private class CircularButton: UIButton {
 private class GradientBackgroundView: UIView {
     
     private let gradientLayer = CAGradientLayer()
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupGradient()
@@ -416,35 +426,22 @@ private class GradientBackgroundView: UIView {
         gradientLayer.endPoint = CGPoint(x: 0.5, y: 1.0)
         
         layer.insertSublayer(gradientLayer, at: 0)
-        
-        // Add solid color below gradient
-        let solidLayer = CALayer()
-        solidLayer.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8).cgColor
-        layer.insertSublayer(solidLayer, at: 0)
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        
-        let gradientHeight = NavigationActionBarView.Constants.barHeight
-        let totalHeight: CGFloat = 140
-        
-        // Position gradient layer
-        gradientLayer.frame = CGRect(
-            x: 0,
-            y: NavigationActionBarView.Constants.padding,
-            width: bounds.width,
-            height: gradientHeight
-        )
-        
-        // Position solid layer below gradient
-        if let solidLayer = layer.sublayers?.first {
-            solidLayer.frame = CGRect(
-                x: 0,
-                y: NavigationActionBarView.Constants.padding + gradientHeight,
-                width: bounds.width,
-                height: totalHeight - NavigationActionBarView.Constants.padding - gradientHeight
-            )
+
+        gradientLayer.frame = bounds
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            gradientLayer.colors = [
+                UIColor(designSystemColor: .surface).withAlphaComponent(0.0).cgColor,
+                UIColor(designSystemColor: .surface).withAlphaComponent(0.8).cgColor
+            ]
         }
     }
 }

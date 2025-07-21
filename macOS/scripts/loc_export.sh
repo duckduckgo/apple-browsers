@@ -8,7 +8,10 @@ show_help() {
     echo
     echo "Options:"
     echo "  -n, --name NAME    Specify the name for the exported xliff file"
-    echo "This script attempts to export an xliff file from the Xcode String Catalogue."
+    echo
+    echo "This script exports an xliff file from the macOS Xcode String Catalogue."
+    echo "It explicitly targets the macOS project to avoid including iOS strings"
+    echo "when run from the repository root directory."
     echo "--- ---"
     echo
     exit 0
@@ -47,11 +50,27 @@ script_dir=$(dirname "$(readlink -f "$0")")
 export_path="${script_dir}/TempLocalizationExport"
 final_xliff_path="${script_dir}/assets/loc"
 
+# Get the macOS directory (parent of scripts directory)
+macos_dir=$(dirname "$script_dir")
+
 # Ensure the final xliff directory exists
 mkdir -p "$final_xliff_path"
 
-# Export localizations
-xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
+# Export localizations - explicitly specify the macOS project and working directory
+# Save current directory to return to it later
+current_dir=$(pwd)
+
+# Only change directory if we're not already in the macOS directory
+if [ "$(pwd)" != "$macos_dir" ]; then
+    cd "$macos_dir"
+fi
+
+xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -project "DuckDuckGo-macOS.xcodeproj" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
+
+# Return to original directory if we changed it
+if [ "$(pwd)" != "$current_dir" ]; then
+    cd "$current_dir"
+fi
 
 # Attempt to find the .xcloc package
 xcloc_package=$(find "$export_path" -type d -name "*.xcloc")

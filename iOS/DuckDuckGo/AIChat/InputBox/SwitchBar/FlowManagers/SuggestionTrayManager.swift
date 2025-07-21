@@ -94,7 +94,7 @@ final class SuggestionTrayManager: NSObject {
         }
 
         controller.coversFullScreen = true
-        controller.isUsingNTPCompatibleStyling = true
+        controller.isUsingSearchInputCustomStyling = true
         controller.additionalFavoritesOverlayInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 6)
 
         parentViewController.addChild(controller)

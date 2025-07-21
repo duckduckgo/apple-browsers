@@ -1,5 +1,5 @@
 //
-//  UserAgentManager.swift
+//  UserAgentManaging.swift
 //  Core
 //
 //  Copyright © 2020 DuckDuckGo. All rights reserved.
@@ -22,46 +22,55 @@ import Common
 import Foundation
 import WebKit
 
-public protocol UserAgentManager {
+public protocol UserAgentManaging {
+
+    @MainActor func extractAndSetDefaultUserAgent() async throws -> String
+    @MainActor func setDefaultUserAgent(_ userAgent: String)
 
     func update(request: inout URLRequest, isDesktop: Bool)
-
     func update(webView: WKWebView, isDesktop: Bool, url: URL?)
-
     func userAgent(isDesktop: Bool) -> String
-
     func userAgent(isDesktop: Bool, url: URL?) -> String
 
 }
 
-public class DefaultUserAgentManager: UserAgentManager {
+private enum UserAgentError: Error {
 
-    public static let shared: UserAgentManager = DefaultUserAgentManager()
+    case invalidResult
 
+}
+
+public class DefaultUserAgentManager: UserAgentManaging {
+
+    public static let shared: UserAgentManaging = DefaultUserAgentManager()
     private var userAgent = UserAgent()
 
-    init() {
-        prepareUserAgent()
+    @MainActor
+    public func extractAndSetDefaultUserAgent() async throws -> String {
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.load(URLRequest.developerInitiated(URL(string: "about:blank")!))
+
+        guard let userAgent: String = try await webView.evaluateJavaScript("navigator.userAgent") else {
+            throw UserAgentError.invalidResult
+        }
+        self.userAgent = UserAgent(defaultAgent: userAgent)
+        return userAgent
     }
 
-    private func prepareUserAgent() {
-        let webview = WKWebView()
-        webview.load(URLRequest.developerInitiated(URL(string: "about:blank")!))
-        getDefaultAgent(webView: webview) { [weak self] agent in
-            // Reference webview instance to keep it in scope and allow UA to be returned
-            _ = webview
-
-            guard let defaultAgent = agent else { return }
-            self?.userAgent = UserAgent(defaultAgent: defaultAgent)
-        }
+    @MainActor
+    public func setDefaultUserAgent(_ userAgent: String) {
+        self.userAgent = UserAgent(defaultAgent: userAgent)
     }
 
     public func userAgent(isDesktop: Bool) -> String {
-        return userAgent.agent(forUrl: nil, isDesktop: isDesktop)
+        userAgent.agent(forUrl: nil, isDesktop: isDesktop)
     }
 
     public func userAgent(isDesktop: Bool, url: URL?) -> String {
-        return userAgent.agent(forUrl: url, isDesktop: isDesktop)
+        userAgent.agent(forUrl: url, isDesktop: isDesktop)
     }
 
     public func update(request: inout URLRequest, isDesktop: Bool) {
@@ -73,17 +82,10 @@ public class DefaultUserAgentManager: UserAgentManager {
         webView.customUserAgent = agent
     }
 
-    private func getDefaultAgent(webView: WKWebView, completion: @escaping (String?) -> Void) {
-        webView.evaluateJavaScript("navigator.userAgent") { (result, _) in
-            let agent = result as? String
-            completion(agent)
-        }
-    }
-
     public static var duckDuckGoUserAgent: String { duckduckGoUserAgent(for: AppVersion.shared) }
 
     public static func duckduckGoUserAgent(for appVersion: AppVersion, osVersion: String = UIDevice.current.systemVersion) -> String {
-        return "ddg_ios/\(appVersion.versionAndBuildNumber) (\(appVersion.identifier); iOS \(osVersion))"
+        "ddg_ios/\(appVersion.versionAndBuildNumber) (\(appVersion.identifier); iOS \(osVersion))"
     }
 
 }

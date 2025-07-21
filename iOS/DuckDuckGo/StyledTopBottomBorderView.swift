@@ -1,5 +1,5 @@
 //
-//  TabBorderView.swift
+//  StyledTopBottomBorderView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,10 +20,40 @@
 import UIKit
 import DesignResourcesKit
 
-final class TabBorderView: UIView {
+final class StyledTopBottomBorderView: UIView {
 
     private let topEdge = UIView()
     private let bottomEdge = UIView()
+
+    private var bottomConstraint: NSLayoutConstraint!
+
+    var bottomOffset: CGFloat {
+        get {
+            bottomConstraint.constant
+        }
+
+        set {
+            bottomConstraint.constant = newValue
+        }
+    }
+
+    var isTopVisible: Bool {
+        get {
+            !topEdge.isHidden
+        }
+        set {
+            topEdge.isHidden = !newValue
+        }
+    }
+
+    var isBottomVisible: Bool {
+        get {
+            !bottomEdge.isHidden
+        }
+        set {
+            bottomEdge.isHidden = !newValue
+        }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -44,10 +74,14 @@ final class TabBorderView: UIView {
     }
 
     private func setUpConstraints() {
+        assert(bottomConstraint == nil)
+
         topEdge.translatesAutoresizingMaskIntoConstraints = false
         bottomEdge.translatesAutoresizingMaskIntoConstraints = false
 
         let height = Metrics.lineWidth
+
+        bottomConstraint = bottomEdge.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor)
 
         NSLayoutConstraint.activate([
             topEdge.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
@@ -55,10 +89,10 @@ final class TabBorderView: UIView {
             topEdge.trailingAnchor.constraint(equalTo: trailingAnchor),
             topEdge.heightAnchor.constraint(equalToConstant: height),
 
-            bottomEdge.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
+            bottomConstraint,
             bottomEdge.leadingAnchor.constraint(equalTo: leadingAnchor),
             bottomEdge.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomEdge.heightAnchor.constraint(equalToConstant: height)
+            bottomEdge.heightAnchor.constraint(equalToConstant: height),
         ])
     }
 
@@ -69,9 +103,9 @@ final class TabBorderView: UIView {
         let edgeColor = UIColor { traitCollection in
             switch traitCollection.userInterfaceStyle {
             case .dark:
-                return UIColor(designSystemColor: .shadowTertiary)
+                return UIColor(designSystemColor: .highlightDecoration)
             default:
-                return UIColor(designSystemColor: .shadowSecondary)
+                return UIColor(designSystemColor: .shadowTertiary)
             }
         }
         topEdge.backgroundColor = edgeColor
@@ -79,6 +113,27 @@ final class TabBorderView: UIView {
     }
 
     private struct Metrics {
-        static let lineWidth = 1.0
+        static let lineWidth = 0.5
     }
+
+    /// This crudely adds itself as a subview and uses autoresizing.  Itworks well for 'container' type views with a fixed
+    /// height that are already constrained at the top and bottom.  If you need something more sophisticated just
+    /// treat it like a regular view and use constraints.
+    func insertSelf(into view: UIView) {
+        if !isDescendant(of: view) {
+            view.addSubview(self)
+
+            frame = view.bounds
+            autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
+    }
+
+}
+
+extension StyledTopBottomBorderView {
+
+    func updateForAddressBarPosition(_ addressBarPosition: AddressBarPosition) {
+        isTopVisible = addressBarPosition == .top
+    }
+
 }

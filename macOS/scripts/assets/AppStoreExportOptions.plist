@@ -18,6 +18,20 @@
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.network-extension macos</string>
         <key>com.duckduckgo.mobile.ios.vpn.agent.proxy</key>
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.proxy macos</string>
+        <key>com.duckduckgo.mobile.ios.DBP.backgroundAgent</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.DBP.backgroundAgent macos</string>
+        <key>com.duckduckgo.mobile.ios.alpha</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.alpha macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.alpha</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.alpha macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.alpha.network-protection-extension</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.alpha.network-protection-extension macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.network-extension.alpha</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.network-extension.alpha macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.alpha.proxy</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.alpha.proxy macos</string>
+        <key>com.duckduckgo.mobile.ios.DBP.backgroundAgent.alpha</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.DBP.backgroundAgent.alpha macos</string>
         <key>com.duckduckgo.mobile.ios.review</key>
         <string>match AppStore com.duckduckgo.mobile.ios.review macos</string>
         <key>com.duckduckgo.mobile.ios.vpn.agent.review</key>
@@ -28,11 +42,8 @@
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.network-extension.review macos</string>
         <key>com.duckduckgo.mobile.ios.vpn.agent.review.proxy</key>
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.review.proxy macos</string>
-        <key>com.duckduckgo.mobile.ios.DBP.backgroundAgent</key>
-        <string>match AppStore com.duckduckgo.mobile.ios.DBP.backgroundAgent macos</string>
         <key>com.duckduckgo.mobile.ios.DBP.backgroundAgent.review</key>
         <string>match AppStore com.duckduckgo.mobile.ios.DBP.backgroundAgent.review macos</string>
-
     </dict>
 </dict>
 </plist>

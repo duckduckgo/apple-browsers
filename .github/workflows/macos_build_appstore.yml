@@ -15,6 +15,7 @@ on:
         options:
         - testflight
         - testflight_review
+        - testflight_alpha
         - appstore
       asana-task-url:
         description: "Asana release task URL"
@@ -29,12 +30,21 @@ on:
         type: string
       asana-task-url:
         description: "Asana release task URL"
-        required: true
+        required: false
         type: string
       branch:
         description: "Branch name"
         required: false
         type: string
+      build-number-override:
+        description: "Override build number (for Alpha builds)"
+        required: false
+        type: string
+      skip-notify:
+        description: "Skip Mattermost notification"
+        required: false
+        default: false
+        type: boolean
     secrets:
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
@@ -56,16 +66,22 @@ on:
         required: true
 
 jobs:
-  make-release:
+  build:
 
-    name: Make App Store Connect Release
+    name: Build App Store Connect Release
+
+    concurrency:
+      group: macos-appstore-build-${{ github.event.inputs.destination || inputs.destination }}
+      cancel-in-progress: true
 
     runs-on: macos-15-xlarge
 
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination }}
-      asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
+
+    outputs:
+      upload-to: ${{ steps.is-official-release.outputs.upload-to }}
 
     steps:
 
@@ -100,7 +116,7 @@ jobs:
       env:
         is-official-release: ${{ (env.destination == 'appstore' || env.destination == 'testflight') && (startsWith(env.branch, 'release') || startsWith(env.branch, 'hotfix')) }}
       run: |
-        if [[ "${{ env.is-official-release }}" == "true" ]]; then
+        if [[ "${{ env.is-official-release }}" == "true" ]] || [[ "${{ env.destination }}" == "testflight_alpha" ]]; then
           upload_to=s3
           echo "upload-to=${upload_to}" >> $GITHUB_OUTPUT
           echo "upload-to=${upload_to}" >> $GITHUB_ENV
@@ -109,30 +125,110 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Archive and Upload the App
+    - name: Override version and build number for Alpha release and add commit SHA to plist
+      if: ${{ env.destination == 'testflight_alpha' }}
+      env:
+        ALPHA_VERSION: 9999.9.9
+      run: |
+        echo "Overriding version number to ${ALPHA_VERSION}"
+        echo "MARKETING_VERSION = ${ALPHA_VERSION}" > Configuration/Version.xcconfig
+        if [[ "${{ inputs.build-number-override }}" != "" ]]; then
+          echo "Overriding build number to ${{ inputs.build-number-override }}"
+          echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
+        fi
+        plist_path="DuckDuckGo/Info.plist"
+        /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${plist_path}" \
+          || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
+
+    - name: Archive the App
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      run: |
-        if [ "${{ env.destination }}" == "testflight_review" ]; then
-          app_bundle_name="DuckDuckGo App Store Review"
-          app_dsym_name="DuckDuckGo-AppStore-Review"
-        else
-          app_bundle_name="DuckDuckGo App Store"
-          app_dsym_name="DuckDuckGo-AppStore"
-        fi
+      run: bundle exec fastlane build_${{ env.destination }}
 
-        bundle exec fastlane release_${{ env.destination }}
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: appstore-artifacts
+        path: |
+          macOS/DuckDuckGo*.app.dSYM.zip
+          macOS/DuckDuckGo*.pkg
+        retention-days: 1
+
+  upload:
+    name: Upload App Store Connect Release
+
+    needs: build
+
+    if: always() # cannot be cancelled while running
+
+    concurrency:
+      group: macos-appstore-upload-${{ github.event.inputs.destination || inputs.destination }}
+      cancel-in-progress: true
+
+    runs-on: macos-15
+
+    env:
+      destination: ${{ github.event.inputs.destination || inputs.destination }}
+      asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
+      branch: ${{ inputs.branch || github.ref_name }}
+      upload-to: ${{ needs.build.outputs.upload-to }}
+
+    steps:
+
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        ref: ${{ env.branch }}
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: appstore-artifacts
+        path: macOS/
+
+    - name: Upload the App to App Store Connect
+      id: upload-app-to-appstore
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      run: |
+        case "${{ env.destination }}" in
+          testflight_review)
+            app_bundle_name="DuckDuckGo App Store Review"
+            app_dsym_name="DuckDuckGo-AppStore-Review"
+            ;;
+          testflight_alpha)
+            app_bundle_name="DuckDuckGo App Store Alpha"
+            app_dsym_name="DuckDuckGo-AppStore-Alpha"
+            ;;
+          *)
+            app_bundle_name="DuckDuckGo App Store"
+            app_dsym_name="DuckDuckGo-AppStore"
+            ;;
+        esac
+
+        bundle exec fastlane upload_${{ env.destination }}
         dsym_path="${{ github.workspace }}/macOS/${app_dsym_name}.app.dSYM.zip"
         mv -f "${{ github.workspace }}/macOS/${app_bundle_name}.app.dSYM.zip" "${dsym_path}"
-        version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
-        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
+        version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig | tr -d '\n')"
+        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig | tr -d '\n')"
         echo "dsym-path=${dsym_path}" >> $GITHUB_ENV
         echo "app-version=${version}.${build_number}" >> $GITHUB_ENV
+        echo "app-dsym-name=${app_dsym_name}" >> $GITHUB_ENV
 
     - name: Upload dSYMs artifact
+      if: steps.upload-app-to-appstore.conclusion == 'success'
       uses: actions/upload-artifact@v4
       with:
         name: DuckDuckGo-${{ env.destination }}-dSYM-${{ env.app-version }}
@@ -140,12 +236,12 @@ jobs:
 
     - name: Upload dSYMs to S3
       id: upload-dsyms-to-s3
-      if: ${{ env.upload-to == 's3' }}
+      if: steps.upload-app-to-appstore.conclusion == 'success' && env.upload-to == 's3'
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
-        DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.MACOS_DSYM_BUCKET_PREFIX }}/DuckDuckGo-AppStore-${{ env.app-version }}-dSYM.zip
+        DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.MACOS_DSYM_BUCKET_PREFIX }}/${{ env.app-dsym-name }}-${{ env.app-version }}-dSYM.zip
       run: |
         echo "dsym-s3-path=${DSYM_S3_PATH}" >> $GITHUB_OUTPUT
         aws s3 cp ${{ env.dsym-path }} ${{ env.DSYM_S3_PATH }}
@@ -156,6 +252,7 @@ jobs:
         TAG: ${{ env.app-version }}
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      if: steps.upload-app-to-appstore.conclusion == 'success' && env.asana-task-url != ''
       run: |
         bundle exec fastlane run asana_log_message \
           task_url:"${{ env.asana-task-url }}" \
@@ -170,7 +267,9 @@ jobs:
         DESTINATION: ${{ env.destination }}
         PLATFORM: macOS
       run: |
-        bundle exec fastlane run mattermost_send_message \
-          mattermost_webhook_url:${{ secrets.MM_WEBHOOK_URL }} \
-          github_handle:${{ github.actor }} \
-          template_name:$([[ "${{ job.status }}" == "success" ]] && echo "public-release-complete" || echo "public-release-failed")
+        if [[ "${{ inputs.skip-notify }}" == "false" ]]; then
+          bundle exec fastlane run mattermost_send_message \
+            mattermost_webhook_url:${{ secrets.MM_WEBHOOK_URL }} \
+            github_handle:${{ github.actor }} \
+            template_name:$([[ "${{ job.status }}" == "success" ]] && echo "public-release-complete" || echo "public-release-failed")
+        fi

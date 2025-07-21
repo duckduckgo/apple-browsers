@@ -43,11 +43,7 @@ final class NavigationActionBarManager {
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
     }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    
+
     // MARK: - Public Methods
     
     /// Installs the navigation action bar in the provided parent view controller

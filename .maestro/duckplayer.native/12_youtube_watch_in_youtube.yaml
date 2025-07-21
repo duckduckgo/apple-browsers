@@ -19,7 +19,7 @@ tags:
 # Turn DuckPlayer to Auto
 - tapOn:
     id: chevron.up.chevron.down
-- tapOn: "Let me choose"
+- tapOn: ${output.letMeChooseLabel}
 
 # Close Settings
 - runFlow: 
@@ -48,7 +48,7 @@ tags:
 - runFlow: 
     file: shared/duckplayer_is_visible.yaml
 
-- assertVisible: "Open YouTube videos here"
+- assertVisible: ${output.openVideosHereLabel}
 
 - assertVisible:
     id: ${output.chevronUpId}
@@ -56,7 +56,7 @@ tags:
 - tapOn:
     id: ${output.chevronUpId}
 
-- assertNotVisible: "Open YouTube videos here"
+- assertNotVisible: ${output.openVideosHereLabel}
 
 - tapOn:
     id: ${output.chevronUpId}
@@ -71,4 +71,4 @@ tags:
 - runFlow: 
     file: shared/open_settings.yaml
 
-- assertVisible: "Open Automatically"
+- assertVisible: ${output.openAutomaticallyLabel}

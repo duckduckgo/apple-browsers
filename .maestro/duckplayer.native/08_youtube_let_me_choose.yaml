@@ -19,7 +19,7 @@ tags:
 # Turn DuckPlayer to Auto
 - tapOn:
     id: chevron.up.chevron.down
-- tapOn: "Let me choose"
+- tapOn: ${output.letMeChooseLabel}
 
 # Close Settings
 - runFlow: 
@@ -56,9 +56,9 @@ tags:
     file: shared/close_player.yaml
 
 # Assert Duck Player Welcome Pill is not present
-- assertVisible: "Resume in Duck Player"
+- assertVisible: ${output.resumeInDuckPlayerLabel}
 
-- tapOn: "Resume in Duck Player"
+- tapOn: ${output.resumeInDuckPlayerLabel}
 
 # Assert Duck Player is Visible
 - runFlow: 
@@ -69,8 +69,8 @@ tags:
     file: shared/close_player.yaml
 
 # Check for the pill
-- assertVisible: "Resume in Duck Player"
-- tapOn: "Resume in Duck Player"
+- assertVisible: ${output.resumeInDuckPlayerLabel}
+- tapOn: ${output.resumeInDuckPlayerLabel}
 
 # Assert Duck Player is Visible
 - runFlow: 
@@ -81,7 +81,7 @@ tags:
     file: shared/close_player.yaml
 
 # Hit fire button
-- tapOn: "Close Tabs and Clear Data"
+- tapOn: ${output.closeTabsAndClearDataLabel}
 - tapOn:
     id: alert.forget-data.confirm
 
@@ -94,8 +94,8 @@ tags:
 - tapOn: ${output.videoTitle}
 
 # Assert Pill is present
-- assertVisible: "Play this video in Duck Player"
-- tapOn: "Play this video in Duck Player"
+- assertVisible: ${output.playThisVideoInDuckPlayerLabel}
+- tapOn: ${output.playThisVideoInDuckPlayerLabel}
 
 # Assert Duck Player is Visible
 - runFlow: 

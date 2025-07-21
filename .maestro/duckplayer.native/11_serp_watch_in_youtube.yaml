@@ -24,7 +24,7 @@ tags:
 - runFlow: 
     file: shared/duckplayer_is_visible.yaml
 
-- assertVisible: "Watch on YouTube"
+- assertVisible: ${output.watchOnYoutubeLabel}
 
 - assertVisible:
     id: ${output.chevronUpId}
@@ -32,16 +32,16 @@ tags:
 - tapOn:
     id: ${output.chevronUpId}
 
-- assertNotVisible: "Watch on YouTube"
+- assertNotVisible: ${output.watchOnYoutubeLabel}
 
 - tapOn:
     id: ${output.chevronUpId}
 
-- tapOn: "Watch on YouTube"
+- tapOn: ${output.watchOnYoutubeLabel}
 
 # Validate YouTube opens
 - assertVisible: ${output.youtubeMobileDomain}
 
 # Assert Pill is present
-- assertNotVisible: "Play this video in Duck Player"
-- assertNotVisible: "Play in Duck Player"
+- assertNotVisible: ${output.playThisVideoInDuckPlayerLabel}
+- assertNotVisible: ${output.playInDuckPlayerLabel}

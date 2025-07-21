@@ -19,7 +19,7 @@ tags:
 # Turn DuckPlayer to Auto
 - tapOn:
     id: chevron.up.chevron.down
-- tapOn: "Don't Show"
+- tapOn: ${output.dontShowLabel}
 
 # Close Settings
 - runFlow: 
@@ -42,6 +42,6 @@ tags:
     id: duckPlayerWelcomePill
 
 # Assert Duck Player Welcome Pill is not present
-- assertNotVisible: "Play in Duck Player"
-- assertNotVisible: "Resume in Duck Player"
+- assertNotVisible: ${output.playInDuckPlayerLabel}
+- assertNotVisible: ${output.resumeInDuckPlayerLabel}
 

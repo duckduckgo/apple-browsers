@@ -19,7 +19,7 @@ tags:
 # Turn DuckPlayer to Auto
 - tapOn:
     id: chevron.up.chevron.down
-- tapOn: "Open Automatically"
+- tapOn: ${output.openAutomaticallyLabel}
 
 # Close Settings
 - runFlow: 
@@ -43,4 +43,4 @@ tags:
     file: shared/close_player.yaml
 
 # Assert Duck Player Welcome Pill is not present
-- assertVisible: "Resume in Duck Player"
+- assertVisible: ${output.resumeInDuckPlayerLabel}

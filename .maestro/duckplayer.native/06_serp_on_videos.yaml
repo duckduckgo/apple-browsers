@@ -17,8 +17,8 @@ tags:
 - runFlow: 
     file: shared/load_serp_url.yaml
 
-- assertVisible: "Videos"
-- tapOn: "Videos"
+- assertVisible: ${output.videosTabLabel}
+- tapOn: ${output.videosTabLabel}
 
 # Open Specific Video
 - assertVisible: ${output.videoTitle}

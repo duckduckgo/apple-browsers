@@ -60,15 +60,16 @@ mkdir -p "$final_xliff_path"
 # Save current directory to return to it later
 current_dir=$(pwd)
 
-# Only change directory if we're not already in the macOS directory
-if [ "$(pwd)" != "$macos_dir" ]; then
+# Change to macOS directory if we're not already there
+# This ensures only macOS strings are exported when running from repository root
+if [ "$(pwd)" = "$macos_dir" ]; then
+    # Already in the correct directory, no change needed
+    xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -project "DuckDuckGo-macOS.xcodeproj" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
+else
+    # Change to macOS directory for the export
     cd "$macos_dir"
-fi
-
-xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -project "DuckDuckGo-macOS.xcodeproj" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
-
-# Return to original directory if we changed it
-if [ "$(pwd)" != "$current_dir" ]; then
+    xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -project "DuckDuckGo-macOS.xcodeproj" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
+    # Return to the original directory
     cd "$current_dir"
 fi
 

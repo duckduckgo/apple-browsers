@@ -53,25 +53,15 @@ final_xliff_path="${script_dir}/assets/loc"
 # Get the macOS directory (parent of scripts directory)
 macos_dir=$(dirname "$script_dir")
 
+# Source the common functions
+. "${script_dir}/../../scripts/loc_export_common.sh"
+
 # Ensure the final xliff directory exists
 mkdir -p "$final_xliff_path"
 
 # Export localizations - explicitly specify the macOS project and working directory
-# Save current directory to return to it later
-current_dir=$(pwd)
-
-# Change to macOS directory if we're not already there
 # This ensures only macOS strings are exported when running from repository root
-if [ "$(pwd)" = "$macos_dir" ]; then
-    # Already in the correct directory, no change needed
-    xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -project "DuckDuckGo-macOS.xcodeproj" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
-else
-    # Change to macOS directory for the export
-    cd "$macos_dir"
-    xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -project "DuckDuckGo-macOS.xcodeproj" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
-    # Return to the original directory
-    cd "$current_dir"
-fi
+run_in_directory "$macos_dir" xcodebuild -exportLocalizations -localizationPath "$export_path" -derivedDataPath "${script_dir}/DerivedData" -project "DuckDuckGo-macOS.xcodeproj" -scheme "macOS Browser" APP_STORE_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_App_Store PRIVACY_PRO_PRODUCT_MODULE_NAME_OVERRIDE=DuckDuckGo_Privacy_Browser_Privacy_Pro
 
 # Attempt to find the .xcloc package
 xcloc_package=$(find "$export_path" -type d -name "*.xcloc")

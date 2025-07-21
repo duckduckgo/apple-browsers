@@ -20,6 +20,7 @@ import SwiftUI
 import SwiftUIExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Lottie
 
 final class NewFeedbackFormViewController: NSHostingController<FeedbackFlowView> {
 
@@ -79,20 +80,25 @@ struct NewFeedbackFormView: View {
     var onSubmit: () -> Void
     var onClose: () -> Void
 
-    var availableFeatures = [
-        "Reader mode",
-        "Password manager extensions",
+    let availableFeatures = [
         "Advanced ad blocking",
-        "New tab page widgets",
-        "Website translation",
-        "Incognito",
-        "User profiles",
-        "Import bookmarks",
-        "Vertical tabs",
-        "Picture-in-picture",
+        "AI support",
         "Cast video/audio",
-        "Tab groups"
-    ].shuffled()
+        "Customize browser theme",
+        "Dark mode on all sites",
+        "Import bookmarks folders",
+        "Import history",
+        "Incognito",
+        "Move browser buttons",
+        "New tab page widgets",
+        "Password manager extensions",
+        "Picture-in-picture",
+        "Reader mode",
+        "Tab groups",
+        "User profiles",
+        "Vertical tabs",
+        "Website translation"
+    ].shuffled().prefix(12)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -227,6 +233,40 @@ struct NewFeedbackFormView: View {
     }
 }
 
+private struct DaxHeartAnimation: NSViewRepresentable {
+    private let animation: LottieAnimation?
+    private let animationView = LottieAnimationView()
+
+    init() {
+        self.animation = LottieAnimation.named("pictogramDaxHeart")
+    }
+
+    func makeNSView(context: Context) -> some NSView {
+        let container = NSView()
+        animationView.animation = animation
+        animationView.contentMode = .scaleAspectFit
+        animationView.clipsToBounds = false
+        animationView.loopMode = .playOnce
+
+        container.addSubview(animationView)
+        animationView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            animationView.heightAnchor.constraint(equalToConstant: 64),
+            animationView.widthAnchor.constraint(equalToConstant: 64),
+            animationView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            animationView.trailingAnchor.constraint(equalTo: container.trailingAnchor)
+        ])
+
+        animationView.play()
+
+        return container
+    }
+
+    func updateNSView(_ nsView: NSViewType, context: Context) {
+    }
+}
+
 struct ThankYouView: View {
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
@@ -235,7 +275,8 @@ struct ThankYouView: View {
         VStack(alignment: .leading, spacing: 24) {
             // Header
             HStack(spacing: 12) {
-                Image(nsImage: .duckDuckGoResponseHeart)
+                DaxHeartAnimation()
+                    .frame(width: 64, height: 64)
 
                 Text("Thanks for your feedback!")
                     .systemTitle2()

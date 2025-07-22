@@ -181,24 +181,23 @@ internal class FirefoxDataImporter: DataImporter {
             }
 
             let (pinnedSites, favoritesCount) = fetchPinnedSitesAndFavoritesCount(from: preferences)
+            let pinnedRootDomains = Set(pinnedSites.compactMap { $0?.url?.root })
 
             // Get frecent sites from Firefox history and convert them into bookmarks.
             let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL, tld: Application.appDelegate.tld)
             let frecentSites = try historyReader.readFrecentSites().get()
-                .reduce(into: (seen: Set<URL>(), result: [ImportedBookmarks.BookmarkOrFolder]())) { partialResult, site in
-                    // Filter out URLs that are blocked, the root domain is pinned, or not HTTP/HTTPS.
-                    // Then, de-duplicate remaining frecent sites by their root domain.
-                    guard let url = URL(string: site.url),
-                            !preferences.isURLBlockedOnNewTab(site.url),
-                            !pinnedSites.contains(where: { $0?.url?.root == url.root }) else { return }
-                    let rootDomain = url.root ?? url
-                    if !partialResult.seen.contains(rootDomain) {
-                        partialResult.seen.insert(rootDomain)
-                        let favorite = ImportedBookmarks.BookmarkOrFolder(name: site.title ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true, favoritesIndex: partialResult.result.count)
-                        partialResult.result.append(favorite)
-                    }
+                .compactMap { site -> (URL, ImportedBookmarks.BookmarkOrFolder)? in
+                    // Filter out URLs that are blocked or the root domain is pinned.
+                    guard !preferences.isURLBlockedOnNewTab(site.url),
+                          let url = URL(string: site.url),
+                          let rootDomain = url.root,
+                          !pinnedRootDomains.contains(rootDomain) else { return nil }
+                    let bookmark = ImportedBookmarks.BookmarkOrFolder(name: site.title ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true)
+                    return (rootDomain, bookmark)
                 }
-                .result.prefix(favoritesCount).map { $0 }
+                .uniqued(on: \.0) // De-duplicate sites by their root domain
+                .prefix(favoritesCount)
+                .map(\.1)
 
             guard !pinnedSites.isEmpty else {
                 return frecentSites

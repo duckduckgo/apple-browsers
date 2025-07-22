@@ -32,7 +32,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     private var mockSidebarProvider: MockAIChatSidebarProvider!
     private var mockAIChatTabOpener: MockAIChatTabOpener!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockTabIDProvider: MockTabIDProvider!
+    private var mockWindowControllersManager: WindowControllersManagerMock!
     private var mockPixelFiring: PixelKitMock!
     private var cancellables: Set<AnyCancellable>!
 
@@ -42,7 +42,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockSidebarProvider = MockAIChatSidebarProvider()
         mockAIChatTabOpener = MockAIChatTabOpener()
         mockFeatureFlagger = MockFeatureFlagger()
-        mockTabIDProvider = MockTabIDProvider()
+        mockWindowControllersManager = WindowControllersManagerMock()
         mockPixelFiring = PixelKitMock()
         cancellables = Set<AnyCancellable>()
 
@@ -54,7 +54,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
             sidebarProvider: mockSidebarProvider,
             aiChatTabOpener: mockAIChatTabOpener,
             featureFlagger: mockFeatureFlagger,
-            tabIDProvider: mockTabIDProvider,
+            windowControllersManager: mockWindowControllersManager,
             pixelFiring: mockPixelFiring
         )
     }
@@ -63,7 +63,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         cancellables = nil
         presenter = nil
         mockPixelFiring = nil
-        mockTabIDProvider = nil
+        mockWindowControllersManager = nil
         mockFeatureFlagger = nil
         mockAIChatTabOpener = nil
         mockSidebarProvider = nil
@@ -86,7 +86,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
             sidebarHost: mockSidebarHost,
             aiChatTabOpener: mockAIChatTabOpener,
             featureFlagger: mockFeatureFlagger,
-            tabIDProvider: mockTabIDProvider,
+            windowControllersManager: mockWindowControllersManager,
             pixelFiring: mockPixelFiring
         )
 
@@ -147,7 +147,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
-        mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
         XCTAssertTrue(mockSidebarProvider.isShowingSidebar(for: tabID))
 
         var presenceChangeReceived: AIChatSidebarPresenceChange?
@@ -368,8 +368,15 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     func testSidebarHostDidUpdateTabs_DoesNotRemoveVisibleTabs() {
         // Given
-        mockTabIDProvider.allPinnedTabIDs = ["tab1"]
-        mockTabIDProvider.allRegularTabIDs = ["tab2"]
+        let persistor = MockTabsPreferencesPersistor()
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
+                                                            tabsPreferences: TabsPreferences(persistor: persistor))
+        tabCollectionViewModel.append(tab: Tab(uuid: "tab1", content: .url(URL.duckDuckGo, source: .ui)))
+        tabCollectionViewModel.append(tab: Tab(uuid: "tab2", content: .url(URL.duckDuckGo, source: .ui)))
+
+        // Set up the mock to return predefined tabCollectionViewModel
+        mockWindowControllersManager.customAllTabCollectionViewModels = [tabCollectionViewModel]
+
         _ = mockSidebarProvider.makeSidebar(for: "tab1", burnerMode: .regular)
         _ = mockSidebarProvider.makeSidebar(for: "tab2", burnerMode: .regular)
         XCTAssertEqual(mockSidebarProvider.sidebarsByTab.count, 2)
@@ -769,9 +776,4 @@ class MockAIChatTabOpener: AIChatTabOpening {
         lastLinkOpenBehavior = nil
         openMethodCalledExpectation = nil
     }
-}
-
-class MockTabIDProvider: TabIDProviding {
-    public var allPinnedTabIDs: [TabIdentifier] = []
-    public var allRegularTabIDs: [TabIdentifier] = []
 }

@@ -105,6 +105,18 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
     func register(_ windowController: MainWindowController) {}
     func unregister(_ windowController: MainWindowController) {}
 
+    var customAllTabCollectionViewModels: [TabCollectionViewModel]?
+    var allTabCollectionViewModels: [TabCollectionViewModel] {
+        if let customAllTabCollectionViewModels {
+            return customAllTabCollectionViewModels
+        } else {
+            // The default implementation
+            return mainWindowControllers.map {
+                $0.mainViewController.tabCollectionViewModel
+            }
+        }
+    }
+
     var lastKeyMainWindowController: MainWindowController?
 
     struct ShowArgs: Equatable {

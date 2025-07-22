@@ -231,7 +231,6 @@ final class NavigationActionBarView: UIView {
         updateMicrophoneButton()
         updateSearchButton()
         updateButtonVisibility()
-        updateBackgroundVisibility()
     }
     
     private func updateWebSearchToggleButton() {

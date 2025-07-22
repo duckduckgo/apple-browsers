@@ -56,6 +56,12 @@ protocol AIChatSidebarPresenting {
     func presentSidebar(for prompt: AIChatNativePrompt)
 }
 
+@MainActor
+protocol TabIDProviding {
+    var allPinnedTabIDs: [TabIdentifier] { get }
+    var allRegularTabIDs: [TabIdentifier] { get }
+}
+
 final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
     let sidebarPresenceWillChangePublisher: AnyPublisher<AIChatSidebarPresenceChange, Never>
@@ -64,7 +70,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     private let sidebarProvider: AIChatSidebarProviding
     private let aiChatTabOpener: AIChatTabOpening
     private let featureFlagger: FeatureFlagger
-    private let windowControllersManager: WindowControllersManagerProtocol
+    private let tabIDProvider: TabIDProviding
     private let pixelFiring: PixelFiring?
     private let sidebarPresenceWillChangeSubject = PassthroughSubject<AIChatSidebarPresenceChange, Never>()
 
@@ -76,14 +82,14 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
         aiChatTabOpener: AIChatTabOpening,
         featureFlagger: FeatureFlagger,
-        windowControllersManager: WindowControllersManagerProtocol,
+        tabIDProvider: TabIDProviding,
         pixelFiring: PixelFiring?
     ) {
         self.sidebarHost = sidebarHost
         self.sidebarProvider = sidebarProvider
         self.aiChatTabOpener = aiChatTabOpener
         self.featureFlagger = featureFlagger
-        self.windowControllersManager = windowControllersManager
+        self.tabIDProvider = tabIDProvider
         self.pixelFiring = pixelFiring
 
         sidebarPresenceWillChangePublisher = sidebarPresenceWillChangeSubject.eraseToAnyPublisher()
@@ -213,9 +219,7 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
     }
 
     func sidebarHostDidUpdateTabs() {
-        let allPinnedTabIDs = windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
-        let allTabIDs = windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
-        sidebarProvider.cleanUp(for: allPinnedTabIDs + allTabIDs)
+        sidebarProvider.cleanUp(for: tabIDProvider.allPinnedTabIDs + tabIDProvider.allRegularTabIDs)
     }
 }
 
@@ -238,8 +242,19 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
     func didClickCloseButton() {
         pixelFiring?.fire(AIChatPixel.aiChatSidebarClosed(source: .sidebarCloseButton), frequency: .dailyAndStandard)
 
-        windowControllersManager.lastKeyMainWindowController?.window?.makeFirstResponder(nil)
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window?.makeFirstResponder(nil)
         toggleSidebar()
+    }
+
+}
+
+extension WindowControllersManager: TabIDProviding {
+    var allPinnedTabIDs: [TabIdentifier] {
+        pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
+    }
+
+    var allRegularTabIDs: [TabIdentifier] {
+        allTabCollectionViewModels.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
     }
 
 }

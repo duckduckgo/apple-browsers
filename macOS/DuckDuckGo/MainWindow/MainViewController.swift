@@ -170,7 +170,7 @@ final class MainViewController: NSViewController {
             sidebarProvider: aiChatSidebarProvider,
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager,
+            tabIDProvider: windowControllersManager,
             pixelFiring: pixelFiring
         )
         aiChatSummarizer = AIChatSummarizer(

@@ -312,7 +312,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private func performUpdateCheckSkippingRollout() async {
         // Cancel any active task (user-initiated takes priority)
         await updateCheckState.cancelActiveTask()
-        Logger.updates.log("User-initiated update check - cancelled any active task")
+        Logger.updates.debug("User-initiated update check - cancelled any active task")
 
         // Record that we're starting a check (no rate limiting for user-initiated)
         await updateCheckState.recordCheckTime()

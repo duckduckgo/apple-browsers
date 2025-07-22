@@ -84,7 +84,7 @@ final class FirefoxPreferences {
     }()
 
     /// The number of sponsored sites shown on the new tab page.
-    private lazy var newTabSponsoredSitesCount: Int = {
+    private(set) lazy var newTabSponsoredSitesCount: Int = {
         let showSponsoredTopSitesString = preferences[Constants.PreferenceKeys.showSponsoredTopSites]?.lowercased() ?? "true" // Defaults to enabled
         return Bool(showSponsoredTopSitesString) ?? true ? Constants.sponsoredSitesCount : 0
     }()

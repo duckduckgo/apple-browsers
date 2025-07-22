@@ -509,7 +509,6 @@ extension UpdateController: SPUUpdaterDelegate {
         guard let item = nsError.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else { return }
 
         Logger.updates.log("Updater did not find valid update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidNotFindUpdate, error: error), frequency: .legacyDailyNoSuffix)
 
         // Edge case: User upgrades to latest version within their rollout group
         // But fetched release notes are outdated due to rollout group reset

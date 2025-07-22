@@ -424,7 +424,6 @@ enum GeneralPixel: PixelKitEventV2 {
 
     case updaterAborted
     case updaterDidFindUpdate
-    case updaterDidNotFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
 
@@ -1117,8 +1116,6 @@ enum GeneralPixel: PixelKitEventV2 {
             return "updater_aborted"
         case .updaterDidFindUpdate:
             return "updater_did_find_update"
-        case .updaterDidNotFindUpdate:
-            return "updater_did_not_find_update"
         case .updaterDidDownloadUpdate:
             return "updater_did_download_update"
         case .updaterDidRunUpdate:

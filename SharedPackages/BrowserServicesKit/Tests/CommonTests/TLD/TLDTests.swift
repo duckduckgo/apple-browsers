@@ -98,4 +98,30 @@ final class TLDTests: XCTestCase {
         XCTAssertEqual("example", tld.domain("example"))
     }
 
+    func testWhenStringURLHasNoSubdomainThenSecondLevelDomainCorrect() {
+        XCTAssertEqual("example", tld.extractSecondLevelDomain(fromStringURL: "https://example.com"))
+        XCTAssertEqual("bbc", tld.extractSecondLevelDomain(fromStringURL: "https://bbc.co.uk"))
+    }
+
+    func testWhenStringURLMultiPartTopLevelWithSubdomainThenSecondLevelDomainCorrect() {
+        XCTAssertEqual("bbc", tld.extractSecondLevelDomain(fromStringURL: "https://www.bbc.co.uk"))
+        XCTAssertEqual("bbc", tld.extractSecondLevelDomain(fromStringURL: "https://other.bbc.co.uk"))
+        XCTAssertEqual("bbc", tld.extractSecondLevelDomain(fromStringURL: "https://multi.part.bbc.co.uk"))
+    }
+
+    func testWhenStringURLDotComWithSubdomainThenSecondLevelDomainCorrect() {
+        XCTAssertEqual("example", tld.extractSecondLevelDomain(fromStringURL: "https://www.example.com"))
+        XCTAssertEqual("example", tld.extractSecondLevelDomain(fromStringURL: "https://other.example.com"))
+        XCTAssertEqual("example", tld.extractSecondLevelDomain(fromStringURL: "https://multi.part.example.com"))
+    }
+
+    func testWhenStringURLIsTLDLevelThenSecondLevelDomainIsNotFound() {
+        XCTAssertEqual(nil, tld.extractSecondLevelDomain(fromStringURL: "https://com"))
+        XCTAssertEqual(nil, tld.extractSecondLevelDomain(fromStringURL: "https://co.uk"))
+    }
+
+    func testWhenStringURLIsIncorrectThenSecondLevelDomainIsNotFound() {
+        XCTAssertEqual(nil, tld.extractSecondLevelDomain(fromStringURL: "https://abcderfg"))
+    }
+
 }

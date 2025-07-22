@@ -37,15 +37,17 @@ struct FavoritesImportProcessorTests {
         let favorite = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
 
         // Check initial state
-        try #require(bookmarks.numberOfBookmarks == 2)
+        try #require(bookmarks.numberOfBookmarks == 3)
         let bookmarkBarBookmark = try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.first)
         try #require(bookmarkBarBookmark.isDDGFavorite == false)
 
         FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &bookmarks, favorites: [favorite])
 
-        #expect(bookmarks.numberOfBookmarks == 2)
+        #expect(bookmarks.numberOfBookmarks == 3)
         let mergedBookmarkBarBookmark = try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.first)
         #expect(mergedBookmarkBarBookmark.isDDGFavorite == true)
+        let mergedOtherBookmarksBookmark = try #require(bookmarks.topLevelFolders.otherBookmarks?.children?.first)
+        #expect(mergedOtherBookmarksBookmark.isDDGFavorite == false)
     }
 
     @Test("Check if mergeBookmarksAndFavorites adds unique favorites to the bookmark bar")
@@ -56,12 +58,12 @@ struct FavoritesImportProcessorTests {
         let uniqueFavorite = ImportedBookmarks.BookmarkOrFolder(name: "Duck.ai", type: .bookmark, urlString: "https://duck.ai", children: nil, isDDGFavorite: true, favoritesIndex: 2)
 
         // Check initial state
-        try #require(bookmarks.numberOfBookmarks == 2)
+        try #require(bookmarks.numberOfBookmarks == 3)
         try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.count == 2)
 
         FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &bookmarks, favorites: [exactDuplicateFavorite, approxDuplicateFavorite, uniqueFavorite])
 
-        #expect(bookmarks.numberOfBookmarks == 3)
+        #expect(bookmarks.numberOfBookmarks == 4)
         let bookmarkBarChildren = try #require(bookmarks.topLevelFolders.bookmarkBar?.children)
         #expect(bookmarkBarChildren.count == 3)
         #expect(bookmarkBarChildren.contains(approxDuplicateFavorite) == false)
@@ -74,7 +76,7 @@ struct FavoritesImportProcessorTests {
         let folder1 = ImportedBookmarks.BookmarkOrFolder(name: "Folder", type: .folder, urlString: nil, children: [bookmark2])
 
         let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [bookmark1, folder1])
-        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [bookmark1])
 
         let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
 

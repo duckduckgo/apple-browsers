@@ -61,7 +61,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
-        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase])
+        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .authUpdate])
     }
 
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
@@ -185,6 +185,57 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
     }
+
+    // MARK: - Auth Update Push Tests
+
+    func testThatSubscriptionDidChangeNotificationTriggersAuthUpdate() {
+        let mockBroker = MockUserScriptMessagePusher()
+        let mockWebView = WKWebView()
+        let mockUserScript = SubscriptionUserScript(handler: handler, debugHost: nil)
+
+        handler.setBroker(mockBroker)
+        handler.setWebView(mockWebView)
+        handler.setUserScript(mockUserScript)
+
+        NotificationCenter.default.post(name: .subscriptionDidChange, object: nil)
+        let result = XCTWaiter().wait(for: [mockBroker.pushExpectation], timeout: 1)
+        XCTAssertEqual(result, .completed)
+
+        XCTAssertEqual(mockBroker.lastPushedMethod, SubscriptionUserScript.MessageName.authUpdate.rawValue)
+    }
+
+    func testThatAccountDidSignInNotificationTriggersAuthUpdate() {
+        let mockBroker = MockUserScriptMessagePusher()
+        let mockWebView = WKWebView()
+        let mockUserScript = SubscriptionUserScript(handler: handler, debugHost: nil)
+
+        handler.setBroker(mockBroker)
+        handler.setWebView(mockWebView)
+        handler.setUserScript(mockUserScript)
+
+        NotificationCenter.default.post(name: .accountDidSignIn, object: nil)
+        let result = XCTWaiter().wait(for: [mockBroker.pushExpectation], timeout: 1)
+        XCTAssertEqual(result, .completed)
+
+        XCTAssertEqual(mockBroker.lastPushedMethod, SubscriptionUserScript.MessageName.authUpdate.rawValue)
+    }
+
+    func testThatAccountDidSignOutNotificationTriggersAuthUpdate() {
+        let mockBroker = MockUserScriptMessagePusher()
+        let mockWebView = WKWebView()
+        let mockUserScript = SubscriptionUserScript(handler: handler, debugHost: nil)
+
+        handler.setBroker(mockBroker)
+        handler.setWebView(mockWebView)
+        handler.setUserScript(mockUserScript)
+
+        NotificationCenter.default.post(name: .accountDidSignOut, object: nil)
+        let result = XCTWaiter().wait(for: [mockBroker.pushExpectation], timeout: 1)
+        XCTAssertEqual(result, .completed)
+
+        XCTAssertEqual(mockBroker.lastPushedMethod, SubscriptionUserScript.MessageName.authUpdate.rawValue)
+    }
+
 }
 
 private extension PrivacyProSubscription {
@@ -209,5 +260,15 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
 
     func navigateToSubscriptionPurchase() {
         navigateToSubscriptionPurchaseCalled = true
+    }
+}
+
+class MockUserScriptMessagePusher: UserScriptMessagePushing {
+    var lastPushedMethod: String?
+    let pushExpectation = XCTestExpectation(description: "Push method called")
+
+    func push(method: String, params: Encodable?, for delegate: Subfeature, into webView: WKWebView) {
+        lastPushedMethod = method
+        pushExpectation.fulfill()
     }
 }

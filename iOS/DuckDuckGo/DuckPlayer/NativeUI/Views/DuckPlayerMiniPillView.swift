@@ -146,6 +146,7 @@ struct DuckPlayerMiniPillView: View {
                 )
 
             })
+            .accessibilityIdentifier("Resume in Duck Player")
     }
 
     var body: some View {

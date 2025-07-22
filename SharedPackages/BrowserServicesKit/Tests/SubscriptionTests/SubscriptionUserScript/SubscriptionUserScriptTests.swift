@@ -111,14 +111,23 @@ final class SubscriptionUserScriptTests: XCTestCase {
     }
 
     func testThatOpenSubscriptionPurchaseMessageIsPassedToHandler() async throws {
-        try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.openSubscriptionPurchase)
-        XCTAssertEqual(handler.handshakeCallCount, 0)
-        XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
-        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
-        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
-        XCTAssertEqual(handler.backToSettingsCallCount, 0)
-        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
-        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 1)
+        let origin = "some_origin"
+        let params = ["origin": origin]
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: SubscriptionUserScript.MessageName.openSubscriptionPurchase.rawValue))
+        _ = try await handler(params, WKScriptMessage())
+
+        let mockHandler = try XCTUnwrap(self.handler)
+        XCTAssertEqual(mockHandler.handshakeCallCount, 0)
+        XCTAssertEqual(mockHandler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(mockHandler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(mockHandler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(mockHandler.backToSettingsCallCount, 0)
+        XCTAssertEqual(mockHandler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(mockHandler.openSubscriptionPurchaseCallCount, 1)
+
+        // Verify parameters were passed through
+        let passedParams = try XCTUnwrap(mockHandler.lastOpenSubscriptionPurchaseParams as? [String: String])
+        XCTAssertEqual(passedParams["origin"], origin)
     }
 
     func testThatHandshakeIncludesAuthUpdateInAvailableMessages() async throws {

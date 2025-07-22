@@ -32,6 +32,10 @@ public final class MockSubscriptionUserScriptHandler: SubscriptionUserScriptHand
     public var openSubscriptionActivationCallCount = 0
     public var openSubscriptionPurchaseCallCount = 0
 
+    // Parameter tracking
+    public var lastOpenSubscriptionPurchaseParams: Any?
+    public var lastOpenSubscriptionPurchaseMessage: (any UserScriptMessage)?
+
     // Setter method tracking
     public var lastSetBroker: UserScriptMessagePushing?
     public var lastSetWebView: WKWebView?
@@ -77,6 +81,8 @@ public final class MockSubscriptionUserScriptHandler: SubscriptionUserScriptHand
 
     public func openSubscriptionPurchase(params: Any, message: any UserScriptMessage) async throws -> Encodable? {
         openSubscriptionPurchaseCallCount += 1
+        lastOpenSubscriptionPurchaseParams = params
+        lastOpenSubscriptionPurchaseMessage = message
         return try await openSubscriptionPurchase(params, message)
     }
 

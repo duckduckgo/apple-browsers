@@ -349,6 +349,7 @@ private class CircularButton: UIButton {
         secondShadowLayer.shadowOpacity = 1.0
         secondShadowLayer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset2Y)
         secondShadowLayer.shadowRadius = NavigationActionBarView.Constants.shadowRadius2
+        secondShadowLayer.masksToBounds = false
         layer.insertSublayer(secondShadowLayer, at: 0)
         
         imageView?.contentMode = .scaleAspectFit

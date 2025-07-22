@@ -57,7 +57,7 @@ actor UpdateCheckState {
     /// This method immediately cancels the active task and clears the task reference.
     /// Used when user-initiated update checks need to take priority over automatic checks.
     ///
-        internal func cancelActiveTask() {
+    internal func cancelActiveTask() {
         activeUpdateTask?.cancel()
         activeUpdateTask = nil
     }

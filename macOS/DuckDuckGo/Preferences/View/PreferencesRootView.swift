@@ -286,6 +286,7 @@ enum Preferences {
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
         let visualStyle: VisualStyleProviding
+        let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
 
@@ -293,6 +294,7 @@ enum Preferences {
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling,
+            featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
@@ -301,6 +303,7 @@ enum Preferences {
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.showTab = showTab
+            self.featureFlagger = featureFlagger
             self.visualStyle = visualStyle
             self.aiChatURLSettings = aiChatURLSettings
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
@@ -371,7 +374,7 @@ enum Preferences {
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!)
+                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!, isSubscriptionRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) }, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
@@ -425,7 +428,7 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                        featureFlagger: featureFlagger,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }

@@ -1,0 +1,47 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    searchSubmitted: {
+        description: 'Fires when the user submits a search term via the New Tab Page search box. Used to monitor NTP search engagement.',
+        owners: ['tomasstrba'],
+        triggers: ['search_ddg'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    promptSubmitted: {
+        description: 'Fires when a user submits a chat prompt via the New Tab Page AI chat box. Helps track interaction with DuckAI.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    omnibarModeChanged: {
+        description: 'Fires when a user switches between search and DuckAI mode in the omnibar. Used to understand mode preference.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            {
+                key: 'mode',
+                type: 'string',
+                description: 'Omnibar mode the user switched to',
+                enum: ['search', 'duck_ai'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    omnibarHidden: {
+        description: 'Fires when the user hides the omnibar from New Tab Page. Indicates visibility preference.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    omnibarShown: {
+        description: 'Fires when the user reveals the omnibar on New Tab Page. Indicates visibility preference.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

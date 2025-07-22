@@ -897,8 +897,6 @@ final class LocalBookmarkStore: BookmarkStore {
             }
             .prefix(availableFavoriteSlots)
             .forEach { $0.addToFavorites(folders: favoritesFolders) }
-
-        // Send pixel for success: https://app.asana.com/1/137249556945/task/1210674932129670
     }
 
     /// There is a rare issue where bookmark managed objects can end up in the database with an invalid state, that is that they are missing their title value despite being non-optional.

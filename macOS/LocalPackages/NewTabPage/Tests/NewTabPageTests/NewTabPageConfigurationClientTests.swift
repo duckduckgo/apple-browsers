@@ -89,8 +89,8 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         XCTAssertEqual(configuration.widgets, [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
-            .init(id: .nextSteps),
             .init(id: .omnibar),
+            .init(id: .nextSteps),
             .init(id: .favorites),
             .init(id: .protections)
         ])

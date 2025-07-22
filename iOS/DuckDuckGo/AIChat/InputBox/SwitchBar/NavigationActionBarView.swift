@@ -41,8 +41,7 @@ final class NavigationActionBarView: UIView {
     // MARK: - Properties
     private let viewModel: NavigationActionBarViewModel
     private var cancellables = Set<AnyCancellable>()
-    private var isKeyboardVisible = false
-    
+
     // MARK: - UI Elements
     private let mainStackView = UIStackView()
     private let rightStackView = UIStackView()
@@ -59,7 +58,6 @@ final class NavigationActionBarView: UIView {
         super.init(frame: .zero)
         setupUI()
         setupBindings()
-        setupKeyboardObserver()
         updateUI()
     }
     
@@ -126,7 +124,7 @@ final class NavigationActionBarView: UIView {
             // Background gradient should align with the keyboard (or bottom safe area)
             backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
             backgroundGradientView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            backgroundGradientView.topAnchor.constraint(equalTo: topAnchor),
+            backgroundGradientView.topAnchor.constraint(equalTo: mainStackView.topAnchor),
             backgroundGradientView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
 
             // Position the solid view under gradient and extend to the bottom of the view
@@ -210,22 +208,6 @@ final class NavigationActionBarView: UIView {
             .store(in: &cancellables)
     }
     
-    private func setupKeyboardObserver() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillShow),
-            name: UIResponder.keyboardWillShowNotification,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillHide),
-            name: UIResponder.keyboardWillHideNotification,
-            object: nil
-        )
-    }
-    
     // MARK: - Actions
     @objc private func webSearchToggleTapped() {
         viewModel.handleWebSearchToggle()
@@ -242,17 +224,7 @@ final class NavigationActionBarView: UIView {
     @objc private func searchTapped() {
         viewModel.onSearchTapped()
     }
-    
-    @objc private func keyboardWillShow() {
-        isKeyboardVisible = true
-        updateBackgroundVisibility()
-    }
-    
-    @objc private func keyboardWillHide() {
-        isKeyboardVisible = false
-        updateBackgroundVisibility()
-    }
-    
+
     // MARK: - UI Updates
     private func updateUI() {
         updateWebSearchToggleButton()
@@ -322,15 +294,7 @@ final class NavigationActionBarView: UIView {
         let shouldShowSearchButton = viewModel.hasText
         searchButton.isHidden = !shouldShowSearchButton
     }
-    
-    private func updateBackgroundVisibility() {
-        let alpha = isKeyboardVisible ? 1.0 : 0.0
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: .curveEaseOut) {
-            self.backgroundGradientView.alpha = alpha
-            self.solidView.alpha = alpha
-        }
-    }
-    
+
     // MARK: - Touch Handling
     
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {

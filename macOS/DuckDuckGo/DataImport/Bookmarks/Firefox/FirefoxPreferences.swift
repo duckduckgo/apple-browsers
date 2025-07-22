@@ -63,14 +63,14 @@ final class FirefoxPreferences {
 
     private let preferences: [String: String]
 
-    lazy var newTabFavoritesEnabled: Bool = {
+    private(set) lazy var newTabFavoritesEnabled: Bool = {
         let topSitesEnabledString = preferences[Constants.PreferenceKeys.topSites]?.lowercased() ?? "true" // Defaults to enabled
         return Bool(topSitesEnabledString) ?? true
     }()
 
     /// Maximum number of favorites shown on the new tab page.
     /// We remove the sponsored sites from the total count, since they can't be imported.
-    lazy var newTabFavoritesCount: Int = {
+    private(set) lazy var newTabFavoritesCount: Int = {
         return ( newTabFavoritesRowCount * Constants.topSitesPerRow ) - newTabSponsoredSitesCount
     }()
 
@@ -91,7 +91,7 @@ final class FirefoxPreferences {
 
     /// Sites pinned in favorites on the new tab page.
     /// Includes nil entries for empty slots (to be filled with frecent sites from browsing history).
-    lazy var newTabPinnedSites: [PinnedSite?] = {
+    private(set) lazy var newTabPinnedSites: [PinnedSite?] = {
         let pinnedSitesJSONString = preferences[Constants.PreferenceKeys.pinned]
         return parseJSONValue(pinnedSitesJSONString, as: [PinnedSite?].self) ?? []
     }()

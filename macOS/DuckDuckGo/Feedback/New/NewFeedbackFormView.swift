@@ -74,31 +74,10 @@ struct FeedbackFlowView: View {
 }
 
 struct NewFeedbackFormView: View {
-    @State private var selectedFeatures: Set<String> = []
-    @State private var customFeatureText: String = ""
+    @ObservedObject var viewModel: NewFeedbackFormViewModel = .init()
 
     var onSubmit: () -> Void
     var onClose: () -> Void
-
-    let availableFeatures = [
-        "Advanced ad blocking",
-        "AI support",
-        "Cast video/audio",
-        "Customize browser theme",
-        "Dark mode on all sites",
-        "Import bookmarks folders",
-        "Import history",
-        "Incognito",
-        "Move browser buttons",
-        "New tab page widgets",
-        "Password manager extensions",
-        "Picture-in-picture",
-        "Reader mode",
-        "Tab groups",
-        "User profiles",
-        "Vertical tabs",
-        "Website translation"
-    ].shuffled().prefix(12)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -123,21 +102,22 @@ struct NewFeedbackFormView: View {
                 // Feature selection pills
                 FlexibleView(
                     availableWidth: NewFeedbackFormViewController.Constants.width,
-                    data: availableFeatures,
+                    data: viewModel.availableFeatures,
                     spacing: 8,
                     alignment: .leading
                 ) { feature in
                     FeaturePill(
                         text: feature,
-                        isSelected: selectedFeatures.contains(feature)
+                        isSelected: viewModel.selectedFeatures.contains(feature)
                     ) {
-                        toggleFeature(feature)
+                        viewModel.toggleFeature(feature)
                     }
                 }
                 .padding([.leading, .trailing], 24)
                 .padding(.bottom, 24)
 
-                if selectedFeatures.contains("Incognito") {
+
+                if viewModel.shouldShowIncognitoInfo {
                     IncognitoInfoBox()
                         .padding([.leading, .trailing], 24)
                         .padding(.bottom, 16)
@@ -149,7 +129,7 @@ struct NewFeedbackFormView: View {
                     Text("Or share your own feature idea")
                         .systemLabel()
 
-                    TextEditor(text: $customFeatureText)
+                    TextEditor(text: $viewModel.customFeatureText)
                         .systemLabel()
                         .frame(minHeight: 80)
                         .padding(8)
@@ -157,12 +137,12 @@ struct NewFeedbackFormView: View {
                         .cornerRadius(6)
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(customFeatureText.isEmpty ? Color(.separatorColor) : Color(baseColor: .blue50),
+                                .stroke(viewModel.customFeatureText.isEmpty ? Color(.separatorColor) : Color(baseColor: .blue50),
                                         lineWidth: 1)
                         )
                         .overlay(
                             Group {
-                                if customFeatureText.isEmpty {
+                                if viewModel.customFeatureText.isEmpty {
                                     HStack {
                                         VStack {
                                             HStack {
@@ -209,27 +189,13 @@ struct NewFeedbackFormView: View {
                         Text("Submit")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(DefaultActionButtonStyle(enabled: shouldEnableSubmit))
+                    .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
                 }
                 .padding([.leading, .trailing], 24)
                 .padding(.bottom, 16)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    var shouldEnableSubmit: Bool {
-        !selectedFeatures.isEmpty || !customFeatureText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private func toggleFeature(_ feature: String) {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            if selectedFeatures.contains(feature) {
-                selectedFeatures.remove(feature)
-            } else {
-                selectedFeatures.insert(feature)
-            }
-        }
     }
 }
 

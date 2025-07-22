@@ -159,7 +159,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     private var shouldCheckNewApplicationVersion = true
 
-    private let updateCheckState = UpdateCheckState()
+    private let updateCheckState: UpdateCheckState
 
     // MARK: - Feature Flags support
 
@@ -175,11 +175,13 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // MARK: - Public
 
     init(internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         updateCheckState: UpdateCheckState = UpdateCheckState()) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
+        self.updateCheckState = updateCheckState
         super.init()
 
         _ = try? configureUpdater()

@@ -176,8 +176,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    authenticationStateProvider: subscriptionManager,
                                                    internalUserDecider: internalUserDecider,
-                                                   featureFlagger: featureFlagger,
-                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
+                                                   featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -785,7 +785,6 @@ final class FeedbackSubMenu: NSMenu {
          internalUserDecider: InternalUserDecider,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
          featureFlagger: FeatureFlagger) {
-        self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.authenticationStateProvider = authenticationStateProvider
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
@@ -1277,6 +1276,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
             let isNetworkProtectionItemEnabled = await hasEntitlement(for: .networkProtection)
             let isDataBrokerProtectionItemEnabled = await hasEntitlement(for: .dataBrokerProtection)
+            let isPaidAIChatItemEnabled = await hasEntitlement(for: .paidAIChat)
 
             let hasIdentityTheftRestoration = await hasEntitlement(for: .identityTheftRestoration)
             let hasIdentityTheftRestorationGlobal = await hasEntitlement(for: .identityTheftRestorationGlobal)
@@ -1286,6 +1286,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                 self.networkProtectionItem.isEnabled = isNetworkProtectionItemEnabled
                 self.dataBrokerProtectionItem.isEnabled = isDataBrokerProtectionItemEnabled
                 self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
+                self.paidAIChatItem.isEnabled = isPaidAIChatItemEnabled
             }
         }
     }

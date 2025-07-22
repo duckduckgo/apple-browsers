@@ -63,6 +63,8 @@ struct ImportPasswordsPromptView: View {
                 }
             }
             .background(GeometryReader { proxy -> Color in
+                // Using main dispatch queue to avoid SwiftUI geometry updates conflicts
+                // since modifying view state during geometry calculation can cause issues
                 DispatchQueue.main.async { viewModel.contentHeight = proxy.size.height }
                 return Color.clear
             })

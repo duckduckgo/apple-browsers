@@ -377,7 +377,6 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
 
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     public func autofillUserScript(_: AutofillUserScript,
                                    didRequestCredentialsForDomain domain: String,
                                    subType: AutofillUserScript.GetAutofillDataSubType,
@@ -406,14 +405,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
                 }
 
                 if accounts.count == 0 {
-                    self.delegate?.secureVaultManager(self, promptUserToImportCredentialsForDomain: domain) { [weak self] shouldRefresh in
-                        guard let self = self else { return }
-                        if shouldRefresh {
-                            completionHandler(nil, self.credentialsProvider, .refreshAvailableInputTypes)
-                        } else {
-                            completionHandler(nil, self.credentialsProvider, .none)
-                        }
-                    }
+                    self.handleCredentialsImport(domain: domain, completionHandler: completionHandler)
                 } else {
                     self.delegate?.secureVaultManager(self, promptUserToAutofillCredentialsForDomain: domain,
                                                       withAccounts: accounts,
@@ -445,6 +437,17 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
         } catch {
             Logger.secureVault.error("Error requesting accounts: \(error.localizedDescription, privacy: .public)")
             completionHandler(nil, credentialsProvider, .none)
+        }
+    }
+
+    private func handleCredentialsImport(domain: String, completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?, SecureVaultModels.CredentialsProvider, RequestVaultDataAction) -> Void) {
+        self.delegate?.secureVaultManager(self, promptUserToImportCredentialsForDomain: domain) { [weak self] shouldRefresh in
+            guard let self = self else { return }
+            if shouldRefresh {
+                completionHandler(nil, self.credentialsProvider, .refreshAvailableInputTypes)
+            } else {
+                completionHandler(nil, self.credentialsProvider, .none)
+            }
         }
     }
 

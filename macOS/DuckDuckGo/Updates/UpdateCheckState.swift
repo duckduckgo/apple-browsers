@@ -25,8 +25,8 @@ import Foundation
 /// 
 actor UpdateCheckState {
 
-    /// Default minimum interval between update checks (1 minute).
-    static let defaultMinimumCheckInterval: TimeInterval = 60
+    /// Default minimum interval between update checks
+    static let defaultMinimumCheckInterval: TimeInterval = .minutes(5)
 
     private var activeUpdateTask: Task<Void, Never>?
     private var lastUpdateCheckTime: Date?

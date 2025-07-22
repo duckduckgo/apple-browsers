@@ -202,7 +202,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private func subscribeToResignKeyNotifications() {
         NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
             .sink { [weak self] _ in
-                self?.discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false)
+                self?.checkForUpdateRespectingRollout()
             }
             // Store subscription to keep it alive
             .store(in: &cancellables)
@@ -242,7 +242,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private func performUpdateCheck() async {
         // Check if we can start a new check (no active task + rate limiting)
         guard await updateCheckState.canStartNewCheck() else {
-            Logger.updates.log("Update check skipped - task already running or rate limited")
+            Logger.updates.debug("Update check skipped - task already running or rate limited")
             return
         }
 
@@ -320,7 +320,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         // Create the actual update task
         let updateTask = Task { @MainActor in
             // Handle expired builds first (critical path)
-            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
+            guard await !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
                 return
             }
 

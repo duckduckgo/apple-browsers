@@ -216,8 +216,8 @@ final class UpdateCheckStateTests: XCTestCase {
 
     // MARK: - Constants Tests
 
-    /// Tests that the default rate limiting interval is configured to 60 seconds.
+    /// Tests that the default rate limiting interval is configured to 5 minutes.
     func testDefaultRateLimitingInterval() {
-        XCTAssertEqual(UpdateCheckState.defaultMinimumCheckInterval, 60, "Default minimum check interval should be 60 seconds")
+        XCTAssertEqual(UpdateCheckState.defaultMinimumCheckInterval, .minutes(5), "Default minimum check interval should be 5 minutes")
     }
 }

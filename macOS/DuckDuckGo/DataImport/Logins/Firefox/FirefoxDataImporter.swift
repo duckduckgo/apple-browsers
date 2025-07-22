@@ -250,7 +250,7 @@ internal class FirefoxDataImporter: DataImporter {
 
         // Add pinned sites, if any, to fill the sponsored slots. This optimistically includes manually added shortcuts in cases where the sponsored sites may have been dismissed.
         let sponsoredSlots = preferences.newTabPinnedSites
-            .suffix(from: favoritesCount)
+            .suffix(from: primaryPinned.count)
             .prefix(preferences.newTabSponsoredSitesCount)
             .compactMap { site -> ImportedBookmarks.BookmarkOrFolder? in
                 convertPinnedSiteToBookmark(site: site)

@@ -1968,7 +1968,6 @@ extension TabViewController: WKNavigationDelegate {
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
            let request = requestForDoNotSell(basedOn: navigationAction.request) {
-
             decisionHandler(.cancel)
             load(urlRequest: request)
             return
@@ -3327,9 +3326,20 @@ extension TabViewController: SecureVaultManagerDelegate {
                 return
             }
 
-            self.delegate?.tab(self, didRequestDataImport: .promo, onFinished: {
+            self.delegate?.tab(self, didRequestDataImport: .inBrowserPromo, onFinished: { [weak self] in
+                Pixel.fire(pixel: .importCredentialsFlowEnded)
                 completionHandler(true)
+
+                if let domainPasswordImportLastShownOn = self?.credentialsImportManager.domainPasswordImportLastShownOn,
+                    let autofillUserScript = self?.autofillUserScript {
+                    self?.vaultManager.autofillUserScript(autofillUserScript, didRequestAccountsForDomain: domainPasswordImportLastShownOn) { accounts, _ in
+                        if !accounts.isEmpty {
+                            Pixel.fire(pixel: .importCredentialsFlowHadCredentials)
+                        }
+                    }
+                }
             }, onCancelled: {
+                Pixel.fire(pixel: .importCredentialsFlowCancelled)
                 completionHandler(false)
             })
         }

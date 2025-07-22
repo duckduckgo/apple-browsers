@@ -141,7 +141,7 @@ class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, RecentAc
 
     func moveFavorites(with objectUUIDs: [String], toIndex: Int?, completion: @escaping (Error?) -> Void) {}
 
-    func importBookmarks(_ bookmarks: DuckDuckGo_Privacy_Browser.ImportedBookmarks, source: DuckDuckGo_Privacy_Browser.BookmarkImportSource) -> BrowserServicesKit.BookmarksImportSummary {
+    func importBookmarks(_ bookmarks: DuckDuckGo_Privacy_Browser.ImportedBookmarks, source: DuckDuckGo_Privacy_Browser.BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true, maxFavoritesCount: Int?) -> BrowserServicesKit.BookmarksImportSummary {
         BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
     }
 

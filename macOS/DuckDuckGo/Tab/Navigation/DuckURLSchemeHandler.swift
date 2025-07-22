@@ -195,7 +195,7 @@ private extension DuckURLSchemeHandler {
     func response(for requestURL: URL, withFaviconURL faviconURL: URL) -> (URLResponse, Data)? {
         guard faviconManager.isCacheLoaded,
               let favicon = faviconManager.getCachedFavicon(for: faviconURL, sizeCategory: .medium, fallBackToSmaller: true),
-              let imagePNGData = favicon.image?.pngData
+              let imagePNGData = favicon.image?.pngData()
         else {
             guard let response = HTTPURLResponse(url: requestURL, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil) else {
                 return nil
@@ -242,7 +242,7 @@ private extension DuckURLSchemeHandler {
         guard let userBackgroundImagesManager,
               let userBackgroundImage = userBackgroundImagesManager.availableImages.first(where: { $0.fileName == fileName }),
               let image = isThumbnail ? userBackgroundImagesManager.thumbnailImage(for: userBackgroundImage) : userBackgroundImagesManager.image(for: userBackgroundImage),
-              let imageJPEGData = image.jpegData
+              let imageJPEGData = image.jpegData()
         else {
             guard let response = HTTPURLResponse(url: requestURL, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil) else {
                 return nil

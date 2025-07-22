@@ -27,12 +27,13 @@ import History
 import Core
 import Suggestions
 import SwiftUI
+import AIChat
 import UIComponents
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
     func onQuerySubmitted(_ query: String)
-    func onPromptSubmitted(_ query: String)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
@@ -69,7 +70,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Manager Components
     
     private var swipeContainerManager: SwipeContainerManager?
-    private var keyboardAdjustmentManager: KeyboardAdjustmentManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private let daxLogoManager = DaxLogoManager()
@@ -140,6 +140,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         delegate?.onDismiss()
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate { _ in
+            self.swipeContainerManager?.updateLayout(viewBounds: CGRect(origin: .zero, size: size))
+        }
+    }
+
     // MARK: - Private Methods
     
     private func setupView() {
@@ -152,7 +160,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSuggestionsTray()
         installDaxLogoView()
         installNavigationActionBar()
-        installKeyboardManager()
 
         view.bringSubviewToFront(switchBarVC.view)
     }
@@ -193,7 +200,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self)
+        daxLogoManager.installInViewController(self, belowView: switchBarVC.view)
     }
     
     private func installNavigationActionBar() {
@@ -201,15 +208,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         manager.delegate = self
         manager.installInViewController(self, safeAreaGuide: view.safeAreaLayoutGuide)
         navigationActionBarManager = manager
-    }
-    
-    private func installKeyboardManager() {
-        let manager = KeyboardAdjustmentManager(
-            parentView: view,
-            logoCenterYConstraint: daxLogoManager.logoCenterYConstraint,
-            actionBarBottomConstraint: navigationActionBarManager?.actionBarBottomConstraint
-        )
-        keyboardAdjustmentManager = manager
     }
 
     private func setupSubscriptions() {
@@ -224,14 +222,24 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         switchBarHandler.textSubmissionPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
-                switch submission.mode {
-                case .search:
-                    self?.delegate?.onQuerySubmitted(submission.text)
-                case .aiChat:
-                    self?.delegate?.onPromptSubmitted(submission.text)
+                guard let self = self else { return }
+                defer { self.switchBarHandler.clearText() }
+
+                let text = submission.text
+
+                if self.switchBarHandler.isCurrentTextValidURL {
+                    self.delegate?.onQuerySubmitted(text)
+                    return
                 }
 
-                self?.switchBarHandler.clearText()
+                switch submission.mode {
+                case .search:
+                    self.delegate?.onQuerySubmitted(text)
+
+                case .aiChat:
+                    let tools: [AIChatRAGTool]? = self.switchBarHandler.forceWebSearch ? [.webSearch] : nil
+                    self.delegate?.onPromptSubmitted(text, tools: tools)
+                }
             }
             .store(in: &cancellables)
 
@@ -268,7 +276,7 @@ extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
         switchBarVC.updateScrollProgress(progress)
 
         if let logoView {
-            if suggestionTrayManager?.isShowingSuggestions == true {
+            if suggestionTrayManager?.isShowingSuggestionTray == true {
                 logoView.alpha = Easing.inOutCirc(progress)
                 logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
             } else {

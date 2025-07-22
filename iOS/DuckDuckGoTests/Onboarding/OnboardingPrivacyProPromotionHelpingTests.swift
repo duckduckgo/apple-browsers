@@ -46,6 +46,32 @@ final class OnboardingPrivacyProPromotionHelpingTests: XCTestCase {
         mockSubscriptionAuthV1toV2Bridge = nil
         PixelFiringMock.tearDown()
     }
+    
+    // MARK: - proceedButtonText Tests
+    
+    func testReturnsFreeTrialTextWhenUserIsEligibleForFreeTrial() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
+        mockSubscriptionAuthV1toV2Bridge.isEligibleForFreeTrialResult = true
+
+        // When
+        let result = sut.proceedButtonText
+
+        // Then
+        XCTAssertEqual(result, UserText.SubscriptionPromotionOnboarding.Buttons.tryItForFree)
+    }
+    
+    func testReturnsNonFreeTrialTextWhenUserIsNotEligibleForFreeTrial() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
+        mockSubscriptionAuthV1toV2Bridge.isEligibleForFreeTrialResult = false
+
+        // When
+        let result = sut.proceedButtonText
+
+        // Then
+        XCTAssertEqual(result, UserText.SubscriptionPromotionOnboarding.Buttons.learnMore)
+    }
 
     // MARK: - shouldDisplay Tests
 

@@ -24,62 +24,88 @@ import SwiftUI
 /// Manages the Dax logo view display and positioning
 final class DaxLogoManager {
     
-    // MARK: - Types
-    
-    struct Configuration {
-        let logoOffset: CGFloat
-        
-        static let `default` = Configuration(logoOffset: 18)
-    }
-    
     // MARK: - Properties
-    
-    private let configuration: Configuration
-    private var daxLogoHostingController: UIHostingController<NewTabPageDaxLogoView>?
-    private(set) var logoCenterYConstraint: NSLayoutConstraint?
-    
-    var logoView: UIView? {
-        daxLogoHostingController?.view
-    }
-    
-    // MARK: - Initialization
-    
-    init(configuration: Configuration = .default) {
-        self.configuration = configuration
-    }
-    
+
+    private(set) var logoView: UIView = DaxLogoView()
+
     // MARK: - Public Methods
     
-    func installInViewController(_ viewController: UIViewController) {
-        let daxLogoView = NewTabPageDaxLogoView()
-        let hostingController = UIHostingController(rootView: daxLogoView)
-        daxLogoHostingController = hostingController
-        
-        hostingController.view.backgroundColor = .clear
-        viewController.addChild(hostingController)
-        viewController.view.addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Offset so the logo is displayed on the same height as the NTP logo
-        logoCenterYConstraint = hostingController.view.centerYAnchor.constraint(
-            equalTo: viewController.view.centerYAnchor,
-            constant: configuration.logoOffset
-        )
-        
+    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
+
+        viewController.view.addSubview(logoView)
+        logoView.translatesAutoresizingMaskIntoConstraints = false
+        logoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+
+        let centeringGuide = UILayoutGuide()
+        centeringGuide.identifier = "DaxLogoCenteringGuide"
+        viewController.view.addLayoutGuide(centeringGuide)
+
         NSLayoutConstraint.activate([
-            hostingController.view.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
-            logoCenterYConstraint!
+
+            // Position layout centering guide vertically between top view and keyboard
+            viewController.view.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
+            viewController.view.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
+            topView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
+            viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
+
+            // Center within the layout guide
+            logoView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
+            logoView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
+            logoView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
+            logoView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
+            logoView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
+            logoView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
         ])
 
-        viewController.view.sendSubviewToBack(hostingController.view)
-        hostingController.didMove(toParent: viewController)
+        viewController.view.sendSubviewToBack(logoView)
     }
-    
-    func removeFromParent() {
-        daxLogoHostingController?.willMove(toParent: nil)
-        daxLogoHostingController?.view.removeFromSuperview()
-        daxLogoHostingController?.removeFromParent()
-        daxLogoHostingController = nil
-        logoCenterYConstraint = nil
+}
+
+private final class DaxLogoView: UIView {
+    let logoImage = UIImageView(image: UIImage(resource: .home))
+    let textImage = UIImageView(image: UIImage(resource: .textDuckDuckGo))
+
+    private let stackView = UIStackView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        setUpSubviews()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setUpSubviews() {
+        stackView.addArrangedSubview(logoImage)
+        stackView.addArrangedSubview(textImage)
+
+        textImage.tintColor = UIColor(designSystemColor: .textPrimary)
+
+        stackView.spacing = Metrics.spacing
+        stackView.axis = .vertical
+
+        addSubview(stackView)
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: Metrics.maxLogoSize),
+            logoImage.heightAnchor.constraint(equalToConstant: Metrics.maxLogoSize).withPriority(.defaultHigh)
+        ])
+
+        logoImage.contentMode = .scaleAspectFit
+        textImage.contentMode = .center
+
+    }
+
+    private struct Metrics {
+        static let maxLogoSize: CGFloat = 96
+        static let spacing: CGFloat = 12
     }
 }

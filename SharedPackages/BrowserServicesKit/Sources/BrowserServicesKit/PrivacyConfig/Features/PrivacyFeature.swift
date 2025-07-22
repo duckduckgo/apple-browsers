@@ -141,6 +141,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case passwordVariantCategorization
     case autocompleteAttributeSupport
     case inputFocusApi
+    case canPromoteImportPasswordsInPasswordManagement
+    case canPromoteImportPasswordsInBrowser
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -173,6 +175,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for summarizing text selected on a website.
     case textSummarization
+
+    // Adds capability to load AI Chat in a sidebar
+    case sidebar
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -243,6 +248,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProFreeTrial
     case paidAIChat
     case subscriptionRebranding
+    case vpnToolbarUpsell
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

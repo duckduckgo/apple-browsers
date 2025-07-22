@@ -28,6 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
+import SwiftUICore
 
 public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
 
@@ -61,7 +62,9 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                                   pixelKit: PixelKit,
-                                  quickLinkOpenURLHandler: @escaping (URL) -> Void) -> DataBrokerProtectionIOSManager? {
+                                  subscriptionManager: DataBrokerProtectionSubscriptionManager,
+                                  quickLinkOpenURLHandler: @escaping (URL) -> Void,
+                                  feedbackViewCreator: @escaping () -> (any View)) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -134,7 +137,9 @@ public class DataBrokerProtectionIOSManagerProvider {
             dataBrokerProtectionSettings: dbpSettings,
             emailService: emailService,
             captchaService: captchaService,
-            vpnBypassService: nil)
+            vpnBypassService: nil,
+            jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask
+        )
 
         return DataBrokerProtectionIOSManager(
             queueManager: queueManager,
@@ -144,33 +149,83 @@ public class DataBrokerProtectionIOSManagerProvider {
             iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
             database: database,
-            quickLinkOpenURLHandler: quickLinkOpenURLHandler
+            quickLinkOpenURLHandler: quickLinkOpenURLHandler,
+            feedbackViewCreator: feedbackViewCreator,
+            featureFlagger: featureFlagger,
+            settings: dbpSettings,
+            subscriptionManager: subscriptionManager
         )
     }
 }
 
 public final class DataBrokerProtectionIOSManager {
 
+    public struct Constants {
+        /// Maximum delay before the next background task must run
+        public static let defaultMaxBackgroundTaskWaitTime: TimeInterval = .hours(48)
+
+        /// Minimum delay before scheduling the next background task
+        public static let defaultMinBackgroundTaskWaitTime: TimeInterval = .minutes(15)
+    }
+
     public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
-    private let queueManager: BrokerProfileJobQueueManager
-    private let jobDependencies: BrokerProfileJobDependencies
+    private let queueManager: BrokerProfileJobQueueManaging
+    private let jobDependencies: BrokerProfileJobDependencyProviding
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let quickLinkOpenURLHandler: (URL) -> Void
+    private let maxBackgroundTaskWaitTime: TimeInterval
+    private let minBackgroundTaskWaitTime: TimeInterval
+    private let feedbackViewCreator: () -> (any View)
+    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
+    private let settings: DataBrokerProtectionSettings
+    private let subscriptionManager: DataBrokerProtectionSubscriptionManager
+    private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: DatabaseConstants.directoryName,
+            fileName: DatabaseConstants.fileName,
+            appGroupIdentifier: nil
+        )
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
+            return nil
+        }
+        return RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                       settings: settings,
+                                       vault: vault,
+                                       authenticationManager: authenticationManager,
+                                       localBrokerProvider: nil)
+    }()
 
-    init(queueManager: BrokerProfileJobQueueManager,
-         jobDependencies: BrokerProfileJobDependencies,
+    public var hasScheduledBackgroundJob: Bool {
+        get async {
+            let scheduledTasks = await BGTaskScheduler.shared.pendingTaskRequests()
+            return scheduledTasks.contains {
+                $0.identifier == DataBrokerProtectionIOSManager.backgroundJobIdentifier
+            }
+        }
+    }
+
+    init(queueManager: BrokerProfileJobQueueManaging,
+         jobDependencies: BrokerProfileJobDependencyProviding,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository,
-         quickLinkOpenURLHandler: @escaping (URL) -> Void
+         quickLinkOpenURLHandler: @escaping (URL) -> Void,
+         maxBackgroundTaskWaitTime: TimeInterval = Constants.defaultMaxBackgroundTaskWaitTime,
+         minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
+         feedbackViewCreator: @escaping () -> (any View),
+         featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+         settings: DataBrokerProtectionSettings,
+         subscriptionManager: DataBrokerProtectionSubscriptionManager
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -180,6 +235,12 @@ public final class DataBrokerProtectionIOSManager {
         self.privacyConfigManager = privacyConfigManager
         self.database = database
         self.quickLinkOpenURLHandler = quickLinkOpenURLHandler
+        self.feedbackViewCreator = feedbackViewCreator
+        self.maxBackgroundTaskWaitTime = maxBackgroundTaskWaitTime
+        self.minBackgroundTaskWaitTime = minBackgroundTaskWaitTime
+        self.featureFlagger = featureFlagger
+        self.settings = settings
+        self.subscriptionManager = subscriptionManager
 
         registerBackgroundTaskHandler()
     }
@@ -190,18 +251,35 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
+
     public func scheduleBGProcessingTask() {
         Task {
             guard await validateRunPrerequisites() else {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid during scheduling of background task")
                 return
             }
-            
-            let request = BGProcessingTaskRequest(identifier: "com.duckduckgo.app.dbp.backgroundProcessing")
-            request.requiresNetworkConnectivity = true
-            
+
+            guard await !hasScheduledBackgroundJob else {
+                Logger.dataBrokerProtection.log("Background task already scheduled")
+                return
+            }
+
 #if !targetEnvironment(simulator)
             do {
+                let request = BGProcessingTaskRequest(identifier: Self.backgroundJobIdentifier)
+                request.requiresNetworkConnectivity = true
+
+                let earliestBeginDate: Date
+
+                do {
+                    earliestBeginDate = calculateEarliestBeginDate(firstEligibleJobDate: try database.fetchFirstEligibleJobDate())
+                } catch {
+                    earliestBeginDate = Date().addingTimeInterval(maxBackgroundTaskWaitTime)
+                }
+
+                request.earliestBeginDate = earliestBeginDate
+                Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")
+
                 try BGTaskScheduler.shared.submit(request)
                 Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
@@ -213,13 +291,15 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    func handleBGProcessingTask(task: BGTask) {
+    private func handleBGProcessingTask(task: BGTask) {
         Logger.dataBrokerProtection.log("Background task started")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
         iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
         let startTime = Date.now
 
         task.expirationHandler = {
+            self.queueManager.stop()
+
             let timeTaken = Date.now.timeIntervalSince(startTime)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
@@ -250,9 +330,69 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
+    private func calculateEarliestBeginDate(from date: Date = .init(), firstEligibleJobDate: Date?) -> Date {
+        let maxBackgroundTaskWaitDate = date.addingTimeInterval(maxBackgroundTaskWaitTime)
+
+        guard let jobDate = firstEligibleJobDate else {
+            // No eligible jobs
+            return maxBackgroundTaskWaitDate
+        }
+
+        let minBackgroundTaskWaitDate = date.addingTimeInterval(minBackgroundTaskWaitTime)
+
+        // If overdue → ASAP
+        if jobDate <= date {
+            return date
+        }
+
+        // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
+        return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
+    }
+
     /// Used by the iOS PIR debug menu to reset tester data.
     public func deleteAllData() throws {
         try database.deleteProfileData()
+    }
+
+    public func refreshRemoteBrokerJSON() async throws {
+        try await brokerUpdater?.checkForUpdates(skipsLimiter: true)
+    }
+
+    /// Used by the iOS PIR debug menu to trigger scheduled jobs.
+    public func runScheduledJobs(type: JobType,
+                                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                 completionHandler: (() -> Void)?) {
+        switch type {
+        case .scheduledScan:
+            queueManager.startScheduledScanOperationsIfPermitted(
+                showWebView: true,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+        case .optOut:
+            let optOutCommand = DataBrokerProtectionQueueManagerDebugCommand.startOptOutOperations(
+                showWebView: true,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+            queueManager.execute(optOutCommand)
+        case .all:
+            queueManager.startScheduledAllOperationsIfPermitted(
+                showWebView: true,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+        case .manualScan:
+            completionHandler?()
+        }
+    }
+
+    /// Used by the iOS PIR debug menu to check if jobs are currently running.
+    public var isRunningJobs: Bool {
+        return queueManager.debugRunningStatusString == "running"
     }
 
     // MARK: - Run Prerequisites
@@ -294,7 +434,8 @@ extension DataBrokerProtectionIOSManager: DataBrokerProtectionViewControllerProv
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
-                                                  openURLHandler: quickLinkOpenURLHandler)
+                                                  openURLHandler: quickLinkOpenURLHandler,
+                                                  feedbackViewCreator: feedbackViewCreator)
     }
 }
 
@@ -314,10 +455,25 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     public func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData] {
         try database.fetchAllBrokerProfileQueryData()
     }
-    
+
+    @MainActor
     public func saveProfile(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
-        try await database.save(profile)
-        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+        let backgroundAssertion = QRunInBackgroundAssertion(name: "DataBrokerProtectionIOSManager", application: .shared) {
+            self.queueManager.stop()
+        }
+
+        do {
+            try await database.save(profile)
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+                DispatchQueue.main.async {
+                    backgroundAssertion.release()
+                }
+            }
+        } catch {
+            DispatchQueue.main.async {
+                backgroundAssertion.release()
+            }
+            throw error
         }
     }
     
@@ -329,5 +485,4 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     public func matchRemovedByUser(with id: Int64) throws {
         try database.matchRemovedByUser(id)
     }
-
 }

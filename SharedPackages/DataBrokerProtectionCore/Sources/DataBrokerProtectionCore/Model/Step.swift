@@ -108,6 +108,8 @@ public struct Step: Codable, Sendable {
             case .emailConfirmation:
                 let action = try JSONDecoder().decode(EmailConfirmationAction.self, from: jsonData)
                 actionList.append(action)
+            case .condition:
+                continue
             }
         }
 

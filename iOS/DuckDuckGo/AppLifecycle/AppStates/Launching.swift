@@ -52,6 +52,7 @@ struct Launching: LaunchingHandling {
     private let configuration = AppConfiguration()
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
+    private let launchTaskManager = LaunchTaskManager()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -116,13 +117,10 @@ struct Launching: LaunchingHandling {
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter
-        )
+                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
-
-        let mainController = mainCoordinator.controller
 
         syncService.presenter = mainCoordinator.controller
         let vpnService = VPNService(mainCoordinator: mainCoordinator)
@@ -159,12 +157,21 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService
         )
 
+        // Register background tasks that run after app is ready
+        launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
+                                                                   interactionStateSource: mainCoordinator.interactionStateSource,
+                                                                   tabManager: mainCoordinator.tabManager))
+
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
-        configuration.finalize(with: reportingService,
-                               autoClearService: autoClearService,
-                               mainViewController: mainCoordinator.controller)
+        configuration.finalize(
+            reportingService: reportingService,
+            mainViewController: mainCoordinator.controller,
+            launchTaskManager: launchTaskManager,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         setupWindow()
         logAppLaunchTime()
 
@@ -194,7 +201,8 @@ struct Launching: LaunchingHandling {
     private var appDependencies: AppDependencies {
         .init(
             mainCoordinator: mainCoordinator,
-            services: services
+            services: services,
+            launchTaskManager: launchTaskManager
         )
     }
     

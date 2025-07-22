@@ -35,6 +35,9 @@ extension Color {
     // Used in Surface for dark mode
     static let x2F2F2F = Color(0x2F2F2F)
 
+    // Used as tertiary surface for dark mode
+    static let x474747 = Color(0x474747)
+
     // Used in Experimental Surface for dark mode
     static let x3A4047 = Color(0x3A4047)
 

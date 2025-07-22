@@ -56,6 +56,8 @@ protocol WindowControllersManagerProtocol {
                        isMiniaturized: Bool,
                        isMaximized: Bool,
                        isFullscreen: Bool) -> MainWindow?
+
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
     func showTab(with content: Tab.TabContent)
 
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)
@@ -358,7 +360,7 @@ extension WindowControllersManager {
             windowController.window?.makeKeyAndOrderFront(self)
             tabCollectionViewModel.select(at: index)
             if let tab = tabCollectionViewModel.tabViewModel(at: index)?.tab,
-               tab.content.urlForWebView != url {
+               tab.content.urlForWebView != url && url != URL.empty {
                 // navigate to another settings pane
                 tab.setContent(.contentFromURL(url, source: .switchToOpenTab))
             }

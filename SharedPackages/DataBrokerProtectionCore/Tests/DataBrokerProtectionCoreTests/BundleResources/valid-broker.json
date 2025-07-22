@@ -12,6 +12,28 @@
             "id": "268c96ef-7d5e-44bf-b5e6-ba606240b802"
         },
         {
+            "actionType": "condition",
+            "expectations": [
+                {
+                    "type": "element",
+                    "selector": "//div[@class='search-results']"
+                }
+            ],
+            "actions": [
+                {
+                    "actionType": "click",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "selector": "//button[@class='load-more']"
+                        }
+                    ],
+                    "id": "7ac09a95-8b13-44f3-9ea6-2316514e4c50"
+                }
+            ],
+            "id": "268c96ef-7d5e-44bf-b5e6-ba606240b803"
+        },
+        {
             "actionType": "extract",
             "selector": ".profile-card",
             "noResultsSelector": "//div[contains(@class, 'results')]//p[contains(text(), 'No Results Found')]",

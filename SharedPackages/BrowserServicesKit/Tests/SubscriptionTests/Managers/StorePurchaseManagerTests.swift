@@ -343,7 +343,7 @@ final class StorePurchaseManagerTests: XCTestCase {
 
         // Set USA products initially
         mockProductFetcher.mockProducts = [usaMonthlyProduct, usaYearlyProduct]
-        mockFeatureFlagger.enabledFeatures = [] // No ROW features enabled - defaults to USA
+        mockFeatureFlagger.enabledFeatures = [.usePrivacyProUSARegionOverride] // No ROW features enabled - defaults to USA
 
         // When - Update for USA region
         await sut.updateAvailableProducts()

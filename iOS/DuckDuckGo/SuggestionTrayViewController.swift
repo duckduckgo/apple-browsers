@@ -34,14 +34,29 @@ class SuggestionTrayViewController: UIViewController {
     @IBOutlet var fullWidthConstraint: NSLayoutConstraint!
     @IBOutlet var topConstraint: NSLayoutConstraint!
     @IBOutlet var variableHeightConstraint: NSLayoutConstraint!
+    @IBOutlet var fullHeightSafeAreaConstraint: NSLayoutConstraint!
     @IBOutlet var fullHeightConstraint: NSLayoutConstraint!
-    
+
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var favoritesOverlayDelegate: FavoritesOverlayDelegate?
     
     var dismissHandler: (() -> Void)?
     var isShowingAutocompleteSuggestions: Bool {
         autocompleteController != nil
+    }
+
+    var isShowingFavoritesOverlay: Bool {
+        favoritesOverlay != nil
+    }
+
+    var isShowing: Bool {
+        isShowingAutocompleteSuggestions || isShowingFavoritesOverlay
+    }
+
+    var isUsingSearchInputCustomStyling: Bool = false {
+        didSet {
+            favoritesOverlay?.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
+        }
     }
 
     private var autocompleteController: AutocompleteViewController?
@@ -53,6 +68,9 @@ class SuggestionTrayViewController: UIViewController {
     private let tabsModel: TabsModel
     private let featureFlagger: FeatureFlagger
     private let appSettings: AppSettings
+
+    var coversFullScreen: Bool = false
+    var additionalFavoritesOverlayInsets: UIEdgeInsets = .zero
 
     var selectedSuggestion: Suggestion? {
         autocompleteController?.selectedSuggestion
@@ -123,21 +141,20 @@ class SuggestionTrayViewController: UIViewController {
         }
         return canShow
     }
-    
-    func show(for type: SuggestionType) {
 
-        self.fullHeightConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? 50 : 0
+    func show(for type: SuggestionType, animated: Bool = true) {
+        self.fullHeightSafeAreaConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? 50 : 0
 
         switch type {
         case .autocomplete(let query):
-            displayAutocompleteSuggestions(forQuery: query)
+            displayAutocompleteSuggestions(forQuery: query, animated: animated)
         case .favorites:
             if isPad {
                 removeAutocomplete()
-                displayFavoritesIfNeeded()
+                displayFavoritesIfNeeded(animated: animated)
             } else {
                 willRemoveAutocomplete = true
-                displayFavoritesIfNeeded { [weak self] in
+                displayFavoritesIfNeeded(animated: animated) { [weak self] in
                     self?.removeAutocomplete()
                     self?.willRemoveAutocomplete = false
                 }
@@ -189,9 +206,12 @@ class SuggestionTrayViewController: UIViewController {
         variableWidthConstraint.constant = width
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
+        fullHeightSafeAreaConstraint.isActive = false
     }
     
-    func fill() {
+    func fill(bottomOffset: CGFloat = 0.0) {
+        additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
+
         containerView.layer.shadowColor = UIColor.clear.cgColor
         containerView.layer.cornerRadius = 0
 
@@ -203,7 +223,8 @@ class SuggestionTrayViewController: UIViewController {
 
         topConstraint.constant = 0
         fullWidthConstraint.isActive = true
-        fullHeightConstraint.isActive = true
+        fullHeightConstraint.isActive = coversFullScreen
+        fullHeightSafeAreaConstraint.isActive = !coversFullScreen
     }
     
     private func installDismissHandler() {
@@ -223,16 +244,22 @@ class SuggestionTrayViewController: UIViewController {
         favoritesModel.favorites.count > 0
     }
     
-    private func displayFavoritesIfNeeded(onInstall: @escaping () -> Void = {}) {
+    private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
         if favoritesOverlay == nil {
-            installFavoritesOverlay(onInstall: onInstall)
+            installFavoritesOverlay(animated: animated, onInstall: onInstall)
+        } else {
+            onInstall()
         }
     }
     
-    private func installFavoritesOverlay(onInstall: @escaping () -> Void = {}) {
+    private func installFavoritesOverlay(animated: Bool, onInstall: @escaping () -> Void = {}) {
         let controller = FavoritesOverlay(viewModel: favoritesModel)
         controller.delegate = favoritesOverlayDelegate
-        install(controller: controller, completion: onInstall)
+        controller.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
+        install(controller: controller,
+                animated: animated,
+                additionalInsets: additionalFavoritesOverlayInsets,
+                completion: onInstall)
         favoritesOverlay = controller
     }
     
@@ -244,20 +271,20 @@ class SuggestionTrayViewController: UIViewController {
         return canDisplay
     }
     
-    private func displayAutocompleteSuggestions(forQuery query: String) {
+    private func displayAutocompleteSuggestions(forQuery query: String, animated: Bool) {
         if autocompleteController == nil {
-            installAutocompleteSuggestions()
+            installAutocompleteSuggestions(animated: animated)
         }
         autocompleteController?.updateQuery(query)
     }
     
-    private func installAutocompleteSuggestions() {
+    private func installAutocompleteSuggestions(animated: Bool) {
         let controller = AutocompleteViewController(historyManager: historyManager,
                                                     bookmarksDatabase: bookmarksDatabase,
                                                     appSettings: appSettings,
                                                     tabsModel: tabsModel,
                                                     featureFlagger: featureFlagger)
-        install(controller: controller)
+        install(controller: controller, animated: animated, additionalInsets: .zero)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
@@ -265,38 +292,49 @@ class SuggestionTrayViewController: UIViewController {
 
     private func removeAutocomplete() {
         guard let controller = autocompleteController else { return }
-        controller.removeFromParent()
+        controller.willMove(toParent: nil)
         controller.view.removeFromSuperview()
+        controller.removeFromParent()
         autocompleteController = nil
     }
     
     private func removeFavorites() {
         guard let controller = favoritesOverlay else { return }
-        controller.removeFromParent()
+        controller.willMove(toParent: nil)
         controller.view.removeFromSuperview()
+        controller.removeFromParent()
         favoritesOverlay = nil
     }
     
-    private func install(controller: UIViewController, completion: @escaping () -> Void = {}) {
+    private func install(controller: UIViewController,
+                         animated: Bool,
+                         additionalInsets: UIEdgeInsets,
+                         completion: @escaping () -> Void = {}) {
         addChild(controller)
         controller.view.frame = containerView.bounds
         containerView.addSubview(controller.view)
 
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: controller.view.topAnchor),
-            containerView.leftAnchor.constraint(equalTo: controller.view.leftAnchor),
-            containerView.bottomAnchor.constraint(equalTo: controller.view.bottomAnchor),
-            containerView.rightAnchor.constraint(equalTo: controller.view.rightAnchor)
+            containerView.topAnchor.constraint(equalTo: controller.view.topAnchor, constant: -additionalInsets.top),
+            containerView.leftAnchor.constraint(equalTo: controller.view.leftAnchor, constant: -additionalInsets.left),
+            containerView.bottomAnchor.constraint(equalTo: controller.view.bottomAnchor, constant: additionalInsets.bottom),
+            containerView.rightAnchor.constraint(equalTo: controller.view.rightAnchor, constant: additionalInsets.right)
         ])
 
-        controller.didMove(toParent: self)
-        controller.view.alpha = 0
-        UIView.animate(withDuration: 0.2, animations: {
+        if animated {
+            controller.view.alpha = 0
+            UIView.animate(withDuration: 0.2, animations: {
+                controller.view.alpha = 1
+            }, completion: { _ in
+                controller.didMove(toParent: self)
+                completion()
+            })
+        } else {
             controller.view.alpha = 1
-        }, completion: { _ in
+            controller.didMove(toParent: self)
             completion()
-        })
+        }
     }
 
 }

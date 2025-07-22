@@ -35,6 +35,12 @@ class FavoriteHomeCell: UICollectionViewCell {
     @IBOutlet weak var iconSize: NSLayoutConstraint!
     @IBOutlet weak var deleteButton: UIButton!
 
+    var isUsingSearchInputCustomStyling: Bool = false {
+        didSet {
+            decorate()
+        }
+    }
+
     var isEditing = false {
         didSet {
             deleteButton.isHidden = !isEditing
@@ -71,7 +77,6 @@ class FavoriteHomeCell: UICollectionViewCell {
         super.awakeFromNib()
         FavoriteHomeCell.applyDropshadow(to: iconBackground)
         FavoriteHomeCell.applyDropshadow(to: deleteButton)
-        layer.cornerRadius = 8
 
         decorate()
     }
@@ -125,7 +130,9 @@ class FavoriteHomeCell: UICollectionViewCell {
     private func useImageBorder(_ border: Bool) {
         iconSize.constant = border ? -24 : 0
         iconImage.layer.masksToBounds = !border
-        iconImage.layer.cornerRadius = border ? 3 : 8
+
+        let defaultCornerRadius = isUsingSearchInputCustomStyling ? Constant.cornerRadiusNTPCompatible : Constant.cornerRadius
+        iconImage.layer.cornerRadius = border ? 3 : defaultCornerRadius
     }
   
     private func applyFavicon(_ image: UIImage) {
@@ -141,6 +148,11 @@ class FavoriteHomeCell: UICollectionViewCell {
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = 0.12
         view.layer.masksToBounds = false
+    }
+
+    private struct Constant {
+        static let cornerRadiusNTPCompatible: CGFloat = 12
+        static let cornerRadius: CGFloat = 8
     }
 }
 
@@ -162,14 +174,25 @@ private extension BookmarkEntity {
     var host: String {
         return urlObject?.host ?? ""
     }
-
 }
 
 extension FavoriteHomeCell {
     
     private func decorate() {
-        let theme = ThemeManager.shared.currentTheme
-        titleLabel.textColor = theme.favoriteTextColor
+        if isUsingSearchInputCustomStyling {
+            titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+            titleLabel.font = .systemFont(ofSize: 12, weight: .regular)
+            
+            iconBackground.layer.cornerRadius = Constant.cornerRadiusNTPCompatible
+            iconBackground.layer.shadowOpacity = 0
+            iconBackground.layer.cornerCurve = .continuous
+        } else {
+            let theme = ThemeManager.shared.currentTheme
+            titleLabel.textColor = theme.favoriteTextColor
+            titleLabel.adjustsFontSizeToFitWidth = false
+
+            iconBackground.layer.cornerRadius = Constant.cornerRadius
+        }
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

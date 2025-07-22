@@ -55,7 +55,8 @@ final class OverlayWindowManager: OverlayWindowManaging {
         let blankSnapshotViewController = BlankSnapshotViewController(addressBarPosition: appSettings.currentAddressBarPosition,
                                                                       aiChatSettings: aiChatSettings,
                                                                       voiceSearchHelper: voiceSearchHelper,
-                                                                      featureFlagger: featureFlagger)
+                                                                      featureFlagger: featureFlagger,
+                                                                      appSettings: appSettings)
         blankSnapshotViewController.delegate = self
         displayOverlay(with: blankSnapshotViewController)
     }

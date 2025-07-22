@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 protocol FavoritesFaviconLoading {
     func loadFavicon(for favorite: Favorite, size: CGFloat) async -> Favicon?
@@ -34,19 +35,22 @@ struct FavoriteIconView: View {
     let isExperimentalAppearanceEnabled: Bool
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .center) {
             Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
-                .fill(Color(designSystemColor: .surface))
+                .fill(bgFillColor())
                 .if(!isExperimentalAppearanceEnabled) {
                     $0.shadow(color: .shade(0.12), radius: 0.5, y: 1)
                 }
                 .aspectRatio(1, contentMode: .fit)
+                .frame(width: Constant.faviconSize, height: Constant.faviconSize)
 
             Image(uiImage: favicon.image)
                 .resizable()
                 .aspectRatio(1.0, contentMode: .fit)
                 .if(favicon.isUsingBorder) {
                     $0.padding(Constant.borderSize)
+                        .frame(maxWidth: Constant.faviconSize, maxHeight: Constant.faviconSize)
+                        .fixedSize()
                 }
                 .clipShape(Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled))
         }
@@ -55,6 +59,10 @@ struct FavoriteIconView: View {
                 self.favicon = favicon
             }
         }
+    }
+
+    private func bgFillColor() -> Color {
+        favicon.isFake ? Color(UIColor.forDomain(favorite.domain)) :  Color(designSystemColor: .surface)
     }
 
     static func itemShape(isExperimentalAppearanceEnabled: Bool) -> RoundedRectangle {
@@ -68,6 +76,7 @@ struct FavoriteIconView: View {
 
 private struct Constant {
     static let faviconSize: CGFloat = 64
+    static let fakeFaviconSize: CGFloat = 40
     static let borderSize: CGFloat = 12
     static let cornerRadiusExperimental: CGFloat = 12
     static let cornerRadius: CGFloat = 8
@@ -90,7 +99,7 @@ private extension Favorite {
 extension FavoriteIconView {
     init(favorite: Favorite, isExperimentalAppearanceEnabled: Bool, faviconLoading: FavoritesFaviconLoading? = nil) {
         let favicon = faviconLoading?.existingFavicon(for: favorite, size: Constant.faviconSize)
-        ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.faviconSize)
+        ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.fakeFaviconSize)
         ?? .empty
         self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading, isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
     }

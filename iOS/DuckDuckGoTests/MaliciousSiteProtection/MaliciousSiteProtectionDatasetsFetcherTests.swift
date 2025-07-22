@@ -81,7 +81,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
 
         // WHEN
-        try await sut.startFetching().value
+        await sut.startFetching().value
 
         // THEN
         #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == true)
@@ -138,7 +138,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
 
         // WHEN
-        try await sut.startFetching().value
+        await sut.startFetching().value
 
         // THEN
         #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == true)
@@ -161,7 +161,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
 
         // WHEN
-        try await sut.startFetching().value
+        await sut.startFetching().value
 
         // THEN
         #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == false)
@@ -191,8 +191,8 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         let secondCallTask = sut.startFetching()
 
         // THEN
-        try await firstCallTask.value
-        try await secondCallTask.value
+        await firstCallTask.value
+        await secondCallTask.value
 
         #expect(updateManagerMock.updateCallCount == 2)
         #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == true)
@@ -218,7 +218,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(sut.isDatasetsFetchInProgress)
 
         // THEN
-        try await task.value
+        await task.value
         #expect(updateManagerMock.updateCallCount == 1)
         #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == true)
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
@@ -243,7 +243,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(sut.isDatasetsFetchInProgress)
 
         // THEN
-        try await task.value
+        await task.value
         #expect(updateManagerMock.updateCallCount == 1)
         #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == false)
         #expect(updateManagerMock.updateDatasets[.filterSet] == true)
@@ -266,7 +266,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
 
         // WHEN
         timeTraveller.advanceBy(.minutes(16))
-        try await sut.startFetching().value
+        await sut.startFetching().value
 
         // THEN
         #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == true)
@@ -624,6 +624,44 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         // TRUE
         preferencesScheduler.advance(by: .seconds(1))
         #expect(backgroundSchedulerMock.didCallCancelTaskRequestWithIdentifier)
+    }
+
+    @MainActor
+    @Test(
+        "Test Background Task Is Not Executed If Fetch is In Progress",
+        arguments: [
+            DataManager.StoredDataType.Kind.hashPrefixSet,
+            .filterSet,
+        ]
+    )
+    func whenBackgroundFetchFiresAndUpdateIsInProgressSkipIt(datasetType: DataManager.StoredDataType.Kind) async throws {
+        // GIVEN
+        featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
+        userPreferencesManagerMock.isMaliciousSiteProtectionOn = true
+        updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast
+        updateManagerMock.lastFilterSetUpdateDate = .distantPast
+        let identifier = datasetType.backgroundTaskIdentifier
+        let backgroundTask = MockBGTask(identifier: identifier)
+        sut.registerBackgroundRefreshTaskHandler()
+        let launchHandler = try #require(backgroundSchedulerMock.launchHandlers[identifier])
+        #expect(backgroundTask.expirationHandler == nil)
+
+        // WHEN
+        let firstCallTask = sut.startFetching()
+
+        // THEN
+         #expect(sut.isDatasetsFetchInProgress)
+
+        // WHEN
+        launchHandler?(backgroundTask)
+
+        // THEN
+        await firstCallTask.value
+
+        // THEN
+        #expect(updateManagerMock.updateCallCount == 2)
+        #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == true)
+        #expect(updateManagerMock.updateDatasets[.filterSet] == true)
     }
 
 }

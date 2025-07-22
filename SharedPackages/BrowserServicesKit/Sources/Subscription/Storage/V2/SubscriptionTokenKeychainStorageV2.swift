@@ -42,7 +42,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         public static let `default` = RetryConfiguration(maxAttempts: 5, baseDelay: 0.2)
 
         func delay(for attempt: Int) -> TimeInterval {
-            baseDelay * log2(Double(attempt + 1))
+            baseDelay * log2(Double(attempt + 2))
         }
     }
 
@@ -160,19 +160,20 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         guard let keychainError = error as? AccountKeychainAccessError else { return true }
 
         switch keychainError {
-        case .failedToDecodeKeychainData,
-             .failedToDecodeKeychainValueAsData,
-             .failedToDecodeKeychainDataAsString,
-             .failedToEncodeKeychainData:
-            return false
 
         case .keychainLookupFailure(let status),
              .keychainSaveFailure(let status),
              .keychainDeleteFailure(let status):
             return status.isRetryable
 
-        case .internalError:
-            return true
+        default:
+            /*
+             .failedToDecodeKeychainData,
+             .failedToDecodeKeychainValueAsData,
+             .failedToDecodeKeychainDataAsString,
+             .failedToEncodeKeychainData:
+             */
+            return false
         }
     }
 

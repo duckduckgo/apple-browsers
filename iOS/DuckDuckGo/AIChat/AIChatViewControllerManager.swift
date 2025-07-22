@@ -62,7 +62,7 @@ final class AIChatViewControllerManager {
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
-         userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
+         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
@@ -307,7 +307,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
 // MARK: - AIChatUserAgentHandler
 
 private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
-    let userAgentManager: UserAgentManager
+    let userAgentManager: UserAgentManaging
 
     func userAgent(url: URL?) -> String {
         userAgentManager.userAgent(isDesktop: false, url: url)

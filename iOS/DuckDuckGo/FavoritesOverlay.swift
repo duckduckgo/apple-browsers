@@ -32,6 +32,7 @@ class FavoritesOverlay: UIViewController {
     
     struct Constants {
         static let margin: CGFloat = 28
+        static let ntpCompatibleMargin: CGFloat = 30
         static let footerPadding: CGFloat = 50
     }
     
@@ -39,7 +40,14 @@ class FavoritesOverlay: UIViewController {
     var collectionView: UICollectionView!
     private var renderer: FavoritesHomeViewSectionRenderer!
     private let appSettings: AppSettings
-    
+
+    private lazy var borderView = StyledTopBottomBorderView()
+
+    var isUsingSearchInputCustomStyling: Bool {
+        get { renderer.isUsingSearchInputCustomStyling }
+        set { renderer.isUsingSearchInputCustomStyling = newValue }
+    }
+
     weak var delegate: FavoritesOverlayDelegate?
 
 
@@ -66,6 +74,11 @@ class FavoritesOverlay: UIViewController {
 
         view.addSubview(collectionView)
 
+        if !isUsingSearchInputCustomStyling {
+            borderView.insertSelf(into: view)
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
+
         renderer.install(into: self)
         
         registerForKeyboardNotifications()
@@ -89,10 +102,12 @@ class FavoritesOverlay: UIViewController {
             layout.minimumInteritemSpacing = 32
         } else {
             layout.minimumInteritemSpacing = 10
+            if isUsingSearchInputCustomStyling {
+                layout.minimumLineSpacing = 12
+            }
         }
         
         collectionView.frame = view.bounds
-        collectionView.reloadData()
     }
     
     private func registerForKeyboardNotifications() {
@@ -177,7 +192,7 @@ extension FavoritesOverlay: UICollectionViewDelegateFlowLayout {
             
             var insets = renderer.collectionView(collectionView, layout: collectionViewLayout, insetForSectionAt: section) ?? UIEdgeInsets.zero
             
-            insets.top += Constants.margin
+            insets.top += isUsingSearchInputCustomStyling ? Constants.ntpCompatibleMargin : Constants.margin
             return insets
     }
 }

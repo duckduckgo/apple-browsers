@@ -1,0 +1,8 @@
+{
+    "agents": ["ddg_mac_desktop"],
+    "target": {
+        "key": "appVersion",
+        "version": "1.148.0"
+    },
+    "forceLowerCase": false
+}

@@ -49,7 +49,8 @@ class WebViewTransition: TabSwitcherTransition {
         let targetFrame = CGRect(x: 0,
                                  y: TabViewCell.Constants.cellHeaderHeight,
                                  width: targetSize.width,
-                                 height: targetSize.height)
+                                 height: targetSize.height - 8)
+            .insetBy(dx: 4, dy: 4)
         return targetFrame
     }
 }

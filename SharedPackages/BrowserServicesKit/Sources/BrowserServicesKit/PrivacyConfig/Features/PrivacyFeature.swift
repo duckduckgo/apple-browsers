@@ -150,6 +150,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case passwordVariantCategorization
     case autocompleteAttributeSupport
     case inputFocusApi
+    case canPromoteImportPasswordsInPasswordManagement
+    case canPromoteImportPasswordsInBrowser
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -254,6 +256,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
+    case subscriptionRebranding
+    case vpnToolbarUpsell
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

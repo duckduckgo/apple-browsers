@@ -21,46 +21,29 @@ import Networking
 import os.log
 
 public actor DeadTokenRecoverer {
+    private var recoveryTask: Task<Void, Error>?
 
-    private static var recoveryAttemptCount: Int = 0
+    public init() {}
 
     @available(macOS 12.0, *)
-    public static func attemptRecoveryFromPastPurchase(subscriptionManager: any SubscriptionManagerV2,
-                                                       restoreFlow: any AppStoreRestoreFlowV2) async throws {
-        if recoveryAttemptCount != 0 {
-            Logger.subscription.debug("Recovery attempt already in progress, skipping...")
-            try reportFailure()
-        }
-        recoveryAttemptCount += 1
-
-        switch subscriptionManager.currentEnvironment.purchasePlatform {
-        case .appStore:
-            do {
-                try await restoreFlow.restoreSubscriptionAfterExpiredRefreshToken()
-            } catch {
-                do { try reportFailure(error: error) } catch { throw error}
-            }
-        case .stripe:
-            Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, notifying the user...")
-            NotificationCenter.default.post(name: .expiredRefreshTokenDetected, object: self, userInfo: nil)
+    public func attemptRecoveryFromPastPurchase(purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
+                                                restoreFlow: any AppStoreRestoreFlowV2) async throws {
+        guard purchasePlatform == .appStore else {
             throw SubscriptionManagerError.noTokenAvailable
         }
-    }
 
-    public static func reportDeadRefreshToken() async throws {
-        if recoveryAttemptCount != 0 {
-            Logger.subscription.debug("Recovery attempt already in progress, skipping...")
-            try reportFailure()
+        // If recovery is in progress or completed, wait for it
+        if let existingTask = recoveryTask {
+            try await existingTask.value
+            return
         }
-        recoveryAttemptCount += 1
 
-        Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, removing the subscription and notifying the user...")
-        NotificationCenter.default.post(name: .expiredRefreshTokenDetected, object: self, userInfo: nil)
-        try reportFailure()
-    }
+        // Start new recovery
+        recoveryTask = Task {
+            try await restoreFlow.restoreSubscriptionAfterExpiredRefreshToken()
+        }
 
-    private static func reportFailure(error: Error? = nil) throws {
-        recoveryAttemptCount = 0
-        throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
+        defer { recoveryTask = nil }
+        try await recoveryTask!.value
     }
 }

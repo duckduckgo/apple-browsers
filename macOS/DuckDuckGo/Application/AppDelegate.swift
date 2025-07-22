@@ -147,7 +147,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore,
         visualizeFireAnimationDecider: visualizeFireAnimationDecider,
-        featureFlagger: featureFlagger
+        featureFlagger: featureFlagger,
+        windowControllersManager: windowControllersManager,
+        tabsPreferences: TabsPreferences.shared
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -173,6 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
     let subscriptionAuthMigrator: AuthMigrator
+    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
     private let subscriptionCookieManager: any SubscriptionCookieManaging
@@ -522,11 +525,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if #available(iOS 15.0, macOS 12.0, *) {
                 let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: subscriptionManager.storePurchaseManager())
                 subscriptionManager.tokenRecoveryHandler = {
-                        try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
-                }
-            } else {
-                subscriptionManager.tokenRecoveryHandler = {
-                    try await DeadTokenRecoverer.reportDeadRefreshToken()
+                    try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
                 }
             }
 
@@ -941,7 +940,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         UserDefaultsWrapper<Any>.clearRemovedKeys()
 
-        vpnSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
+        vpnSubscriptionEventHandler?.startMonitoring()
 
         UNUserNotificationCenter.current().delegate = self
 
@@ -1022,10 +1021,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireAppLaunchPixel() {
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
 #if SPARKLE
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
 #else
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .legacyDaily)
 #endif
     }
 

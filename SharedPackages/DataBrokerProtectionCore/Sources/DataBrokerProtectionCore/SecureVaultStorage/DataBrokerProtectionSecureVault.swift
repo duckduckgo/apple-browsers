@@ -110,6 +110,8 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
+
+    func fetchFirstEligibleJobDate() throws -> Date?
 }
 
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
@@ -499,5 +501,9 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         let password = try passwordInUse()
         let l2Key = try l2KeyFrom(password: password)
         return try providers.crypto.decrypt(data, withKey: l2Key)
+    }
+
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        return try self.providers.database.fetchFirstEligibleJobDate()
     }
 }

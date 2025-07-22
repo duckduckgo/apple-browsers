@@ -159,10 +159,10 @@ final class BrokerProfileJobTests: XCTestCase {
     // MARK: - Filtering Tests
 
     func testWhenFilteringOptOutOperationData_thenAllButFuturePreferredRunDateIsReturned() {
-        let operationData1 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: nil)
-        let operationData2 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .now)
-        let operationData3 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantPast)
-        let operationData4 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantFuture)
+        let operationData1 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: nil)
+        let operationData2 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .now)
+        let operationData3 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantPast)
+        let operationData4 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantFuture)
 
         XCTAssertEqual(operationData1.count, 30) // all jobs
         XCTAssertEqual(operationData2.count, 20) // nil preferred run date + past jobs
@@ -171,10 +171,10 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenFilteringScanOperationData_thenPreferredRunDatePriorToPriorityDateIsReturned() {
-        let operationData1 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: nil)
-        let operationData2 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .now)
-        let operationData3 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: .distantPast)
-        let operationData4 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .distantFuture)
+        let operationData1 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: nil)
+        let operationData2 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .now)
+        let operationData3 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: .distantPast)
+        let operationData4 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .distantFuture)
 
         XCTAssertEqual(operationData1.count, 30) // all jobs
         XCTAssertEqual(operationData2.count, 10) // past jobs
@@ -183,10 +183,10 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testFilteringAllOperationData() {
-        let operationData1 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: nil)
-        let operationData2 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .now)
-        let operationData3 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantPast)
-        let operationData4 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantFuture)
+        let operationData1 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: nil)
+        let operationData2 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .now)
+        let operationData3 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantPast)
+        let operationData4 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantFuture)
 
         XCTAssertEqual(operationData1.filter { $0 is ScanJobData }.count, 30) // all jobs
         XCTAssertEqual(operationData1.filter { $0 is OptOutJobData }.count, 30) // all jobs
@@ -205,4 +205,60 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertEqual(operationData4.count, 20+30)
     }
 
+    func testSortPredicateForBackgroundTasks() {
+            let now = Date()
+
+            let jobs: [BrokerJobData] = [
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .matchesFound(count: 1))], preferredRunDate: now.addingTimeInterval(100)), // Maintenance
+                OptOutJobData.mock(attemptCount: 10, preferredRunDate: now), // Opt-out
+                ScanJobData.mock(historyEvents: [], preferredRunDate: now.addingTimeInterval(-100)), // Initial scan
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .scanStarted)], preferredRunDate: nil), // Other scan
+                OptOutJobData.mock(attemptCount: 1, preferredRunDate: now.addingTimeInterval(50)), // Opt-out
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .optOutRequested)], preferredRunDate: now), // Confirm opt-out
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .error(error: DataBrokerProtectionError.unknown("Test error")))], preferredRunDate: now.addingTimeInterval(-50)), // Retry
+                OptOutJobData.mock(attemptCount: 5, preferredRunDate: nil), // Opt-out
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .noMatchFound)], preferredRunDate: now.addingTimeInterval(-200)), // Maintenance
+                ScanJobData.mock(historyEvents: [], preferredRunDate: nil), // Initial scan
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .error(error: DataBrokerProtectionError.unknown("Test error")))], preferredRunDate: now.addingTimeInterval(200)), // Retry
+                ScanJobData.mock(historyEvents: [], preferredRunDate: now), // Initial scan
+            ]
+
+            let sorted = jobs.sorted(by: BrokerJobDataComparators.byPriorityForBackgroundTask)
+
+            // 1. Initial scans (sorted by date, nil last)
+            XCTAssertEqual((sorted[0] as? ScanJobData)?.scanType(), .initial)
+            XCTAssertEqual(sorted[0].preferredRunDate, now.addingTimeInterval(-100))
+
+            XCTAssertEqual((sorted[1] as? ScanJobData)?.scanType(), .initial)
+            XCTAssertEqual(sorted[1].preferredRunDate, now)
+
+            XCTAssertEqual((sorted[2] as? ScanJobData)?.scanType(), .initial)
+            XCTAssertNil(sorted[2].preferredRunDate)
+
+            // 2. Opt-outs (sorted by attempt count ascending: 1, 5, 10)
+            XCTAssertEqual((sorted[3] as? OptOutJobData)?.attemptCount, 1)
+            XCTAssertEqual((sorted[4] as? OptOutJobData)?.attemptCount, 5)
+            XCTAssertEqual((sorted[5] as? OptOutJobData)?.attemptCount, 10)
+
+            // 3. Confirm opt-out scans
+            XCTAssertEqual((sorted[6] as? ScanJobData)?.scanType(), .confirmOptOut)
+
+            // 4. Retry scans (sorted by date)
+            XCTAssertEqual((sorted[7] as? ScanJobData)?.scanType(), .retry)
+            XCTAssertEqual(sorted[7].preferredRunDate, now.addingTimeInterval(-50))
+
+            XCTAssertEqual((sorted[8] as? ScanJobData)?.scanType(), .retry)
+            XCTAssertEqual(sorted[8].preferredRunDate, now.addingTimeInterval(200))
+
+            // 5. Maintenance scans (sorted by date)
+            XCTAssertEqual((sorted[9] as? ScanJobData)?.scanType(), .maintenance)
+            XCTAssertEqual(sorted[9].preferredRunDate, now.addingTimeInterval(-200))
+
+            XCTAssertEqual((sorted[10] as? ScanJobData)?.scanType(), .maintenance)
+            XCTAssertEqual(sorted[10].preferredRunDate, now.addingTimeInterval(100))
+
+            // 6. Other scans
+            XCTAssertEqual((sorted[11] as? ScanJobData)?.scanType(), .other)
+            XCTAssertNil(sorted[11].preferredRunDate)
+        }
 }

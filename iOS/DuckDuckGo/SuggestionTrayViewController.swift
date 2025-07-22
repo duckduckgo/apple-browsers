@@ -45,6 +45,20 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController != nil
     }
 
+    var isShowingFavoritesOverlay: Bool {
+        favoritesOverlay != nil
+    }
+
+    var isShowing: Bool {
+        isShowingAutocompleteSuggestions || isShowingFavoritesOverlay
+    }
+
+    var isUsingSearchInputCustomStyling: Bool = false {
+        didSet {
+            favoritesOverlay?.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
+        }
+    }
+
     private var autocompleteController: AutocompleteViewController?
     private var favoritesOverlay: FavoritesOverlay?
     private var willRemoveAutocomplete = false
@@ -195,7 +209,9 @@ class SuggestionTrayViewController: UIViewController {
         fullHeightSafeAreaConstraint.isActive = false
     }
     
-    func fill() {
+    func fill(bottomOffset: CGFloat = 0.0) {
+        additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
+
         containerView.layer.shadowColor = UIColor.clear.cgColor
         containerView.layer.cornerRadius = 0
 
@@ -239,6 +255,7 @@ class SuggestionTrayViewController: UIViewController {
     private func installFavoritesOverlay(animated: Bool, onInstall: @escaping () -> Void = {}) {
         let controller = FavoritesOverlay(viewModel: favoritesModel)
         controller.delegate = favoritesOverlayDelegate
+        controller.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
         install(controller: controller,
                 animated: animated,
                 additionalInsets: additionalFavoritesOverlayInsets,

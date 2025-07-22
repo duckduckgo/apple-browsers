@@ -66,6 +66,9 @@ final class PreferencesSidebarModel: ObservableObject {
     private let pixelFiring: PixelFiring?
     private var isInitialSelectedPanePixelFired = false
     private let featureFlagger: FeatureFlagger
+    var isSubscriptionRebrandingEnabled: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRebranding)
+    }
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -309,7 +312,9 @@ final class PreferencesSidebarModel: ObservableObject {
     }
 
     private func makeSubscriptionState() async -> PreferencesSidebarSubscriptionState {
-        let currentSubscriptionFeatures = await subscriptionManager.currentSubscriptionFeatures()
+        // This requires follow-up work:
+        // https://app.asana.com/1/137249556945/task/1210799126744217
+        let currentSubscriptionFeatures = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
 
         if subscriptionManager.isUserAuthenticated {
@@ -317,18 +322,9 @@ final class PreferencesSidebarModel: ObservableObject {
             var currentUserEntitlements: [SubscriptionEntitlement] = []
             let entitlements: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
-            if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2,
-               let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .localValid) {
-
-                for entitlement in entitlements where tokenContainer.decodedAccessToken.hasEntitlement(entitlement) {
+            for entitlement in entitlements {
+                if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement.product), hasEntitlement == true {
                     currentUserEntitlements.append(entitlement)
-
-                }
-            } else {
-                for entitlement in entitlements {
-                    if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: entitlement.product), hasEntitlement == true {
-                        currentUserEntitlements.append(entitlement)
-                    }
                 }
             }
 

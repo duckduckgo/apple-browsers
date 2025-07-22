@@ -17,6 +17,7 @@
 //
 
 import Combine
+import PixelKitTestingUtilities
 import Testing
 import WebKit
 @testable import DuckDuckGo_Privacy_Browser
@@ -54,6 +55,7 @@ struct AIChatUserScriptHandlerTests {
     private var messageHandler = MockAIChatMessageHandler()
     private var windowControllersManager: WindowControllersManagerMock
     private var notificationCenter = NotificationCenter()
+    private var pixelFiring = PixelKitMock()
     private var handler: AIChatUserScriptHandler
 
     @MainActor
@@ -64,6 +66,7 @@ struct AIChatUserScriptHandlerTests {
             storage: storage,
             messageHandling: messageHandler,
             windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
             notificationCenter: notificationCenter
         )
     }
@@ -169,6 +172,7 @@ struct AIChatUserScriptHandlerTests {
     func testThatOpenSummarizationSourceLinkCallsWindowControllersManager() async throws {
         let urlString = "https://example.com"
         let params = [AIChatUserScriptHandler.AIChatKeys.url: urlString]
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
         _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage())
 
@@ -176,6 +180,7 @@ struct AIChatUserScriptHandlerTests {
         let openCall = try #require(windowControllersManager.openCalls.first)
         #expect(openCall.url.absoluteString == urlString)
         #expect(openCall.source == .link)
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
     }
 
     @Test("openSummarizationSourceLink doesn't call windowControllersManager when invalid URL is passed")

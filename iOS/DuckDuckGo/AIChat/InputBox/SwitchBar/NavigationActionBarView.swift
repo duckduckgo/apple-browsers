@@ -71,14 +71,28 @@ struct NavigationActionBarView: View {
         .background(
             Group {
                 if keyboardObserver.isKeyboardVisible {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(designSystemColor: .surface).opacity(0.0),
-                            Color(designSystemColor: .surface).opacity(0.8)
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                    VStack (spacing: 0) {
+                        Spacer()
+                            .frame(height: Constants.padding)
+
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(designSystemColor: .surface).opacity(0.0),
+                                Color(designSystemColor: .surface).opacity(0.8)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                         .frame(height: Constants.barHeight)
+
+                        /// Add a color bellow the top gradient so it doesn't show a cut-off during keyboard animations
+                        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210809108643486?focus=true
+                        Color(designSystemColor: .surface).opacity(0.8)
+                    }
+                    /// Overflow the color
+                    .frame(height: 140)
+                    .clipped()
+                    .ignoresSafeArea(.container, edges: .horizontal)
                 }
             }
         )
@@ -113,14 +127,25 @@ struct NavigationActionBarView: View {
     }
 
     private var searchButton: some View {
-        CircularButton(
+        let icon: Image = {
+            if viewModel.isCurrentTextValidURL {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+            } else if viewModel.isSearchMode {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.searchFind)
+            } else {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.arrowUp)
+            }
+        }()
+        
+        return CircularButton(
             action: viewModel.onSearchTapped,
-            icon: Image(uiImage: viewModel.isSearchMode ? DesignSystemImages.Glyphs.Size24.searchFind : DesignSystemImages.Glyphs.Size24.arrowUp),
+            icon: icon,
             foregroundColor: viewModel.hasText ? .white : Color(designSystemColor: .textPlaceholder),
             backgroundColor: viewModel.hasText ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface),
             isEnabled: viewModel.hasText
         )
         .animation(.easeInOut(duration: 0.2), value: viewModel.hasText)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isCurrentTextValidURL)
     }
 
     // MARK: - CircularButton

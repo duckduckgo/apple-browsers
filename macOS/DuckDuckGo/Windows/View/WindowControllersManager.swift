@@ -360,7 +360,7 @@ extension WindowControllersManager {
             windowController.window?.makeKeyAndOrderFront(self)
             tabCollectionViewModel.select(at: index)
             if let tab = tabCollectionViewModel.tabViewModel(at: index)?.tab,
-               tab.content.urlForWebView != url {
+               tab.content.urlForWebView != url && url != URL.empty {
                 // navigate to another settings pane
                 tab.setContent(.contentFromURL(url, source: .switchToOpenTab))
             }

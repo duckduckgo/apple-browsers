@@ -31,6 +31,7 @@ protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
 final class UnifiedFeedbackFormViewModel: ObservableObject {
     private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
     private static let platform = "macos"
+    private let featureFlagger: FeatureFlagger
 
     enum ViewState {
         case feedbackPending
@@ -158,7 +159,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
-    private let featureFlagger: FeatureFlagger
 
     let source: UnifiedFeedbackSource
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
@@ -183,7 +183,9 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.source = source
 
         Task {
-            let features = await subscriptionManager.currentSubscriptionFeatures()
+            // This requires follow-up work:
+            // https://app.asana.com/1/137249556945/task/1210799126744217
+            let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
 
             if features.contains(.networkProtection) {
                 availableCategories.append(.vpn)
@@ -198,6 +200,10 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                 availableCategories.append(.itr)
             }
         }
+    }
+
+    var isSubscriptionRebrandingEnabled: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRebranding)
     }
 
     @MainActor

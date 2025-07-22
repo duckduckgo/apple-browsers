@@ -23,6 +23,7 @@ import Core
 import Common
 import BrowserServicesKit
 import PixelKit
+import Networking
 
 final class DBPService: NSObject {
 
@@ -48,9 +49,20 @@ final class DBPService: NSObject {
                 privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
                 pixelKit: pixelKit,
+                subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
                     guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
                     UIApplication.shared.open(quickLinkURL)
+                },
+                feedbackViewCreator: {
+                    let viewModel = UnifiedFeedbackFormViewModel(
+                        subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                        apiService: DefaultAPIService(),
+                        vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                        isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
+                        source: .pir)
+                    let view = UnifiedFeedbackRootView(viewModel: viewModel)
+                    return view
                 })
 
             DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
@@ -66,7 +78,7 @@ final class DBPService: NSObject {
     }
 }
 
-private final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
+final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
     private let appDependencies: DependencyProvider
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {

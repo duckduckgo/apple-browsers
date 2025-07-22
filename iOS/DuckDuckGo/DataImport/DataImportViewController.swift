@@ -126,6 +126,7 @@ final class DataImportViewController: UIViewController {
 
     private func presentSummary(for summary: DataImportSummary) {
         summaryPresented = true
+        AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -198,7 +199,7 @@ extension DataImportViewController: UIDocumentPickerDelegate {
             viewModel.handleFileSelection(selectedFileURL, type: fileType)
 
             switch fileType {
-            case .zip:
+            case .zip, .json:
                 Pixel.fire(pixel: .importInstructionsFileSelectedZip, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
             case .csv:
                 Pixel.fire(pixel: .importInstructionsFileSelectedCsv, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])

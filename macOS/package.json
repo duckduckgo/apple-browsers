@@ -4,11 +4,13 @@
   "scripts": {
     "test": "echo 'no test required'",
     "rebuild-autoconsent": "rollup -c",
+    "validate-defs-without-formatting": "validate-ddg-pixel-defs ./PixelDefinitions",
     "validate-pixel-defs": "validate-ddg-pixel-defs ./PixelDefinitions && prettier ./PixelDefinitions --check",
+    "pixel-lint": "prettier ./PixelDefinitions --check",
     "pixel-lint.fix": "prettier ./PixelDefinitions --write"
   },
   "devDependencies": {
-    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v1.0.7",
+    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v1.0.8",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.0.6",
     "prettier": "^3.6.2",
@@ -16,7 +18,7 @@
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
-    "@duckduckgo/autoconsent": "^14.3.0"
+    "@duckduckgo/autoconsent": "^14.8.0"
   },
   "prettier": {
     "singleQuote": true,

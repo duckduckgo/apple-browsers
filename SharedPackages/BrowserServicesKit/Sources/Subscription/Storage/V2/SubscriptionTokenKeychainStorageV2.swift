@@ -37,53 +37,61 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private let keychainType: KeychainType
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
+    private let accessQueue = DispatchQueue(label: "keychain.subscription.access", qos: .userInitiated)
+    private let keychainOperations: KeychainOperationsProtocol
 
     public init(keychainType: KeychainType = .dataProtection(.unspecified),
-                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
+                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void,
+                keychainOperations: KeychainOperationsProtocol = DefaultKeychainOperations()) {
         self.keychainType = keychainType
         self.errorEventsHandler = errorEventsHandler
+        self.keychainOperations = keychainOperations
     }
 
-    public func getTokenContainer() throws -> Networking.TokenContainer? {
-        do {
-            guard let data = try retrieveData(forField: .tokenContainer) else {
-                Logger.subscriptionKeychain.debug("TokenContainer not found")
-                return nil
+    public func getTokenContainer() throws -> TokenContainer? {
+        return try accessQueue.sync {
+            do {
+                guard let data = try retrieveData(forField: .tokenContainer) else {
+                    Logger.subscriptionKeychain.debug("TokenContainer not found")
+                    return nil
+                }
+                return CodableHelper.decode(jsonData: data)
+            } catch {
+                if let error = error as? AccountKeychainAccessError {
+                    errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)
+                } else {
+                    assertionFailure("Unexpected error: \(error)")
+                    Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")
+                }
+                throw error
             }
-            return CodableHelper.decode(jsonData: data)
-        } catch {
-            if let error = error as? AccountKeychainAccessError {
-                errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)
-            } else {
-                assertionFailure("Unexpected error: \(error)")
-                Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")
-            }
-            throw error
         }
     }
 
-    public func saveTokenContainer(_ tokenContainer: Networking.TokenContainer?) throws {
-        do {
-            guard let tokenContainer else {
-                Logger.subscriptionKeychain.debug("Remove TokenContainer")
-                try self.deleteItem(forField: .tokenContainer)
-                return
-            }
+    public func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        try accessQueue.sync {
+            do {
+                guard let tokenContainer else {
+                    Logger.subscriptionKeychain.debug("Remove TokenContainer")
+                    try self.deleteItem(forField: .tokenContainer)
+                    return
+                }
 
-            if let data = CodableHelper.encode(tokenContainer) {
+                guard let data = CodableHelper.encode(tokenContainer) else {
+                    throw AccountKeychainAccessError.failedToEncodeKeychainData // Fixed error name
+                }
+
                 try self.store(data: data, forField: .tokenContainer)
-            } else {
-                throw AccountKeychainAccessError.failedToDecodeKeychainData
+            } catch {
+                Logger.subscriptionKeychain.fault("Failed to set TokenContainer: \(error, privacy: .public)")
+                if let error = error as? AccountKeychainAccessError {
+                    errorEventsHandler(AccountKeychainAccessType.storeAuthToken, error)
+                } else {
+                    assertionFailure("Unexpected error: \(error)")
+                    Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")
+                }
+                throw error
             }
-        } catch {
-            Logger.subscriptionKeychain.fault("Failed to set TokenContainer: \(error, privacy: .public)")
-            if let error = error as? AccountKeychainAccessError {
-                errorEventsHandler(AccountKeychainAccessType.storeAuthToken, error)
-            } else {
-                assertionFailure("Unexpected error: \(error)")
-                Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")
-            }
-            throw error
         }
     }
 }
@@ -109,7 +117,7 @@ extension SubscriptionTokenKeychainStorageV2 {
         query[kSecReturnData] = true
 
         var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        let status = keychainOperations.copyMatching(query as CFDictionary, &item)
 
         if status == errSecSuccess {
             if let existingItem = item as? Data {
@@ -130,18 +138,22 @@ extension SubscriptionTokenKeychainStorageV2 {
         query[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
         query[kSecValueData] = data
 
-        let status = SecItemAdd(query as CFDictionary, nil)
+        let status = keychainOperations.add(query as CFDictionary, nil)
 
         switch status {
         case errSecSuccess:
+            Logger.subscriptionKeychain.debug("Successfully added keychain item for \(field.keyValue)")
             return
         case errSecDuplicateItem:
+            Logger.subscriptionKeychain.debug("Keychain item exists, updating for \(field.keyValue)")
             let updateStatus = updateData(data, forField: field)
-
-            if updateStatus != errSecSuccess {
-                throw AccountKeychainAccessError.keychainSaveFailure(status)
+            guard updateStatus == errSecSuccess else {
+                Logger.subscriptionKeychain.error("Failed to update keychain item: \(updateStatus)")
+                throw AccountKeychainAccessError.keychainSaveFailure(updateStatus)
             }
+            Logger.subscriptionKeychain.debug("Successfully updated keychain item for \(field.keyValue)")
         default:
+            Logger.subscriptionKeychain.error("Failed to add keychain item: \(status.humanReadableDescription)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)
         }
     }
@@ -155,16 +167,27 @@ extension SubscriptionTokenKeychainStorageV2 {
             kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock
         ] as [CFString: Any]
 
-        return SecItemUpdate(query as CFDictionary, newAttributes as CFDictionary)
+        let status = keychainOperations.update(query as CFDictionary, newAttributes as CFDictionary)
+
+        if status != errSecSuccess {
+            Logger.subscriptionKeychain.error("SecItemUpdate failed with status: \(status.humanReadableDescription) for field: \(field.keyValue)")
+        }
+
+        return status
     }
 
-    func deleteItem(forField field: SubscriptionKeychainField, useDataProtectionKeychain: Bool = true) throws {
+    func deleteItem(forField field: SubscriptionKeychainField) throws {
         var query = defaultAttributes()
         query[kSecAttrService] = field.keyValue
 
-        let status = SecItemDelete(query as CFDictionary)
+        let status = keychainOperations.delete(query as CFDictionary)
 
-        if status != errSecSuccess && status != errSecItemNotFound {
+        if status == errSecSuccess {
+            Logger.subscriptionKeychain.debug("Successfully deleted keychain item for \(field.keyValue)")
+        } else if status == errSecItemNotFound {
+            Logger.subscriptionKeychain.debug("Keychain item not found for deletion: \(field.keyValue)")
+        } else {
+            Logger.subscriptionKeychain.error("Failed to delete keychain item: \(status.humanReadableDescription)")
             throw AccountKeychainAccessError.keychainDeleteFailure(status)
         }
     }

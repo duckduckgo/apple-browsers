@@ -25,14 +25,19 @@ import os.log
 /// Temporary bridge between auth v1 and v2, this is implemented by SubscriptionManager V1 and V2
 public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
 
-    /// If the feature is enabled in the app, based on Subscription entitlements
-    /// This is mostly used by the UI for showing features and their state
-    func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool
-    /// If the user is allowed to use the feature, base on the TokenContainer entitlements
-    /// This is used by VPN and PIR
-    func isFeatureEnabledForUser(feature: Entitlement.ProductName) async throws -> Bool
+    /// Whether a feature is included in the Subscription.
+    ///
+    /// This allows us to know if a feature is included in the current subscription.
+    ///
+    func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool
 
-    func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
+    /// Whether the feature is enabled for use.
+    ///
+    /// This is mostly useful post-purchases.
+    ///
+    func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool
+
+    func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName]
     func signOut(notifyUI: Bool) async
     var canPurchase: Bool { get }
     /// Publisher that emits a boolean value indicating whether the user can purchase.
@@ -45,24 +50,16 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
 
     /// Checks if the user is eligible for a free trial.
-    ///
-    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
-    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
-    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
-    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
     func isUserEligibleForFreeTrial() -> Bool
-}
-
-extension SubscriptionAuthV1toV2Bridge {
-
-    public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
-        try await isFeatureAvailableAndEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad)
-    }
 }
 
 extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
-    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async throws -> Bool {
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
+        try await currentSubscriptionFeatures().contains(feature)
+    }
+
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
         let result = await accountManager.hasEntitlement(forProductName: feature, cachePolicy: .returnCacheDataElseLoad)
         switch result {
         case .success(let hasEntitlements):
@@ -74,17 +71,6 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
             default:
                 throw error
             }
-        }
-    }
-
-    public func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
-
-        let result = await accountManager.hasEntitlement(forProductName: feature, cachePolicy: cachePolicy)
-        switch result {
-        case .success(let hasEntitlements):
-            return hasEntitlements
-        case .failure(let error):
-            throw error
         }
     }
 
@@ -115,19 +101,29 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
-    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
-    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
-    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
+    /// Returns `true` for Stripe-based purchases (on all macOS versions)
+    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
+    ///
+    /// - Returns: 
+    ///   - `true` for Stripe platform regardless of macOS version
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
+    ///   - `false` for App Store on macOS < 12.0
     public func isUserEligibleForFreeTrial() -> Bool {
-        guard currentEnvironment.purchasePlatform != .stripe, #available(macOS 12.0, *) else { return false }
+        if currentEnvironment.purchasePlatform == .stripe {
+            return true
+        }
+        guard #available(macOS 12.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }
 
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
-    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async throws -> Bool {
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
+        try await currentSubscriptionFeatures().contains(feature)
+    }
+
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
         do {
             guard isUserAuthenticated else { return false }
             let tokenContainer = try await getTokenContainer(policy: .localValid)
@@ -139,27 +135,28 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
         }
     }
 
-    public func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
-        return try await isSubscriptionFeatureEnabled(feature.subscriptionEntitlement)
-    }
-
-    public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        let result = try? await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
+    public func currentSubscriptionFeatures() async throws -> [Entitlement.ProductName] {
+        try await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
             subscriptionFeatureV2.entitlement.product
         }
-        return result ?? []
     }
 
     public var email: String? { userEmail }
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
-    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
-    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
-    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
+    /// Returns `true` for Stripe-based purchases (on all macOS versions)
+    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
+    ///
+    /// - Returns: 
+    ///   - `true` for Stripe platform regardless of macOS version
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
+    ///   - `false` for App Store on macOS < 12.0
     public func isUserEligibleForFreeTrial() -> Bool {
-        guard currentEnvironment.purchasePlatform != .stripe, #available(macOS 12.0, *) else { return false }
+        if currentEnvironment.purchasePlatform == .stripe {
+            return true
+        }
+        guard #available(macOS 12.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }

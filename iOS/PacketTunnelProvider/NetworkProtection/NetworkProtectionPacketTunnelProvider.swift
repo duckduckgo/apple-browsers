@@ -475,9 +475,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
-                                                                   tokenRecoveryHandler: {
-                Logger.networkProtection.error("Expired refresh token detected")
-            },
                                                                    initForPurchase: false)
             self.subscriptionManager = subscriptionManager
 

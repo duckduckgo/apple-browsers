@@ -73,16 +73,10 @@ extension Preferences {
                         ToggleMenuItem(UserText.aiChatOpenInSidebarToggle,
                                        isOn: $model.openAIChatInSidebar)
                         .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
-                        .onChange(of: model.openAIChatInSidebar) { newValue in
-                            if newValue {
-    //                            PixelKit.fire(AIChatPixel.aiChatSettingsOpenInSidebarTurnedOn,
-    //                                          frequency: .dailyAndCount,
-    //                                          includeAppVersionParameter: true)
-                            } else {
-    //                            PixelKit.fire(AIChatPixel.aiChatSettingsOpenInSidebarTurnedOff,
-    //                                          frequency: .dailyAndCount,
-    //                                          includeAppVersionParameter: true)
-                            }
+                        .onChange(of: model.openAIChatInSidebar) { _ in
+                            PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
+                                          frequency: .uniqueByName,
+                                          includeAppVersionParameter: true)
                         }
                     }
                 }

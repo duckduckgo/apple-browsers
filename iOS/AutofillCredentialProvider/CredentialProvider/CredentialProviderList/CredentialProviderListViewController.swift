@@ -326,8 +326,6 @@ extension CredentialProviderListViewController: UITableViewDataSource {
                 self?.presentDetailsForCredentials(item: item)
             }
             return cell
-        default:
-            return UITableViewCell()
         }
     }
 
@@ -335,8 +333,6 @@ extension CredentialProviderListViewController: UITableViewDataSource {
         switch viewModel.sections[section] {
         case .suggestions(let title, _), .credentials(let title, _):
             return title
-        default:
-            return nil
         }
     }
 
@@ -367,8 +363,6 @@ extension CredentialProviderListViewController: UITableViewDelegate {
                 onRowSelected(item)
                 Pixel.fire(pixel: .autofillExtensionPasswordSelected)
             }
-        default:
-            return
         }
     }
 

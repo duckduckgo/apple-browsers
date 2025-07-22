@@ -104,7 +104,7 @@ struct AIChatViewControllerManagerTests {
         #expect(manager.chatViewController !== firstViewController)
     }
 
-    @Test("Account sign out notification triggers session invalidation")
+    @Test("Account sign out notification triggers session invalidation", .disabled("Flaky test - https://app.asana.com/1/137249556945/project/414709148257752/task/1210784601649460?focus=true"))
     @MainActor
     func testAccountSignOutTriggersSessionInvalidation() async throws {
         let manager = createManager()

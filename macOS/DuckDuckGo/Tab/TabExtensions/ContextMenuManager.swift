@@ -338,7 +338,7 @@ private extension ContextMenuManager {
     }
 
     func summarizeMenuItem() -> NSMenuItem {
-        NSMenuItem(title: "Summarize with Duck.ai", action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"])
+        NSMenuItem(title: UserText.aiChatSummarize, action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"])
     }
 
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {

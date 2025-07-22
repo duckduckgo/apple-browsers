@@ -30,6 +30,7 @@ protocol OmnibarDependencyProvider {
     var aiChatSettings: AIChatSettingsProvider { get }
     var themingProperties: ExperimentalThemingProperties { get }
     var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
+    var appSettings: AppSettings { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -38,4 +39,5 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     let aiChatSettings: AIChatSettingsProvider
     let themingProperties: ExperimentalThemingProperties
     var suggestionTrayDependencies: SuggestionTrayDependencies?
+    let appSettings: any AppSettings
 }

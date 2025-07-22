@@ -3,7 +3,7 @@ name: Pixel Schema Validation
 on:
   push:
     branches:
-      - develop
+      - main
   pull_request:
     paths:
       - 'macOS/package*'
@@ -30,9 +30,19 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+      - name: Checkout internal-github-asana-utils repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_RO_PAT }}
+          path: internal-github-asana-utils
+          repository: duckduckgo/internal-github-asana-utils
+            
       - name: Install dependencies
         run: npm ci --verbose
         working-directory: ${{ matrix.platform }}
-      - name: Run validation
-        run: npm run validate-pixel-defs
+      - name: Lint
+        run: npm run pixel-lint
+        working-directory: ${{ matrix.platform }}        
+      - name: Run validation with GitHub user map
+        run: npm run validate-defs-without-formatting -- -g ../internal-github-asana-utils/user_map.yml
         working-directory: ${{ matrix.platform }}

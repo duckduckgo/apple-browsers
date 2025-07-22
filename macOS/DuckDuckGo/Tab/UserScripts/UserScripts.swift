@@ -20,6 +20,7 @@ import AIChat
 import BrowserServicesKit
 import Foundation
 import HistoryView
+import PixelKit
 import SpecialErrorPages
 import Subscription
 import UserScript
@@ -62,8 +63,14 @@ final class UserScripts: UserScriptsProvider {
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         let aiChatDebugURLSettings = AIChatDebugURLSettings()
-        aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
-                                            urlSettings: aiChatDebugURLSettings)
+        aiChatUserScript = AIChatUserScript(
+            handler: AIChatUserScriptHandler(
+                storage: DefaultAIChatPreferencesStorage(),
+                windowControllersManager: sourceProvider.windowControllersManager,
+                pixelFiring: PixelKit.shared
+            ),
+            urlSettings: aiChatDebugURLSettings
+        )
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,

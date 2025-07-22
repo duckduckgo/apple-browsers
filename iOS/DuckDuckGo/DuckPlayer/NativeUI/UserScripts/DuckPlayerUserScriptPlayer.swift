@@ -105,7 +105,28 @@ final class DuckPlayerUserScriptPlayer: NSObject, Subfeature {
 
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
+        let (volumePixel, dailyPixel) = getPixelsForNativeYouTubeErrorParams(params)
+        DailyPixel.fire(pixel: dailyPixel)
+        Pixel.fire(pixel: volumePixel)
         return [:] as [String: String]
+    }
+    
+    /// Returns tuple of Pixels for firing when a YouTube Error occurs in native Duck Player
+    private func getPixelsForNativeYouTubeErrorParams(_ params: Any) -> (Pixel.Event, Pixel.Event) {
+        if let paramsDict = params as? [String: Any],
+           let errorParam = paramsDict["error"] as? String {
+                switch errorParam {
+                case "sign-in-required":
+                    return (.duckPlayerNativeYouTubeSignInErrorImpression, .duckPlayerNativeYouTubeSignInErrorDaily)
+                case "age-restricted":
+                    return (.duckPlayerNativeYouTubeAgeRestrictedErrorImpression, .duckPlayerNativeYouTubeAgeRestrictedErrorDaily)
+                case "no-embed":
+                    return (.duckPlayerNativeYouTubeNoEmbedErrorImpression, .duckPlayerNativeYouTubeNoEmbedErrorDaily)
+                default:
+                    return (.duckPlayerNativeYouTubeUnknownErrorImpression, .duckPlayerNativeYouTubeUnknownErrorDaily)
+                }
+        }
+        return (.duckPlayerNativeYouTubeUnknownErrorImpression, .duckPlayerNativeYouTubeUnknownErrorDaily)
     }
 
 

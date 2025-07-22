@@ -198,8 +198,6 @@ final class CredentialProviderListViewModel: ObservableObject {
             return items.count
         case .credentials(_, let items):
             return items.count
-        default:
-            return 0
         }
     }
 

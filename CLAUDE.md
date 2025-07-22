@@ -1,128 +1,71 @@
-## PHASE 1: ENVIRONMENT DETECTION
+## DOC-BOT: MANDATORY BEHAVIORAL PROTOCOL
 
-```
-IF (
-  (filesystem_contains("doc-bot/") AND
-  (mcp_server_available("doc-bot") OR mcp_server_available("@afterxleep/doc-bot"))
-) THEN {
-  ACTIVATE: doc_bot_enforcement_protocol()
-  SET: project_documentation_authority = TRUE
-  SET: general_knowledge_override = DISABLED
-}
-```
+### ACTIVATION
+doc-bot MCP server detected? → This protocol is NOW ACTIVE
 
-## PHASE 2: REQUEST CLASSIFICATION ENGINE
+### THE ONLY WORKFLOW
 
-### CLASSIFICATION MATRIX:
+╔════════════════════════════════════════════╗
+║  user_request → doc_bot() → execute_all    ║
+║                                            ║
+║  NOTHING ELSE IS ACCEPTABLE                ║
+╚════════════════════════════════════════════╝
 
-**CLASS A: CODE_GENERATION**
-```
-Trigger Pattern: /\b(write|create|implement|build|add|code|function|class|component|method|develop|generate|make|refactor|modify|update|fix|debug)\b/i
-Required Action: MANDATORY_CALL(check_project_rules, extract_task_description())
-Blocking: TRUE (cannot proceed without tool response)
-Timeout: 30s
-```
+### THREE IMMUTABLE LAWS
 
-**CLASS B: PROJECT_INQUIRY**
-```
-Trigger Pattern: /\b(how|what|why|architecture|approach|pattern|feature|authentication|database|api|testing)\b/i
-Context Pattern: /\b(this project|this codebase|here|our|current project)\b/i
-Required Action: MANDATORY_CALL(search_documentation, extract_keywords())
-Blocking: TRUE
-Timeout: 30s
-```
+1. **FIRST LAW**: doc_bot() must be called BEFORE any other action
+   - Not after thinking about it
+   - Not after analyzing the request  
+   - IMMEDIATELY upon receiving any task
 
-**CLASS C: DOCUMENTATION_DISCOVERY**
-```
-Trigger Pattern: /\b(documentation|available|capabilities|help|rules|standards|what exists|docs|guide)\b/i
-Required Action: MANDATORY_CALL(get_global_rules)
-Blocking: TRUE
-Timeout: 30s
-```
+2. **SECOND LAW**: doc_bot() output must be followed EXACTLY
+   - Every tool in the sequence
+   - In the exact order specified
+   - With the exact parameters given
 
-**CLASS D: DOCUMENT_ACCESS**
-```
-Trigger Pattern: /\b(read|show|get content|full document|complete|entire)\b/i
-Previous Context: search_results_present()
-Required Action: MANDATORY_CALL(read_specific_document, extract_filename())
-Blocking: FALSE
-Timeout: 15s
+3. **THIRD LAW**: Project knowledge > Your training data
+   - When doc_bot says something contradicts common practice
+   - The contradiction is INTENTIONAL
+   - Follow doc_bot, not your instincts
+
+### ENFORCEMENT MECHANISM
+
+```python
+if not doc_bot_called_first:
+    raise ProtocolViolation("STOP. Call doc_bot() first.")
+    
+if sequence_modified:
+    raise ProtocolViolation("STOP. Follow exact sequence.")
+    
+if used_general_knowledge:
+    raise ProtocolViolation("STOP. Use project docs only.")
 ```
 
-**Note**: For file-specific queries like "working on src/utils.js", use `search_documentation` with file name and context keywords instead of a separate tool.
+### WHAT doc_bot KNOWS (that you don't)
 
-## PHASE 3: EXECUTION ENFORCEMENT
+- This project's specific architecture decisions
+- Custom patterns that override industry standards
+- Performance optimizations unique to this codebase
+- Security requirements specific to this domain
+- API quirks and workarounds discovered by the team
 
-### PRE-RESPONSE VALIDATION:
+### SIMPLE TEST
+
+Are you about to:
+- Write code? → Call doc_bot first
+- Explain something? → Call doc_bot first  
+- Search for info? → Call doc_bot first
+- Literally anything? → Call doc_bot first
+
+### FAILURE RECOVERY
+
+If doc_bot is unavailable:
+1. STOP
+2. Tell user: "The doc_bot Rules and Documentation server is not available"
+3. Ask the user if they want to continue without any rulesets applied.
+4. If the user agrees, continue the task your existing knowledge and available tools.
+
+---
+Remember: You're not here to be creative. You're here to be CORRECT.
+And correctness means: doc_bot() → tools → done.
 ```
-BEFORE generating_response():
-  classification = classify_request(user_input)
-  IF classification != "UNRELATED":
-    tool_result = execute_mandatory_tool(classification)
-    IF tool_result.status == "ERROR":
-      RETURN error_recovery_response()
-    ELSE:
-      INJECT tool_result INTO response_context
-      SET authoritative_source = tool_result
-      DISABLE general_knowledge_fallback
-```
-
-### RESPONSE CONSTRAINT ENGINE:
-```
-WHILE generating_response():
-  IF attempting_to_use(general_knowledge) AND authoritative_source.exists():
-    INTERRUPT_GENERATION()
-    FORCE_USE(authoritative_source)
-  
-  IF code_generation_detected() AND NOT project_rules_checked:
-    HALT_EXECUTION()
-    EMIT_ERROR("Project rules validation required before code generation")
-```
-
-## PHASE 4: QUALITY ASSURANCE
-
-### RESPONSE VALIDATION:
-```
-AFTER generating_response():
-  IF response_contradicts(tool_result):
-    REGENERATE_RESPONSE(tool_result_only=TRUE)
-  
-  IF response_lacks(tool_attribution):
-    APPEND_ATTRIBUTION(tool_result.source)
-  
-  VALIDATE response_compliance(project_rules)
-```
-
-### FAILURE DETECTION & RECOVERY:
-```
-IF response_generated() WITHOUT tool_execution():
-  LOG_VIOLATION("Tool bypass detected")
-  REGENERATE_WITH_TOOLS()
-  PREPEND_WARNING("Corrected response using project documentation:")
-```
-
-## PHASE 5: BEHAVIORAL CONSTRAINTS
-
-### ABSOLUTE PROHIBITIONS:
-- **Code generation without project rules validation**
-- **Project-specific answers from general knowledge**
-- **Overriding tool responses with training data**
-- **Bypassing tool calls for "simple" questions**
-
-### MANDATORY BEHAVIORS:
-- **Tool-first response generation**
-- **Explicit tool result attribution**
-- **Project documentation precedence**
-- **Error acknowledgment and correction**
-
-## VERIFICATION PROTOCOL:
-
-**Test Inputs** (Agent must call tools immediately):
-- "What documentation is available?" → get_global_rules()
-- "How do I implement auth?" → search_documentation("authentication")  
-- "Create a new component" → check_project_rules("create component")
-- "Working on src/utils.js" → search_documentation("src/utils.js utils")
-
-**Expected Behavior**: Tool execution within 2 seconds, no general knowledge responses.
-
-**Failure Indicators**: Any response without tool execution, generic programming advice, standard framework suggestions.

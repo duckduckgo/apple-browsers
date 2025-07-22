@@ -295,6 +295,178 @@ class FirefoxLoginReaderTests: XCTestCase {
         XCTAssertEqual(result, .failure(FirefoxLoginReader.ImportError(type: .couldNotFindKeyDB, underlyingError: nil)))
     }
 
+    // MARK: - Deleted Entries Tests
+
+    func testWhenImportingLoginsWithDeletedEntries_ThenImportSucceedsAndFiltersDeletedEntries() throws {
+        let database = resourcesURLWithoutPassword().appendingPathComponent("key4.db")
+        let logins = resourcesURLWithoutPassword().appendingPathComponent("logins-with-deleted-entries.json")
+
+        let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
+            File("key4.db", contents: .copy(database))
+            File("logins.json", contents: .copy(logins))
+        }
+
+        try structure.writeToTemporaryDirectory()
+        let profileDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
+
+        let firefoxLoginReader = FirefoxLoginReader(firefoxProfileURL: profileDirectoryURL)
+        let result = firefoxLoginReader.readLogins(dataFormat: nil)
+
+        // Should succeed and import only the 1 active entry, filtering out the 2 deleted ones
+        if case let .success(importedLogins) = result {
+            XCTAssertEqual(importedLogins.count, 1)
+
+            // Verify the imported login is the expected one (not the deleted entries)
+            XCTAssertEqual(importedLogins.first?.url, "example.com")
+            XCTAssertEqual(importedLogins.first?.username, "testusername")
+            XCTAssertEqual(importedLogins.first?.password, "testpassword")
+        } else {
+            XCTFail("Failed to decrypt Firefox logins with deleted entries: \(result)")
+        }
+
+        try structure.removeCreatedFileSystemStructure()
+    }
+
+    func testWhenImportingLoginsWithDeletedEntriesAndPrimaryPassword_ThenImportSucceedsAndFiltersDeletedEntries() throws {
+        let database = resourcesURLWithPassword().appendingPathComponent("key4-encrypted.db")
+        let logins = resourcesURLWithPassword().appendingPathComponent("logins-with-deleted-entries.json")
+
+        let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
+            File("key4.db", contents: .copy(database))
+            File("logins.json", contents: .copy(logins))
+        }
+
+        try structure.writeToTemporaryDirectory()
+        let profileDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
+
+        let firefoxLoginReader = FirefoxLoginReader(firefoxProfileURL: profileDirectoryURL, primaryPassword: "testpassword")
+        let result = firefoxLoginReader.readLogins(dataFormat: nil)
+
+        // Should succeed and import only the 1 active entry
+        if case let .success(importedLogins) = result {
+            XCTAssertEqual(importedLogins.count, 1)
+
+            XCTAssertEqual(importedLogins.first?.url, "example.com")
+        } else {
+            XCTFail("Failed to decrypt Firefox logins with deleted entries and primary password: \(result)")
+        }
+
+        try structure.removeCreatedFileSystemStructure()
+    }
+
+    func testWhenImportingLoginsWithAllDeletedEntries_ThenImportSucceedsWithEmptyResult() throws {
+        let database = resourcesURLWithoutPassword().appendingPathComponent("key4.db")
+        let logins = resourcesURLWithoutPassword().appendingPathComponent("logins-all-deleted.json")
+
+        let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
+            File("key4.db", contents: .copy(database))
+            File("logins.json", contents: .copy(logins))
+        }
+
+        try structure.writeToTemporaryDirectory()
+        let profileDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
+
+        let firefoxLoginReader = FirefoxLoginReader(firefoxProfileURL: profileDirectoryURL)
+        let result = firefoxLoginReader.readLogins(dataFormat: nil)
+
+        // Should succeed but return empty result since all entries are deleted
+        if case let .success(importedLogins) = result {
+            XCTAssertEqual(importedLogins.count, 0)
+        } else {
+            XCTFail("Failed to handle all-deleted entries case: \(result)")
+        }
+
+        try structure.removeCreatedFileSystemStructure()
+    }
+
+    func testWhenImportingLoginsWithMalformedEntries_ThenImportSucceedsAndFiltersInvalidEntries() throws {
+        let database = resourcesURLWithoutPassword().appendingPathComponent("key4.db")
+        let logins = resourcesURLWithoutPassword().appendingPathComponent("logins-with-malformed-entries.json")
+
+        let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
+            File("key4.db", contents: .copy(database))
+            File("logins.json", contents: .copy(logins))
+        }
+
+        try structure.writeToTemporaryDirectory()
+        let profileDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
+
+        let firefoxLoginReader = FirefoxLoginReader(firefoxProfileURL: profileDirectoryURL)
+        let result = firefoxLoginReader.readLogins(dataFormat: nil)
+
+        // Should succeed and import only the 1 valid entry, filtering out malformed ones
+        if case let .success(importedLogins) = result {
+            XCTAssertEqual(importedLogins.count, 1)
+            XCTAssertEqual(importedLogins.first?.url, "example.com")
+            XCTAssertEqual(importedLogins.first?.username, "testusername")
+            XCTAssertEqual(importedLogins.first?.password, "testpassword")
+        } else {
+            XCTFail("Failed to handle malformed entries case: \(result)")
+        }
+
+        try structure.removeCreatedFileSystemStructure()
+    }
+
+    func testWhenImportingLoginsWithOnlyDeletedEntriesAtStart_ThenImportSucceeds() throws {
+        // This test specifically verifies the original bug case where deleted entries at index 0 
+        // would cause immediate decode failure
+        let database = resourcesURLWithoutPassword().appendingPathComponent("key4.db")
+        let logins = resourcesURLWithoutPassword().appendingPathComponent("logins-with-deleted-entries.json")
+
+        let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
+            File("key4.db", contents: .copy(database))
+            File("logins.json", contents: .copy(logins))
+        }
+
+        try structure.writeToTemporaryDirectory()
+        let profileDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
+
+        let firefoxLoginReader = FirefoxLoginReader(firefoxProfileURL: profileDirectoryURL)
+        let result = firefoxLoginReader.readLogins(dataFormat: nil)
+
+        // Before the fix, this would fail with DecodingError.keyNotFound for hostname
+        // After the fix, it should succeed and return the active logins
+        switch result {
+        case .success(let importedLogins):
+            XCTAssertEqual(importedLogins.count, 1)
+            // Verify we got the active entry, not the deleted ones at indices 0 and 1
+            XCTAssertEqual(importedLogins.first?.url, "example.com")
+        case .failure(let error):
+            XCTFail("Import should succeed with deleted entries at start, but failed with: \(error)")
+        }
+
+        try structure.removeCreatedFileSystemStructure()
+    }
+
+    func testWhenImportingLoginsWithFirefoxSyncEntries_ThenFiltersFirefoxAccountsAndDeletedEntries() throws {
+        // Test that both Firefox sync entries and deleted entries are properly filtered
+        let database = resourcesURLWithoutPassword().appendingPathComponent("key4.db")
+        let logins = resourcesURLWithoutPassword().appendingPathComponent("logins.json") // This file has FirefoxAccounts entry
+
+        let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
+            File("key4.db", contents: .copy(database))
+            File("logins.json", contents: .copy(logins))
+        }
+
+        try structure.writeToTemporaryDirectory()
+        let profileDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
+
+        let firefoxLoginReader = FirefoxLoginReader(firefoxProfileURL: profileDirectoryURL)
+        let result = firefoxLoginReader.readLogins(dataFormat: nil)
+
+        if case let .success(importedLogins) = result {
+            // Should filter out chrome://FirefoxAccounts entries
+            XCTAssertTrue(importedLogins.compactMap { $0.url }.filter { $0.contains("chrome://FirefoxAccounts") }.isEmpty)
+            // Should only import the example.com entry
+            XCTAssertEqual(importedLogins.count, 1)
+            XCTAssertEqual(importedLogins.first?.url, "example.com")
+        } else {
+            XCTFail("Failed to import logins with Firefox sync filtering: \(result)")
+        }
+
+        try structure.removeCreatedFileSystemStructure()
+    }
+
     private func resourcesURLWithPassword() -> URL {
         let bundle = Bundle(for: FirefoxLoginReaderTests.self)
         return bundle.resourceURL!.appendingPathComponent("DataImportResources/TestFirefoxData/Primary Password")

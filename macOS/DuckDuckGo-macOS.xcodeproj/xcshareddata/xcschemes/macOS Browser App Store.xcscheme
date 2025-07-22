@@ -236,6 +236,16 @@
                ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "VPNTests"
+               BuildableName = "VPNTests"
+               BlueprintName = "VPNTests"
+               ReferencedContainer = "container:../SharedPackages/VPN">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

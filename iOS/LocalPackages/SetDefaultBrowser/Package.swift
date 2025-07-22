@@ -36,6 +36,7 @@ let package = Package(
         .target(
             name: "SetDefaultBrowserUI",
             dependencies: [
+                "SetDefaultBrowserCore",
                 .product(name: "DuckUI", package: "DuckUI"),
                 .product(name: "MetricBuilder", package: "MetricBuilder"),
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),

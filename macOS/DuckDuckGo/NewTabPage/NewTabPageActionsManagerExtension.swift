@@ -34,15 +34,17 @@ extension NewTabPageActionsManager {
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
-        historyCoordinator: HistoryCoordinating,
+        historyCoordinator: HistoryProviderCoordinating,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         protectionsReportModel: NewTabPageProtectionsReportModel,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
         fire: @escaping () async -> Fire,
-        keyValueStore: KeyValueStoring = UserDefaults.standard,
-        featureFlagger: FeatureFlagger
+        keyValueStore: ThrowingKeyValueStoring,
+        featureFlagger: FeatureFlagger,
+        windowControllersManager: WindowControllersManagerProtocol,
+        tabsPreferences: TabsPreferences
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -77,6 +79,18 @@ extension NewTabPageActionsManager {
                 burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains, tld: tld, fire: fire)
             )
         )
+        let suggestionContainer = SuggestionContainer(
+            historyProvider: historyCoordinator,
+            bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: bookmarkManager),
+            burnerMode: .regular,
+            isUrlIgnored: { _ in false }
+        )
+        let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
+        let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: tabsPreferences
+        )
+        let omnibarModeProvider = NewTabPageOmnibarModeProvider(keyValueStore: keyValueStore)
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -103,7 +117,9 @@ extension NewTabPageActionsManager {
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
             NewTabPageRecentActivityClient(model: recentActivityModel),
-            NewTabPageOmnibarClient(model: NewTabPageOmnibarModel())
+            NewTabPageOmnibarClient(modeProvider: omnibarModeProvider,
+                                    suggestionsProvider: suggestionsProvider,
+                                    actionHandler: omnibarActionHandler)
         ])
     }
 }

@@ -324,28 +324,7 @@ final class AddressBarTextField: NSTextField {
             break
         }
 
-        let autocompletePixel: GeneralPixel? = {
-            switch suggestion {
-            case .phrase:
-                return .autocompleteClickPhrase
-            case .website:
-                return .autocompleteClickWebsite
-            case .bookmark(_, _, let isFavorite, _):
-                if isFavorite {
-                    return .autocompleteClickFavorite
-                } else {
-                    return .autocompleteClickBookmark
-                }
-            case .historyEntry:
-                return .autocompleteClickHistory
-            case .openTab:
-                return .autocompleteClickOpenTab
-            default:
-                return nil
-            }
-        }()
-
-        if let autocompletePixel {
+        if let autocompletePixel = suggestion?.autocompletePixel(from: .addressBar) {
             PixelKit.fire(autocompletePixel)
         }
 
@@ -446,7 +425,7 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func updateTabUrl(suggestion: Suggestion?, downloadRequested: Bool) {
-        makeUrl(suggestion: suggestion,
+        URL.makeUrl(suggestion: suggestion,
                 stringValueWithoutSuffix: stringValueWithoutSuffix,
                 completion: { [weak self] url, userEnteredValue, isUpgraded in
             guard let url else { return }
@@ -465,7 +444,7 @@ final class AddressBarTextField: NSTextField {
 
     enum TabOrWindow { case tab, window }
     private func openNew(_ tabOrWindow: TabOrWindow, selected: Bool, suggestion: Suggestion?) {
-        makeUrl(suggestion: suggestion,
+        URL.makeUrl(suggestion: suggestion,
                 stringValueWithoutSuffix: stringValueWithoutSuffix) { [weak self] url, userEnteredValue, isUpgraded in
             guard let self, let url else {
                 Logger.general.error("AddressBarTextField: Making url from address bar string failed")
@@ -497,46 +476,6 @@ final class AddressBarTextField: NSTextField {
         // reset value so it‘s not restored next time we come back to the tab
         value = .text("", userTyped: false)
         Application.appDelegate.windowControllersManager.show(url: tab.url, tabId: tab.tabId, source: .switchToOpenTab, newTab: true /* in case not found */)
-    }
-
-    private func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
-        let finalUrl: URL?
-        let userEnteredValue: String
-        switch suggestion {
-        case .bookmark(title: _, url: let url, isFavorite: _, _),
-             .historyEntry(title: _, url: let url, _),
-             .website(url: let url),
-             .internalPage(title: _, url: let url, _),
-             .openTab(title: _, url: let url, _, _):
-            finalUrl = url
-            userEnteredValue = url.absoluteString
-        case .phrase(phrase: let phrase),
-             .unknown(value: let phrase):
-            finalUrl = URL.makeSearchUrl(from: phrase)
-            userEnteredValue = phrase
-        case .none:
-            finalUrl = URL.makeURL(from: stringValueWithoutSuffix)
-            userEnteredValue = stringValueWithoutSuffix
-        }
-
-        guard let url = finalUrl else {
-            completion(finalUrl, userEnteredValue, false)
-            return
-        }
-
-        upgradeToHttps(url: url, userEnteredValue: userEnteredValue, completion: completion)
-    }
-
-    private func upgradeToHttps(url: URL, userEnteredValue: String, completion: @escaping (URL?, String, Bool) -> Void) {
-        Task {
-            let result = await NSApp.delegateTyped.privacyFeatures.httpsUpgrade.upgrade(url: url)
-            switch result {
-            case let .success(upgradedUrl):
-                completion(upgradedUrl, userEnteredValue, true)
-            case .failure:
-                completion(url, userEnteredValue, false)
-            }
-        }
     }
 
     // MARK: - Undo Manager
@@ -1279,4 +1218,52 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
 
 fileprivate extension NSStoryboard {
     static let suggestion = NSStoryboard(name: "Suggestion", bundle: .main)
+}
+
+extension URL {
+
+    static func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
+        let finalUrl: URL?
+        let userEnteredValue: String
+        switch suggestion {
+        case .bookmark(title: _, url: let url, isFavorite: _, _),
+             .historyEntry(title: _, url: let url, _),
+             .website(url: let url),
+             .internalPage(title: _, url: let url, _),
+             .openTab(title: _, url: let url, _, _):
+            finalUrl = url
+            userEnteredValue = url.absoluteString
+        case .phrase(phrase: let phrase),
+             .unknown(value: let phrase):
+            finalUrl = URL.makeSearchUrl(from: phrase)
+            userEnteredValue = phrase
+        case .none:
+            finalUrl = URL.makeURL(from: stringValueWithoutSuffix)
+            userEnteredValue = stringValueWithoutSuffix
+        }
+
+        guard let url = finalUrl else {
+            completion(finalUrl, userEnteredValue, false)
+            return
+        }
+
+        upgradeToHttps(url: url, userEnteredValue: userEnteredValue, completion: completion)
+    }
+
+    static private func upgradeToHttps(url: URL, userEnteredValue: String, completion: @escaping (URL?, String, Bool) -> Void) {
+        Task {
+            let result = await NSApp.delegateTyped.privacyFeatures.httpsUpgrade.upgrade(url: url)
+            switch result {
+            case let .success(upgradedUrl):
+                DispatchQueue.main.async {
+                    completion(upgradedUrl, userEnteredValue, true)
+                }
+            case .failure:
+                DispatchQueue.main.async {
+                    completion(url, userEnteredValue, false)
+                }
+            }
+        }
+    }
+
 }

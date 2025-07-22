@@ -50,7 +50,7 @@ public class Favicons {
     let downloader: NotFoundCachingDownloader
     let fireproofing: Fireproofing
 
-    let userAgentManager: UserAgentManager = DefaultUserAgentManager.shared
+    let userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared
 
     init(sourcesProvider: FaviconSourcesProvider = DefaultFaviconSourcesProvider(),
          downloader: NotFoundCachingDownloader = NotFoundCachingDownloader(),

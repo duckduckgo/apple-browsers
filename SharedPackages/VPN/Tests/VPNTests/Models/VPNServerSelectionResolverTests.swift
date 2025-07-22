@@ -29,7 +29,7 @@ final class VPNServerSelectionResolverTests: XCTestCase {
     override func setUp() {
         super.setUp()
         locationListRepository = MockNetworkProtectionLocationListRepository()
-        vpnSettings = VPNSettings(defaults: UserDefaults(suiteName: self.className)!)
+        vpnSettings = VPNSettings(defaults: UserDefaults(suiteName: "VPNServerSelectionResolverTests")!)
         resolver = VPNServerSelectionResolver(
             locationListRepository: locationListRepository,
             vpnSettings: vpnSettings

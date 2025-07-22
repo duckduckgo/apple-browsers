@@ -429,6 +429,7 @@ public extension DesignSystemImages {
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
+            public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
             public static var subItemRecolorable: DesignSystemImage { .init(resource: .subItemRecolorable24) }
             public static var subtraction: DesignSystemImage { .init(resource: .subtraction24) }
             public static var support: DesignSystemImage { .init(resource: .support24) }

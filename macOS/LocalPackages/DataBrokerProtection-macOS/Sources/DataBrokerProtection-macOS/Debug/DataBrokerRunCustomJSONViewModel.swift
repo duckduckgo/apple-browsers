@@ -389,6 +389,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 captchaService: self.captchaService,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
                                 pixelHandler: fakePixelHandler,
+                                executionConfig: .init(),
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
@@ -425,7 +426,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,
-            scanJobData: ScanJobData(brokerId: 1, profileQueryId: 1, historyEvents: [HistoryEvent]())
+            scanJobData: ScanJobData(
+                brokerId: scanResult.dataBroker.id ?? 1,
+                profileQueryId: scanResult.profileQuery.id ?? 1,
+                historyEvents: [HistoryEvent]()
+            )
         )
         Task {
             do {
@@ -437,6 +442,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     captchaService: self.captchaService,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
+                    executionConfig: .init(),
                     shouldRunNextStep: { true }
                 )
 

@@ -36,12 +36,17 @@ final class TabViewCell: UICollectionViewCell {
 
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
-        static let cellCornerRadius: CGFloat = 8.0
-        static let cellHeaderHeight: CGFloat = 36.0
+        static let borderRadius: CGFloat = 14.0
+
+        static let cellCornerRadius: CGFloat = 12.0
+        static let cellHeaderHeight: CGFloat = 36.0 + 4.0 // height + top padding
         static let cellLogoSize: CGFloat = 68.0
 
-        static let selectedBorderWidth: CGFloat = 4.0
+        static let previewCornerRadius: CGFloat = 8.0
+
+        static let selectedBorderWidth: CGFloat = 2.0
         static let unselectedBorderWidth: CGFloat = 0.0
+        static let previewPadding: CGFloat = 4.0
     }
 
     var removeThreshold: CGFloat {
@@ -100,25 +105,37 @@ final class TabViewCell: UICollectionViewCell {
     @IBOutlet var previewBottomConstraint: NSLayoutConstraint?
     @IBOutlet var previewTrailingConstraint: NSLayoutConstraint?
 
+    /// Note that `backgroundView` and `selectedBackgroundView` are provided by UICollectionViewCell and we don't use them for legacy and design reasons, so ignore them.
     func setupSubviews() {
+        layer.masksToBounds = false
+
+        applyShadows()
+
+        preview?.layer.cornerRadius = Constants.previewCornerRadius
+        preview?.layer.masksToBounds = true
 
         backgroundColor = .clear
-        backgroundView?.backgroundColor = .clear
+        
+        background?.layer.cornerRadius = Constants.cellCornerRadius
+        background?.backgroundColor = .clear
 
-        border.layer.cornerRadius = 16
+        border.layer.cornerRadius = Constants.borderRadius
 
-        layer.cornerRadius = 12
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOffset = CGSize(width: 0, height: 1)
-        layer.shadowRadius = 3.0
-        layer.shadowOpacity = 0.15
-        layer.masksToBounds = false
-        layer.shouldRasterize = true
-        layer.rasterizationScale = UIScreen.main.scale
+        layer.cornerRadius = Constants.cellCornerRadius
 
         unread.tintColor = UIColor(designSystemColor: .accent)
 
+        favicon.layer.cornerRadius = 4
+        favicon.layer.masksToBounds = true
+
         removeButton.additionalHitTestSize = 4
+    }
+
+    private func applyShadows() {
+        layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+        layer.shadowOpacity = 1.0
+        layer.shadowRadius = 12.0
+        layer.shadowOffset = CGSize(width: 0, height: 4)
     }
 
     private func updatePreviewToDisplay(image: UIImage) {
@@ -131,8 +148,8 @@ final class TabViewCell: UICollectionViewCell {
             preview?.removeConstraint(constraint)
         }
 
-        previewTopConstraint?.constant = Constants.cellHeaderHeight
         previewBottomConstraint?.isActive = !strechContainerVerically
+        previewBottomConstraint?.constant = 0
         previewTrailingConstraint?.isActive = strechContainerVerically
 
         if let preview {
@@ -147,8 +164,8 @@ final class TabViewCell: UICollectionViewCell {
             previewAspectRatio = nil
         }
 
-        previewTopConstraint?.constant = 0
         previewBottomConstraint?.isActive = true
+        previewBottomConstraint?.constant = Constants.previewPadding * 2
         previewTrailingConstraint?.isActive = true
     }
 
@@ -286,20 +303,16 @@ final class TabViewCell: UICollectionViewCell {
         if !isSelected {
             image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
         } else {
-//            let symbolColorConfiguration = UIImage.SymbolConfiguration(paletteColors: [
-//                .white, // The check
-//                .clear, // This does nothing in this palette
-//                UIColor(designSystemColor: .accent), // The filled background of the circle
-//            ])
-//            image.image = UIImage(systemName: "checkmark.circle.fill")?.applyingSymbolConfiguration(symbolColorConfiguration)
-            // This is temporary until we can work out how to use the above logic with custom symbols
-            image.image = UIImage(resource: .checkAccentDONOTUSE)
+            image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
+                foreground: UIColor(designSystemColor: .accentContentPrimary),
+                background: UIColor(designSystemColor: .accent),
+            )
         }
     }
 
     func updateCurrentTabBorder() {
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
-        border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : .textPrimary).cgColor
+        border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : .decorationTertiary).cgColor
         border.layer.borderWidth = showBorder ? Constants.selectedBorderWidth : Constants.unselectedBorderWidth
     }
 
@@ -331,7 +344,7 @@ final class TabViewCell: UICollectionViewCell {
 
         updateCurrentTabBorder()
 
-        removeButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
+        removeButton.setImage(DesignSystemImages.Glyphs.Size16.closeSolidAlt, for: .normal)
         if let link = tab.link {
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")
             title.accessibilityLabel = UserText.openTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")
@@ -389,13 +402,12 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     private func decorate() {
-        let theme = ThemeManager.shared.currentTheme
         border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
         unread.image = Self.unreadImageAsset.image(with: .current)
         removeButton.tintColor = UIColor(designSystemColor: .icons)
 
-        background.backgroundColor = theme.tabSwitcherCellBackgroundColor
-        title.textColor = theme.tabSwitcherCellTextColor
+        background.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+        title.textColor = UIColor(designSystemColor: .textPrimary)
 
         background.superview?.backgroundColor = .clear
     }

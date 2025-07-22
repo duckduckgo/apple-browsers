@@ -27,18 +27,20 @@ internal class FirefoxDataImporter: DataImporter {
     private let bookmarkImporter: BookmarkImporter
     private let faviconManager: FaviconManagement
     private let profile: DataImport.BrowserProfile
+    private let featureFlagger: FeatureFlagger
     private var source: DataImport.Source {
         profile.browser.importSource
     }
 
     private let primaryPassword: String?
 
-    init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
+    init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement, featureFlagger: FeatureFlagger) {
         self.profile = profile
         self.primaryPassword = primaryPassword
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.featureFlagger = featureFlagger
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -96,23 +98,31 @@ internal class FirefoxDataImporter: DataImporter {
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
 
-            let bookmarkReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: profile.profileURL)
+            let bookmarkReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: profile.profileURL, featureFlagger: featureFlagger)
             let bookmarkResult = bookmarkReader.readBookmarks()
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            guard case .success(var importedBookmarks) = bookmarkResult else {
+                summary[.bookmarks] = .failure(bookmarkResult.error!)
+                return summary
+            }
+
+            var markRootBookmarksAsFavoritesByDefault = true
+            if featureFlagger.isFeatureOn(.updateFirefoxBookmarksImport) {
+                markRootBookmarksAsFavoritesByDefault = false
+                let newTabFavorites = fetchNewTabFavorites()
+                FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabFavorites)
+            }
+
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkResult.map { bookmarks in
-                bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source))
-            }
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: nil)
 
-            if case .success = bookmarksSummary {
-                await importFavicons()
-            }
+            await importFavicons()
 
-            summary[.bookmarks] = bookmarksSummary.map { .init($0) }
+            summary[.bookmarks] = .success(.init(bookmarksSummary))
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
         try updateProgress(.done)
@@ -160,6 +170,64 @@ internal class FirefoxDataImporter: DataImporter {
             return [.passwords: error]
         } catch {
             return nil
+        }
+    }
+
+    private func fetchNewTabFavorites() -> [ImportedBookmarks.BookmarkOrFolder] {
+        do {
+            let preferences = try FirefoxPreferences(profileURL: profile.profileURL)
+            guard preferences.newTabFavoritesEnabled else {
+                return []
+            }
+
+            let favoritesCount = preferences.newTabFavoritesCount
+            let pinnedSites = preferences.newTabPinnedSites
+                .prefix(favoritesCount)
+                .map { site -> ImportedBookmarks.BookmarkOrFolder? in
+                    guard let site else { return nil }
+                    return ImportedBookmarks.BookmarkOrFolder(name: site.label ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true)
+                }
+            let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL)
+            let frecentSites = try historyReader.readFrecentSites().get()
+                .reduce(into: (seen: Set<URL>(), result: [ImportedBookmarks.BookmarkOrFolder]())) { partialResult, site in
+                    // Filter out URLs that are blocked, the root domain is pinned, or not HTTP/HTTPS.
+                    // Then, de-duplicate remaining frecent sites by their root domain.
+                    guard let url = URL(string: site.url),
+                            !preferences.isURLBlockedOnNewTab(site.url),
+                            !pinnedSites.contains(where: { $0?.url?.root == url.root }) else { return }
+                    let rootDomain = url.root ?? url
+                    if !partialResult.seen.contains(rootDomain) {
+                        partialResult.seen.insert(rootDomain)
+                        let favorite = ImportedBookmarks.BookmarkOrFolder(name: site.title ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true, favoritesIndex: partialResult.result.count)
+                        partialResult.result.append(favorite)
+                    }
+                }
+                .result.prefix(favoritesCount).map { $0 }
+
+            guard !pinnedSites.isEmpty else {
+                return frecentSites
+            }
+
+            // Combine pinned sites and frecent sites to create favorites.
+            // The pinned sites array contains nil values as placeholders for frecent sites that are not pinned.
+            var favorites: [ImportedBookmarks.BookmarkOrFolder] = []
+            var frecentIterator = frecentSites.makeIterator()
+
+            for idx in 0..<favoritesCount {
+                if idx < pinnedSites.count, var pinnedSite = pinnedSites[idx] {
+                    pinnedSite.favoritesIndex = idx
+                    favorites.append(pinnedSite)
+                } else if let frecentSite = frecentIterator.next() {
+                    var updatedFrecentSite = frecentSite
+                    updatedFrecentSite.favoritesIndex = idx
+                    favorites.append(updatedFrecentSite)
+                }
+            }
+
+            return favorites
+        } catch {
+            // Send pixel for error: https://app.asana.com/1/137249556945/task/1210674932129670
+            return []
         }
     }
 

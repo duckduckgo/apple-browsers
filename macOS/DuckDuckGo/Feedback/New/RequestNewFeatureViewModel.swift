@@ -1,5 +1,5 @@
 //
-//  NewFeedbackFormViewModel.swift
+//  RequestNewFeatureViewModel.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Combine
 import SwiftUI
 
-final class NewFeedbackFormViewModel: ObservableObject {
+final class RequestNewFeatureViewModel: ObservableObject {
 
     // MARK: - Published Properties
 
@@ -77,34 +77,14 @@ final class NewFeedbackFormViewModel: ObservableObject {
     // MARK: - Methods
 
     func toggleFeature(_ feature: String) {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            if selectedFeatures.contains(feature) {
-                selectedFeatures.remove(feature)
-            } else {
-                selectedFeatures.insert(feature)
-            }
+        if selectedFeatures.contains(feature) {
+            selectedFeatures.remove(feature)
+        } else {
+            selectedFeatures.insert(feature)
         }
-    }
-
-    func isFeatureSelected(_ feature: String) -> Bool {
-        selectedFeatures.contains(feature)
-    }
-
-    func clearForm() {
-        selectedFeatures.removeAll()
-        customFeatureText = ""
-    }
-
-    func validateForm() -> Bool {
-        return shouldEnableSubmit
-    }
-
-    func getFormData() -> (selectedFeatures: Set<String>, customText: String) {
-        return (selectedFeatures, customFeatureText.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     func submitFeedback() {
         // Future implementation for submitting feedback
-        // This could include analytics tracking, API calls, etc.
     }
 }

@@ -263,7 +263,7 @@ extension AppDelegate {
     @objc func openRequestANewFeature(_ sender: Any?) {
         var window: NSWindow?
 
-        let formView = FeedbackFlowView(
+        let formView = RequestNewFeedbackFormFlowView(
             onClose: {
                 window?.close()
             },
@@ -284,7 +284,7 @@ extension AppDelegate {
             }
         )
 
-        let controller = NewFeedbackFormViewController(rootView: formView)
+        let controller = RequestNewFeatureFormViewController(rootView: formView)
         window = NSWindow(contentViewController: controller)
 
         guard let window = window else { return }
@@ -292,8 +292,8 @@ extension AppDelegate {
         window.styleMask.remove(.resizable)
         let windowRect = NSRect(x: 0,
                                 y: 0,
-                                width: NewFeedbackFormViewController.Constants.width,
-                                height: NewFeedbackFormViewController.Constants.height)
+                                width: RequestNewFeatureFormViewController.Constants.width,
+                                height: RequestNewFeatureFormViewController.Constants.height)
         window.setFrame(windowRect, display: true)
 
         DispatchQueue.main.async {

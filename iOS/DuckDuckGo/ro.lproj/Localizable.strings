@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Selectează **Export**, iar pe ecranul următor selectează **Parole** și **Salvează în descărcări**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importă fișierul cu parole...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "În Chrome, mergi la **Manager de parole Google** și apoi la **Setări**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importă parolele";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Nu mai întreba";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Transferă rapid și sigur parolele dintr-un alt browser.";

@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Выберите вариант **Экспорт**, а на следующем экране — **Пароли** и **Сохранить в «Загрузки»**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Импортировать файл с паролями...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "В браузере Chrome откройте **Менеджер паролей Google** и выберите вариант **Настройки**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Импорт паролей";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Больше не спрашивать";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Быстрый и безопасный способ перенести пароли из другого браузера.";

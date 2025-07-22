@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Valitse **Vie** ja valitse seuraavassa näytössä **Salasanat** ja **Tallenna latauksiin**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Tuo salasanatiedosto...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Siirry Chromessa kohtaan **Google Password Manager** ja sitten **Asetukset**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Tuo salasanat";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Älä kysy uudelleen";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Siirrä salasanasi nopeasti ja turvallisesti toisesta selaimesta.";

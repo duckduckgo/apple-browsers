@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Odaberi **Izvoz**, a na sljedećem zaslonu odaberi **Lozinke** i **Spremi u preuzimanja**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Uvezi datoteku s lozinkama...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "U Chromeu, idi na **Google Password Manager**, a zatim na **Postavke**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Uvezi lozinke";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Ne pitaj ponovno";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Brzo i sigurno prenesi svoje lozinke iz drugog preglednika.";

@@ -9,7 +9,7 @@ source $(dirname $0)/common.sh
 check_maestro() {
 
     local command_name="maestro"
-    local known_version="1.39.13"
+    local known_version="1.40.3"
 
     if command -v $command_name > /dev/null 2>&1; then
       local version_output=$($command_name -v 2>&1 | tail -n 1)
@@ -57,25 +57,38 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [ -n "$skip_build" ]; then
-    echo "Skipping build"
-else
-    build_app $rebuild
-fi
-
 echo "ℹ️ Closing all simulators"
 
 killall Simulator
 
-echo "ℹ️ Starting simulator for maestro"
+echo "ℹ️ Checking for existing simulator"
 
-device_uuid=$(xcrun simctl create "$target_device $target_os (maestro)" "com.apple.CoreSimulator.SimDeviceType.$target_device" "com.apple.CoreSimulator.SimRuntime.$target_os")
-if [ $? -ne 0 ]; then
-    echo "‼️ Unable to create simulator for $target_device and $target_os"
-    exit 1
+# Check if a simulator with the same name already exists
+simulator_name="$target_device $target_os (maestro)"
+existing_device_uuid=$(xcrun simctl list devices | grep "$simulator_name" | grep -oE '[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}' | head -1)
+
+if [ -n "$existing_device_uuid" ]; then
+    echo "ℹ️ Found existing simulator: $existing_device_uuid"
+    device_uuid=$existing_device_uuid
+else
+    echo "ℹ️ Creating new simulator for maestro"
+    device_uuid=$(xcrun simctl create "$simulator_name" "com.apple.CoreSimulator.SimDeviceType.$target_device" "com.apple.CoreSimulator.SimRuntime.$target_os")
+    if [ $? -ne 0 ]; then
+        echo "‼️ Unable to create simulator for $target_device and $target_os"
+        exit 1
+    fi
 fi
 
 echo "📱 Using simulator $device_uuid"
+
+# Build the app after we have the simulator
+if [ -n "$skip_build" ]; then
+    echo "Skipping build"
+else
+    # Export the device UUID so build_app can use it
+    export MAESTRO_DEVICE_UUID=$device_uuid
+    build_app $rebuild
+fi
 
 xcrun simctl boot $device_uuid
 if [ $? -ne 0 ]; then

@@ -1,0 +1,109 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - duckplayer.native
+
+---
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+# Turn DuckPlayer to Auto
+- tapOn:
+    id: chevron.up.chevron.down
+- tapOn: ${output.letMeChooseLabel}
+
+# Close Settings
+- runFlow: 
+    file: shared/close_settings.yaml
+
+# Navigate to a video
+# Load Site
+- runFlow: 
+    file: shared/load_youtube_url.yaml
+
+  # Assert Youtube Search Page opens and open the video
+- assertVisible: ${output.videoTitle}
+- tapOn: ${output.videoTitle}
+
+# Validate YouTube opens
+- assertVisible: ${output.youtubeMobileDomain}
+
+# Assert Duck Player Welcome Pill is present
+- assertVisible:
+    id: duckPlayerWelcomePill
+
+- tapOn:
+    id: duckPlayerWelcomeButton
+
+# Validate Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+# Ensure the player is correct
+- assertVisible:
+    id: ${output.openVideosHereLabel}
+
+# Close Duck Player
+- runFlow: 
+    file: shared/close_player.yaml
+
+# Assert Duck Player Welcome Pill is not present
+- assertVisible:
+    id: ${output.resumeInDuckPlayerLabel}
+
+- tapOn:
+    id: ${output.resumeInDuckPlayerLabel}
+
+# Assert Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+# Close Duck Player
+- runFlow: 
+    file: shared/close_player.yaml
+
+# Check for the pill
+- assertVisible:
+    id: ${output.resumeInDuckPlayerLabel}
+- tapOn:
+    id: ${output.resumeInDuckPlayerLabel}
+
+# Assert Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+# Close Duck Player
+- runFlow: 
+    file: shared/close_player.yaml
+
+# Hit fire button
+- tapOn: ${output.closeTabsAndClearDataLabel}
+- tapOn:
+    id: alert.forget-data.confirm
+
+# Load YouTube URL
+- runFlow: 
+    file: shared/load_youtube_url.yaml
+
+  # Assert Youtube Search Page opens and open the video
+- assertVisible: ${output.videoTitle}
+- tapOn: ${output.videoTitle}
+
+# Assert Pill is present
+- assertVisible:
+    id: ${output.playThisVideoInDuckPlayerLabel}
+- tapOn:
+    id: ${output.playThisVideoInDuckPlayerLabel}
+
+# Assert Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml

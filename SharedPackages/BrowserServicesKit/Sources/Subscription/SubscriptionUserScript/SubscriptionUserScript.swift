@@ -59,7 +59,7 @@ protocol SubscriptionUserScriptHandling {
 public protocol SubscriptionUserScriptNavigationDelegate: AnyObject {
     @MainActor func navigateToSettings()
     @MainActor func navigateToSubscriptionActivation()
-    @MainActor func navigateToSubscriptionPurchase()
+    @MainActor func navigateToSubscriptionPurchase(origin: String?)
 }
 
 protocol UserScriptMessagePushing: AnyObject {
@@ -139,7 +139,20 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     @MainActor
     func openSubscriptionPurchase(params: Any, message: any UserScriptMessage) async throws -> Encodable? {
-        navigationDelegate?.navigateToSubscriptionPurchase()
+        struct PurchaseParams: Decodable {
+            let origin: String?
+        }
+
+        let purchaseParams: PurchaseParams? = {
+            if let paramsDict = params as? [String: Any] {
+                if let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+                    return try? JSONDecoder().decode(PurchaseParams.self, from: jsonData)
+                }
+            }
+            return nil
+        }()
+
+        navigationDelegate?.navigateToSubscriptionPurchase(origin: purchaseParams?.origin)
         return nil
     }
 

@@ -181,9 +181,20 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
     @MainActor
     func testOpenSubscriptionPurchaseCallsNavigationDelegate() async throws {
-        let response = try await handler.openSubscriptionPurchase(params: [], message: WKScriptMessage())
+        let origin = "some_origin"
+        let params = ["origin": origin]
+        let response = try await handler.openSubscriptionPurchase(params: params, message: WKScriptMessage())
         XCTAssertNil(response)
         XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
+        XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
+    }
+
+    @MainActor
+    func testOpenSubscriptionPurchaseWithoutOriginCallsNavigationDelegate() async throws {
+        let response = try await handler.openSubscriptionPurchase(params: [:], message: WKScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
+        XCTAssertNil(mockNavigationDelegate.purchaseOrigin)
     }
 
     // MARK: - Auth Update Push Tests
@@ -249,6 +260,7 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
     var navigateToSettingsCalled = false
     var navigateToSubscriptionActivationCalled = false
     var navigateToSubscriptionPurchaseCalled = false
+    var purchaseOrigin: String?
 
     func navigateToSettings() {
         navigateToSettingsCalled = true
@@ -258,8 +270,9 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
         navigateToSubscriptionActivationCalled = true
     }
 
-    func navigateToSubscriptionPurchase() {
+    func navigateToSubscriptionPurchase(origin: String?) {
         navigateToSubscriptionPurchaseCalled = true
+        purchaseOrigin = origin
     }
 }
 

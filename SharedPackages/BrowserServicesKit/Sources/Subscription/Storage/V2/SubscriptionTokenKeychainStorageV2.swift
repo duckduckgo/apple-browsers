@@ -157,7 +157,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
     }
 
     private func isRetryable(_ error: Error) -> Bool {
-        guard let keychainError = error as? AccountKeychainAccessError else { return true }
+        guard let keychainError = error as? AccountKeychainAccessError else { return false }
 
         switch keychainError {
 
@@ -281,5 +281,23 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         ]
         query.merge(keychainType.queryAttributes()) { _, new in new }
         return query
+    }
+}
+
+private extension OSStatus {
+
+    var isRetryable: Bool {
+        let retryableStatuses: Set<OSStatus> = [
+            errSecInteractionNotAllowed,
+            errSecNotAvailable,
+            errSecAuthFailed,
+            errSecAllocate,
+            errSecInternalError,
+            errSecInteractionRequired,
+            errSecIO,
+            errSecNotLoggedIn
+        ]
+
+        return retryableStatuses.contains(self)
     }
 }

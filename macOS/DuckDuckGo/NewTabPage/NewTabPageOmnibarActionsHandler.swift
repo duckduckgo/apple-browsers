@@ -22,6 +22,7 @@ import Suggestions
 import Common
 import AIChat
 import os.log
+import PixelKit
 
 final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
@@ -30,17 +31,20 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let tabsPreferences: TabsPreferences
     private let isShiftPressed: () -> Bool
     private let isCommandPressed: () -> Bool
+    private let firePixel: (PixelKitEvent) -> Void
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol,
          tabsPreferences: TabsPreferences,
          isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
-         isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false }) {
+         isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false },
+         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
         self.tabsPreferences = tabsPreferences
         self.isShiftPressed = isShiftPressed
         self.isCommandPressed = isCommandPressed
+        self.firePixel = firePixel
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
@@ -49,6 +53,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             submitChat(term, target: isCommandPressed() ? .newTab : .sameTab)
             return
         }
+
+        firePixel(NewTabPagePixel.searchSubmitted)
 
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
             Logger.newTabPageOmnibar.error("Failed to get mainWindowController in submitSearch")
@@ -75,6 +81,10 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         let appSuggestion = suggestion.toAppSuggestion()
+
+        if let autocompletePixel = appSuggestion.autocompletePixel(from: .ntpSearchBox) {
+            firePixel(autocompletePixel)
+        }
 
         if case .internalPage(title: _, url: let url, _) = appSuggestion,
            url == .bookmarks || url.isSettingsURL {
@@ -107,6 +117,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     }
 
     func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        firePixel(NewTabPagePixel.promptSubmitted)
+
         let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true)
 
         promptHandler.setData(nativePrompt)

@@ -32,6 +32,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case launch
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
 
+    case navigation
     case serp
     case serpInitial
 
@@ -258,12 +259,13 @@ enum GeneralPixel: PixelKitEventV2 {
     case passwordImportKeychainPromptDenied
 
     // Autocomplete
-    case autocompleteClickPhrase
-    case autocompleteClickWebsite
-    case autocompleteClickBookmark
-    case autocompleteClickFavorite
-    case autocompleteClickHistory
-    case autocompleteClickOpenTab
+    // See macOS/PixelDefinitions/pixels/suggestion_pixels.json5
+    case autocompleteClickPhrase(from: AutocompleteSource)
+    case autocompleteClickWebsite(from: AutocompleteSource)
+    case autocompleteClickBookmark(from: AutocompleteSource)
+    case autocompleteClickFavorite(from: AutocompleteSource)
+    case autocompleteClickHistory(from: AutocompleteSource)
+    case autocompleteClickOpenTab(from: AutocompleteSource)
     case autocompleteToggledOff
     case autocompleteToggledOn
 
@@ -542,6 +544,9 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
+
+        case .navigation:
+            return "m_mac_navigation"
 
         case .serp:
             return "m_mac_navigation_search"
@@ -1370,6 +1375,15 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .fileDownloadCreatePresentersFailed(let osVersion):
             return ["osVersion": osVersion]
+
+        case .autocompleteClickPhrase(from: let source),
+                .autocompleteClickHistory(from: let source),
+                .autocompleteClickWebsite(from: let source),
+                .autocompleteClickBookmark(from: let source),
+                .autocompleteClickFavorite(from: let source),
+                .autocompleteClickOpenTab(from: let source):
+            return ["source": source.rawValue]
+
         default: return nil
         }
     }
@@ -1519,4 +1533,10 @@ enum GeneralPixel: PixelKitEventV2 {
             }
         }
     }
+
+    enum AutocompleteSource: String {
+        case ntpSearchBox = "ntp_search_box"
+        case addressBar = "address_bar"
+    }
+
 }

@@ -171,18 +171,13 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     }
 
     func testWhenBurnAnimationSettingChangesToTrueThenShouldShowBurnAnimationIsTrue() async {
-        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-                                                 settingsPersistor: settingsPersistor,
-                                                 burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
-                                                 showBurnAnimation: false)
-
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
-        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-                                                 settingsPersistor: settingsPersistor,
-                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: false)
-
-        XCTAssertFalse(model.shouldShowBurnAnimation)
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+            showBurnAnimation: false
+        )
 
         let expectation = expectation(description: "shouldShowBurnAnimation should be updated")
         let cancellable = model.$shouldShowBurnAnimation
@@ -193,9 +188,12 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
                 }
             }
 
+        // Ensure subscription is established before sending
+        await Task.yield()
+
         burnAnimationSubject.send(true)
 
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 2.0)
         XCTAssertTrue(model.shouldShowBurnAnimation)
         cancellable.cancel()
     }

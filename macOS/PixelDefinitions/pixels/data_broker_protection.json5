@@ -9,7 +9,9 @@
             'pixelSource',
             {
                 key: 'isInternalUser',
-                expires: '2025-08-25',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
             },
         ],
     },

@@ -132,7 +132,7 @@ final class TabSwitcherStaticView: UIView {
         static let labelYOffset: CGFloat = 0
         static let symbolYOffset: CGFloat = 1
 
-        static let fontSize = 11.0
+        static let fontSize = 12.0
         static let fontWeight = UIFont.Weight.bold
 
         static let symbolFontSize = 14.0

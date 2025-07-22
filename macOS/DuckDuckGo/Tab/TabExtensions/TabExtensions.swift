@@ -249,6 +249,10 @@ extension TabExtensionsBuilder {
             )
         }
 
+        add {
+            SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
+        }
+
 #if SPARKLE
         add {
             ReleaseNotesTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)

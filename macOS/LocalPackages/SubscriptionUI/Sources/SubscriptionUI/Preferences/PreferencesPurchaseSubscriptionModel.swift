@@ -91,6 +91,10 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         featureFlagger.isFeatureOn(.paidAIChat)
     }
 
+    var isSubscriptionRebrandingEnabled: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRebranding)
+    }
+
     /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.
     ///
     /// This method checks if the Privacy Pro free trial feature flag is enabled. If the flag is active,

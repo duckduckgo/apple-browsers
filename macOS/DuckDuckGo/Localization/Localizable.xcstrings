@@ -2020,9 +2020,57 @@
       "comment" : "Label for the AI Chat displayed in the address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Duck.ai"
           }
         }
@@ -7641,6 +7689,7 @@
       }
     },
     "BETA" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -18165,7 +18214,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserdaten löschen…"
+            "value" : "Browserdaten löschen …"
           }
         },
         "en" : {
@@ -18397,8 +18446,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Deaktiviere das automatische Löschen beim Beenden, um die Sitzungswiederherstellung einzuschalten."
+            "state" : "translated",
+            "value" : "Deine Sitzung wird nicht wiederhergestellt, wenn die Daten beim Beenden gelöscht werden."
           }
         },
         "en" : {
@@ -18409,44 +18458,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Desactiva el borrado automático al salir para activar Restaurar sesión."
+            "state" : "translated",
+            "value" : "Tu sesión no se restaurará si se eliminan los datos al salir."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Désactivez l'effacement automatique à la fermeture pour activer la restauration de session."
+            "state" : "translated",
+            "value" : "Votre session ne sera pas rétablie si les données sont supprimées à la fermeture."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Disabilita la cancellazione automatica all'uscita per attivare il ripristino della sessione."
+            "state" : "translated",
+            "value" : "La sessione non sarà ripristinata se i dati vengono eliminati all'uscita."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Schakel automatisch wissen uit wanneer u stopt om het herstellen van de sessie in te schakelen."
+            "state" : "translated",
+            "value" : "Je sessie wordt niet hersteld als de gegevens bij het afsluiten worden verwijderd."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wyłącz automatyczne czyszczenie przy wychodzeniu, aby włączyć przywracanie sesji."
+            "state" : "translated",
+            "value" : "Sesja nie zostanie przywrócona, jeśli dane zostaną usunięte przy wychodzeniu."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Desativa a limpeza automática ao sair para ativar a restauração da sessão."
+            "state" : "translated",
+            "value" : "A tua sessão não será restaurada se os dados forem eliminados ao sair."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Чтобы активировать восстановление сеанса, отключите автоочистку данных при выходе."
+            "state" : "translated",
+            "value" : "Если данные удаляются при выходе, восстановление сеанса невозможно."
           }
         }
       }
@@ -25298,7 +25347,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beim Löschen von Daten eine Inferno-Animation anzeigen"
+            "value" : "Beim Löschen von Daten Inferno-Animation anzeigen"
           }
         },
         "en" : {
@@ -25310,43 +25359,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar la animación Inferno al eliminar datos"
+            "value" : "Mostrar animación de infierno al borrar datos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher une animation inferno lors de la suppression de données"
+            "value" : "Afficher une animation de flammes lors de la suppression de données"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostra un’animazione inferno durante l’eliminazione dei dati"
+            "value" : "Mostra l'animazione del fuoco quando elimini i dati"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toon een inferno-animatie bij het verwijderen van gegevens"
+            "value" : "Vuurzee-animatie tonen bij het verwijderen van gegevens"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokaż animację inferno podczas usuwania danych"
+            "value" : "Pokaż animację ognia podczas usuwania danych"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar animação inferno ao excluir dados"
+            "value" : "Mostrar animação de inferno quando eliminar dados"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показывать анимацию инферно при удалении данных"
+            "value" : "Показывать анимацию «Пламя» при удалении данных"
           }
         }
       }
@@ -27275,14 +27324,61 @@
       "comment" : "Description for the feedback form when the issue is related to Duck.ai",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
@@ -46193,53 +46289,241 @@
       "comment" : "Description for the feedback form when there is an issue with accessing the paid tier models",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zugriff auf nur für Abonnenten zugängliche Duck.ai-Modelle nicht möglich"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Unable to access the subscription Duck.ai models"
+            "value" : "Unable to access the subscriber-only Duck.ai models"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede acceder a los modelos exclusivos para suscriptores de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'accéder aux modèles Duck.ai réservés aux abonnés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile accedere ai modelli Duck.ai riservati agli abbonati."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen toegang tot de alleen voor abonnees beschikbare Duck.ai-modellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można uzyskać dostępu do modeli Duck.ai dostępnych wyłącznie dla subskrybentów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível aceder aos modelos Duck.ai só para subscritores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет доступа к моделям Duck.ai, предоставляемым только по подписке"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "paid-duck-ai.feedback-form.category.login-third-party-browser" : {
       "comment" : "Description for the feedback form when there is an issue with logging into Duck.ai",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich kann mit meinem Abonnement in anderen Browsern nicht auf Duck.ai zugreifen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Can’t log in to Duck.ai with my subscription"
+            "value" : "Can't access Duck.ai with my subscription in other browsers"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedo acceder a Duck.ai con mi suscripción en otros navegadores."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je n'arrive pas à accéder à Duck.ai dans d'autres navigateurs avec mon abonnement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non riesco ad accedere a Duck.ai con il mio abbonamento in altri browser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik kan Duck.ai niet openen met mijn abonnement in andere browsers."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można uzyskać dostępu do Duck.ai przy użyciu mojej subskrypcji w innych przeglądarkach"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consigo aceder ao Duck.ai com a minha subscrição noutros navegadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не могу воспользоваться Duck.ai по подписке в других браузерах"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "paid-duck-ai.feedback-form.category.select-category" : {
       "comment" : "Title for the category selection state of the paid duck.ai feedback form",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EINE KATEGORIE AUSWÄHLEN"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Select a category"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SELECCIONA UNA CATEGORÍA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SÉLECTIONNER UNE CATÉGORIE"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SELEZIONA UNA CATEGORIA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SELECTEER EEN CATEGORIE"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WYBIERZ KATEGORIĘ"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SELECIONA UMA CATEGORIA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ВЫБЕРИТЕ КАТЕГОРИЮ"
+          }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "paid-duck-ai.feedback-form.category.something-else" : {
       "comment" : "Description for the feedback form when the user has an issue not categorized in other options",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anderes Feedback zu Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Other Duck.ai feedback"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros comentarios de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres commentaires sur Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altri commenti su Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere feedback over Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inne opinie o Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outros comentários sobre o Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие отзывы о Duck.ai"
+          }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "passsword.management.all-items" : {
       "comment" : "Used as title for the Autofill All Items option",
@@ -50072,7 +50356,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fijar pestaña"
+            "value" : "Anclar pestaña"
           }
         },
         "fr" : {
@@ -61569,14 +61853,61 @@
       "comment" : "Title of the option to show the Duck.ai Pro preferences",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "preferences.personalInformationRemoval" : {
       "comment" : "Title of the option to show the Personal Information Removal preferences",
@@ -62354,6 +62685,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Всегда включено"
+          }
+        }
+      }
+    },
+    "preferences.subscription.header" : {
+      "comment" : "The section header in Preferences representing subscription features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo Abonnement"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo Subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscripción a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbonamento DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo-abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrypcja DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscrição DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка DuckDuckGo"
           }
         }
       }
@@ -66274,6 +66665,66 @@
         }
       }
     },
+    "send.subscription.feedback" : {
+      "comment" : "Menu with feedback commands",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement-Feedback senden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send Subscription Feedback"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar comentarios sobre la suscripción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer des commentaires sur l'abonnement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia feedback sull'abbonamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feedback over abonnement verzenden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij opinię o subskrypcji"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar comentários sobre a subscrição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить отзыв о подписке"
+          }
+        }
+      }
+    },
     "settings" : {
       "comment" : "Menu item for opening settings",
       "extractionState" : "extracted_with_value",
@@ -68124,7 +68575,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lass es uns wissen"
+            "value" : "Lass Es Uns Wissen"
           }
         },
         "en" : {
@@ -68136,37 +68587,37 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Háznoslo saber"
+            "value" : "Háznoslo Saber"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Faites-le nous savoir"
+            "value" : "Faites-Le Nous Savoir"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Faccelo sapere"
+            "value" : "Faccelo Sapere"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Laat het ons weten"
+            "value" : "Laat Het Ons Weten"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Daj nam znać"
+            "value" : "Daj Nam Znać"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Contacte-nos"
+            "value" : "Contacte-Nos"
           }
         },
         "ru" : {
@@ -69381,6 +69832,66 @@
         }
       }
     },
+    "subscription.options.menu.item" : {
+      "comment" : "Title for Subscription item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo Abonnement"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo Subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscripción a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbonamento DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo-abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrypcja DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscrição DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка DuckDuckGo"
+          }
+        }
+      }
+    },
     "subscription.progress.view.completing.purchase" : {
       "comment" : "Progress view title when completing the purchase",
       "extractionState" : "extracted_with_value",
@@ -69617,6 +70128,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки подписки"
+          }
+        }
+      }
+    },
+    "subscription.side.pane.subscription.inactive" : {
+      "comment" : "Settings Side Pane item for the DuckDuckGo Subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo abonnieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribe to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscríbete a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'abonner à DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iscriviti a DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonneren op DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrybuj DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscrever o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписаться на DuckDuckGo"
           }
         }
       }

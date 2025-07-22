@@ -138,6 +138,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
 
+    case subscriptionRebranding
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
     case newFeedbackForm
 
@@ -196,6 +198,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
+                .subscriptionRebranding,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
@@ -286,7 +289,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProFreeTrial:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .paidAIChat:
-			return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
@@ -311,6 +314,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .disabled
+        case .subscriptionRebranding:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
             return .disabled
         case .vpnToolbarUpsell:

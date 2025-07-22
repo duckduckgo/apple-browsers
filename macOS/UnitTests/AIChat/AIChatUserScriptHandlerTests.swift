@@ -207,9 +207,10 @@ struct AIChatUserScriptHandlerTests {
 
     @Test("openSummarizationSourceLink doesn't call windowControllersManager when invalid URL is passed")
     @MainActor
-    func testThatOpenSummarizationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async {
+    func testThatOpenSummarizationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async throws {
         let urlString = "invalid"
-        let params = [AIChatUserScriptHandler.AIChatKeys.url: urlString]
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
         _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage())
 

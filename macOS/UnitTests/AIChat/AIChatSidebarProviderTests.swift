@@ -41,7 +41,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
         // Then
         XCTAssertTrue(provider.sidebarsByTab.isEmpty)
-        XCTAssertEqual(provider.sidebarWidth, 400)
+        XCTAssertEqual(provider.sidebarWidth, AIChatSidebarProvider.Constants.sidebarWidth)
     }
 
     func testInit_withProvidedSidebarsByTab_setsDictionary() {
@@ -63,14 +63,6 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
         // Then
         XCTAssertTrue(provider.sidebarsByTab.isEmpty)
-    }
-
-    // MARK: - Sidebar Width Tests
-
-    func testSidebarWidth_returnsConstantValue() {
-        // Given & When & Then
-        XCTAssertEqual(provider.sidebarWidth, AIChatSidebarProvider.Constants.sidebarWidth)
-        XCTAssertEqual(provider.sidebarWidth, 400)
     }
 
     // MARK: - Get Sidebar Tests
@@ -104,10 +96,9 @@ final class AIChatSidebarProviderTests: XCTestCase {
     func testMakeSidebar_createsAndStoresSidebar() {
         // Given
         let tabID = "new-tab-id"
-        let burnerMode = BurnerMode.regular
 
         // When
-        let sidebar = provider.makeSidebar(for: tabID, burnerMode: burnerMode)
+        let sidebar = provider.makeSidebar(for: tabID, burnerMode: .regular)
 
         // Then
         XCTAssertNotNil(sidebar)
@@ -147,7 +138,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
     func testIsShowingSidebar_withExistingSidebar_returnsTrue() {
         // Given
         let tabID = "test-tab"
-        provider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = provider.makeSidebar(for: tabID, burnerMode: .regular)
 
         // When
         let isShowing = provider.isShowingSidebar(for: tabID)
@@ -172,7 +163,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
     func testHandleSidebarDidClose_withExistingTab_removesSidebar() {
         // Given
         let tabID = "closing-tab"
-        provider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = provider.makeSidebar(for: tabID, burnerMode: .regular)
         XCTAssertEqual(provider.sidebarsByTab.count, 1)
 
         // When
@@ -187,7 +178,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // Given
         let existingTabID = "existing-tab"
         let nonExistentTabID = "non-existent-tab"
-        provider.makeSidebar(for: existingTabID, burnerMode: .regular)
+        _ = provider.makeSidebar(for: existingTabID, burnerMode: .regular)
         let initialCount = provider.sidebarsByTab.count
 
         // When
@@ -202,9 +193,9 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testCleanUp_removesUnneededSidebars() {
         // Given
-        provider.makeSidebar(for: "tab1", burnerMode: .regular)
-        provider.makeSidebar(for: "tab2", burnerMode: .regular)
-        provider.makeSidebar(for: "tab3", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab1", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab2", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab3", burnerMode: .regular)
         XCTAssertEqual(provider.sidebarsByTab.count, 3)
 
         let currentTabIDs = ["tab1", "tab3"] // tab2 should be removed
@@ -221,8 +212,8 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testCleanUp_withEmptyCurrentTabIDs_removesAllSidebars() {
         // Given
-        provider.makeSidebar(for: "tab1", burnerMode: .regular)
-        provider.makeSidebar(for: "tab2", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab1", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab2", burnerMode: .regular)
         XCTAssertEqual(provider.sidebarsByTab.count, 2)
 
         // When
@@ -235,8 +226,8 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testCleanUp_withAllCurrentTabs_removesNoSidebars() {
         // Given
-        provider.makeSidebar(for: "tab1", burnerMode: .regular)
-        provider.makeSidebar(for: "tab2", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab1", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab2", burnerMode: .regular)
         let allTabIDs = ["tab1", "tab2"]
         XCTAssertEqual(provider.sidebarsByTab.count, 2)
 
@@ -251,7 +242,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testCleanUp_withExtraCurrentTabIDs_doesNotAddSidebars() {
         // Given
-        provider.makeSidebar(for: "tab1", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "tab1", burnerMode: .regular)
         let currentTabIDs = ["tab1", "tab2", "tab3"] // tab2 and tab3 don't exist
 
         // When
@@ -268,7 +259,7 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testRestoreState_clearsExistingState() {
         // Given
-        provider.makeSidebar(for: "existing-tab", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "existing-tab", burnerMode: .regular)
         XCTAssertEqual(provider.sidebarsByTab.count, 1)
 
         let newState: AIChatSidebarsByTab = [:]
@@ -295,8 +286,8 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     func testRestoreState_replacesCompleteState() {
         // Given
-        provider.makeSidebar(for: "old-tab1", burnerMode: .regular)
-        provider.makeSidebar(for: "old-tab2", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "old-tab1", burnerMode: .regular)
+        _ = provider.makeSidebar(for: "old-tab2", burnerMode: .regular)
         XCTAssertEqual(provider.sidebarsByTab.count, 2)
 
         let newSidebar1 = AIChatSidebar(burnerMode: .regular)
@@ -325,9 +316,9 @@ final class AIChatSidebarProviderTests: XCTestCase {
         let tab2 = "tab2"
         let tab3 = "tab3"
 
-        provider.makeSidebar(for: tab1, burnerMode: .regular)
-        provider.makeSidebar(for: tab2, burnerMode: .burner(websiteDataStore: .nonPersistent()))
-        provider.makeSidebar(for: tab3, burnerMode: .regular)
+        _ = provider.makeSidebar(for: tab1, burnerMode: .regular)
+        _ = provider.makeSidebar(for: tab2, burnerMode: .burner(websiteDataStore: .nonPersistent()))
+        _ = provider.makeSidebar(for: tab3, burnerMode: .regular)
 
         // When - Check initial state
         XCTAssertEqual(provider.sidebarsByTab.count, 3)

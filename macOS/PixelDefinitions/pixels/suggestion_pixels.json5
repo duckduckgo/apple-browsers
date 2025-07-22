@@ -1,0 +1,99 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    autocompleteClickPhrase: {
+        description: 'Fires when the user selects a phrase suggestion from the autocomplete results.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            {
+                key: 'source',
+                type: 'string',
+                description: 'Origin of the autocomplete interaction',
+                enum: ['ntp_search_box', 'address_bar'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    autocompleteClickWebsite: {
+        description: 'Fires when the user selects a website suggestion from the autocomplete results.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            {
+                key: 'source',
+                type: 'string',
+                description: 'Origin of the autocomplete interaction',
+                enum: ['ntp_search_box', 'address_bar'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    autocompleteClickHistory: {
+        description: 'Fires when the user selects a history entry from the autocomplete results.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            {
+                key: 'source',
+                type: 'string',
+                description: 'Origin of the autocomplete interaction',
+                enum: ['ntp_search_box', 'address_bar'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    autocompleteClickBookmark: {
+        description: 'Fires when the user selects a bookmark from the autocomplete results.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            {
+                key: 'source',
+                type: 'string',
+                description: 'Origin of the autocomplete interaction',
+                enum: ['ntp_search_box', 'address_bar'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    autocompleteClickFavorite: {
+        description: 'Fires when the user selects a favorite from the autocomplete results.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            {
+                key: 'source',
+                type: 'string',
+                description: 'Origin of the autocomplete interaction',
+                enum: ['ntp_search_box', 'address_bar'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    autocompleteClickOpenTab: {
+        description: 'Fires when the user selects an open tab from the autocomplete results.',
+        owners: ['tomasstrba'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            {
+                key: 'source',
+                type: 'string',
+                description: 'Origin of the autocomplete interaction',
+                enum: ['ntp_search_box', 'address_bar'],
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+}

@@ -40,6 +40,8 @@ enum GeneralPixel: PixelKitEventV2 {
 
     case dataImportFailed(source: String, sourceVersion: String?, error: any DataImportError)
     case dataImportSucceeded(action: DataImportAction, source: String, sourceVersion: String?)
+    case favoritesImportFailed(source: String, sourceVersion: String?, error: Error)
+    case favoritesImportSucceeded(source: String, sourceVersion: String?, favoritesBucket: FavoritesImportBucket)
 
     case formAutofilled(kind: FormAutofillKind)
     case autofillItemSaved(kind: FormAutofillKind)
@@ -561,6 +563,11 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .dataImportSucceeded(action: let action, source: let source, sourceVersion: _):
             return "m_mac_data-import-succeeded_\(action)_\(source)"
+
+        case .favoritesImportFailed(source: let source, sourceVersion: _, error: _):
+            return "m_mac_data-import-failed_favorites_\(source)"
+        case .favoritesImportSucceeded(source: let source, sourceVersion: _, favoritesBucket: _):
+            return "m_mac_data-import-succeeded_favorites_\(source)"
 
         case .formAutofilled(kind: let kind):
             return "m_mac_autofill_\(kind)"
@@ -1274,6 +1281,22 @@ enum GeneralPixel: PixelKitEventV2 {
             }
             return params
 
+        case .favoritesImportFailed(source: _, sourceVersion: let version, error: let error):
+            var params = error.pixelParameters
+
+            if let version {
+                params[PixelKit.Parameters.sourceBrowserVersion] = version
+            }
+            return params
+
+        case .favoritesImportSucceeded(source: _, sourceVersion: let version, favoritesBucket: let bucket):
+            var params = [PixelKit.Parameters.importedFavorites: bucket.description]
+
+            if let version {
+                params[PixelKit.Parameters.sourceBrowserVersion] = version
+            }
+            return params
+
         case .dailyOsVersionCounter:
             return [PixelKit.Parameters.osMajorVersion: "\(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"]
 
@@ -1530,6 +1553,29 @@ enum GeneralPixel: PixelKitEventV2 {
                 self = .lessThan10
             default:
                 self = .more
+            }
+        }
+    }
+
+    public enum FavoritesImportBucket: String, CustomStringConvertible {
+
+        public var description: String { rawValue }
+
+        case none
+        case few
+        case some
+        case many
+
+        public init(count: Int) {
+            switch count {
+            case 0:
+                self = .none
+            case ..<6:
+                self = .few
+            case ..<12:
+                self = .some
+            default:
+                self = .many
             }
         }
     }

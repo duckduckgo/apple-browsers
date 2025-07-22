@@ -111,14 +111,75 @@ final class SubscriptionUserScriptTests: XCTestCase {
     }
 
     func testThatOpenSubscriptionPurchaseMessageIsPassedToHandler() async throws {
-        try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.openSubscriptionPurchase)
-        XCTAssertEqual(handler.handshakeCallCount, 0)
-        XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
-        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
-        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
-        XCTAssertEqual(handler.backToSettingsCallCount, 0)
-        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
-        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 1)
+        let origin = "some_origin"
+        let params = ["origin": origin]
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: SubscriptionUserScript.MessageName.openSubscriptionPurchase.rawValue))
+        _ = try await handler(params, WKScriptMessage())
+
+        let mockHandler = try XCTUnwrap(self.handler)
+        XCTAssertEqual(mockHandler.handshakeCallCount, 0)
+        XCTAssertEqual(mockHandler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(mockHandler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(mockHandler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(mockHandler.backToSettingsCallCount, 0)
+        XCTAssertEqual(mockHandler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(mockHandler.openSubscriptionPurchaseCallCount, 1)
+
+        // Verify parameters were passed through
+        let passedParams = try XCTUnwrap(mockHandler.lastOpenSubscriptionPurchaseParams as? [String: String])
+        XCTAssertEqual(passedParams["origin"], origin)
+    }
+
+    func testThatHandshakeIncludesAuthUpdateInAvailableMessages() async throws {
+        let response = try await handler.handshake(params: [], message: WKScriptMessage())
+        XCTAssertTrue(response.availableMessages.contains(.authUpdate), "authUpdate should be included in available messages")
+    }
+
+    func testThatAuthUpdateMessageNameExists() {
+        // Test that the new message name enum case exists and has correct raw value
+        XCTAssertEqual(SubscriptionUserScript.MessageName.authUpdate.rawValue, "authUpdate")
+    }
+
+    // MARK: - Integration Tests - SubscriptionUserScript to Handler Wiring
+
+    func testThatWebViewIsPassedToHandlerWhenSet() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let webView = WKWebView()
+
+        userScript.webView = webView
+
+        XCTAssertIdentical(mockHandler.lastSetWebView, webView)
+    }
+
+    func testThatBrokerIsPassedToHandlerWhenWithBrokerCalled() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let broker = UserScriptMessageBroker(context: "test")
+
+        userScript.with(broker: broker)
+
+        XCTAssertIdentical(mockHandler.lastSetBroker as? UserScriptMessageBroker, broker)
+    }
+
+    func testThatUserScriptIsPassedToHandlerWhenWithBrokerCalled() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let broker = UserScriptMessageBroker(context: "test")
+
+        userScript.with(broker: broker)
+
+        XCTAssertIdentical(mockHandler.lastSetUserScript, userScript)
+    }
+
+    func testThatBrokerIsStoredOnUserScriptWhenWithBrokerCalled() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let broker = UserScriptMessageBroker(context: "test")
+
+        userScript.with(broker: broker)
+
+        XCTAssertIdentical(userScript.broker, broker)
     }
 
     // MARK: - Helpers

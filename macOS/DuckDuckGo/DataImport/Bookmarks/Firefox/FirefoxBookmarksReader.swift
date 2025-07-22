@@ -73,7 +73,7 @@ final class FirefoxBookmarksReader {
     init(firefoxDataDirectoryURL: URL,
          otherBookmarksFolderTitle: String = UserText.otherBookmarksImportedFolderTitle,
          mobileBookmarksFolderTitle: String = UserText.mobileBookmarksImportedFolderTitle,
-         bookmarksMenuFolderTitle: String = "Bookmarks menu", // Replace with localized string after copy review: https://app.asana.com/1/137249556945/project/1201048563534612/task/1210728265847799?focus=true
+         bookmarksMenuFolderTitle: String = UserText.bookmarksMenuImportedFolderTitle,
          featureFlagger: FeatureFlagger) {
         self.firefoxPlacesDatabaseURL = firefoxDataDirectoryURL.appendingPathComponent(Constants.placesDatabaseName)
         self.otherBookmarksFolderTitle = otherBookmarksFolderTitle

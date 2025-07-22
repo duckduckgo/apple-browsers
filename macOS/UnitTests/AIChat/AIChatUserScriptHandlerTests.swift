@@ -17,8 +17,10 @@
 //
 
 import Combine
+import Common
 import PixelKitTestingUtilities
 import Testing
+import UserScript
 import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -167,11 +169,31 @@ struct AIChatUserScriptHandlerTests {
         #expect(messageHandler.setDataCalls.first?.data == nil)
     }
 
-    @Test("openSummarizationSourceLink calls windowControllersManager when valid URL is passed")
+    @Test("openSummarizationSourceLink calls windowControllersManager show when valid URL is passed with same tab target")
     @MainActor
-    func testThatOpenSummarizationSourceLinkCallsWindowControllersManager() async throws {
+    func testThatOpenSummarizationSourceLinkCallsWindowControllersManagerShow() async throws {
         let urlString = "https://example.com"
-        let params = [AIChatUserScriptHandler.AIChatKeys.url: urlString]
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
+        pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
+
+        _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage())
+
+        let showCall = try #require(windowControllersManager.showCalled)
+        #expect(showCall.url?.absoluteString == urlString)
+        #expect(showCall.source == .switchToOpenTab)
+        #expect(showCall.newTab == true)
+        #expect(showCall.selected == true)
+        #expect(pixelFiring.expectedFireCalls == pixelFiring.actualFireCalls)
+    }
+
+    static let targets: [AIChatUserScriptHandler.OpenLink.OpenTarget] = [.newTab, .newWindow]
+    @Test("openSummarizationSourceLink calls windowControllersManager open when valid URL is passed with non-same-tab target", arguments: targets)
+    @MainActor
+    func testThatOpenSummarizationSourceLinkCallsWindowControllersManagerOpen(_ target: AIChatUserScriptHandler.OpenLink.OpenTarget) async throws {
+        let urlString = "https://example.com"
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target)
+        let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
         _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage())
@@ -185,9 +207,10 @@ struct AIChatUserScriptHandlerTests {
 
     @Test("openSummarizationSourceLink doesn't call windowControllersManager when invalid URL is passed")
     @MainActor
-    func testThatOpenSummarizationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async {
+    func testThatOpenSummarizationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async throws {
         let urlString = "invalid"
-        let params = [AIChatUserScriptHandler.AIChatKeys.url: urlString]
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
         _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage())
 

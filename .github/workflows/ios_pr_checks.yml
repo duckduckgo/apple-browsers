@@ -73,6 +73,8 @@ jobs:
       with:
         format: gcc
         scandir: iOS/scripts
+      env:
+        SHELLCHECK_OPTS: -x -P iOS/scripts
 
   unit-tests:
 

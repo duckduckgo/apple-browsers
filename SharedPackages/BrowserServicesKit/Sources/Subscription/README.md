@@ -21,6 +21,10 @@ The `Subscription` module in `BrowserServicesKit` provides the core subscription
 
 Privacy Pro Subscription is a subscription service that provides enhanced privacy features for DuckDuckGo users. This module manages the entire subscription lifecycle, from initial purchase through authentication and entitlement verification.
 
+The `SubscriptionManagerV2` protocol and the `DefaultSubscriptionManagerV2` implementation serve as the framework's entry point, handling all business logic.
+
+Most of the functionalities are documented in the code. Please check `protocol SubscriptionManagerV2`
+
 > **Note**: This documentation covers Subscription V2 (using Auth V2). V1 is deprecated and will be removed. [Track removal progress](https://app.asana.com/1/137249556945/project/1209882303470922/task/1210741763117598).
 
 ## Core Responsibilities
@@ -31,6 +35,10 @@ Privacy Pro Subscription is a subscription service that provides enhanced privac
 - **API Communication**: Handle all subscription-related API interactions
 
 ## Authentication
+
+### User login state
+
+The user login state can be checked via the `var isUserAuthenticated: Bool` from the `SubscriptionAuthenticationStateProvider` protocol.
 
 ### Token Management
 

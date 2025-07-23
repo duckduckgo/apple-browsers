@@ -42,6 +42,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         defaultBrowserSubject = CurrentValueSubject<Bool, Never>(false)
         contextualOnboardingSubject = CurrentValueSubject<Bool, Never>(false)
         cancellables = Set<AnyCancellable>()
+        mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
     }
 
     override func tearDown() {
@@ -193,6 +194,17 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         defaultBrowserSubject.send(true)
 
         wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testWhenFeatureFlagIsDisabled_ItDoesNotShowUpsell() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When
+        sut = createSUT(isFirstLaunch: false, isNewUser: true, isUserAuthenticated: false)
+
+        // Then
+        XCTAssertFalse(sut.shouldShowUpsell)
     }
 }
 

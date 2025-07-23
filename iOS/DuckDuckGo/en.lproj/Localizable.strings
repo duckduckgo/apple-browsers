@@ -1630,6 +1630,9 @@
 /* Title of the feedback form */
 "feedback.form.title" = "Help Improve Privacy Pro";
 
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
+
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
 
@@ -2374,6 +2377,18 @@ https://duckduckgo.com/mac";
 /* ’Link’ is link on a website */
 "open.externally.failed" = "The app required to open that link can’t be found";
 
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Unable to access the subscriber-only Duck.ai models";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Can't access Duck.ai with my subscription in other browsers";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "Select a category";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Other Duck.ai feedback";
+
 /* Activate button */
 "pm.activate" = "Reactivate";
 
@@ -2770,12 +2785,6 @@ Take back control of your personal information with the browser designed for dat
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privacy Policy and Terms of Service";
 
-/* Privacy Pro description subtitle in settings */
-"settings.PPro.row.description" = "Includes our VPN and Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.PPro.us.description" = "Includes our VPN, Personal Information Removal, and Identity Theft Restoration.";
-
 /* Settings screen cell for long press previews */
 "settings.previews" = "Long-Press Previews";
 
@@ -2809,11 +2818,26 @@ Take back control of your personal information with the browser designed for dat
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "This is taking longer than usual, please check back later.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Remove your info from sites that sell it";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Subscribers get our VPN and Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Subscribers get our VPN, advanced AI models in Duck.ai, Personal Information Removal, and Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "I Have a Subscription";
@@ -2823,6 +2847,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Your Privacy Pro subscription expired";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "DuckDuckGo Subscription";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "If your identity is stolen, we'll help restore it";
@@ -2836,11 +2866,23 @@ Take back control of your personal information with the browser designed for dat
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Subscription Settings";
 
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "DuckDuckGo Subscription";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Subscribe to DuckDuckGo";
+
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Protect your connection and identity with Privacy Pro";
+"settings.subscription.subscribe.title" = "Secure your Wi-Fi, and chat privately with advanced AI models";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Secure your Wi-Fi, and protect identity";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Try DuckDuckGo Subscription Free";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Try Privacy Pro Free";
+"settings.subscription.try.free.no.ai.chat" = "Try Privacy Pro Free";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2986,6 +3028,15 @@ Take back control of your personal information with the browser designed for dat
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Are you sure?";
 
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Chat privately with subscriber-exclusive AI models.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Open Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "The subscription associated with this email is no longer active.";
 
@@ -3099,6 +3150,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "You’re all set.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "DuckDuckGo Subscription";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Subscribed";

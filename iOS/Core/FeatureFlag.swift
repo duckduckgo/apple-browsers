@@ -140,6 +140,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
 
+    case subscriptionRebranding
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210259429792293?focus=true
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
@@ -192,6 +194,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition,
+             .subscriptionRebranding,
              .june2025TabManagerLayoutChanges,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser:
@@ -326,7 +329,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
         case .paidAIChat:
-            return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .canInterceptSyncSetupUrls:
             return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -337,6 +340,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         case .scheduledSetDefaultBrowserPrompts:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
+        case .subscriptionRebranding:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         }
     }
 }

@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Отворете DuckDuckGo на другото си устройство и сканирайте този код, за да синхронизирате.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Или сканирайте с DuckDuckGo на другото си устройство";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Споделяне на текстов код";
 

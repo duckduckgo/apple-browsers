@@ -1069,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "PRILAGOĐENI SADRŽAJ ĆELIJA";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Prilagođeni URL: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Uvezi datoteku knjižnih oznaka...";
 
@@ -1129,9 +1135,6 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kako izvesti lozinke iz Safarija:";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.select-file-button" = "Odaberi datoteku...";
-
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Odaberi datoteku koja sadrži lozinke izvezene iz Safarija ili Chromea. To je obično ZIP ili CSV datoteka.";
 
@@ -1158,9 +1161,6 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Uvoz dovršen!";
-
-/* Data import summary of how many credit cards were successfully imported. */
-"data.import.summary.creditcards.success" = "Kreditne kartice";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Preskočeni duplikati";
@@ -1665,6 +1665,9 @@
 
 /* Title of the feedback form */
 "feedback.form.title" = "Pomogni poboljšati Privacy Pro";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
 
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
@@ -2374,18 +2377,6 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Shvaćam! Preskočit ću ostale savjete.";
 
-/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
-"onboarding.subscription.promo.buttons.tryItForFree" = "Isprobaj besplatno!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo također ima siguran %1$@, dostupan s %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "neobaveznom plaćenom pretplatom";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + još 2 vrhunske zaštite";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Dodaj widget";
 
@@ -2418,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Nije moguće pronaći aplikaciju koja je potrebna za otvaranje te poveznice";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Nije moguće pristupiti modelima Duck.ai koji su dostupni samo pretplatnicima";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "U drugim preglednicima ne mogu pristupiti usluzi Duck.ai s mojom pretplatom";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "ODABERI KATEGORIJU";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Ostale povratne informacije o Duck.ai";
 
 /* Activate button */
 "pm.activate" = "Reaktiviraj";
@@ -2635,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "ODABERI KATEGORIJU";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Postavi prilagođeni URL AI čavrljanja";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "O DuckDuckGou";
 
@@ -2830,12 +2836,6 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Pravila privatnosti i Uvjeti korištenja usluge";
 
-/* Privacy Pro description subtitle in settings */
-"settings.PPro.row.description" = "Uključuje naš VPN i Identity Theft Restoration (oporavak od krađe identiteta).";
-
-/* Privacy pro description subtitle in settings */
-"settings.PPro.us.description" = "Uključuje naš VPN, Personal Information Removal i Identity Theft Restoration.";
-
 /* Settings screen cell for long press previews */
 "settings.previews" = "Pretpregledi na dugi pritisak";
 
@@ -2869,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Ovo traje dulje nego inače, pokušaj kasnije.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Ukloni svoje podatke s web-mjesta koje ih prodaju";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Pretplatnici dobivaju naš VPN i uslugu Identity Theft Restoration (oporavak od krađe identiteta).";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Pretplatnici dobivaju naš VPN te usluge Personal Information Removal (uklanjanje osobnih podataka) i Identity Theft Restoration (oporavak od krađe identiteta).";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Pretplatnici dobivaju naš VPN, napredne AI modele u Duck.ai te usluge Personal Information Removal (uklanjanje osobnih podataka) i Identity Theft Restoration (oporavak od krađe identiteta).";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Pretplatnici dobivaju naš VPN, napredne AI modele u usluzi Duck.ai, uslugu Personal Information Removal (uklanjanje osobnih podataka) te uslugu Identity Theft Restoration (oporavak od krađe identiteta).";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Imam pretplatu";
@@ -2883,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Tvoja pretplata na Privacy Pro je istekla";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "DuckDuckGo pretplata";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Ako ti je identitet ukraden, pomoći ćemo ti da ga vratiš";
@@ -2896,11 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Postavke pretplate";
 
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "DuckDuckGo pretplata";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Pretplati se na DuckDuckGo";
+
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Zaštiti svoju vezu i identitet uz Privacy Pro";
+"settings.subscription.subscribe.title" = "Osiguraj svoj Wi-Fi i privatno čavrljaj s naprednim AI modelima";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Osiguraj svoj Wi-Fi i zaštiti svoj identitet";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Besplatno isprobaj DuckDuckGo pretplatu";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Besplatno isprobaj Privacy Pro";
+"settings.subscription.try.free.no.ai.chat" = "Besplatno isprobaj Privacy Pro";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3052,6 +3085,15 @@
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Jesi li siguran?";
 
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Privatno čavrljaj s AI modelima ekskluzivnim za pretplatnike.\n[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Otvori Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Tvoja pretplata povezana s ovom e-poštom više nije aktivna.";
 
@@ -3165,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Sve je spremno.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "DuckDuckGo pretplata";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Pretplaćen";
@@ -3618,9 +3663,6 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Nastavi";
-
-/* Option to select to import credit cards */
-"zip.content.import.type.creditCards" = "Kreditne kartice";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Lozinke";

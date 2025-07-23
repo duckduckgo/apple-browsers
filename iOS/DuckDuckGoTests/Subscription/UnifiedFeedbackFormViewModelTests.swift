@@ -286,11 +286,13 @@ struct UnifiedFeedbackFormViewModelTests {
     }
 
     @Test func testDuckAiSubcategories_HaveCorrectFAQUrls() {
-        let privacyProUrl = "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/"
-        
-        #expect(PaidAIChatFeedbackSubcategory.accessSubscriptionModels.url.absoluteString == privacyProUrl)
-        #expect(PaidAIChatFeedbackSubcategory.loginThirdPartyBrowser.url.absoluteString == privacyProUrl)
-        #expect(PaidAIChatFeedbackSubcategory.somethingElse.url.absoluteString == privacyProUrl)
+        let accessSubscriptionModelsUrl = "https://duckduckgo.com/duckduckgo-help-pages/duckai/access-subscriber-AI-models/"
+        let loginThirdPartyBrowserUrl = "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating/"
+        let somethingElseUrl = "https://duckduckgo.com/duckduckgo-help-pages/duckai/"
+
+        #expect(PaidAIChatFeedbackSubcategory.accessSubscriptionModels.url.absoluteString == accessSubscriptionModelsUrl)
+        #expect(PaidAIChatFeedbackSubcategory.loginThirdPartyBrowser.url.absoluteString == loginThirdPartyBrowserUrl)
+        #expect(PaidAIChatFeedbackSubcategory.somethingElse.url.absoluteString == somethingElseUrl)
     }
 
     @Test func testSubcategorySelection_ResetsWhenCategoryChanges() {

@@ -2129,6 +2129,9 @@
 		7BA930AF2E0DA5BF00723574 /* NavigationEngagementPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */; };
 		7BA930B12E0DB0C600723574 /* BookmarksNavigationEngagementMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */; };
 		7BA930B22E0DB0C600723574 /* BookmarksNavigationEngagementMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */; };
+		7BAB80C62E2A420400F59FF4 /* UpdateCheckState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB80C52E2A420400F59FF4 /* UpdateCheckState.swift */; };
+		7BAB80C72E2A420400F59FF4 /* UpdateCheckActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB80C42E2A420400F59FF4 /* UpdateCheckActor.swift */; };
+		7BAB80CC2E2A461F00F59FF4 /* UpdateCheckStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB80CA2E2A461F00F59FF4 /* UpdateCheckStateTests.swift */; };
 		7BAC0C312DF84292008D26EC /* SupportedOSCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */; };
 		7BAF9E4B2A8A3CC9002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
 		7BAF9E4C2A8A3CCA002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
@@ -4763,6 +4766,9 @@
 		7BA7CC4D2AD11F6F0042E5CE /* NetworkProtectionIPCTunnelController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionIPCTunnelController.swift; sourceTree = "<group>"; };
 		7BA930AD2E0DA5B800723574 /* NavigationEngagementPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationEngagementPixel.swift; sourceTree = "<group>"; };
 		7BA930B02E0DB0BC00723574 /* BookmarksNavigationEngagementMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksNavigationEngagementMetrics.swift; sourceTree = "<group>"; };
+		7BAB80C42E2A420400F59FF4 /* UpdateCheckActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckActor.swift; sourceTree = "<group>"; };
+		7BAB80C52E2A420400F59FF4 /* UpdateCheckState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckState.swift; sourceTree = "<group>"; };
+		7BAB80CA2E2A461F00F59FF4 /* UpdateCheckStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckStateTests.swift; sourceTree = "<group>"; };
 		7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOSCheckerTests.swift; sourceTree = "<group>"; };
 		7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSiteInfoPublisher.swift; sourceTree = "<group>"; };
 		7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActiveDomainPublisher.swift; sourceTree = "<group>"; };
@@ -6185,6 +6191,8 @@
 			children = (
 				7BC641142DD1FBD600272A9D /* UpdatesDebugMenu.swift */,
 				1DA84D2E2C11989D0011C80F /* Update.swift */,
+				7BAB80C42E2A420400F59FF4 /* UpdateCheckActor.swift */,
+				7BAB80C52E2A420400F59FF4 /* UpdateCheckState.swift */,
 				AAD86E51267A0DFF005C11BE /* UpdateController.swift */,
 				1DA84D312C119AE70011C80F /* UpdateMenuItemFactory.swift */,
 				1D72D59B2BFF61B200AEDE36 /* UpdateNotificationPresenter.swift */,
@@ -6232,6 +6240,7 @@
 			children = (
 				1D838A312C44F0180078373F /* ReleaseNotesParserTests.swift */,
 				1D638D602C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift */,
+				7BAB80CA2E2A461F00F59FF4 /* UpdateCheckStateTests.swift */,
 			);
 			path = Updates;
 			sourceTree = "<group>";
@@ -15137,6 +15146,8 @@
 				AA3D531527A1ED9300074EC1 /* FeedbackWindow.swift in Sources */,
 				B6685E3F29A606190043D2EE /* WorkspaceProtocol.swift in Sources */,
 				B6ABC5962B4861D4008343B9 /* FocusableTextField.swift in Sources */,
+				7BAB80C62E2A420400F59FF4 /* UpdateCheckState.swift in Sources */,
+				7BAB80C72E2A420400F59FF4 /* UpdateCheckActor.swift in Sources */,
 				BB32C59A2DCD2CA600775E80 /* ColorPalette.swift in Sources */,
 				379858102D730EDA008773F6 /* HistoryViewDeleteDialogModel.swift in Sources */,
 				31C26A0B2CBE9D2700FFF462 /* PreferencesAIChat.swift in Sources */,
@@ -15444,6 +15455,7 @@
 				4B43469528655D1400177407 /* FirefoxDataImporterTests.swift in Sources */,
 				4B723E0926B0003E00E14D75 /* CSVLoginExporterTests.swift in Sources */,
 				B6DA06E12913AEDC00225DE2 /* TestNavigationDelegate.swift in Sources */,
+				7BAB80CC2E2A461F00F59FF4 /* UpdateCheckStateTests.swift in Sources */,
 				56D145E829E6BB6300E3488A /* CapturingDataImportProvider.swift in Sources */,
 				B630793526731BC400DCEE41 /* URLSuggestedFilenameTests.swift in Sources */,
 				B603974E29C1F93600902A34 /* TabPermissionsTests.swift in Sources */,

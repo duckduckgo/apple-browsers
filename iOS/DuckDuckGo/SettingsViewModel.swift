@@ -113,6 +113,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.paidAIChat)
     }
 
+    var isSubscriptionRebrandingEnabled: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRebranding)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
@@ -997,41 +1001,46 @@ extension SettingsViewModel {
 
     @MainActor
     private func setupSubscriptionEnvironment() async {
+        // Create a temporary subscription state to batch all updates
+        var updatedSubscription: SettingsState.Subscription
+
         // If there's cached data use it by default
         if let cachedSubscription = subscriptionStateCache.get() {
-            state.subscription = cachedSubscription
+            updatedSubscription = cachedSubscription
         // Otherwise use defaults and setup purchase availability
         } else {
-            state.subscription = SettingsState.defaults.subscription
+            updatedSubscription = SettingsState.defaults.subscription
         }
 
         // Update if can purchase based on App Store product availability
-        state.subscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
+        updatedSubscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
 
         // Update if user is signed in based on the presence of token
-        state.subscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
+        updatedSubscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
 
         // Active subscription check
         guard let token = try? await subscriptionAuthV1toV2Bridge.getAccessToken() else {
             // Reset state in case cache was outdated
-            state.subscription.hasSubscription = false
-            state.subscription.hasActiveSubscription = false
-            state.subscription.entitlements = []
-            state.subscription.platform = .unknown
-            state.subscription.isActiveTrialOffer = false
+            updatedSubscription.hasSubscription = false
+            updatedSubscription.hasActiveSubscription = false
+            updatedSubscription.entitlements = []
+            updatedSubscription.platform = .unknown
+            updatedSubscription.isActiveTrialOffer = false
 
-            state.subscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+            updatedSubscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
 
-            subscriptionStateCache.set(state.subscription) // Sync cache
+            state.subscription = updatedSubscription
+            // Sync cache
+            subscriptionStateCache.set(state.subscription)
             return
         }
 
         do {
             let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
-            state.subscription.platform = subscription.platform
-            state.subscription.hasSubscription = true
-            state.subscription.hasActiveSubscription = subscription.isActive
-            state.subscription.isActiveTrialOffer = subscription.hasActiveTrialOffer
+            updatedSubscription.platform = subscription.platform
+            updatedSubscription.hasSubscription = true
+            updatedSubscription.hasActiveSubscription = subscription.isActive
+            updatedSubscription.isActiveTrialOffer = subscription.hasActiveTrialOffer
 
             // Check entitlements and update state
             var currentEntitlements: [Entitlement.ProductName] = []
@@ -1044,23 +1053,26 @@ extension SettingsViewModel {
                 }
             }
 
-            self.state.subscription.entitlements = currentEntitlements
+            updatedSubscription.entitlements = currentEntitlements
 
             // This requires follow-up work:
             // https://app.asana.com/1/137249556945/task/1210799126744217
-            self.state.subscription.subscriptionFeatures = (try? await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()) ?? []
+            updatedSubscription.subscriptionFeatures = (try? await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()) ?? []
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.debug("No subscription data available")
-            state.subscription.hasSubscription = false
-            state.subscription.hasActiveSubscription = false
-            state.subscription.entitlements = []
-            state.subscription.platform = .unknown
-            state.subscription.isActiveTrialOffer = false
+            updatedSubscription.hasSubscription = false
+            updatedSubscription.hasActiveSubscription = false
+            updatedSubscription.entitlements = []
+            updatedSubscription.platform = .unknown
+            updatedSubscription.isActiveTrialOffer = false
 
             DailyPixel.fireDailyAndCount(pixel: .settingsPrivacyProAccountWithNoSubscriptionFound)
         } catch {
             Logger.subscription.error("Failed to fetch Subscription: \(error, privacy: .public)")
         }
+
+        // Apply all updates at once
+        state.subscription = updatedSubscription
 
         // Sync Cache
         subscriptionStateCache.set(state.subscription)

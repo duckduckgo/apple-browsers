@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Diğer cihazınızda DuckDuckGo'yu açın ve senkronizasyon için bu kodu tarayın.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Veya diğer cihazınızda DuckDuckGo ile tarayın";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Metin Kodu Paylaşılsın mı?";
 

@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Sünkroonimiseks ava DuckDuckGo oma teises sja skanni see kood.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Või skanni DuckDuckGo abil oma teises seadmes";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Jaga tekstikoodi";
 

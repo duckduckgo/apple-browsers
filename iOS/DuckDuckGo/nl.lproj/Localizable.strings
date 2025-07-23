@@ -1069,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Aangepaste URL: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Bladwijzerbestand importeren...";
 
@@ -1129,9 +1135,6 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Wachtwoorden exporteren vanuit Safari:";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.select-file-button" = "Selecteer bestand...";
-
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Selecteer het bestand met wachtwoorden die zijn geëxporteerd uit Safari of Chrome. Dit is meestal een ZIP- of CSV-bestand.";
 
@@ -1158,9 +1161,6 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importeren voltooid!";
-
-/* Data import summary of how many credit cards were successfully imported. */
-"data.import.summary.creditcards.success" = "Creditcards";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Overgeslagen duplicaten";
@@ -1665,6 +1665,9 @@
 
 /* Title of the feedback form */
 "feedback.form.title" = "Help Privacy Pro te verbeteren";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
 
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
@@ -2374,18 +2377,6 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Ik snap het! Ik sla de andere tips over.";
 
-/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
-"onboarding.subscription.promo.buttons.tryItForFree" = "Probeer het gratis!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo heeft ook een beveiligde %1$@, verkrijgbaar met een %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + nog 2 premium beveiligingen";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Widget toevoegen";
 
@@ -2418,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "De app die nodig is om die link te openen, is niet gevonden";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Geen toegang tot de alleen voor abonnees beschikbare Duck.ai-modellen";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Ik kan Duck.ai niet openen met mijn abonnement in andere browsers.";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "SELECTEER EEN CATEGORIE";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Andere feedback over Duck.ai";
 
 /* Activate button */
 "pm.activate" = "Opnieuw activeren";
@@ -2635,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "SELECTEER EEN CATEGORIE";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Aangepaste AI Chat-URL instellen";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "Over DuckDuckGo";
 
@@ -2830,12 +2836,6 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privacybeleid en gebruiksvoorwaarden";
 
-/* Privacy Pro description subtitle in settings */
-"settings.PPro.row.description" = "Inclusief onze VPN en Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.PPro.us.description" = "Inclusief onze VPN, Personal Information Removal en Identity Theft Restoration.";
-
 /* Settings screen cell for long press previews */
 "settings.previews" = "Voorbeeldweergave bij lang indrukken";
 
@@ -2869,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Dit duurt langer dan normaal, kom later nog eens terug.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Verwijder je gegevens van sites die ze verkopen";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Abonnees krijgen onze VPN en Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Abonnees krijgen onze VPN, Personal Information Removal en Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Abonnees krijgen onze VPN, geavanceerde AI-modellen in Duck.ai en Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Abonnees krijgen onze VPN en geavanceerde AI-modellen in Duck.ai, Personal Information Removal en Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Ik heb een abonnement";
@@ -2883,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Je Privacy Pro-abonnement is verlopen";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "DuckDuckGo-abonnement";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Als je identiteit wordt gestolen, helpen we je deze te herstellen";
@@ -2896,11 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnementinstellingen";
 
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "DuckDuckGo-abonnement";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Abonneren op DuckDuckGo";
+
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Bescherm je verbinding en identiteit met Privacy Pro";
+"settings.subscription.subscribe.title" = "Beveilig je wifi en chat privé met geavanceerde AI-modellen";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Beveilig je wifi, en bescherm je identiteit.";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Probeer het DuckDuckGo-abonnement gratis";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Probeer Privacy Pro gratis";
+"settings.subscription.try.free.no.ai.chat" = "Probeer Privacy Pro gratis";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3052,6 +3085,15 @@
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Weet je het zeker?";
 
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Chat privé met AI-modellen die exclusief voor abonnees zijn.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Duck.ai openen";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Je abonnement dat aan dit e-mailadres is gekoppeld, is niet langer actief.";
 
@@ -3165,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Je bent helemaal klaar.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "DuckDuckGo-abonnement";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Geabonneerd";
@@ -3618,9 +3663,6 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Doorgaan";
-
-/* Option to select to import credit cards */
-"zip.content.import.type.creditCards" = "Creditcards";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Wachtwoorden";

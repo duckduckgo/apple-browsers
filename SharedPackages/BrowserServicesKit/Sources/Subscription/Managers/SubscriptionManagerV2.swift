@@ -113,7 +113,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Throws: An error if the access token is not available or something goes wrong in the api requests
     func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription?
 
-    /// If the suer can purchase a subscription or not
+    /// If the user can purchase a subscription or not
     var canPurchase: Bool { get }
 
     /// Publisher that emits a boolean value indicating whether the user can purchase.

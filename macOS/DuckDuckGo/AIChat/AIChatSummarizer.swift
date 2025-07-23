@@ -53,20 +53,17 @@ final class AIChatSummarizer: AIChatSummarizing {
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let aiChatTabOpener: AIChatTabOpening
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
 
     init(
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         aiChatTabOpener: AIChatTabOpening,
-        featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring?
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.aiChatTabOpener = aiChatTabOpener
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
     }
 
@@ -76,7 +73,7 @@ final class AIChatSummarizer: AIChatSummarizing {
     /// summarization will happen either in a tab sidebar or in a new tab.
     @MainActor
     func summarize(_ request: AIChatTextSummarizationRequest) {
-        guard featureFlagger.isFeatureOn(.aiChatTextSummarization) else {
+        guard aiChatMenuConfig.shouldDisplaySummarizationMenuItem else {
             return
         }
 

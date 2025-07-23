@@ -179,7 +179,6 @@ final class MainViewController: NSViewController {
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatSidebarPresenter: aiChatSidebarPresenter,
             aiChatTabOpener: aiChatTabOpener,
-            featureFlagger: featureFlagger,
             pixelFiring: pixelFiring
         )
 

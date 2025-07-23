@@ -28,44 +28,93 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
     }
 
     func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-        Constants.TopTransition.expandDuration
+        if isPresenting {
+            return Constants.TopTransition.expandDuration
+        } else {
+            return Constants.TopTransition.collapseDuration
+        }
     }
 
     func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
-        guard let fromVC = transitionContext.viewController(forKey: .from),
-              let toVC = transitionContext.viewController(forKey: .to) else {
+
+        transitionContext.containerView.backgroundColor = .clear
+
+        if isPresenting {
+            animateAppear(transitionContext: transitionContext)
+        } else {
+            animateDismiss(transitionContext: transitionContext)
+        }
+    }
+
+    private func animateAppear(transitionContext: UIViewControllerContextTransitioning) {
+        guard let fromVC = transitionContext.viewController(forKey: .from) as? (UIViewController & MainViewEditingStateTransitioning),
+              let toVC = transitionContext.viewController(forKey: .to) as? (UIViewController & OmniBarEditingStateTransitioning) else {
             transitionContext.completeTransition(false)
             return
         }
 
         let containerView = transitionContext.containerView
 
-        if isPresenting {
-            // Presenting animation
-            containerView.addSubview(toVC.view)
-            toVC.view.alpha = 0
-            toVC.view.transform = CGAffineTransform(translationX: 0, y: -76)
+        containerView.addSubview(toVC.view)
 
-            let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
-                                   dampingRatio: 0.65) {
-                toVC.view.alpha = 1
-                toVC.view.transform = .identity
-            }
+        let yOffset = toVC.switchBarVC.textEntryViewController.view.frame.minY
 
-            animator.addCompletion { position in
-                transitionContext.completeTransition(position == .end)
-            }
+        toVC.view.frame = containerView.bounds.offsetBy(dx: 0, dy: -yOffset)
+        toVC.view.alpha = 0
+        toVC.switchBarVC.setExpanded(false)
 
-            animator.startAnimation()
-        } else {
-            // Dismissing animation
-            UIView.animate(withDuration: transitionDuration(using: transitionContext)) {
-                fromVC.view.alpha = 0
-                fromVC.view.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
-            } completion: { finished in
-                transitionContext.completeTransition(finished)
-            }
+        if let height = toVC.expectedStartFrame?.height {
+            toVC.switchBarVC.textEntryViewController.containerStaticHeightConstraint?.constant = height
         }
+        toVC.view.layoutIfNeeded()
+
+        let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
+                                              dampingRatio: Constants.TopTransition.expandDampingRatio) {
+
+            toVC.view.alpha = 1.0
+            toVC.view.frame = containerView.bounds
+            toVC.switchBarVC.setExpanded(true)
+            toVC.view.layoutIfNeeded()
+
+            fromVC.hide(with: yOffset)
+            fromVC.view.layoutIfNeeded()
+        }
+
+        animator.addCompletion { position in
+            transitionContext.completeTransition(position == .end)
+        }
+
+        animator.startAnimation()
+    }
+
+    private func animateDismiss(transitionContext: UIViewControllerContextTransitioning) {
+
+        guard let fromVC = transitionContext.viewController(forKey: .from) as? (UIViewController & OmniBarEditingStateTransitioning),
+              let toVC = transitionContext.viewController(forKey: .to) as? (UIViewController & MainViewEditingStateTransitioning) else {
+            transitionContext.completeTransition(false)
+            return
+        }
+
+        let yOffset = fromVC.switchBarVC.textEntryViewController.view.frame.minY
+
+        // Dismissing animation
+        let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
+                                              dampingRatio: Constants.TopTransition.collapseDampingRatio) {
+
+            fromVC.view.frame = fromVC.view.frame.offsetBy(dx: 0, dy: -yOffset)
+            fromVC.switchBarVC.setExpanded(false)
+            fromVC.view.layoutIfNeeded()
+
+            fromVC.view.alpha = 0
+            toVC.show()
+            toVC.view.layoutIfNeeded()
+        }
+
+        animator.addCompletion { position in
+            transitionContext.completeTransition(position == .end)
+        }
+
+        animator.startAnimation()
     }
 
     private struct Constants {
@@ -77,13 +126,10 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         }
 
         struct TopTransition {
-            static let fadeInDuration: TimeInterval = 0.2
             static let expandDuration: TimeInterval = 0.6
-            static let expandDampingRatio: CGFloat = 0.7
+            static let expandDampingRatio: CGFloat = 0.65
             static let collapseDuration: TimeInterval = 0.5
-            static let collapseDampingRatio: CGFloat = 0.65
-            static let fadeOutDuration: TimeInterval = 0.15
-            static let fadeOutDelay: TimeInterval = collapseDuration * 0.35
+            static let collapseDampingRatio: CGFloat = 0.6
         }
     }
 }

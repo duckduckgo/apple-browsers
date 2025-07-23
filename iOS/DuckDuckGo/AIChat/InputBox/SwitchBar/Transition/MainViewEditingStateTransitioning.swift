@@ -1,5 +1,5 @@
 //
-//  MainViewEditinStateTransitioning.swift
+//  MainViewEditingStateTransitioning.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,6 +19,7 @@
 
 import UIKit
 
-protocol MainViewEditinStateTransitioning {
-    func setYOffset(_ yOffset: CGFloat)
+protocol MainViewEditingStateTransitioning {
+    func hide(with yOffset: CGFloat)
+    func show()
 }

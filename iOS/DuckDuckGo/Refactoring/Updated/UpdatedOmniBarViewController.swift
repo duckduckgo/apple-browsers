@@ -33,6 +33,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
 
+    let editModeTransitioningDelegate = OmniBarEditingStateTransitioningDelegate()
+
     override func loadView() {
         view = omniBarView
     }
@@ -166,18 +168,14 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
-        let startFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
-        let transitioningDelegate = OmniBarEditingStateTransitioningDelegate(expectedStartFrame: startFrame)
-
         let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
         editingStateViewController.delegate = self
         editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
 
         editingStateViewController.modalPresentationStyle = .custom
-        editingStateViewController.transitioningDelegate = transitioningDelegate
+        editingStateViewController.transitioningDelegate = editModeTransitioningDelegate
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
-        present(editingStateViewController, animated: true)
         self.editingStateViewController = editingStateViewController
 
         if shouldAutoSelectText {
@@ -185,6 +183,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
                 editingStateViewController.setUpForInitialSelectedState()
             }
         }
+        present(editingStateViewController, animated: true)
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
@@ -248,13 +247,5 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
-    }
-
-    func onAppear(yTranslation: CGFloat) {
-        barView.hideButtons()
-    }
-
-    func onDismiss() {
-        barView.revealButtons()
     }
 }

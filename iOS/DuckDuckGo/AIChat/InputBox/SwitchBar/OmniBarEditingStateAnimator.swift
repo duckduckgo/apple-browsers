@@ -19,20 +19,17 @@
 
 import UIKit
 
-protocol OmniBarEditingStateTransitionDelegate: AnyObject {
+protocol OmniBarEditingStateTransitioning: AnyObject {
     var rootView: UIView { get }
     var expectedStartFrame: CGRect? { get }
     var isTopBarPosition: Bool { get }
     var switchBarVC: SwitchBarViewController { get }
     var logoView: UIView? { get }
-
-    func adjustForAppearance(yTranslation: CGFloat)
-    func adjustForDismissal()
 }
 
 final class OmniBarEditingStateAnimator {
 
-    weak var transitionDelegate: OmniBarEditingStateTransitionDelegate?
+    weak var transitionDelegate: OmniBarEditingStateTransitioning?
 
     private var topSwitchBarConstraint: NSLayoutConstraint?
     private var switchBarHeightConstraint: NSLayoutConstraint?
@@ -100,7 +97,6 @@ final class OmniBarEditingStateAnimator {
                                                     dampingRatio: Constants.TopTransition.expandDampingRatio) {
             transitionDelegate.switchBarVC.view.alpha = 1.0
             transitionDelegate.rootView.alpha = 1.0
-            transitionDelegate.adjustForAppearance(yTranslation: self.transitionYTranslation)
             transitionDelegate.switchBarVC.setExpanded(true)
             self.switchBarHeightConstraint?.isActive = false
 
@@ -128,7 +124,6 @@ final class OmniBarEditingStateAnimator {
 
             transitionDelegate.rootView.alpha = 0.0
             transitionDelegate.switchBarVC.view.alpha = 0.0
-            transitionDelegate.adjustForDismissal()
 
             transitionDelegate.rootView.layoutIfNeeded()
         }
@@ -165,8 +160,6 @@ final class OmniBarEditingStateAnimator {
             transitionDelegate.rootView.alpha = 1.0
             self.topSwitchBarConstraint?.constant = Constants.BottomTransition.finalYOffset
 
-            transitionDelegate.adjustForAppearance(yTranslation: Constants.BottomTransition.finalYOffset - Constants.BottomTransition.yOffset)
-
             transitionDelegate.rootView.layoutIfNeeded()
         }
 
@@ -180,7 +173,6 @@ final class OmniBarEditingStateAnimator {
 
         let animator = UIViewPropertyAnimator(duration: Constants.BottomTransition.dismissDuration, curve: .easeInOut) {
             self.topSwitchBarConstraint?.constant = Constants.BottomTransition.yOffset
-            transitionDelegate.adjustForDismissal()
             transitionDelegate.rootView.layoutIfNeeded()
             transitionDelegate.rootView.alpha = 0.0
         }

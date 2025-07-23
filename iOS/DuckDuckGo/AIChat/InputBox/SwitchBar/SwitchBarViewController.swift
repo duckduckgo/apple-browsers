@@ -39,8 +39,6 @@ class SwitchBarViewController: UIViewController {
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
-    
-    private var segmentedControlTopConstraint: NSLayoutConstraint?
 
     private var isExpanded = false
 
@@ -161,8 +159,6 @@ class SwitchBarViewController: UIViewController {
     func setExpanded(_ isExpanded: Bool) {
         self.isExpanded = isExpanded
 
-//        segmentedControlTopConstraint?.isActive = isExpanded
-
         backButton.alpha = isExpanded ? 1 : 0
         segmentedPickerHostingController?.view.alpha = isExpanded ? 1 : 0
 
@@ -173,18 +169,15 @@ class SwitchBarViewController: UIViewController {
 
         guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
 
-        segmentedControlTopConstraint = segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-        segmentedControlTopConstraint?.isActive = true // TODO: Move to array if works properly
-
         NSLayoutConstraint.activate([
+            segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             segmentedPickerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedPickerView.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 
             textEntryViewController.view.topAnchor.constraint(equalTo: segmentedPickerView.bottomAnchor, constant: Constants.textEntryViewTopPadding),
             textEntryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.textEntryViewSidePadding),
             textEntryViewController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
-            // Create bottom constraint with lower priority to avoid conflicts with parent constraints
-            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor), // .withPriority(.init(999)),
+            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
             backButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.backButtonHorizontalPadding),
             backButton.centerYAnchor.constraint(equalTo: segmentedPickerView.centerYAnchor),

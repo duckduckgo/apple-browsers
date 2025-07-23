@@ -37,9 +37,6 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
-
-    func onAppear(yTranslation: CGFloat)
-    func onDismiss()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -62,7 +59,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
-    private let transitionAnimator = OmniBarEditingStateAnimator()
 
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
@@ -97,14 +93,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         setupView()
         installComponents()
         setupSubscriptions()
-        setupTransitionAnimator()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         switchBarVC.focusTextField()
-//        transitionAnimator.animateAppearance()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -116,14 +110,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Public Methods
     
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
-//        transitionAnimator.animateDismissal {
-            DispatchQueue.main.async {
-                if self.presentingViewController != nil {
-                    self.dismiss(animated: false)
-                }
-                completion?()
-            }
-//        }
+        if self.presentingViewController != nil {
+            self.dismiss(animated: true, completion: completion)
+        }
     }
     
     func setUpForInitialSelectedState() {

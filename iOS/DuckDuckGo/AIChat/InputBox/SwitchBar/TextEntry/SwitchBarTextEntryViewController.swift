@@ -54,7 +54,8 @@ class SwitchBarTextEntryViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
-        self.view.layoutIfNeeded()
+
+        setExpanded(isExpanded)
     }
 
     func setExpanded(_ expanded: Bool) {

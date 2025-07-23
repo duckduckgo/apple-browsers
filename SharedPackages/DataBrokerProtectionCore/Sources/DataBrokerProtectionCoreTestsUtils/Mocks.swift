@@ -1127,6 +1127,12 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public func fireOptOutFailure(tries: Int) {
     }
 
+    public func fireOptOutConditionFound() {
+    }
+
+    public func fireOptOutConditionNotFound() {
+    }
+
     public func fireScanStarted() {
     }
 
@@ -1630,7 +1636,7 @@ public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
     }
 }
 
-public final class MockFileManager: FileManager {
+public final class MockFileManager: FileManager, @unchecked Sendable {
     public var hasUnzippedContent = false
 
     let fileNames = ["valid-broker", "invalid-broker-with-unsupported-type", "invalid-broker-with-unsupported-action"]

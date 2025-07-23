@@ -52,7 +52,6 @@ public class ActionsHandler {
             self.lastExecutedActionIndex = nextActionIndex
             return actions[nextActionIndex]
         } else {
-            print("SAMDEBUG: ActionsHandler has no remaining actions!")
             return nil // No more actions to execute
         }
     }

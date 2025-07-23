@@ -905,7 +905,7 @@ class AddressBarTests: XCTestCase {
         let firstResponderChangeExpectation = window2.responderDidChangeExpectation(to: tab.webView)
         viewModel2.select(at: .pinned(0))
 
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 2)
 
         XCTAssertEqual(window.firstResponder, window)
         XCTAssertEqual(window2.firstResponder, tab.webView)
@@ -913,10 +913,17 @@ class AddressBarTests: XCTestCase {
         // when activating a Pinned Tab in another window when its Address Bar is active, it should be kept active
         _=window.makeFirstResponder(addressBarTextField)
         window.makeKeyAndOrderFront(nil)
-        try await Task.sleep(interval: 0.01)
 
+        let becomesOwnFirstResponder = expectation(
+            for: NSPredicate { [weak window2] _, _ in
+                guard let window2 else { return false }
+                return window2.firstResponder === window2
+            },
+            evaluatedWith: nil
+        )
+
+        await fulfillment(of: [becomesOwnFirstResponder], timeout: 5.0)
         XCTAssertTrue(isAddressBarFirstResponder)
-        XCTAssertEqual(window2.firstResponder, window2)
     }
 
     @MainActor

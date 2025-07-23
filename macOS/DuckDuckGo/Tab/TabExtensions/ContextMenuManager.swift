@@ -30,12 +30,13 @@ enum NavigationDecision {
 
 @MainActor
 final class ContextMenuManager: NSObject {
-    private var userScriptCancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
 
     private var onNewWindow: ((WKNavigationAction?) -> NavigationDecision)?
     private var originalItems: [WKMenuItemIdentifier: NSMenuItem]?
     private var selectedText: String?
     private var linkURL: String?
+    private var tabContent: Tab.TabContent?
 
     private var tabsPreferences: TabsPreferences
     private let isLoadedInSidebar: Bool
@@ -60,6 +61,7 @@ final class ContextMenuManager: NSObject {
 
     @MainActor
     init(contextMenuScriptPublisher: some Publisher<ContextMenuUserScript?, Never>,
+         contentPublisher: some Publisher<Tab.TabContent, Never>,
          tabsPreferences: TabsPreferences = TabsPreferences.shared,
          isLoadedInSidebar: Bool = false,
          featureFlagger: FeatureFlagger,
@@ -70,11 +72,18 @@ final class ContextMenuManager: NSObject {
         self.aiChatPromptHandler = aiChatPromptHandler
         super.init()
 
-        userScriptCancellable = contextMenuScriptPublisher.sink { [weak self] contextMenuScript in
-            contextMenuScript?.delegate = self
-        }
-    }
+        contextMenuScriptPublisher
+            .sink { [weak self] contextMenuScript in
+                contextMenuScript?.delegate = self
+            }
+            .store(in: &cancellables)
 
+        contentPublisher
+            .sink { [weak self] tabContent in
+                self?.tabContent = tabContent
+            }
+            .store(in: &cancellables)
+    }
 }
 
 extension ContextMenuManager: NewWindowPolicyDecisionMaker {
@@ -210,7 +219,8 @@ extension ContextMenuManager {
     }
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        let isSummarizationAvailable = featureFlagger.isFeatureOn(.aiChatTextSummarization) && AIChatMenuConfiguration().shouldDisplayApplicationMenuShortcut
+        let isSummarizationAvailable = shouldShowTextSummarization
+
         var currentIndex = index
         if isSummarizationAvailable {
             menu.insertItem(.separator(), at: currentIndex)
@@ -230,6 +240,15 @@ extension ContextMenuManager {
     private func handleInspectElementItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
         guard isLoadedInSidebar, !featureFlagger.internalUserDecider.isInternalUser else { return }
         menu.removeItem(at: index)
+    }
+
+    private var shouldShowTextSummarization: Bool {
+        switch tabContent {
+        case .aiChat:
+            return false
+        default:
+            return featureFlagger.isFeatureOn(.aiChatTextSummarization) && AIChatMenuConfiguration().shouldDisplayApplicationMenuShortcut
+        }
     }
 }
 
@@ -338,7 +357,7 @@ private extension ContextMenuManager {
     }
 
     func summarizeMenuItem() -> NSMenuItem {
-        NSMenuItem(title: "Summarize with Duck.ai", action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"])
+        NSMenuItem(title: UserText.aiChatSummarize, action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"])
     }
 
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {

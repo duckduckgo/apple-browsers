@@ -174,35 +174,33 @@ internal class FirefoxDataImporter: DataImporter {
     }
 
     private func fetchNewTabFavorites() -> [ImportedBookmarks.BookmarkOrFolder] {
+        let sourceVersion = profile.installedAppsMajorVersionDescription()
+
         do {
             let preferences = try FirefoxPreferences(profileURL: profile.profileURL)
             guard preferences.newTabFavoritesEnabled else {
+                PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, favoritesBucket: .none), frequency: .dailyAndStandard)
                 return []
             }
 
-            let favoritesCount = preferences.newTabFavoritesCount
-            let pinnedSites = preferences.newTabPinnedSites
-                .prefix(favoritesCount)
-                .map { site -> ImportedBookmarks.BookmarkOrFolder? in
-                    guard let site else { return nil }
-                    return ImportedBookmarks.BookmarkOrFolder(name: site.label ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true)
-                }
-            let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL)
+            let (pinnedSites, favoritesCount) = fetchPinnedSitesAndFavoritesCount(from: preferences)
+            let pinnedRootDomains = Set(pinnedSites.compactMap { $0?.url?.root })
+
+            // Get frecent sites from Firefox history and convert them into bookmarks.
+            let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL, tld: Application.appDelegate.tld)
             let frecentSites = try historyReader.readFrecentSites().get()
-                .reduce(into: (seen: Set<URL>(), result: [ImportedBookmarks.BookmarkOrFolder]())) { partialResult, site in
-                    // Filter out URLs that are blocked, the root domain is pinned, or not HTTP/HTTPS.
-                    // Then, de-duplicate remaining frecent sites by their root domain.
-                    guard let url = URL(string: site.url),
-                            !preferences.isURLBlockedOnNewTab(site.url),
-                            !pinnedSites.contains(where: { $0?.url?.root == url.root }) else { return }
-                    let rootDomain = url.root ?? url
-                    if !partialResult.seen.contains(rootDomain) {
-                        partialResult.seen.insert(rootDomain)
-                        let favorite = ImportedBookmarks.BookmarkOrFolder(name: site.title ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true, favoritesIndex: partialResult.result.count)
-                        partialResult.result.append(favorite)
-                    }
+                .compactMap { site -> (URL, ImportedBookmarks.BookmarkOrFolder)? in
+                    // Filter out URLs that are blocked or the root domain is pinned.
+                    guard !preferences.isURLBlockedOnNewTab(site.url),
+                          let url = URL(string: site.url),
+                          let rootDomain = url.root,
+                          !pinnedRootDomains.contains(rootDomain) else { return nil }
+                    let bookmark = ImportedBookmarks.BookmarkOrFolder(name: site.title ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true)
+                    return (rootDomain, bookmark)
                 }
-                .result.prefix(favoritesCount).map { $0 }
+                .uniqued(on: \.0) // De-duplicate sites by their root domain
+                .prefix(favoritesCount)
+                .map(\.1)
 
             guard !pinnedSites.isEmpty else {
                 return frecentSites
@@ -224,11 +222,47 @@ internal class FirefoxDataImporter: DataImporter {
                 }
             }
 
+            PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, favoritesBucket: .init(count: favorites.count)), frequency: .dailyAndStandard)
+
             return favorites
         } catch {
-            // Send pixel for error: https://app.asana.com/1/137249556945/task/1210674932129670
+            PixelKit.fire(GeneralPixel.favoritesImportFailed(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, error: error), frequency: .dailyAndStandard)
             return []
         }
+    }
+
+    /// Fetches pinned sites from Firefox preferences and returns them as bookmarks along with the total favorites count.
+    /// If sponsored sites are enabled, and there are pinned sites that could fill those slots, those pinned sites are included.
+    /// - Parameter preferences: The Firefox preferences to read pinned sites from.
+    /// - Returns: A tuple containing an array of bookmarks (including nil for unpinned slots) and the count of sponsored slots filled by pinned sites.
+    private func fetchPinnedSitesAndFavoritesCount(from preferences: FirefoxPreferences) -> (all: [ImportedBookmarks.BookmarkOrFolder?], favoritesCount: Int) {
+        let favoritesCount = preferences.newTabFavoritesCount
+
+        func convertPinnedSiteToBookmark(site: FirefoxPreferences.PinnedSite?) -> ImportedBookmarks.BookmarkOrFolder? {
+            guard let site else { return nil }
+            return ImportedBookmarks.BookmarkOrFolder(name: site.label ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true)
+        }
+
+        let primaryPinned = preferences.newTabPinnedSites
+            .prefix(favoritesCount)
+            .map { site -> ImportedBookmarks.BookmarkOrFolder? in
+                convertPinnedSiteToBookmark(site: site)
+            }
+
+        guard preferences.newTabSponsoredSitesCount > 0 else {
+            return (all: primaryPinned, favoritesCount: favoritesCount)
+        }
+
+        // Add pinned sites, if any, to fill the sponsored slots. This optimistically includes manually added shortcuts in cases where the sponsored sites may have been dismissed.
+        let sponsoredSlots = preferences.newTabPinnedSites
+            .suffix(from: primaryPinned.count)
+            .prefix(preferences.newTabSponsoredSitesCount)
+            .compactMap { site -> ImportedBookmarks.BookmarkOrFolder? in
+                convertPinnedSiteToBookmark(site: site)
+            }
+
+        let allPinned = primaryPinned + sponsoredSlots
+        return (all: allPinned, favoritesCount: favoritesCount + sponsoredSlots.count)
     }
 
 }

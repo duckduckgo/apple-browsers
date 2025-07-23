@@ -42,11 +42,8 @@ class TabsBarViewController: UIViewController {
     struct Constants {
         
         static let minItemWidth: CGFloat = 68
-        static let buttonSize: CGFloat = 34
-        static let experimentalButtonSize: CGFloat = 40
-        static let stackSpacing: CGFloat = 24
-        static let experimentalStackSpacing: CGFloat = 12
-
+        static let buttonSize: CGFloat = 40
+        static let stackSpacing: CGFloat = 12
     }
     
     @IBOutlet weak var collectionView: UICollectionView!
@@ -63,19 +60,8 @@ class TabsBarViewController: UIViewController {
 
     weak var delegate: TabsBarDelegate?
     private weak var tabsModel: TabsModel?
-    let themingProperties: ExperimentalThemingProperties
-    private var isExperimentalThemingEnabled: Bool { themingProperties.isExperimentalThemingEnabled }
 
-    private lazy var tabSwitcherButton: TabSwitcherButton = {
-        let switcher: TabSwitcherButton
-        if isExperimentalThemingEnabled {
-            switcher = TabSwitcherStaticButton()
-        } else {
-            switcher = TabSwitcherAnimatedButton()
-        }
-
-        return switcher
-    }()
+    private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
 
     private let longPressTabGesture = UILongPressGestureRecognizer()
     
@@ -93,23 +79,12 @@ class TabsBarViewController: UIViewController {
         return Int(collectionView.frame.size.width / Constants.minItemWidth)
     }
 
-    static func createFromXib(themingProperties: ExperimentalThemingProperties) -> TabsBarViewController {
+    static func createFromXib() -> TabsBarViewController {
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
-            TabsBarViewController(coder: coder, themingProperties: themingProperties)
+            TabsBarViewController(coder: coder)
         }
         return controller
-    }
-
-    required init?(coder: NSCoder, themingProperties: ExperimentalThemingProperties) {
-        self.themingProperties = themingProperties
-
-        super.init(coder: coder)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
     
     override func viewDidLoad() {
@@ -130,7 +105,7 @@ class TabsBarViewController: UIViewController {
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
 
-        buttonsStack.spacing = isExperimentalThemingEnabled ? Constants.experimentalStackSpacing : Constants.stackSpacing
+        buttonsStack.spacing = Constants.stackSpacing
 
         buttonsStack.addArrangedSubview(addTabButton)
         buttonsStack.addArrangedSubview(fireButton)
@@ -142,9 +117,8 @@ class TabsBarViewController: UIViewController {
 
         // Set width equal to height for all buttons
         [addTabButton, fireButton, tabSwitcherButton].forEach { button in
-            let size = isExperimentalThemingEnabled ? Constants.experimentalButtonSize : Constants.buttonSize
             button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
-            button.widthAnchor.constraint(equalToConstant: size).isActive = true
+            button.widthAnchor.constraint(equalToConstant: Constants.buttonSize).isActive = true
         }
     }
 
@@ -265,15 +239,9 @@ class TabsBarViewController: UIViewController {
     }
 
     private func createButton(image: UIImage) -> UIButton {
-        if isExperimentalThemingEnabled {
-            let button = BrowserChromeButton()
-            button.setImage(image)
-            return button
-        } else {
-            let button = UIButton(type: .system)
-            button.setImage(image, for: .normal)
-            return button
-        }
+        let button = BrowserChromeButton()
+        button.setImage(image)
+        return button
     }
 
     override func viewDidLayoutSubviews() {

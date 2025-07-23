@@ -5,25 +5,27 @@ defaults:
     working-directory: macOS
 
 on:
-  # To be enabled later
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
+    paths:
+      - 'macOS/**'
+      - 'SharedPackages/**'
   workflow_dispatch:
-    inputs:
-      skip-appstore:
-        description: "Skip App Store release and only make a DMG build"
-        default: false
-        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
 
   calculate-alpha-build-number:
     name: Calculate Alpha Build Number
+
     runs-on: macos-15
 
     outputs:
-      build-number: ${{ steps.build-number.outputs.next_build_number }}
+      build-number: ${{ steps.update-build-number.outputs.build-number }}
 
     steps:
     - name: Check out the code
@@ -49,8 +51,25 @@ jobs:
           config:alpha \
           bundle_id:com.duckduckgo.mobile.ios.alpha
 
-    - name: Report build number
-      run: echo "::notice::Using build number ${{ steps.build-number.outputs.next_build_number }}"
+    - name: Update stored build number if needed
+      id: update-build-number
+      env:
+        GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+      run: |
+        stored_build_number="${{ vars.MACOS_ALPHA_BUILD_NUMBER }}"
+        current_build_number=$((${stored_build_number:-0} + 1)) # increment stored build number by 1
+        next_build_number="${{ steps.build-number.outputs.next_build_number }}"
+
+        if [[ "$next_build_number" -gt "$current_build_number" ]]; then
+          gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$next_build_number"
+          echo "Updated build number from $current_build_number to $next_build_number"
+        else
+          gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$current_build_number"
+          echo "Build number $next_build_number is not higher than current $current_build_number, skipping update"
+          next_build_number=$current_build_number
+        fi
+        echo "::notice::Using build number $next_build_number"
+        echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
 
   dmg-release:
     name: Prepare DMG Release
@@ -80,8 +99,6 @@ jobs:
     name: Prepare AppStore Release
 
     needs: calculate-alpha-build-number
-
-    if: inputs.skip-appstore != 'true'
 
     uses: ./.github/workflows/macos_build_appstore.yml
     with:
@@ -160,6 +177,7 @@ jobs:
 
       - name: Upload to S3
         id: upload
+        if: always() && steps.appcast.conclusion == 'success'
         working-directory: sparkle
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}

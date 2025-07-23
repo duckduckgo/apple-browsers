@@ -20,7 +20,7 @@
 import UIKit
 import Lottie
 
-class PrivacyInfoContainerView: UIView {
+class PrivacyInfoContainerView: UIView, NibLoading {
     
     @IBOutlet var privacyIcon: PrivacyIconView!
     @IBOutlet var maskingView: UIView!
@@ -28,13 +28,6 @@ class PrivacyInfoContainerView: UIView {
     @IBOutlet var trackers1Animation: LottieAnimationView!
     @IBOutlet var trackers2Animation: LottieAnimationView!
     @IBOutlet var trackers3Animation: LottieAnimationView!
-
-    var isUsingExperimentalAnimations: Bool = false {
-        didSet {
-            privacyIcon.isUsingExperimentalAnimations = isUsingExperimentalAnimations
-            loadAnimations()
-        }
-    }
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -58,7 +51,7 @@ class PrivacyInfoContainerView: UIView {
 
         func trackersAnimationName(for count: Int) -> String {
             let trackersBaseAnimationName = useDarkStyle ? "dark-trackers" : "trackers"
-            return "\(trackersBaseAnimationName)-\(count)\(isUsingExperimentalAnimations ? "-new" : "")"
+            return "\(trackersBaseAnimationName)-\(count)"
         }
 
         trackers1Animation.animation = LottieAnimation.named(trackersAnimationName(for: 1), animationCache: cache)

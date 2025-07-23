@@ -137,7 +137,9 @@ public class DataBrokerProtectionIOSManagerProvider {
             dataBrokerProtectionSettings: dbpSettings,
             emailService: emailService,
             captchaService: captchaService,
-            vpnBypassService: nil)
+            vpnBypassService: nil,
+            jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask
+        )
 
         return DataBrokerProtectionIOSManager(
             queueManager: queueManager,

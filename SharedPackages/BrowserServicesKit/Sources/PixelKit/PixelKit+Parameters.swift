@@ -78,6 +78,9 @@ public extension PixelKit {
         public static let pproIssueCategory = "category"
         public static let pproIssueSubcategory = "subcategory"
         public static let pproIssueMetadata = "customMetadata"
+
+        // Data import
+        public static let importedFavorites = "saved_favorites"
     }
 
     enum Values {

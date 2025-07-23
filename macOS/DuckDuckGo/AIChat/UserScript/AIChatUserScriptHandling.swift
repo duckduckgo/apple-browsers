@@ -19,6 +19,7 @@
 import AIChat
 import AppKit
 import Combine
+import Common
 import Foundation
 import PixelKit
 import UserScript
@@ -68,7 +69,6 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     enum AIChatKeys {
         static let aiChatPayload = "aiChatPayload"
         static let serializedChatData = "serializedChatData"
-        static let url = "url"
     }
 
     @MainActor public func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -126,12 +126,17 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor func openSummarizationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
-        guard let params = params as? [String: String],
-              let urlString = params[AIChatKeys.url],
-              let url = urlString.url
+        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
         else { return nil }
 
-        windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
+        let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+
+        switch openLinkParams.target {
+        case .sameTab where isSidebar == false: // for same tab outside of sidebar we force opening new tab to keep the AI chat tab
+            windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: true, selected: true)
+        default:
+            windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
+        }
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)
         return nil
     }
@@ -143,4 +148,19 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
 extension NSNotification.Name {
     static let aiChatNativeHandoffData: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatNativeHandoffData")
+}
+
+extension AIChatUserScriptHandler {
+
+    struct OpenLink: Codable, Equatable {
+        let url: String
+        let target: OpenTarget
+
+        enum OpenTarget: String, Codable, Equatable {
+            case sameTab = "same-tab"
+            case newTab = "new-tab"
+            case newWindow = "new-window"
+        }
+
+    }
 }

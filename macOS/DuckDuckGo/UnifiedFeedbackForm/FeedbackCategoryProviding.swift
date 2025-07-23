@@ -225,11 +225,11 @@ enum PaidAIChatFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackF
         case .selectSubcategory:
             return nil
         case .accessSubscriptionModels:
-            return nil
+            return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
         case .loginThirdPartyBrowser:
-            return nil
+            return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating")!
         case .somethingElse:
-            return nil
+            return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai")!
         }
     }
 }

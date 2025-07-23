@@ -175,6 +175,7 @@ extension TabExtensionsBuilder {
         }
         add {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
+                               contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                featureFlagger: dependencies.featureFlagger)
         }
@@ -247,6 +248,10 @@ extension TabExtensionsBuilder {
                 webViewPublisher: args.webViewFuture,
                 webViewErrorPublisher: args.errorPublisher
             )
+        }
+
+        add {
+            SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
         }
 
 #if SPARKLE

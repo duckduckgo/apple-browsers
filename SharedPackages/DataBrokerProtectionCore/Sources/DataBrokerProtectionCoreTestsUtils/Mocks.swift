@@ -160,6 +160,10 @@ public extension HistoryEvent {
     static func mockScanEvent(with date: Date) -> HistoryEvent {
         HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: date)
     }
+
+    static func mock(type: EventType, date: Date = Date()) -> HistoryEvent {
+        HistoryEvent(brokerId: 1, profileQueryId: 1, type: type, date: date)
+    }
 }
 
 public extension DataBrokerScheduleConfig {
@@ -1241,6 +1245,15 @@ public extension ScanJobData {
             historyEvents: [HistoryEvent]()
         )
     }
+
+    static func mock(historyEvents: [HistoryEvent], preferredRunDate: Date?) -> ScanJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            preferredRunDate: preferredRunDate,
+            historyEvents: historyEvents
+        )
+    }
 }
 
 public extension OptOutJobData {
@@ -1509,6 +1522,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var emailService: any EmailServiceProtocol
     public var captchaService: any CaptchaServiceProtocol
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
+    public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
 
     public var mockScanRunner = MockScanSubJobWebRunner()
     public var mockOptOutRunner = MockOptOutSubJobWebRunner()
@@ -2084,6 +2098,18 @@ public extension OptOutJobData {
 
     static func mock(with extractedProfile: ExtractedProfile) -> OptOutJobData {
         .init(brokerId: 1, profileQueryId: 1, createdDate: Date(), historyEvents: [HistoryEvent](), attemptCount: 0, extractedProfile: extractedProfile)
+    }
+
+    static func mock(attemptCount: Int64, preferredRunDate: Date? = nil) -> OptOutJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            createdDate: Date(),
+            preferredRunDate: preferredRunDate,
+            historyEvents: [],
+            attemptCount: attemptCount,
+            extractedProfile: .mockWithoutRemovedDate
+        )
     }
 }
 

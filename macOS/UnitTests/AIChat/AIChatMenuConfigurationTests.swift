@@ -189,7 +189,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     var showShortcutOnNewTabPage: Bool = false {
         didSet {
-            showShortcutOnNewTabPageSubject.send(showShortcutInApplicationMenu)
+            showShortcutOnNewTabPageSubject.send(showShortcutOnNewTabPage)
         }
     }
 

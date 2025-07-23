@@ -159,6 +159,8 @@ final class MockAutofillLoginImportState: AutofillLoginImportStateStoring, Autof
 
     var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool = false
 
+    var credentialsImportPromptPresentationCount: Int = 0
+
     var isEligibleDDGUser = false
 
     var hasImportedLogins = false

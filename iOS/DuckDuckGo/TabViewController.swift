@@ -97,6 +97,8 @@ class TabViewController: UIViewController {
         webView.isLoading && !wasLoadingStoppedExternally
     }
 
+    var preventUniversalLinksOnce = false
+
     private let themingProperties: ExperimentalThemingProperties
     private var isExperimentalThemingEnabled: Bool {
         themingProperties.isExperimentalThemingEnabled
@@ -248,6 +250,11 @@ class TabViewController: UIViewController {
         return creditCardInputAccessoryView
     }()
 
+    lazy var credentialsImportManager: AutofillCredentialsImportPresentationManager = {
+        let manager = AutofillCredentialsImportPresentationManager(loginImportStateProvider: AutofillLoginImportState(keyValueStore: keyValueStore))
+        return manager
+    }()
+
     public var url: URL? {
         willSet {
             if newValue != url {
@@ -378,7 +385,8 @@ class TabViewController: UIViewController {
                                    fireproofing: Fireproofing,
                                    tabInteractionStateSource: TabInteractionStateSource?,
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
-                                   featureDiscovery: FeatureDiscovery) -> TabViewController {
+                                   featureDiscovery: FeatureDiscovery,
+                                   keyValueStore: ThrowingKeyValueStoring) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -400,7 +408,8 @@ class TabViewController: UIViewController {
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
-                              featureDiscovery: featureDiscovery
+                              featureDiscovery: featureDiscovery,
+                              keyValueStore: keyValueStore
             )
         })
         return controller
@@ -444,6 +453,7 @@ class TabViewController: UIViewController {
     let websiteDataManager: WebsiteDataManaging
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
     let featureDiscovery: FeatureDiscovery
+    let keyValueStore: ThrowingKeyValueStoring
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -467,6 +477,7 @@ class TabViewController: UIViewController {
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
+                   keyValueStore: ThrowingKeyValueStoring,
                    themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         self.tabModel = tabModel
         self.appSettings = appSettings
@@ -489,6 +500,7 @@ class TabViewController: UIViewController {
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
+        self.keyValueStore = keyValueStore
         self.themingProperties = themingProperties
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
@@ -1593,6 +1605,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
@@ -1959,7 +1972,6 @@ extension TabViewController: WKNavigationDelegate {
            !(navigationAction.request.url?.isCustomURLScheme() ?? false),
            navigationAction.navigationType != .backForward,
            let request = requestForDoNotSell(basedOn: navigationAction.request) {
-
             decisionHandler(.cancel)
             load(urlRequest: request)
             return
@@ -2213,6 +2225,9 @@ extension TabViewController: WKNavigationDelegate {
 
     private func determineAllowPolicy() -> WKNavigationActionPolicy {
         let allowWithoutUniversalLinks = WKNavigationActionPolicy(rawValue: WKNavigationActionPolicy.allow.rawValue + 2) ?? .allow
+        if preventUniversalLinksOnce {
+            return allowWithoutUniversalLinks
+        }
         return AppUserDefaults().allowUniversalLinks ? .allow : allowWithoutUniversalLinks
     }
     
@@ -2746,6 +2761,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.contentBlockerUserScript.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager
+        userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingUserScript.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
@@ -3298,6 +3314,56 @@ extension TabViewController: SecureVaultManagerDelegate {
         self.present(autofillPromptViewController, animated: true, completion: nil)
     }
 
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToImportCredentialsForDomain domain: String,
+                            completionHandler: @escaping (Bool) -> Void) {
+        guard let eTLDplus1 = storageCache.tld.eTLDplus1(url?.host), credentialsImportManager.domainPasswordImportLastShownOn != eTLDplus1 else {
+            completionHandler(false)
+            return
+        }
+
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
+
+        credentialsImportManager.domainPasswordImportLastShownOn = eTLDplus1
+
+        let promptViewController = ImportPasswordsPromptViewController(keyValueStore: keyValueStore) { [weak self] startImport in
+            guard startImport, let self = self else {
+                completionHandler(false)
+                return
+            }
+
+            self.delegate?.tab(self, didRequestDataImport: .inBrowserPromo, onFinished: { [weak self] in
+                Pixel.fire(pixel: .importCredentialsFlowEnded)
+                completionHandler(true)
+
+                if let domainPasswordImportLastShownOn = self?.credentialsImportManager.domainPasswordImportLastShownOn,
+                    let autofillUserScript = self?.autofillUserScript {
+                    self?.vaultManager.autofillUserScript(autofillUserScript, didRequestAccountsForDomain: domainPasswordImportLastShownOn) { accounts, _ in
+                        if !accounts.isEmpty {
+                            Pixel.fire(pixel: .importCredentialsFlowHadCredentials)
+                        }
+                    }
+                }
+            }, onCancelled: {
+                Pixel.fire(pixel: .importCredentialsFlowCancelled)
+                completionHandler(false)
+            })
+        }
+
+        if let presentationController = promptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.loginPromptMinHeight
+                })]
+            } else {
+                presentationController.detents =  [.medium()]
+            }
+        }
+
+        self.present(promptViewController, animated: true, completion: nil)
+    }
+
     // Used on macOS to request authentication for individual autofill items
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager,
                             isAuthenticatedFor type: BrowserServicesKit.AutofillType,
@@ -3581,6 +3647,7 @@ private extension TabViewController {
             if webView.url != nil {
                 self.url = tabModel.link?.url
                 didRestoreWebViewState = true
+                preventUniversalLinksOnce = true
                 tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
             } else {
                 Pixel.fire(pixel: .tabInteractionStateFailedToRestore)

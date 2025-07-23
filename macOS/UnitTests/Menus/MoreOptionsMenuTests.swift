@@ -161,7 +161,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertFalse(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
+        XCTAssertFalse(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false)))
     }
 
     @MainActor
@@ -172,7 +172,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
+        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false)))
     }
 
     @MainActor
@@ -183,7 +183,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
+        XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false)))
     }
 
     @MainActor
@@ -215,7 +215,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.emailOptionsMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false))
         XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
         XCTAssertTrue(moreOptionsMenu.items[17].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.fireproofSite)
@@ -258,7 +258,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.emailOptionsMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false))
         XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
         XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.freemiumDBPOptionsMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[18].isSeparatorItem)
@@ -318,7 +318,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
-        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
@@ -326,7 +325,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
@@ -345,7 +344,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
@@ -358,8 +357,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenUserIsAuthenticatedWithoutPaidAIChatFeatureThenPaidAIChatItemDoesNotAppear() async throws {
-        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
-
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = []
@@ -367,7 +364,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
@@ -380,66 +377,13 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenClickingPaidAIChatItemThenActionDelegateIsCalled() async throws {
-        throw XCTSkip("Flaky: SubscriptionSubMenu inserted while menu was enumerated")
-        /*
-         <unknown>:0: error: -[Unit_Tests.MoreOptionsMenuTests testWhenClickingPaidAIChatItemThenActionDelegateIsCalled] : *** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated. (NSGenericException)
-         2025-07-09 12:35:26.437716+0000 DuckDuckGo[31381:106091] [Default] Flushing outgoing messages to the IDE with timeout 30.00s
-         2025-07-09 12:35:26.438057+0000 DuckDuckGo[31381:112916] [Default] Received confirmation that IDE processed remaining outgoing messages
-         2025-07-09 12:35:26.438344+0000 DuckDuckGo[31381:106091] *** Terminating app due to uncaught exception 'NSGenericException', reason: '*** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated.'
-         *** First throw call stack:
-         (
-             0   CoreFoundation                      0x000000018799aca0 __exceptionPreprocess + 176
-             1   libobjc.A.dylib                     0x000000018745eb90 objc_exception_throw + 88
-             2   CoreFoundation                      0x0000000187a4998c -[__NSSingleObjectEnumerator init] + 0
-             3   AppKit                              0x000000018b82e49c -[NSMenuItem _titlePathForUserKeyEquivalents] + 172
-             4   AppKit                              0x000000018b82e240 -[NSMenuItem _fetchFreshUserKeyEquivalentInfo] + 72
-             5   AppKit                              0x000000018b82e13c -[NSMenuItem userKeyEquivalent] + 56
-             6   AppKit                              0x000000018c08bec0 -[NSMenuItem _desiredKeyEquivalent:] + 64
-             7   AppKit                              0x000000018b8454b4 -[NSMenu insertItem:atIndex:] + 604
-             8   DuckDuckGo.debug.dylib              0x
-         *** Terminating app due to uncaught exception 'NSGenericException', reason: '*** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated.'
-         *** First throw call stack:
-         (
-             0   CoreFoundation                      0x000000018799aca0 __exceptionPreprocess + 176
-             1   libobjc.A.dylib                     0x000000018745eb90 objc_exception_throw + 88
-             2   CoreFoundation                      0x0000000187a4998c -[__NSSingleObjectEnumerator init] + 0
-             3   AppKit                              0x000000018b82e49c -[NSMenuItem _titlePathForUserKeyEquivalents] + 172
-             4   AppKit                              0x000000018b82e240 -[NSMenuItem _fetchFreshUserKeyEquivalentInfo] + 72
-             5   AppKit                              0x000000018b82e13c -[NSMenuItem userKeyEquivalent] + 56
-             6   AppKit                              0x000000018c08bec0 -[NSMenuItem _desiredKeyEquivalent:] + 64
-             7   AppKit                              0x000000018b8454b4 -[NSMenu insertItem:atIndex:] + 604
-             8   DuckDuckGo.debug.dylib              0x000000010b0ee86c $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC03addG5Items33_EA0A2B0DCF19AB0FA0F1ECC6111E38C7LLyyYaFTY2_ + 1304
-             9   DuckDuckGo.debug.dylib              0x000000010b0ee0c9 $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E    10  DuckDuckGo.debug.dylib              0x000000010b0f0f8d $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E    11  DuckDuckGo.debug.dylib              0x000000010a35b429 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
-             12  DuckDuckGo.debug.dylib              0x000000010a35b595 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
-             13  libswift_Concurrency.dylib          0x000000027063083d _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
-         )
-         2025-07-09 12:35:26.439514+0000 DuckDuckGo[31381:106091] [General] An uncaught exception was raised
-         2025-07-09 12:35:26.441185+0000 DuckDuckGo[31381:106091] [General] *** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated.
-         2025-07-09 12:35:26.441313+0000 DuckDuckGo[31381:106091] [General] (
-             0   CoreFoundation                      0x000000018799aca0 __exceptionPreprocess + 176
-             1   libobjc.A.dylib                     0x000000018745eb90 objc_exception_throw + 88
-             2   CoreFoundation                      0x0000000187a4998c -[__NSSingleObjectEnumerator init] + 0
-             3   AppKit                              0x000000018b82e49c -[NSMenuItem _titlePathForUserKeyEquivalents] + 172
-             4   AppKit                              0x000000018b82e240 -[NSMenuItem _fetchFreshUserKeyEquivalentInfo] + 72
-             5   AppKit                              0x000000018b82e13c -[NSMenuItem userKeyEquivalent] + 56
-             6   AppKit                              0x000000018c08bec0 -[NSMenuItem _desiredKeyEquivalent:] + 64
-             7   AppKit                              0x000000018b8454b4 -[NSMenu insertItem:atIndex:] + 604
-             8   DuckDuckGo.debug.dylib              0x000000010b0ee86c $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC03addG5Items33_EA0A2B0DCF19AB0FA0F1ECC6111E38C7LLyyYaFTY2_ + 1304
-             9   DuckDuckGo.debug.dylib              0x000000010b0ee0c9 $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E16AuthV1toV2Bridge_pAA04MorengO9Providing_pAJ0jR0_pyyctcfcyyYacfU_TQ1_ + 1
-             10  DuckDuckGo.debug.dylib              0x000000010b0f0f8d $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E16AuthV1toV2Bridge_pAA04MorengO9Providing_pAJ0jR0_pyyctcfcyyYacfU_TATQ0_ + 1
-             11  DuckDuckGo.debug.dylib              0x000000010a35b429 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
-             12  DuckDuckGo.debug.dylib              0x000000010a35b595 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
-             13  libswift_Concurrency.dylib          0x000000027063083d _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
-         )
-        */
-
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: false) })
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         await waitForSubscriptionSubmenuBuilding()
@@ -744,8 +688,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
                                   internalUserDecider: MockInternalUserDecider(),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
 
         XCTAssertTrue(sut.items.count == 2)
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
@@ -756,22 +700,22 @@ final class MoreOptionsMenuTests: XCTestCase {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
 
         XCTAssertTrue(sut.items.count == 4)
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
         XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
         XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendPProFeedback)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
     }
 
     func testCorrectItemsAreShown_whenInternalUserAndNotPrivacyProUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: false),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
 
         XCTAssertTrue(sut.items.count == 4)
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
@@ -784,14 +728,14 @@ final class MoreOptionsMenuTests: XCTestCase {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
 
         XCTAssertTrue(sut.items.count == 6)
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
         XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
         XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendPProFeedback)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
     }
@@ -802,8 +746,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
-                                  featureFlagger: featureFlagger,
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: featureFlagger)
 
         XCTAssertTrue(sut.items.count == 8)
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
@@ -811,7 +755,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 2)?.title, "Report a Browser Problem")
         XCTAssertEqual(sut.item(at: 3)?.title, "Request a New Feature")
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendPProFeedback)
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
         XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
     }

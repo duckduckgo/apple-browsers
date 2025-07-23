@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Vyber **Export** a na další obrazovce vyber **Hesla** a **Uložit do stažených souborů**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importovat soubor s hesly...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "V Chromu přejdi do **Správce hesel Google** a pak do **Nastavení**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importovat hesla";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Znovu se neptat";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Rychle a bezpečně přenes svá hesla z jiného prohlížeče.";

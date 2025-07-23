@@ -462,7 +462,7 @@ jobs:
           is_scheduled_release:"${{ github.event_name == 'schedule' }}"
 
     - name: Report success (test build)
-      if: ${{ env.asana-task-url != '' && env.upload-to == 's3testbuilds' }}
+      if: ${{ env.upload-to == 's3testbuilds' }}
       env:
         DMG_URL: ${{ steps.upload-dmg-to-s3.outputs.dmg-url }}
         DMG_S3_PATH: ${{ steps.upload-dmg-to-s3.outputs.dmg-s3-path }}

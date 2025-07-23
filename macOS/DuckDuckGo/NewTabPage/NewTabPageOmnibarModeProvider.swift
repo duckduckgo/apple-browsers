@@ -20,6 +20,7 @@ import NewTabPage
 import Persistence
 import AppKit
 import os.log
+import PixelKit
 
 final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
 
@@ -28,9 +29,12 @@ final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private let firePixel: (PixelKitEvent) -> Void
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring,
+         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
+        self.firePixel = firePixel
     }
 
     @MainActor
@@ -47,6 +51,7 @@ final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
             return .search
         }
         set {
+            firePixel(NewTabPagePixel.omnibarModeChanged(mode: newValue == .search ? .search : .duckAI))
             do {
                 try keyValueStore.set(newValue.rawValue, forKey: Key.newTabPageOmnibarMode.rawValue)
             } catch {

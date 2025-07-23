@@ -1510,7 +1510,27 @@ class MainViewController: UIViewController {
             autofillLoginListViewController.showAccountDetails(account, animated: true)
         }
     }
-    
+
+    func launchDataImport(source: DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
+        let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
+                                                  bookmarksDatabase: self.bookmarksDatabase,
+                                                  favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+                                                  tld: AppDependencyProvider.shared.storageCache.tld)
+        let dataImportViewController = DataImportViewController(importManager: dataImportManager,
+                                                                importScreen: source,
+                                                                syncService: syncService,
+                                                                keyValueStore: keyValueStore,
+                                                                onFinished: onFinished,
+                                                                onCancelled: onCancelled)
+
+        let navigationController = UINavigationController(rootViewController: dataImportViewController)
+        dataImportViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
+                                                                                          style: .plain,
+                                                                                          target: self,
+                                                                                          action: #selector(closeAutofillModal))
+        self.present(navigationController, animated: true, completion: nil)
+    }
+
     @objc private func closeAutofillModal() {
         dismiss(animated: true)
     }
@@ -2881,7 +2901,12 @@ extension MainViewController: TabDelegate {
              source: AutofillSettingsSource) {
         launchAutofillLogins(with: currentTab?.url, currentTabUid: tab.tabModel.uid, source: source, selectedAccount: account)
     }
-    
+
+    func tab(_ tab: TabViewController,
+             didRequestDataImport source: DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
+        launchDataImport(source: source, onFinished: onFinished, onCancelled: onCancelled)
+    }
+
     func tabDidRequestSettings(tab: TabViewController) {
         segueToSettings()
     }

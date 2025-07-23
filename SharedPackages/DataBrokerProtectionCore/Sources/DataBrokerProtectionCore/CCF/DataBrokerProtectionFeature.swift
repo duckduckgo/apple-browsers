@@ -102,10 +102,8 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         switch result.result {
         case .success(let successResponse):
-            print("SAMDEBUG: Action completed, success: \(params)")
             await parseSuccess(success: successResponse)
         case .error(let error):
-            print("SAMDEBUG: Action completed, failure: \(params)")
             let dataBrokerError: DataBrokerProtectionError = .actionFailed(actionID: error.actionID, message: error.message)
             await delegate?.onError(error: dataBrokerError)
         }

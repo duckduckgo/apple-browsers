@@ -75,8 +75,7 @@ final class MainWindow: NSWindow {
         minSize = .init(width: Self.minWindowWidth, height: 0)
     }
 
-    // MARK: - First Responder Notification
-
+    /// The overridden method sends `firstResponderDidChange` notification on first responder change
     override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
         // The only reliable way to detect NSTextField is the first responder
         defer {
@@ -96,17 +95,45 @@ final class MainWindow: NSWindow {
         super.endEditing(for: object)
     }
 
-    // used to observe childWindows property
+    /// Used to observe `childWindows` property which is non-KVO-compliant by-default
     override func addChildWindow(_ childWin: NSWindow, ordered place: NSWindow.OrderingMode) {
         willChangeValue(forKey: "childWindows")
         super.addChildWindow(childWin, ordered: place)
         didChangeValue(forKey: "childWindows")
     }
-
+    /// Used to observe `childWindows` property which is non-KVO-compliant by-default
     override func removeChildWindow(_ childWin: NSWindow) {
         willChangeValue(forKey: "childWindows")
         super.removeChildWindow(childWin)
         didChangeValue(forKey: "childWindows")
+    }
+
+    /// Makes custom Tab Bar visible for VoiceOver (Accessibility Inspector) as the window‘s child with no own AX representation (directly
+    /// (`accessibilityEnabled` and `isAccessibilityElement` are set in `MainWindowController.moveTabBarView(toTitlebarView:)`)
+    override func accessibilityChildren() -> [Any]? {
+        guard var children = super.accessibilityChildren() else { return nil }
+
+        guard let mainViewController = self.contentViewController as? MainViewController else {
+            assertionFailure(
+                "MainWindow contentViewController must be MainViewController, but is \(String(describing: self.contentViewController))"
+            )
+            return children
+        }
+
+        let buttons = children.enumerated().filter({
+            ($0.element as? NSAccessibilityProtocol)?.accessibilityRole() == .button
+        })
+        // semaphore buttons should be present
+        guard buttons.count > 3 else { return children }
+        guard var insertionPoint = buttons.prefix(3).last?.offset else { return children }
+
+        let tabBarViewController = mainViewController.tabBarViewController
+        if !children.contains(where: { $0 as AnyObject === tabBarViewController.view }) {
+            // Insert `TabBarViewController.view` as the window‘s AX child after the semaphore buttons
+            children.insert(tabBarViewController.view, at: insertionPoint)
+            insertionPoint += 1
+        }
+        return children
     }
 
 }

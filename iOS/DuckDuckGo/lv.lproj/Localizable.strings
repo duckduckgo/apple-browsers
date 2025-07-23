@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Atlasi **Eksportēt**, nākamajā ekrānā atlasi **Paroles** un tad **Saglabāt lejupielādēs**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importēt paroļu failu...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Pārlūkā Chrome atver sadaļu **Google paroļu pārvaldnieks** un tad **Iestatījumi**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importēt paroles";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Vairs nejautāt";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Ātri un droši pārnesiet savas paroles no citas pārlūkprogrammas.";

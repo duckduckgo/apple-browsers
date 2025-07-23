@@ -71,6 +71,9 @@ class FavoritesOverlay: UIViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.backgroundColor = .clear
+        if isUsingSearchInputCustomStyling {
+            collectionView.contentInsetAdjustmentBehavior = .always
+        }
 
         view.addSubview(collectionView)
 

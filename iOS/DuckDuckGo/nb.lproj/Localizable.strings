@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Velg **Eksporter**, og på neste skjermbilde **Passord** og **Lagre i Nedlastinger**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importer passordfil ...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "I Chrome går du til **Google passordlagring** og deretter **Innstillinger**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importer passord";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Ikke spør igjen";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Overfør passordene dine raskt og sikkert fra en annen nettleser.";

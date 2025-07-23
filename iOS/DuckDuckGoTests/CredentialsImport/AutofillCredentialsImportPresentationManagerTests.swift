@@ -125,6 +125,24 @@ final class AutofillCredentialsImportPresentationManagerTests: XCTestCase {
         XCTAssertFalse(result)
     }
     
+    func testWhenCredentialsImportPromptPresentationCountIs5OrMore_ThenAutofillUserScriptShouldShowPasswordImportDialogIsFalse() {
+        importState.credentialsImportPromptPresentationCount = 5
+        let result = autofillUserScriptShouldShowPasswordImportDialogResult()
+
+        XCTAssertFalse(result)
+    }
+
+    func testWhenCredentialsImportPromptPresentationCountIsLessThan5_ThenAutofillUserScriptShouldShowPasswordImportDialogConsidersOtherConditions() {
+        importState.credentialsImportPromptPresentationCount = 4
+        let result = autofillUserScriptShouldShowPasswordImportDialogResult()
+
+        if #available(iOS 18.2, *) {
+            XCTAssertTrue(result)
+        } else {
+            XCTAssertFalse(result)
+        }
+    }
+
     @available(iOS 18.2, *)
     func testWhenAllPasswordsScreenImportConditionsAreMet_ThenPasswordsScreenShouldShowPasswordImportPromotionIsTrue() {
         let result = passwordsScreenShouldShowPasswordImportPromotionResult()
@@ -219,7 +237,9 @@ final class MockAutofillLoginImportState: AutofillLoginImportStateProvider, Auto
     var isImportPromoInBrowserPromptFeatureEnabled: Bool = true
     
     var isImportPromoInPasswordsScreenFeatureEnabled: Bool = true
-    
+
+    var credentialsImportPromptPresentationCount: Int = 0
+
     var hasImportedLogins: Bool = false
     
     var isAutofillEnabled: Bool = true

@@ -1168,6 +1168,7 @@ Take back control of your personal information with the browser designed for dat
     public static let importPasswordsPromoTitle =  NSLocalizedString("import.passwords.promo.title", value: "Import your passwords to DuckDuckGo", comment: "Title for the Import Passwords Promotion banner")
     public static let importPasswordsPromoMessage =  NSLocalizedString("import.passwords.promo.message", value: "Quickly and securely transfer your passwords from another browser.", comment: "Message body for the Import Passwords Promotion banner")
     public static let importPasswordsPromoButtonTitle =  NSLocalizedString("import.passwords.promo.button.title", value: "Import Passwords", comment: "Title for button of the Import Passwords Promotion banner")
+    public static let importPasswordsPromoDismissButtonTitle =  NSLocalizedString("import.passwords.promo.dismiss.button.title", value: "Don’t Ask Again", comment: "Title for button to dismiss the Import Passwords Promotion banner")
 
     static let preemptiveCrashTitle = NSLocalizedString("error.preemptive-crash.title", value: "App issue detected", comment: "Alert title")
     static let preemptiveCrashBody = NSLocalizedString("error.preemptive-crash.body", value: "Looks like there's an issue with the app and it needs to close. Please reopen to continue.", comment: "Alert message")
@@ -1821,7 +1822,6 @@ Take back control of your personal information with the browser designed for dat
 
     public static let dataImportPasswordsTitle = NSLocalizedString("data.import.passwords.title", value:"Import Passwords to DuckDuckGo", comment: "Title for screen to import passwords")
     public static let dataImportPasswordsSubtitle = NSLocalizedString("data.import.passwords.subtitle", value:"Select the file containing passwords exported from Safari or Chrome. This is usually a ZIP or CSV file.", comment: "Subtitle for screen to import passwords")
-    public static let dataImportPasswordsFileButton = NSLocalizedString("data.import.passwords.file-button", value:"Import Passwords File...", comment: "Button label to select zip or csv file for importing")
     public static let dataImportPasswordsSelectFileButton = NSLocalizedString("data.import.passwords.select-file-button", value:"Select File...", comment: "Button label to select zip or csv file for importing")
     public static let dataImportPasswordsInstructionHeader = NSLocalizedString("data.import.passwords.instructions.header", value:"How to export passwords", comment: "Header for section with instructions for how to export passwords from Safari or Chrome")
     public static let dataImportBookmarksInstructionHeader = NSLocalizedString("data.import.bookmarks.instructions.header", value:"How to export bookmarks from Safari", comment: "Header for section with instructions for how to export bookmarks from Safari")

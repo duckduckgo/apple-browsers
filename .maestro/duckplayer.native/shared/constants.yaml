@@ -1,0 +1,32 @@
+# Shared constants for DuckPlayer tests
+appId: com.duckduckgo.mobile.ios
+---
+# Define variables that can be used across tests
+- evalScript: "${output.videoTitle = 'DuckDuckGo vs Google: 5 Reasons You Should Switch'}"
+- evalScript: "${output.videoSearchUrl = 'https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web'}"
+- evalScript: "${output.youtubeSearchUrl = 'https://www.youtube.com/results?search_query=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%22&sp=EgIQAQ%253D%253D'}"
+- evalScript: "${output.searchEntryId = 'searchEntry'}"
+- evalScript: "${output.closeButtonId = 'xmark'}"
+- evalScript: "${output.chevronUpId = 'chevron.up'}"
+- evalScript: "${output.duckPlayerSettingsId = 'DuckPlayerOpenSettings'}"
+- evalScript: "${output.duckPlayerLabel = 'Duck Player'}"
+- evalScript: "${output.settingsLabel = 'Settings'}"
+- evalScript: "${output.doneLabel = 'Done'}"
+- evalScript: "${output.browsingMenuLabel = 'Browsing Menu'}"
+- evalScript: "${output.watchOnYoutubeLabel = 'Watch on YouTube'}"
+- evalScript: "${output.openVideosHereLabel = 'Open YouTube videos here'}"
+- evalScript: "${output.youtubeMobileDomain = 'm.youtube.com'}"
+- evalScript: "${output.playInDuckPlayerLabel = 'Play in Duck Player'}"
+- evalScript: "${output.playThisVideoInDuckPlayerLabel = 'Play this video in Duck Player'}"
+- evalScript: "${output.resumeInDuckPlayerLabel = 'Resume in Duck Player'}"
+- evalScript: "${output.dontShowLabel = \"Don't Show\"}"
+- evalScript: "${output.videosTabLabel = 'Videos'}"
+- evalScript: "${output.openAutomaticallyLabel = 'Open Automatically'}"
+- evalScript: "${output.letMeChooseLabel = 'Let me choose'}"
+- evalScript: "${output.closeTabsAndClearDataLabel = 'Close Tabs and Clear Data'}"
+# Toggle states
+- evalScript: "${output.toggleOff = '0'}"
+- evalScript: "${output.toggleOn = '1'}"
+# Settings toggle options
+- evalScript: "${output.serpToggleOn = '1'}"
+- evalScript: "${output.watchInYoutubeOption = '0'}"

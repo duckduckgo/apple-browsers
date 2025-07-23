@@ -28,10 +28,15 @@ final class DataImportSummaryViewController: UIViewController {
 
     private var viewModel: DataImportSummaryViewModel
     private let importScreen: DataImportViewModel.ImportScreen
+    private let onCompletion: () -> Void
+    private let onSegueToSync: () -> Void
 
-    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
+    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, onSegueToSync: @escaping () -> Void, onCompletion: @escaping () -> Void) {
         self.viewModel = DataImportSummaryViewModel(summary: summary, importScreen: importScreen, syncService: syncService)
         self.importScreen = importScreen
+
+        self.onCompletion = onCompletion
+        self.onSegueToSync = onSegueToSync
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -71,12 +76,20 @@ extension DataImportSummaryViewController: DataImportSummaryViewModelDelegate {
             dismiss(animated: true) {
                 parent.segueToSync()
             }
+        } else {
+            self.onSegueToSync()
         }
     }
 
 
     func dataImportSummaryViewModelComplete(_ viewModel: DataImportSummaryViewModel) {
-        dismiss(animated: true)
+        if let navigationController = presentingViewController as? UINavigationController, navigationController.topViewController is DataImportViewController {
+            self.onCompletion()
+        } else {
+            dismiss(animated: true) { [weak self] in
+                self?.onCompletion()
+            }
+        }
     }
 
 }

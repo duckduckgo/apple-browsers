@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Valige **Eksport** ning järgmisel ekraanil valige **Paroolid** ja **Salvesta allalaadimiskausta**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Impordi paroolifail...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Avage Chrome'is **Google Password Manager** ja seejärel **Seaded**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Impordi paroolid";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Ära küsi enam";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Viige oma paroolid kiiresti ja turvaliselt üle teisest brauserist.";

@@ -59,10 +59,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.featureFlagger = featureFlagger
         self.timerDuration = timerDuration
 
-        guard featureFlagger.isFeatureOn(.vpnToolbarUpsell) else {
-            return
-        }
-
         guard isNewUser && !subscriptionManager.isUserAuthenticated else {
             return
         }
@@ -124,7 +120,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Upsell Visibility
 
     private func updateUpsellVisibility() {
-        guard !subscriptionManager.isUserAuthenticated else {
+        guard featureFlagger.isFeatureOn(.vpnToolbarUpsell), !subscriptionManager.isUserAuthenticated else {
             shouldShowUpsell = false
             return
         }

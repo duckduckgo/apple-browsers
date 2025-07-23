@@ -52,6 +52,7 @@ protocol ContextualOnboardingDialogTypeProviding {
 /// Protocol to update the onboarding state (e.g., when the user uses the fire button or the feature is turned off).
 protocol ContextualOnboardingStateUpdater: AnyObject {
     var state: ContextualOnboardingState { get set }
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { get }
     func gotItPressed()
     func fireButtonUsed()
     func turnOffFeature()
@@ -101,6 +102,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Publisher for contextual onboarding completion
     @Published private(set) var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
     // Computed property for managing state.
     var state: ContextualOnboardingState {

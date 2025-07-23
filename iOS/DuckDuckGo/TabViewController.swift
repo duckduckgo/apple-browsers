@@ -99,15 +99,6 @@ class TabViewController: UIViewController {
 
     var preventUniversalLinksOnce = false
 
-    private let themingProperties: ExperimentalThemingProperties
-    private var isExperimentalThemingEnabled: Bool {
-        themingProperties.isExperimentalThemingEnabled
-    }
-    
-    private var isRounderCornersEnabled: Bool {
-        themingProperties.isRoundedCornersTreatmentEnabled
-    }
-
     var openedByPage = false
     weak var openingTab: TabViewController? {
         didSet {
@@ -477,8 +468,8 @@ class TabViewController: UIViewController {
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
-                   keyValueStore: ThrowingKeyValueStoring,
-                   themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
+                   keyValueStore: ThrowingKeyValueStoring) {
+
         self.tabModel = tabModel
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
@@ -501,7 +492,6 @@ class TabViewController: UIViewController {
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
-        self.themingProperties = themingProperties
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
@@ -531,7 +521,6 @@ class TabViewController: UIViewController {
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
         registerForAddressBarLocationNotifications()
-        registerForOrientationDidChangeNotification()
         registerForAutofillNotifications()
 
         if #available(iOS 16.4, *) {
@@ -565,13 +554,6 @@ class TabViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector:
                                                 #selector(onAddressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
-                                               object: nil)
-    }
-
-    private func registerForOrientationDidChangeNotification() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(updateRoundedCorners),
-                                               name: UIDevice.orientationDidChangeNotification,
                                                object: nil)
     }
 
@@ -622,8 +604,7 @@ class TabViewController: UIViewController {
 
         // Update DuckPlayer when WebView appears
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
-        
-        updateRoundedCorners()
+
         fireWebViewDebugPixels()
     }
 
@@ -664,13 +645,6 @@ class TabViewController: UIViewController {
     
     func applyInheritedAttribution(_ attribution: AdClickAttributionLogic.State?) {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
-    }
-
-    @objc func updateRoundedCorners() {
-        if isRounderCornersEnabled {
-            webViewContainer.clipsToBounds = true
-            webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
-        }
     }
 
     private func fireWebViewDebugPixels() {
@@ -729,19 +703,11 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        if isExperimentalThemingEnabled {
-            pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
-                                                                pullableView: webViewContainerView,
-                                                                onRefresh: { [weak self] in
-                self?.handlePullToRefresh()
-            })
-        } else {
-            webView.scrollView.refreshControl = refreshControl
-            // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.
-            // We don't have to care about it for this control instance the next time `setRefreshControlEnabled`
-            // is called. Looks like a bug introduced in iOS 17.4 (https://github.com/facebook/react-native/issues/43388)
-            configureRefreshControl(refreshControl)
-        }
+        pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                                            pullableView: webViewContainerView,
+                                                            onRefresh: { [weak self] in
+            self?.handlePullToRefresh()
+        })
 
         updateContentMode()
 
@@ -792,7 +758,6 @@ class TabViewController: UIViewController {
         }
 #endif
 
-        updateRoundedCorners()
         borderView.insertSelf(into: webView)
         borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
     }
@@ -1192,11 +1157,7 @@ class TabViewController: UIViewController {
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        if isExperimentalThemingEnabled {
-            pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
-        } else {
-            webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
-        }
+        pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
     }
 
     private var didGoBackForward: Bool = false {

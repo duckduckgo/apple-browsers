@@ -1,5 +1,5 @@
 //
-//  UpdatedOmniBarSearchView.swift
+//  DefaultOmniBarSearchView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,13 +21,10 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-final class UpdatedOmniBarSearchView: UIView {
+final class DefaultOmniBarSearchView: UIView {
 
     let privacyInfoContainer: PrivacyInfoContainerView! = {
-        // This view is constructed inside an original OmniBar xib, so let's extract it from there.
-        let omniBarNib = DefaultOmniBarView.create()
-        omniBarNib.privacyInfoContainer.removeFromSuperview()
-        return omniBarNib.privacyInfoContainer
+        return PrivacyInfoContainerView.load(nibName: "PrivacyInfoContainer")
     }()
     let notificationContainer: OmniBarNotificationContainerView! = OmniBarNotificationContainerView()
 
@@ -140,13 +137,13 @@ final class UpdatedOmniBarSearchView: UIView {
             privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor)
         ])
 
-        UpdatedOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: reloadButton)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: clearButton)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: shareButton)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: cancelButton)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: accessoryButton)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: leftIconContainer)
+        DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: reloadButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: clearButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: shareButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: cancelButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: accessoryButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: leftIconContainer)
 
         // Use autoresizing mask here so it's less code
         loupeIconView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -171,25 +168,25 @@ final class UpdatedOmniBarSearchView: UIView {
         textField.keyboardType = .webSearch
 
         accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
-        UpdatedOmniBarView.setUpCommonProperties(for: accessoryButton)
+        DefaultOmniBarView.setUpCommonProperties(for: accessoryButton)
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
-        UpdatedOmniBarView.setUpCommonProperties(for: reloadButton)
+        DefaultOmniBarView.setUpCommonProperties(for: reloadButton)
 
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
-        UpdatedOmniBarView.setUpCommonProperties(for: clearButton)
+        DefaultOmniBarView.setUpCommonProperties(for: clearButton)
 
         shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
-        UpdatedOmniBarView.setUpCommonProperties(for: shareButton)
+        DefaultOmniBarView.setUpCommonProperties(for: shareButton)
 
         cancelButton.setImage(DesignSystemImages.Glyphs.Size24.close)
-        UpdatedOmniBarView.setUpCommonProperties(for: cancelButton)
+        DefaultOmniBarView.setUpCommonProperties(for: cancelButton)
 
         voiceSearchButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
-        UpdatedOmniBarView.setUpCommonProperties(for: voiceSearchButton)
+        DefaultOmniBarView.setUpCommonProperties(for: voiceSearchButton)
 
         dismissButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
-        UpdatedOmniBarView.setUpCommonProperties(for: dismissButtonView)
+        DefaultOmniBarView.setUpCommonProperties(for: dismissButtonView)
 
         loupeIconView.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
         loupeIconView.tintColor = tintColor
@@ -199,7 +196,5 @@ final class UpdatedOmniBarSearchView: UIView {
         customIconView.contentMode = .center
         customIconView.isHidden = true
         customIconView.image = nil
-
-        privacyInfoContainer.isUsingExperimentalAnimations = true
     }
 }

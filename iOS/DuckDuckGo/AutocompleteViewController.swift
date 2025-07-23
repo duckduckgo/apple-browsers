@@ -42,7 +42,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private let appSettings: AppSettings
     private let model: AutocompleteViewModel
-    private let themingProperties: ExperimentalThemingProperties
 
     @Published private var query = ""
     private var queryDebounceCancellable: AnyCancellable?
@@ -75,8 +74,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
          appSettings: AppSettings,
          historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
          tabsModel: TabsModel,
-         featureFlagger: FeatureFlagger,
-         themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
+         featureFlagger: FeatureFlagger) {
 
         self.tabsModel = tabsModel
         self.historyManager = historyManager
@@ -85,11 +83,9 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.appSettings = appSettings
         self.historyMessageManager = historyMessageManager
         self.featureFlagger = featureFlagger
-        self.themingProperties = themingProperties
 
         self.model = AutocompleteViewModel(isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
-                                           showMessage: historyManager.isHistoryFeatureEnabled() && historyMessageManager.shouldShow(),
-                                           isExperimentalThemingEnabled: themingProperties.isExperimentalThemingEnabled)
+                                           showMessage: historyManager.isHistoryFeatureEnabled() && historyMessageManager.shouldShow())
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
         self.model.isPad = isPad

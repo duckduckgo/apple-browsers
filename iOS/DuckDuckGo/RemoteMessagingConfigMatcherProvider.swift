@@ -121,21 +121,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let shownMessageIds = store.fetchShownRemoteMessageIDs()
 
         let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
-            guard flag.cohortType == nil else { return false }
-
-            let isFlagEnabled: Bool
-            switch flag {
-            case .visualUpdates:
-                // Use value established at launch instead of live feature flag.
-                // This prevents showing remote message that's based on this flag prematurely,
-                // i.e. before `visualUpdates` flag becomes effective after restart.
-                // See https://app.asana.com/1/137249556945/project/1206226850447395/task/1210454132810101
-                isFlagEnabled = themeManager.properties.isExperimentalThemingEnabled
-            default:
-                isFlagEnabled = featureFlagger.isFeatureOn(for: flag)
-            }
-
-            return isFlagEnabled
+            flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
 
         return RemoteMessagingConfigMatcher(

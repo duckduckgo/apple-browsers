@@ -1,5 +1,5 @@
 //
-//  UpdatedOmniBarView.swift
+//  DefaultOmniBarView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,7 +23,22 @@ import DesignResourcesKitIcons
 import SwiftUI
 import UIComponents
 
-final class UpdatedOmniBarView: UIView, OmniBarView {
+public enum OmniBarIcon {
+    case duckPlayer
+    case specialError
+
+    var image: UIImage {
+        switch self {
+        case .duckPlayer:
+            return UIImage(resource: .duckPlayerURLIcon)
+        case .specialError:
+            return DesignSystemImages.Glyphs.Size24.globe
+        }
+    }
+
+}
+
+final class DefaultOmniBarView: UIView, OmniBarView {
 
     var textField: TextFieldWithInsets! { searchAreaView.textField }
     var privacyInfoContainer: PrivacyInfoContainerView! { searchAreaView.privacyInfoContainer }
@@ -44,7 +59,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var shareButton: UIButton! { searchAreaView.shareButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
-    let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
+    let expectedHeight: CGFloat = DefaultOmniBarView.expectedHeight
     static let expectedHeight: CGFloat = Metrics.height
 
     var accessoryType: OmniBarAccessoryType = .chat {
@@ -230,7 +245,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private let leadingButtonsContainer = UIStackView()
     private let trailingButtonsContainer = UIStackView()
 
-    private let searchAreaView = UpdatedOmniBarSearchView()
+    private let searchAreaView = DefaultOmniBarSearchView()
     private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
 
     /// Spans to available width of the omni bar and allows the input field to center horizontally
@@ -348,11 +363,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             fieldContainerLayoutGuide.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
         ])
 
-        UpdatedOmniBarView.activateItemSizeConstraints(for: backButtonView)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: forwardButtonView)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: menuButtonView)
-        UpdatedOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: backButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: forwardButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
+        DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
     }
 
     private func setUpProperties() {
@@ -397,19 +412,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         leadingButtonsContainer.isHidden = true
 
         backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall)
-        UpdatedOmniBarView.setUpCommonProperties(for: backButtonView)
+        DefaultOmniBarView.setUpCommonProperties(for: backButtonView)
 
         forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)
-        UpdatedOmniBarView.setUpCommonProperties(for: forwardButtonView)
+        DefaultOmniBarView.setUpCommonProperties(for: forwardButtonView)
 
         bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
-        UpdatedOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
+        DefaultOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
         menuButtonView.setImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
-        UpdatedOmniBarView.setUpCommonProperties(for: menuButtonView)
+        DefaultOmniBarView.setUpCommonProperties(for: menuButtonView)
 
         settingsButtonView.setImage(DesignSystemImages.Glyphs.Size24.settings)
-        UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
+        DefaultOmniBarView.setUpCommonProperties(for: settingsButtonView)
         
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
@@ -630,7 +645,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 }
 
-extension UpdatedOmniBarView {
+extension DefaultOmniBarView {
     static func activateItemSizeConstraints(for item: UIView) {
         item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
         item.widthAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
@@ -641,7 +656,7 @@ extension UpdatedOmniBarView {
     }
 }
 
-extension UpdatedOmniBarView {
+extension DefaultOmniBarView {
     func showSeparator() {
         // no-op
     }

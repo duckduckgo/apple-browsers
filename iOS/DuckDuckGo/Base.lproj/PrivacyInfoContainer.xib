@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="ipad12_9rounded" orientation="landscape" layout="fullscreen" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="39A-Jc-g74" customClass="PrivacyInfoContainerView" customModule="DuckDuckGo" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="1366" height="1024"/>
+            <subviews>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WzT-Ie-1Jn" userLabel="Trackers Animation Wrapper">
+                    <rect key="frame" x="-15" y="0.0" width="158" height="1024"/>
+                    <subviews>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7Vd-32-zgf" customClass="LottieAnimationView" customModule="Lottie">
+                            <rect key="frame" x="0.0" y="0.0" width="158" height="1024"/>
+                        </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="TEY-Cn-AKR" customClass="LottieAnimationView" customModule="Lottie">
+                            <rect key="frame" x="0.0" y="0.0" width="158" height="1024"/>
+                        </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="n9k-Wb-Aoz" customClass="LottieAnimationView" customModule="Lottie">
+                            <rect key="frame" x="0.0" y="0.0" width="158" height="1024"/>
+                        </view>
+                    </subviews>
+                    <constraints>
+                        <constraint firstAttribute="bottom" secondItem="n9k-Wb-Aoz" secondAttribute="bottom" id="0sb-tG-NdG"/>
+                        <constraint firstItem="n9k-Wb-Aoz" firstAttribute="top" secondItem="WzT-Ie-1Jn" secondAttribute="top" id="2ce-wX-G3x"/>
+                        <constraint firstItem="n9k-Wb-Aoz" firstAttribute="leading" secondItem="WzT-Ie-1Jn" secondAttribute="leading" id="JSZ-kU-pcX"/>
+                        <constraint firstItem="7Vd-32-zgf" firstAttribute="top" secondItem="WzT-Ie-1Jn" secondAttribute="top" id="KPF-Jb-FJk"/>
+                        <constraint firstAttribute="trailing" secondItem="n9k-Wb-Aoz" secondAttribute="trailing" id="PWf-E3-E5P"/>
+                        <constraint firstItem="TEY-Cn-AKR" firstAttribute="top" secondItem="WzT-Ie-1Jn" secondAttribute="top" id="TMm-wB-iHh"/>
+                        <constraint firstAttribute="trailing" secondItem="7Vd-32-zgf" secondAttribute="trailing" id="V1u-hm-NNj"/>
+                        <constraint firstAttribute="bottom" secondItem="TEY-Cn-AKR" secondAttribute="bottom" id="gzz-FE-PBh"/>
+                        <constraint firstAttribute="bottom" secondItem="7Vd-32-zgf" secondAttribute="bottom" id="mx9-xO-5xr"/>
+                        <constraint firstItem="TEY-Cn-AKR" firstAttribute="leading" secondItem="WzT-Ie-1Jn" secondAttribute="leading" id="nAi-pE-iIE"/>
+                        <constraint firstItem="7Vd-32-zgf" firstAttribute="leading" secondItem="WzT-Ie-1Jn" secondAttribute="leading" id="qHF-yt-xbT"/>
+                        <constraint firstAttribute="trailing" secondItem="TEY-Cn-AKR" secondAttribute="trailing" id="ta9-Fo-A0x"/>
+                        <constraint firstAttribute="width" constant="158" id="vGJ-Hh-TnJ"/>
+                    </constraints>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="eit-OC-tFF">
+                    <rect key="frame" x="-6.5" y="499.5" width="32" height="25"/>
+                    <color key="backgroundColor" systemColor="systemYellowColor"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="25" id="cEc-q4-hyF"/>
+                        <constraint firstAttribute="width" constant="32" id="iZm-iR-7qJ"/>
+                    </constraints>
+                </view>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="X7P-SV-mFZ" customClass="PrivacyIconView" customModule="DuckDuckGo" customModuleProvider="target">
+                    <rect key="frame" x="-8" y="0.0" width="43" height="1024"/>
+                    <subviews>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="UlQ-2A-9kv" userLabel="Shield Animations Wrapper">
+                            <rect key="frame" x="-12" y="0.0" width="158" height="1024"/>
+                            <subviews>
+                                <view contentMode="scaleAspectFill" translatesAutoresizingMaskIntoConstraints="NO" id="1Cb-tX-0m0" customClass="LottieAnimationView" customModule="Lottie">
+                                    <rect key="frame" x="0.0" y="0.0" width="158" height="1024"/>
+                                </view>
+                                <view contentMode="scaleAspectFill" translatesAutoresizingMaskIntoConstraints="NO" id="VbZ-DJ-Yl6" customClass="LottieAnimationView" customModule="Lottie">
+                                    <rect key="frame" x="0.0" y="0.0" width="158" height="1024"/>
+                                </view>
+                                <view contentMode="scaleAspectFill" translatesAutoresizingMaskIntoConstraints="NO" id="2RX-sI-A1R" customClass="LottieAnimationView" customModule="Lottie">
+                                    <rect key="frame" x="0.0" y="0.0" width="158" height="1024"/>
+                                </view>
+                                <view contentMode="center" translatesAutoresizingMaskIntoConstraints="NO" id="W8K-ii-MPB" customClass="LottieAnimationView" customModule="Lottie">
+                                    <rect key="frame" x="0.0" y="0.0" width="158" height="1024"/>
+                                </view>
+                            </subviews>
+                            <constraints>
+                                <constraint firstAttribute="trailing" secondItem="1Cb-tX-0m0" secondAttribute="trailing" id="8sT-Na-AgE"/>
+                                <constraint firstItem="W8K-ii-MPB" firstAttribute="leading" secondItem="UlQ-2A-9kv" secondAttribute="leading" id="EzP-lZ-hR9"/>
+                                <constraint firstAttribute="width" constant="158" id="HnB-g2-0gZ"/>
+                                <constraint firstAttribute="bottom" secondItem="2RX-sI-A1R" secondAttribute="bottom" id="Jxp-hq-ROg"/>
+                                <constraint firstAttribute="trailing" secondItem="W8K-ii-MPB" secondAttribute="trailing" id="MuY-6c-lQA"/>
+                                <constraint firstItem="1Cb-tX-0m0" firstAttribute="leading" secondItem="UlQ-2A-9kv" secondAttribute="leading" id="O8O-VP-06G"/>
+                                <constraint firstAttribute="trailing" secondItem="VbZ-DJ-Yl6" secondAttribute="trailing" id="TxQ-wJ-jjg"/>
+                                <constraint firstItem="2RX-sI-A1R" firstAttribute="top" secondItem="UlQ-2A-9kv" secondAttribute="top" id="UoA-AK-VaJ"/>
+                                <constraint firstItem="1Cb-tX-0m0" firstAttribute="top" secondItem="UlQ-2A-9kv" secondAttribute="top" id="VXD-Yf-jZI"/>
+                                <constraint firstItem="W8K-ii-MPB" firstAttribute="top" secondItem="UlQ-2A-9kv" secondAttribute="top" id="bbl-rL-bjM"/>
+                                <constraint firstAttribute="trailing" secondItem="2RX-sI-A1R" secondAttribute="trailing" id="fKY-x9-TyG"/>
+                                <constraint firstItem="VbZ-DJ-Yl6" firstAttribute="top" secondItem="UlQ-2A-9kv" secondAttribute="top" id="gXL-kd-4ko"/>
+                                <constraint firstAttribute="bottom" secondItem="1Cb-tX-0m0" secondAttribute="bottom" id="hFN-rx-XHP"/>
+                                <constraint firstAttribute="bottom" secondItem="VbZ-DJ-Yl6" secondAttribute="bottom" id="mhc-u4-VfR"/>
+                                <constraint firstAttribute="bottom" secondItem="W8K-ii-MPB" secondAttribute="bottom" id="sIg-gz-BEG"/>
+                                <constraint firstItem="VbZ-DJ-Yl6" firstAttribute="leading" secondItem="UlQ-2A-9kv" secondAttribute="leading" id="wIs-Yd-3vg"/>
+                                <constraint firstItem="2RX-sI-A1R" firstAttribute="leading" secondItem="UlQ-2A-9kv" secondAttribute="leading" id="zRA-a1-Vv2"/>
+                            </constraints>
+                        </view>
+                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Qwx-6B-9zG">
+                            <rect key="frame" x="0.0" y="2" width="43" height="1022"/>
+                        </imageView>
+                    </subviews>
+                    <accessibility key="accessibilityConfiguration" identifier="PrivacyIcon">
+                        <accessibilityTraits key="traits" button="YES"/>
+                        <bool key="isElement" value="YES"/>
+                    </accessibility>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="43" id="4Fb-kt-921"/>
+                        <constraint firstItem="UlQ-2A-9kv" firstAttribute="leading" secondItem="X7P-SV-mFZ" secondAttribute="leading" constant="-12" id="EQb-aZ-v8x"/>
+                        <constraint firstAttribute="bottom" secondItem="Qwx-6B-9zG" secondAttribute="bottom" id="Qjf-h6-Mqj"/>
+                        <constraint firstAttribute="trailing" secondItem="Qwx-6B-9zG" secondAttribute="trailing" id="TqM-PK-ZoU"/>
+                        <constraint firstItem="Qwx-6B-9zG" firstAttribute="leading" secondItem="X7P-SV-mFZ" secondAttribute="leading" id="h8q-Ma-s9P"/>
+                        <constraint firstItem="Qwx-6B-9zG" firstAttribute="top" secondItem="X7P-SV-mFZ" secondAttribute="top" constant="2" id="hjy-oy-1bp"/>
+                        <constraint firstItem="UlQ-2A-9kv" firstAttribute="top" secondItem="X7P-SV-mFZ" secondAttribute="top" id="rbI-hl-eze"/>
+                        <constraint firstAttribute="bottom" secondItem="UlQ-2A-9kv" secondAttribute="bottom" id="yO7-J2-mXB"/>
+                    </constraints>
+                    <connections>
+                        <outlet property="shieldAnimationView" destination="2RX-sI-A1R" id="5Ue-S9-tM7"/>
+                        <outlet property="shieldDotAnimationView" destination="W8K-ii-MPB" id="bij-z8-429"/>
+                        <outlet property="staticImageView" destination="Qwx-6B-9zG" id="2hq-NM-FTC"/>
+                        <outlet property="staticShieldAnimationView" destination="1Cb-tX-0m0" id="e6x-xU-eqw"/>
+                        <outlet property="staticShieldDotAnimationView" destination="VbZ-DJ-Yl6" id="9ot-2e-l20"/>
+                    </connections>
+                </view>
+            </subviews>
+            <viewLayoutGuide key="safeArea" id="BeX-pq-5ZW"/>
+            <color key="backgroundColor" systemColor="systemGreenColor"/>
+            <constraints>
+                <constraint firstAttribute="width" constant="138" id="0kE-uY-a10"/>
+                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="138" id="14Y-1H-4U8"/>
+                <constraint firstItem="X7P-SV-mFZ" firstAttribute="centerY" secondItem="eit-OC-tFF" secondAttribute="centerY" id="CRH-fI-zp1"/>
+                <constraint firstItem="X7P-SV-mFZ" firstAttribute="leading" secondItem="39A-Jc-g74" secondAttribute="leading" constant="-8" id="HxR-3a-lr5"/>
+                <constraint firstAttribute="height" constant="40" id="aej-ZW-nrB"/>
+                <constraint firstAttribute="bottom" secondItem="WzT-Ie-1Jn" secondAttribute="bottom" id="box-oG-t5g"/>
+                <constraint firstItem="X7P-SV-mFZ" firstAttribute="centerX" secondItem="eit-OC-tFF" secondAttribute="centerX" constant="4" id="dTM-eY-MgM"/>
+                <constraint firstItem="X7P-SV-mFZ" firstAttribute="top" secondItem="39A-Jc-g74" secondAttribute="top" id="mck-RF-bng"/>
+                <constraint firstAttribute="bottom" secondItem="X7P-SV-mFZ" secondAttribute="bottom" id="nIg-ZA-euz"/>
+                <constraint firstItem="WzT-Ie-1Jn" firstAttribute="leading" secondItem="39A-Jc-g74" secondAttribute="leading" constant="-15" id="tB8-mS-JWu"/>
+                <constraint firstItem="WzT-Ie-1Jn" firstAttribute="top" secondItem="39A-Jc-g74" secondAttribute="top" id="wju-yb-Vlh"/>
+            </constraints>
+            <connections>
+                <outlet property="maskingView" destination="eit-OC-tFF" id="deO-lf-uGl"/>
+                <outlet property="privacyIcon" destination="X7P-SV-mFZ" id="OHU-e9-jjF"/>
+                <outlet property="trackers1Animation" destination="7Vd-32-zgf" id="0Hj-CK-YKG"/>
+                <outlet property="trackers2Animation" destination="TEY-Cn-AKR" id="5Eg-sg-QrG"/>
+                <outlet property="trackers3Animation" destination="n9k-Wb-Aoz" id="RXQ-91-qAa"/>
+            </connections>
+            <point key="canvasLocation" x="-288" y="-462"/>
+        </view>
+    </objects>
+    <resources>
+        <systemColor name="systemGreenColor">
+            <color red="0.20392156862745098" green="0.7803921568627451" blue="0.34901960784313724" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemYellowColor">
+            <color red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

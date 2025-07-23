@@ -185,19 +185,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var experimentalThemingBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.isExperimentalThemingEnabled },
-            set: { _ in
-                self.themeManager.toggleExperimentalTheming()
-
-                // The theme manager is caching the value, so we use previous state to update the UI.
-                // Changes will be applied after restart.
-                self.state.isExperimentalThemingEnabled = !self.state.isExperimentalThemingEnabled
-            })
-    }
-
-
     var applicationLockBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.applicationLock },
@@ -574,7 +561,6 @@ extension SettingsViewModel {
             textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
-            isExperimentalThemingEnabled: themeManager.properties.isExperimentalThemingEnabled,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             isExperimentalAIChatTransitionEnabled: experimentalAIChatManager.isExperimentalTransitionEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,

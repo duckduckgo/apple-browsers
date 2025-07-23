@@ -226,7 +226,6 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
 
     private var duckPlayerEntryPointVisible = false
-    private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
 
     init(
@@ -361,7 +360,6 @@ class MainViewController: UIViewController {
         chromeManager = BrowserChromeManager()
         chromeManager.delegate = self
         initTabButton()
-        initMenuButton()
         initBookmarksButton()
         loadInitialView()
         previewsSource.prepare()
@@ -409,6 +407,9 @@ class MainViewController: UIViewController {
             }
         }
 
+        // Always hide this, we use StyledTopBottomBorderView where needed instead
+        viewCoordinator.hideToolbarSeparator()
+
         // Needs to be called here because sometimes the frames are not the expected size during didLoad
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
@@ -435,7 +436,6 @@ class MainViewController: UIViewController {
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      themingProperties: themeManager.properties,
                                                       appSettings: appSettings)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
@@ -518,7 +518,7 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let controller = TabsBarViewController.createFromXib(themingProperties: themeManager.properties)
+        let controller = TabsBarViewController.createFromXib()
 
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
@@ -695,19 +695,10 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            if isExperimentalAppearanceEnabled {
-                viewCoordinator.hideToolbarSeparator()
-            } else {
-                viewCoordinator.showToolbarSeparator()
-            }
             viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
                     
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
-            // If this is called before the toolbar has shown it will not re-add the separator when moving to the top position
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self.viewCoordinator.hideToolbarSeparator()
-            }
         }
 
         omniBar.adjust(for: position)
@@ -719,12 +710,7 @@ class MainViewController: UIViewController {
         themeColorManager.updateThemeColor()
         let position = appSettings.currentAddressBarPosition
         switch position {
-        case .top:
-            if duckPlayerEntryPointVisible {
-                viewCoordinator.hideToolbarSeparator()
-            } else {
-                viewCoordinator.showToolbarSeparator()
-            }
+        case .top: break // no-op
         case .bottom:
             // Use higher delays then refreshViewsBasedOnAddressBarPosition
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.31) {
@@ -817,7 +803,7 @@ class MainViewController: UIViewController {
     private func initTabButton() {
         assert(tabSwitcherButton == nil)
 
-        tabSwitcherButton = isExperimentalAppearanceEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
@@ -826,19 +812,6 @@ class MainViewController: UIViewController {
 
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
-    }
-
-    private func initMenuButton() {
-        guard !isExperimentalAppearanceEnabled else {
-            // For experimental appearance, this is set up in the ToolbarStateHandling
-            return
-        }
-
-        viewCoordinator.menuToolbarButton.customView = menuButton
-        viewCoordinator.menuToolbarButton.isAccessibilityElement = true
-        viewCoordinator.menuToolbarButton.accessibilityTraits = .button
-
-        menuButton.delegate = self
     }
     
     private func initBookmarksButton() {
@@ -971,7 +944,6 @@ class MainViewController: UIViewController {
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
                                                   isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
-                                                  isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
                                                   privacyProDataReporting: privacyProDataReporter,
@@ -1396,11 +1368,6 @@ class MainViewController: UIViewController {
             
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
-
-            if !self.isExperimentalAppearanceEnabled {
-                self.refreshMenuButtonState()
-            }
-
             self.newTabPageViewController?.widthChanged()
         }
     }
@@ -1429,7 +1396,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32, useActiveShadow: isExperimentalAppearanceEnabled)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32)
         } else {
             let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
             self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
@@ -2413,10 +2380,8 @@ extension MainViewController: OmniBarDelegate {
                                                                 menuEntries: menuEntries)
 
         controller.modalPresentationStyle = .custom
-        if isExperimentalAppearanceEnabled {
-            controller.onDismiss = {
-                self.viewCoordinator.menuToolbarButton.isEnabled = true
-            }
+        controller.onDismiss = {
+            self.viewCoordinator.menuToolbarButton.isEnabled = true
         }
         self.present(controller, animated: true) {
             if self.canDisplayAddFavoriteVisualIndicator {

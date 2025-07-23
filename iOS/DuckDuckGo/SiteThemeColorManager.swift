@@ -130,7 +130,6 @@ final class SiteThemeColorManager {
     }
 
     private func applyThemeColor(_ color: UIColor?) {
-        guard themeManager.properties.isExperimentalThemingEnabled else { return }
 
         var newColor = UIColor(designSystemColor: .background)
 

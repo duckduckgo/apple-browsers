@@ -18,43 +18,88 @@
 
 import SwiftUI
 
+/// See [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
+    private static let x1F1F1F = Color(0x1F1F1F)
+    private static let x141415 = Color(0x141415)
+    private static let x181818 = Color(0x181818)
+    private static let x27282A = Color(0x27282A)
+    private static let x333538 = Color(0x333538)
+    private static let x404145 = Color(0x404145)
+    private static let xE0E0E0 = Color(0xE0E0E0)
+    private static let xF2F2F2 = Color(0xF2F2F2)
+    private static let xF9F9F9 = Color(0xF9F9F9)
+
+    // New dark mode colors
+    private static let x080808 = Color(0x080808)
+    private static let x282828 = Color(0x282828)
+    private static let x373737 = Color(0x373737)
+    private static let x474747 = Color(0x474747)
+
+    // URL bar
+    private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
+
+    // Surfaces
+    private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
 
     // Backgrounds
-    private static let background = DynamicColor(lightColor: .gray10, darkColor: .gray90)
-    private static let surface = DynamicColor(lightColor: .white, darkColor: .x2F2F2F)
-    private static let backgroundSheets = DynamicColor(lightColor: .white, darkColor: .gray90)
-    private static let panel = DynamicColor(lightColor: .gray0, darkColor: .gray85)
-    private static let container = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
-    private static let urlBar = DynamicColor(lightColor: .xEAEAEA, darkColor: .gray80)
+    private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
+    private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
+    private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
+    private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let backgroundBlur = DynamicColor(staticColor: .gray90.opacity(0.7))
+
+    // Shadow
+    private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
+    private static let shadowSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.08), darkColor: .shade(0.24))
+    private static let shadowTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.16), darkColor: .shade(0.48))
+
+    // Controls
+    private static let controlsFillPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+    private static let controlsFillSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.12), darkColor: xF9F9F9.opacity(0.18))
+    private static let controlsFillTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.18), darkColor: xF9F9F9.opacity(0.24))
+
+    // Icons
+    private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
+    private static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
+
+    // Text
+    private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
+    private static let textSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.72), darkColor: .tint(0.6))
+    private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
+
+    // System
+    private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+
+    // Decorations
+    private static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
+    private static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
+    private static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
+
+    // Highlight
+    private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
+
+    // Accents
+    private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
     // Various
     private static let variousIPadTabs = DynamicColor(lightColor: .gray20, darkColor: .black)
     private static let variousOutline = DynamicColor(lightColor: .shade(0.24), darkColor: .tint(0.24))
-    private static let backdrop = DynamicColor(lightColor: .x1E1E1E.opacity(0.75), darkColor: .gray15.opacity(0.8))
-    private static let backgroundBlur = DynamicColor(staticColor: .gray90.opacity(0.7))
 
     // Text
-    private static let textPrimary = DynamicColor(lightColor: .shade(0.84), darkColor: .tint(0.84))
-    private static let textSecondary = DynamicColor(lightColor: .shade(0.6), darkColor: .tint(0.6))
     private static let textLink = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let textSelectionFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
-    private static let textPlaceholder = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
     // Brand
     private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
 
     // System
-    private static let lines = DynamicColor(lightColor: .shade(0.09), darkColor: .tint(0.09))
     private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
 
     // Alert
     private static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
     private static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
-
-    // Icons
-    private static let icons = DynamicColor(lightColor: .shade(0.84), darkColor: .tint(0.84))
-    private static let iconsSecondary = DynamicColor(lightColor: .shade(0.6), darkColor: .tint(0.6))
 
     // Buttons/Primary
     private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
@@ -96,46 +141,40 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor {
         switch designSystemColor {
+
         case .urlBar: return urlBar
-        case .accent: return accent
-        case .accentContentPrimary:
-            assertionFailure("This color should be used in experimental palette only.")
-            return accent
-        case .alertGreen: return alertGreen
-        case .alertYellow: return alertYellow
         case .background: return background
-        case .backgroundTertiary:
-            assertionFailure("This color should be used in experimental palette only.")
-            return background
+        case .backgroundTertiary: return backgroundTertiary
         case .backgroundSheets: return backgroundSheets
-        case .container: return container
-        case .highlightDecoration:
-            assertionFailure("This color should be used in experimental palette only.")
-            return lines
+        case .backgroundBlur: return backgroundBlur
+        case .backdrop: return backdrop
+        case .panel: return background
+        case .surface: return surface
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
-        case .lines: return lines
-        case .border: return border
-        case .panel: return panel
-        case .surface: return surface
-        case .surfaceTertiary:
-            assertionFailure("This color should be used in experimental palette only.")
-            return surface
-        case .textLink: return textLink
         case .textPrimary: return textPrimary
+        case .lines: return lines
+        case .shadowPrimary: return shadowPrimary
+        case .shadowSecondary: return shadowSecondary
+        case .shadowTertiary: return shadowTertiary
+        case .surfaceTertiary: return surfaceTertiary
+        case .controlsFillPrimary: return controlsFillPrimary
+        case .controlsFillSecondary: return controlsFillSecondary
+        case .controlsFillTertiary: return controlsFillTertiary
+        case .decorationPrimary: return decorationPrimary
+        case .decorationSecondary: return decorationSecondary
+        case .decorationTertiary: return decorationTertiary
+        case .highlightDecoration: return highlightDecoration
+        case .accentContentPrimary: return accentContentPrimary
+
+        case .accent: return accent
+        case .alertGreen: return alertGreen
+        case .alertYellow: return alertYellow
+        case .border: return border
+        case .textLink: return textLink
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textSelectionFill: return textSelectionFill
-        case .backdrop: return backdrop
-        case .backgroundBlur: return backgroundBlur
-
-        case .shadowPrimary, .shadowSecondary, .shadowTertiary:
-            // Temporarily commented out as this was causing crashes in the iOS integration test suite:
-            // assertionFailure("This color should be used in experimental palette only.")
-            return lines
-        case .controlsFillPrimary, .controlsFillSecondary, .controlsFillTertiary:
-            assertionFailure("This color should be used in experimental palette only.")
-            return surface
 
             // Buttons/SecondaryFill
         case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault
@@ -170,7 +209,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsWhite: return buttonsWhite
 
             // Various
-        case .variousIPadTabs: return variousIPadTabs
         case .variousOutline: return variousOutline
 
             // Buttons/DeleteGhost
@@ -178,10 +216,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsDeleteGhostText: return buttonsDeleteGhostText
         case .buttonsDeleteGhostTextPressed: return buttonsDeleteGhostTextPressed
         case .buttonsDeleteGhostTextDisabled: return buttonsDeleteGhostTextDisabled
-
-        case .decorationPrimary, .decorationSecondary, .decorationTertiary:
-            assertionFailure("This color should be used in experimental palette only.")
-            return border
         }
     }
 

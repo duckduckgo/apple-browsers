@@ -23,7 +23,6 @@ import UIKit
 @testable import DuckDuckGo
 
 final class MockThemeManager: ThemeManaging {
-    var properties = ExperimentalThemingProperties()
     var currentTheme: any Theme = DefaultTheme()
     var currentInterfaceStyle: UIUserInterfaceStyle = .light
 
@@ -31,14 +30,4 @@ final class MockThemeManager: ThemeManaging {
     func toggleExperimentalTheming() { }
     func setThemeStyle(_ style: DuckDuckGo.ThemeStyle) { }
     func updateUserInterfaceStyle(window: UIWindow?) { }
-}
-
-extension ExperimentalThemingProperties {
-    init(isExperimentalThemingEnabled: Bool) {
-        self.init(isExperimentalThemingEnabled: isExperimentalThemingEnabled, isRoundedCornersTreatmentEnabled: false)
-    }
-
-    init() {
-        self.init(isExperimentalThemingEnabled: false, isRoundedCornersTreatmentEnabled: false)
-    }
 }

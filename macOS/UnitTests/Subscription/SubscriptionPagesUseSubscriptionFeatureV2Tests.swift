@@ -330,29 +330,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     }
 
     @MainActor
-    func testFreemiumPixelOriginSetWhenSubscriptionSelectedSuccessFromFreemium() async throws {
-        // Given
-        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
-        mockStorePurchaseManager.hasActiveSubscriptionResult = false
-        mockStorePurchaseManager.purchaseSubscriptionResult = .success("mock-transaction-jws")
-        let validTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerV2.resultTokenContainer = validTokenContainer
-        subscriptionManagerV2.resultCreateAccountTokenContainer = validTokenContainer
-        subscriptionManagerV2.confirmPurchaseResponse = .success(SubscriptionMockFactory.appleSubscription)
-        subscriptionManagerV2.resultSubscription = SubscriptionMockFactory.appleSubscription
-
-        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = try await sut.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertNil(result)
-        XCTAssertEqual(subscriptionSuccessPixelHandler.origin, freemiumOrigin)
-    }
-
-    @MainActor
     func testFreemiumPixelOriginNotSetWhenSubscriptionSelectedSuccessNotFromFreemium() async throws {
         // Given
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false

@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Seleciona **Exportar** e, no ecrã seguinte, seleciona **Palavras-passe** e **Guardar em Transferências**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importar ficheiro de palavras-passe…";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "No Chrome, acede ao **Gestor de Palavras-passe da Google** e, em seguida, às **Definições**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importar palavras-passe";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Não perguntar novamente";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Transfere de forma rápida e segura as tuas palavras-passe a partir de outro navegador.";

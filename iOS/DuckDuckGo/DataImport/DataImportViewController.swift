@@ -40,13 +40,17 @@ final class DataImportViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let importScreen: DataImportViewModel.ImportScreen
     private var summaryPresented: Bool = false
+    private let onFinished: (() -> Void)?
+    private let onCancelled: (() -> Void)?
 
-    init(importManager: DataImportManager, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, keyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+    init(importManager: DataImportManager, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, keyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger, onFinished: (() -> Void)? = nil, onCancelled: (() -> Void)? = nil) {
         self.viewModel = DataImportViewModel(importScreen: importScreen, importManager: importManager)
         self.importScreen = importScreen
         self.syncService = syncService
         self.keyValueStore = keyValueStore
         self.featureFlagger = featureFlagger
+        self.onFinished = onFinished
+        self.onCancelled = onCancelled
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -65,13 +69,18 @@ final class DataImportViewController: UIViewController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if !summaryPresented {
+            onCancelled?()
             Pixel.fire(pixel: .importInstructionsCancelled, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        } else {
+            onFinished?()
         }
     }
 
     // MARK: - Private
 
     private func setupView() {
+        decorateNavigationBar()
+
         viewModel.delegate = self
         let controller = UIHostingController(rootView: DataImportView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
@@ -131,15 +140,29 @@ final class DataImportViewController: UIViewController {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            self.navigationController?.present(DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService), animated: true) { [weak self] in
+            let summaryViewController = DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService) { [weak self] in
                 guard let self = self else { return }
-
-                if featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) {
-                    try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
-                    try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                if let mainViewController = self.presentingViewController as? MainViewController {
+                    mainViewController.dismiss(animated: true) {
+                        mainViewController.segueToSettingsSync()
+                    }
                 }
-                self.navigationController?.popViewController(animated: false)
-                delegate?.dataImportViewControllerDidFinish(self)
+            } onCompletion: { [weak self] in
+                guard let self = self else { return }
+                if self.navigationController?.children.first is DataImportViewController {
+                    self.presentingViewController?.dismiss(animated: true)
+                } else {
+                    navigationController?.popViewController(animated: false)
+                    delegate?.dataImportViewControllerDidFinish(self)
+                }
+            }
+
+
+            self.present(summaryViewController, animated: true)
+
+            if featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) {
+                try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+                try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
             }
         }
     }

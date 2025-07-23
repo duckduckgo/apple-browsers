@@ -147,6 +147,7 @@ class AutofillDebugViewController: UITableViewController {
                 importState.hasImportedLogins = false
                 importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
                 importState.isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed = false
+                importState.credentialsImportPromptPresentationCount = 0
                 try? keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
                 ActionMessageView.present(message: "Import Prompts reset")
             }

@@ -263,6 +263,10 @@ public extension SubJobWebRunning {
     }
 
     func conditionSuccess(actions: [Action]) async {
+        if actionsHandler?.stepType == .optOut {
+            stageCalculator.fireOptOutConditionFound()
+        }
+
         actionsHandler?.insert(actions: actions)
         await self.executeNextStep()
     }
@@ -298,6 +302,10 @@ public extension SubJobWebRunning {
 
     func onError(error: Error) async {
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
+            if actionsHandler?.stepType == .optOut {
+                stageCalculator.fireOptOutConditionNotFound()
+            }
+
             await executeNextStep()
             return
         }

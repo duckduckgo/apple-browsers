@@ -43,7 +43,9 @@ class SwitchBarViewController: UIViewController {
     private var segmentedControlTopConstraint: NSLayoutConstraint?
 
     private var isExpanded = false
-    
+
+    var segmentedPickerView: UIView? { segmentedPickerHostingController?.viewIfLoaded }
+
     // Items for the segmented picker
     private let pickerItems = [
         ImageSegmentedPickerItem(
@@ -159,7 +161,7 @@ class SwitchBarViewController: UIViewController {
     func setExpanded(_ isExpanded: Bool) {
         self.isExpanded = isExpanded
 
-        segmentedControlTopConstraint?.isActive = isExpanded
+//        segmentedControlTopConstraint?.isActive = isExpanded
 
         backButton.alpha = isExpanded ? 1 : 0
         segmentedPickerHostingController?.view.alpha = isExpanded ? 1 : 0
@@ -172,6 +174,7 @@ class SwitchBarViewController: UIViewController {
         guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
 
         segmentedControlTopConstraint = segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+        segmentedControlTopConstraint?.isActive = true // TODO: Move to array if works properly
 
         NSLayoutConstraint.activate([
             segmentedPickerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),

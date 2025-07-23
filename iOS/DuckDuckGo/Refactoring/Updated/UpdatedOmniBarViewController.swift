@@ -166,12 +166,18 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
+        let startFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
+        let transitioningDelegate = OmniBarEditingStateTransitioningDelegate(expectedStartFrame: startFrame)
+
         let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
         editingStateViewController.delegate = self
         editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
-        editingStateViewController.modalPresentationStyle = .overFullScreen
+
+        editingStateViewController.modalPresentationStyle = .custom
+        editingStateViewController.transitioningDelegate = transitioningDelegate
+
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
-        present(editingStateViewController, animated: false)
+        present(editingStateViewController, animated: true)
         self.editingStateViewController = editingStateViewController
 
         if shouldAutoSelectText {
@@ -244,7 +250,7 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         }
     }
 
-    func onAppear() {
+    func onAppear(yTranslation: CGFloat) {
         barView.hideButtons()
     }
 

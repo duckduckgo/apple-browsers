@@ -526,6 +526,8 @@
 		6FF915822B88E07A0042AC87 /* AdAttributionFetcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */; };
 		6FF9AD3F2CE63DD800C5A406 /* TabSwitcherOpenDailyPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF9AD3E2CE63DC200C5A406 /* TabSwitcherOpenDailyPixel.swift */; };
 		6FF9AD412CE6610F00C5A406 /* TabSwitcherOpenDailyPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF9AD402CE6610600C5A406 /* TabSwitcherOpenDailyPixelTests.swift */; };
+		6FFBA0D42E30FCC300873286 /* OmniBarEditingStateTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFBA0D32E30FCC300873286 /* OmniBarEditingStateTransition.swift */; };
+		6FFBA0D62E30FF2900873286 /* OmniBarEditingStateTransitioningDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFBA0D52E30FF2900873286 /* OmniBarEditingStateTransitioningDelegate.swift */; };
 		7B020B9A2D11F99D00876178 /* FavoritesDisplayMode+UserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373608912ABB430D00629E7F /* FavoritesDisplayMode+UserDefaults.swift */; };
 		7B059F0F2D0387E900371ED0 /* NumberedParagraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B059F0A2D0387E900371ED0 /* NumberedParagraphView.swift */; };
 		7B059F112D0387E900371ED0 /* WidgetEducationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B059F0D2D0387E900371ED0 /* WidgetEducationViewController.swift */; };
@@ -2435,6 +2437,8 @@
 		6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionFetcherTests.swift; sourceTree = "<group>"; };
 		6FF9AD3E2CE63DC200C5A406 /* TabSwitcherOpenDailyPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherOpenDailyPixel.swift; sourceTree = "<group>"; };
 		6FF9AD402CE6610600C5A406 /* TabSwitcherOpenDailyPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherOpenDailyPixelTests.swift; sourceTree = "<group>"; };
+		6FFBA0D32E30FCC300873286 /* OmniBarEditingStateTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarEditingStateTransition.swift; sourceTree = "<group>"; };
+		6FFBA0D52E30FF2900873286 /* OmniBarEditingStateTransitioningDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarEditingStateTransitioningDelegate.swift; sourceTree = "<group>"; };
 		7B059F0A2D0387E900371ED0 /* NumberedParagraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberedParagraphView.swift; sourceTree = "<group>"; };
 		7B059F0C2D0387E900371ED0 /* WidgetEducationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetEducationView.swift; sourceTree = "<group>"; };
 		7B059F0D2D0387E900371ED0 /* WidgetEducationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetEducationViewController.swift; sourceTree = "<group>"; };
@@ -5376,6 +5380,7 @@
 		6FB9D52F2DF70496005ED4A5 /* SwitchBar */ = {
 			isa = PBXGroup;
 			children = (
+				6FFBA0D22E30FCB300873286 /* Transition */,
 				31B5E8C32E1D564000EECC1E /* FlowManagers */,
 				315E14AE2DF77C7B00419C8A /* TextEntry */,
 				6FCF65132DF8481400C7F35F /* OmniBarEditingStateViewController.swift */,
@@ -5483,6 +5488,15 @@
 				6FD3AEE12B8DFBB80060FCCC /* AdAttributionPixelReporterTests.swift */,
 			);
 			name = AdAttribution;
+			sourceTree = "<group>";
+		};
+		6FFBA0D22E30FCB300873286 /* Transition */ = {
+			isa = PBXGroup;
+			children = (
+				6FFBA0D32E30FCC300873286 /* OmniBarEditingStateTransition.swift */,
+				6FFBA0D52E30FF2900873286 /* OmniBarEditingStateTransitioningDelegate.swift */,
+			);
+			path = Transition;
 			sourceTree = "<group>";
 		};
 		7B059F0B2D0387E900371ED0 /* NumberedParagraphView */ = {
@@ -9892,6 +9906,7 @@
 				CBF259C52D4ED37700AC63E4 /* ATBAndVariantConfiguration.swift in Sources */,
 				B609D5522862EAFF0088CAC2 /* InlineWKDownloadDelegate.swift in Sources */,
 				BDFF03222BA3D8E200F324C9 /* NetworkProtectionFeatureVisibility.swift in Sources */,
+				6FFBA0D42E30FCC300873286 /* OmniBarEditingStateTransition.swift in Sources */,
 				B652DEFD287BE67400C12A9C /* UserScripts.swift in Sources */,
 				3768D8472C2CC98C004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */,
 				1D200C992BA3176D00108701 /* SettingsOthersView.swift in Sources */,
@@ -10646,6 +10661,7 @@
 				CBF259792D3FC36C00AC63E4 /* AutofillService.swift in Sources */,
 				1E4DCF4A27B6A38000961E25 /* DownloadListRepresentable.swift in Sources */,
 				1DEAADFB2BA71E9A00E25A97 /* SettingsDescriptionView.swift in Sources */,
+				6FFBA0D62E30FF2900873286 /* OmniBarEditingStateTransitioningDelegate.swift in Sources */,
 				6F3537A02C4AAFD2009F8717 /* NewTabPageSettingsSectionItemView.swift in Sources */,
 				2DC3FC65C6D9DA634426672D /* AutofillNoAuthAvailableView.swift in Sources */,
 				9F03113D2DF7DD4200AC4DB5 /* SetAsDefaultTutorialView.swift in Sources */,

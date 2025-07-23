@@ -38,7 +38,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
 
-    func onAppear()
+    func onAppear(yTranslation: CGFloat)
     func onDismiss()
 }
 
@@ -63,7 +63,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
     private let transitionAnimator = OmniBarEditingStateAnimator()
-    
+
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
     
@@ -104,7 +104,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewWillAppear(animated)
 
         switchBarVC.focusTextField()
-        transitionAnimator.animateAppearance()
+//        transitionAnimator.animateAppearance()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -116,14 +116,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Public Methods
     
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
-        transitionAnimator.animateDismissal {
+//        transitionAnimator.animateDismissal {
             DispatchQueue.main.async {
                 if self.presentingViewController != nil {
                     self.dismiss(animated: false)
                 }
                 completion?()
             }
-        }
+//        }
     }
     
     func setUpForInitialSelectedState() {
@@ -132,8 +132,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         swipeContainerManager?.updateLayout(viewBounds: view.bounds)
     }
 
-    func adjustForAppearance() {
-        delegate?.onAppear()
+    func adjustForAppearance(yTranslation: CGFloat) {
+        delegate?.onAppear(yTranslation: yTranslation)
     }
 
     func adjustForDismissal() {

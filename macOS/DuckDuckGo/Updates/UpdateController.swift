@@ -288,18 +288,16 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater = nil
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            /*guard let self,
+            guard let self,
                   let updater = try? configureUpdater(needsUpdateCheck: true) else {
                 return
-            }*/
-            // self.updater = updater
-
-            guard let self else { return }
+            }
+            self.updater = updater
 
             if skipRollout {
-                updater?.checkForUpdates()
+                updater.checkForUpdates()
             } else {
-                updater?.checkForUpdatesInBackground()
+                updater.checkForUpdatesInBackground()
             }
         }
 

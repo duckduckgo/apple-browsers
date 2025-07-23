@@ -1,5 +1,5 @@
 //
-//  MockNewTabPageOmnibarModeProvider.swift
+//  MockNewTabPageOmnibarConfigProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import NewTabPage
 
-final class MockNewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
+final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     @MainActor
     var mode: NewTabPageDataModel.OmnibarMode = .search

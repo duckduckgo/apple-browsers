@@ -1,5 +1,5 @@
 //
-//  NewTabPageModeProviderTests.swift
+//  NewTabPageOmnibarConfigProviderTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import Persistence
 import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
-final class NewTabPageOmnibarModeProviderTests: XCTestCase {
+final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // Key used for persistence in the provider
     private let storageKey = "newTabPageOmnibarMode"
@@ -41,21 +41,21 @@ final class NewTabPageOmnibarModeProviderTests: XCTestCase {
     @MainActor
     func testDefaultModeWhenNoValueInStore() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarModeProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testModeReadsStoredValidValue() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
-        let provider = NewTabPageOmnibarModeProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
         XCTAssertEqual(provider.mode, .ai)
     }
 
     @MainActor
     func testModeDefaultsToSearchOnInvalidRawValue() throws {
         let store = try makeStore(underlying: [storageKey: "invalid"])
-        let provider = NewTabPageOmnibarModeProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
         XCTAssertEqual(provider.mode, .search)
     }
 
@@ -63,14 +63,14 @@ final class NewTabPageOmnibarModeProviderTests: XCTestCase {
     func testModeDefaultsToSearchOnReadError() throws {
         let readError = NSError(domain: "test", code: 1)
         let store = try makeStore(throwOnRead: readError)
-        let provider = NewTabPageOmnibarModeProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testSettingModeWritesValue() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarModeProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
         provider.mode = .ai
         // Underlying dict should contain the rawValue
         XCTAssertEqual(store.underlyingDict[storageKey] as? String, "ai")
@@ -82,7 +82,7 @@ final class NewTabPageOmnibarModeProviderTests: XCTestCase {
     func testSettingModeHandlesWriteErrorGracefully() throws {
         let writeError = NSError(domain: "test", code: 2)
         let store = try makeStore(throwOnSet: writeError)
-        let provider = NewTabPageOmnibarModeProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
         // Should not throw on write error
         provider.mode = .ai
         // Underlying dict remains unchanged

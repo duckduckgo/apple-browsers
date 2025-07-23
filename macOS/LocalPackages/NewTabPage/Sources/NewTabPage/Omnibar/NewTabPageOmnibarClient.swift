@@ -31,14 +31,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case submitChat = "omnibar_submitChat"
     }
 
-    private let modeProvider: NewTabPageOmnibarModeProviding
+    private let configProvider: NewTabPageOmnibarConfigProviding
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
     private let actionHandler: NewTabPageOmnibarActionsHandling
 
-    public init(modeProvider: NewTabPageOmnibarModeProviding,
+    public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 actionHandler: NewTabPageOmnibarActionsHandling) {
-        self.modeProvider = modeProvider
+        self.configProvider = configProvider
         self.suggestionsProvider = suggestionsProvider
         self.actionHandler = actionHandler
         super.init()
@@ -56,7 +56,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     }
 
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let mode = await modeProvider.mode
+        let mode = await configProvider.mode
         return NewTabPageDataModel.OmnibarConfig(mode: mode)
     }
 
@@ -65,7 +65,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let config: NewTabPageDataModel.OmnibarConfig = DecodableHelper.decode(from: params) else {
             return nil
         }
-        modeProvider.mode = config.mode
+        configProvider.mode = config.mode
         return nil
     }
 

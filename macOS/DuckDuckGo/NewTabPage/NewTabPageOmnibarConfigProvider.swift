@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarModeProvider.swift
+//  NewTabPageOmnibarConfigProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import AppKit
 import os.log
 import PixelKit
 
-final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
+final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private enum Key: String {
         case newTabPageOmnibarMode

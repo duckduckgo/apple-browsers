@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarModeProviding.swift
+//  NewTabPageOmnibarConfigProviding.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-public protocol NewTabPageOmnibarModeProviding: AnyObject {
+public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     @MainActor
     var mode: NewTabPageDataModel.OmnibarMode { get set }

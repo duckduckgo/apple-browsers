@@ -22,7 +22,7 @@ import XCTest
 final class NewTabPageOmnibarClientTests: XCTestCase {
 
     private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
-    private var modeProvider: NewTabPageOmnibarModeProviding!
+    private var modeProvider: NewTabPageOmnibarConfigProviding!
     private var actionHandler: NewTabPageOmnibarActionsHandling!
     private var client: NewTabPageOmnibarClient!
     private var userScript: NewTabPageUserScript!
@@ -32,9 +32,9 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         try await super.setUp()
 
         suggestionsProvider = MockNewTabPageOmnibarSuggestionsProvider()
-        modeProvider = MockNewTabPageOmnibarModeProvider()
+        modeProvider = MockNewTabPageOmnibarConfigProvider()
         actionHandler = MockNewTabPageOmnibarActionsHandler()
-        client = NewTabPageOmnibarClient(modeProvider: modeProvider,
+        client = NewTabPageOmnibarClient(configProvider: modeProvider,
                                          suggestionsProvider: suggestionsProvider,
                                          actionHandler: actionHandler)
 

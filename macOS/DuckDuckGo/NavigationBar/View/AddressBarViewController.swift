@@ -177,7 +177,7 @@ final class AddressBarViewController: NSViewController {
                                                          permissionManager: permissionManager,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
-                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings),
+                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings, remoteSettings: AIChatRemoteSettings()),
                                                          aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         self.addressBarButtonsViewController = controller

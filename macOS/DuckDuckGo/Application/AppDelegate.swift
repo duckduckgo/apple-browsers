@@ -385,7 +385,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatSidebarProvider = AIChatSidebarProvider()
         aiChatMenuConfiguration = AIChatMenuConfiguration(
             storage: DefaultAIChatPreferencesStorage(),
-            remoteSettings: AIChatRemoteSettings(featureFlagger: featureFlagger)
+            remoteSettings: AIChatRemoteSettings(
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyConfigurationManager
+            )
         )
 
         appearancePreferences = AppearancePreferences(

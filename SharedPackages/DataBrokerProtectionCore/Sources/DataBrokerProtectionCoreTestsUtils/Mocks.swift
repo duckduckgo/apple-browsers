@@ -1073,13 +1073,16 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         attemptInformation = nil
         scanEvents.removeAll()
         optOutEvents.removeAll()
+        backgroundTaskSessionsToReturn.removeAll()
     }
+
+    public var backgroundTaskSessionsToReturn: [BackgroundTaskSessionDB] = []
 
     public func saveBackgroundTaskSession(startDate: Date, duration: Int64, isTerminated: Bool) throws {
     }
 
     public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
-        return []
+        return backgroundTaskSessionsToReturn.filter { $0.startDate >= date }
     }
 
     public func deleteBackgroundTaskSessions(olderThan date: Date) throws {

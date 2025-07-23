@@ -202,7 +202,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first(where: { $0.name.contains("weekly-report_removals") })!
         let removals = weeklyReportScanningPixel.params!["removals"]!
 
         XCTAssertEqual("0", removals)
@@ -227,7 +227,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first(where: { $0.name.contains("weekly-report_removals") })!
         let removals = weeklyReportScanningPixel.params!["removals"]!
 
         XCTAssertEqual("2", removals)
@@ -679,6 +679,36 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         XCTAssertEqual(child3Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName3,
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
                                             DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "-1"])
+    }
+    func testTryToFireWeeklyPixels_includesBackgroundTaskSessionMetrics() {
+        let sessions = [
+            BackgroundTaskSessionDB(id: 1, startDate: .daysAgo(3), duration: 30000, isTerminated: false),
+            BackgroundTaskSessionDB(id: 2, startDate: .daysAgo(2), duration: 45000, isTerminated: true),
+            BackgroundTaskSessionDB(id: 3, startDate: .daysAgo(1), duration: 60000, isTerminated: false),
+            BackgroundTaskSessionDB(id: 4, startDate: .daysAgo(4), duration: -1000, isTerminated: false),
+            BackgroundTaskSessionDB(id: 5, startDate: .daysAgo(5), duration: 90000000, isTerminated: true),
+            BackgroundTaskSessionDB(id: 6, startDate: .daysAgo(6), duration: 15000, isTerminated: false),
+            BackgroundTaskSessionDB(id: 7, startDate: .daysAgo(20), duration: 50000, isTerminated: true),
+            BackgroundTaskSessionDB(id: 8, startDate: .daysAgo(2), duration: 35000, isTerminated: false)
+        ]
+        
+        database.backgroundTaskSessionsToReturn = sessions
+        repository.customGetLatestWeeklyPixel = nil
+        
+        let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
+        
+        sut.tryToFireWeeklyPixels()
+        
+        let sessionPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+            .first { $0.name.contains("weekly-report_background-task_session") }
+        
+        XCTAssertNotNil(sessionPixel)
+        XCTAssertEqual(sessionPixel?.params?["num_started"], "7")
+        XCTAssertEqual(sessionPixel?.params?["num_completed"], "5")
+        XCTAssertEqual(sessionPixel?.params?["num_terminated"], "2")
+        XCTAssertEqual(sessionPixel?.params?["duration_min_ms"], "15000.0")
+        XCTAssertEqual(sessionPixel?.params?["duration_max_ms"], "60000.0")
+        XCTAssertEqual(sessionPixel?.params?["duration_median_ms"], "35000.0")
     }
 }
 

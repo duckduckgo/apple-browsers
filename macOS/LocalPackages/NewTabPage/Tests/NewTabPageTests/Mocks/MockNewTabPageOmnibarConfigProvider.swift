@@ -27,6 +27,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     @Published var isAIChatShortcutEnabled: Bool = true
 
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
-        $isAIChatShortcutEnabled.eraseToAnyPublisher()
+        $isAIChatShortcutEnabled.dropFirst().eraseToAnyPublisher()
     }
 }

@@ -145,6 +145,7 @@ final class NavigationBarViewController: NSViewController {
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
     private let visualStyle: VisualStyleProviding
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let showTab: (Tab.TabContent) -> Void
 
@@ -172,6 +173,7 @@ final class NavigationBarViewController: NSViewController {
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
                        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+                       aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
@@ -196,6 +198,7 @@ final class NavigationBarViewController: NSViewController {
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
                 visualStyle: visualStyle,
+                aiChatMenuConfig: aiChatMenuConfig,
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
                 showTab: showTab
             )
@@ -218,6 +221,7 @@ final class NavigationBarViewController: NSViewController {
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
         visualStyle: VisualStyleProviding,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
@@ -246,6 +250,7 @@ final class NavigationBarViewController: NSViewController {
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
+        self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.showTab = showTab
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
@@ -403,6 +408,7 @@ final class NavigationBarViewController: NSViewController {
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
+                                                                      aiChatMenuConfig: aiChatMenuConfig,
                                                                       aiChatSidebarPresenter: aiChatSidebarPresenter) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }

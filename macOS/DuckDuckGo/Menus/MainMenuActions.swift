@@ -1368,13 +1368,7 @@ extension MainViewController: NSMenuItemValidation {
             return true
 
         case #selector(MainViewController.summarize(_:)):
-            return AIChatMenuConfiguration(
-                storage: DefaultAIChatPreferencesStorage(),
-                remoteSettings: AIChatRemoteSettings(
-                    featureFlagger: featureFlagger,
-                    privacyConfigurationManager: contentBlocking.privacyConfigurationManager
-                )
-            ).shouldDisplaySummarizationMenuItem
+            return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
 
         default:
             return true

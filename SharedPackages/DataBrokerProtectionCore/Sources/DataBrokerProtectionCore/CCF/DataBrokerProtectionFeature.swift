@@ -29,6 +29,7 @@ public protocol CCFCommunicationDelegate: AnyObject {
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async
     func solveCaptcha(with response: SolveCaptchaResponse) async
     func success(actionId: String, actionType: ActionType) async
+    func conditionSuccess(actions: [Action]) async
     func onError(error: Error) async
 }
 
@@ -101,8 +102,10 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         switch result.result {
         case .success(let successResponse):
+            print("SAMDEBUG: Action completed, success: \(params)")
             await parseSuccess(success: successResponse)
         case .error(let error):
+            print("SAMDEBUG: Action completed, failure: \(params)")
             let dataBrokerError: DataBrokerProtectionError = .actionFailed(actionID: error.actionID, message: error.message)
             await delegate?.onError(error: dataBrokerError)
         }
@@ -126,7 +129,10 @@ public class DataBrokerProtectionFeature: Subfeature {
             await delegate?.solveCaptcha(with: response)
         case .fillForm, .click, .expectation:
             await delegate?.success(actionId: success.actionID, actionType: success.actionType)
-        default: return
+        case .conditionSuccess(let response):
+            await delegate?.conditionSuccess(actions: response.actions)
+        case .none:
+            break
         }
     }
 

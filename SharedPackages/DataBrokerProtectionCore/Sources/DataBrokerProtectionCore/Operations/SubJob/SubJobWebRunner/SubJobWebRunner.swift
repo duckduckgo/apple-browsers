@@ -73,7 +73,7 @@ public extension SubJobWebRunning {
     }
 
     func runNextAction(_ action: Action) async {
-        let stepType = actionsHandler?.step.type
+        let stepType = actionsHandler?.stepType
 
         switch action {
         case is GetCaptchaInfoAction:
@@ -262,6 +262,11 @@ public extension SubJobWebRunning {
         }
     }
 
+    func conditionSuccess(actions: [Action]) async {
+        actionsHandler?.insert(actions: actions)
+        await self.executeNextStep()
+    }
+
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {
         do {
             stageCalculator.fireOptOutCaptchaParse()
@@ -292,6 +297,11 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
+        if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
+            await executeNextStep()
+            return
+        }
+
         if retriesCountOnError > 0 {
             await executeCurrentAction()
         } else {

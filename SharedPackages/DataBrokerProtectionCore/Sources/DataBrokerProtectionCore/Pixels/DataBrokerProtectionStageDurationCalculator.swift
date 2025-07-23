@@ -34,6 +34,8 @@ public enum Stage: String {
     case validate
     case other
     case fillForm = "fill-form"
+    case conditionFound = "condition-found"
+    case conditionNotFound = "condition-not-found"
 }
 
 public protocol StageDurationCalculator {

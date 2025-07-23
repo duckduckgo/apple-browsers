@@ -211,7 +211,7 @@ private extension DataImportSummaryViewModelTests {
     }
 
     func createPerfectSummary() -> DataImportSummary {
-        createSummary(passwords: true, bookmarks: true)
+        createSummary(passwords: true, bookmarks: true, creditCards: true)
     }
 
     func createSummaryWithFailures() -> DataImportSummary {

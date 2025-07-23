@@ -1769,7 +1769,7 @@ extension Pixel.Event {
         case .importResultDisplayed: return "import_result_displayed"
         case .importResultPasswordsSuccess: return "import_result_passwords_success"
         case .importResultBookmarksSuccess: return "import_result_bookmarks_success"
-        case .importResultCreditCardsSuccess: return "import_result_credit_cards_success"
+        case .importResultCreditCardsSuccess: return "import_result_creditcards_success"
         case .importResultSyncButtonShown: return "import_result_sync_button_shown"
         case .importResultSyncButtonTapped: return "import_result_sync_button_tapped"
         case .importResultPasswordsParsing: return "import_result_passwords_parsing"

@@ -26,7 +26,13 @@ import os.log
 import PixelKit
 import Suggestions
 
-final class SuggestionContainer {
+protocol SuggestionContainerProtocol {
+
+    func getSuggestions(for query: String, useCachedData: Bool, completion: ((SuggestionResult?) -> Void)?)
+
+}
+
+final class SuggestionContainer: SuggestionContainerProtocol {
 
     static let maximumNumberOfSuggestions = 9
 

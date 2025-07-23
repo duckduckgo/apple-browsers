@@ -273,7 +273,7 @@ final class AIChatSidebarViewController: NSViewController {
     @objc private func openInNewTabButtonClicked() {
         let aiChatRestorationData = aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
 
-        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingPlacementParameter(), aiChatRestorationData: aiChatRestorationData)
+        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingAIChatPlacementParameter(), aiChatRestorationData: aiChatRestorationData)
     }
 
     @objc private func closeButtonClicked() {

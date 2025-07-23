@@ -82,7 +82,7 @@ class FirefoxDataImporterTests: XCTestCase {
 
         _ = await importer.importData(types: [.bookmarks])
 
-        XCTAssertEqual(bookmarksToImport?.numberOfBookmarks, 10)
+        XCTAssertEqual(bookmarksToImport?.numberOfBookmarks, 13)
         XCTAssertEqual(bookmarksBarMarkedAsFavorites, false)
     }
 

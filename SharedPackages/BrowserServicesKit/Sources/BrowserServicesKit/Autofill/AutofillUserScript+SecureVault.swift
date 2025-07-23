@@ -23,6 +23,7 @@ import UserScript
 public enum RequestVaultDataAction: String, Codable {
     case none
     case fill
+    case refreshAvailableInputTypes
 }
 
 public protocol AutofillSecureVaultDelegate: AnyObject {
@@ -575,6 +576,7 @@ extension AutofillUserScript {
         case partialSave
         case passwordGeneration
         case emailProtection
+        case credentialsImport
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json

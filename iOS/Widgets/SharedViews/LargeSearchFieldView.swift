@@ -27,7 +27,7 @@ struct LargeSearchFieldView: View {
         Link(destination: DeepLinks.newSearch) {
             ZStack {
                 RoundedRectangle(cornerRadius: 23)
-                    .fill(Color(designSystemColor: .container))
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
                     .frame(minHeight: 46, maxHeight: 46)
                     .padding(.vertical, 16)
 

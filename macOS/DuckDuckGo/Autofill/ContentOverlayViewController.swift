@@ -302,6 +302,12 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager,
+                                   promptUserToImportCredentialsForDomain domain: String,
+                                   completionHandler: @escaping (Bool) -> Void) {
+        // no-op on macOS
+    }
+
+    public func secureVaultManager(_: SecureVaultManager,
                                    isAuthenticatedFor type: AutofillType,
                                    completionHandler: @escaping (Bool) -> Void) {
 

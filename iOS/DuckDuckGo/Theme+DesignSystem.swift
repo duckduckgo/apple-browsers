@@ -95,7 +95,7 @@ extension Theme {
     
     var browsingMenuHighlightColor: UIColor { UIColor(designSystemColor: .urlBar) }
     var searchBarBackgroundColor: UIColor { UIColor(designSystemColor: .urlBar) }
-    var tabsBarBackgroundColor: UIColor { UIColor(designSystemColor: .variousIPadTabs) }
+    var tabsBarBackgroundColor: UIColor { UIColor(designSystemColor: .backdrop) }
     var tabsBarSeparatorColor: UIColor { UIColor(designSystemColor: .lines) }
     var navigationBarTintColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var searchBarTextDeemphasisColor: UIColor { UIColor(designSystemColor: .textSecondary) }

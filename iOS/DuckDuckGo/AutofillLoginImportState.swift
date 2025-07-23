@@ -27,6 +27,7 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
         static let hasImportedLogins: String = "com.duckduckgo.logins.hasImportedLogins"
         static let isCredentialsImportViaBrowserPromptPermanentlyDismissed: String = "com.duckduckgo.logins.isCredentialsImportBrowserPromptPermanentlyDismissed"
         static let isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: String = "com.duckduckgo.logins.isCredentialsImportPasswordsPromoPermanentlyDismissed"
+        static let credentialsImportPromptPresentationCount: String = "com.duckduckgo.logins.credentialsImportPromptPresentationCount"
     }
 
     private let featureFlagger: FeatureFlagger
@@ -80,6 +81,20 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
 
         set {
             try? keyValueStore.set(newValue, forKey: Key.isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed)
+        }
+    }
+
+    public var credentialsImportPromptPresentationCount: Int {
+        get {
+            guard let presentationCount = try? keyValueStore.object(forKey: Key.credentialsImportPromptPresentationCount) as? Int else {
+                return 0
+            }
+
+            return presentationCount
+        }
+
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.credentialsImportPromptPresentationCount)
         }
     }
 

@@ -1,7 +1,8 @@
 ---
-description: Detailed integration patterns for DuckPlayerUserScriptYouTube and DuckPlayerUserScriptPlayer, including communication protocols, event handling, and synchronization patterns
-keywords: DuckPlayer, UserScript, JavaScript bridge, WebKit messaging, YouTube integration, video player communication, event queuing, state synchronization
-always_apply: false
+alwaysApply: false
+title: "DuckPlayer UserScript Integration Guide"
+description: "Detailed integration patterns for DuckPlayerUserScriptYouTube and DuckPlayerUserScriptPlayer, including communication protocols, event handling, and synchronization patterns"
+keywords: ["DuckPlayer", "UserScript", "JavaScript bridge", "WebKit messaging", "YouTube integration", "video player communication", "event queuing", "state synchronization"]
 ---
 
 # DuckPlayer UserScript Integration Guide

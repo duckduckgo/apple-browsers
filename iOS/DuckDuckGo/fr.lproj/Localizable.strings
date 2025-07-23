@@ -1111,9 +1111,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Sélectionnez **Exporter**, puis sur l'écran suivant, sélectionnez **Mots de passe** et **Enregistrer dans les téléchargements**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importer le fichier de mots de passe...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Dans Chrome, allez dans **Gestionnaire de mots de passe Google** puis dans **Paramètres**.";
 
@@ -1863,6 +1860,18 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Identifiant : %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importer les mots de passe";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Ne plus demander";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Transférez vos mots de passe rapidement et en toute sécurité à partir d'un autre navigateur.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importez vos mots de passe sur DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Vous devez activer le VPN à partir de l'application DuckDuckGo.";

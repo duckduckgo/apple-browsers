@@ -114,7 +114,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         ]
 
         if sectionsAvailabilityProvider.isOmnibarAvailable {
-            widgets.insert(.init(id: .omnibar), at: 3)
+            widgets.insert(.init(id: .omnibar), at: 2)
         }
 
         return widgets

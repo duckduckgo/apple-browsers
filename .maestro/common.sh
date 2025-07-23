@@ -50,9 +50,19 @@ build_app() {
     fi
 
     echo "⏲️ Building the app"
+    
+    # Use specific device UUID if provided, otherwise fall back to name-based destination
+    if [ -n "$MAESTRO_DEVICE_UUID" ]; then
+        destination="platform=iOS Simulator,id=$MAESTRO_DEVICE_UUID"
+        echo "ℹ️ Building for specific simulator: $MAESTRO_DEVICE_UUID"
+    else
+        destination="platform=iOS Simulator,name=$destination_device,OS=$destination_os_version"
+        echo "ℹ️ Building for simulator: $destination_device with OS $destination_os_version"
+    fi
+    
     set -o pipefail && xcodebuild -project "$project_root"/iOS/DuckDuckGo-iOS.xcodeproj \
                                   -scheme "iOS Browser" \
-                                  -destination "platform=iOS Simulator,name=$destination_device,OS=$destination_os_version" \
+                                  -destination "$destination" \
                                   -derivedDataPath "$derived_data_path" \
                                   -skipPackagePluginValidation \
                                   -skipMacroValidation \

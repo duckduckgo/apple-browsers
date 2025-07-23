@@ -109,13 +109,8 @@ final class SuggestionTrayManager: NSObject {
             controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: containerView.keyboardLayoutGuide.topAnchor),
-            controller.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor)
+            controller.view.bottomAnchor.constraint(equalTo: containerView.safeAreaLayoutGuide.bottomAnchor)
         ])
-
-        if #available(iOS 17.0, *) {
-            containerView.keyboardLayoutGuide.usesBottomSafeArea = false
-        }
 
         controller.autocompleteDelegate = self
         controller.favoritesOverlayDelegate = self

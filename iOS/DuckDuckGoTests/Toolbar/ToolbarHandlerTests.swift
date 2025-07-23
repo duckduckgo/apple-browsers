@@ -46,37 +46,9 @@ class ToolbarHandlerTests: XCTestCase {
         mockThemeManager = nil
         super.tearDown()
     }
-
+    
     func testUpdateToolbarWithStateNewTab() {
-        toolbarHandler.updateToolbarWithState(.newTab)
-
-        XCTAssertEqual(mockToolbar.items?.count, 9)
-        XCTAssertEqual(mockToolbar.items?[0].title, UserText.actionOpenBookmarks)
-        XCTAssertEqual(mockToolbar.items?[2].title, UserText.actionOpenPasswords)
-        XCTAssertEqual(mockToolbar.items?[4].title, UserText.actionForgetAll)
-        XCTAssertEqual(mockToolbar.items?[6].title, UserText.tabSwitcherAccessibilityLabel)
-        XCTAssertEqual(mockToolbar.items?[8].title, UserText.menuButtonHint)
-    }
-
-    func testUpdateToolbarWithStatePageLoaded() {
-        toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
-
-        XCTAssertEqual(mockToolbar.items?.count, 9)
-        XCTAssertEqual(mockToolbar.items?[0].title, UserText.keyCommandBrowserBack)
-        XCTAssertEqual(mockToolbar.items?[2].title, UserText.keyCommandBrowserForward)
-        XCTAssertEqual(mockToolbar.items?[4].title, UserText.actionForgetAll)
-        XCTAssertEqual(mockToolbar.items?[6].title, UserText.tabSwitcherAccessibilityLabel)
-        XCTAssertEqual(mockToolbar.items?[8].title, UserText.menuButtonHint)
-
-        XCTAssertTrue(toolbarHandler.backButton.isEnabled)
-        XCTAssertFalse(toolbarHandler.forwardButton.isEnabled)
-    }
-
-    func testUpdateExperimentalToolbarWithStateNewTab() {
-        mockThemeManager.properties = ExperimentalThemingProperties(isExperimentalThemingEnabled: true)
         // To prevent assertion for using experimental colors with the default theme
-        DesignSystemPalette.current = .experimental
-
         toolbarHandler.updateToolbarWithState(.newTab)
 
         XCTAssertEqual(mockToolbar.items?.count, 11)
@@ -87,11 +59,8 @@ class ToolbarHandlerTests: XCTestCase {
         XCTAssertEqual(mockToolbar.items?[9].title, UserText.menuButtonHint)
     }
 
-    func testUpdateExperimentalToolbarWithStatePageLoaded() {
-        mockThemeManager.properties = ExperimentalThemingProperties(isExperimentalThemingEnabled: true)
+    func testUpdateToolbarWithStatePageLoaded() {
         // To prevent assertion for using experimental colors with the default theme
-        DesignSystemPalette.current = .experimental
-
         toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
 
         XCTAssertEqual(mockToolbar.items?.count, 11)

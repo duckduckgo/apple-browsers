@@ -1214,7 +1214,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         self.tries += 1
     }
 
-    func clear() {
+    public func clear() {
         self.stage = nil
         durationSinceLastStageCalled = false
         durationSinceStartTimeCalled = false

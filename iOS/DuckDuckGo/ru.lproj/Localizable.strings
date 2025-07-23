@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Выберите вариант **Экспорт**, а на следующем экране — **Пароли** и **Сохранить в «Загрузки»**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Импортировать файл с паролями...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "В браузере Chrome откройте **Менеджер паролей Google** и выберите вариант **Настройки**.";
 
@@ -1864,6 +1861,9 @@
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Импорт паролей";
 
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Больше не спрашивать";
+
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Быстрый и безопасный способ перенести пароли из другого браузера.";
 
@@ -2362,15 +2362,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Кстати, пока не забыл...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "В DuckDuckGo также есть встроенный %1$@!\n\nДля его активации требуется %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "платная подписка Privacy Pro";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Начать просмотр";
 
@@ -2382,6 +2373,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Понятно. Тогда мы пропустим остальные советы.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Ознакомление бесплатное!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo также предлагает надежный сервис %1$@ по %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "платной подписке";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + еще два вида дополнительной защиты";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Добавить виджет";

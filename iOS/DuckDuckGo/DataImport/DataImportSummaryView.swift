@@ -231,7 +231,15 @@ struct DataImportSummaryView: View {
             VStack(spacing: 0) {
                 HStack {
                     HStack(spacing: 12) {
-                        Image(uiImage: isSuccess ? DesignSystemImages.Glyphs.Size24.checkRecolorable : DesignSystemImages.Glyphs.Size24.crossRecolorable)
+                        if isSuccess {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.checkRecolorable).renderingMode(.template)
+                                .resizable()
+                                .frame(width: 21, height: 21)
+                                .foregroundStyle(Color(designSystemColor: .alertGreen))
+                                .padding(.leading, 2)
+                        } else {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.crossRecolorable)
+                        }
                         Text(label)
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textPrimary))

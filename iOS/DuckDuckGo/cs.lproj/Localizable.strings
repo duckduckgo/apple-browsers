@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Vyber **Export** a na další obrazovce vyber **Hesla** a **Uložit do stažených souborů**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importovat soubor s hesly...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "V Chromu přejdi do **Správce hesel Google** a pak do **Nastavení**.";
 
@@ -1864,6 +1861,9 @@
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importovat hesla";
 
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Znovu se neptat";
+
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Rychle a bezpečně přenes svá hesla z jiného prohlížeče.";
 
@@ -2362,15 +2362,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Než to zapomenu...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo má také integrovanou %1$@!\n\nMůžete ji aktivovat pomocí %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "placeného předplatného Privacy Pro";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Spustit procházení";
 
@@ -2382,6 +2373,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Rozumím. Ostatní tipy přeskočím.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Vyzkoušej to vše zdarma!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo má také bezpečnou %1$@, které jsou dostupné v rámci %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN a dvě další prémiové ochrany";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Přidat widget";

@@ -1,0 +1,28 @@
+{
+    "permissions": {
+      "allow": [
+        "mcp__doc-bot__search_documentation",
+        "mcp__doc-bot__read_specific_document",
+        "mcp__doc-bot__check_project_rules",
+        "mcp__doc-bot__list_docsets",
+        "mcp__doc-bot__get_document_index",
+        "mcp__doc-bot__explore_api",
+        "mcp__doc-bot__get_global_rules",
+        "Bash(gh pr view:*)",
+        "Bash(xcodebuild:*)",
+        "Bash(grep:*)",
+        "Bash(ls:*)",
+        "Bash(gh pr diff:*)",
+        "Bash(git check-ignore:*)",
+        "Bash(git sparse-checkout:*)",
+         "Bash(git update-index:*)",
+        "Bash(true)",
+        "Bash(touch:*)",
+        "Bash(git fetch:*)"
+      ],
+      "deny": []
+    },
+    "enabledMcpjsonServers": [
+      "doc-bot"
+    ]
+  }

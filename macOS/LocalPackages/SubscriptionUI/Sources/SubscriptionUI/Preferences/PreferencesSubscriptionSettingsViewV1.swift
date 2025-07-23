@@ -105,7 +105,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(.subscriptionExpiredIcon)
-                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader)
+                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: false))
             }
             HStack {
                 Button(UserText.viewPlansExpiredButtonTitle) { model.purchaseAction() }

@@ -59,7 +59,7 @@ final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
 
     func testWhenSubscriptionPlatformIsStripe_isUserEligibleForFreeTrial_ReturnsTrue() {
         mockSubscriptionBridge.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
-        mockSubscriptionBridge.isEligibleForFreeTrialResult = false
+        mockSubscriptionBridge.isEligibleForFreeTrialResult = true
         XCTAssertTrue(subscriptionManager.isUserEligibleForFreeTrial())
     }
 }

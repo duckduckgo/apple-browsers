@@ -197,7 +197,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition,
              .june2025TabManagerLayoutChanges,
-             .canPromoteImportPasswordsInPasswordManagement:
+             .canPromoteImportPasswordsInPasswordManagement,
+             .canPromoteImportPasswordsInBrowser:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {

@@ -10,9 +10,8 @@
 // - set it within a user.js file in your profile.
 
 user_pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs", "newtab_stories_1, newtab_stories_2, newtab_stories_3, newtab_stories_4, newtab_stories_5, newtab_stories_6, newtab_billboard");
-user_pref("browser.newtabpage.activity-stream.feeds.topsites", true);
 user_pref("browser.newtabpage.activity-stream.showSearch", false);
-user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 user_pref("browser.newtabpage.activity-stream.topSitesRows", 2);
+user_pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 user_pref("browser.newtabpage.blocked", "{\"Ah7lSVYCzNULDsq5mnZyfw==\":1}");
 user_pref("browser.newtabpage.pinned", "[{\"url\":\"https://duckduckgo.com/\",\"baseDomain\":\"duckduckgo.com\",\"label\":\"DuckDuckGo\"},{\"url\":\"https://duck.com/\",\"label\":\"Duck.com\"},{\"url\":\"https://duck.ai/\",\"label\":\"Duck.ai\"},null,null,null,{\"url\":\"https://example.com/\",\"label\":\"Example Domain\"}]");

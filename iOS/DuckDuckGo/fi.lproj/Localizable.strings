@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Valitse **Vie** ja valitse seuraavassa näytössä **Salasanat** ja **Tallenna latauksiin**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Tuo salasanatiedosto...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Siirry Chromessa kohtaan **Google Password Manager** ja sitten **Asetukset**.";
 
@@ -1864,6 +1861,9 @@
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Tuo salasanat";
 
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Älä kysy uudelleen";
+
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Siirrä salasanasi nopeasti ja turvallisesti toisesta selaimesta.";
 
@@ -2362,15 +2362,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ai niin, melkein unohdin...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "DuckDuckGossa on myös oma %1$@!\n\nHanki %2$@, niin saat sen käyttöösi.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "maksullinen Privacy Pro -tilaus";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Aloita selailu";
 
@@ -2382,6 +2373,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Selvä! Ohitan muut vinkit.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Kokeile ilmaiseksi!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo:lla on myös suojattu %1$@, joka on saatavilla %2$@:n kanssa.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "valinnainen maksullinen tilaus";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 muuta premium-suojausta";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Lisää widget";

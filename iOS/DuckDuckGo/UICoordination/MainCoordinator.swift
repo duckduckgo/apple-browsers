@@ -108,7 +108,8 @@ final class MainCoordinator {
                                 fireproofing: fireproofing,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
-                                featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard))
+                                featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
+                                keyValueStore: keyValueStore)
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,

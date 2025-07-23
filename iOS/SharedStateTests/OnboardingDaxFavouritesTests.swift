@@ -105,7 +105,8 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
                                     fireproofing: fireproofing,
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-                                    featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard))
+                                    featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
+                                    keyValueStore: try! MockKeyValueFileStore())
         sut = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,

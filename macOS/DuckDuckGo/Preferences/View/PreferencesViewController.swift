@@ -38,6 +38,7 @@ final class PreferencesViewController: NSViewController {
     private var selectedPreferencePaneCancellable: AnyCancellable?
 
     private var bitwardenManager: BWManagement = BWManager.shared
+    private let featureFlagger: FeatureFlagger
 
     init(
         syncService: DDGSyncing,
@@ -50,6 +51,7 @@ final class PreferencesViewController: NSViewController {
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.featureFlagger = featureFlagger
         self.aiChatRemoteSettings = aiChatRemoteSettings
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
                                         featureFlagger: featureFlagger,
@@ -82,6 +84,7 @@ final class PreferencesViewController: NSViewController {
             let prefRootView = Preferences.RootViewV2(model: model,
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
                                                       subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
+                                                      featureFlagger: featureFlagger,
                                                       aiChatURLSettings: aiChatRemoteSettings)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)

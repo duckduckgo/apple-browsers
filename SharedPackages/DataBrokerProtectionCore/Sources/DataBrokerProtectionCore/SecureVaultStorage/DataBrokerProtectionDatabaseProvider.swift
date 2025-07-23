@@ -105,6 +105,10 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func save(_ optOutAttemptDB: OptOutAttemptDB) throws
 
     func fetchFirstEligibleJobDate() throws -> Date?
+
+    func save(_ session: BackgroundTaskSessionDB) throws
+    func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB]
+    func deleteBackgroundTaskSessions(olderThan date: Date) throws
  }
 
 public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorageDatabaseProvider, DataBrokerProtectionDatabaseProvider {
@@ -123,7 +127,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                                                      key: Data,
                                                      migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self,
                                                      reporter: SecureVaultReporting? = nil) throws -> DefaultDataBrokerProtectionDatabaseProvider {
-        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v6Migrations, reporter: reporter)
+        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v7Migrations, reporter: reporter)
     }
 
     public init(file: URL,
@@ -710,6 +714,29 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
 
             let result = try Row.fetchOne(db, sql: sql)
             return result?[alias]
+        }
+    }
+
+    public func save(_ session: BackgroundTaskSessionDB) throws {
+        try db.write { db in
+            try session.save(db)
+        }
+    }
+
+    public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
+        try db.read { db in
+            try BackgroundTaskSessionDB
+                .filter(BackgroundTaskSessionDB.Columns.startDate >= date)
+                .order(BackgroundTaskSessionDB.Columns.startDate.desc)
+                .fetchAll(db)
+        }
+    }
+
+    public func deleteBackgroundTaskSessions(olderThan date: Date) throws {
+        _ = try db.write { db in
+            try BackgroundTaskSessionDB
+                .filter(BackgroundTaskSessionDB.Columns.startDate < date)
+                .deleteAll(db)
         }
     }
 }

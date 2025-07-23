@@ -112,6 +112,10 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 
     func fetchFirstEligibleJobDate() throws -> Date?
+
+    func save(backgroundTaskSession: BackgroundTaskSessionDB) throws
+    func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB]
+    func deleteBackgroundTaskSessions(olderThan date: Date) throws
 }
 
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
@@ -505,5 +509,19 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
 
     public func fetchFirstEligibleJobDate() throws -> Date? {
         return try self.providers.database.fetchFirstEligibleJobDate()
+    }
+
+    // MARK: - Background Task Session Methods
+
+    public func save(backgroundTaskSession: BackgroundTaskSessionDB) throws {
+        try self.providers.database.save(backgroundTaskSession)
+    }
+
+    public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
+        return try self.providers.database.fetchBackgroundTaskSessions(since: date)
+    }
+
+    public func deleteBackgroundTaskSessions(olderThan date: Date) throws {
+        try self.providers.database.deleteBackgroundTaskSessions(olderThan: date)
     }
 }

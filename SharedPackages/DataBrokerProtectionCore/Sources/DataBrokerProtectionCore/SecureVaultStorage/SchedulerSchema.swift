@@ -393,3 +393,35 @@ extension OptOutAttemptDB: PersistableRecord, FetchableRecord {
         container[Columns.startDate] = startDate
     }
 }
+
+public struct BackgroundTaskSessionDB: Codable {
+    let id: Int64?
+    let startDate: Date
+    let duration: Int64
+    let isTerminated: Bool
+}
+
+extension BackgroundTaskSessionDB: PersistableRecord, FetchableRecord {
+    public static let databaseTableName: String = "backgroundTaskSession"
+
+    enum Columns: String, ColumnExpression {
+        case id
+        case startDate
+        case duration
+        case isTerminated
+    }
+
+    public init(row: Row) throws {
+        id = row[Columns.id]
+        startDate = row[Columns.startDate]
+        duration = row[Columns.duration]
+        isTerminated = row[Columns.isTerminated]
+    }
+
+    public func encode(to container: inout PersistenceContainer) throws {
+        container[Columns.id] = id
+        container[Columns.startDate] = startDate
+        container[Columns.duration] = duration
+        container[Columns.isTerminated] = isTerminated
+    }
+}

@@ -295,16 +295,25 @@ public final class DataBrokerProtectionIOSManager {
         Logger.dataBrokerProtection.log("Background task started")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
         iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-        let startTime = Date.now
+        let startDate = Date.now
 
         task.expirationHandler = {
             self.queueManager.stop()
 
-            let timeTaken = Date.now.timeIntervalSince(startTime)
+            let timeTaken = Date.now.timeIntervalSince(startDate)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
             self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
                                                               deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+            
+            // Record terminated session
+            let duration = Date.now.timeIntervalSince(startDate) * 1000
+            do {
+                try self.database.saveBackgroundTaskSession(startDate: startDate, duration: Int64(duration), isTerminated: true)
+            } catch {
+                Logger.dataBrokerProtection.error("Failed to save terminated background task session: \(error.localizedDescription, privacy: .public)")
+            }
+            
             self.scheduleBGProcessingTask()
             task.setTaskCompleted(success: false)
         }
@@ -317,12 +326,20 @@ public final class DataBrokerProtectionIOSManager {
             }
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
-                let timeTaken = Date.now.timeIntervalSince(startTime)
+                let timeTaken = Date.now.timeIntervalSince(startDate)
                 Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
                 self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
                     duration: timeTaken * 1000.0,
                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+
+                // Record completed session
+                let duration = Date.now.timeIntervalSince(startDate) * 1000
+                do {
+                    try self.database.saveBackgroundTaskSession(startDate: startDate, duration: Int64(duration), isTerminated: false)
+                } catch {
+                    Logger.dataBrokerProtection.error("Failed to save completed background task session: \(error.localizedDescription, privacy: .public)")
+                }
 
                 self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
@@ -348,7 +365,7 @@ public final class DataBrokerProtectionIOSManager {
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
     }
-
+    
     /// Used by the iOS PIR debug menu to reset tester data.
     public func deleteAllData() throws {
         try database.deleteProfileData()

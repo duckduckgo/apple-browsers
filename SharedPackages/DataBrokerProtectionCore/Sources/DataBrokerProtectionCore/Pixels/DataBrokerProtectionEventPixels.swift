@@ -68,6 +68,8 @@ public final class DataBrokerProtectionEventPixels {
         if shouldWeFireWeeklyPixel() {
             fireWeeklyReportPixels()
             repository.markWeeklyPixelSent()
+
+            cleanupOldBackgroundTaskSessions()
         }
     }
 
@@ -132,6 +134,34 @@ public final class DataBrokerProtectionEventPixels {
         handler.fire(.weeklyReportRemovals(removals: removalsInTheLastWeek))
 
         fireWeeklyChildBrokerOrphanedOptOutsPixels(for: data)
+
+        // Fire background task session metrics
+        do {
+            let sessions = try database.fetchBackgroundTaskSessions(since: .daysAgo(7))
+
+            let startedCount = sessions.count
+            let completedCount = sessions.filter { !$0.isTerminated }.count
+            let terminatedCount = sessions.filter { $0.isTerminated }.count
+
+            let validSessionDurations = sessions
+                .filter { $0.duration > 0 && $0.duration < Int64(TimeInterval.days(1)) }
+                .map { Int64($0.duration) }
+
+            let durationMinMs = validSessionDurations.min() ?? 0
+            let durationMaxMs = validSessionDurations.max() ?? 0
+            let durationMedianMs = validSessionDurations.median()
+
+            handler.fire(.weeklyReportBackgroundTaskSession(
+                started: startedCount,
+                completed: completedCount,
+                terminated: terminatedCount,
+                durationMinMs: Double(durationMinMs),
+                durationMaxMs: Double(durationMaxMs),
+                durationMedianMs: durationMedianMs
+            ))
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to fetch background task sessions: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func hadScanThisWeek(_ brokerProfileQuery: BrokerProfileQueryData) -> Bool {
@@ -147,6 +177,15 @@ public final class DataBrokerProtectionEventPixels {
             return differenceInDays >= 7
         } else {
             return false
+        }
+    }
+
+    private func cleanupOldBackgroundTaskSessions() {
+        do {
+            try database.deleteBackgroundTaskSessions(olderThan: .daysAgo(7))
+            Logger.dataBrokerProtection.log("Cleaned up background task sessions older than 7 days")
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to clean up old background task sessions: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -234,6 +273,21 @@ private extension Int {
             return "75-100"
         } else {
             return "error"
+        }
+    }
+}
+
+private extension Array where Element == Int64 {
+    func median() -> Double {
+        guard !isEmpty else { return 0 }
+
+        let sorted = self.sorted()
+        let count = sorted.count
+
+        if count % 2 == 0 {
+            return Double((sorted[count / 2 - 1] + sorted[count / 2]) / 2)
+        } else {
+            return Double(sorted[count / 2])
         }
     }
 }

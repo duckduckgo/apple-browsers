@@ -55,7 +55,7 @@ final class NavigationActionBarView: UIView {
     // MARK: - Initialization
     init(viewModel: NavigationActionBarViewModel) {
         self.viewModel = viewModel
-        super.init(frame: .zero)
+        super.init(frame: .init(x: 0, y: 0, width: 300, height: 100))
         setupUI()
         setupBindings()
         updateUI()
@@ -74,12 +74,12 @@ final class NavigationActionBarView: UIView {
         // Setup stack views
         mainStackView.axis = .horizontal
         mainStackView.spacing = Constants.buttonSpacing
-        mainStackView.alignment = .center
+        mainStackView.alignment = .fill
         mainStackView.distribution = .fill
         
         rightStackView.axis = .horizontal
         rightStackView.spacing = Constants.buttonSpacing
-        rightStackView.alignment = .center
+        rightStackView.alignment = .fill
         rightStackView.distribution = .fill
 
         solidView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8)
@@ -98,8 +98,8 @@ final class NavigationActionBarView: UIView {
         mainStackView.addArrangedSubview(webSearchToggleButton)
         
         let spacer = UIView()
-        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        spacer.setContentHuggingPriority(.init(1), for: .horizontal)
+        spacer.setContentCompressionResistancePriority(.init(1), for: .horizontal)
         mainStackView.addArrangedSubview(spacer)
         
         mainStackView.addArrangedSubview(rightStackView)

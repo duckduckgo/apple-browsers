@@ -43,7 +43,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
-final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitionDelegate {
+final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitioning {
 
     // MARK: - Properties
     
@@ -174,6 +174,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
+            switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             switchBarVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
         ])
@@ -206,7 +207,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
-        manager.installInViewController(self, safeAreaGuide: view.safeAreaLayoutGuide)
+        manager.installInViewController(self)
         navigationActionBarManager = manager
     }
 

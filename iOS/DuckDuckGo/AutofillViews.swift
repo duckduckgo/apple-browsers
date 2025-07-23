@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
 
 struct AutofillViews {
 
@@ -117,13 +118,8 @@ struct AutofillViews {
             } label: {
                 Text(title)
                     .daxButton()
-                    .padding()
-                    .frame(minWidth: 0, maxWidth: Const.Size.maxWidth)
-                    .foregroundColor(.white)
-                    .background(Color(designSystemColor: .accent))
-                    .cornerRadius(Const.Size.buttonCornerRadius)
-                    .fixedSize(horizontal: false, vertical: true)
             }
+            .buttonStyle(PrimaryButtonStyle())
         }
     }
 

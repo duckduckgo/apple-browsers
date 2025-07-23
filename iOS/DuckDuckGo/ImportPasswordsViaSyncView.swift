@@ -161,6 +161,7 @@ struct NumberBadge: View {
                     .fill(colorScheme == .dark ? darkBulletColor : lightBulletColor)
                     .frame(width: 24, height: 24)
             )
+            .frame(width: 10)
             .foregroundColor(Color(designSystemColor: .accent))
             .fixedSize()
             .padding(10)

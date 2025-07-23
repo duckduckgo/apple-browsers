@@ -1087,9 +1087,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Select **Export**, and on the next screen select **Passwords** and **Save to Downloads**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Import Passwords File...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "In Chrome, go to **Google Password Manager** and then **Settings**.";
 
@@ -1824,6 +1821,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Import Passwords";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Don’t Ask Again";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Quickly and securely transfer your passwords from another browser.";

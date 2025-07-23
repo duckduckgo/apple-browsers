@@ -233,45 +233,19 @@ class SecureVaultManagerTests: XCTestCase {
         XCTAssertEqual(resultAction, RequestVaultDataAction.none)
     }
 
-    func testWhenUserScriptRequestsCreditCardAndDelegateReturnsNil_ThenNilCardAndNoneActionReturned() {
+    func testWhenRequestingCredentialsWithEmptyUsername_ThenNonActionIsReturned() throws {
         // Given
-        class CreditCardTestDelegate: MockSecureVaultManagerDelegate {
-            override func secureVaultManager(_ manager: SecureVaultManager,
-                                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
-                                             withTrigger trigger: AutofillUserScript.GetTriggerType,
-                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-                // Return nil to simulate user cancellation
-                completionHandler(nil)
+        class TestDelegate: MockSecureVaultManagerDelegate {
+            override func secureVaultManager(_: SecureVaultManager,
+                                             promptUserToImportCredentialsForDomain domain: String,
+                                             completionHandler: @escaping (Bool) -> Void) {
+                completionHandler(false)
             }
         }
 
-        // Setup test credit cards
-        let card = paymentMethod(id: 1, cardNumber: "4111111111111111", cardholderName: "Test User", cvv: "123", month: 1, year: 2030)
-        try! self.testVault.storeCreditCard(card)
+        let testDelegate = TestDelegate()
+        self.manager.delegate = testDelegate
 
-        let delegate = CreditCardTestDelegate()
-        self.manager.delegate = delegate
-
-        // When
-        let expectation = self.expectation(description: "Credit card request completed")
-        var resultCard: SecureVaultModels.CreditCard?
-        var resultAction: RequestVaultDataAction?
-
-        manager.autofillUserScriptDidRequestCreditCard(mockAutofillUserScript, trigger: .userInitiated) { card, action in
-            resultCard = card
-            resultAction = action
-            expectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 1.0)
-
-        // Then
-        XCTAssertNil(resultCard)
-        XCTAssertEqual(resultAction, RequestVaultDataAction.none)
-    }
-
-    // MARK: - AutofillSecureVaultDelegate Tests
-    func testWhenRequestingCredentialsWithEmptyUsername_ThenNonActionIsReturned() throws {
         let triggerType = AutofillUserScript.GetTriggerType.userInitiated
 
         // account
@@ -1454,6 +1428,10 @@ private class MockSecureVaultManagerDelegate: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
 
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {}
+
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToImportCredentialsForDomain domain: String,
+                            completionHandler: @escaping (Bool) -> Void) {}
 
     func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {}
 

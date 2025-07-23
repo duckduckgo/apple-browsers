@@ -60,7 +60,7 @@ final class AIChatSidebar: NSObject {
     /// Creates a sidebar wrapper with the specified initial AI chat URL.
     /// - Parameter initialAIChatURL: The initial AI chat URL to load. If nil, defaults to the URL from AIChatRemoteSettings.
     init(initialAIChatURL: URL? = nil, burnerMode: BurnerMode) {
-        self.initialAIChatURL = initialAIChatURL ?? aiChatRemoteSettings.aiChatURL.forSidebar()
+        self.initialAIChatURL = initialAIChatURL ?? aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
         self.burnerMode = burnerMode
     }
 }
@@ -87,22 +87,25 @@ extension AIChatSidebar: NSSecureCoding {
     }
 }
 
-fileprivate extension URL {
-
-    enum PlacementParameter {
-        static let name = "placement"
-        static let sidebar = "sidebar"
-    }
-
-    func forSidebar() -> URL {
-        self.appendingParameter(name: PlacementParameter.name, value: PlacementParameter.sidebar)
-    }
-
-}
-
 extension URL {
 
-    public func removingPlacementParameter() -> URL {
-        self.removingParameters(named: [PlacementParameter.name])
+    enum AIChatPlacementParameter {
+        public static let name = "placement"
+        public static let sidebar = "sidebar"
+    }
+
+    public func forAIChatSidebar() -> URL {
+        appendingParameter(name: AIChatPlacementParameter.name, value: AIChatPlacementParameter.sidebar)
+    }
+
+    public func removingAIChatPlacementParameter() -> URL {
+        removingParameters(named: [AIChatPlacementParameter.name])
+    }
+
+    public var hasAIChatSidebarPlacementParameter: Bool {
+        guard let parameter = self.getParameter(named: AIChatPlacementParameter.name) else {
+            return false
+        }
+        return parameter == AIChatPlacementParameter.sidebar
     }
 }

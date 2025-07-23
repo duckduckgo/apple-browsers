@@ -1105,9 +1105,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Pasirink **Eksportuoti**, o kitame ekrane pasirink **Slaptažodžiai** ir **Išsaugoti į atsisiuntimus**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importuoti slaptažodžių failą...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Chrome naršyklėje eik į **„Google“ slaptažodžių tvarkyklę** ir tada į **Nustatymai**.";
 
@@ -1863,6 +1860,9 @@
 
 /* Title for button of the Import Passwords Promotion banner */
 "import.passwords.promo.button.title" = "Importuoti slaptažodžius";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Daugiau neklausti";
 
 /* Message body for the Import Passwords Promotion banner */
 "import.passwords.promo.message" = "Greitai ir saugiai perkelk slaptažodžius iš kitos naršyklės.";

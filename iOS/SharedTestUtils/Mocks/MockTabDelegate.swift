@@ -28,7 +28,10 @@ import Subscription
 import SubscriptionTestingUtilities
 import SpecialErrorPages
 import MaliciousSiteProtection
+import PersistenceTestingUtils
 @testable import DuckDuckGo
+
+// swiftlint:disable force_try
 
 final class MockTabDelegate: TabDelegate {
     private(set) var didRequestLoadQueryCalled = false
@@ -69,6 +72,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestDownloads(tab: DuckDuckGo.TabViewController) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
 
     func tabDidRequestAIChat(tab: TabViewController) {}
     
@@ -152,7 +157,8 @@ extension TabViewController {
             fireproofing: MockFireproofing(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
-            featureDiscovery: MockFeatureDiscovery()
+            featureDiscovery: MockFeatureDiscovery(),
+            keyValueStore: try! MockKeyValueFileStore()
         )
         tab.attachWebView(configuration: .nonPersistent(), andLoadRequest: nil, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -198,3 +204,5 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     func advancedInfoPresented() {}
 
 }
+
+// swiftlint:enable force_try

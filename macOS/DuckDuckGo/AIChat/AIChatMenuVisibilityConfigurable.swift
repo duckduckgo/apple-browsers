@@ -26,6 +26,12 @@ protocol AIChatMenuVisibilityConfigurable {
     /// This property validates user settings to determine if the shortcut
     /// should be presented to the user.
     ///
+    /// - Returns: `true` if the New Tab Page omnibar shortcut should be displayed; otherwise, `false`.
+    var shouldDisplayNewTabPageShortcut: Bool { get }
+
+    /// This property validates user settings to determine if the shortcut
+    /// should be presented to the user.
+    ///
     /// - Returns: `true` if the address bar shortcut should be displayed; otherwise, `false`.
     var shouldDisplayAddressBarShortcut: Bool { get }
 
@@ -68,6 +74,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     var valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
+    var shouldDisplayNewTabPageShortcut: Bool {
+        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showShortcutOnNewTabPage
+    }
+
     var shouldDisplaySummarizationMenuItem: Bool {
         remoteSettings.isTextSummarizationEnabled && storage.isAIFeaturesEnabled && shouldDisplayApplicationMenuShortcut
     }
@@ -93,8 +103,9 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     private func subscribeToValuesChanged() {
-        Publishers.Merge4(
+        Publishers.Merge5(
             storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
+            storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
             storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
             storage.showShortcutInAddressBarPublisher.removeDuplicates(),
             storage.openAIChatInSidebarPublisher.removeDuplicates()

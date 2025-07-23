@@ -24,6 +24,9 @@ public protocol AIChatPreferencesStorage {
     var isAIFeaturesEnabled: Bool { get set }
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> { get }
 
+    var showShortcutOnNewTabPage: Bool { get set }
+    var showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> { get }
+
     var showShortcutInApplicationMenu: Bool { get set }
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -42,6 +45,10 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     public var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
         userDefaults.isAIFeaturesEnabledPublisher
+    }
+
+    public var showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> {
+        userDefaults.showAIChatShortcutOnNewTabPagePublisher
     }
 
     public var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
@@ -67,6 +74,11 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.isAIFeaturesEnabled = newValue }
     }
 
+    public var showShortcutOnNewTabPage: Bool {
+        get { userDefaults.showAIChatShortcutOnNewTabPage }
+        set { userDefaults.showAIChatShortcutOnNewTabPage = newValue }
+    }
+
     public var showShortcutInApplicationMenu: Bool {
         get { userDefaults.showAIChatShortcutInApplicationMenu }
         set { userDefaults.showAIChatShortcutInApplicationMenu = newValue }
@@ -84,6 +96,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     public func reset() {
         userDefaults.isAIFeaturesEnabled = UserDefaults.isAIFeaturesEnabledDefaultValue
+        userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
         userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
         userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
@@ -93,12 +106,14 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 private extension UserDefaults {
     enum Keys {
         static let aiFeatures = "aichat.enabled"
+        static let showAIChatShortcutOnNewTabPage = "aichat.showAIChatShortcutOnNewTabPage"
         static let showAIChatShortcutInApplicationMenu = "aichat.showAIChatShortcutInApplicationMenu"
         static let showAIChatShortcutInAddressBar = "aichat.showAIChatShortcutInAddressBar"
         static let openAIChatInSidebar = "aichat.openAIChatInSidebar"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
+    static let showAIChatShortcutOnNewTabPageDefaultValue = true
     static let showAIChatShortcutInApplicationMenuDefaultValue = true
     static let showAIChatShortcutInAddressBarDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
@@ -111,6 +126,17 @@ private extension UserDefaults {
         set {
             guard newValue != isAIFeaturesEnabled else { return }
             set(newValue, forKey: Keys.aiFeatures)
+        }
+    }
+
+    @objc dynamic var showAIChatShortcutOnNewTabPage: Bool {
+        get {
+            value(forKey: Keys.showAIChatShortcutOnNewTabPage) as? Bool ?? Self.showAIChatShortcutOnNewTabPageDefaultValue
+        }
+
+        set {
+            guard newValue != showAIChatShortcutOnNewTabPage else { return }
+            set(newValue, forKey: Keys.showAIChatShortcutOnNewTabPage)
         }
     }
 
@@ -149,6 +175,10 @@ private extension UserDefaults {
 
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.isAIFeaturesEnabled).eraseToAnyPublisher()
+    }
+
+    var showAIChatShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.showAIChatShortcutOnNewTabPage).eraseToAnyPublisher()
     }
 
     var showAIChatShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {

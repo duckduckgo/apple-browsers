@@ -163,7 +163,17 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     }
 
     func testWhenSubscriptionChanges_ItHidesUpsellAndCancelsTimer() {
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 10.0)
+        let expectation = XCTestExpectation(description: "Visibility should be false")
+        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
+
+        sut.$shouldShowUpsell
+            .dropFirst()
+            .sink { (shouldShow: Bool) in
+                // Then
+                XCTAssertFalse(shouldShow)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
 
         contextualOnboardingSubject.send(true)
         defaultBrowserSubject.send(true)
@@ -173,7 +183,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         NotificationCenter.default.post(name: .entitlementsDidChange, object: nil)
 
         // Then
-        XCTAssertFalse(sut.shouldShowUpsell)
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testWhenTimerCompletes_ItUpdatesVisibility() {
@@ -199,12 +209,24 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     func testWhenFeatureFlagIsDisabled_ItDoesNotShowUpsell() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
+        let expectation = XCTestExpectation(description: "Should not show upsell")
+
+        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
+
+        sut.$shouldShowUpsell
+            .dropFirst()
+            .sink { (shouldShow: Bool) in
+                // Then
+                XCTAssertFalse(shouldShow)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
 
         // When
-        sut = createSUT(isFirstLaunch: false, isNewUser: true, isUserAuthenticated: false)
+        contextualOnboardingSubject.send(true)
+        defaultBrowserSubject.send(true)
 
-        // Then
-        XCTAssertFalse(sut.shouldShowUpsell)
+        wait(for: [expectation], timeout: 1.0)
     }
 }
 

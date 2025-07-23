@@ -403,14 +403,13 @@ struct PinnedTabInnerView: View {
     }
 
     private var faviconImage: NSImage? {
-        if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError is MaliciousSiteError) {
-            return .redAlertCircle16
-        } else if model.error?.isWebContentProcessTerminated == true {
-            return .alertCircleColor16
-        } else if let favicon = model.favicon {
-            return favicon
-        }
-        return nil
+        return model.content.displayedFavicon(
+            error: model.error,
+            actualFavicon: model.favicon,
+            isBurner: model.burnerMode.isBurner,
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            visualStyle: NSApp.delegateTyped.visualStyle
+        )
     }
 
     @ViewBuilder

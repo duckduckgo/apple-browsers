@@ -283,7 +283,6 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
             default:
                 throw unmanagedSubscriptionError(underlyingError: error)
             }
-            throw error
         }
     }
 

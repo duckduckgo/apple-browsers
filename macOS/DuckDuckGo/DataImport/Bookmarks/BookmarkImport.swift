@@ -33,6 +33,6 @@ enum BookmarkImportSource: Equatable {
 
 protocol BookmarkImporter {
 
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool, maxFavoritesCount: Int?) -> BookmarksImportSummary
 
 }

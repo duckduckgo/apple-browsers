@@ -92,7 +92,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
         if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
 
         // NOTE: This check In AuthV1 this can fail in case of bad network, in AuthV2 works as expected in any network condition
-        let hasEntitlements = try await subscriptionManager.isFeatureEnabledForUser(feature: .dataBrokerProtection)
+        let hasEntitlements = try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
         firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
         return hasEntitlements && isAuthenticated
     }

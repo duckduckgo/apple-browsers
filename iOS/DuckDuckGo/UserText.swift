@@ -1157,12 +1157,17 @@ Take back control of your personal information with the browser designed for dat
     static let syncUnavailableMessageUpgradeRequired = NSLocalizedString("sync.warning.data.syncing.disabled.upgrade.required", value: "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.", comment: "Data syncing unavailable warning message")
 
     // Mark: Sync Promotion
-    public static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value:"Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")
-    public static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value:"Sync & Back Up Your Passwords", comment: "Title for the Sync Promotion banner")
-    public static let syncPromoBookmarksMessage = NSLocalizedString("sync.promo.bookmarks.message", value:"No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
-    public static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value:"No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
-    public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value:"Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
-    public static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value:"No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
+    public static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")
+    public static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords", comment: "Title for the Sync Promotion banner")
+    public static let syncPromoBookmarksMessage = NSLocalizedString("sync.promo.bookmarks.message", value: "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
+    public static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
+    public static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
+    public static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
+
+    // Mark: Import Promotion
+    public static let importPasswordsPromoTitle =  NSLocalizedString("import.passwords.promo.title", value: "Import your passwords to DuckDuckGo", comment: "Title for the Import Passwords Promotion banner")
+    public static let importPasswordsPromoMessage =  NSLocalizedString("import.passwords.promo.message", value: "Quickly and securely transfer your passwords from another browser.", comment: "Message body for the Import Passwords Promotion banner")
+    public static let importPasswordsPromoButtonTitle =  NSLocalizedString("import.passwords.promo.button.title", value: "Import Passwords", comment: "Title for button of the Import Passwords Promotion banner")
 
     static let preemptiveCrashTitle = NSLocalizedString("error.preemptive-crash.title", value: "App issue detected", comment: "Alert title")
     static let preemptiveCrashBody = NSLocalizedString("error.preemptive-crash.body", value: "Looks like there's an issue with the app and it needs to close. Please reopen to continue.", comment: "Alert message")
@@ -1817,6 +1822,7 @@ Take back control of your personal information with the browser designed for dat
     public static let dataImportPasswordsTitle = NSLocalizedString("data.import.passwords.title", value:"Import Passwords to DuckDuckGo", comment: "Title for screen to import passwords")
     public static let dataImportPasswordsSubtitle = NSLocalizedString("data.import.passwords.subtitle", value:"Select the file containing passwords exported from Safari or Chrome. This is usually a ZIP or CSV file.", comment: "Subtitle for screen to import passwords")
     public static let dataImportPasswordsFileButton = NSLocalizedString("data.import.passwords.file-button", value:"Import Passwords File...", comment: "Button label to select zip or csv file for importing")
+    public static let dataImportPasswordsSelectFileButton = NSLocalizedString("data.import.passwords.select-file-button", value:"Select File...", comment: "Button label to select zip or csv file for importing")
     public static let dataImportPasswordsInstructionHeader = NSLocalizedString("data.import.passwords.instructions.header", value:"How to export passwords", comment: "Header for section with instructions for how to export passwords from Safari or Chrome")
     public static let dataImportBookmarksInstructionHeader = NSLocalizedString("data.import.bookmarks.instructions.header", value:"How to export bookmarks from Safari", comment: "Header for section with instructions for how to export bookmarks from Safari")
     public static let dataImportPasswordsInstructionSelector = NSLocalizedString("data.import.passwords.instructions.selector", value:"Export From", comment: "Text next to selector for which browser to export passwords from (Safari | Chrome)")
@@ -1845,12 +1851,14 @@ Take back control of your personal information with the browser designed for dat
     public static let zipContentSelectionTitle = NSLocalizedString("zip.content.import.types.title", value: "What do you want to import?", comment: "Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords)")
     public static let zipContentSelectionPasswords = NSLocalizedString("zip.content.import.type.passwords", value: "Passwords", comment: "Option to select to import passwords")
     public static let zipContentSelectionBookmarks = NSLocalizedString("zip.content.import.type.bookmarks", value: "Bookmarks", comment: "Option to select to import bookmarks")
+    public static let zipContentSelectionCreditCards = NSLocalizedString("zip.content.import.type.creditCards", value: "Credit Cards", comment: "Option to select to import credit cards")
     public static let zipContentSelectionButtonContinue = NSLocalizedString("zip.content.import.type.button.title.continue", value:"Continue", comment: "Title of button to continue after selecting what data to import")
 
     public static let dataImportSummaryTitle = NSLocalizedString("data.import.summary.complete.title", value:"Import complete!", comment: "Title for screen shown after attempting to import data (passwords / bookmarks)")
     public static let dataImportSummaryPasswordsSubtitle = NSLocalizedString("data.import.summary.passwords.subtitle", value:"You can now delete the passwords file.", comment: "Subtitle for screen shown after after attempting to import passwords from file")
     public static let dataImportSummaryPasswordsSuccess = NSLocalizedString("data.import.summary.passwords.success", value:"Passwords", comment: "Data import summary of how many passwords were successfully imported.")
     public static let dataImportSummaryBookmarksSuccess = NSLocalizedString("data.import.summary.bookmarks.success", value:"Bookmarks", comment: "Data import summary of how many bookmarks were successfully imported.")
+    public static let dataImportSummaryCreditCardsSuccess = NSLocalizedString("data.import.summary.creditcards.success", value:"Credit Cards", comment: "Data import summary of how many credit cards were successfully imported.")
     public static let dataImportSummaryFailed = NSLocalizedString("data.import.summary.failed", value:"Failed to import", comment: "Data import summary of how many items failed to import.")
     public static let dataImportSummaryDuplicates = NSLocalizedString("data.import.summary.duplicates", value:"Duplicates Skipped", comment: "Data import summary of how many items were not imported as they were duplicates.")
     public static let dataImportSummaryDone = NSLocalizedString("data.import.summary.button.title.done", value:"Done", comment: "Title of button to dismiss the screen")
@@ -1858,28 +1866,28 @@ Take back control of your personal information with the browser designed for dat
     public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
-    public enum PrivacyProPromotionOnboarding {
+    public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")
             static func message() -> NSAttributedString {
-                // Localized bold message parts
-                let vpnBold = NSLocalizedString(
-                    "onboarding.privacypro.promo.vpn.message.vpn-bold",
-                    value: "VPN",
-                    comment: "Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message."
+                
+                let vpnAndTwoMoreBold = NSLocalizedString(
+                    "onboarding.subscription.promo.message.vpn-two-more-bold",
+                    value: "VPN + 2 more premium protections",
+                    comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
                 )
 
-                let privacyProBold = NSLocalizedString(
-                    "onboarding.privacypro.promo.vpn.message.privacy-pro-bold",
-                    value: "paid Privacy Pro subscription",
-                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message."
+                let optionalSubscriptionBold = NSLocalizedString(
+                    "onboarding.subscription.promo.message.optional-subscription-bold",
+                    value: "optional paid subscription",
+                    comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
                 )
 
                 // Localized full message with numbered placeholders
                 let fullText = String(format: NSLocalizedString(
-                    "onboarding.privacypro.promo.vpn.message",
-                    value: "DuckDuckGo also has a built-in %1$@!\n\nActivate it with a %2$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold)."), vpnBold, privacyProBold)
+                    "onboarding.subscription.promo.message",
+                    value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
+                    comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."), vpnAndTwoMoreBold, optionalSubscriptionBold)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -1887,14 +1895,14 @@ Take back control of your personal information with the browser designed for dat
                     .font: UIFont.daxBodyBold()
                 ]
 
-                // Apply bold formatting to "VPN"
-                if let vpnRange = fullText.range(of: vpnBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(vpnRange, in: fullText))
+                // Apply bold formatting
+                if let vpnAndTwoMorRange = fullText.range(of: vpnAndTwoMoreBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(vpnAndTwoMorRange, in: fullText))
                 }
 
-                // Apply bold formatting to "paid Privacy Pro subscription."
-                if let privacyProRange = fullText.range(of: privacyProBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(privacyProRange, in: fullText))
+                // Apply bold formatting
+                if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
                 }
 
                 return attributedString
@@ -1902,6 +1910,7 @@ Take back control of your personal information with the browser designed for dat
         }
 
         public enum Buttons {
+            static let tryItForFree = NSLocalizedString("onboarding.subscription.promo.buttons.tryItForFree", value: "Try it for free!", comment: "Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall.")
             static let learnMore =  NSLocalizedString("onboarding.privacypro.promo.buttons.learnMore", value: "Learn More", comment: "Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall.")
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 

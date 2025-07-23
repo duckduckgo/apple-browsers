@@ -28,10 +28,10 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     public init() {}
 
     public var enabledFeatures: [Entitlement.ProductName] = []
-    public func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
         enabledFeatures.contains(feature)
     }
-    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async -> Bool {
         enabledFeatures.contains(feature)
     }
 

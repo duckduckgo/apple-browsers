@@ -132,6 +132,8 @@ struct DataImportViewModel {
     /// collected import summary for current import operation per selected import source
     private(set) var summary: [DataTypeImportResult]
 
+    var errors: [[DataType: any DataImportError]] = []
+
     private var userReportText: String = ""
 
 #if DEBUG || REVIEW
@@ -268,7 +270,7 @@ struct DataImportViewModel {
                 if dataTypeSummary.isEmpty, !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil {
                     nextScreen = .fileImport(dataType: dataType, summary: Set(summary.filter({ $0.value.isSuccess }).keys))
                 }
-                PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .init(dataType), source: importSource, sourceVersion: sourceVersion))
+                PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .init(dataType), source: importSource.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
             case .failure(let error):
                 // successful imports are appended above
                 self.summary.append( .init(dataType, result) )
@@ -278,7 +280,7 @@ struct DataImportViewModel {
                     // switch to file import of the failed data type displaying successful import results
                     nextScreen = .fileImport(dataType: dataType, summary: Set(summary.filter({ $0.value.isSuccess }).keys))
                 }
-                PixelKit.fire(GeneralPixel.dataImportFailed(source: importSource, sourceVersion: sourceVersion, error: error))
+                PixelKit.fire(GeneralPixel.dataImportFailed(source: importSource.pixelSourceParameterName, sourceVersion: sourceVersion, error: error), frequency: .dailyAndStandard)
             }
         }
 
@@ -312,6 +314,7 @@ struct DataImportViewModel {
     /// handle recoverable errors (request primary password or file permission)
     @MainActor
     private mutating func handleErrors(_ summary: [DataType: any DataImportError]) -> Bool {
+        errors.append(summary)
         for error in summary.values {
             switch error {
             // chromium user denied keychain prompt error
@@ -339,8 +342,8 @@ struct DataImportViewModel {
                 }
                 Logger.dataImportExport.debug("file read no permission for \(url.path)")
 
-                if url != selectedProfile?.profileURL.appendingPathComponent(SafariDataImporter.bookmarksFileName) {
-                    PixelKit.fire(GeneralPixel.dataImportFailed(source: importSource, sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile), error: importError))
+                if url != selectedProfile?.profileURL.appendingPathComponent(SafariDataImporter.Constants.bookmarksFileName) {
+                    PixelKit.fire(GeneralPixel.dataImportFailed(source: importSource.pixelSourceParameterName, sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile), error: importError), frequency: .dailyAndStandard)
                 }
                 screen = .getReadPermission(url)
                 return true
@@ -430,19 +433,23 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
         ChromiumDataImporter(profile: profile,
                              loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                             featureFlagger: Application.appDelegate.featureFlagger)
     case .yandex:
         YandexDataImporter(profile: profile,
-                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                           featureFlagger: Application.appDelegate.featureFlagger)
     case .firefox, .tor:
         FirefoxDataImporter(profile: profile,
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                            faviconManager: NSApp.delegateTyped.faviconManager)
+                            faviconManager: NSApp.delegateTyped.faviconManager,
+                            featureFlagger: Application.appDelegate.featureFlagger)
     case .safari, .safariTechnologyPreview:
         SafariDataImporter(profile: profile,
-                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                           featureFlagger: Application.appDelegate.featureFlagger)
     }
 }
 

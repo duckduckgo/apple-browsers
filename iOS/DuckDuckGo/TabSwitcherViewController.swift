@@ -85,6 +85,8 @@ class TabSwitcherViewController: UIViewController {
 
     }
 
+    lazy var borderView = StyledTopBottomBorderView()
+
     @IBOutlet weak var titleBarView: UINavigationBar!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var toolbar: UIToolbar!
@@ -129,7 +131,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     /// Updated based on featureflag / killswitch in `viewDidLoad`
-    var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
+    var barsHandler: TabSwitcherBarsStateHandling!
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
@@ -181,7 +183,17 @@ class TabSwitcherViewController: UIViewController {
             collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+
+            interfaceMode.isLarge ? collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
+                collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+
+            borderView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            borderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            borderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+            // On iPad large mode constrain to the bottom as the toolbar is hidden
+            interfaceMode.isLarge ? borderView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
+                borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
             // Always at the bottom
             toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -192,21 +204,23 @@ class TabSwitcherViewController: UIViewController {
 
     private func setupBarsLayout() {
         // Remove existing constraints to avoid conflicts
+        borderView.translatesAutoresizingMaskIntoConstraints = false
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         // Clear existing constraints for these views comprehensively
-        let viewsToRemoveConstraintsFor = [titleBarView, toolbar, collectionView]
+        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, collectionView, borderView]
         viewsToRemoveConstraintsFor.forEach { targetView in
-            targetView?.removeFromSuperview()
+            targetView.removeFromSuperview()
         }
         
         // Re-add the views to the hierarchy
         view.addSubview(titleBarView)
         view.addSubview(toolbar)
         view.addSubview(collectionView)
-        
+        view.addSubview(borderView)
+
         let toolbarAppearance = UIToolbarAppearance()
         if isExperimentalThemingEnabled {
             toolbarAppearance.configureWithTransparentBackground()
@@ -216,46 +230,35 @@ class TabSwitcherViewController: UIViewController {
         }
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        // On large ipad view don't show the bottom divider
+        borderView.isBottomVisible = !interfaceMode.isLarge
         activateLayoutConstraintsBasedOnBarPosition()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        // These should only be done once
         applyJune2025LayoutChanges()
-
         createTitleBar()
-        setupBarsLayout()
-
-        refreshTitle()
         setupBackgroundView()
-        currentSelection = tabsModel.currentIndex
+        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.collectionView.reloadData()
+        }
+
+        // These can be done more than once but don't need to
         decorate()
         becomeFirstResponder()
-        updateUIForSelectionMode()
-
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
 
-        if !tabSwitcherSettings.hasSeenNewLayout {
-            Pixel.fire(pixel: .tabSwitcherNewLayoutSeen)
-            tabSwitcherSettings.hasSeenNewLayout = true
-        }
-
-        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
-            self?.collectionView.reloadData()
-        }
     }
 
     private func applyJune2025LayoutChanges() {
+        assert(barsHandler == nil)
         barsHandler = isJune2025LayoutChangeEnabled ? DefaultTabSwitcherBarsStateHandler() : LegacyTabSwitcherBarsStateHandler()
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        setupBarsLayout()
-        updateUIForSelectionMode()
     }
 
     private func setupBackgroundView() {
@@ -270,12 +273,21 @@ class TabSwitcherViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        collectionView.dragInteractionEnabled = true
-        collectionView.dragDelegate = self
-        collectionView.dropDelegate = self
-        
+        refreshTitle()
+        currentSelection = tabsModel.currentIndex
         updateUIForSelectionMode()
+        setupBarsLayout()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        _ = AppWidthObserver.shared.willResize(toWidth: size.width)
+        updateUIForSelectionMode()
+        setupBarsLayout()
+        collectionView.setNeedsLayout()
+        collectionView.collectionViewLayout.invalidateLayout()
+
     }
 
     func prepareForPresentation() {
@@ -291,11 +303,6 @@ class TabSwitcherViewController: UIViewController {
         } else {
             dismiss()
         }
-    }
-
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        collectionView.collectionViewLayout.invalidateLayout()
     }
 
     private func scrollToInitialTab() {
@@ -558,11 +565,11 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        
+        let size: CGSize
         if tabSwitcherSettings.isGridViewEnabled {
             let columnWidth = calculateColumnWidth(minimumColumnWidth: 150, maxColumns: 4)
             let rowHeight = calculateRowHeight(columnWidth: columnWidth)
-            return CGSize(width: floor(columnWidth),
+            size = CGSize(width: floor(columnWidth),
                           height: floor(rowHeight))
         } else {
             let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
@@ -570,8 +577,9 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
             
             let width = min(664, collectionView.bounds.size.width - 2 * spacing)
             
-            return CGSize(width: width, height: 70)
+            size = CGSize(width: width, height: 70)
         }
+        return size
     }
     
 }

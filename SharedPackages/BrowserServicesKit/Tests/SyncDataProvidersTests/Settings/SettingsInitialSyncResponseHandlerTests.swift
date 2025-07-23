@@ -105,13 +105,27 @@ final class SettingsInitialSyncResponseHandlerTests: SettingsProviderTestsBase {
             .testSetting("remote")
         ]
 
-        try await handleInitialSyncResponse(received: received)
+        let exp = XCTestExpectation(description: "should process response")
 
-        let context = metadataDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
-        let settingsMetadata = fetchAllSettingsMetadata(in: context)
-        let testSettingMetadata = try XCTUnwrap(settingsMetadata.first)
-        XCTAssertNil(testSettingMetadata.lastModified)
-        XCTAssertEqual(testSettingSyncHandler.syncedValue, "remote")
+        let cancellable = testSettingSyncHandler.$syncedValue.sink { value in
+            guard let value else { return }
+
+            XCTAssertEqual(value, "remote")
+            exp.fulfill()
+        }
+
+        try await handleInitialSyncResponse(received: received)
+        await fulfillment(of: [exp], timeout: 1.0)
+
+        let context = self.metadataDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
+        let settingsMetadata = self.fetchAllSettingsMetadata(in: context)
+
+        do {
+            let testSettingMetadata = try XCTUnwrap(settingsMetadata.first)
+            XCTAssertNil(testSettingMetadata.lastModified)
+        } catch {
+            XCTFail("Failed to unwrap")
+        }
     }
 
     func testThatDeletedSettingIsIgnoredWhenLocallyIsNil() async throws {

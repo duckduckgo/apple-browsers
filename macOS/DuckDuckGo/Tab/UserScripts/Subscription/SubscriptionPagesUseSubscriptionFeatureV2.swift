@@ -311,6 +311,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActivated, frequency: .uniqueByName)
                     subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
                     sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
+                    notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
                 case .failure(let error):
                     switch error {
@@ -414,6 +415,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         saveSubscriptionUpgradeTimestampIfFreemiumActivated()
         subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
+        notificationCenter.post(name: .subscriptionDidChange, object: self)
         return [String: String]() // cannot be nil, the web app expect something back before redirecting the user to the final page
     }
 

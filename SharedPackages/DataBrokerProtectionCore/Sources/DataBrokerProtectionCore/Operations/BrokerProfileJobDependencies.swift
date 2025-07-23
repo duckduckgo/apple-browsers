@@ -33,6 +33,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var emailService: EmailServiceProtocol { get }
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
+    var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
 
     func createScanRunner(profileQuery: BrokerProfileQueryData,
                           stageDurationCalculator: StageDurationCalculator,
@@ -55,6 +56,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let emailService: EmailServiceProtocol
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
+    public let jobSortPredicate: BrokerJobDataComparators.Predicate
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -66,7 +68,9 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,
-                vpnBypassService: VPNBypassFeatureProvider? = nil) {
+                vpnBypassService: VPNBypassFeatureProvider? = nil,
+                jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
+    ) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
         self.privacyConfig = privacyConfig
@@ -78,6 +82,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.emailService = emailService
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
+        self.jobSortPredicate = jobSortPredicate
     }
 
     public func createScanRunner(profileQuery: BrokerProfileQueryData,
@@ -91,6 +96,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             captchaService: self.captchaService,
             stageDurationCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
+            executionConfig: self.executionConfig,
             shouldRunNextStep: shouldRunNextStep
         )
     }
@@ -106,6 +112,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             captchaService: self.captchaService,
             stageCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
+            executionConfig: self.executionConfig,
             shouldRunNextStep: shouldRunNextStep
         )
     }

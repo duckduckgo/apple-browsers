@@ -23,6 +23,7 @@ public final class AppStoreRestoreFlowMockV2: AppStoreRestoreFlowV2 {
 
     public var restoreAccountFromPastPurchaseResult: Result<String, AppStoreRestoreFlowErrorV2>!
     public var restoreAccountFromPastPurchaseCalled: Bool = false
+    public var restoreSubscriptionAfterExpiredRefreshTokenHandler: (() async throws -> Void)?
 
     public init() { }
 
@@ -34,7 +35,13 @@ public final class AppStoreRestoreFlowMockV2: AppStoreRestoreFlowV2 {
     public var restoreSubscriptionAfterExpiredRefreshTokenError: Error?
     public var restoreSubscriptionAfterExpiredRefreshTokenCalled: Bool = false
     public func restoreSubscriptionAfterExpiredRefreshToken() async throws {
+
         restoreSubscriptionAfterExpiredRefreshTokenCalled = true
+
+        if let handler = restoreSubscriptionAfterExpiredRefreshTokenHandler {
+            try await handler()
+        }
+
         if let restoreSubscriptionAfterExpiredRefreshTokenError {
             throw restoreSubscriptionAfterExpiredRefreshTokenError
         }

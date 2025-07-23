@@ -71,7 +71,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
             createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         case .privacyProPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
-            createPrivacyProPromoDialog(onDismiss: onCompletion)
+            createPrivacyProPromoDialog(proceedButtonText: onboardingPrivacyProPromotionHelper.proceedButtonText, onDismiss: onCompletion)
         }
     }
 
@@ -160,14 +160,14 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
 }
 
 private extension NewTabDaxDialogFactory {
-    private func createPrivacyProPromoDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    private func createPrivacyProPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
 
         return FadeInView {
             PrivacyProPromotionView(
-                title: UserText.PrivacyProPromotionOnboarding.Promo.title,
-                message: UserText.PrivacyProPromotionOnboarding.Promo.message(),
-                proceedText: UserText.PrivacyProPromotionOnboarding.Buttons.learnMore,
-                dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
+                title: UserText.SubscriptionPromotionOnboarding.Promo.title,
+                message: UserText.SubscriptionPromotionOnboarding.Promo.message(),
+                proceedText: proceedButtonText,
+                dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.skip,
                 proceedAction: { [weak self] in
                     self?.onboardingPrivacyProPromotionHelper.fireTapPixel()
                     let urlComponents = self?.onboardingPrivacyProPromotionHelper.redirectURLComponents()

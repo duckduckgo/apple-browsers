@@ -35,6 +35,7 @@ protocol ScriptSourceProviding {
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
+    var windowControllersManager: WindowControllersManagerProtocol { get }
     var currentCohorts: [ContentScopeExperimentData]? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
@@ -54,6 +55,7 @@ protocol ScriptSourceProviding {
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
         appearancePreferences: Application.appDelegate.appearancePreferences,
         startupPreferences: Application.appDelegate.startupPreferences,
+        windowControllersManager: Application.appDelegate.windowControllersManager,
         bookmarkManager: Application.appDelegate.bookmarkManager,
         historyCoordinator: Application.appDelegate.historyCoordinator,
         fireproofDomains: Application.appDelegate.fireproofDomains,
@@ -80,6 +82,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let experimentManager: ContentScopeExperimentsManaging
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
     let historyCoordinator: HistoryDataSource
+    let windowControllersManager: WindowControllersManagerProtocol
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -92,10 +95,11 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
          startupPreferences: StartupPreferences,
+         windowControllersManager: WindowControllersManagerProtocol,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
-         fireCoordinator: FireCoordinator
+         fireCoordinator: FireCoordinator,
     ) {
 
         self.configStorage = configStorage
@@ -107,6 +111,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.tld = tld
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
+        self.windowControllersManager = windowControllersManager
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()

@@ -99,6 +99,15 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
+
+    // Import Chrome's new tab shortcuts when bookmarks are imported
+    case importChromeShortcuts
+
+    // Import Safari's bookmarks and favorites to better match Safari's behavior
+    case updateSafariBookmarksImport
+
+    // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
+    case updateFirefoxBookmarksImport
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -141,6 +150,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case passwordVariantCategorization
     case autocompleteAttributeSupport
     case inputFocusApi
+    case canPromoteImportPasswordsInPasswordManagement
+    case canPromoteImportPasswordsInBrowser
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -173,6 +184,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for summarizing text selected on a website.
     case textSummarization
+
+    // Adds capability to load AI Chat in a sidebar
+    case sidebar
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -242,6 +256,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
+    case subscriptionRebranding
+    case vpnToolbarUpsell
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

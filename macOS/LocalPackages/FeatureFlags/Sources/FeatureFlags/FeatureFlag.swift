@@ -123,17 +123,40 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
 
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case importChromeShortcuts
+
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case updateSafariBookmarksImport
+
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case updateFirefoxBookmarksImport
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210522798790015?focus=true
     case disableFireAnimation
 
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
+
+    case subscriptionRebranding
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
+    case newFeedbackForm
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
+    case vpnToolbarUpsell
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection, .visualUpdatesInternalOnly:
+        case .failsafeExampleCrossPlatformFeature,
+                .failsafeExamplePlatformSpecificSubfeature,
+                .removeWWWInCanonicalizationInThreatProtection,
+                .visualUpdatesInternalOnly,
+                .importChromeShortcuts,
+                .updateSafariBookmarksImport,
+                .updateFirefoxBookmarksImport:
             true
         default:
             false
@@ -181,8 +204,14 @@ extension FeatureFlag: FeatureFlagDescribing {
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
+                .subscriptionRebranding,
+                .importChromeShortcuts,
+                .updateSafariBookmarksImport,
+                .updateFirefoxBookmarksImport,
                 .disableFireAnimation,
-                .newTabPageOmnibar:
+                .newTabPageOmnibar,
+                .newFeedbackForm,
+                .vpnToolbarUpsell:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -266,11 +295,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProFreeTrial:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .paidAIChat:
-			return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
         case .osSupportForceUnsupportedMessage:
@@ -281,10 +310,22 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
+        case .importChromeShortcuts:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.importChromeShortcuts))
+        case .updateSafariBookmarksImport:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
+        case .updateFirefoxBookmarksImport:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateFirefoxBookmarksImport))
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .disabled
+        case .subscriptionRebranding:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
+        case .newFeedbackForm:
+            return .disabled
+        case .vpnToolbarUpsell:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         }
     }
 }

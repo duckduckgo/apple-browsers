@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "So exportierst du Passwörter aus Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Datei auswählen ...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Wähle die Datei aus, die Passwörter enthält, die aus Safari oder Chrome exportiert wurden. Dabei handelt es sich in der Regel um eine ZIP- oder CSV-Datei.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import abgeschlossen!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kreditkarten";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplikate übersprungen";
@@ -1855,6 +1861,15 @@
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
 
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Passwörter importieren";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Übertrage deine Passwörter schnell und sicher von einem anderen Browser.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importiere deine Passwörter zu DuckDuckGo";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Du musst das VPN in der DuckDuckGo-App aktivieren.";
 
@@ -2347,15 +2362,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, bevor ich es vergesse ...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo hat auch ein integriertes %1$@!\n\nAktiviere es mit einem %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "kostenpflichtigen Privacy Pro Abonnement";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Mit dem Browsen beginnen";
 
@@ -2367,6 +2373,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Verstanden. Ich überspringe die anderen Tipps.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Probiere es kostenlos aus!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo verfügt auch über ein sicheres %1$@, das mit einem %2$@ erhältlich ist.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "optionales kostenpflichtiges Abonnement";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 weitere Premium-Schutzfunktionen";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Widget hinzufügen";
@@ -3600,6 +3618,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Fortsetzen";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kreditkarten";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Passwörter";

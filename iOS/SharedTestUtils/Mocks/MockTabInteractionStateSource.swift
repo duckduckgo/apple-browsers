@@ -21,8 +21,12 @@ import Foundation
 @testable import DuckDuckGo
 
 final class MockTabInteractionStateSource: TabInteractionStateSource {
+
     func saveState(_ state: Any?, for tab: Tab) { }
     func popLastStateForTab(_ tab: Tab) -> Data? { return nil }
     func removeStateForTab(_ tab: Tab) { }
     func removeAll(excluding excludedTabs: [Tab]) { }
+    func urlsToRemove(excluding excludedTabs: [Tab]) -> [URL] { [] }
+    func removeStates(at urls: [URL], isCancelled: (() -> Bool)?) { }
+
 }

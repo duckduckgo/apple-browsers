@@ -504,6 +504,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
                                      PrivacyProPixel.privacyProSubscriptionActivated.name])
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.subscription)
     }
 
     func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredAppleSubscription() async throws {
@@ -1084,7 +1085,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredSubscription)
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
         feature.with(broker: broker)
-        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
+        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -1092,7 +1093,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         // Then
         XCTAssertNil(result)
-        XCTAssertEqual(subscriptionAttributionPixelHandler.origin, freeiumOrigin)
+        XCTAssertEqual(subscriptionAttributionPixelHandler.origin, freemiumOrigin)
     }
 
     func testFreemiumPixelOriginNotSetWhenSubscriptionSelectedSuccessNotFromFreemium() async throws {
@@ -1122,7 +1123,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false
         feature.with(broker: broker)
-        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
+        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -1130,7 +1131,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         // Then
         XCTAssertNil(result)
-        XCTAssertNotEqual(subscriptionAttributionPixelHandler.origin, freeiumOrigin)
+        XCTAssertNotEqual(subscriptionAttributionPixelHandler.origin, freemiumOrigin)
     }
 
     // MARK: - Free Trials

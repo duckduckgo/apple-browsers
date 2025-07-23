@@ -336,11 +336,19 @@ final class SyncPreferencesTests: XCTestCase {
         // Must have an account to prevent devices being cleared
         setUpWithSingleDevice(id: "1")
 
-        ddgSyncing.spyLogin = { _, _, _ in
-            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
-        }
+        let expectation = expectation(description: "devices updated")
+
+        ddgSyncing.stubLogin = [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
 
         await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+
+        syncPreferences.$devices.sink {
+            if $0.map(\.id) == ["1", "2"] {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertEqual(syncPreferences.devices.map(\.id), ["1", "2"])
     }

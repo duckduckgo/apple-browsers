@@ -153,7 +153,22 @@ final class FirefoxLoginReader {
     private func readLoginsFile(from loginsFilePath: String) throws -> EncryptedFirefoxLogins {
         let loginsFileData = try Data(contentsOf: URL(fileURLWithPath: loginsFilePath))
 
-        return try JSONDecoder().decode(EncryptedFirefoxLogins.self, from: loginsFileData)
+        // Decode all entries using type-safe enum approach
+        let allEntries = try JSONDecoder().decode(FirefoxLoginsFile.self, from: loginsFileData)
+
+        // Extract only active logins using type-safe filtering
+        let activeLogins = allEntries.logins.compactMap { entry in
+            switch entry {
+            case .active(let login):
+                return login
+            case .deleted:
+                return nil // Filter out deleted entries
+            case .unparsed:
+                return nil // Filter out unparsed entries
+            }
+        }
+
+        return EncryptedFirefoxLogins(logins: activeLogins)
     }
 
     private func decrypt(logins: EncryptedFirefoxLogins, with key: Data, currentOperationType: inout ImportError.OperationType) throws -> [ImportedLoginCredential] {
@@ -203,14 +218,43 @@ final class FirefoxLoginReader {
 }
 
 /// Represents the logins.json file found in the Firefox profile directory
-private struct EncryptedFirefoxLogins: Decodable {
+private struct FirefoxLoginsFile: Decodable {
+    let logins: [FirefoxLoginEntry]
+}
 
-    struct Login: Decodable {
+/// Type-safe enum representing either an active or deleted Firefox login entry
+private enum FirefoxLoginEntry: Decodable {
+    case active(ActiveLogin)
+    case deleted(DeletedLogin)
+    case unparsed
+
+    /// Active login with all required fields for import
+    struct ActiveLogin: Decodable {
         let hostname: String
         let encryptedUsername: String
         let encryptedPassword: String
     }
 
-    let logins: [Login]
+    /// Deleted login entry (tombstone record for sync)
+    struct DeletedLogin: Decodable {
+        let deleted: Bool
+    }
 
+    init(from decoder: Decoder) throws {
+        // Try to decode as active login - this will fail if required fields are missing
+
+        // Check if this is a deleted entry
+        if let deletedLogin = try? DeletedLogin(from: decoder), deletedLogin.deleted {
+            self = .deleted(deletedLogin)
+        } else if let activeLogin = try? ActiveLogin(from: decoder) {
+            self = .active(activeLogin)
+        } else {
+            self = .unparsed
+        }
+    }
+}
+
+/// Legacy structure for compatibility with existing decrypt logic
+private struct EncryptedFirefoxLogins {
+    let logins: [FirefoxLoginEntry.ActiveLogin]
 }

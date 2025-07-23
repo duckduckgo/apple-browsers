@@ -1,0 +1,8 @@
+{
+    "agents": ["ddg_ios"],
+    "target": {
+        "key": "appVersion",
+        "version": "7.178.0"
+    },
+    "forceLowerCase": false
+}

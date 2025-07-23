@@ -22,8 +22,8 @@ import DesignResourcesKit
 import UIKit
 
 extension CompositeShadowView.Shadow {
-    private static let defaultColor = UIColor(designSystemColor: .shadowPrimary)
-    private static let focusColor = UIColor(designSystemColor: .shadowSecondary)
+    private static let defaultColor: UIColor = UIColor(designSystemColor: .shadowSecondary)
+    private static let focusColor: UIColor = UIColor(designSystemColor: .shadowTertiary)
 
     static let defaultLayer1 = CompositeShadowView.Shadow(
         id: "ddg.shadow1",
@@ -36,9 +36,9 @@ extension CompositeShadowView.Shadow {
     static let defaultLayer2 = CompositeShadowView.Shadow(
         id: "ddg.shadow2",
         color: defaultColor,
-        opacity: 0,
-        radius: 48.0,
-        offset: CGSize(width: 0, height: 16)
+        opacity: 1,
+        radius: 24.0,
+        offset: CGSize(width: 0, height: 8)
     )
 
     static let activeLayer1 = CompositeShadowView.Shadow(
@@ -52,7 +52,7 @@ extension CompositeShadowView.Shadow {
     static let activeLayer2 = CompositeShadowView.Shadow(
         id: "ddg.shadow2",
         color: focusColor,
-        opacity: 0,
+        opacity: 1,
         radius: 32.0,
         offset: CGSize(width: 0, height: 16)
     )

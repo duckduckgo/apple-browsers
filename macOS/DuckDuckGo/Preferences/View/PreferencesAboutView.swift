@@ -115,8 +115,8 @@ extension Preferences {
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGoForMacAppStore)
                         .font(.companyName)
-                    if model.isInternalUser {
-                        Text("BETA")
+                    if model.appVersionModel.shouldDisplayPrereleaseLabel {
+                        Text(model.appVersionModel.prereleaseLabel)
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)
@@ -133,18 +133,18 @@ extension Preferences {
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.leading)
 
-                Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                Text(model.appVersionModel.versionLabel)
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                            model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
 #elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
-                    if model.isInternalUser {
-                        Text("BETA")
+                    if model.appVersionModel.shouldDisplayPrereleaseLabel {
+                        Text(model.appVersionModel.prereleaseLabel)
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)
@@ -177,7 +177,7 @@ extension Preferences {
 
         private var horizontalPageLogo: some View {
             HStack(alignment: .top) {
-                Image(.aboutPageLogo)
+                logoImage
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 8) {
                     rightColumnContent
@@ -189,13 +189,22 @@ extension Preferences {
 
         private var verticalPageLogo: some View {
             VStack(alignment: .leading) {
-                Image(.aboutPageLogo)
+                logoImage
                 VStack(alignment: .leading, spacing: 8) {
                     rightColumnContent
                 }
                 .padding(.top, 10)
             }
             .padding(.bottom, 8)
+        }
+
+        @ViewBuilder
+        private var logoImage: some View {
+#if ALPHA
+            Image(.aboutPageLogoAlpha)
+#else
+            Image(.aboutPageLogo)
+#endif
         }
 
 #if SPARKLE
@@ -210,10 +219,10 @@ extension Preferences {
         @ViewBuilder
         private var versionText: some View {
             HStack(spacing: 0) {
-                Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                Text(model.appVersionModel.versionLabel)
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                            model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
 #if SPARKLE

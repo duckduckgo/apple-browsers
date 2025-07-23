@@ -60,13 +60,14 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             Logger.newTabPageOmnibar.error("Failed to get mainWindowController in submitSearch")
             return
         }
-        guard let searchURL = URL.makeSearchUrl(from: term) else {
-            Logger.newTabPageOmnibar.error("Failed to create search URL from term: \(term)")
+
+        guard let url = URL.makeURL(from: term) else {
+            Logger.newTabPageOmnibar.error("Failed to create URL from term: \(term)")
             return
         }
 
         NewTabPageLinkOpener.open(
-            searchURL,
+            url,
             source: .ui,
             sender: .userScript,
             target: target.linkOpenTarget,

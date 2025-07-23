@@ -249,6 +249,10 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         // Record that we're starting a check
         await updateCheckState.recordCheckTime()
 
+        if case .updaterError = userDriver?.updateProgress {
+            userDriver?.cancelAndDismissCurrentUpdate()
+        }
+
         // Create the actual update task
         let updateTask = Task { @MainActor in
             // Handle expired builds first (critical path)
@@ -284,16 +288,18 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater = nil
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self,
+            /*guard let self,
                   let updater = try? configureUpdater(needsUpdateCheck: true) else {
                 return
-            }
-            self.updater = updater
+            }*/
+            // self.updater = updater
+
+            guard let self else { return }
 
             if skipRollout {
-                updater.checkForUpdates()
+                updater?.checkForUpdates()
             } else {
-                updater.checkForUpdatesInBackground()
+                updater?.checkForUpdatesInBackground()
             }
         }
 
@@ -317,10 +323,14 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         // Record that we're starting a check (no rate limiting for user-initiated)
         await updateCheckState.recordCheckTime()
 
+        if case .updaterError = userDriver?.updateProgress {
+            userDriver?.cancelAndDismissCurrentUpdate()
+        }
+
         // Create the actual update task
         let updateTask = Task { @MainActor in
             // Handle expired builds first (critical path)
-            guard await !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
                 return
             }
 

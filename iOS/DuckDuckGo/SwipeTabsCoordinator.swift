@@ -86,7 +86,6 @@ class SwipeTabsCoordinator: NSObject {
         collectionView.showsVerticalScrollIndicator = false
 
         updateLayout()
-        registerForNotifications()
     }
     
     enum State {
@@ -147,27 +146,6 @@ class SwipeTabsCoordinator: NSObject {
         self.collectionView.scrollToItem(at: indexPath,
                                          at: .centeredHorizontally,
                                          animated: false)
-    }
-
-
-    private func registerForNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(updateRoundCornersMaskView),
-                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(updateRoundCornersMaskView),
-                                               name: UIDevice.orientationDidChangeNotification,
-                                               object: nil)
-    }
-
-    @objc func updateRoundCornersMaskView() {
-        for cell in collectionView.visibleCells {
-            if let omniBarCell = cell as? OmniBarCell {
-                omniBarCell.roundCornersMaskView?.removeFromSuperview()
-                omniBarCell.roundCornersMaskView = nil
-            }
-        }
     }
 
     private struct Constant {
@@ -411,7 +389,6 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
-    var roundCornersMaskView: RoundedCornersMaskView?
     var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {

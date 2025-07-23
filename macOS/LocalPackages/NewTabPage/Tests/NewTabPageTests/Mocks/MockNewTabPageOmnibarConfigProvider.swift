@@ -20,7 +20,6 @@ import Combine
 import NewTabPage
 
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
-
     @MainActor
     var mode: NewTabPageDataModel.OmnibarMode = .search
 
@@ -28,5 +27,11 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
         $isAIChatShortcutEnabled.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var isAIChatSettingVisible: Bool = true
+
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
+        $isAIChatSettingVisible.dropFirst().eraseToAnyPublisher()
     }
 }

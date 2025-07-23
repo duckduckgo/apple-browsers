@@ -28,6 +28,12 @@ final class MockNewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcu
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
         $isAIChatShortcutEnabled.dropFirst().eraseToAnyPublisher()
     }
+
+    @Published var isAIChatSettingVisible: Bool = true
+
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
+        $isAIChatSettingVisible.dropFirst().eraseToAnyPublisher()
+    }
 }
 
 final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
@@ -98,6 +104,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(store.underlyingDict[storageKey])
     }
 
+    // MARK: - isAIChatShortcutEnabled
+
     func testThatAIChatShortcutEnabledFlagIsPassedToSettingProvider() throws {
         let store = try makeStore()
         let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
@@ -125,6 +133,41 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         settingProvider.isAIChatShortcutEnabled = true
         settingProvider.isAIChatShortcutEnabled = false
         settingProvider.isAIChatShortcutEnabled = true
+
+        cancellable.cancel()
+
+        XCTAssertEqual(events, [true, false, true])
+    }
+
+    // MARK: - isAIChatSettingVisible
+
+    func testThatAIChatSettingsVisibleFlagIsPassedToFromSettingProvider() throws {
+        let store = try makeStore()
+        let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider)
+
+        settingProvider.isAIChatSettingVisible = true
+        XCTAssertEqual(provider.isAIChatSettingVisible, true)
+
+        settingProvider.isAIChatSettingVisible = false
+        XCTAssertEqual(provider.isAIChatSettingVisible, false)
+    }
+
+    func testThatAIChatSettingVisibleFlagPublisherIsConnectedToSettingProvider() throws {
+        let store = try makeStore()
+        let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider)
+
+        var events: [Bool] = []
+
+        let cancellable = provider.isAIChatSettingVisiblePublisher
+            .sink { value in
+                events.append(value)
+            }
+
+        settingProvider.isAIChatSettingVisible = true
+        settingProvider.isAIChatSettingVisible = false
+        settingProvider.isAIChatSettingVisible = true
 
         cancellable.cancel()
 

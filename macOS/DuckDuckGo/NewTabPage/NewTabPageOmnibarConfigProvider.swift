@@ -27,6 +27,8 @@ import PixelKit
 protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
     var isAIChatShortcutEnabled: Bool { get set }
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
+    var isAIChatSettingVisible: Bool { get }
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
 
 final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding {
@@ -58,6 +60,14 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
             .map(\.shouldDisplayNewTabPageShortcut)
             .removeDuplicates()
             .eraseToAnyPublisher()
+    }
+
+    var isAIChatSettingVisible: Bool {
+        aiChatPreferencesStorage.isAIFeaturesEnabled
+    }
+
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
+        aiChatPreferencesStorage.isAIFeaturesEnabledPublisher.eraseToAnyPublisher()
     }
 }
 
@@ -113,5 +123,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
         aiChatShortcutSettingProvider.isAIChatShortcutEnabledPublisher
+    }
+
+    var isAIChatSettingVisible: Bool {
+        aiChatShortcutSettingProvider.isAIChatSettingVisible
+    }
+
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
+        aiChatShortcutSettingProvider.isAIChatSettingVisiblePublisher
     }
 }

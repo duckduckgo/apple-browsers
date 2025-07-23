@@ -25,4 +25,7 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isAIChatShortcutEnabled: Bool { get set }
     var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
+    var isAIChatSettingVisible: Bool { get }
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }

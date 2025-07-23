@@ -22,7 +22,7 @@ import XCTest
 final class NewTabPageOmnibarClientTests: XCTestCase {
 
     private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
-    private var configProvider: NewTabPageOmnibarConfigProviding!
+    private var configProvider: MockNewTabPageOmnibarConfigProvider!
     private var actionHandler: NewTabPageOmnibarActionsHandling!
     private var client: NewTabPageOmnibarClient!
     private var userScript: NewTabPageUserScript!
@@ -50,20 +50,23 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     func testGetConfigReturnsConfigFromTheProvider() async throws {
         configProvider.mode = .search
         configProvider.isAIChatShortcutEnabled = true
+        configProvider.isAIChatSettingVisible = false
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.mode, configProvider.mode)
         XCTAssertEqual(config.enableAi, configProvider.isAIChatShortcutEnabled)
+        XCTAssertEqual(config.showAiSetting, configProvider.isAIChatSettingVisible)
     }
 
     // MARK: - setConfig
 
     @MainActor
-    func testSetConfigUpdatesModeAndEnableAIFlag() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false)
+    func testSetConfigUpdatesModeAndSettings() async throws {
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
+        XCTAssertEqual(configProvider.isAIChatSettingVisible, true)
     }
 
     // MARK: - getSuggestions

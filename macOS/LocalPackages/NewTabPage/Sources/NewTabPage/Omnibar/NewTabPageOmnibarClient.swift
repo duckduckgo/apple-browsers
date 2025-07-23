@@ -45,13 +45,16 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        configProvider.isAIChatShortcutEnabledPublisher
-            .sink { [weak self] _ in
-                Task { @MainActor in
-                    self?.notifyAIChatShortcutUpdated()
-                }
+        Publishers.Merge(
+            configProvider.isAIChatShortcutEnabledPublisher,
+            configProvider.isAIChatSettingVisiblePublisher
+        )
+        .sink { [weak self] _ in
+            Task { @MainActor in
+                self?.notifyAIChatShortcutUpdated()
             }
-            .store(in: &cancellables)
+        }
+        .store(in: &cancellables)
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -67,7 +70,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        NewTabPageDataModel.OmnibarConfig(mode: configProvider.mode, enableAi: configProvider.isAIChatShortcutEnabled)
+        NewTabPageDataModel.OmnibarConfig(
+            mode: configProvider.mode,
+            enableAi: configProvider.isAIChatShortcutEnabled,
+            showAiSetting: configProvider.isAIChatSettingVisible
+        )
     }
 
     @MainActor
@@ -82,7 +89,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func notifyAIChatShortcutUpdated() {
-        let config = NewTabPageDataModel.OmnibarConfig(mode: configProvider.mode, enableAi: configProvider.isAIChatShortcutEnabled)
+        let config = NewTabPageDataModel.OmnibarConfig(
+            mode: configProvider.mode,
+            enableAi: configProvider.isAIChatShortcutEnabled,
+            showAiSetting: configProvider.isAIChatSettingVisible
+        )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
 

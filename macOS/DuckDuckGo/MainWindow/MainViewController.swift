@@ -92,7 +92,7 @@ final class MainViewController: NSViewController {
          permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
-         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
          aiChatSidebarProvider: AIChatSidebarProviding,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,

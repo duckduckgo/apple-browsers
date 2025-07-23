@@ -26,6 +26,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case setConfig = "omnibar_setConfig"
         case getSuggestions = "omnibar_getSuggestions"
         case submitSearch = "omnibar_submitSearch"
+        case onConfigUpdate = "omnibar_onConfigUpdate"
         case openSuggestion = "omnibar_openSuggestion"
         case submitChat = "omnibar_submitChat"
     }

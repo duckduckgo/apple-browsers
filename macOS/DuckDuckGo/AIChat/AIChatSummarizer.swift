@@ -56,7 +56,7 @@ final class AIChatSummarizer: AIChatSummarizing {
     private let pixelFiring: PixelFiring?
 
     init(
-        aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         aiChatTabOpener: AIChatTabOpening,
         pixelFiring: PixelFiring?

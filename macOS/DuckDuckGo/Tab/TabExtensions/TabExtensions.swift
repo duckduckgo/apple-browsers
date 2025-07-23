@@ -79,6 +79,7 @@ protocol TabExtensionDependencies {
     var faviconManagement: FaviconManagement? { get }
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
+    var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -177,7 +178,8 @@ extension TabExtensionsBuilder {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
-                               internalUserDecider: dependencies.featureFlagger.internalUserDecider)
+                               internalUserDecider: dependencies.featureFlagger.internalUserDecider,
+                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))

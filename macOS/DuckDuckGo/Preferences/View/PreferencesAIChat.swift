@@ -48,9 +48,9 @@ extension Preferences {
 
                     if model.shouldShowNewTabPageToggle {
                         ToggleMenuItem(UserText.aiChatShowOnNewTabPageBarToggle,
-                                       isOn: $model.showOnNewTabPage)
+                                       isOn: $model.showShortcutOnNewTabPage)
                         .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
-                        .onChange(of: model.showOnNewTabPage) { newValue in
+                        .onChange(of: model.showShortcutOnNewTabPage) { newValue in
                             if newValue {
                                 PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOn,
                                               frequency: .dailyAndCount,

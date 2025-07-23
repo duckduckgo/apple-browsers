@@ -24,8 +24,8 @@ public protocol AIChatPreferencesStorage {
     var isAIFeaturesEnabled: Bool { get set }
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> { get }
 
-    var showOnNewTabPage: Bool { get set }
-    var showOnNewTabPagePublisher: AnyPublisher<Bool, Never> { get }
+    var showShortcutOnNewTabPage: Bool { get set }
+    var showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> { get }
 
     var showShortcutInApplicationMenu: Bool { get set }
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> { get }
@@ -47,7 +47,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.isAIFeaturesEnabledPublisher
     }
 
-    public var showOnNewTabPagePublisher: AnyPublisher<Bool, Never> {
+    public var showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> {
         userDefaults.showAIChatOnNewTabPagePublisher
     }
 
@@ -74,7 +74,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.isAIFeaturesEnabled = newValue }
     }
 
-    public var showOnNewTabPage: Bool {
+    public var showShortcutOnNewTabPage: Bool {
         get { userDefaults.showAIChatOnNewTabPage }
         set { userDefaults.showAIChatOnNewTabPage = newValue }
     }

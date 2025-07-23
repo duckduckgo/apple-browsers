@@ -75,7 +75,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     var valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
     var shouldDisplayNewTabPageShortcut: Bool {
-        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showOnNewTabPage
+        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showShortcutOnNewTabPage
     }
 
     var shouldDisplaySummarizationMenuItem: Bool {
@@ -105,7 +105,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     private func subscribeToValuesChanged() {
         Publishers.Merge5(
             storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
-            storage.showOnNewTabPagePublisher.removeDuplicates(),
+            storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
             storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
             storage.showShortcutInAddressBarPublisher.removeDuplicates(),
             storage.openAIChatInSidebarPublisher.removeDuplicates()

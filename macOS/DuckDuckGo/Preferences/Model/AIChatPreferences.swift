@@ -43,7 +43,7 @@ final class AIChatPreferences: ObservableObject {
         self.featureFlagger = featureFlagger
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
-        showOnNewTabPage = storage.showOnNewTabPage
+        showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
@@ -58,10 +58,10 @@ final class AIChatPreferences: ObservableObject {
             .assign(to: \.isAIFeaturesEnabled, onWeaklyHeld: self)
             .store(in: &cancellables)
 
-        storage.showOnNewTabPagePublisher
+        storage.showShortcutOnNewTabPagePublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .assign(to: \.showOnNewTabPage, onWeaklyHeld: self)
+            .assign(to: \.showShortcutOnNewTabPage, onWeaklyHeld: self)
             .store(in: &cancellables)
 
         storage.showShortcutInApplicationMenuPublisher
@@ -95,8 +95,8 @@ final class AIChatPreferences: ObservableObject {
         didSet { storage.isAIFeaturesEnabled = isAIFeaturesEnabled }
     }
 
-    @Published var showOnNewTabPage: Bool {
-        didSet { storage.showOnNewTabPage = showOnNewTabPage }
+    @Published var showShortcutOnNewTabPage: Bool {
+        didSet { storage.showShortcutOnNewTabPage = showShortcutOnNewTabPage }
     }
 
     @Published var showShortcutInApplicationMenu: Bool {

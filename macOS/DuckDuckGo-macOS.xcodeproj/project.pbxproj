@@ -1020,6 +1020,8 @@
 		370A34B22AB24E3700C77F7C /* SyncDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370A34B02AB24E3700C77F7C /* SyncDebugMenu.swift */; };
 		370C23112C7747E200A80A3E /* ImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370C23102C7747E200A80A3E /* ImageProcessor.swift */; };
 		370C23122C7747E200A80A3E /* ImageProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370C23102C7747E200A80A3E /* ImageProcessor.swift */; };
+		370CAEC52E3134B1001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370CAEC42E3134AC001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift */; };
+		370CAEC62E3134B1001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370CAEC42E3134AC001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift */; };
 		370DB6E22D521D130055D988 /* NewTabPageConfigurationErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370DB6E12D521D0A0055D988 /* NewTabPageConfigurationErrorHandler.swift */; };
 		370DB6E32D521D130055D988 /* NewTabPageConfigurationErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370DB6E12D521D0A0055D988 /* NewTabPageConfigurationErrorHandler.swift */; };
 		370E70A32D4691560077D4F3 /* RecentActivityProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370E70A22D46914A0077D4F3 /* RecentActivityProviderTests.swift */; };
@@ -4113,6 +4115,7 @@
 		370AB88A2E263AF100BBBDE0 /* DuckDuckGoAppStoreAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreAlpha.entitlements; sourceTree = "<group>"; };
 		370AB88B2E2641C500BBBDE0 /* DuckDuckGoAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAlpha.entitlements; sourceTree = "<group>"; };
 		370C23102C7747E200A80A3E /* ImageProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessor.swift; sourceTree = "<group>"; };
+		370CAEC42E3134AC001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageAIChatShortcutSettingProviderTests.swift; sourceTree = "<group>"; };
 		370DB6E12D521D0A0055D988 /* NewTabPageConfigurationErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageConfigurationErrorHandler.swift; sourceTree = "<group>"; };
 		370E70A22D46914A0077D4F3 /* RecentActivityProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentActivityProviderTests.swift; sourceTree = "<group>"; };
 		371209202C232E3F003ADF3D /* RemoteMessagingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingClient.swift; sourceTree = "<group>"; };
@@ -6617,6 +6620,7 @@
 				3730F20E2D2E725A00239F96 /* NewTabPageCustomizationProviderTests.swift */,
 				377D7BC02D0AC7E000ADFD06 /* NewTabPageNextStepsCardsProviderTests.swift */,
 				1D2EE7072E267D4F00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift */,
+				370CAEC42E3134AC001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift */,
 				1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */,
 			);
 			path = NewTabPage;
@@ -13654,6 +13658,7 @@
 				3706FE3D293F661700E42796 /* DataEncryptionTests.swift in Sources */,
 				1D39F7292DCA2C9200F258F0 /* InitialWindowFrameProviderTests.swift in Sources */,
 				C11198352C89AEFA00F0272C /* FreemiumDBPFirstProfileSavedNotifierTests.swift in Sources */,
+				370CAEC52E3134B1001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift in Sources */,
 				37EC314C2D8C02C00026C348 /* FaviconTests.swift in Sources */,
 				C17CA7B32B9B5317008EC3C1 /* MockAutofillPopoverPresenter.swift in Sources */,
 				3706FE3F293F661700E42796 /* FileStoreMock.swift in Sources */,
@@ -15400,6 +15405,7 @@
 				56EA40292DB7830800B5061E /* LocalizationTests.swift in Sources */,
 				C1F142DC2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift in Sources */,
 				3714B1E928EDBAAB0056C57A /* DuckPlayerTests.swift in Sources */,
+				370CAEC62E3134B1001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift in Sources */,
 				5603D90629B7B746007F9F01 /* MockTabViewItemDelegate.swift in Sources */,
 				B67C6C3D2654B897006C872E /* WebViewExtensionTests.swift in Sources */,
 				EEBBEF362CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift in Sources */,

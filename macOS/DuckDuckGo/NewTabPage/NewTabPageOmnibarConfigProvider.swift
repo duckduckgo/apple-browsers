@@ -16,11 +16,50 @@
 //  limitations under the License.
 //
 
-import NewTabPage
-import Persistence
+import AIChat
 import AppKit
+import Combine
+import NewTabPage
 import os.log
+import Persistence
 import PixelKit
+
+protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
+    var isAIChatShortcutEnabled: Bool { get set }
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
+}
+
+final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding {
+    private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    private var aiChatPreferencesStorage: AIChatPreferencesStorage
+
+    init(
+        aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()
+    ) {
+        self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.aiChatPreferencesStorage = aiChatPreferencesStorage
+    }
+
+    var isAIChatShortcutEnabled: Bool {
+        get {
+            aiChatMenuConfiguration.shouldDisplayNewTabPageShortcut
+        }
+        set {
+            aiChatPreferencesStorage.showShortcutOnNewTabPage = newValue
+        }
+    }
+
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
+        aiChatMenuConfiguration.valuesChangedPublisher
+            .compactMap { [weak self] in
+                self?.aiChatMenuConfiguration
+            }
+            .map(\.shouldDisplayNewTabPageShortcut)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+}
 
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
@@ -29,11 +68,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let firePixel: (PixelKitEvent) -> Void
 
     init(keyValueStore: ThrowingKeyValueStoring,
+         aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
+        self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.firePixel = firePixel
     }
 
@@ -60,4 +102,16 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
     }
 
+    var isAIChatShortcutEnabled: Bool {
+        get {
+            aiChatShortcutSettingProvider.isAIChatShortcutEnabled
+        }
+        set {
+            aiChatShortcutSettingProvider.isAIChatShortcutEnabled = newValue
+        }
+    }
+
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
+        aiChatShortcutSettingProvider.isAIChatShortcutEnabledPublisher
+    }
 }

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import NewTabPage
 
 final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
@@ -23,4 +24,9 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     @MainActor
     var mode: NewTabPageDataModel.OmnibarMode = .search
 
+    @Published var isAIChatShortcutEnabled: Bool = true
+
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatShortcutEnabled.eraseToAnyPublisher()
+    }
 }

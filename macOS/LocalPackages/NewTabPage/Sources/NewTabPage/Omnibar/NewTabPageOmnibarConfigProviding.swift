@@ -16,9 +16,13 @@
 //  limitations under the License.
 //
 
+import Combine
+
 public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     @MainActor
     var mode: NewTabPageDataModel.OmnibarMode { get set }
 
+    var isAIChatShortcutEnabled: Bool { get set }
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
 }

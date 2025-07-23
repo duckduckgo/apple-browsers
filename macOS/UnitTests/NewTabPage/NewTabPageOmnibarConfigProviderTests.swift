@@ -16,10 +16,19 @@
 //  limitations under the License.
 //
 
+import Combine
 import XCTest
 import Persistence
 import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
+
+final class MockNewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding {
+    @Published var isAIChatShortcutEnabled: Bool = true
+
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatShortcutEnabled.dropFirst().eraseToAnyPublisher()
+    }
+}
 
 final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
@@ -41,21 +50,21 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     @MainActor
     func testDefaultModeWhenNoValueInStore() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testModeReadsStoredValidValue() throws {
         let store = try makeStore(underlying: [storageKey: "ai"])
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
         XCTAssertEqual(provider.mode, .ai)
     }
 
     @MainActor
     func testModeDefaultsToSearchOnInvalidRawValue() throws {
         let store = try makeStore(underlying: [storageKey: "invalid"])
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
         XCTAssertEqual(provider.mode, .search)
     }
 
@@ -63,14 +72,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testModeDefaultsToSearchOnReadError() throws {
         let readError = NSError(domain: "test", code: 1)
         let store = try makeStore(throwOnRead: readError)
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
         XCTAssertEqual(provider.mode, .search)
     }
 
     @MainActor
     func testSettingModeWritesValue() throws {
         let store = try makeStore()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
         provider.mode = .ai
         // Underlying dict should contain the rawValue
         XCTAssertEqual(store.underlyingDict[storageKey] as? String, "ai")
@@ -82,10 +91,43 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testSettingModeHandlesWriteErrorGracefully() throws {
         let writeError = NSError(domain: "test", code: 2)
         let store = try makeStore(throwOnSet: writeError)
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store)
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())
         // Should not throw on write error
         provider.mode = .ai
         // Underlying dict remains unchanged
         XCTAssertNil(store.underlyingDict[storageKey])
+    }
+
+    func testThatAIChatShortcutEnabledFlagIsPassedToSettingProvider() throws {
+        let store = try makeStore()
+        let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider)
+
+        provider.isAIChatShortcutEnabled = true
+        XCTAssertEqual(settingProvider.isAIChatShortcutEnabled, true)
+
+        provider.isAIChatShortcutEnabled = false
+        XCTAssertEqual(settingProvider.isAIChatShortcutEnabled, false)
+    }
+
+    func testThatAIChatShortcutEnabledFlagPublisherIsConnectedToSettingProvider() throws {
+        let store = try makeStore()
+        let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider)
+
+        var events: [Bool] = []
+
+        let cancellable = provider.isAIChatShortcutEnabledPublisher
+            .sink { value in
+                events.append(value)
+            }
+
+        settingProvider.isAIChatShortcutEnabled = true
+        settingProvider.isAIChatShortcutEnabled = false
+        settingProvider.isAIChatShortcutEnabled = true
+
+        cancellable.cancel()
+
+        XCTAssertEqual(events, [true, false, true])
     }
 }

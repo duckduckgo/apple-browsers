@@ -1,65 +1,187 @@
 # Privacy Pro Subscription
 
-## Overview
-
-[AOR: Apple Privacy Pro Accounts](https://app.asana.com/1/137249556945/project/1209882303470922/list/1209882470267442)
-
 The `Subscription` module in `BrowserServicesKit` provides the core subscription infrastructure shared between iOS and macOS DuckDuckGo applications. It handles authentication, purchase flows, entitlement management, and API communication for Privacy Pro features.
 
-Its main responsibilities are:
-- Purchase, restore and remove the Subscription
-- Provide the subscription and user entitlements
-- Manage the Subscription authentication tokens lifecycle. For details about the authentication, refer to [the Networking/Auth README](./../Networking/Auth/README.md)
+## Table of Contents
+- [Overview](#overview)
+- [Core Responsibilities](#core-responsibilities)
+- [Quick Start](#quick-start)
+- [Authentication](#authentication)
+  - [Token Management](#token-management)
+  - [Token Retrieval](#token-retrieval)
+  - [Cache Policies](#cache-policies)
+- [Entitlements](#entitlements)
+  - [Subscription Entitlements](#subscription-entitlements)
+  - [User Entitlements](#user-entitlements)
+- [Best Practices](#best-practices)
+- [Error Handling](#error-handling)
+- [Additional Resources](#additional-resources)
 
-**Note**: This framework contains Subscription V1, that uses Auth V1, and Subscription V2 that uses Auth V2. The documentation is only about the V2 version of the code. V1 will be removed [soon](https://app.asana.com/1/137249556945/project/1209882303470922/task/1210741763117598).
+## Overview
 
-## How to use it
+Privacy Pro Subscription is a subscription service that provides enhanced privacy features for DuckDuckGo users. This module manages the entire subscription lifecycle, from initial purchase through authentication and entitlement verification.
 
-Generally, any external component...
+> **Note**: This documentation covers Subscription V2 (using Auth V2). V1 is deprecated and will be removed. [Track removal progress](https://app.asana.com/1/137249556945/project/1209882303470922/task/1210741763117598).
 
-### Authentication, Getting an authentication token, checking the auth state
+## Core Responsibilities
 
-General concepts:
-- The Subscription framework is the only entity authorised to handle and store the `TokenContainer`
-- A token last 4h and is the Subscription framework responsibility to, on demand, keep it up to date
-- For details about the `TokenContainer` refer to [the Networking/Auth README](./../Networking/Auth/README.md)
+- **Purchase Management**: Handle new subscriptions, restore existing ones, and process cancellations
+- **Entitlement Verification**: Manage and verify user access to Privacy Pro features
+- **Authentication**: Manage the complete lifecycle of subscription authentication tokens
+- **API Communication**: Handle all subscription-related API interactions
 
-How to get a token:
- ```
+## Authentication
+
+### Token Management
+
+The Subscription framework is the sole authority for handling and storing authentication tokens (`TokenContainer`). Key points:
+
+- **Token Lifetime**: Each token is valid for 4 hours
+- **Automatic Refresh**: The framework handles token refresh on-demand
+- **Storage**: Tokens are securely stored and managed internally
+- **Access Control**: Only the Subscription framework can directly manipulate token storage
+
+For details about the authentication architecture, see the [Networking/Auth README](./../Networking/Auth/README.md).
+
+### Token Retrieval
+
+Retrieve authentication tokens using the following method:
+
+```swift
 func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer
- ```
-
-The policy options:
-```
-/// The token container from the local storage
-case local
-/// The token container from the local storage, refreshed if needed
-case localValid
-/// A refreshed token
-case localForceRefresh
-/// Like `.localValid`,  if doesn't exist create a new one
-case createIfNeeded
 ```
 
-Generally, any feature external to the Subscription, like VPN or PIR, should use `localValid` to assure the token is always refreshed.
+### Cache Policies
 
-The access token is part of the `TokenContainer`
+Choose the appropriate cache policy based on your use case:
 
-### Checking for entitlements
+| Policy | Description | Use Case |
+|--------|-------------|----------|
+| `.local` | Returns token from local storage | Debugging or when offline access is acceptable |
+| `.localValid` | Returns local token, refreshes if expired | **Default for most features (VPN, PIR, etc.)** |
+| `.localForceRefresh` | Forces a token refresh | When you need the latest authentication state |
+| `.createIfNeeded` | Like `.localValid`, but creates new token if none exists | Initial authentication flows |
 
-There are 2 types of entitlements.
-Both functions can throw errors, it's important not to interpret an error as the absence of entitlements.
+**Example:**
 
-1. **Subscription entitlements**: What the Subscription is capable of
+```swift
+// Most common usage for external features
+let tokenContainer = try await subscription.getTokenContainer(policy: .localValid)
+let accessToken = tokenContainer.accessToken
+```
 
-`func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool`
+## Entitlements
 
-Used mostly by the Settings UI 
+The framework distinguishes between two types of entitlements:
 
-2. **User entitlements**: What the user is authorised to use
+### Subscription Entitlements
 
-`func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool`
+**What the subscription includes** - The features available in the user's subscription plan.
 
-Privacy pro features always need to check if the user is allowed to use the feature by checking the user entitlement
-When User entitlements change the `.entitlementsDidChange` notification is fired.
+```swift
+func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool
+```
 
+**Use cases:**
+- Settings UI to show available features
+- Screens showing what's included
+
+**Example:**
+```swift
+let includesVPN = try await subscription.isFeatureIncludedInSubscription(.networkProtection)
+// Use this to show/hide VPN in settings
+```
+
+### User Entitlements
+
+**What the user can actually use** - The features the user is authorised to access based on their subscription status.
+
+```swift
+func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool
+```
+
+**Use cases:**
+- Feature gates (ALWAYS use this for feature access)
+- Enabling/disabling functionality
+- Access control checks
+
+**Example:**
+```swift
+// Always check user entitlements before enabling features
+let canUseDataBrokerProtection = try await subscription.isFeatureEnabled(.dataBrokerProtection)
+
+if canUseDataBrokerProtection {
+    // Enable the feature
+}
+```
+
+### Entitlement Change Notifications
+
+Listen for entitlement changes to update your UI dynamically:
+
+```swift
+NotificationCenter.default.addObserver(
+    self,
+    selector: #selector(handleEntitlementsChange),
+    name: .entitlementsDidChange,
+    object: nil
+)
+
+@objc private func handleEntitlementsChange() {
+    // Refresh UI or feature availability
+}
+```
+
+## Best Practices
+
+1. **Always Use User Entitlements for Feature Access**
+   ```swift
+   // ✅ Correct - Check user entitlements
+   if try await subscription.isFeatureEnabled(.networkProtection) {
+       enableVPN()
+   }
+   
+   // ❌ Wrong - Don't use subscription entitlements for access control
+   if try await subscription.isFeatureIncludedInSubscription(.networkProtection) {
+       enableVPN()
+   }
+   ```
+
+2. **Handle Errors Gracefully**
+   - Never interpret errors as lack of entitlements
+   - Implement retry logic for transient failures
+   - Provide appropriate user feedback
+
+3. **Use Appropriate Cache Policies**
+   - Use `.localValid` for most scenarios
+   - Avoid `.localForceRefresh` unless necessary (reduces server load)
+   - Use `.createIfNeeded` only for initial setup flows
+
+4. **Listen for Changes**
+   - Subscribe to `.entitlementsDidChange` notifications
+   - Update UI and feature availability dynamically
+
+## Error Handling
+
+Both entitlement check methods can throw errors. Proper error handling is crucial:
+
+```swift
+do {
+    let hasAccess = try await subscription.isFeatureEnabled(.networkProtection)
+    if hasAccess {
+        // Enable feature
+    } else {
+        // Do not enable feature
+    }
+} catch {
+    // Handle error - DO NOT assume no access
+    // Log error, retry, or show appropriate message
+    print("Failed to check entitlements: \(error)")
+    // Consider showing a retry option or degraded experience
+}
+```
+
+## Additional Resources
+
+- **AOR**: [Apple Privacy Pro Accounts AOR](https://app.asana.com/1/137249556945/project/1209882303470922/list/1209882470267442)
+- **Authentication Details**: [Networking/Auth README](./../Networking/Auth/README.md)

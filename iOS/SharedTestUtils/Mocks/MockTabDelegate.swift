@@ -151,7 +151,6 @@ extension TabViewController {
             onboardingPixelReporter: contextualOnboardingPixelReporter,
             featureFlagger: featureFlagger,
             contentScopeExperimentManager: MockContentScopeExperimentManager(),
-            subscriptionCookieManager: SubscriptionCookieManagerMock(),
             textZoomCoordinator: MockTextZoomCoordinator(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),

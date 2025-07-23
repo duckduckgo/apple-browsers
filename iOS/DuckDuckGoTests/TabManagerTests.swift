@@ -95,7 +95,6 @@ final class TabManagerTests: XCTestCase {
                           onboardingPixelReporter: OnboardingPixelReporterMock(),
                           featureFlagger: MockFeatureFlagger(),
                           contentScopeExperimentManager: MockContentScopeExperimentManager(),
-                          subscriptionCookieManager: SubscriptionCookieManagerMock(),
                           appSettings: AppSettingsMock(),
                           textZoomCoordinator: MockTextZoomCoordinator(),
                           websiteDataManager: MockWebsiteDataManager(),

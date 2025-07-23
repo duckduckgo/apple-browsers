@@ -3266,6 +3266,8 @@
 		BB9BA22A2D10C0A5009229F3 /* TabBarActiveRemoteMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BA2282D10C0A3009229F3 /* TabBarActiveRemoteMessage.swift */; };
 		BB9BDD492D09BAA80069E9EF /* TabBarRemoteMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */; };
 		BB9BDD4A2D09BAA80069E9EF /* TabBarRemoteMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */; };
+		BBB3F1F12E302143009E77AF /* ReportProblemFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */; };
+		BBB3F1F22E302143009E77AF /* ReportProblemFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */; };
 		BBB881882C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB881872C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift */; };
 		BBB881892C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB881872C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift */; };
 		BBB891E62DAEC1C1001A42DF /* MoreOptionsMenuIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */; };
@@ -5474,6 +5476,7 @@
 		BB9BA2252D10C089009229F3 /* TabBarRemoteMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessage.swift; sourceTree = "<group>"; };
 		BB9BA2282D10C0A3009229F3 /* TabBarActiveRemoteMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarActiveRemoteMessage.swift; sourceTree = "<group>"; };
 		BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessageViewModel.swift; sourceTree = "<group>"; };
+		BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormView.swift; sourceTree = "<group>"; };
 		BBB881872C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkListTreeControllerSearchDataSource.swift; sourceTree = "<group>"; };
 		BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuIconsProviding.swift; sourceTree = "<group>"; };
 		BBBB653F2C77BB9400E69AC6 /* BookmarkSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkSearchTests.swift; sourceTree = "<group>"; };
@@ -10485,6 +10488,7 @@
 		BB53CF3C2E26CED5007F0B42 /* New */ = {
 			isa = PBXGroup;
 			children = (
+				BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */,
 				BBBD2A072E2FE544005E7664 /* FeaturesPillCollection.swift */,
 				BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */,
 				BBBD2A012E2FE44B005E7664 /* ThankYouView.swift */,
@@ -12635,6 +12639,7 @@
 				3706FEC0293F6EFF00E42796 /* BWRequest.swift in Sources */,
 				3706FAF7293F65D500E42796 /* FireproofDomainsViewController.swift in Sources */,
 				BBDAA9202DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */,
+				BBB3F1F22E302143009E77AF /* ReportProblemFormView.swift in Sources */,
 				F18826852BBEE31700D9AC4F /* PixelKit+Assertion.swift in Sources */,
 				4BF0E5062AD2551A00FFEC9E /* NetworkProtectionPixelEvent.swift in Sources */,
 				C10529442C9CC18B0041E502 /* AutofillCredentialsDebugView.swift in Sources */,
@@ -14556,6 +14561,7 @@
 				37FC2A182CF903080048E226 /* MockPrivacyStats.swift in Sources */,
 				BB7BAABC2DDBAD5A004A5A58 /* IconsProviding.swift in Sources */,
 				5677BB702E0D641F001EB83B /* SubscriptionNavigationCoordinator.swift in Sources */,
+				BBB3F1F12E302143009E77AF /* ReportProblemFormView.swift in Sources */,
 				4B0EF7262B578095009D6481 /* AppVersionExtension.swift in Sources */,
 				4BBDEE9328FC14760092FAA6 /* ConnectBitwardenViewModel.swift in Sources */,
 				4B5A4F4C27F3A5AA008FBD88 /* NSNotificationName+DataImport.swift in Sources */,

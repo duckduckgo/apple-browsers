@@ -112,6 +112,7 @@ public extension DesignSystemImages {
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
             public static var checkGray: DesignSystemImage { .init(resource: .checkGray16) }
             public static var chevronDoubleRight: DesignSystemImage { .init(resource: .chevronDoubleRight16) }
+            public static var chevronRight: DesignSystemImage { .init(resource: .chevronRight16) }
             public static var clear: DesignSystemImage { .init(resource: .clear16) }
             public static var clearSolid: DesignSystemImage { .init(resource: .clearSolid16) }
             public static var close: DesignSystemImage { .init(resource: .close16) }

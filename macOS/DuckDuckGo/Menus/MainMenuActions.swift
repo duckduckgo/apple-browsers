@@ -255,8 +255,62 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
     @objc func openReportABrowserProblem(_ sender: Any?) {
+        var window: NSWindow?
 
+        // Check if we can report broken site (same logic as openReportBrokenSite)
+        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+
+        let formView = ReportProblemFormFlowView(
+            onClose: {
+                window?.close()
+            },
+            onSeeWhatsNew: {
+                Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
+                window?.close()
+            },
+            onResize: { width, height in
+                guard let window = window else { return }
+                let currentFrame = window.frame
+                let newFrame = NSRect(
+                    x: currentFrame.origin.x,
+                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
+                    width: width,
+                    height: height
+                )
+                window.setFrame(newFrame, display: true, animate: true)
+            },
+            onReportBrokenSite: {
+                // Close the problem report form and show broken site dashboard
+                window?.close()
+                DispatchQueue.main.async {
+                    NSApp.delegateTyped.openReportBrokenSite(sender)
+                }
+            },
+            canReportBrokenSite: canReportBrokenSite
+        )
+
+        let controller = ReportProblemFormViewController(rootView: formView)
+        window = NSWindow(contentViewController: controller)
+
+        guard let window = window else { return }
+
+        window.styleMask.remove(.resizable)
+        let windowRect = NSRect(x: 0,
+                                y: 0,
+                                width: RequestNewFeatureFormViewController.Constants.width,
+                                height: RequestNewFeatureFormViewController.Constants.height)
+        window.setFrame(windowRect, display: true)
+
+        DispatchQueue.main.async {
+            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
+                assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
+                return
+            }
+
+            parentWindowController.window?.beginSheet(window) { _ in }
+        }
     }
 
     @MainActor
@@ -304,7 +358,6 @@ extension AppDelegate {
 
             parentWindowController.window?.beginSheet(window) { _ in }
         }
-
     }
 
     @MainActor

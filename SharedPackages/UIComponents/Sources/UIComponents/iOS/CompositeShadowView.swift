@@ -60,7 +60,7 @@ public class CompositeShadowView: UIView {
             return
         }
 
-        shadowView.layer.applyShadowProperties(shadow)
+        shadowView.layer.applyShadowProperties(shadow, in: self)
     }
 
     private func setUpShadows() {
@@ -80,7 +80,7 @@ public class CompositeShadowView: UIView {
             shadowView.layer.cornerRadius = layer.cornerRadius
             shadowView.layer.cornerCurve = layer.cornerCurve
 
-            shadowView.layer.applyShadowProperties(shadow)
+            shadowView.layer.applyShadowProperties(shadow, in: self)
 
             insertSubview(shadowView, at: 0)
             shadowViews.append(shadowView)
@@ -165,8 +165,8 @@ public class CompositeShadowView: UIView {
 }
 
 private extension CALayer {
-    func applyShadowProperties(_ shadow: CompositeShadowView.Shadow) {
-        shadowColor = shadow.color.cgColor
+    func applyShadowProperties(_ shadow: CompositeShadowView.Shadow, in view: UIView) {
+        shadowColor = shadow.color.resolvedColor(with: view.traitCollection).cgColor
         shadowOpacity = shadow.opacity
         shadowRadius = shadow.radius
         shadowOffset = shadow.offset

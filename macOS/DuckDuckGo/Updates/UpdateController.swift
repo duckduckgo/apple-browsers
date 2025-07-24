@@ -240,9 +240,9 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UpdateCheckActor
     private func performUpdateCheck() async {
-        // Check if we can start a new check (no active task + rate limiting)
-        guard await updateCheckState.canStartNewCheck() else {
-            Logger.updates.debug("Update check skipped - task already running or rate limited")
+        // Check if we can start a new check (no active session + rate limiting)
+        guard await updateCheckState.canStartNewCheck(updater: updater) else {
+            Logger.updates.debug("Update check skipped - already checking or rate limited")
             return
         }
 
@@ -251,7 +251,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
 
         // Create the actual update task
-        let updateTask = Task { @MainActor in
+        Task { @MainActor in
             // Handle expired builds first (critical path)
             guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
                 return
@@ -262,9 +262,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             Logger.updates.log("Checking for updates respecting rollout")
             updater.checkForUpdatesInBackground()
         }
-
-        // Store the task reference
-        await updateCheckState.setActiveTask(updateTask)
     }
 
     private var isBuildExpired: Bool {
@@ -307,16 +304,20 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UpdateCheckActor
     private func performUpdateCheckSkippingRollout() async {
-        // Cancel any active task (user-initiated takes priority)
-        await updateCheckState.cancelActiveTask()
-        Logger.updates.debug("User-initiated update check - cancelled any active task")
+        // User-initiated checks skip rate limiting but still respect active sessions
+        guard await updateCheckState.canStartNewCheck(updater: updater, minimumInterval: 0) else {
+            Logger.updates.debug("User-initiated update check skipped - session already in progress")
+            return
+        }
+        
+        Logger.updates.debug("User-initiated update check starting")
 
         if case .updaterError = userDriver?.updateProgress {
             userDriver?.cancelAndDismissCurrentUpdate()
         }
 
         // Create the actual update task
-        let updateTask = Task { @MainActor in
+        Task { @MainActor in
             // Handle expired builds first (critical path)
             guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
                 return
@@ -327,9 +328,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             Logger.updates.log("Checking for updates skipping rollout")
             updater.checkForUpdates()
         }
-
-        // Store the task reference
-        await updateCheckState.setActiveTask(updateTask)
     }
 
     // MARK: - Private
@@ -539,10 +537,6 @@ extension UpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: (any Error)?) {
-        defer {
-            Task { await updateCheckState.setActiveTask(nil) }
-        }
-
         if error == nil {
             Logger.updates.log("Updater did finish update cycle with no error")
             updateProgress = .updateCycleDone(.finishedWithNoError)

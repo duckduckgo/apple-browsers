@@ -6,7 +6,7 @@ defaults:
 
 on:
   push:
-    branches: [ main, "sam/deploy-alpha-on-main-branch-updates" ]
+    branches: [ main ]
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'

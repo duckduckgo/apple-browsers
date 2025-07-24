@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import BrowserServicesKit
 import Common
@@ -44,7 +45,8 @@ extension NewTabPageActionsManager {
         keyValueStore: ThrowingKeyValueStoring,
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol,
-        tabsPreferences: TabsPreferences
+        tabsPreferences: TabsPreferences,
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -90,7 +92,10 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences
         )
-        let omnibarModeProvider = NewTabPageOmnibarModeProvider(keyValueStore: keyValueStore)
+        let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
+            keyValueStore: keyValueStore,
+            aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
+        )
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -117,7 +122,7 @@ extension NewTabPageActionsManager {
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
             NewTabPageRecentActivityClient(model: recentActivityModel),
-            NewTabPageOmnibarClient(modeProvider: omnibarModeProvider,
+            NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
                                     actionHandler: omnibarActionHandler)
         ])

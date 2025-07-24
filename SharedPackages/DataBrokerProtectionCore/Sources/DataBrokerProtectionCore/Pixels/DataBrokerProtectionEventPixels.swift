@@ -163,7 +163,7 @@ public final class DataBrokerProtectionEventPixels {
                         durations.append(Int64(durationMs))
                     }
                 } else if let startEvent = sessionEvents[.started],
-                          Date.now.timeIntervalSince(startEvent.timestamp) > .hours(1) {
+                          Date().timeIntervalSince(startEvent.timestamp) > .hours(1) {
                     // Consider orphaned if the session started more than a hour ago
                     orphanedCount += 1
                 }

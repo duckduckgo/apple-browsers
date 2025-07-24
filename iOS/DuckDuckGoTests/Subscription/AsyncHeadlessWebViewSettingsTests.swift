@@ -33,7 +33,9 @@ final class AsyncHeadlessWebViewSettingsTests: XCTestCase {
         let result = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
 
         // Then
-        XCTAssertEqual([baseURL.host!], result)
+        XCTAssertTrue(result.contains(baseURL.host!))
+        XCTAssertTrue(result.contains("checkout.stripe.com"))
+        XCTAssertEqual(2, result.count)
     }
 
     func testAllowedDomainsContainsCustomBaseURLHostWhenInternalUserModeDisabled() async throws {
@@ -45,7 +47,9 @@ final class AsyncHeadlessWebViewSettingsTests: XCTestCase {
         let result = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
 
         // Then
-        XCTAssertEqual([baseURL.host!], result)
+        XCTAssertTrue(result.contains(baseURL.host!))
+        XCTAssertTrue(result.contains("checkout.stripe.com"))
+        XCTAssertEqual(2, result.count)
     }
 
     func testAllowedDomainsContainsBaseURLHostAndDUORequiredHostsWhenInternalUserModeEnabled() async throws {
@@ -59,6 +63,7 @@ final class AsyncHeadlessWebViewSettingsTests: XCTestCase {
 
         // Then
         XCTAssertTrue(result.contains(baseURL.host!))
+        XCTAssertTrue(result.contains("checkout.stripe.com"))
 
         domainsRequiredForDUOAuthentication.forEach { duoDomain in
             XCTAssertTrue(result.contains(duoDomain))

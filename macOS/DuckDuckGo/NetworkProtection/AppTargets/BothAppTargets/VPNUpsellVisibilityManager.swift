@@ -59,16 +59,24 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.featureFlagger = featureFlagger
         self.timerDuration = timerDuration
 
-        guard isNewUser && !subscriptionManager.isUserAuthenticated else {
+        guard isNewUser && !isUserAuthenticated else {
             return
         }
 
         guard isFirstLaunch else {
-            shouldShowUpsell = true
+            updateUpsellVisibility(shouldShow: true)
             return
         }
 
         setupMonitoring()
+    }
+
+    private var isFeatureOn: Bool {
+        featureFlagger.isFeatureOn(.vpnToolbarUpsell)
+    }
+
+    private var isUserAuthenticated: Bool {
+        subscriptionManager.isUserAuthenticated
     }
 
     // MARK: - Monitoring Setup
@@ -107,25 +115,25 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
     private func handleTimerCompletion() {
         timerCompleted = true
-        updateUpsellVisibility()
+        updateUpsellVisibility(shouldShow: timerCompleted)
     }
 
     private func handleSubscriptionChange() {
         timer?.invalidate()
         timer = nil
         timerCompleted = false
-        updateUpsellVisibility()
+        updateUpsellVisibility(shouldShow: !isUserAuthenticated)
     }
 
     // MARK: - Upsell Visibility
 
-    private func updateUpsellVisibility() {
-        guard featureFlagger.isFeatureOn(.vpnToolbarUpsell), !subscriptionManager.isUserAuthenticated else {
+    private func updateUpsellVisibility(shouldShow: Bool) {
+        guard isFeatureOn, !isUserAuthenticated else {
             shouldShowUpsell = false
             return
         }
 
-        shouldShowUpsell = timerCompleted
+        shouldShowUpsell = shouldShow
     }
 
     deinit {

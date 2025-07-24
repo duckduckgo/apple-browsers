@@ -37,6 +37,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
     private let featureFlagger: FeatureFlagger
     private let timerDuration: TimeInterval
+    private let autoDismissDays: Int
     private var persistor: VPNUpsellUserDefaultsPersisting
 
     // MARK: - State
@@ -51,7 +52,8 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
          featureFlagger: FeatureFlagger,
          persistor: VPNUpsellUserDefaultsPersisting = VPNUpsellUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
-         timerDuration: TimeInterval = 600) {
+         timerDuration: TimeInterval = 600,
+         autoDismissDays: Int = 7) {
         self.isFirstLaunch = isFirstLaunch
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
@@ -59,6 +61,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
         self.featureFlagger = featureFlagger
         self.timerDuration = timerDuration
+        self.autoDismissDays = autoDismissDays
         self.persistor = persistor
 
         guard isNewUser && !isUserAuthenticated else {
@@ -83,8 +86,16 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         subscriptionManager.isUserAuthenticated
     }
 
-    private var hasBeenManuallyDismissed: Bool {
+    private var hasBeenDismissed: Bool {
         persistor.vpnUpsellDismissed
+    }
+
+    private var shouldDismissAutomatically: Bool {
+        guard let firstPinnedDate = persistor.vpnUpsellFirstPinnedDate else {
+            return false
+        }
+
+        return firstPinnedDate.daysSinceNow() >= autoDismissDays
     }
 
     // MARK: - Monitoring Setup
@@ -112,7 +123,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Event Handling
 
     public func handlePinningChange(isPinned: Bool) {
-        guard isFeatureOn, !isUserAuthenticated, !hasBeenManuallyDismissed else {
+        guard isFeatureOn, !isUserAuthenticated, !hasBeenDismissed else {
             return
         }
 
@@ -156,8 +167,13 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Upsell Visibility
 
     private func updateUpsellVisibility(shouldShow: Bool) {
-        guard isFeatureOn, !isUserAuthenticated, !hasBeenManuallyDismissed else {
+        guard isFeatureOn, !isUserAuthenticated, !hasBeenDismissed else {
             shouldShowUpsell = false
+            return
+        }
+
+        guard !shouldDismissAutomatically else {
+            dismissUpsell()
             return
         }
 

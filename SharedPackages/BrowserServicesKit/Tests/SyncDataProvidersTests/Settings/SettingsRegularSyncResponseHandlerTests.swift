@@ -44,7 +44,8 @@ final class SettingsRegularSyncResponseHandlerTests: SettingsProviderTestsBase {
 
     /// Awaits first event emitted by the synced value AsyncStream.
     private func getSyncedValue() async throws -> String? {
-        guard let syncedValue = await syncedValueStream.first(where: { _ in true }) else {
+        var iterator = syncedValueStream.makeAsyncIterator()
+        guard let syncedValue = await iterator.next() else {
             throw SyncedValueNotReceivedError()
         }
         return syncedValue

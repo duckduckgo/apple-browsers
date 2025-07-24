@@ -143,7 +143,7 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-
+        app.openNewTab()
         // Search
         openURL(url: Self.searchURL)
 
@@ -389,6 +389,5 @@ class DuckPlayerTests: UITestCase {
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
         XCTAssertTrue(watchLink.waitForExistence(timeout: 1))
     }
-
 
 }

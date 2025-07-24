@@ -71,12 +71,7 @@ find_task_and_occurrences() {
 	local task_name=$1
 	curl -s "${asana_api_url}/workspaces/${workspace_id}/tasks/search?text=${task_name}&custom_fields.${occurrences_custom_field_id}.greater_than=0&opt_fields=name,custom_fields.number_value&resource_subtype=default_task&projects.any=${project_id}&is_subtask=false" \
 		-H "Authorization: Bearer ${asana_personal_access_token}" \
-		| jq -r "if (.data | map(select(.name == \"${task_name}\")) | length) != 0 \
-		then \
-			(.data | map(select(.name == \"${task_name}\"))[0] | [.gid, (.custom_fields[] | select(.gid == \"${occurrences_custom_field_id}\") | (.number_value // 0))]) | join(\" \") \
-		else \
-			empty \
-		end"
+		| jq -r "(.data[] | select(.name == \"${task_name}\") | [.gid, (.custom_fields[] | select(.gid == \"${occurrences_custom_field_id}\") | (.number_value // 0))]) | join(\" \") // empty"
 }
 
 update_task() {

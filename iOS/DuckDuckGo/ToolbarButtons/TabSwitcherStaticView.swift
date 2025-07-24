@@ -45,7 +45,7 @@ final class TabSwitcherStaticView: UIView {
     var hasUnread: Bool = false {
         didSet {
             unreadDotImageView.isHidden = !hasUnread
-            iconImageView.image = hasUnread ? DesignSystemImages.Glyphs.Size24.tabMobileAlertRecolorable : DesignSystemImages.Glyphs.Size24.tabMobile
+            iconImageView.image = hasUnread ? DesignSystemImages.Glyphs.Size24.tabMobileAlert : DesignSystemImages.Glyphs.Size24.tabMobile
         }
     }
 
@@ -70,7 +70,7 @@ final class TabSwitcherStaticView: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         unreadDotImageView.translatesAutoresizingMaskIntoConstraints = false
 
-        let verticalLabelOffsetConstraint = label.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -Metrics.labelOffset)
+        let verticalLabelOffsetConstraint = label.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -Metrics.labelYOffset)
         self.verticalLabelOffsetConstraint = verticalLabelOffsetConstraint
 
         NSLayoutConstraint.activate([
@@ -79,7 +79,7 @@ final class TabSwitcherStaticView: UIView {
             iconImageView.widthAnchor.constraint(equalToConstant: Metrics.iconSize),
             iconImageView.heightAnchor.constraint(equalToConstant: Metrics.iconSize),
 
-            label.centerXAnchor.constraint(equalTo: centerXAnchor, constant: Metrics.labelOffset),
+            label.centerXAnchor.constraint(equalTo: centerXAnchor, constant: Metrics.labelXOffset),
             verticalLabelOffsetConstraint,
 
             unreadDotImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
@@ -90,7 +90,7 @@ final class TabSwitcherStaticView: UIView {
     }
 
     private func updateLayout(_ isShowingSymbol: Bool) {
-        verticalLabelOffsetConstraint?.constant = -(isShowingSymbol ? Metrics.labelYOffsetInfinity : Metrics.labelOffset)
+        verticalLabelOffsetConstraint?.constant = -(isShowingSymbol ? Metrics.symbolYOffset : Metrics.labelYOffset)
     }
 
     private func setUpProperties() {
@@ -128,13 +128,14 @@ final class TabSwitcherStaticView: UIView {
     private struct Metrics {
         static let iconSize: CGFloat = 24
 
-        static let labelOffset: CGFloat = 2
-        static let labelYOffsetInfinity: CGFloat = 3
+        static let labelXOffset: CGFloat = 0
+        static let labelYOffset: CGFloat = 0
+        static let symbolYOffset: CGFloat = 1
 
-        static let fontSize = 9.0
+        static let fontSize = 12.0
         static let fontWeight = UIFont.Weight.bold
 
-        static let symbolFontSize = 12.0
+        static let symbolFontSize = 14.0
         static let symbolFontWeight = UIFont.Weight.semibold
     }
 }

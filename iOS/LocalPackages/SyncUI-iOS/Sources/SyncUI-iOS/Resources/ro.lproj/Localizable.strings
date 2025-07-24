@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Deschide DuckDuckGo pe celălalt dispozitiv și scanează acest cod pentru a sincroniza.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Sau scanează cu DuckDuckGo pe celălalt dispozitiv";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Distribuie codul textului";
 

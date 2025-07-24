@@ -159,6 +159,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     private var shouldCheckNewApplicationVersion = true
 
+    private let updateCheckState: UpdateCheckState
+
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
@@ -173,11 +175,13 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // MARK: - Public
 
     init(internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         updateCheckState: UpdateCheckState = UpdateCheckState()) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
+        self.updateCheckState = updateCheckState
         super.init()
 
         _ = try? configureUpdater()
@@ -198,7 +202,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private func subscribeToResignKeyNotifications() {
         NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
             .sink { [weak self] _ in
-                self?.discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false)
+                self?.checkForUpdateRespectingRollout()
             }
             // Store subscription to keep it alive
             .store(in: &cancellables)
@@ -229,14 +233,45 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates while adhering to the rollout schedule
     // This is the default behavior
     func checkForUpdateRespectingRollout() {
-        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+        Task { @UpdateCheckActor in
+            await performUpdateCheck()
+        }
+    }
+
+    @UpdateCheckActor
+    private func performUpdateCheck() async {
+        // Check if we can start a new check (no active task + rate limiting)
+        guard await updateCheckState.canStartNewCheck() else {
+            Logger.updates.debug("Update check skipped - task already running or rate limited")
             return
         }
 
-        guard let updater, !updater.sessionInProgress else { return }
+        // Record that we're starting a check
+        await updateCheckState.recordCheckTime()
 
-        Logger.updates.log("Checking for updates respecting rollout")
-        updater.checkForUpdatesInBackground()
+        if case .updaterError = userDriver?.updateProgress {
+            userDriver?.cancelAndDismissCurrentUpdate()
+        }
+
+        // Create the actual update task
+        let updateTask = Task { @MainActor in
+            // Handle expired builds first (critical path)
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+                return
+            }
+
+            guard let updater, !updater.sessionInProgress else { return }
+
+            Logger.updates.log("Checking for updates respecting rollout")
+            updater.checkForUpdatesInBackground()
+        }
+
+        // Store the task reference
+        await updateCheckState.setActiveTask(updateTask)
+
+        // Wait for the task to complete and clean up
+        await updateTask.value
+        await updateCheckState.setActiveTask(nil)
     }
 
     private var isBuildExpired: Bool {
@@ -272,14 +307,43 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
-        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
-            return
+        Task { @UpdateCheckActor in
+            await performUpdateCheckSkippingRollout()
+        }
+    }
+
+    @UpdateCheckActor
+    private func performUpdateCheckSkippingRollout() async {
+        // Cancel any active task (user-initiated takes priority)
+        await updateCheckState.cancelActiveTask()
+        Logger.updates.debug("User-initiated update check - cancelled any active task")
+
+        // Record that we're starting a check (no rate limiting for user-initiated)
+        await updateCheckState.recordCheckTime()
+
+        if case .updaterError = userDriver?.updateProgress {
+            userDriver?.cancelAndDismissCurrentUpdate()
         }
 
-        guard let updater, !updater.sessionInProgress else { return }
+        // Create the actual update task
+        let updateTask = Task { @MainActor in
+            // Handle expired builds first (critical path)
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
+                return
+            }
 
-        Logger.updates.log("Checking for updates skipping rollout")
-        updater.checkForUpdates()
+            guard let updater, !updater.sessionInProgress else { return }
+
+            Logger.updates.log("Checking for updates skipping rollout")
+            updater.checkForUpdates()
+        }
+
+        // Store the task reference
+        await updateCheckState.setActiveTask(updateTask)
+
+        // Wait for the task to complete and clean up
+        await updateTask.value
+        await updateCheckState.setActiveTask(nil)
     }
 
     // MARK: - Private
@@ -453,7 +517,6 @@ extension UpdateController: SPUUpdaterDelegate {
         guard let item = nsError.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else { return }
 
         Logger.updates.log("Updater did not find valid update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidNotFindUpdate, error: error))
 
         // Edge case: User upgrades to latest version within their rollout group
         // But fetched release notes are outdated due to rollout group reset

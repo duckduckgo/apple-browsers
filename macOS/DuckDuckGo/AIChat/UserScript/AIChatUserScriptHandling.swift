@@ -129,10 +129,11 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
         else { return nil }
 
+        let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+
         switch openLinkParams.target {
-        case .sameTab:
-            let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
-            windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: !isSidebar, selected: true)
+        case .sameTab where isSidebar == false: // for same tab outside of sidebar we force opening new tab to keep the AI chat tab
+            windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: true, selected: true)
         default:
             windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
         }

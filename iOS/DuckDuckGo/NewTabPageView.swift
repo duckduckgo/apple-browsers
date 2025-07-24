@@ -78,9 +78,7 @@ private extension NewTabPageView {
                     
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
-                        .if(viewModel.isExperimentalAppearanceEnabled) {
-                            $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                        }
+                        .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
 
                     favoritesSectionView(proxy: proxy)
                         .fixedSize(horizontal: false, vertical: true)
@@ -104,9 +102,7 @@ private extension NewTabPageView {
             VStack(spacing: Metrics.sectionSpacing) {
                 messagesSectionView
                     .padding(.top, Metrics.nonGridSectionTopPadding)
-                    .if(viewModel.isExperimentalAppearanceEnabled) {
-                        $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                    }
+                    .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

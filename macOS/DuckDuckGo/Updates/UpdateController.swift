@@ -240,9 +240,9 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UpdateCheckActor
     private func performUpdateCheck() async {
-        // Check if we can start a new check (no active session + rate limiting)
+        // Check if we can start a new check (Sparkle availability + rate limiting)
         guard await updateCheckState.canStartNewCheck(updater: updater) else {
-            Logger.updates.debug("Update check skipped - already checking or rate limited")
+            Logger.updates.debug("Update check skipped - not allowed by Sparkle or rate limited")
             return
         }
 
@@ -304,9 +304,9 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UpdateCheckActor
     private func performUpdateCheckSkippingRollout() async {
-        // User-initiated checks skip rate limiting but still respect active sessions
+        // User-initiated checks skip rate limiting but still respect Sparkle availability
         guard await updateCheckState.canStartNewCheck(updater: updater, minimumInterval: 0) else {
-            Logger.updates.debug("User-initiated update check skipped - session already in progress")
+            Logger.updates.debug("User-initiated update check skipped - not allowed by Sparkle")
             return
         }
         

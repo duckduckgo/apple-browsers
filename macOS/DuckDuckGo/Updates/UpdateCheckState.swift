@@ -34,14 +34,14 @@ actor UpdateCheckState {
     /// Determines whether a new update check can be started.
     ///
     /// - Parameters:
-    ///   - updater: The SPUUpdater instance to check for active sessions
+    ///   - updater: The SPUUpdater instance to check for availability
     ///   - minimumInterval: Minimum time interval that must pass between checks.
     ///     Defaults to `UpdateCheckState.defaultMinimumCheckInterval`.
-    /// - Returns: `true` if no session is active and enough time has passed since the last check, `false` otherwise.
+    /// - Returns: `true` if Sparkle allows checks and enough time has passed since the last check, `false` otherwise.
     ///
     func canStartNewCheck(updater: SPUUpdater?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
-        // Check if Sparkle is already checking
-        if let updater = updater, updater.sessionInProgress {
+        // Check if Sparkle allows checking for updates
+        if let updater = updater, !updater.canCheckForUpdates {
             return false
         }
 

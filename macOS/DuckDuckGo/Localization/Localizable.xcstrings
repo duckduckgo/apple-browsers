@@ -71604,6 +71604,66 @@
         }
       }
     },
+    "title.privacy-dashboard.button": {
+      "comment": "Title for the Privacy Dashboard button",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        }
+      }
+    },
     "today" : {
       "comment" : "Date section in history view indicating current day",
       "localizations" : {

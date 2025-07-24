@@ -39,6 +39,12 @@ enum AIChatPixel: PixelKitEventV2 {
     /// - Check if this is not a widespread issue. Sometimes users can change config data manually on macOS which could cause this
     case aichatNoRemoteSettingsFound(AIChatRemoteSettings.SettingsValue)
 
+    /// Event Trigger: New Tab Page shortcut for AI Chat is turned on
+    case aiChatSettingsNewTabPageShortcutTurnedOn
+
+    /// Event Trigger: New Tab Page shortcut for AI Chat is turned off
+    case aiChatSettingsNewTabPageShortcutTurnedOff
+
     /// Event Trigger: Address bar shortcut for AI Chat is turned on
     case aiChatSettingsAddressBarShortcutTurnedOn
 
@@ -94,6 +100,10 @@ enum AIChatPixel: PixelKitEventV2 {
             return "aichat_application-menu-file-clicked"
         case .aichatNoRemoteSettingsFound(let settings):
             return "aichat_no_remote_settings_found-\(settings.rawValue.lowercased())"
+        case .aiChatSettingsNewTabPageShortcutTurnedOn:
+            return "aichat_settings_new-tab-page_on"
+        case .aiChatSettingsNewTabPageShortcutTurnedOff:
+            return "aichat_settings_new-tab-page_off"
         case .aiChatSettingsAddressBarShortcutTurnedOn:
             return "aichat_settings_addressbar_on"
         case .aiChatSettingsAddressBarShortcutTurnedOff:
@@ -126,6 +136,8 @@ enum AIChatPixel: PixelKitEventV2 {
         case .aichatApplicationMenuAppClicked,
                 .aichatApplicationMenuFileClicked,
                 .aichatNoRemoteSettingsFound,
+                .aiChatSettingsNewTabPageShortcutTurnedOn,
+                .aiChatSettingsNewTabPageShortcutTurnedOff,
                 .aiChatSettingsAddressBarShortcutTurnedOn,
                 .aiChatSettingsAddressBarShortcutTurnedOff,
                 .aiChatSettingsApplicationMenuShortcutTurnedOff,

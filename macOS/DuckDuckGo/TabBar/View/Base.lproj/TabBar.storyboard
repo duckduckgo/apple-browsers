@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="uSf-9n-QMw">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24093.9" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="uSf-9n-QMw">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24093.9"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -10,7 +10,7 @@
         <scene sceneID="1uN-YZ-dtj">
             <objects>
                 <viewController id="uSf-9n-QMw" customClass="TabBarViewController" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" id="JQD-ov-FCr" customClass="MouseOverView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                    <view key="view" id="JQD-ov-FCr" customClass="TabBarView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="845" height="38"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
@@ -326,7 +326,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Add" width="24" height="24"/>
+        <image name="Add" width="16" height="16"/>
         <image name="Burn" width="18" height="18"/>
         <image name="BurnerWindowGraphic" width="96" height="41"/>
         <image name="TabBarShadowLeft" width="5" height="34"/>

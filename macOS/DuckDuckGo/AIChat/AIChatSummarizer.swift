@@ -53,20 +53,17 @@ final class AIChatSummarizer: AIChatSummarizing {
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let aiChatTabOpener: AIChatTabOpening
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
 
     init(
-        aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         aiChatTabOpener: AIChatTabOpening,
-        featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring?
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.aiChatTabOpener = aiChatTabOpener
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
     }
 
@@ -76,14 +73,14 @@ final class AIChatSummarizer: AIChatSummarizing {
     /// summarization will happen either in a tab sidebar or in a new tab.
     @MainActor
     func summarize(_ request: AIChatTextSummarizationRequest) {
-        guard featureFlagger.isFeatureOn(.aiChatTextSummarization) else {
+        guard aiChatMenuConfig.shouldDisplaySummarizationMenuItem else {
             return
         }
 
         let prompt = AIChatNativePrompt.summaryPrompt(request.text, url: request.websiteURL, title: request.websiteTitle)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) && aiChatMenuConfig.openAIChatInSidebar {
+        if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
                 pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard)
             }

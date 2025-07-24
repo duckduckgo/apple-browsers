@@ -38,7 +38,33 @@ extension Preferences {
                     }
                 }
 
+                if model.shouldShowAIFeaturesToggle {
+                    PreferencePaneSubSection {
+                        ToggleMenuItem("Enable Duck.ai",
+                                       isOn: $model.isAIFeaturesEnabled)
+                        .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
+                    }
+                }
+
                 PreferencePaneSection(UserText.duckAIShortcuts) {
+
+                    if model.shouldShowNewTabPageToggle {
+                        ToggleMenuItem(UserText.aiChatShowOnNewTabPageBarToggle,
+                                       isOn: $model.showShortcutOnNewTabPage)
+                        .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
+                        .onChange(of: model.showShortcutOnNewTabPage) { newValue in
+                            if newValue {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOn,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            } else {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOff,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            }
+                        }
+                    }
+
                     ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
                                    isOn: $model.showShortcutInAddressBar)
                     .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
@@ -80,6 +106,7 @@ extension Preferences {
                         }
                     }
                 }
+                .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
                 PreferencePaneSection(UserText.searchAssistSettings) {
                     TextMenuItemCaption(UserText.searchAssistSettingsDescription)

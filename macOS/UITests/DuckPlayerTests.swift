@@ -84,7 +84,7 @@ class DuckPlayerTests: UITestCase {
     }
 
     private func selectAskOpenInDuckPlayer() {
-        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.ask"]
+        let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.alwaysAsk"]
         XCTAssertTrue(alwaysOpenRadioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         alwaysOpenRadioButton.click()
     }

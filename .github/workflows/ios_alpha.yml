@@ -81,10 +81,9 @@ jobs:
         # Get all in-progress runs for this workflow
         runs=$(gh run list \
           --workflow="ios_alpha.yml" \
-          --status="in_progress" \
-          --json="databaseId" \
-          --jq='.[].databaseId')
-        
+          --json="status,databaseId" \
+          --jq='.[] | select(.status == "in_progress" or .status == "queued") | .databaseId')
+
         upload_in_progress=false
         for run_id in $runs; do
           # Check if this run has an upload job in progress

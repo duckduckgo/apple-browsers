@@ -223,7 +223,7 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     private var shouldShowBurnAnimationStream: AsyncStream<Bool>!
     private struct ShouldShowBurnAnimationNotReceivedError: Error {}
 
-    /// Creates AsyncStream that emits updates to `testSettingSyncHandler.syncedValue`.
+    /// Creates AsyncStream that emits updates to `model.shouldShowBurnAnimation`.
     private func makeShouldShowBurnAnimationStream() throws {
         shouldShowBurnAnimationStream = AsyncStream { continuation in
             let cancellable = model.$shouldShowBurnAnimation.dropFirst()

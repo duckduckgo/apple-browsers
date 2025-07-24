@@ -310,7 +310,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
-            return .disabled
+            return .internalOnly()
         case .newFeedbackForm:
             return .disabled
         case .vpnToolbarUpsell:

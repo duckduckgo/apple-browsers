@@ -202,6 +202,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         VPNControllerXPCClient.shared
     }
 
+    lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
+        return VPNUpsellVisibilityManager(
+            isFirstLaunch: AppDelegate.isFirstLaunch,
+            isNewUser: AppDelegate.isNewUser,
+            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            defaultBrowserPublisher: DefaultBrowserPreferences.shared.$isDefault.eraseToAnyPublisher(),
+            contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
+            featureFlagger: featureFlagger
+        )
+    }()
+
     // MARK: - DBP
 
     private lazy var dataBrokerProtectionSubscriptionEventHandler: DataBrokerProtectionSubscriptionEventHandler = {
@@ -227,6 +238,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static var isNewUser: Bool {
         return firstLaunchDate >= Date.weekAgo
     }
+
+    static var isFirstLaunch = false
 
     static var twoDaysPassedSinceFirstLaunch: Bool {
         return firstLaunchDate.daysSinceNow() >= 2
@@ -831,6 +844,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = RecentlyClosedCoordinator.shared
 
         if LocalStatisticsStore().atb == nil {
+            AppDelegate.isFirstLaunch = true
             AppDelegate.firstLaunchDate = Date()
         }
         AtbAndVariantCleanup.cleanup()

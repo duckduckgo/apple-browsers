@@ -59,10 +59,10 @@ jobs:
     steps:
     - name: Assert main branch
       run: |
-        case "${{ github.ref }}" in
-          *main/*) ;;
-          *) echo "👎 Not main branch"; exit 1 ;;
-        esac
+        if [ "${{ github.ref_name }}" != "main" ]; then
+          echo "👎 Not the main branch"
+          exit 1
+        fi
 
     - name: Register SSH keys for access to certificates
       uses: webfactory/ssh-agent@v0.9.1
@@ -201,10 +201,10 @@ jobs:
     steps:
     - name: Assert main branch
       run: |
-        case "${{ github.ref }}" in
-          *main/*) ;;
-          *) echo "👎 Not main branch"; exit 1 ;;
-        esac
+        if [ "${{ github.ref_name }}" != "main" ]; then
+          echo "👎 Not the main branch"
+          exit 1
+        fi
 
     - name: Check out the code
       uses: actions/checkout@v4
@@ -256,10 +256,10 @@ jobs:
     steps:
     - name: Assert main branch
       run: |
-        case "${{ github.ref }}" in
-          *main/*) ;;
-          *) echo "👎 Not main branch"; exit 1 ;;
-        esac
+        if [ "${{ github.ref_name }}" != "main" ]; then
+          echo "👎 Not the main branch"
+          exit 1
+        fi
 
     - name: Check out the code
       uses: actions/checkout@v4

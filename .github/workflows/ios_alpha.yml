@@ -186,7 +186,7 @@ jobs:
 
   upload:
     needs: build-alpha
-    if: needs.build.outputs.should_skip != 'true'
+    if: needs.build-alpha.outputs.should_skip != 'true'
     runs-on: macos-15
     name: Upload to TestFlight
     timeout-minutes: 15
@@ -207,7 +207,7 @@ jobs:
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: alpha-build-${{ needs.build.outputs.app_version }}-${{ needs.build.outputs.build_version }}
+        name: alpha-build-${{ needs.build-alpha.outputs.app_version }}-${{ needs.build-alpha.outputs.build_version }}
         path: iOS/
 
     - name: Setup Ruby and dependencies
@@ -222,20 +222,20 @@ jobs:
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
       run: |
-        bundle exec fastlane upload_alpha groups:["${{ env.destination }}"] ipa_path:"${{ needs.build.outputs.ipa_path }}"
+        bundle exec fastlane upload_alpha groups:["${{ env.destination }}"] ipa_path:"${{ needs.build-alpha.outputs.ipa_path }}"
 
     - name: Upload dSYMs artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DuckDuckGo-Alpha-dSYM-${{ needs.build.outputs.app_version }}
-        path: ${{ needs.build.outputs.dsyms_path }}
+        name: DuckDuckGo-Alpha-dSYM-${{ needs.build-alpha.outputs.app_version }}
+        path: ${{ needs.build-alpha.outputs.dsyms_path }}
 
     - name: Upload debug symbols to Asana
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
-        asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ needs.build.outputs.app_version }}(${{ needs.build.outputs.build_version }})-dSYM.zip"
-        mv -f "${{ needs.build.outputs.dsyms_path }}" "$asana_dsyms_path"
+        asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ needs.build-alpha.outputs.app_version }}(${{ needs.build-alpha.outputs.build_version }})-dSYM.zip"
+        mv -f "${{ needs.build-alpha.outputs.dsyms_path }}" "$asana_dsyms_path"
         curl -s "https://app.asana.com/api/1.0/tasks/1205344386326139/attachments" \
           -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
           --form "file=@${asana_dsyms_path};type=application/zip"

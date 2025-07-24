@@ -294,7 +294,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatGlobalSwitch:
-            return .internalOnly()
+            return .disabled
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:

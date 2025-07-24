@@ -28,7 +28,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        stateHandler = DefaultTabSwitcherBarsStateHandler(themingProperties: ExperimentalThemingProperties(isExperimentalThemingEnabled: false, isRoundedCornersTreatmentEnabled: false))
+        stateHandler = DefaultTabSwitcherBarsStateHandler()
     }
 
     override func tearDown() {
@@ -40,15 +40,17 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 1, containsWebPages: false, showAIChatButton: true)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
+            UIBarButtonItem.fixedSpace(10),
             stateHandler.tabSwitcherStyleButton,
             UIBarButtonItem.flexibleSpace(),
-            UIBarButtonItem.fixedSpace(11),
+            UIBarButtonItem.fixedSpace(6),
             UIBarButtonItem.flexibleSpace(),
             stateHandler.fireButton,
             UIBarButtonItem.flexibleSpace(),
             stateHandler.plusButton,
             UIBarButtonItem.flexibleSpace(),
-            stateHandler.editButton
+            stateHandler.editButton,
+            UIBarButtonItem.fixedSpace(10)
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
         XCTAssertFalse(stateHandler.editButton.isEnabled)
@@ -58,15 +60,17 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: true, showAIChatButton: true)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
+            UIBarButtonItem.fixedSpace(10),
             stateHandler.tabSwitcherStyleButton,
             UIBarButtonItem.flexibleSpace(),
-            UIBarButtonItem.fixedSpace(11),
+            UIBarButtonItem.fixedSpace(6),
             UIBarButtonItem.flexibleSpace(),
             stateHandler.fireButton,
             UIBarButtonItem.flexibleSpace(),
             stateHandler.plusButton,
             UIBarButtonItem.flexibleSpace(),
-            stateHandler.editButton
+            stateHandler.editButton,
+            UIBarButtonItem.fixedSpace(10),
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
         XCTAssertTrue(stateHandler.editButton.isEnabled)
@@ -76,9 +80,11 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
+            UIBarButtonItem.fixedSpace(10),
             stateHandler.closeTabsButton,
             UIBarButtonItem.flexibleSpace(),
-            stateHandler.menuButton
+            stateHandler.menuButton,
+            UIBarButtonItem.fixedSpace(10)
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
     }
@@ -202,7 +208,7 @@ class LegacyTabSwitcherBarsStateHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        stateHandler = LegacyTabSwitcherBarsStateHandler(themingProperties: ExperimentalThemingProperties(isExperimentalThemingEnabled: false, isRoundedCornersTreatmentEnabled: false))
+        stateHandler = LegacyTabSwitcherBarsStateHandler()
     }
 
     override func tearDown() {
@@ -214,15 +220,17 @@ class LegacyTabSwitcherBarsStateHandlerTests: XCTestCase {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
+            UIBarButtonItem.fixedSpace(10),
             stateHandler.tabSwitcherStyleButton,
             UIBarButtonItem.flexibleSpace(),
-            UIBarButtonItem.fixedSpace(11),
+            UIBarButtonItem.fixedSpace(6),
             UIBarButtonItem.flexibleSpace(),
             stateHandler.fireButton,
             UIBarButtonItem.flexibleSpace(),
             stateHandler.duckChatButton,
             UIBarButtonItem.flexibleSpace(),
-            stateHandler.plusButton
+            stateHandler.plusButton,
+            UIBarButtonItem.fixedSpace(10),
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
     }
@@ -231,9 +239,11 @@ class LegacyTabSwitcherBarsStateHandlerTests: XCTestCase {
         stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
+            UIBarButtonItem.fixedSpace(10),
             stateHandler.closeTabsButton,
             UIBarButtonItem.flexibleSpace(),
-            stateHandler.menuButton
+            stateHandler.menuButton,
+            UIBarButtonItem.fixedSpace(10)
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
     }

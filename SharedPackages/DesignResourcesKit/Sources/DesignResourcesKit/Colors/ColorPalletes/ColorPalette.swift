@@ -25,14 +25,11 @@ public struct DesignSystemPalette {
 
 public enum ColorPalette {
     case `default`
-    case experimental
 
     var paletteDefinition: ColorPaletteDefinition.Type {
         switch self {
         case .default:
             return DefaultColorPalette.self
-        case .experimental:
-            return ExperimentalColorPalette.self
         }
     }
 }

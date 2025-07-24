@@ -1069,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "MUKAUTETTU SOLUN SISÄLTÖ";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Mukautettu URL-osoite: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Tuo kirjanmerkkitiedosto...";
 
@@ -1129,9 +1135,6 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Näin voit viedä salasanat Safarista:";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.select-file-button" = "Valitse tiedosto...";
-
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Valitse tiedosto, joka sisältää Safarista tai Chromesta tuodut salasanat. Tämä on yleensä ZIP- tai CSV-tiedosto.";
 
@@ -1158,9 +1161,6 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Tuonti valmis!";
-
-/* Data import summary of how many credit cards were successfully imported. */
-"data.import.summary.creditcards.success" = "Luottokortit";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Kaksoiskappaleet ohitettu";
@@ -1665,6 +1665,9 @@
 
 /* Title of the feedback form */
 "feedback.form.title" = "Auta parantamaan Privacy Prota";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
 
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
@@ -2374,18 +2377,6 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Selvä! Ohitan muut vinkit.";
 
-/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
-"onboarding.subscription.promo.buttons.tryItForFree" = "Kokeile ilmaiseksi!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo:lla on myös suojattu %1$@, joka on saatavilla %2$@:n kanssa.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "valinnainen maksullinen tilaus";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 muuta premium-suojausta";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Lisää widget";
 
@@ -2418,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Linkin avaamiseen tarvittavaa sovellusta ei löydy";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "En voi käyttää tilaajille tarkoitettuja Duck.ai-malleja.";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "En voi käyttää Duck.ai:ta muissa selaimissa tilauksellani.";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "VALITSE KATEGORIA";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Muu Duck.ai -palaute";
 
 /* Activate button */
 "pm.activate" = "Aktivoi uudelleen";
@@ -2635,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "VALITSE KATEGORIA";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Aseta mukautettu AI-keskustelun URL-osoite";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "Tietoa DuckDuckGo:sta";
 
@@ -2830,12 +2836,6 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Tietosuojakäytäntö ja palveluehdot";
 
-/* Privacy Pro description subtitle in settings */
-"settings.PPro.row.description" = "Sisältää: VPN ja Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.PPro.us.description" = "Seuraavat sisältyvät: VPN, Personal Information Removal ja Identity Theft Restoration.";
-
 /* Settings screen cell for long press previews */
 "settings.previews" = "Esikatselu pitkällä painalluksella";
 
@@ -2869,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Tämä kestää tavallista pidempään, palaa myöhemmin.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Poista tietosi sivustoilta, jotka myyvät niitä";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Tilaajat saavat VPN:n ja Identity Theft Restorationin.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Tilaajat saavat VPN:n, Personal Information Removalin ja Identity Theft Restorationin.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Tilaajat saavat VPN:n, edistyneet tekoälymallit Duck.ai:ssa ja Identity Theft Restorationin.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Tilaajat saavat VPN:n ja edistyneet tekoälymallit Duck.ai:ssa, Personal Information Removalin ja Identity Theft Restorationin.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Minulla on tilaus";
@@ -2883,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Privacy Pro -tilauksesi on päättynyt";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "DuckDuckGo-tilaus";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Jos henkilöllisyytesi varastetaan, me autamme palauttamaan sen.";
@@ -2896,11 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Tilauksen asetukset";
 
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "DuckDuckGo-tilaus";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Tilaa DuckDuckGo";
+
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Suojaa yhteytesi ja identiteettisi Privacy Prolla";
+"settings.subscription.subscribe.title" = "Suojaa WiFi-yhteytesi ja keskustele yksityisesti edistyneiden tekoälymallien kanssa";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Suojaa WiFi-yhteytesi ja henkilöllisyytesi";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Kokeile DuckDuckGo-tilausta maksutta";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Kokeile Privacy Pro -tilausta ilmaiseksi";
+"settings.subscription.try.free.no.ai.chat" = "Kokeile Privacy Pro -tilausta ilmaiseksi";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3052,6 +3085,15 @@
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Oletko varma?";
 
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Keskustele yksityisesti tilaajien käytettävissä olevien tekoälymallien kanssa.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Avaa Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Tähän sähköpostiin liitetty tilaus ei ole enää aktiivinen.";
 
@@ -3165,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Kaikki on valmista.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "DuckDuckGo-tilaus";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Tilattu";
@@ -3618,9 +3663,6 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Jatka";
-
-/* Option to select to import credit cards */
-"zip.content.import.type.creditCards" = "Luottokortit";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Salasanat";

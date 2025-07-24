@@ -103,11 +103,11 @@ public extension Date {
 
         return calendar.date(byAdding: .day, value: 1, to: self)
     }
-    
+
     func daysAgo(_ days: Int) -> Date {
         Calendar.current.date(byAdding: .day, value: -days, to: self)!
     }
-    
+
     func daysSince(_ date: Date) -> Int? {
         Calendar.current.dateComponents([.day], from: date, to: self).day
     }

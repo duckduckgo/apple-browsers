@@ -691,17 +691,16 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
             BackgroundTaskSessionDB(id: 7, startDate: .daysAgo(20), duration: 50000, isTerminated: true),
             BackgroundTaskSessionDB(id: 8, startDate: .daysAgo(2), duration: 35000, isTerminated: false)
         ]
-        
+
         database.backgroundTaskSessionsToReturn = sessions
         repository.customGetLatestWeeklyPixel = nil
-        
+
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
-        
+
         sut.tryToFireWeeklyPixels()
-        
+
         let sessionPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
             .first { $0.name.contains("weekly-report_background-task_session") }
-        
         XCTAssertNotNil(sessionPixel)
         XCTAssertEqual(sessionPixel?.params?["num_started"], "7")
         XCTAssertEqual(sessionPixel?.params?["num_completed"], "5")

@@ -309,7 +309,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             Logger.updates.debug("User-initiated update check skipped - not allowed by Sparkle")
             return
         }
-        
+
         Logger.updates.debug("User-initiated update check starting")
 
         if case .updaterError = userDriver?.updateProgress {

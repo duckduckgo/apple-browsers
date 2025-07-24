@@ -43,20 +43,35 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
 }
 
 struct ReportProblemFormFlowView: View {
-    @State private var showThankYou = false
-    @State private var selectedProblemCategory: ProblemCategory?
+    @StateObject private var viewModel: ReportProblemFormViewModel
 
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
-    var onReportBrokenSite: (() -> Void)?
-    var canReportBrokenSite: Bool
+
+    init(
+        canReportBrokenSite: Bool,
+        onReportBrokenSite: (() -> Void)?,
+        onClose: @escaping () -> Void,
+        onSeeWhatsNew: @escaping () -> Void,
+        onResize: @escaping (CGFloat, CGFloat) -> Void
+    ) {
+        self._viewModel = StateObject(wrappedValue: ReportProblemFormViewModel(
+            canReportBrokenSite: canReportBrokenSite,
+            onReportBrokenSite: onReportBrokenSite
+        ))
+        self.onClose = onClose
+        self.onSeeWhatsNew = onSeeWhatsNew
+        self.onResize = onResize
+    }
 
     var body: some View {
         Group {
-            if showThankYou {
+            if viewModel.showThankYou {
                 ThankYouView(
-                    onClose: onClose,
+                    onClose: {
+                        onClose()
+                    },
                     onSeeWhatsNew: onSeeWhatsNew
                 )
                 .onAppear {
@@ -67,147 +82,29 @@ struct ReportProblemFormFlowView: View {
                         }
                     }
                 }
-            } else if let selectedCategory = selectedProblemCategory {
+            } else if viewModel.isShowingDetailForm, let selectedCategory = viewModel.selectedProblemCategory {
                 ProblemDetailFormView(
-                    problemCategory: selectedCategory,
-                    onSubmit: {
-                        showThankYou = true
-                    },
+                    viewModel: viewModel,
                     onBack: {
-                        selectedProblemCategory = nil
+                        viewModel.goBackToCategorySelection()
                     },
                     onClose: onClose
                 )
-            } else {
+            } else if viewModel.isShowingCategorySelection {
                 ProblemCategoriesView(
-                    onCategorySelected: { category in
-                        if category.id == "brokenWebsite" {
-                            onReportBrokenSite?()
-                            onClose()
-                        } else {
-                            selectedProblemCategory = category
-                        }
-                    },
-                    onClose: onClose,
-                    canReportBrokenSite: canReportBrokenSite
+                    viewModel: viewModel,
+                    onClose: onClose
                 )
             }
         }
     }
 }
 
-// MARK: - Problem Categories
-
-struct ProblemCategory: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let subcategories: [String]
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-
-    static func == (lhs: ProblemCategory, rhs: ProblemCategory) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    static let allCategories: [ProblemCategory] = [
-        ProblemCategory(
-            id: "browserTooSlow",
-            name: UserText.problemCategoryBrowserTooSlow,
-            subcategories: [
-                UserText.problemSubcategoryBrowserStartsSlowly,
-                UserText.problemSubcategoryBrowserUsesTooMuchMemory,
-                UserText.problemSubcategoryChangingTabsTakesTooLong,
-                UserText.problemSubcategoryNewTabsOpenSlowly,
-                UserText.problemSubcategoryWebsitesLoadSlowly
-            ]
-        ),
-        ProblemCategory(
-            id: "browserDoesntWork",
-            name: UserText.problemCategoryBrowserDoesntWork,
-            subcategories: [
-                UserText.problemSubcategoryBrowserUsesTooMuchMemory,
-                UserText.problemSubcategoryCameraAudioPermissions,
-                UserText.problemSubcategoryCantRestartFailedDownloads,
-                UserText.problemSubcategoryConfusingOrMissingSettings,
-                UserText.problemSubcategoryLoggedOutUnexpectedly,
-                UserText.problemSubcategoryLostTabsOrHistory,
-                UserText.problemSubcategoryNoDownloadHistory,
-                UserText.problemSubcategoryTooManyCaptchas,
-                UserText.problemSubcategoryVideoAudioPlaysAutomatically,
-                UserText.problemSubcategoryVideoDoesntPlay
-            ]
-        ),
-        ProblemCategory(
-            id: "installUpdates",
-            name: UserText.problemCategoryInstallUpdates,
-            subcategories: [
-                UserText.problemSubcategoryBrowserVersionIssues,
-                UserText.problemSubcategoryCantControlUpdates,
-                UserText.problemSubcategoryInstalling,
-                UserText.problemSubcategoryUninstalling,
-                UserText.problemSubcategoryTooManyUpdates
-            ]
-        ),
-        ProblemCategory(
-            id: "brokenWebsite",
-            name: UserText.problemCategoryBrokenWebsite,
-            subcategories: [
-                UserText.problemSubcategorySiteWontLoad,
-                UserText.problemSubcategorySiteLooksBroken,
-                UserText.problemSubcategoryFeaturesDontWork,
-                UserText.problemSubcategorySomethingElse
-            ]
-        ),
-        ProblemCategory(
-            id: "adsIssues",
-            name: UserText.problemCategoryAdsIssues,
-            subcategories: [
-                UserText.problemSubcategoryBannerAdsBlockingContent,
-                UserText.problemSubcategoryDistractingAnimationsOnAds,
-                UserText.problemSubcategoryInterruptingPopups,
-                UserText.problemSubcategoryLargeBannerAds,
-                UserText.problemSubcategorySiteAsksToTurnOffAdBlocker
-            ]
-        ),
-        ProblemCategory(
-            id: "passwordIssues",
-            name: UserText.problemCategoryPasswordIssues,
-            subcategories: [
-                UserText.problemSubcategoryCantSyncPasswords,
-                UserText.problemSubcategoryExportingPasswords,
-                UserText.problemSubcategoryImportingPasswords,
-                UserText.problemSubcategoryPasswordsManagement
-            ]
-        ),
-        ProblemCategory(
-            id: "somethingElse",
-            name: UserText.problemCategorySomethingElse,
-            subcategories: [
-                UserText.problemSubcategoryCantCompleteAPurchase,
-                UserText.problemSubcategoryCantRestartFailedDownloads,
-                UserText.problemSubcategoryConfusingOrMissingSettings,
-                UserText.problemSubcategoryNoDownloadsHistory,
-                UserText.problemSubcategoryVideoAudioPlaysAutomatically
-            ]
-        )
-    ]
-}
+// MARK: - Problem Categories View
 
 struct ProblemCategoriesView: View {
-    var onCategorySelected: (ProblemCategory) -> Void
+    @ObservedObject var viewModel: ReportProblemFormViewModel
     var onClose: () -> Void
-    var canReportBrokenSite: Bool
-
-    private var availableCategories: [ProblemCategory] {
-        ProblemCategory.allCategories.filter { category in
-            if category.id == "brokenWebsite" {
-                return canReportBrokenSite
-            }
-            return true
-        }
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -240,12 +137,19 @@ struct ProblemCategoriesView: View {
 
     private func categoriesList() -> some View {
         VStack(spacing: 0) {
-            ForEach(availableCategories, id: \.id) { category in
-                ProblemCategoryView(category: category,
-                                    shouldShowDivider: category.id != availableCategories.last?.id,
-                                    isTopCategory: category.id == availableCategories.first?.id,
-                                    isLastCategory: category.id == availableCategories.last?.id,
-                                    onCategorySelected: onCategorySelected)
+            ForEach(viewModel.availableCategories, id: \.id) { category in
+                ProblemCategoryView(
+                    category: category,
+                    shouldShowDivider: category.id != viewModel.availableCategories.last?.id,
+                    isTopCategory: category.id == viewModel.availableCategories.first?.id,
+                    isLastCategory: category.id == viewModel.availableCategories.last?.id,
+                    onCategorySelected: { selectedCategory in
+                        viewModel.selectCategory(selectedCategory)
+                        if selectedCategory.id == "brokenWebsite" {
+                            onClose()
+                        }
+                    }
+                )
             }
         }
         .background(
@@ -254,6 +158,7 @@ struct ProblemCategoriesView: View {
         )
         .padding([.leading, .trailing, .bottom], 24)
     }
+
     private func footer() -> some View {
         VStack(spacing: 16) {
             Divider()
@@ -279,6 +184,8 @@ struct ProblemCategoriesView: View {
     }
 }
 
+// MARK: - Problem Category Row View
+
 struct ProblemCategoryView: View {
     let category: ProblemCategory
     let shouldShowDivider: Bool
@@ -286,7 +193,7 @@ struct ProblemCategoryView: View {
     let isLastCategory: Bool
     var onCategorySelected: (ProblemCategory) -> Void
 
-    @State var isHovered: Bool = false
+    @State private var isHovered: Bool = false
 
     var body: some View {
         Button {
@@ -321,49 +228,14 @@ struct ProblemCategoryView: View {
                 .padding(.horizontal, 8)
         }
     }
-
 }
 
 // MARK: - Problem Detail Form
 
-final class ProblemDetailViewModel: ObservableObject {
-    @Published var selectedOptions: Set<String> = []
-    @Published var customText: String = ""
-
-    let problemCategory: ProblemCategory
-    let availableOptions: [String]
-
-    var shouldEnableSubmit: Bool {
-        !selectedOptions.isEmpty || !customText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    init(problemCategory: ProblemCategory) {
-        self.problemCategory = problemCategory
-        self.availableOptions = problemCategory.subcategories.shuffled().prefix(7) + [UserText.feedbackSomethingElse]
-    }
-
-    func toggleOption(_ option: String) {
-        if selectedOptions.contains(option) {
-            selectedOptions.remove(option)
-        } else {
-            selectedOptions.insert(option)
-        }
-    }
-}
-
 struct ProblemDetailFormView: View {
-    @StateObject private var viewModel: ProblemDetailViewModel
-
-    var onSubmit: () -> Void
+    @ObservedObject var viewModel: ReportProblemFormViewModel
     var onBack: () -> Void
     var onClose: () -> Void
-
-    init(problemCategory: ProblemCategory, onSubmit: @escaping () -> Void, onBack: @escaping () -> Void, onClose: @escaping () -> Void) {
-        self._viewModel = StateObject(wrappedValue: ProblemDetailViewModel(problemCategory: problemCategory))
-        self.onSubmit = onSubmit
-        self.onBack = onBack
-        self.onClose = onClose
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -388,7 +260,7 @@ struct ProblemDetailFormView: View {
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(viewModel.problemCategory.name)
+                Text(viewModel.selectedProblemCategory?.name ?? "")
                     .systemTitle2()
 
                 Text(UserText.reportProblemFormSelectAllThatApply)
@@ -479,7 +351,7 @@ struct ProblemDetailFormView: View {
                 .buttonStyle(DismissActionButtonStyle())
 
                 Button {
-                    onSubmit()
+                    viewModel.submitFeedback()
                 } label: {
                     Text(UserText.submit)
                         .frame(maxWidth: .infinity)

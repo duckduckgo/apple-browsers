@@ -263,6 +263,14 @@ extension AppDelegate {
         let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
 
         let formView = ReportProblemFormFlowView(
+            canReportBrokenSite: canReportBrokenSite,
+            onReportBrokenSite: {
+                // Close the problem report form and show broken site dashboard
+                window?.close()
+                DispatchQueue.main.async {
+                    NSApp.delegateTyped.openReportBrokenSite(sender)
+                }
+            },
             onClose: {
                 window?.close()
             },
@@ -280,15 +288,7 @@ extension AppDelegate {
                     height: height
                 )
                 window.setFrame(newFrame, display: true, animate: true)
-            },
-            onReportBrokenSite: {
-                // Close the problem report form and show broken site dashboard
-                window?.close()
-                DispatchQueue.main.async {
-                    NSApp.delegateTyped.openReportBrokenSite(sender)
-                }
-            },
-            canReportBrokenSite: canReportBrokenSite
+            }
         )
 
         let controller = ReportProblemFormViewController(rootView: formView)

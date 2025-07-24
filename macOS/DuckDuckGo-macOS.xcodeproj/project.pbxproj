@@ -3308,6 +3308,8 @@
 		BBC7BDAA2D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */; };
 		BBC7BDAC2D5BB0890037A4AE /* BannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */; };
 		BBC7BDAD2D5BB0890037A4AE /* BannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */; };
+		BBC90A2B2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */; };
+		BBC90A2C2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */; };
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
 		BBD798AD2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
 		BBD798AE2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
@@ -5510,6 +5512,7 @@
 		BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionsIconsProviding.swift; sourceTree = "<group>"; };
 		BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinator.swift; sourceTree = "<group>"; };
 		BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
+		BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormViewModel.swift; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
 		BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPermissionButtonsIconsProviding.swift; sourceTree = "<group>"; };
 		BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentVPNNavigationBarIconProvider.swift; sourceTree = "<group>"; };
@@ -10521,6 +10524,7 @@
 		BB53CF3C2E26CED5007F0B42 /* New */ = {
 			isa = PBXGroup;
 			children = (
+				BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */,
 				BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */,
 				BBBD2A072E2FE544005E7664 /* FeaturesPillCollection.swift */,
 				BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */,
@@ -12600,6 +12604,7 @@
 				3706FACD293F65D500E42796 /* PopUpButton.swift in Sources */,
 				37A089FC2C510FE0003BB417 /* RemoteMessagingDebugMenu.swift in Sources */,
 				B6BCC54B2AFDF24B002C5499 /* TaskWithProgress.swift in Sources */,
+				BBC90A2C2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */,
 				3706FACE293F65D500E42796 /* SuggestionViewController.swift in Sources */,
 				B6F9BDDD2B45B7EE00677B33 /* WebsiteInfo.swift in Sources */,
 				3706FAD1293F65D500E42796 /* VisitViewModel.swift in Sources */,
@@ -14372,6 +14377,7 @@
 				BBE948D12D6FD11200FAC581 /* DefaultBrowserAndDockPromptStoring.swift in Sources */,
 				B66CA41E2AD910B300447CF0 /* DataImportView.swift in Sources */,
 				4BE65477271FCD41008D1D63 /* PasswordManagementLoginItemView.swift in Sources */,
+				BBC90A2B2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */,
 				1D4B03D72CA4432000224E99 /* BookmarkUrlExtension.swift in Sources */,
 				85D0327B2B8E3D090041D1FB /* HistoryCoordinatorExtension.swift in Sources */,
 				BB960BCE2DD77A0B002C46DD /* SettingsIconsProviding.swift in Sources */,

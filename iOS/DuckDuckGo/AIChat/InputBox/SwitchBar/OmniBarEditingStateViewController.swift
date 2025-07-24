@@ -237,8 +237,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                     self.delegate?.onQuerySubmitted(text)
 
                 case .aiChat:
-                    let tools: [AIChatRAGTool]? = self.switchBarHandler.forceWebSearch ? [.webSearch] : nil
-                    self.delegate?.onPromptSubmitted(text, tools: tools)
+                    // If we (re)add the web rag button, then we need to add it to the array of tools Duck.ai should use
+                    //  for this submission.
+                    self.delegate?.onPromptSubmitted(text, tools: nil)
                 }
             }
             .store(in: &cancellables)

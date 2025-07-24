@@ -114,10 +114,6 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     // MARK: - Action Handlers
-    private func handleWebSearchToggle() {
-        handler.toggleForceWebSearch()
-    }
-
     private func handleSend() {
         let currentText = handler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

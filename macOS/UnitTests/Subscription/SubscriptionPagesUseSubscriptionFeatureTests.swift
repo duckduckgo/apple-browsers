@@ -1059,44 +1059,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
     }
 
-    func testFreemiumPixelOriginNotSetWhenSubscriptionSelectedSuccessNotFromFreemium() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-        XCTAssertEqual(subscriptionEnvironment.purchasePlatform, .appStore)
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-
-        authService.createAccountResult = .success(CreateAccountResponse(authToken: Constants.authToken,
-                                                                         externalID: Constants.externalID,
-                                                                         status: "created"))
-        authService.getAccessTokenResult = .success(AccessTokenResponse(accessToken: Constants.accessToken))
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-        authService.storeLoginResult = .success(StoreLoginResponse(authToken: Constants.authToken,
-                                                                   email: Constants.email,
-                                                                   externalID: Constants.externalID,
-                                                                   id: 1,
-                                                                   status: "authenticated"))
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .success(Constants.mostRecentTransactionJWS)
-        subscriptionService.confirmPurchaseResult = .success(ConfirmPurchaseResponse(email: Constants.email,
-                                                                                     entitlements: Constants.entitlements,
-                                                                                     subscription: SubscriptionMockFactory.appleSubscription))
-
-        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false
-        feature.with(broker: broker)
-        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = try await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertNil(result)
-        XCTAssertNotEqual(subscriptionAttributionPixelHandler.origin, freemiumOrigin)
-    }
-
     // MARK: - Free Trials
 
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {

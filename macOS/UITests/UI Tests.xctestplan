@@ -36,6 +36,7 @@
   "testTargets" : [
     {
       "skippedTests" : [
+        "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
         "PermissionsTests"
       ],

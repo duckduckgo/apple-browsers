@@ -130,14 +130,6 @@ extension OmniBarDelegate {
         
     }
     
-    func onTextFieldWillBeginEditing(_ omniBar: DefaultOmniBarView) {
-        
-    }
-
-    func onTextFieldDidBeginEditing(_ omniBar: DefaultOmniBarView) {
-        
-    }
-    
     func onRefreshPressed() {
     
     }

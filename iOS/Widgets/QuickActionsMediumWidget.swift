@@ -110,7 +110,7 @@ private struct QuickActionView: View {
         VStack {
             ZStack {
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(designSystemColor: .container))
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
                     .frame(width: 60, height: 60)
                 
                 shortcut.icon

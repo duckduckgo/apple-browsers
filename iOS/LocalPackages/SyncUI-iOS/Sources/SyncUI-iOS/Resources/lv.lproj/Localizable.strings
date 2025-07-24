@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Atver DuckDuckGo citā ierīcē un noskenē šo kodu, lai sinhronizētu.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Vai skenē ar DuckDuckGo citā ierīcē";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Kopīgot teksta kodu";
 

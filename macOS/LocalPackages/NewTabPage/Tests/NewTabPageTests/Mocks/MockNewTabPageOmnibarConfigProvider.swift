@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarModeProviding.swift
+//  MockNewTabPageOmnibarConfigProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,9 +16,22 @@
 //  limitations under the License.
 //
 
-public protocol NewTabPageOmnibarModeProviding: AnyObject {
+import Combine
+import NewTabPage
 
+final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode { get set }
+    var mode: NewTabPageDataModel.OmnibarMode = .search
 
+    @Published var isAIChatShortcutEnabled: Bool = true
+
+    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIChatShortcutEnabled.dropFirst().eraseToAnyPublisher()
+    }
+
+    @Published var isAIChatSettingVisible: Bool = true
+
+    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
+        $isAIChatSettingVisible.dropFirst().eraseToAnyPublisher()
+    }
 }

@@ -941,7 +941,7 @@ class AddressBarTests: XCTestCase {
         _=try await tabLoadedPromise.value
 
         // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
+        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
         XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
@@ -961,7 +961,7 @@ class AddressBarTests: XCTestCase {
         _=try await tabLoadedPromise.value
 
         // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
+        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
         XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
@@ -981,7 +981,7 @@ class AddressBarTests: XCTestCase {
         _ = try await tabLoadedPromise.value
 
         // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
+        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
         XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 

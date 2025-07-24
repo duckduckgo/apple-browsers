@@ -348,6 +348,7 @@ final class MainMenu: NSMenu {
             .withAccessibilityIdentifier("MainMenu.bookmarks")
             .submenu(bookmarksMenu.buildItems {
                 NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(MainViewController.bookmarkThisPage), keyEquivalent: "d")
+                    .withAccessibilityIdentifier("MainMenu.addBookmark")
                 NSMenuItem(title: UserText.bookmarkAllTabs, action: #selector(MainViewController.bookmarkAllOpenTabs), keyEquivalent: [.command, .shift, "d"])
                 manageBookmarksMenuItem
                 bookmarksMenuToggleBookmarksBarMenuItem

@@ -105,7 +105,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
 
-    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210702047347360?focus=true
+    case aiChatGlobalSwitch
+
+    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210012482760771?focus=true
     case aiChatSidebar
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
@@ -201,6 +204,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
+                .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
@@ -298,6 +302,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
+        case .aiChatGlobalSwitch:
+            return .disabled
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:

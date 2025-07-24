@@ -149,7 +149,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireAnimationDecider: visualizeFireAnimationDecider,
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
-        tabsPreferences: TabsPreferences.shared
+        tabsPreferences: TabsPreferences.shared,
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -157,6 +158,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
         windowControllersManager: windowControllersManager
     )
+    let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSidebarProvider: AIChatSidebarProviding
 
     let privacyStats: PrivacyStatsCollecting
@@ -204,6 +206,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         VPNControllerXPCClient.shared
     }
 
+    lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
+        return VPNUpsellVisibilityManager(
+            isFirstLaunch: AppDelegate.isFirstLaunch,
+            isNewUser: AppDelegate.isNewUser,
+            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            defaultBrowserPublisher: DefaultBrowserPreferences.shared.$isDefault.eraseToAnyPublisher(),
+            contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
+            featureFlagger: featureFlagger
+        )
+    }()
+
     // MARK: - DBP
 
     private lazy var dataBrokerProtectionSubscriptionEventHandler: DataBrokerProtectionSubscriptionEventHandler = {
@@ -229,6 +242,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static var isNewUser: Bool {
         return firstLaunchDate >= Date.weekAgo
     }
+
+    static var isFirstLaunch = false
 
     static var twoDaysPassedSinceFirstLaunch: Bool {
         return firstLaunchDate.daysSinceNow() >= 2
@@ -267,7 +282,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         bookmarkDatabase = BookmarkDatabase()
-        aiChatSidebarProvider = AIChatSidebarProvider()
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
@@ -381,6 +395,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        aiChatSidebarProvider = AIChatSidebarProvider()
+        aiChatMenuConfiguration = AIChatMenuConfiguration(
+            storage: DefaultAIChatPreferencesStorage(),
+            remoteSettings: AIChatRemoteSettings(
+                privacyConfigurationManager: privacyConfigurationManager
+            ),
+            featureFlagger: featureFlagger
+        )
 
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,
@@ -840,6 +863,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = RecentlyClosedCoordinator.shared
 
         if LocalStatisticsStore().atb == nil {
+            AppDelegate.isFirstLaunch = true
             AppDelegate.firstLaunchDate = Date()
         }
         AtbAndVariantCleanup.cleanup()

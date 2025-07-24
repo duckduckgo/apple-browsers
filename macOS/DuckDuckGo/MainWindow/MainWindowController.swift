@@ -164,7 +164,7 @@ final class MainWindowController: NSWindowController {
         // Empty toolbar ensures that window buttons are centered vertically
         window?.toolbar = NSToolbar()
         window?.toolbar?.showsBaselineSeparator = true
-
+        window?.toolbarStyle = .unifiedCompact
         moveTabBarView(toTitlebarView: true)
     }
 
@@ -228,6 +228,15 @@ final class MainWindowController: NSWindowController {
             newParentView.addSubview(tabBarViewController.view)
         } else {
             newParentView.addSubview(tabBarViewController.view, positioned: .below, relativeTo: mainViewController.fireViewController.view)
+        }
+
+        // enable Tab Bar appear as an AX child of the Window
+        // this won‘t work by-default since we‘re adding it to the NSToolbar view
+        // providing its own a11y implementation: see TabBarViewController
+        if let toolbarView = newParentView.subviews.first(where: { $0.className == "NSToolbarView" }) {
+            toolbarView.setAccessibilityEnabled(false)
+            toolbarView.setAccessibilityElement(false)
+            tabBarViewController.view.setAccessibilityParent(window)
         }
 
         tabBarViewController.view.frame = newParentView.bounds

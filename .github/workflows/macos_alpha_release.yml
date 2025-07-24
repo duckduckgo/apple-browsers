@@ -28,6 +28,13 @@ jobs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
 
     steps:
+    - name: Assert main branch
+      run: |
+        case "${{ github.ref }}" in
+          *main/*) ;;
+          *) echo "👎 Not main branch"; exit 1 ;;
+        esac
+
     - name: Check out the code
       uses: actions/checkout@v4
       with:
@@ -128,6 +135,13 @@ jobs:
         working-directory: .
 
     steps:
+      - name: Assert main branch
+        run: |
+          case "${{ github.ref }}" in
+            *main/*) ;;
+            *) echo "👎 Not main branch"; exit 1 ;;
+          esac
+
       - name: Download DMG URL artifact
         uses: actions/download-artifact@v4
         with:

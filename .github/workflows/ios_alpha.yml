@@ -57,6 +57,12 @@ jobs:
       should_skip: ${{ steps.check-upload.outputs.should_skip }}
 
     steps:
+    - name: Assert main branch
+      run: |
+        case "${{ github.ref }}" in
+          *main/*) ;;
+          *) echo "👎 Not main branch"; exit 1 ;;
+        esac
 
     - name: Register SSH keys for access to certificates
       uses: webfactory/ssh-agent@v0.9.1
@@ -193,6 +199,13 @@ jobs:
       destination: ${{ github.event.inputs.destination || inputs.destination || 'Latest Alpha Group' }}
 
     steps:
+    - name: Assert main branch
+      run: |
+        case "${{ github.ref }}" in
+          *main/*) ;;
+          *) echo "👎 Not main branch"; exit 1 ;;
+        esac
+
     - name: Check out the code
       uses: actions/checkout@v4
       with:
@@ -241,6 +254,13 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
+    - name: Assert main branch
+      run: |
+        case "${{ github.ref }}" in
+          *main/*) ;;
+          *) echo "👎 Not main branch"; exit 1 ;;
+        esac
+
     - name: Check out the code
       uses: actions/checkout@v4
       with:

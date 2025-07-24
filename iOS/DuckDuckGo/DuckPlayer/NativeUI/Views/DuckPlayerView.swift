@@ -164,6 +164,7 @@ struct DuckPlayerView: View {
                                 .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
                                 .rotationEffect(Angle(degrees: viewModel.controlsVisible ? 180 : 0))
                         }
+                        .accessibilityIdentifier("chevron.up")
                     }
                     .padding(.bottom, LayoutConstants.controlButtonBottomPadding)
                 }
@@ -198,6 +199,7 @@ struct DuckPlayerView: View {
                         .onChange(of: autoOpenOnYoutube) { newValue in
                             viewModel.autoOpenOnYoutube = newValue
                         }
+                        .accessibilityIdentifier("Open YouTube videos here")
                 }
                 .padding(.horizontal, LayoutConstants.horizontalPadding)
             }
@@ -230,6 +232,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(.horizontal, LayoutConstants.horizontalPadding)
                 }
+                .accessibilityIdentifier("Watch on YouTube")
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
@@ -256,6 +259,7 @@ struct DuckPlayerView: View {
                         .frame(width: LayoutConstants.settingsButtonSize, height: LayoutConstants.settingsButtonSize)
                 }
             }
+            .accessibilityIdentifier("DuckPlayerOpenSettings")
 
             Spacer()
 
@@ -268,6 +272,7 @@ struct DuckPlayerView: View {
                 Text(UserText.duckPlayerFeatureName)
                     .foregroundColor(.white)
                     .font(.headline)
+                    .accessibilityIdentifier("Duck Player")
             }
 
             Spacer()
@@ -281,6 +286,7 @@ struct DuckPlayerView: View {
                         .font(.system(size: 20, weight: .semibold))
                         .frame(width: LayoutConstants.closeButtonSize, height: LayoutConstants.closeButtonSize)
                 })
+                .accessibilityIdentifier("xmark")
         }
         .padding(.horizontal, LayoutConstants.horizontalPadding)
     }
@@ -370,6 +376,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(8)
                 }
+                .accessibilityIdentifier("duckPlayerWelcomeCloseButton")
                 .offset(x: 2, y: 4 + LayoutConstants.duckPlayerLogoSize)
                 .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 0)
             }

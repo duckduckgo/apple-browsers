@@ -98,10 +98,6 @@ class TabSwitcherViewController: UIViewController {
         collectionView.indexPathsForSelectedItems ?? []
     }
 
-    var isExperimentalThemingEnabled: Bool {
-        featureFlagger.isFeatureOn(.visualUpdates)
-    }
-
     var isJune2025LayoutChangeEnabled: Bool {
         featureFlagger.isFeatureOn(.june2025TabManagerLayoutChanges)
     }
@@ -171,7 +167,7 @@ class TabSwitcherViewController: UIViewController {
         // Potentially for these 3 we could do thing better for 'normal' on iPad
         let topOffset = -6.0
         let bottomOffset = 8.0
-        let navHPadding = isExperimentalThemingEnabled ? 10.0 : 0.0
+        let navHPadding = 10.0
 
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
@@ -222,12 +218,8 @@ class TabSwitcherViewController: UIViewController {
         view.addSubview(borderView)
 
         let toolbarAppearance = UIToolbarAppearance()
-        if isExperimentalThemingEnabled {
-            toolbarAppearance.configureWithTransparentBackground()
-            toolbarAppearance.shadowColor = .clear
-        } else {
-            toolbarAppearance.configureWithDefaultBackground()
-        }
+        toolbarAppearance.configureWithTransparentBackground()
+        toolbarAppearance.shadowColor = .clear
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
         borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)

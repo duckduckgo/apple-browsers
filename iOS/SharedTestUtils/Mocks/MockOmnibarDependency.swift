@@ -27,8 +27,6 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
     var aiChatSettings: AIChatSettingsProvider
-    var themingProperties: ExperimentalThemingProperties = ExperimentalThemingProperties(isExperimentalThemingEnabled: false,
-                                                                                         isRoundedCornersTreatmentEnabled: false)
     var appSettings: any AppSettings
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),

@@ -32,20 +32,17 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let pixelFiring: PixelFiring.Type
     private let privacyProDataReporter: PrivacyProDataReporting?
     private let navigator: MessageNavigator
-    private let isExperimentalThemingEnabled: Bool
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
          privacyProDataReporter: PrivacyProDataReporting? = nil,
-         navigator: MessageNavigator,
-         isExperimentalThemingEnabled: Bool = false) {
+         navigator: MessageNavigator) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.privacyProDataReporter = privacyProDataReporter
         self.navigator = navigator
-        self.isExperimentalThemingEnabled = isExperimentalThemingEnabled
     }
 
     func load() {
@@ -86,8 +83,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             return HomeMessageViewModel(messageId: "",
                                         sendPixels: false,
                                         modelType: .small(titleText: "", descriptionText: ""),
-                                        navigator: navigator,
-                                        isExperimentalThemingEnabled: isExperimentalThemingEnabled) { [weak self] _ in
+                                        navigator: navigator) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
@@ -102,8 +98,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: privacyProDataReporter,
-                                                     navigator: navigator,
-                                                     isExperimentalThemingEnabled: isExperimentalThemingEnabled) { @MainActor [weak self] action in
+                                                     navigator: navigator) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

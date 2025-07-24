@@ -142,7 +142,7 @@ public final class DataImportManager: DataImportManaging {
                 importPreview.append(ImportPreview(type: .bookmarks, count: bookmarksCount))
             }
         }
-        
+
         if let jsonContents = contents.creditCards.first {
             let creditCardsCount = SafariPaymentCardsImporter.totalValidCreditCards(in: jsonContents)
             if creditCardsCount > 0 {
@@ -235,7 +235,7 @@ public final class DataImportManager: DataImportManaging {
                 summary[.bookmarks] = .failure(ImportError(type: errorType, underlyingError: error))
             }
         }
-        
+
         if types.contains(.creditCards), let jsonImporter {
             let importTask = jsonImporter.importData(types: [.creditCards])
             if case .success(let importSummary) = await importTask.result {

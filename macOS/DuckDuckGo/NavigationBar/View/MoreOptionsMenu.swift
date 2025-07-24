@@ -176,8 +176,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    authenticationStateProvider: subscriptionManager,
                                                    internalUserDecider: internalUserDecider,
-                                                   featureFlagger: featureFlagger,
-                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
+                                                   featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -548,13 +548,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         if !subscriptionManager.isUserAuthenticated {
 
-            var privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+            var privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)))
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
             // Check if user is eligible for Free Trial
             if featureFlagger.isFeatureOn(.privacyProFreeTrial) && subscriptionManager.isUserEligibleForFreeTrial() {
                 privacyProItem = NSMenuItem.createMenuItemWithBadge(
-                    title: UserText.subscriptionOptionsMenuItem,
+                    title: UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)),
                     badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,
                     action: #selector(openSubscriptionPurchasePage(_:)),
                     target: self,
@@ -571,7 +571,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 addItem(privacyProItem)
             }
         } else {
-            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)))
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
             privacyProItem.submenu = SubscriptionSubMenu(targeting: self,
@@ -778,14 +778,16 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 final class FeedbackSubMenu: NSMenu {
     private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
     private let internalUserDecider: InternalUserDecider
+    private let featureFlagger: FeatureFlagger
 
     init(targetting target: AnyObject,
          authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
          internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger,
-         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
+         featureFlagger: FeatureFlagger) {
         self.authenticationStateProvider = authenticationStateProvider
         self.internalUserDecider = internalUserDecider
+        self.featureFlagger = featureFlagger
         super.init(title: UserText.sendFeedback)
 
         updateMenuItems(targetting: target,
@@ -813,7 +815,7 @@ final class FeedbackSubMenu: NSMenu {
         if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
 
-            let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,
+            let sendPProFeedbackItem = NSMenuItem(title: UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)),
                                                   action: #selector(sendPrivacyProFeedback(_:)),
                                                   keyEquivalent: "")
                 .targetting(self)
@@ -1274,6 +1276,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
             let isNetworkProtectionItemEnabled = await hasEntitlement(for: .networkProtection)
             let isDataBrokerProtectionItemEnabled = await hasEntitlement(for: .dataBrokerProtection)
+            let isPaidAIChatItemEnabled = await hasEntitlement(for: .paidAIChat)
 
             let hasIdentityTheftRestoration = await hasEntitlement(for: .identityTheftRestoration)
             let hasIdentityTheftRestorationGlobal = await hasEntitlement(for: .identityTheftRestorationGlobal)
@@ -1283,6 +1286,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                 self.networkProtectionItem.isEnabled = isNetworkProtectionItemEnabled
                 self.dataBrokerProtectionItem.isEnabled = isDataBrokerProtectionItemEnabled
                 self.identityTheftRestorationItem.isEnabled = isIdentityTheftRestorationItemEnabled
+                self.paidAIChatItem.isEnabled = isPaidAIChatItemEnabled
             }
         }
     }

@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Avaa DuckDuckGo toisella laitteellasi ja skannaa tämä koodi synkronoidaksesi.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Tai skannaa DuckDuckGolla toisella laitteellasi";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Jaa tekstikoodi";
 

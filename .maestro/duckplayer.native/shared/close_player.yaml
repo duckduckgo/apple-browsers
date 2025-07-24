@@ -1,0 +1,11 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+# Load constants
+- runFlow:
+    file: constants.yaml
+
+# Validate Duck Player Closes
+- tapOn: 
+    id: ${output.closeButtonId}
+- assertVisible: ${output.videoTitle}

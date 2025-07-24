@@ -179,7 +179,7 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController?.keyboardMoveSelectionUp()
     }
     
-    func float(withWidth width: CGFloat, useActiveShadow: Bool) {
+    func float(withWidth width: CGFloat) {
 
         containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true
@@ -187,14 +187,7 @@ class SuggestionTrayViewController: UIViewController {
         backgroundView.layer.cornerRadius = 24
         backgroundView.backgroundColor = UIColor(designSystemColor: .background)
         backgroundView.clipsToBounds = false
-        if useActiveShadow {
-            backgroundView.applyActiveShadow()
-        } else {
-            backgroundView.layer.shadowColor = UIColor.black.cgColor
-            backgroundView.layer.shadowOffset = .init(width: 0, height: 10)
-            backgroundView.layer.shadowOpacity = 0.3
-            backgroundView.layer.shadowRadius = 120
-        }
+        backgroundView.applyActiveShadow()
 
         topConstraint.constant = 4
 

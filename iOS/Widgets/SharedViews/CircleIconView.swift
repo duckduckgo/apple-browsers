@@ -25,7 +25,7 @@ struct CircleIconView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 23)
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .controlsFillPrimary))
             image
                 .resizable()
                 .scaledToFit()

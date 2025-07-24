@@ -324,28 +324,7 @@ final class AddressBarTextField: NSTextField {
             break
         }
 
-        let autocompletePixel: GeneralPixel? = {
-            switch suggestion {
-            case .phrase:
-                return .autocompleteClickPhrase
-            case .website:
-                return .autocompleteClickWebsite
-            case .bookmark(_, _, let isFavorite, _):
-                if isFavorite {
-                    return .autocompleteClickFavorite
-                } else {
-                    return .autocompleteClickBookmark
-                }
-            case .historyEntry:
-                return .autocompleteClickHistory
-            case .openTab:
-                return .autocompleteClickOpenTab
-            default:
-                return nil
-            }
-        }()
-
-        if let autocompletePixel {
+        if let autocompletePixel = suggestion?.autocompletePixel(from: .addressBar) {
             PixelKit.fire(autocompletePixel)
         }
 

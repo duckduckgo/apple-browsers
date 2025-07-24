@@ -264,6 +264,11 @@ final class AppearancePreferences: ObservableObject {
     @Published var isOmnibarVisible: Bool {
         didSet {
             persistor.isOmnibarVisible = isOmnibarVisible
+            if isOmnibarVisible {
+                pixelFiring?.fire(NewTabPagePixel.omnibarShown, frequency: .dailyAndStandard)
+            } else {
+                pixelFiring?.fire(NewTabPagePixel.omnibarHidden, frequency: .dailyAndStandard)
+            }
         }
     }
 

@@ -72,7 +72,7 @@ class FingerprintUITest: XCTestCase {
     
     func dismissMenu() {
         let app = XCUIApplication()
-        app.otherElements["Browsing Menu Background"].tap()
+        app.otherElements["browsingMenuBackground"].tap()
     }
     
     func removeTheBookmark() {

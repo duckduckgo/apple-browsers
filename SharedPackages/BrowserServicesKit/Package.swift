@@ -544,6 +544,7 @@ let package = Package(
                 "SecureStorageTestsUtils",
                 "Subscription",
                 "PersistenceTestingUtils",
+                "WKAbstractions",
             ],
             resources: [
                 .copy("Resources")

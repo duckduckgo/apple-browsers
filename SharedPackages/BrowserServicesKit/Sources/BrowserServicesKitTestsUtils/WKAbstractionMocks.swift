@@ -16,9 +16,8 @@
 //  limitations under the License.
 //
 
-#if DEBUG
-
 import Foundation
+import WKAbstractions
 
 public class MockWebsiteDataStore: DDGWebsiteDataStore {
 
@@ -95,5 +94,3 @@ public struct MockWebsiteDataRecord: DDGWebsiteDataRecord {
     }
 
 }
-
-#endif

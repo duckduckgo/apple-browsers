@@ -21,6 +21,7 @@ import XCTest
 @testable import Core
 import WebKit
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
 import WKAbstractions
 
 @MainActor

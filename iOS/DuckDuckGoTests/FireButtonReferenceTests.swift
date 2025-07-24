@@ -22,6 +22,7 @@ import os.log
 import WebKit
 @testable import Core
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
 import WKAbstractions
 
 @MainActor

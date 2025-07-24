@@ -30,7 +30,7 @@ class DuckPlayerTests: UITestCase {
     private static let duckURLForVideo = "duck://player/3ml7yeKBUhc"
     private static let youtubeURLForVideo = "https://www.youtube.com/watch?v=3ml7yeKBUhc"
     private static let youtubeVideoSearchURL = "https://www.youtube.com/results?search_query=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%22&sp=EgIQAQ%253D%253D"
-    private static let watchOnDuckPlayerLink = "Watch on Duck Player"
+    private static let watchOnDuckPlayerLink = "Watch in Duck Player"
     private static let watchOnYouTubeLink = "Watch on YouTube"
     private static let turnOnDuckPlayer = "Turn On Duck Player"
 
@@ -143,7 +143,7 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-        app.openNewTab()
+        
         // Search
         openURL(url: Self.searchURL)
 
@@ -151,6 +151,7 @@ class DuckPlayerTests: UITestCase {
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
+        sleep(2)
 
         // Close Opener tab
         app.typeKey("1", modifierFlags: [.command])
@@ -172,7 +173,9 @@ class DuckPlayerTests: UITestCase {
         // Click Link
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
         XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
+        organicVideo.click()
+        sleep(2)
+        
         // Close Opener tab
         app.typeKey("1", modifierFlags: [.command])
         app.closeCurrentTab()
@@ -198,6 +201,7 @@ class DuckPlayerTests: UITestCase {
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
+        sleep(2)
 
         // Close Opener tab
         app.typeKey("1", modifierFlags: [.command])
@@ -219,6 +223,7 @@ class DuckPlayerTests: UITestCase {
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
+        sleep(2)
 
         verifyYoutubeLoads()
 
@@ -239,6 +244,7 @@ class DuckPlayerTests: UITestCase {
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
         XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         organicVideo.click()
+        sleep(2)
 
         verifyYoutubeLoads()
 
@@ -264,6 +270,7 @@ class DuckPlayerTests: UITestCase {
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
+        sleep(2)
 
         verifyYoutubeLoads()
 
@@ -285,11 +292,13 @@ class DuckPlayerTests: UITestCase {
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
+        sleep(2)
 
         // Click Watch in YouTube
         let watchLink = app.links.containing(.staticText, identifier: Self.watchOnDuckPlayerLink).firstMatch
         XCTAssertTrue(watchLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         watchLink.click()
+        sleep(2)
 
         verifyDuckPlayerLoads()
 
@@ -307,11 +316,13 @@ class DuckPlayerTests: UITestCase {
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
+        sleep(2)
 
         // Click Watch in YouTube
         let watchLink = app.links.containing(.staticText, identifier: Self.watchOnYouTubeLink).firstMatch
         XCTAssertTrue(watchLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         watchLink.click()
+        sleep(2)
 
         verifyYoutubeLoads()
 

@@ -505,7 +505,7 @@ extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
     }
 
     @objc func setAccessibilityValue(_ value: Any?) {
-        var newValue = (value as? String) == "1"
+        let newValue = (value as? String) == "1"
         let isSelected = self.isSelected
 
         switch (isSelected, newValue) {
@@ -513,13 +513,12 @@ extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
             selectTab()
         case (true, false):
             // we can‘t unselect the Tab
-            newValue = true
+            break
         default: break
         }
     }
 
     @objc func setAccessibilitySelected(_ newValue: Bool) {
-        var newValue = newValue
         let isSelected = self.isSelected
 
         switch (isSelected, newValue) {
@@ -527,7 +526,7 @@ extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
             selectTab()
         case (true, false):
             // we can‘t unselect the Tab
-            newValue = true
+            break
         default: break
         }
     }

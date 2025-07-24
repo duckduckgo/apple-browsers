@@ -1,0 +1,72 @@
+{
+    m_ios_dbp_secure_vault_database_recreated: {
+        description: 'Fired when the DBP secure vault database has been recreated in response to SQLITE_NOTADB or SQLITE_CORRUPT errors',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+        ],
+    },
+    m_ios_dbp_weekly_report_background_task_session: {
+        description: 'Fired when a DBP weekly report background task session is executed',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: ['daily'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+        ],
+    },
+    dbp_event_weekly-report_background-task_session: {
+        description: 'Fired weekly with background task session metrics including started, completed, terminated counts and duration statistics',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'started',
+                description: 'Number of background task sessions started in the last 7 days',
+                type: 'integer',
+            },
+            {
+                key: 'completed',
+                description: 'Number of background task sessions completed in the last 7 days',
+                type: 'integer',
+            },
+            {
+                key: 'terminated',
+                description: 'Number of background task sessions terminated in the last 7 days',
+                type: 'integer',
+            },
+            {
+                key: 'durationMinMs',
+                description: 'Minimum duration of background task sessions in milliseconds',
+                type: 'number',
+            },
+            {
+                key: 'durationMaxMs',
+                description: 'Maximum duration of background task sessions in milliseconds',
+                type: 'number',
+            },
+            {
+                key: 'durationMedianMs',
+                description: 'Median duration of background task sessions in milliseconds',
+                type: 'number',
+            },
+        ],
+    },
+}

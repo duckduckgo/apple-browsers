@@ -251,5 +251,4 @@ final class ActionsHandlerTests: XCTestCase {
         return Step(type: .scan, actions: actions)
     }
 
-
 }

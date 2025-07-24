@@ -708,7 +708,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
         XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
         XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
-        
+
         // Verify follow-up action was inserted
         let nextAction = sut.actionsHandler?.nextAction()
         XCTAssertEqual(nextAction?.id, "followup")
@@ -754,7 +754,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let mockStageCalculator = MockStageDurationCalculator()
         let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
         let step = Step(type: .optOut, actions: [conditionAction])
-        
+
         let errorTypes: [Error] = [
             DataBrokerProtectionError.httpError(code: 404),
             DataBrokerProtectionError.httpError(code: 500),
@@ -853,7 +853,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
         // Clear and test multiple failures
         mockStageCalculator.clear()
-        
+
         // Set up for multiple failure calls
         _ = sut.actionsHandler?.nextAction()
         await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "First failure"))

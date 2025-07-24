@@ -11,7 +11,7 @@ The `Subscription` module in `BrowserServicesKit` provides the core subscription
   - [Token Retrieval](#token-retrieval)
   - [Cache Policies](#cache-policies)
 - [Entitlements](#entitlements)
-  - [Subscription Entitlements](#subscription-entitlements)
+  - [Subscription Features](#subscription-features)
   - [User Entitlements](#user-entitlements)
 - [Best Practices](#best-practices)
 - [Error Handling](#error-handling)
@@ -78,13 +78,13 @@ let tokenContainer = try await subscription.getTokenContainer(policy: .localVali
 let accessToken = tokenContainer.accessToken
 ```
 
-## Entitlements
+## Entitlements & Features
 
-The framework distinguishes between two types of entitlements:
+The framework can check if a feature is available in the subscription and if the same feature is active for the user
 
-### Subscription Entitlements
+### Subscription Features
 
-**What the subscription includes** - The features available in the user's subscription plan.
+**What features the subscription includes** - The features available in the subscription plan.
 
 ```swift
 func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool
@@ -116,7 +116,7 @@ func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool
 **Example:**
 ```swift
 // Always check user entitlements before enabling features
-let canUseDataBrokerProtection = try await subscription.isFeatureEnabled(.dataBrokerProtection)
+let canUseDataBrokerProtection = try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
 
 if canUseDataBrokerProtection {
     // Enable the feature
@@ -145,11 +145,11 @@ NotificationCenter.default.addObserver(
 1. **Always Use User Entitlements for Feature Access**
    ```swift
    // ✅ Correct - Check user entitlements
-   if try await subscription.isFeatureEnabled(.networkProtection) {
+   if try await subscriptionManager.isFeatureEnabled(.networkProtection) {
        enableVPN()
    }
    
-   // ❌ Wrong - Don't use subscription entitlements for access control
+   // ❌ Wrong - Don't use subscription features for access control
    if try await subscription.isFeatureIncludedInSubscription(.networkProtection) {
        enableVPN()
    }
@@ -175,7 +175,7 @@ Both entitlement check methods can throw errors. Proper error handling is crucia
 
 ```swift
 do {
-    let hasAccess = try await subscription.isFeatureEnabled(.networkProtection)
+    let hasAccess = try await subscriptionManager.isFeatureEnabled(.networkProtection)
     if hasAccess {
         // Enable feature
     } else {

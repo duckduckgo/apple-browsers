@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Common
@@ -793,9 +794,6 @@ extension MainViewController {
     }
 
     @objc func summarize(_ sender: Any) {
-        guard featureFlagger.isFeatureOn(.aiChatTextSummarization), featureFlagger.isFeatureOn(.aiChatSidebar) else {
-            return
-        }
         Logger.aiChat.debug("Summarize action to be implemented")
 
         Task {
@@ -1368,6 +1366,9 @@ extension MainViewController: NSMenuItemValidation {
             menuItem.title = isDownloadsPopoverShown ? UserText.closeDownloads : UserText.openDownloads
 
             return true
+
+        case #selector(MainViewController.summarize(_:)):
+            return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
 
         default:
             return true

@@ -96,7 +96,43 @@ final class SubscriptionURLNavigationHandlerTests: XCTestCase {
         }
 
         // When
-        handler.navigateToSubscriptionPurchase()
+        handler.navigateToSubscriptionPurchase(origin: nil)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testNavigateToSubscriptionPurchaseWithOrigin_PostsCorrectNotificationWithOriginParameter() {
+        // Given
+        let testOrigin = "some_origin"
+        let expectation = expectation(forNotification: .settingsDeepLinkNotification,
+                                      object: nil) { notification in
+            // Verify the notification contains the correct deep link target
+            guard let deepLinkTarget = notification.object as? SettingsViewModel.SettingsDeepLinkSection else {
+                XCTFail("Notification object should be SettingsDeepLinkSection")
+                return false
+            }
+
+            // Check if it's subscriptionFlow with redirect components containing the origin
+            if case .subscriptionFlow(let components) = deepLinkTarget {
+                guard let urlComponents = components,
+                      let url = urlComponents.url,
+                      let queryItems = urlComponents.queryItems else {
+                    XCTFail("URLComponents should contain URL and query items")
+                    return false
+                }
+
+                // Verify the origin parameter is present in the URL
+                let hasOriginParameter = queryItems.contains { $0.name == "origin" && $0.value == testOrigin }
+                let urlContainsOrigin = url.absoluteString.contains("origin=\(testOrigin)")
+
+                return hasOriginParameter && urlContainsOrigin
+            }
+            return false
+        }
+
+        // When
+        handler.navigateToSubscriptionPurchase(origin: testOrigin)
 
         // Then
         wait(for: [expectation], timeout: 1.0)

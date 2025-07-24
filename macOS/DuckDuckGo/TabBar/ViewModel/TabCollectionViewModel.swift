@@ -151,7 +151,7 @@ final class TabCollectionViewModel: NSObject {
         self.tabsPreferences = tabsPreferences
         super.init()
 
-        self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self)
+        self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self, forceActive: nil)
         subscribeToTabs()
         subscribeToPinnedTabsManager()
         subscribeToPinnedTabsSettingChanged()
@@ -742,7 +742,7 @@ final class TabCollectionViewModel: NSObject {
         pinnedTabsManagerProvider?.settingChangedPublisher
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self)
+                self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self, forceActive: nil)
             }.store(in: &cancellables)
     }
 

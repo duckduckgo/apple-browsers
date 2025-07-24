@@ -74,7 +74,7 @@ struct SubscriptionNavigationCoordinatorTests {
         let expectedURL = URL(string: "https://duckduckgo.com/pro/purchase")!
         mockSubscriptionManager.urls[.purchase] = expectedURL
 
-        coordinator.navigateToSubscriptionPurchase()
+        coordinator.navigateToSubscriptionPurchase(origin: nil)
 
         // Verify tab shower was called to show tab with subscription content
         #expect(mockTabShower.capturedContent != nil)
@@ -86,6 +86,27 @@ struct SubscriptionNavigationCoordinatorTests {
 
         // Verify the URL matches exactly what was returned from subscription manager
         #expect(url == expectedURL)
+    }
+
+    @Test("navigateToSubscriptionPurchase fetches purchase URL and shows subscription tab with origin")
+    func navigateToSubscriptionPurchaseWithOrigin() async throws {
+        let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
+        let baseURL = URL(string: "https://duckduckgo.com/pro/purchase")!
+        let origin = "funnel_duckai_macos__modelpicker"
+        mockSubscriptionManager.urls[.purchase] = baseURL
+
+        coordinator.navigateToSubscriptionPurchase(origin: origin)
+
+        // Verify tab shower was called to show tab with subscription content
+        #expect(mockTabShower.capturedContent != nil)
+
+        guard case let .subscription(url) = mockTabShower.capturedContent else {
+            Issue.record("Expected .subscription tab content")
+            return
+        }
+
+        // Verify the URL contains the origin parameter
+        #expect(url.absoluteString.contains("origin=\(origin)"))
     }
 
 }

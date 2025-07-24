@@ -21,14 +21,28 @@ import Testing
 
 class FirefoxPreferencesTests {
 
-    @Test("Check if new tab favorites setting is parsed from preferences")
-    func whenPreferencesAreParsed_newTabFavoritesEnabledHasExpectedValue() throws {
+    @Test("Check if default new tab favorites setting is parsed from preferences")
+    func whenPreferencesAreParsed_withNoTopSiteUserPref_newTabFavoritesEnabledIsTrue() throws {
         let preferences = try FirefoxPreferences(profileURL: resourceURL())
         #expect(preferences.newTabFavoritesEnabled == true)
     }
 
+    @Test("Check if new tab favorites setting is parsed from preferences")
+    func whenPreferencesAreParsed_withTopSiteUserPref_newTabFavoritesEnabledHasExpectedValue() throws {
+        let preferences = try FirefoxPreferences(profileURL: resourceURL(withAlternatePrefs: true))
+        #expect(preferences.newTabFavoritesEnabled == false)
+    }
+
+    @Test("Check if default pinned sites are parsed from preferences")
+    func whenPreferencesAreParsed_withNoPinnedUserPref_newTabPinnedSitesHasExpectedSites() throws {
+        let preferences = try FirefoxPreferences(profileURL: resourceURL(withAlternatePrefs: true))
+        let pinnedSites = preferences.newTabPinnedSites
+
+        #expect(pinnedSites.isEmpty)
+    }
+
     @Test("Check if pinned sites are parsed from preferences")
-    func whenPreferencesAreParsed_newTabPinnedSitesHasExpectedSites() throws {
+    func whenPreferencesAreParsed_withPinnedUserPref_newTabPinnedSitesHasExpectedSites() throws {
         let preferences = try FirefoxPreferences(profileURL: resourceURL())
         let pinnedSites = preferences.newTabPinnedSites
 
@@ -40,27 +54,43 @@ class FirefoxPreferencesTests {
         #expect(firstPinnedSite.label == "DuckDuckGo")
     }
 
+    @Test("Check if default favorites count is parsed from preferences")
+    func whenPreferencesAreParsed_withNoTopSitesRowsOrSponsoredSitesUserPrefs_newTabFavoritesCountHasExpectedValue() throws {
+        let preferences = try FirefoxPreferences(profileURL: resourceURL(withAlternatePrefs: true))
+        #expect(preferences.newTabFavoritesCount == 5)
+    }
+
     @Test("Check if favorites count is parsed from preferences")
-    func whenPreferencesAreParsed_newTabFavoritesCountHasExpectedValue() throws {
+    func whenPreferencesAreParsed_withTopSitesRowsAndSponsoredSitesUserPrefs_newTabFavoritesCountHasExpectedValue() throws {
         let preferences = try FirefoxPreferences(profileURL: resourceURL())
         #expect(preferences.newTabFavoritesCount == 16)
     }
 
+    @Test("Check if default blocked sites are parsed from preferences")
+    func whenPreferencesAreParsed_withNoBlockedUserPref_isURLBlockedOnNewTabReturnsFalse_forProvidedSite() throws {
+        let preferences = try FirefoxPreferences(profileURL: resourceURL(withAlternatePrefs: true))
+        let siteURL = "https://www.mozilla.org/privacy/firefox/"
+        let isBlocked = preferences.isURLBlockedOnNewTab(siteURL)
+        #expect(isBlocked == false)
+    }
+
     @Test("Check if blocked sites are parsed from preferences")
-    func whenPreferencesAreParsed_isURLBlockedOnNewTabReturnsExpectedValue_forBlockedSite() throws {
+    func whenPreferencesAreParsed_withBlockedUserPref_isURLBlockedOnNewTabReturnsTrue_forBlockedSite() throws {
         let preferences = try FirefoxPreferences(profileURL: resourceURL())
         let siteURL = "https://www.mozilla.org/privacy/firefox/"
         let isBlocked = preferences.isURLBlockedOnNewTab(siteURL)
-        #expect(isBlocked)
+        #expect(isBlocked == true)
     }
 
 }
 
 private extension FirefoxPreferencesTests {
+    static let altPrefsDir = "/Alternate prefs"
 
-    func resourceURL() -> URL {
+    func resourceURL(withAlternatePrefs: Bool = false) -> URL {
         let bundle = Bundle(for: FirefoxPreferencesTests.self)
         return bundle.resourceURL!.appendingPathComponent("DataImportResources/TestFirefoxData")
+            .appendingPathComponent(withAlternatePrefs ? Self.altPrefsDir : "")
     }
 
 }

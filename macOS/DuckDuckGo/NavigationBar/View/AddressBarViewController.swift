@@ -84,6 +84,7 @@ final class AddressBarViewController: NSViewController {
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     private let visualStyle: VisualStyleProviding
     private var tabViewModel: TabViewModel?
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     private var aiChatSettings: AIChatPreferencesStorage
@@ -143,6 +144,7 @@ final class AddressBarViewController: NSViewController {
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
           visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatSidebarPresenter: AIChatSidebarPresenting) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -164,6 +166,7 @@ final class AddressBarViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
         self.visualStyle = visualStyle
+        self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
 
         super.init(coder: coder)
@@ -177,7 +180,7 @@ final class AddressBarViewController: NSViewController {
                                                          permissionManager: permissionManager,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
-                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings),
+                                                         aiChatMenuConfig: aiChatMenuConfig,
                                                          aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         self.addressBarButtonsViewController = controller

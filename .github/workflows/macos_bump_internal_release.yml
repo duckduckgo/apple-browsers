@@ -22,6 +22,10 @@ on:
         default: false
         type: boolean
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
 
   validate_input_conditions:
@@ -53,7 +57,7 @@ jobs:
             main) ;;
             *) echo "👎 Not a release or main branch"; exit 1 ;;
           esac
-          
+
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby
         with:

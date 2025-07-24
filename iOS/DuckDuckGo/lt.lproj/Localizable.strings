@@ -1069,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "PASIRINKTINIS LANGELIŲ TURINYS";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Pasirinktinis URL: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuoti žymės failą...";
 
@@ -1129,9 +1135,6 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kaip eksportuoti slaptažodžius iš „Safari“:";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.select-file-button" = "Pasirink failą...";
-
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Pasirink failą, kuriame yra slaptažodžiai, eksportuoti iš „Safari“ arba „Chrome“. Paprastai tai būna ZIP arba CSV failas.";
 
@@ -1158,9 +1161,6 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importavimas baigtas!";
-
-/* Data import summary of how many credit cards were successfully imported. */
-"data.import.summary.creditcards.success" = "Kreditinės kortelės";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Praleisti dublikatai";
@@ -1665,6 +1665,9 @@
 
 /* Title of the feedback form */
 "feedback.form.title" = "Padėk pagerinti „Privacy Pro“";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
 
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
@@ -2374,18 +2377,6 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Supratau! Praleisiu kitus patarimus.";
 
-/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
-"onboarding.subscription.promo.buttons.tryItForFree" = "Išbandyk nemokamai!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "„DuckDuckGo“ taip pat turi saugų %1$@, kurį galima naudoti su %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "pasirenkama mokama prenumerata";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 papildomos aukščiausios kokybės apsaugos priemonės";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Pridėti valdiklį";
 
@@ -2418,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Negalima rasti programos, galinčios atidaryti šią nuorodą";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Nepavyksta pasiekti tik prenumeratoriams skirtų „Duck.ai“ modelių.";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Negaliu pasiekti „Duck.ai“ su savo prenumerata kitose naršyklėse.";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "PASIRINKITE KATEGORIJĄ";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Kiti „Duck.ai“ atsiliepimai";
 
 /* Activate button */
 "pm.activate" = "Iš naujo įjungti";
@@ -2635,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "PASIRINKITE KATEGORIJĄ";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Nustatyti pasirinktinį DI pokalbių URL";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "Apie DuckDuckGo";
 
@@ -2830,12 +2836,6 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privatumo politika ir  paslaugų teikimo sąlygos";
 
-/* Privacy Pro description subtitle in settings */
-"settings.PPro.row.description" = "Apima mūsų VPN ir Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.PPro.us.description" = "Apima mūsų VPN, Asmens duomenų pašalinimą ir Tapatybės vagystės atkūrimą.";
-
 /* Settings screen cell for long press previews */
 "settings.previews" = "Peržiūros ilgai spaudžiant";
 
@@ -2869,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Tai užtrunka ilgiau nei įprastai, prašome sugrįžti vėliau.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Pašalink savo informaciją iš svetainių, kurios ją parduoda";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Prenumeratoriai gauna mūsų VPN ir tapatybės vagystės atkūrimą.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Prenumeratoriai gauna mūsų VPN, asmeninės informacijos pašalinimo ir tapatybės vagystės atkūrimo paslaugas.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Prenumeratoriai gauna mūsų VPN, pažangius dirbtinio intelekto modelius „Duck.ai“ platformoje ir tapatybės vagystės atkūrimo paslaugą.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Prenumeratoriai gauna mūsų VPN, pažangius dirbtinio intelekto modelius „Duck.ai“, asmens duomenų šalinimas ir tapatybės vagystės duomenų atkūrimas.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Turiu prenumeratą";
@@ -2883,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Jūsų „Privacy Pro“ prenumerata baigėsi";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "„DuckDuckGo“ prenumerata";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "„Privacy Pro“";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Jei tavo tapatybė buvo pavogta, padėsime ją atkurti";
@@ -2896,11 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Prenumeratos nustatymai";
 
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "„DuckDuckGo“ prenumerata";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Prenumeruok „DuckDuckGo“";
+
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Apsaugokite savo ryšį ir tapatybę su „Privacy Pro“.";
+"settings.subscription.subscribe.title" = "Apsaugok savo Wi-Fi ir kalbėkis privačiai su pažangiais DI modeliais";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Apsaugok savo Wi-Fi ir tapatybę";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Išbandyk „DuckDuckGo“ prenumeratą nemokamai";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Išbandyk „Privacy Pro“ nemokamai";
+"settings.subscription.try.free.no.ai.chat" = "Išbandyk „Privacy Pro“ nemokamai";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3052,6 +3085,15 @@
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Ar esi tikras?";
 
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Kalbėkis privačiai su išskirtiniais abonentams skirtais DI modeliais.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Atidaryti „Duck.ai“";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Su šiuo el. paštu susijusi prenumerata nebėra aktyvi.";
 
@@ -3165,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Tu pasiruošęs.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "„DuckDuckGo“ prenumerata";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Prenumeruota";
@@ -3618,9 +3663,6 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Tęsti";
-
-/* Option to select to import credit cards */
-"zip.content.import.type.creditCards" = "Kreditinės kortelės";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Slaptažodžiai";

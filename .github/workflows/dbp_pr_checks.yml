@@ -17,6 +17,10 @@ on:
   schedule:
     - cron: '10,40 4,5,6 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   unit-tests:

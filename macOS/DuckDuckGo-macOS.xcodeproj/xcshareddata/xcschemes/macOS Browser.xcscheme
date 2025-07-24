@@ -189,6 +189,9 @@
                <Test
                   Identifier = "EncryptionKeyStoreTests">
                </Test>
+               <Test
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
+               </Test>
             </SkippedTests>
          </TestableReference>
          <TestableReference

@@ -78,22 +78,24 @@ struct SettingsSubscriptionView: View {
     @ViewBuilder
     private var purchaseSubscriptionView: some View {
         Group {
-            let subtitleText = {
+            let isPaidAIChatEnabled = settingsViewModel.isPaidAIChatEnabled
+            let titleText: String = UserText.settingsSubscription(isPaidAIChatEnabled: isPaidAIChatEnabled)
+            let subtitleText: String = {
                 switch currentStorefrontRegion {
                 case .usa:
-                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionUSDescription : UserText.settingsPProUSDescription
+                    return UserText.settingsSubscriptionDescription(isPaidAIChatEnabled: isPaidAIChatEnabled, isUS: true)
                 case .restOfWorld:
-                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionROWDescription : UserText.settingsPProROWDescription
+                    return UserText.settingsSubscriptionDescription(isPaidAIChatEnabled: isPaidAIChatEnabled, isUS: false)
                 }
             }()
 
-            SettingsCellView(label: UserText.settingsPProSubscribe,
+            SettingsCellView(label: titleText,
                              subtitle: subtitleText,
                              image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro))
             .disabled(true)
 
             // Get privacy pro
-            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.settingsPProTryFree : UserText.settingsPProLearnMore
+            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.getSubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
             SettingsCustomCell(content: {
                 Text(getText)
                     .daxBodyRegular()
@@ -348,7 +350,7 @@ struct SettingsSubscriptionView: View {
                                       destination: ViewConstants.privacyPolicyURL)
                     .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
 
-                Section(header: Text(UserText.settingsPProSection),
+                Section(header: Text(UserText.settingsSubscriptionSection(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
                         footer: !isSignedIn ? footerLink : nil
                 ) {
 

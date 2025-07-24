@@ -54,7 +54,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
-         isExperimentalAppearanceEnabled: Bool,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          privacyProDataReporting: PrivacyProDataReporting? = nil,
@@ -78,18 +77,16 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
 
-        newTabPageViewModel = NewTabPageViewModel(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
+        newTabPageViewModel = NewTabPageViewModel()
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
         sectionsSettingsModel = NewTabPageSectionsSettingsModel()
         favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
-                                            isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         shortcutsModel = ShortcutsModel()
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 privacyProDataReporter: privacyProDataReporting,
-                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate),
-                                                isExperimentalThemingEnabled: isExperimentalAppearanceEnabled)
+                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
         if isNewTabPageCustomizationEnabled {
             super.init(rootView: AnyView(CustomizableNewTabPageView(viewModel: self.newTabPageViewModel,

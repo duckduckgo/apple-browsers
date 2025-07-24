@@ -174,6 +174,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     func cancelAndDismissCurrentUpdate() {
         onDismiss()
         pendingUpdateSince = .distantPast
+        onResuming = nil
     }
 
     func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {

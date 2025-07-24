@@ -765,14 +765,14 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return nil
     }
 
-    public func save(backgroundTaskSession: BackgroundTaskSessionDB) throws {
+    public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
     }
 
-    public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
         return []
     }
 
-    public func deleteBackgroundTaskSessions(olderThan date: Date) throws {
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
     }
 }
 
@@ -1073,19 +1073,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         attemptInformation = nil
         scanEvents.removeAll()
         optOutEvents.removeAll()
-        backgroundTaskSessionsToReturn.removeAll()
+        backgroundTaskEventsToReturn.removeAll()
     }
 
-    public var backgroundTaskSessionsToReturn: [BackgroundTaskSessionDB] = []
+    public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []
 
-    public func saveBackgroundTaskSession(startDate: Date, duration: Int64, isTerminated: Bool) throws {
+    public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
+        backgroundTaskEventsToReturn.append(event)
     }
 
-    public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
-        return backgroundTaskSessionsToReturn.filter { $0.startDate >= date }
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        return backgroundTaskEventsToReturn.filter { $0.timestamp >= date }
     }
 
-    public func deleteBackgroundTaskSessions(olderThan date: Date) throws {
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        backgroundTaskEventsToReturn.removeAll { $0.timestamp < date }
     }
 }
 

@@ -21,12 +21,13 @@ import WebKit
 
 @MainActor
 public protocol DDGWebsiteDataStore {
+    associatedtype Record: DDGWebsiteDataRecord
 
     var httpCookieStore: DDGHTTPCookieStore { get }
 
     func removeData(ofTypes types: Set<String>, modifiedSince: Date) async
-    func dataRecords(ofTypes types: Set<String>) async -> [DDGWebsiteDataRecord]
-    func removeData(ofTypes types: Set<String>, for records: [DDGWebsiteDataRecord]) async
+    func dataRecords(ofTypes types: Set<String>) async -> [Record]
+    func removeData(ofTypes types: Set<String>, for records: [Record]) async
 
 }
 
@@ -62,16 +63,12 @@ public struct WebsiteDataStoreWrapper: DDGWebsiteDataStore {
         await wrapped.removeData(ofTypes: types, modifiedSince: modifiedSince)
     }
 
-    public func dataRecords(ofTypes types: Set<String>) async -> [any DDGWebsiteDataRecord] {
-        await wrapped.dataRecords(ofTypes: types).map { record in
-            WebsiteDataRecordWrapper(wrapped: record)
-        }
+    public func dataRecords(ofTypes types: Set<String>) async -> [WKWebsiteDataRecord] {
+        await wrapped.dataRecords(ofTypes: types)
     }
 
-    public func removeData(ofTypes types: Set<String>, for records: [any DDGWebsiteDataRecord]) async {
-        let unwrappedRecords = records.compactMap { ($0 as? WebsiteDataRecordWrapper)?.wrapped }
-        assert(unwrappedRecords.count == records.count)
-        await wrapped.removeData(ofTypes: types, for: unwrappedRecords)
+    public func removeData(ofTypes types: Set<String>, for records: [WKWebsiteDataRecord]) async {
+        await wrapped.removeData(ofTypes: types, for: records)
     }
 
 }
@@ -100,12 +97,4 @@ public struct HTTPCookieStoreWrapper: DDGHTTPCookieStore {
 
 }
 
-public struct WebsiteDataRecordWrapper: DDGWebsiteDataRecord {
-
-    public var displayName: String {
-        wrapped.displayName
-    }
-
-    let wrapped: WKWebsiteDataRecord
-
-}
+extension WKWebsiteDataRecord: DDGWebsiteDataRecord {}

@@ -27,6 +27,54 @@ class MockSPUUpdater: SPUUpdater {
     override var canCheckForUpdates: Bool {
         return mockCanCheckForUpdates
     }
+
+    convenience init() {
+        // Create a minimal mock user driver for testing
+        let mockUserDriver = MockUserDriver()
+        self.init(hostBundle: Bundle.main,
+                  applicationBundle: Bundle.main,
+                  userDriver: mockUserDriver,
+                  delegate: nil)
+        // Note: We intentionally don't call start() here since:
+        // 1. It might throw and we don't need it for these tests
+        // 2. We're only testing UpdateCheckState rate limiting, not SPUUpdater functionality
+    }
+}
+
+// Mock user driver to satisfy SPUUpdater requirements
+class MockUserDriver: NSObject, SPUUserDriver {
+    func showCanCheckForUpdatesNow(_ canCheckForUpdatesNow: Bool) {}
+    func showUserInitiatedUpdateCheck(cancellation: @escaping () -> Void) {}
+    func dismissUserInitiatedUpdateCheck() {}
+    func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {
+        return SUUpdatePermissionResponse(automaticUpdateChecks: false, sendSystemProfile: false)
+    }
+    func showUpdateFound(with appcastItem: SUAppcastItem, state: SPUUserUpdateState, reply: @escaping (SPUUserUpdateChoice) -> Void) {
+        reply(.dismiss)
+    }
+    func showUpdateReleaseNotes(with downloadData: SPUDownloadData) {}
+    func showUpdateReleaseNotesFailedToDownloadWithError(_ error: any Error) {}
+    func showUpdateNotFoundWithError(_ error: any Error, acknowledgement: @escaping () -> Void) {
+        acknowledgement()
+    }
+    func showUpdaterError(_ error: any Error, acknowledgement: @escaping () -> Void) {
+        acknowledgement()
+    }
+    func showDownloadInitiated(cancellation: @escaping () -> Void) {}
+    func showDownloadDidReceiveExpectedContentLength(_ expectedContentLength: UInt64) {}
+    func showDownloadDidReceiveData(ofLength length: UInt64) {}
+    func showDownloadDidStartExtractingUpdate() {}
+    func showExtractionReceivedProgress(_ progress: Double) {}
+    func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
+        reply(.dismiss)
+    }
+    func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {}
+    func showSendingTerminationSignal() {}
+    func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
+        acknowledgement()
+    }
+    func showUpdateInFocus() {}
+    func dismissUpdateInstallation() {}
 }
 
 /// Tests for UpdateCheckState actor that manages update check rate limiting.

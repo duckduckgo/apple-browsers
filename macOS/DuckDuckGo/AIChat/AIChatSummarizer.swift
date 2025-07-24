@@ -80,7 +80,7 @@ final class AIChatSummarizer: AIChatSummarizing {
         let prompt = AIChatNativePrompt.summaryPrompt(request.text, url: request.websiteURL, title: request.websiteTitle)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
-        if aiChatMenuConfig.openAIChatInSidebar {
+        if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
                 pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard)
             }

@@ -26,6 +26,5 @@ public protocol AIChatRemoteSettingsProvider {
     var aiChatURLIdentifiableQueryValue: String { get }
     var aiChatURL: URL { get }
     var isAIChatEnabled: Bool { get }
-    var isTextSummarizationEnabled: Bool { get }
 }
 #endif

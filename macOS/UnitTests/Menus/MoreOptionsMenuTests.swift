@@ -131,7 +131,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                           aiChatMenuConfiguration: AIChatMenuConfiguration(
                                             storage: aiChatPreferencesStorage,
-                                            remoteSettings: MockRemoteAISettings()
+                                            remoteSettings: MockRemoteAISettings(),
+                                            featureFlagger: mockFeatureFlagger
                                           ))
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate

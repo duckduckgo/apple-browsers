@@ -388,7 +388,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         // Close the sidebar if it's currently open and the user preference is set to open AI chat in new tabs
         // This ensures consistent behavior when the sidebar is unexpectedly open but shouldn't be the default action
-        if !aiChatMenuConfig.openAIChatInSidebar && aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
+        if !aiChatMenuConfig.shouldOpenAIChatInSidebar && aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
             aiChatSidebarPresenter.toggleSidebar()
 
             if aiChatButton == sender as? AddressBarMenuButton {
@@ -399,7 +399,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let behavior = createAIChatLinkOpenBehavior(for: tab)
 
         if featureFlagger.isFeatureOn(.aiChatSidebar),
-           aiChatMenuConfig.openAIChatInSidebar,
+           aiChatMenuConfig.shouldOpenAIChatInSidebar,
            !isTextFieldEditorFirstResponder,
            case .url = tab.content,
            behavior == .currentTab {
@@ -719,7 +719,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @objc func openAIChatContextMenuAction(_ sender: NSMenuItem) {
         // Open AI Chat action implementation - behavior opposite to default setting
 
-        if aiChatMenuConfig.openAIChatInSidebar {
+        if aiChatMenuConfig.shouldOpenAIChatInSidebar {
             // Default is sidebar, menu action forces new tab
             let behavior = LinkOpenBehavior(
                 event: NSApp.currentEvent,
@@ -1214,7 +1214,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             if isSidebarOpen {
                 aiChatButton.toolTip = UserText.aiChatCloseSidebarButton
-            } else if aiChatMenuConfig.openAIChatInSidebar, case .url = tab.content {
+            } else if aiChatMenuConfig.shouldOpenAIChatInSidebar, case .url = tab.content {
                 aiChatButton.toolTip = UserText.aiChatOpenSidebarButton
             } else {
                 aiChatButton.toolTip = isTextFieldEditorFirstResponder ? ShortcutTooltip.askAIChat.value : ShortcutTooltip.newAIChatTab.value
@@ -1291,7 +1291,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let contextMenu = NSMenu {
             if shouldShowOpenAIChatButton {
                 let contextMenuTitle: String = {
-                    if aiChatMenuConfig.openAIChatInSidebar {
+                    if aiChatMenuConfig.shouldOpenAIChatInSidebar {
                         return UserText.aiChatOpenNewTabButton
                     } else {
                         // Check if sidebar is currently open for this tab

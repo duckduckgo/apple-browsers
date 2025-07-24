@@ -23,6 +23,14 @@ import Combine
 
 protocol AIChatMenuVisibilityConfigurable {
 
+    /// Indicates whether any AI Chat feature should be displayed to the user.
+    ///
+    /// This property checks both remote setting and local global switch value to determine
+    /// if any of the AI Chat-related features should be visible in the UI.
+    ///
+    /// - Returns: `true` if any AI Chat feature should be shown; otherwise, `false`.
+    var shouldDisplayAnyAIChatFeature: Bool { get }
+
     /// This property validates user settings to determine if the shortcut
     /// should be presented to the user.
     ///
@@ -44,7 +52,7 @@ protocol AIChatMenuVisibilityConfigurable {
     /// This property determines whether AI Chat should open in the sidebar.
     ///
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
-    var openAIChatInSidebar: Bool { get }
+    var shouldOpenAIChatInSidebar: Bool { get }
 
     /// This property validates user settings to determine if the text summarization
     /// feature should be presented to the user.
@@ -71,32 +79,45 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     private var cancellables = Set<AnyCancellable>()
     private var storage: AIChatPreferencesStorage
     private let remoteSettings: AIChatRemoteSettingsProvider
+    private let featureFlagger: FeatureFlagger
 
     var valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
+    var shouldDisplayAnyAIChatFeature: Bool {
+        let isAIChatEnabledRemotely = remoteSettings.isAIChatEnabled
+        let isAIChatEnabledLocally = storage.isAIFeaturesEnabled
+
+        if featureFlagger.isFeatureOn(.aiChatGlobalSwitch) {
+            return isAIChatEnabledRemotely && isAIChatEnabledLocally
+        } else {
+            return isAIChatEnabledRemotely
+        }
+    }
+
     var shouldDisplayNewTabPageShortcut: Bool {
-        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showShortcutOnNewTabPage
+        shouldDisplayAnyAIChatFeature && storage.showShortcutOnNewTabPage
     }
 
     var shouldDisplaySummarizationMenuItem: Bool {
-        remoteSettings.isTextSummarizationEnabled && storage.isAIFeaturesEnabled && shouldDisplayApplicationMenuShortcut
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextSummarization) && shouldDisplayApplicationMenuShortcut
     }
 
     var shouldDisplayApplicationMenuShortcut: Bool {
-        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showShortcutInApplicationMenu
+        shouldDisplayAnyAIChatFeature && storage.showShortcutInApplicationMenu
     }
 
     var shouldDisplayAddressBarShortcut: Bool {
-        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showShortcutInAddressBar
+        shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBar
     }
 
-    var openAIChatInSidebar: Bool {
-        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.openAIChatInSidebar
+    var shouldOpenAIChatInSidebar: Bool {
+        shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
     }
 
-    init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider) {
+    init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {
         self.storage = storage
         self.remoteSettings = remoteSettings
+        self.featureFlagger = featureFlagger
 
         self.subscribeToValuesChanged()
     }

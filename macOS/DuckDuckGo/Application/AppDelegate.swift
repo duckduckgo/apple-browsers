@@ -387,9 +387,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aiChatMenuConfiguration = AIChatMenuConfiguration(
             storage: DefaultAIChatPreferencesStorage(),
             remoteSettings: AIChatRemoteSettings(
-                featureFlagger: featureFlagger,
                 privacyConfigurationManager: privacyConfigurationManager
-            )
+            ),
+            featureFlagger: featureFlagger
         )
 
         appearancePreferences = AppearancePreferences(

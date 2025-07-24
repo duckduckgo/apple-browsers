@@ -27,12 +27,15 @@ final class NewTabPageAIChatShortcutSettingProviderTests: XCTestCase {
     private var userDefaults: UserDefaults!
     private var configuration: AIChatMenuConfiguration!
     private var storage: DefaultAIChatPreferencesStorage!
+    private var featureFlagger: MockFeatureFlagger!
 
     override func setUp() async throws {
         suiteName = UUID().uuidString
         userDefaults = UserDefaults(suiteName: suiteName)
         storage = DefaultAIChatPreferencesStorage(userDefaults: userDefaults)
-        configuration = AIChatMenuConfiguration(storage: storage, remoteSettings: MockRemoteAISettings())
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatGlobalSwitch]
+        configuration = AIChatMenuConfiguration(storage: storage, remoteSettings: MockRemoteAISettings(), featureFlagger: featureFlagger)
 
         provider = NewTabPageAIChatShortcutSettingProvider(
             aiChatMenuConfiguration: configuration,
@@ -45,6 +48,7 @@ final class NewTabPageAIChatShortcutSettingProviderTests: XCTestCase {
         provider = nil
         configuration = nil
         userDefaults = nil
+        featureFlagger = nil
     }
 
     func testWhenFlagIsTrueThenGetterReturnsTrue() {

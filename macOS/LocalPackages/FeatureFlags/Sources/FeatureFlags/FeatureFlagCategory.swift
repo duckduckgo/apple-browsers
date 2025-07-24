@@ -45,7 +45,7 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
-        case .aiFeatures,
+        case .aiChatGlobalSwitch,
                 .aiChatSidebar,
                 .aiChatTextSummarization:
             return .duckAI

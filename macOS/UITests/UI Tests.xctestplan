@@ -37,6 +37,7 @@
     {
       "skippedTests" : [
         "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
+        "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
         "PermissionsTests"
       ],

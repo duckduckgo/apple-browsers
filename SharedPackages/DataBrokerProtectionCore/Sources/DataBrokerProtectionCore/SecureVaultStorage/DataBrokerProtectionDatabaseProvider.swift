@@ -106,9 +106,9 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
 
     func fetchFirstEligibleJobDate() throws -> Date?
 
-    func save(_ session: BackgroundTaskSessionDB) throws
-    func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB]
-    func deleteBackgroundTaskSessions(olderThan date: Date) throws
+    func save(_ event: BackgroundTaskEventDB) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEventDB]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
  }
 
 public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorageDatabaseProvider, DataBrokerProtectionDatabaseProvider {
@@ -717,25 +717,24 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
         }
     }
 
-    public func save(_ session: BackgroundTaskSessionDB) throws {
+    public func save(_ event: BackgroundTaskEventDB) throws {
         try db.write { db in
-            try session.save(db)
+            try event.save(db)
         }
     }
 
-    public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEventDB] {
         try db.read { db in
-            try BackgroundTaskSessionDB
-                .filter(BackgroundTaskSessionDB.Columns.startDate >= date)
-                .order(BackgroundTaskSessionDB.Columns.startDate.desc)
+            try BackgroundTaskEventDB
+                .filter(BackgroundTaskEventDB.Columns.timestamp >= date)
                 .fetchAll(db)
         }
     }
 
-    public func deleteBackgroundTaskSessions(olderThan date: Date) throws {
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
         _ = try db.write { db in
-            try BackgroundTaskSessionDB
-                .filter(BackgroundTaskSessionDB.Columns.startDate < date)
+            try BackgroundTaskEventDB
+                .filter(BackgroundTaskEventDB.Columns.timestamp < date)
                 .deleteAll(db)
         }
     }

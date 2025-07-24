@@ -113,9 +113,9 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
 
     func fetchFirstEligibleJobDate() throws -> Date?
 
-    func save(backgroundTaskSession: BackgroundTaskSessionDB) throws
-    func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB]
-    func deleteBackgroundTaskSessions(olderThan date: Date) throws
+    func save(backgroundTaskEvent: BackgroundTaskEvent) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
 }
 
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
@@ -511,17 +511,19 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         return try self.providers.database.fetchFirstEligibleJobDate()
     }
 
-    // MARK: - Background Task Session Methods
-
-    public func save(backgroundTaskSession: BackgroundTaskSessionDB) throws {
-        try self.providers.database.save(backgroundTaskSession)
+    public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
+        let mapperToDB = MapperToDB(mechanism: { $0 })
+        let eventDB = try mapperToDB.mapToDB(backgroundTaskEvent)
+        try self.providers.database.save(eventDB)
     }
 
-    public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
-        return try self.providers.database.fetchBackgroundTaskSessions(since: date)
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        let eventsDB = try self.providers.database.fetchBackgroundTaskEvents(since: date)
+        let mapperToModel = MapperToModel(mechanism: { $0 })
+        return try eventsDB.map { try mapperToModel.mapToModel($0) }
     }
 
-    public func deleteBackgroundTaskSessions(olderThan date: Date) throws {
-        try self.providers.database.deleteBackgroundTaskSessions(olderThan: date)
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        try self.providers.database.deleteBackgroundTaskEvents(olderThan: date)
     }
 }

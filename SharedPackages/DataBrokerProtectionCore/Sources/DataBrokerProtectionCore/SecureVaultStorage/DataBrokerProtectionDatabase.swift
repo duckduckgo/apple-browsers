@@ -79,9 +79,9 @@ public protocol DataBrokerProtectionRepository {
 
     func fetchFirstEligibleJobDate() throws -> Date?
 
-    func saveBackgroundTaskSession(startDate: Date, duration: Int64, isTerminated: Bool) throws
-    func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB]
-    func deleteBackgroundTaskSessions(olderThan date: Date) throws
+    func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -687,21 +687,15 @@ extension DataBrokerProtectionDatabase {
         try vault.fetchFirstEligibleJobDate()
     }
 
-    public func saveBackgroundTaskSession(startDate: Date, duration: Int64, isTerminated: Bool) throws {
-        let session = BackgroundTaskSessionDB(
-            id: nil,
-            startDate: startDate,
-            duration: duration,
-            isTerminated: isTerminated
-        )
-        try vault.save(backgroundTaskSession: session)
+    public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
+        try vault.save(backgroundTaskEvent: event)
     }
 
-    public func fetchBackgroundTaskSessions(since date: Date) throws -> [BackgroundTaskSessionDB] {
-        try vault.fetchBackgroundTaskSessions(since: date)
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        try vault.fetchBackgroundTaskEvents(since: date)
     }
 
-    public func deleteBackgroundTaskSessions(olderThan date: Date) throws {
-        try vault.deleteBackgroundTaskSessions(olderThan: date)
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        try vault.deleteBackgroundTaskEvents(olderThan: date)
     }
 }

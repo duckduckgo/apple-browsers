@@ -137,22 +137,44 @@ public final class DataBrokerProtectionEventPixels {
 
         // Fire background task session metrics
         do {
-            let sessions = try database.fetchBackgroundTaskSessions(since: .daysAgo(7))
+            let events = try database.fetchBackgroundTaskEvents(since: .daysAgo(7))
 
-            let startedCount = sessions.count
-            let completedCount = sessions.filter { !$0.isTerminated }.count
-            let terminatedCount = sessions.filter { $0.isTerminated }.count
+            // Group events by sessionId to calculate metrics
+            let sessionGroups = Dictionary(grouping: events, by: \.sessionId)
 
-            let validSessionDurations = sessions
-                .filter { $0.duration > 0 && $0.duration < Int64(TimeInterval.days(1)) }
-                .map { Int64($0.duration) }
+            var startedCount = 0
+            var orphanedCount = 0
+            var completedCount = 0
+            var terminatedCount = 0
+            var durations: [Int64] = []
 
-            let durationMinMs = validSessionDurations.min() ?? 0
-            let durationMaxMs = validSessionDurations.max() ?? 0
-            let durationMedianMs = validSessionDurations.median()
+            for (_, sessionEvents) in sessionGroups where sessionEvents[.started] != nil {
+                startedCount += 1
+
+                if let endEvent = sessionEvents[.completed] ?? sessionEvents[.terminated] {
+                    if endEvent.eventType == .completed {
+                        completedCount += 1
+                    } else {
+                        terminatedCount += 1
+                    }
+
+                    if let durationMs = endEvent.metadata?.duration {
+                        if durationMs > 0 && durationMs < Double(.days(1) * 1000) {
+                            durations.append(Int64(durationMs))
+                        }
+                    }
+                } else {
+                    orphanedCount += 1
+                }
+            }
+
+            let durationMinMs = durations.min() ?? 0
+            let durationMaxMs = durations.max() ?? 0
+            let durationMedianMs = durations.median()
 
             handler.fire(.weeklyReportBackgroundTaskSession(
                 started: startedCount,
+                orphaned: orphanedCount,
                 completed: completedCount,
                 terminated: terminatedCount,
                 durationMinMs: Double(durationMinMs),
@@ -160,7 +182,7 @@ public final class DataBrokerProtectionEventPixels {
                 durationMedianMs: durationMedianMs
             ))
         } catch {
-            Logger.dataBrokerProtection.error("Failed to fetch background task sessions: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("Failed to fetch background task events: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -182,10 +204,10 @@ public final class DataBrokerProtectionEventPixels {
 
     private func cleanupOldBackgroundTaskSessions() {
         do {
-            try database.deleteBackgroundTaskSessions(olderThan: .daysAgo(7))
-            Logger.dataBrokerProtection.log("Cleaned up background task sessions older than 7 days")
+            try database.deleteBackgroundTaskEvents(olderThan: .daysAgo(7))
+            Logger.dataBrokerProtection.log("Cleaned up background task events older than 7 days")
         } catch {
-            Logger.dataBrokerProtection.error("Failed to clean up old background task sessions: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("Failed to clean up old background task events: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

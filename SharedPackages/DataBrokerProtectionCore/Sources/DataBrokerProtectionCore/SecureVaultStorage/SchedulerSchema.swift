@@ -394,34 +394,38 @@ extension OptOutAttemptDB: PersistableRecord, FetchableRecord {
     }
 }
 
-public struct BackgroundTaskSessionDB: Codable {
+public struct BackgroundTaskEventDB: Codable {
     let id: Int64?
-    public let startDate: Date
-    let duration: Int64
-    let isTerminated: Bool
+    public let sessionId: String
+    public let eventType: String
+    public let timestamp: Date
+    public let metadata: Data?
 }
 
-extension BackgroundTaskSessionDB: PersistableRecord, FetchableRecord {
-    public static let databaseTableName: String = "backgroundTaskSession"
+extension BackgroundTaskEventDB: PersistableRecord, FetchableRecord {
+    public static let databaseTableName: String = "backgroundTaskEvent"
 
     enum Columns: String, ColumnExpression {
         case id
-        case startDate
-        case duration
-        case isTerminated
+        case sessionId
+        case eventType
+        case timestamp
+        case metadata
     }
 
     public init(row: Row) throws {
         id = row[Columns.id]
-        startDate = row[Columns.startDate]
-        duration = row[Columns.duration]
-        isTerminated = row[Columns.isTerminated]
+        sessionId = row[Columns.sessionId]
+        eventType = row[Columns.eventType]
+        timestamp = row[Columns.timestamp]
+        metadata = row[Columns.metadata]
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.id] = id
-        container[Columns.startDate] = startDate
-        container[Columns.duration] = duration
-        container[Columns.isTerminated] = isTerminated
+        container[Columns.sessionId] = sessionId
+        container[Columns.eventType] = eventType
+        container[Columns.timestamp] = timestamp
+        container[Columns.metadata] = metadata
     }
 }

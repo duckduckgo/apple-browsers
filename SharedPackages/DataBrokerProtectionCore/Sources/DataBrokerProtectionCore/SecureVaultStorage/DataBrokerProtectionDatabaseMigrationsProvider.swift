@@ -321,12 +321,13 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
     }
 
     static func migrateV7(database: Database) throws {
-        try database.create(table: BackgroundTaskSessionDB.databaseTableName) {
-            $0.autoIncrementedPrimaryKey(BackgroundTaskSessionDB.Columns.id.name)
+        try database.create(table: BackgroundTaskEventDB.databaseTableName) {
+            $0.autoIncrementedPrimaryKey(BackgroundTaskEventDB.Columns.id.name)
 
-            $0.column(BackgroundTaskSessionDB.Columns.startDate.name, .datetime).notNull()
-            $0.column(BackgroundTaskSessionDB.Columns.duration.name, .integer).notNull()
-            $0.column(BackgroundTaskSessionDB.Columns.isTerminated.name, .boolean).notNull().defaults(to: false)
+            $0.column(BackgroundTaskEventDB.Columns.sessionId.name, .text).notNull()
+            $0.column(BackgroundTaskEventDB.Columns.eventType.name, .text).notNull()
+            $0.column(BackgroundTaskEventDB.Columns.timestamp.name, .datetime).notNull()
+            $0.column(BackgroundTaskEventDB.Columns.metadata.name, .text)
         }
     }
 

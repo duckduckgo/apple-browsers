@@ -296,6 +296,20 @@ public final class DataBrokerProtectionIOSManager {
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
         iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
         let startDate = Date.now
+        let sessionId = UUID().uuidString
+        
+        // Record started event
+        do {
+            let event = BackgroundTaskEvent(
+                sessionId: sessionId,
+                eventType: .started,
+                timestamp: startDate,
+                metadata: nil
+            )
+            try database.recordBackgroundTaskEvent(event)
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to record background task start event: \(error.localizedDescription, privacy: .public)")
+        }
 
         task.expirationHandler = {
             self.queueManager.stop()
@@ -306,12 +320,18 @@ public final class DataBrokerProtectionIOSManager {
             self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
                                                               deviceID: DataBrokerProtectionSettings.deviceIdentifier))
             
-            // Record terminated session
-            let duration = Date.now.timeIntervalSince(startDate) * 1000
+            // Record terminated event
+            let duration = Date.now.timeIntervalSince(startDate) * 1000.0
             do {
-                try self.database.saveBackgroundTaskSession(startDate: startDate, duration: Int64(duration), isTerminated: true)
+                let event = BackgroundTaskEvent(
+                    sessionId: sessionId,
+                    eventType: .terminated,
+                    timestamp: Date.now,
+                    metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
+                )
+                try self.database.recordBackgroundTaskEvent(event)
             } catch {
-                Logger.dataBrokerProtection.error("Failed to save terminated background task session: \(error.localizedDescription, privacy: .public)")
+                Logger.dataBrokerProtection.error("Failed to record background task terminated event: \(error.localizedDescription, privacy: .public)")
             }
             
             self.scheduleBGProcessingTask()
@@ -333,12 +353,18 @@ public final class DataBrokerProtectionIOSManager {
                     duration: timeTaken * 1000.0,
                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
 
-                // Record completed session
-                let duration = Date.now.timeIntervalSince(startDate) * 1000
+                // Record completed event
+                let duration = Date.now.timeIntervalSince(startDate) * 1000.0
                 do {
-                    try self.database.saveBackgroundTaskSession(startDate: startDate, duration: Int64(duration), isTerminated: false)
+                    let event = BackgroundTaskEvent(
+                        sessionId: sessionId,
+                        eventType: .completed,
+                        timestamp: Date.now,
+                        metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
+                    )
+                    try self.database.recordBackgroundTaskEvent(event)
                 } catch {
-                    Logger.dataBrokerProtection.error("Failed to save completed background task session: \(error.localizedDescription, privacy: .public)")
+                    Logger.dataBrokerProtection.error("Failed to record background task completed event: \(error.localizedDescription, privacy: .public)")
                 }
 
                 self.scheduleBGProcessingTask()

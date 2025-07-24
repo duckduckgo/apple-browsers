@@ -78,7 +78,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
          vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          statusReporter: NetworkProtectionStatusReporter,
          iconProvider: IconProvider,
-         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = Application.appDelegate.vpnUpsellVisibilityManager) {
+         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {
 
         self.popoverManager = popoverManager
         self.vpnGatekeeper = vpnGatekeeper

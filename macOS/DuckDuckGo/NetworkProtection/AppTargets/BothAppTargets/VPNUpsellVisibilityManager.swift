@@ -37,6 +37,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
     private let featureFlagger: FeatureFlagger
     private let timerDuration: TimeInterval
+    private var persistor: VPNUpsellUserDefaultsPersisting
 
     // MARK: - State
     private var cancellables = Set<AnyCancellable>()
@@ -49,8 +50,8 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          defaultBrowserPublisher: AnyPublisher<Bool, Never>,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
          featureFlagger: FeatureFlagger,
-         timerDuration: TimeInterval = 600)
-    {
+         persistor: VPNUpsellUserDefaultsPersisting = VPNUpsellUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
+         timerDuration: TimeInterval = 600) {
         self.isFirstLaunch = isFirstLaunch
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
@@ -58,6 +59,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
         self.featureFlagger = featureFlagger
         self.timerDuration = timerDuration
+        self.persistor = persistor
 
         guard isNewUser && !isUserAuthenticated else {
             return
@@ -71,12 +73,18 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         setupMonitoring()
     }
 
+    // MARK: - Eligibility
+
     private var isFeatureOn: Bool {
         featureFlagger.isFeatureOn(.vpnToolbarUpsell)
     }
 
     private var isUserAuthenticated: Bool {
         subscriptionManager.isUserAuthenticated
+    }
+
+    private var hasBeenManuallyDismissed: Bool {
+        persistor.vpnUpsellDismissed
     }
 
     // MARK: - Monitoring Setup
@@ -103,6 +111,21 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
     // MARK: - Event Handling
 
+    public func handlePinningChange(isPinned: Bool) {
+        guard isFeatureOn, !isUserAuthenticated, !hasBeenManuallyDismissed else {
+            return
+        }
+
+        guard isPinned else {
+            dismissUpsell()
+            return
+        }
+
+        if persistor.vpnUpsellFirstPinnedDate == nil {
+            persistor.vpnUpsellFirstPinnedDate = Date()
+        }
+    }
+
     private func startTimerIfNeeded(onboardingCompleted: Bool, defaultBrowserSet: Bool) {
         guard onboardingCompleted, defaultBrowserSet, timer == nil, !timerCompleted else {
             return
@@ -125,10 +148,15 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         updateUpsellVisibility(shouldShow: !isUserAuthenticated)
     }
 
+    private func dismissUpsell() {
+        persistor.vpnUpsellDismissed = true
+        updateUpsellVisibility(shouldShow: false)
+    }
+
     // MARK: - Upsell Visibility
 
     private func updateUpsellVisibility(shouldShow: Bool) {
-        guard isFeatureOn, !isUserAuthenticated else {
+        guard isFeatureOn, !isUserAuthenticated, !hasBeenManuallyDismissed else {
             shouldShowUpsell = false
             return
         }

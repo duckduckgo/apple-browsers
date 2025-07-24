@@ -26,9 +26,9 @@ public struct BackgroundTaskEvent: Identifiable, Sendable {
     }
 
     public struct Metadata: Codable, Sendable {
-        public let duration: TimeInterval?
+        public let duration: TimeInterval
 
-        public init(durationInMs: TimeInterval? = nil) {
+        public init(durationInMs: TimeInterval) {
             self.duration = durationInMs
         }
     }

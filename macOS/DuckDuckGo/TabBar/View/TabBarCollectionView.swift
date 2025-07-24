@@ -111,7 +111,7 @@ final class TabBarCollectionView: NSCollectionView {
     // MARK: - Accessibility
 
     override func accessibilityChildren() -> [Any]? {
-        // matches [NSCollectionViewAccessibilityHelper accessibilityChildren] implementation
+        // matches the internal [NSCollectionViewAccessibilityHelper accessibilityChildren] implementation
         return accessibilityVisibleChildren()
     }
 

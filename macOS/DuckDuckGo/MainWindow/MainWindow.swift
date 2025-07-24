@@ -125,13 +125,12 @@ final class MainWindow: NSWindow {
         })
         // semaphore buttons should be present
         guard buttons.count > 3 else { return children }
-        guard var insertionPoint = buttons.prefix(3).last?.offset else { return children }
+        guard let insertionPoint = buttons.prefix(3).last?.offset else { return children }
 
         let tabBarViewController = mainViewController.tabBarViewController
         if !children.contains(where: { $0 as AnyObject === tabBarViewController.view }) {
             // Insert `TabBarViewController.view` as the window‘s AX child after the semaphore buttons
             children.insert(tabBarViewController.view, at: insertionPoint)
-            insertionPoint += 1
         }
         return children
     }

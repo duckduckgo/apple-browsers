@@ -81,7 +81,7 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     var isAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiFeatures)
+        privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .aiChat)
     }
 
     var isTextSummarizationEnabled: Bool {

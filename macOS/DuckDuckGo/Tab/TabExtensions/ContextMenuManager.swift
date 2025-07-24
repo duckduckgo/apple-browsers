@@ -41,6 +41,7 @@ final class ContextMenuManager: NSObject {
     private var tabsPreferences: TabsPreferences
     private let isLoadedInSidebar: Bool
     private let internalUserDecider: InternalUserDecider
+    private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
 
     private var isEmailAddress: Bool {
         guard let linkURL, let url = URL(string: linkURL) else {
@@ -63,10 +64,13 @@ final class ContextMenuManager: NSObject {
          contentPublisher: some Publisher<Tab.TabContent, Never>,
          tabsPreferences: TabsPreferences = TabsPreferences.shared,
          isLoadedInSidebar: Bool = false,
-         internalUserDecider: InternalUserDecider) {
+         internalUserDecider: InternalUserDecider,
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    ) {
         self.tabsPreferences = tabsPreferences
         self.isLoadedInSidebar = isLoadedInSidebar
         self.internalUserDecider = internalUserDecider
+        self.aiChatMenuConfiguration = aiChatMenuConfiguration
         super.init()
 
         contextMenuScriptPublisher
@@ -244,7 +248,7 @@ extension ContextMenuManager {
         case .aiChat:
             return false
         default:
-            return AIChatMenuConfiguration().shouldDisplaySummarizationMenuItem
+            return aiChatMenuConfiguration.shouldDisplaySummarizationMenuItem
         }
     }
 }

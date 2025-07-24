@@ -149,7 +149,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireAnimationDecider: visualizeFireAnimationDecider,
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
-        tabsPreferences: TabsPreferences.shared
+        tabsPreferences: TabsPreferences.shared,
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -157,6 +158,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
         windowControllersManager: windowControllersManager
     )
+    let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSidebarProvider: AIChatSidebarProviding
 
     let privacyStats: PrivacyStatsCollecting
@@ -267,7 +269,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         bookmarkDatabase = BookmarkDatabase()
-        aiChatSidebarProvider = AIChatSidebarProvider()
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
@@ -381,6 +382,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        aiChatSidebarProvider = AIChatSidebarProvider()
+        aiChatMenuConfiguration = AIChatMenuConfiguration(
+            storage: DefaultAIChatPreferencesStorage(),
+            remoteSettings: AIChatRemoteSettings(
+                featureFlagger: featureFlagger,
+                privacyConfigurationManager: privacyConfigurationManager
+            )
+        )
 
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,

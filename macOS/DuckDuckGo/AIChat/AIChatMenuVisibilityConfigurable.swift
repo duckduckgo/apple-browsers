@@ -94,8 +94,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.openAIChatInSidebar
     }
 
-    init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         remoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings()) {
+    init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider) {
         self.storage = storage
         self.remoteSettings = remoteSettings
 

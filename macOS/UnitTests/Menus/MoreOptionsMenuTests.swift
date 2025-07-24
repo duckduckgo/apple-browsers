@@ -108,6 +108,9 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     private func setupMoreOptionsMenu() {
+        let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
+        aiChatPreferencesStorage.showShortcutInApplicationMenu = true
+
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                           bookmarkManager: MockBookmarkManager(),
                                           historyCoordinator: HistoryCoordinatingMock(),
@@ -125,7 +128,11 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
                                           featureFlagger: mockFeatureFlagger,
-                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler)
+                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+                                          aiChatMenuConfiguration: AIChatMenuConfiguration(
+                                            storage: aiChatPreferencesStorage,
+                                            remoteSettings: MockRemoteAISettings()
+                                          ))
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }

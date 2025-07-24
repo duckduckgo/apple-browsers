@@ -135,13 +135,6 @@ jobs:
         working-directory: .
 
     steps:
-      - name: Assert main branch
-        run: |
-          if [ "${{ github.ref_name }}" != "main" ]; then
-            echo "👎 Not the main branch"
-            exit 1
-          fi
-
       - name: Download DMG URL artifact
         uses: actions/download-artifact@v4
         with:

@@ -39,7 +39,7 @@ on:
         required: true
 
 jobs:
-  build:
+  build-alpha:
     runs-on: macos-15
     name: Build Alpha
     timeout-minutes: 20
@@ -185,7 +185,7 @@ jobs:
         retention-days: 1
 
   upload:
-    needs: build
+    needs: build-alpha
     if: needs.build.outputs.should_skip != 'true'
     runs-on: macos-15
     name: Upload to TestFlight
@@ -199,13 +199,6 @@ jobs:
       destination: ${{ github.event.inputs.destination || inputs.destination || 'Latest Alpha Group' }}
 
     steps:
-    - name: Assert main branch
-      run: |
-        if [ "${{ github.ref_name }}" != "main" ]; then
-          echo "👎 Not the main branch"
-          exit 1
-        fi
-
     - name: Check out the code
       uses: actions/checkout@v4
       with:
@@ -254,13 +247,6 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-    - name: Assert main branch
-      run: |
-        if [ "${{ github.ref_name }}" != "main" ]; then
-          echo "👎 Not the main branch"
-          exit 1
-        fi
-
     - name: Check out the code
       uses: actions/checkout@v4
       with:

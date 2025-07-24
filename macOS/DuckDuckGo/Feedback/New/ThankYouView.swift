@@ -33,7 +33,7 @@ struct ThankYouView: View {
                 DaxHeartAnimation()
                     .frame(width: 64, height: 64)
 
-                Text("Thanks for your feedback!")
+                Text(UserText.thankYouTitle)
                     .systemTitle2()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -42,7 +42,7 @@ struct ThankYouView: View {
 
             // Link section
             VStack(alignment: .leading, spacing: 16) {
-                Text("Feedback like yours directly influences our product updates and improvements.")
+                Text(UserText.thankYouMessage)
                     .systemLabel(color: .textSecondary)
                     .multilineText()
                     .multilineTextAlignment(.leading)
@@ -52,7 +52,7 @@ struct ThankYouView: View {
                     onSeeWhatsNew()
                 } label: {
                     HStack(spacing: 3) {
-                        Text("See what's new in DuckDuckGo")
+                        Text(UserText.thankYouSeeWhatsNew)
                             .systemLabel(color: .init(baseColor: .blue60))
 
                         Image(nsImage: DesignSystemImages.Glyphs.Size12.open)
@@ -73,7 +73,7 @@ struct ThankYouView: View {
                 Button {
                     onClose()
                 } label: {
-                    Text("Close")
+                    Text(UserText.feedbackFormClose)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(DismissActionButtonStyle())

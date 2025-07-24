@@ -37,7 +37,7 @@ final class RequestNewFeatureViewModel: ObservableObject {
     }
 
     var shouldShowIncognitoInfo: Bool {
-        selectedFeatures.contains("Incognito")
+        selectedFeatures.contains(UserText.featureIncognito)
     }
 
     var hasSelectedFeatures: Bool {
@@ -52,23 +52,23 @@ final class RequestNewFeatureViewModel: ObservableObject {
 
     init() {
         let allFeatures = [
-            "Advanced ad blocking",
-            "AI support",
-            "Cast video/audio",
-            "Customize browser theme",
-            "Dark mode on all sites",
-            "Import bookmarks folders",
-            "Import history",
-            "Incognito",
-            "Move browser buttons",
-            "New tab page widgets",
-            "Password manager extensions",
-            "Picture-in-picture",
-            "Reader mode",
-            "Tab groups",
-            "User profiles",
-            "Vertical tabs",
-            "Website translation"
+            UserText.featureAdvancedAdBlocking,
+            UserText.featureAISupport,
+            UserText.featureCastVideo,
+            UserText.featureCustomizeTheme,
+            UserText.featureDarkModeAllSites,
+            UserText.featureImportBookmarkFolders,
+            UserText.featureImportHistory,
+            UserText.featureIncognito,
+            UserText.featureMoveBrowserButtons,
+            UserText.featureNewTabPageWidgets,
+            UserText.featurePasswordManagerExtensions,
+            UserText.featurePictureInPicture,
+            UserText.featureReaderMode,
+            UserText.featureTabGroups,
+            UserText.featureUserProfiles,
+            UserText.featureVerticalTabs,
+            UserText.featureWebsiteTranslation
         ]
 
         self.availableFeatures = Array(allFeatures.shuffled().prefix(12))

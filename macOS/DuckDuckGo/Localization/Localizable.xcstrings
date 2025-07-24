@@ -24863,6 +24863,162 @@
         }
       }
     },
+    "feedback.feature.advanced-ad-blocking" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Advanced ad blocking"
+          }
+        }
+      }
+    },
+    "feedback.feature.ai-support" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI support"
+          }
+        }
+      }
+    },
+    "feedback.feature.cast-video" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cast video/audio"
+          }
+        }
+      }
+    },
+    "feedback.feature.customize-theme" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize browser theme"
+          }
+        }
+      }
+    },
+    "feedback.feature.dark-mode-all-sites" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dark mode on all sites"
+          }
+        }
+      }
+    },
+    "feedback.feature.import-bookmark-folders" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import bookmarks folders"
+          }
+        }
+      }
+    },
+    "feedback.feature.import-history" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import history"
+          }
+        }
+      }
+    },
+    "feedback.feature.incognito" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Incognito"
+          }
+        }
+      }
+    },
+    "feedback.feature.move-browser-buttons" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move browser buttons"
+          }
+        }
+      }
+    },
+    "feedback.feature.new-tab-widgets" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New tab page widgets"
+          }
+        }
+      }
+    },
+    "feedback.feature.password-manager-extensions" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Password manager extensions"
+          }
+        }
+      }
+    },
+    "feedback.feature.picture-in-picture" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Picture-in-picture"
+          }
+        }
+      }
+    },
+    "feedback.feature.reader-mode" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reader mode"
+          }
+        }
+      }
+    },
     "feedback.feature.request.description" : {
       "comment" : "Label in the feedback form for feature requests.",
       "extractionState" : "extracted_with_value",
@@ -24923,6 +25079,90 @@
         }
       }
     },
+    "feedback.feature.tab-groups" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tab groups"
+          }
+        }
+      }
+    },
+    "feedback.feature.user-profiles" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "User profiles"
+          }
+        }
+      }
+    },
+    "feedback.feature.vertical-tabs" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Vertical tabs"
+          }
+        }
+      }
+    },
+    "feedback.feature.website-translation" : {
+      "comment" : "Feature request option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Website translation"
+          }
+        }
+      }
+    },
+    "feedback.form.close" : {
+      "comment" : "Close button for feedback forms",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "feedback.incognito-info.description" : {
+      "comment" : "Description text for incognito feature information box",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open the browser menu and select **New Fire Window** to browse without saving local history, and automatically burn data when you close the window."
+          }
+        }
+      }
+    },
+    "feedback.incognito-info.title" : {
+      "comment" : "Title for incognito feature information box",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Have you tried our Fire Window?"
+          }
+        }
+      }
+    },
     "feedback.other.description" : {
       "comment" : "Label in the feedback form",
       "extractionState" : "extracted_with_value",
@@ -24979,6 +25219,654 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Оставьте комментарий здесь:"
+          }
+        }
+      }
+    },
+    "feedback.problem-category.ads-issues" : {
+      "comment" : "Problem category for advertising-related problems",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ads causing issues"
+          }
+        }
+      }
+    },
+    "feedback.problem-category.broken-website" : {
+      "comment" : "Problem category for broken website reports",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Report broken website"
+          }
+        }
+      }
+    },
+    "feedback.problem-category.browser-doesnt-work" : {
+      "comment" : "Problem category for functionality issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser doesn't work as expected"
+          }
+        }
+      }
+    },
+    "feedback.problem-category.browser-too-slow" : {
+      "comment" : "Problem category for performance issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Computer or browser is too slow"
+          }
+        }
+      }
+    },
+    "feedback.problem-category.install-updates" : {
+      "comment" : "Problem category for installation and update issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser install & updates"
+          }
+        }
+      }
+    },
+    "feedback.problem-category.password-issues" : {
+      "comment" : "Problem category for password-related problems",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Password issues"
+          }
+        }
+      }
+    },
+    "feedback.problem-category.something-else" : {
+      "comment" : "Problem category for other issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.banner-ads-blocking-content" : {
+      "comment" : "Problem subcategory for intrusive banner ads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Banner ads blocking content"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.browser-starts-slowly" : {
+      "comment" : "Problem subcategory for slow browser startup",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser starts slowly"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.browser-uses-too-much-memory" : {
+      "comment" : "Problem subcategory for memory usage issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser uses too much memory"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.browser-version-issues" : {
+      "comment" : "Problem subcategory for version-related problems",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser version issues"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.camera-audio-permissions" : {
+      "comment" : "Problem subcategory for media permissions issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Camera/audio permissions"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.cant-complete-a-purchase" : {
+      "comment" : "Problem subcategory for e-commerce transaction issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can't complete a purchase"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.cant-control-updates" : {
+      "comment" : "Problem subcategory for update control issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can't control updates"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.cant-restart-failed-downloads" : {
+      "comment" : "Problem subcategory for download restart issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can't restart failed downloads"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.cant-sync-passwords" : {
+      "comment" : "Problem subcategory for password synchronization issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can't sync passwords"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.changing-tabs-takes-too-long" : {
+      "comment" : "Problem subcategory for slow tab switching",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Changing tabs takes too long"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.confusing-or-missing-settings" : {
+      "comment" : "Problem subcategory for settings issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Confusing or missing settings"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.distracting-animations-on-ads" : {
+      "comment" : "Problem subcategory for animated advertising",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Distracting animations on ads"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.exporting-passwords" : {
+      "comment" : "Problem subcategory for password export issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Exporting passwords"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.features-dont-work" : {
+      "comment" : "Problem subcategory for website functionality issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Features don't work"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.importing-passwords" : {
+      "comment" : "Problem subcategory for password import issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Importing passwords"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.installing" : {
+      "comment" : "Problem subcategory for installation issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Installing"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.interrupting-popups" : {
+      "comment" : "Problem subcategory for disruptive popup ads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Interrupting pop-ups"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.large-banner-ads" : {
+      "comment" : "Problem subcategory for oversized banner advertisements",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Large banner ads"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.logged-out-unexpectedly" : {
+      "comment" : "Problem subcategory for unexpected logout issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Logged out unexpectedly"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.lost-tabs-or-history" : {
+      "comment" : "Problem subcategory for data loss issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Lost tabs or history"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.new-tabs-open-slowly" : {
+      "comment" : "Problem subcategory for slow new tab creation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New tabs open slowly"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.no-download-history" : {
+      "comment" : "Problem subcategory for missing download history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No download history"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.no-downloads-history" : {
+      "comment" : "Problem subcategory for missing downloads history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No downloads history"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.passwords-management" : {
+      "comment" : "Problem subcategory for general password management issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords management"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.site-asks-to-turn-off-ad-blocker" : {
+      "comment" : "Problem subcategory for ad blocker detection messages",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Site asks to turn off ad blocker"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.site-looks-broken" : {
+      "comment" : "Problem subcategory for website display issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Site looks broken"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.site-wont-load" : {
+      "comment" : "Problem subcategory for website loading failures",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Site won't load"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.something-else" : {
+      "comment" : "Problem subcategory for other website issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.too-many-captchas" : {
+      "comment" : "Problem subcategory for excessive CAPTCHA prompts",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Too many CAPTCHAs"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.too-many-updates" : {
+      "comment" : "Problem subcategory for excessive updates",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Too many updates"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.uninstalling" : {
+      "comment" : "Problem subcategory for uninstallation issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Uninstalling"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.video-audio-plays-automatically" : {
+      "comment" : "Problem subcategory for unwanted autoplay",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video/audio plays automatically"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.video-doesnt-play" : {
+      "comment" : "Problem subcategory for video playback issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Video doesn't play"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.websites-load-slowly" : {
+      "comment" : "Problem subcategory for slow website loading",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Websites load slowly"
+          }
+        }
+      }
+    },
+    "feedback.report-problem.placeholder" : {
+      "comment" : "Placeholder text for additional feedback input",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The more details you share, the better!"
+          }
+        }
+      }
+    },
+    "feedback.report-problem.select-all" : {
+      "comment" : "Instruction text for problem detail form",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select all that apply"
+          }
+        }
+      }
+    },
+    "feedback.report-problem.subtitle" : {
+      "comment" : "Subtitle for the report problem feedback form",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select the issue you want to report"
+          }
+        }
+      }
+    },
+    "feedback.report-problem.tell-us-more" : {
+      "comment" : "Optional text input section title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tell us more (optional)"
+          }
+        }
+      }
+    },
+    "feedback.report-problem.title" : {
+      "comment" : "Title for the report problem feedback form",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Report a Problem"
+          }
+        }
+      }
+    },
+    "feedback.request-feature.custom-idea" : {
+      "comment" : "Text input section title for custom feature ideas",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Or share your own feature idea"
+          }
+        }
+      }
+    },
+    "feedback.request-feature.placeholder" : {
+      "comment" : "Placeholder text for custom feature input",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The more details you share, the better!"
+          }
+        }
+      }
+    },
+    "feedback.request-feature.select-all" : {
+      "comment" : "Instruction text for feature request form",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select all that apply"
+          }
+        }
+      }
+    },
+    "feedback.request-feature.title" : {
+      "comment" : "Title for the request new feature feedback form",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Request a New Feature"
+          }
+        }
+      }
+    },
+    "feedback.something-else" : {
+      "comment" : "Generic option for other feedback items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else"
+          }
+        }
+      }
+    },
+    "feedback.thank-you.message" : {
+      "comment" : "Message for thank you screen after feedback submission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Feedback like yours directly influences our product updates and improvements."
+          }
+        }
+      }
+    },
+    "feedback.thank-you.see-whats-new" : {
+      "comment" : "Link text to see product updates",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See what's new in DuckDuckGo"
+          }
+        }
+      }
+    },
+    "feedback.thank-you.title" : {
+      "comment" : "Title for thank you screen after feedback submission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Thanks for your feedback!"
           }
         }
       }
@@ -46228,9 +47116,6 @@
         }
       }
     },
-    "Or share your own feature idea" : {
-
-    },
     "page.crash.header" : {
       "comment" : "Error page heading text shown when a Web Page process had crashed",
       "extractionState" : "extracted_with_value",
@@ -64826,9 +65711,6 @@
         }
       }
     },
-    "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version." : {
-
-    },
     "Request a New Feature" : {
 
     },
@@ -66083,9 +66965,6 @@
           }
         }
       }
-    },
-    "Select all that apply" : {
-
     },
     "Select Profile:" : {
       "comment" : "Browser Profile picker title for Data Import",
@@ -69847,9 +70726,6 @@
         }
       }
     },
-    "Submit" : {
-
-    },
     "submit.report" : {
       "comment" : "Submit Report button",
       "extractionState" : "extracted_with_value",
@@ -71568,9 +72444,6 @@
           }
         }
       }
-    },
-    "The more details you share, the better!" : {
-
     },
     "The version of the browser you are trying to import from" : {
       "comment" : "Data import failure Report dialog description of a report field providing version of a browser user is trying to import data from",

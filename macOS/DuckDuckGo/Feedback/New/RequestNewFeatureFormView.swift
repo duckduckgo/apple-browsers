@@ -105,10 +105,10 @@ struct RequestNewFeatureFormView: View {
 
             VStack(alignment: .leading, spacing: 8) {
 
-                Text("Request a New Feature")
+                Text(UserText.requestNewFeatureFormTitle)
                     .systemTitle2()
 
-                Text("Select all that apply")
+                Text(UserText.requestNewFeatureFormSelectAllThatApply)
                     .systemLabel()
             }
         }
@@ -139,7 +139,7 @@ struct RequestNewFeatureFormView: View {
 
     private func userTextInput() -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Or share your own feature idea")
+            Text(UserText.requestNewFeatureFormCustomIdea)
                 .systemLabel()
 
             TextEditor(text: $viewModel.customFeatureText)
@@ -159,7 +159,7 @@ struct RequestNewFeatureFormView: View {
                             HStack {
                                 VStack {
                                     HStack {
-                                        Text("The more details you share, the better!")
+                                        Text(UserText.requestNewFeatureFormPlaceholder)
                                             .systemLabel(color: .textTertiary)
                                         Spacer()
                                     }
@@ -182,7 +182,7 @@ struct RequestNewFeatureFormView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 1)
 
-            Text("Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version.")
+            Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
                 .padding([.leading, .trailing], 24)
@@ -191,7 +191,7 @@ struct RequestNewFeatureFormView: View {
                 Button {
                     onClose()
                 } label: {
-                    Text("Cancel")
+                    Text(UserText.cancel)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(DismissActionButtonStyle())
@@ -199,7 +199,7 @@ struct RequestNewFeatureFormView: View {
                 Button {
                     onSubmit()
                 } label: {
-                    Text("Submit")
+                    Text(UserText.submit)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
@@ -216,10 +216,10 @@ private struct IncognitoInfoBox: View {
             Image(nsImage: DesignSystemImages.Color.Size16.infoFeedback)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Have you tried our Fire Window?")
+                Text(UserText.incognitoInfoBoxTitle)
                     .body()
 
-                Text("Open the browser menu and select **New Fire Window** to browse without saving local history, and automatically burn data when you close the window.")
+                Text(UserText.incognitoInfoBoxDescription)
                     .systemLabel(color: .textSecondary)
                     .multilineTextAlignment(.leading)
             }

@@ -114,82 +114,82 @@ struct ProblemCategory: Identifiable, Hashable {
     static let allCategories: [ProblemCategory] = [
         ProblemCategory(
             id: "browserTooSlow",
-            name: "Computer or browser is too slow",
+            name: UserText.problemCategoryBrowserTooSlow,
             subcategories: [
-                "Browser starts slowly",
-                "Browser uses too much memory",
-                "Changing tabs takes too long",
-                "New tabs open slowly",
-                "Websites load slowly"
+                UserText.problemSubcategoryBrowserStartsSlowly,
+                UserText.problemSubcategoryBrowserUsesTooMuchMemory,
+                UserText.problemSubcategoryChangingTabsTakesTooLong,
+                UserText.problemSubcategoryNewTabsOpenSlowly,
+                UserText.problemSubcategoryWebsitesLoadSlowly
             ]
         ),
         ProblemCategory(
             id: "browserDoesntWork",
-            name: "Browser doesn't work as expected",
+            name: UserText.problemCategoryBrowserDoesntWork,
             subcategories: [
-                "Browser uses too much memory",
-                "Camera/audio permissions",
-                "Can't restart failed downloads",
-                "Confusing or missing settings",
-                "Logged out unexpectedly",
-                "Lost tabs or history",
-                "No download history",
-                "Too many CAPTCHAs",
-                "Video/audio plays automatically",
-                "Video doesn't play"
+                UserText.problemSubcategoryBrowserUsesTooMuchMemory,
+                UserText.problemSubcategoryCameraAudioPermissions,
+                UserText.problemSubcategoryCantRestartFailedDownloads,
+                UserText.problemSubcategoryConfusingOrMissingSettings,
+                UserText.problemSubcategoryLoggedOutUnexpectedly,
+                UserText.problemSubcategoryLostTabsOrHistory,
+                UserText.problemSubcategoryNoDownloadHistory,
+                UserText.problemSubcategoryTooManyCaptchas,
+                UserText.problemSubcategoryVideoAudioPlaysAutomatically,
+                UserText.problemSubcategoryVideoDoesntPlay
             ]
         ),
         ProblemCategory(
             id: "installUpdates",
-            name: "Browser install & updates",
+            name: UserText.problemCategoryInstallUpdates,
             subcategories: [
-                "Browser version issues",
-                "Can't control updates",
-                "Installing",
-                "Uninstalling",
-                "Too many updates"
+                UserText.problemSubcategoryBrowserVersionIssues,
+                UserText.problemSubcategoryCantControlUpdates,
+                UserText.problemSubcategoryInstalling,
+                UserText.problemSubcategoryUninstalling,
+                UserText.problemSubcategoryTooManyUpdates
             ]
         ),
         ProblemCategory(
             id: "brokenWebsite",
-            name: "Report broken website",
+            name: UserText.problemCategoryBrokenWebsite,
             subcategories: [
-                "Site won't load",
-                "Site looks broken",
-                "Features don't work",
-                "Something else"
+                UserText.problemSubcategorySiteWontLoad,
+                UserText.problemSubcategorySiteLooksBroken,
+                UserText.problemSubcategoryFeaturesDontWork,
+                UserText.problemSubcategorySomethingElse
             ]
         ),
         ProblemCategory(
             id: "adsIssues",
-            name: "Ads causing issues",
+            name: UserText.problemCategoryAdsIssues,
             subcategories: [
-                "Banner ads blocking content",
-                "Distracting animations on ads",
-                "Interrupting pop-ups",
-                "Large banner ads",
-                "Site asks to turn off ad blocker"
+                UserText.problemSubcategoryBannerAdsBlockingContent,
+                UserText.problemSubcategoryDistractingAnimationsOnAds,
+                UserText.problemSubcategoryInterruptingPopups,
+                UserText.problemSubcategoryLargeBannerAds,
+                UserText.problemSubcategorySiteAsksToTurnOffAdBlocker
             ]
         ),
         ProblemCategory(
             id: "passwordIssues",
-            name: "Password issues",
+            name: UserText.problemCategoryPasswordIssues,
             subcategories: [
-                "Can't sync passwords",
-                "Exporting passwords",
-                "Importing passwords",
-                "Passwords management"
+                UserText.problemSubcategoryCantSyncPasswords,
+                UserText.problemSubcategoryExportingPasswords,
+                UserText.problemSubcategoryImportingPasswords,
+                UserText.problemSubcategoryPasswordsManagement
             ]
         ),
         ProblemCategory(
             id: "somethingElse",
-            name: "Something else",
+            name: UserText.problemCategorySomethingElse,
             subcategories: [
-                "Can't complete a purchase",
-                "Can't restart failed downloads",
-                "Confusing or missing settings",
-                "No downloads history",
-                "Video/audio plays automatically"
+                UserText.problemSubcategoryCantCompleteAPurchase,
+                UserText.problemSubcategoryCantRestartFailedDownloads,
+                UserText.problemSubcategoryConfusingOrMissingSettings,
+                UserText.problemSubcategoryNoDownloadsHistory,
+                UserText.problemSubcategoryVideoAudioPlaysAutomatically
             ]
         )
     ]
@@ -226,10 +226,10 @@ struct ProblemCategoriesView: View {
             Image(.feedbackAsk)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Report a Problem")
+                Text(UserText.reportProblemFormTitle)
                     .systemTitle2()
 
-                Text("Select the issue you want to report")
+                Text(UserText.reportProblemFormSubtitle)
                     .systemLabel()
             }
         }
@@ -261,7 +261,7 @@ struct ProblemCategoriesView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 1)
 
-            Text("Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version.")
+            Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
                 .padding([.leading, .trailing], 24)
@@ -269,7 +269,7 @@ struct ProblemCategoriesView: View {
             Button {
                 onClose()
             } label: {
-                Text("Cancel")
+                Text(UserText.cancel)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(DismissActionButtonStyle())
@@ -339,7 +339,7 @@ final class ProblemDetailViewModel: ObservableObject {
 
     init(problemCategory: ProblemCategory) {
         self.problemCategory = problemCategory
-        self.availableOptions = problemCategory.subcategories.shuffled().prefix(7) + ["Something else"]
+        self.availableOptions = problemCategory.subcategories.shuffled().prefix(7) + [UserText.feedbackSomethingElse]
     }
 
     func toggleOption(_ option: String) {
@@ -391,7 +391,7 @@ struct ProblemDetailFormView: View {
                 Text(viewModel.problemCategory.name)
                     .systemTitle2()
 
-                Text("Select all that apply")
+                Text(UserText.reportProblemFormSelectAllThatApply)
                     .systemLabel()
             }
         }
@@ -421,7 +421,7 @@ struct ProblemDetailFormView: View {
 
     private func userTextInput() -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Tell us more (optional)")
+            Text(UserText.reportProblemFormTellUsMore)
                 .systemLabel()
 
             TextEditor(text: $viewModel.customText)
@@ -441,7 +441,7 @@ struct ProblemDetailFormView: View {
                             HStack {
                                 VStack {
                                     HStack {
-                                        Text("The more details you share, the better!")
+                                        Text(UserText.reportProblemFormPlaceholder)
                                             .systemLabel(color: .textTertiary)
                                         Spacer()
                                     }
@@ -464,7 +464,7 @@ struct ProblemDetailFormView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 1)
 
-            Text("Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version.")
+            Text(UserText.feedbackDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
                 .padding([.leading, .trailing], 24)
@@ -473,7 +473,7 @@ struct ProblemDetailFormView: View {
                 Button {
                     onClose()
                 } label: {
-                    Text("Cancel")
+                    Text(UserText.cancel)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(DismissActionButtonStyle())
@@ -481,7 +481,7 @@ struct ProblemDetailFormView: View {
                 Button {
                     onSubmit()
                 } label: {
-                    Text("Submit")
+                    Text(UserText.submit)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))

@@ -108,7 +108,7 @@ final class MainWindow: NSWindow {
         didChangeValue(forKey: "childWindows")
     }
 
-    /// Makes custom Tab Bar visible for VoiceOver (Accessibility Inspector) as the window‘s child with no own AX representation (directly
+    /// Makes custom Tab Bar visible for VoiceOver (Accessibility Inspector) as the direct window‘s child
     /// (`accessibilityEnabled` and `isAccessibilityElement` are set in `MainWindowController.moveTabBarView(toTitlebarView:)`)
     override func accessibilityChildren() -> [Any]? {
         guard var children = super.accessibilityChildren() else { return nil }

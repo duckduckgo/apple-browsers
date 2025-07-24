@@ -82,7 +82,7 @@ jobs:
         runs=$(gh run list \
           --workflow="ios_alpha.yml" \
           --status="in_progress" \
-          --json="databaseId,headSha" \
+          --json="databaseId" \
           --jq='.[].databaseId')
         
         upload_in_progress=false

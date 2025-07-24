@@ -246,9 +246,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             return
         }
 
-        // Record that we're starting a check
-        await updateCheckState.recordCheckTime()
-
         if case .updaterError = userDriver?.updateProgress {
             userDriver?.cancelAndDismissCurrentUpdate()
         }
@@ -268,10 +265,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         // Store the task reference
         await updateCheckState.setActiveTask(updateTask)
-
-        // Wait for the task to complete and clean up
-        await updateTask.value
-        await updateCheckState.setActiveTask(nil)
     }
 
     private var isBuildExpired: Bool {
@@ -318,9 +311,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         await updateCheckState.cancelActiveTask()
         Logger.updates.debug("User-initiated update check - cancelled any active task")
 
-        // Record that we're starting a check (no rate limiting for user-initiated)
-        await updateCheckState.recordCheckTime()
-
         if case .updaterError = userDriver?.updateProgress {
             userDriver?.cancelAndDismissCurrentUpdate()
         }
@@ -340,10 +330,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         // Store the task reference
         await updateCheckState.setActiveTask(updateTask)
-
-        // Wait for the task to complete and clean up
-        await updateTask.value
-        await updateCheckState.setActiveTask(nil)
     }
 
     // MARK: - Private
@@ -553,12 +539,18 @@ extension UpdateController: SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: (any Error)?) {
+        defer {
+            Task { await updateCheckState.setActiveTask(nil) }
+        }
+
         if error == nil {
             Logger.updates.log("Updater did finish update cycle with no error")
             updateProgress = .updateCycleDone(.finishedWithNoError)
+            Task { await updateCheckState.recordCheckTime() }
         } else if let errorCode = (error as? NSError)?.code, errorCode == Int(Sparkle.SUError.noUpdateError.rawValue) {
             Logger.updates.log("Updater did finish update cycle with no update found")
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
+            Task { await updateCheckState.recordCheckTime() }
         } else if let error {
             Logger.updates.log("Updater did finish update cycle with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
         }

@@ -65,6 +65,7 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
             let optOutJobs = data.flatMap { $0.optOutJobData }
             let extractedProfiles = data.flatMap { $0.extractedProfiles }
             let events = data.flatMap { $0.events }
+            let sessions = (try? database.fetchBackgroundTaskSessions(since: .distantPast)) ?? []
 
             let brokersTable = createTable(using: dataBrokers, tableName: "DataBrokers")
             let profileQueriesTable = createTable(using: profileQuery, tableName: "ProfileQuery")
@@ -73,9 +74,10 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
             let extractedProfilesTable = createTable(using: extractedProfiles, tableName: "ExtractedProfile")
             let eventsTable = createTable(using: events.sorted(by: { $0.date > $1.date }), tableName: "Events")
             let attemptsTable = createTable(using: attempts.sorted(by: <), tableName: "OptOutAttempts")
+            let backgroundTaskSessionsTable = createTable(using: sessions.sorted(by: { $0.startDate < $1.startDate }), tableName: "BackgroundTaskSessions")
 
             DispatchQueue.main.async {
-                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable]
+                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, backgroundTaskSessionsTable]
             }
         }
  }

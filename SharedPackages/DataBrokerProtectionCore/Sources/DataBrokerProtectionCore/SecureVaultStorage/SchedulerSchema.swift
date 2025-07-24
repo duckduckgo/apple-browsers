@@ -396,7 +396,7 @@ extension OptOutAttemptDB: PersistableRecord, FetchableRecord {
 
 public struct BackgroundTaskSessionDB: Codable {
     let id: Int64?
-    let startDate: Date
+    public let startDate: Date
     let duration: Int64
     let isTerminated: Bool
 }

@@ -1,7 +1,7 @@
 //
 //  DuckPlayerTests.swift
 //
-//  Copyright � 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ class DuckPlayerTests: UITestCase {
         XCTAssertTrue(alwaysOpenRadioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         alwaysOpenRadioButton.click()
     }
-    
+
     private func selectAskOpenInDuckPlayer() {
         let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.ask"]
         XCTAssertTrue(alwaysOpenRadioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -97,28 +97,28 @@ class DuckPlayerTests: UITestCase {
         let duckPlayerWebView = app.windows.firstMatch.webViews["\(Self.duckPlayerTabPreffix)\(Self.carouselVideoTitle)"]
 
         print(app.windows.firstMatch.webViews["\(Self.duckPlayerTabPreffix)\(Self.carouselVideoTitle)"].buttons)
-        
+
         // Validate DuckPlayer View Exists
         XCTAssertTrue(
             duckPlayerWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Duck Player did not load with the expected title in a reasonable timeframe."
         )
-        
+
         // Focus the address bar first, then get its value
         app.typeKey("l", modifierFlags: [.command])
         let urlValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(
             urlValue.contains(Self.duckURLForVideo),
-            "URL should contain youtube.com, but was: \(urlValue)"
+            "URL should be DuckPlayer, but was: \(urlValue)"
         )
 
     }
 
     private func verifyYoutubeLoads() {
-        
+
         // Give the page time to load
         sleep(5)
-        
+
         // Get the YouTube view
         let youtubeWebView = app.windows.firstMatch.webViews["\(Self.organicVideoTitle)"]
 
@@ -143,10 +143,10 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
-        
+
         // Click Link
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -155,29 +155,28 @@ class DuckPlayerTests: UITestCase {
         // Close Opener tab
         app.typeKey("1", modifierFlags: [.command])
         app.closeCurrentTab()
-                
+
         verifyDuckPlayerLoads()
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPOrganic() throws {
-        
+
         // Settings
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
-        
+
         // Click Link
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
         XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        organicVideo.click()
-        
+
         // Close Opener tab
         app.typeKey("1", modifierFlags: [.command])
         app.closeCurrentTab()
-        
+
         verifyDuckPlayerLoads()
     }
 
@@ -186,13 +185,10 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-        
-        // Back to previous tab
-        app.typeKey("[", modifierFlags: [.command, .shift])
-        
+
         // Search
         openURL(url: Self.searchURL)
-        
+
         // Click links
         let videoLink = app.links.containing(.staticText, identifier: Self.videoTitle).firstMatch
         XCTAssertTrue(videoLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -202,11 +198,11 @@ class DuckPlayerTests: UITestCase {
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
-        
+
         // Close Opener tab
         app.typeKey("1", modifierFlags: [.command])
         app.closeCurrentTab()
-        
+
         verifyDuckPlayerLoads()
     }
 
@@ -216,16 +212,16 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectNeverOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
-        
+
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
-        
+
         verifyYoutubeLoads()
-        
+
         // Turn On YouTube Button not be present
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
         XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
@@ -236,7 +232,7 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectNeverOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
 
@@ -245,7 +241,7 @@ class DuckPlayerTests: UITestCase {
         organicVideo.click()
 
         verifyYoutubeLoads()
-        
+
         // Turn On YouTube Button not be present
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
         XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
@@ -256,7 +252,7 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectNeverOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
 
@@ -270,55 +266,55 @@ class DuckPlayerTests: UITestCase {
         carouselVideo.click()
 
         verifyYoutubeLoads()
-        
+
         // Turn On YouTube Button not be present
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
         XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
     }
-    
+
     // MARK:  Ask Mode - Serp
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInDuckPlayer() throws {
         // Settings
         openDuckPlayerSettings()
         selectAskOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
-        
+
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
-        
+
         // Click Watch in YouTube
         let watchLink = app.links.containing(.staticText, identifier: Self.watchOnDuckPlayerLink).firstMatch
         XCTAssertTrue(watchLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         watchLink.click()
-        
+
         verifyDuckPlayerLoads()
-        
+
     }
-    
+
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInYouTube() throws {
         // Settings
         openDuckPlayerSettings()
         selectAskOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
-        
+
         let carouselVideo = app.links.containing(.staticText, identifier: Self.carouselVideoTitle).firstMatch
         XCTAssertTrue(carouselVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         carouselVideo.click()
-        
+
         // Click Watch in YouTube
         let watchLink = app.links.containing(.staticText, identifier: Self.watchOnYouTubeLink).firstMatch
         XCTAssertTrue(watchLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         watchLink.click()
-        
+
         verifyYoutubeLoads()
-        
+
     }
 
     func test_DuckPlayer_AskMode_Opens_FromDirectNavigation() throws {
@@ -326,73 +322,73 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectAskOpenInDuckPlayer()
         app.closeCurrentTab()
-               
+
         openURL(url: Self.duckURLForVideo)
-        
+
         verifyDuckPlayerLoads()
     }
-    
+
     func test_DuckPlayer_AlwaysEnabled_WatchOnYouTubeButton_OpensVideoOnYouTube() throws {
         // Settings
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-                
+
         openURL(url: Self.duckURLForVideo)
         verifyDuckPlayerLoads()
-        
+
         // Simulate click on YouTube
         app.typeKey("l", modifierFlags: [.command])
         app.typeURL(URL(string: Self.youtubeURLForVideo)!)
         app.typeKey(.enter, modifierFlags: [])
-        
+
         verifyYoutubeLoads()
-        
+
     }
-    
+
     func test_DuckPlayer_AlwaysEnabled_Opens_FromDirectYouTubeNavigation() throws {
         // Settings
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.youtubeURLForVideo)
-        
+
         verifyDuckPlayerLoads()
     }
-    
+
     func test_DuckPlayer_Disabled_OpensYouTube_WithoutOverlay() throws {
         // Settings
         openDuckPlayerSettings()
         selectNeverOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.youtubeURLForVideo)
-        
+
         verifyYoutubeLoads()
-        
+
         // Turn On YouTube Button not be present
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
         XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
     }
-    
+
     func test_DuckPlayer_AskMode_OpensYouTube_WithOverlay() throws {
         // Settings
         openDuckPlayerSettings()
         selectAskOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.youtubeURLForVideo)
-        
+
         verifyYoutubeLoads()
-        
+
         // Overlay visible
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
         XCTAssertTrue(watchLink.waitForExistence(timeout: 1))
     }
 
-    
+
 }

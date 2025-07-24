@@ -119,17 +119,20 @@ final class MainWindow: NSWindow {
             )
             return children
         }
+        lazy var insertionPoint: Int = {
+            let buttons = children.enumerated().filter({
+                ($0.element as? NSAccessibilityProtocol)?.accessibilityRole() == .button
+            })
+            // semaphore buttons should be present
+            guard buttons.count > 3 else { return 0 }
+            guard let insertionPoint = buttons.prefix(3).last?.offset else { return 0 }
 
-        let buttons = children.enumerated().filter({
-            ($0.element as? NSAccessibilityProtocol)?.accessibilityRole() == .button
-        })
-        // semaphore buttons should be present
-        guard buttons.count > 3 else { return children }
-        guard let insertionPoint = buttons.prefix(3).last?.offset else { return children }
+            return insertionPoint + 1
+        }()
 
         let tabBarViewController = mainViewController.tabBarViewController
         if !children.contains(where: { $0 as AnyObject === tabBarViewController.view }) {
-            // Insert `TabBarViewController.view` as the window‘s AX child after the semaphore buttons
+            // Insert `TabBarViewController.view` as the window‘s AX child after the semaphore buttons if it‘s not there already
             children.insert(tabBarViewController.view, at: insertionPoint)
         }
         return children

@@ -120,7 +120,8 @@ extension TabViewController {
             fireproofing: fireproofing,
             tabInteractionStateSource: tabInteractionStateSource,
             specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
-            featureDiscovery: featureDiscovery)
+            featureDiscovery: featureDiscovery,
+            keyValueStore: keyValueStore)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

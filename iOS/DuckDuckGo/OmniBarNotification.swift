@@ -38,10 +38,10 @@ struct OmniBarNotification: View {
                 text
             }
             .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: Constants.Radius.background)
                     .foregroundColor(Constants.Colors.background)
                     .offset(x: textOffset)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    .clipShape(RoundedRectangle(cornerRadius: Constants.Radius.background))
             )
             
             Spacer()
@@ -77,13 +77,6 @@ struct OmniBarNotification: View {
                 textWidth = $0.width
                 textOffset = -textWidth
             }
-    }
-
-    private var cornerRadius: CGFloat {
-        switch viewModel.style {
-        case .default: return 8
-        case .experimental: return 12
-        }
     }
 }
 
@@ -127,5 +120,9 @@ private enum Constants {
         static let animatedIcon = CGSize(width: 36, height: 36)
         static let cancel = CGSize(width: 13, height: 13)
         static let rowHeight: CGFloat = 76
+    }
+
+    enum Radius {
+        static let background: CGFloat = 12
     }
 }

@@ -170,7 +170,7 @@ class DataImportViewModelTests: XCTestCase {
 
         XCTAssertEqual(state.title, UserText.dataImportPasswordsTitle)
         XCTAssertEqual(state.subtitle, UserText.dataImportPasswordsSubtitle)
-        XCTAssertEqual(state.buttonTitle, UserText.dataImportPasswordsFileButton)
+        XCTAssertEqual(state.buttonTitle, UserText.dataImportPasswordsSelectFileButton)
         XCTAssertEqual(state.displayName, UserText.dataImportPasswordsInstructionSafari)
     }
 

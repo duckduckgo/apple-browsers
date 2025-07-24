@@ -175,6 +175,7 @@ extension TabExtensionsBuilder {
         }
         add {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
+                               contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                featureFlagger: dependencies.featureFlagger)
         }

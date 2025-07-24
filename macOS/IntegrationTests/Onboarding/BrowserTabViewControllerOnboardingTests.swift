@@ -373,6 +373,8 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
     var lastDialog: DuckDuckGo_Privacy_Browser.ContextualDialogType?
 
     var state: ContextualOnboardingState = .onboardingCompleted
+    @Published var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
     var turnOffFeatureCalledExpectation: XCTestExpectation?
 
     func updateStateFor(tab: DuckDuckGo_Privacy_Browser.Tab) {}

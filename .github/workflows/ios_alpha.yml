@@ -95,7 +95,7 @@ jobs:
           # Check if this run has an upload job in progress
           upload_job="$(gh run view "$run_id" \
             --json="jobs" \
-            --jq='.jobs[] | select(.name == "Upload to TestFlight" and (.status == "in_progress" or status == "queued")) | .name' \
+            --jq='.jobs[] | select(.name == "Upload to TestFlight" and (.status == "in_progress" or .status == "queued")) | .name' \
             2>/dev/null || echo "")"
           if [ -n "$upload_job" ]; then
             upload_in_progress=true

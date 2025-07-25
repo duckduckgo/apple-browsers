@@ -165,6 +165,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     private func presentExperimentalEditingState(for textField: UITextField) {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
+
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
@@ -176,13 +177,10 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         editingStateViewController.transitioningDelegate = editModeTransitioningDelegate
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
+        editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
+        
         self.editingStateViewController = editingStateViewController
 
-        if shouldAutoSelectText {
-            DispatchQueue.main.async {
-                editingStateViewController.setUpForInitialSelectedState()
-            }
-        }
         present(editingStateViewController, animated: true)
     }
 

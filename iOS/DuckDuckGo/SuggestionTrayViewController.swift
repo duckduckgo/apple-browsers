@@ -41,6 +41,7 @@ class SuggestionTrayViewController: UIViewController {
     weak var favoritesOverlayDelegate: FavoritesOverlayDelegate?
     
     var dismissHandler: (() -> Void)?
+
     var isShowingAutocompleteSuggestions: Bool {
         autocompleteController != nil
     }

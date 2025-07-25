@@ -54,7 +54,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var expectedStartFrame: CGRect?
     var suggestionTrayDependencies: SuggestionTrayDependencies?
-    
+    var automaticallySelectsTextOnAppear = false
+
     // MARK: - Core Components
     
     private let switchBarHandler: SwitchBarHandling
@@ -99,6 +100,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewWillAppear(animated)
 
         switchBarVC.focusTextField()
+        if automaticallySelectsTextOnAppear {
+            DispatchQueue.main.async {
+                self.switchBarVC.textEntryViewController.selectAllText()
+            }
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {

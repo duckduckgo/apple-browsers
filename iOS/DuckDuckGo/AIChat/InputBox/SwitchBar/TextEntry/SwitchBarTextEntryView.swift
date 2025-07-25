@@ -62,6 +62,12 @@ class SwitchBarTextEntryView: UIView {
     private var textViewTrailingConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
 
+    var isExpandable: Bool = false {
+        didSet {
+            updateTextViewHeight()
+        }
+    }
+
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
         self.handler = handler
@@ -225,6 +231,13 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateTextViewHeight() {
+        guard isExpandable else {
+            heightConstraint?.constant = Constants.minHeight
+            textView.isScrollEnabled = true
+            textView.showsVerticalScrollIndicator = true
+            return
+        }
+
         let size = textView.sizeThatFits(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
         let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
@@ -243,6 +256,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupSubscriptions() {
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateForCurrentMode()
             }
@@ -250,6 +264,7 @@ class SwitchBarTextEntryView: UIView {
 
         handler.currentTextPublisher
             .receive(on: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] text in
                 guard let self = self else { return }
 

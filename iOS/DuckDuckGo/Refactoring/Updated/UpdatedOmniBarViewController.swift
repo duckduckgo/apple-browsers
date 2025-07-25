@@ -33,7 +33,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
 
-    let editModeTransitioningDelegate = OmniBarEditingStateTransitioningDelegate()
+//    let editModeTransitioningDelegate = OmniBarEditingStateTransitioningDelegate()
 
     override func loadView() {
         view = omniBarView
@@ -173,7 +173,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         editingStateViewController.delegate = self
 
         editingStateViewController.modalPresentationStyle = .custom
-        editingStateViewController.transitioningDelegate = editModeTransitioningDelegate
+        editingStateViewController.transitioningDelegate = self
 
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
@@ -244,5 +244,20 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
+    }
+}
+
+extension UpdatedOmniBarViewController: UIViewControllerTransitioningDelegate {
+
+    func animationController(forPresented presented: UIViewController,
+                             presenting: UIViewController,
+                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return OmniBarEditingStateTransition(isPresenting: true,
+                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
+    }
+
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return OmniBarEditingStateTransition(isPresenting: false,
+                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 }

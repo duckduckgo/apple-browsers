@@ -686,35 +686,27 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
             // Session 1: completed
             BackgroundTaskEvent(sessionId: "session1", eventType: .started, timestamp: .daysAgo(3)),
             BackgroundTaskEvent(sessionId: "session1", eventType: .completed, timestamp: .daysAgo(3), metadata: BackgroundTaskEvent.Metadata(durationInMs: 30000)),
-            
             // Session 2: terminated
             BackgroundTaskEvent(sessionId: "session2", eventType: .started, timestamp: .daysAgo(2)),
             BackgroundTaskEvent(sessionId: "session2", eventType: .terminated, timestamp: .daysAgo(2), metadata: BackgroundTaskEvent.Metadata(durationInMs: 45000)),
-            
             // Session 3: completed
             BackgroundTaskEvent(sessionId: "session3", eventType: .started, timestamp: .daysAgo(1)),
             BackgroundTaskEvent(sessionId: "session3", eventType: .completed, timestamp: .daysAgo(1), metadata: BackgroundTaskEvent.Metadata(durationInMs: 60000)),
-            
             // Session 4: completed (with invalid negative duration - should be ignored in min/max/median calculation)
             BackgroundTaskEvent(sessionId: "session4", eventType: .started, timestamp: .daysAgo(4)),
             BackgroundTaskEvent(sessionId: "session4", eventType: .completed, timestamp: .daysAgo(4), metadata: BackgroundTaskEvent.Metadata(durationInMs: -1000)),
-            
             // Session 5: terminated (with too long duration - should be ignored in min/max/median calculation)
             BackgroundTaskEvent(sessionId: "session5", eventType: .started, timestamp: .daysAgo(5)),
             BackgroundTaskEvent(sessionId: "session5", eventType: .terminated, timestamp: .daysAgo(5), metadata: BackgroundTaskEvent.Metadata(durationInMs: 90000000)),
-            
             // Session 6: completed
             BackgroundTaskEvent(sessionId: "session6", eventType: .started, timestamp: .daysAgo(6)),
             BackgroundTaskEvent(sessionId: "session6", eventType: .completed, timestamp: .daysAgo(6), metadata: BackgroundTaskEvent.Metadata(durationInMs: 15000)),
-            
             // Session 7: terminated (outside 7-day window  - should be ignored from all calculations)
             BackgroundTaskEvent(sessionId: "session7", eventType: .started, timestamp: .daysAgo(20)),
             BackgroundTaskEvent(sessionId: "session7", eventType: .terminated, timestamp: .daysAgo(20), metadata: BackgroundTaskEvent.Metadata(durationInMs: 50000)),
-            
             // Session 8: completed
             BackgroundTaskEvent(sessionId: "session8", eventType: .started, timestamp: .daysAgo(2)),
             BackgroundTaskEvent(sessionId: "session8", eventType: .completed, timestamp: .daysAgo(2), metadata: BackgroundTaskEvent.Metadata(durationInMs: 35000)),
-            
             // Session 9: orphaned (started but never completed/terminated)
             BackgroundTaskEvent(sessionId: "session9", eventType: .started, timestamp: .daysAgo(3))
         ]

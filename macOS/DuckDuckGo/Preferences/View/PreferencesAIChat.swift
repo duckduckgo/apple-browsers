@@ -82,22 +82,7 @@ extension Preferences {
                         }
                         .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
 
-                        ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
-                                       isOn: $model.showShortcutInAddressBar)
-                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
-                        .onChange(of: model.showShortcutInAddressBar) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            }
-                        }
-
-                        ToggleMenuItem(UserText.aiChatShowInApplicationMenuToggle,
+                        ToggleMenuItem("Show in browser menus",
                                        isOn: $model.showShortcutInApplicationMenu)
                         .accessibilityIdentifier("Preferences.AIChat.showInApplicationMenuToggle")
                         .onChange(of: model.showShortcutInApplicationMenu) { newValue in
@@ -107,6 +92,21 @@ extension Preferences {
                                               includeAppVersionParameter: true)
                             } else {
                                 PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOff,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            }
+                        }
+
+                        ToggleMenuItem("Show in address bar",
+                                       isOn: $model.showShortcutInAddressBar)
+                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
+                        .onChange(of: model.showShortcutInAddressBar) { newValue in
+                            if newValue {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
+                                              frequency: .dailyAndCount,
+                                              includeAppVersionParameter: true)
+                            } else {
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
                                               frequency: .dailyAndCount,
                                               includeAppVersionParameter: true)
                             }

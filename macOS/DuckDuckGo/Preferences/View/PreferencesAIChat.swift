@@ -26,6 +26,7 @@ extension Preferences {
 
     struct AIChatView: View {
         @ObservedObject var model: AIChatPreferences
+        @State private var showingDisableAIChatDialog = false
 
         var body: some View {
             PreferencePane {
@@ -54,7 +55,11 @@ extension Preferences {
                             }
 
                             Button(model.isAIFeaturesEnabled ? "Disable Duck.ai" : "Enable Duck.ai") {
-                                model.isAIFeaturesEnabled.toggle()
+                                if model.isAIFeaturesEnabled {
+                                    showingDisableAIChatDialog = true
+                                } else {
+                                    model.isAIFeaturesEnabled = true
+                                }
                             }
                             .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
                         }
@@ -235,6 +240,44 @@ extension Preferences {
                     }
                 }
             }
+            .sheet(isPresented: $showingDisableAIChatDialog) {
+                removeConfirmationDialog
+            }
+        }
+
+        @ViewBuilder
+        private var removeConfirmationDialog: some View {
+            Dialog {
+                Image("DaxAIChat")
+                    .frame(width: 96, height: 72)
+//                    .padding(.vertical, 16)
+
+                Text("Disable Duck.ai?")
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(Color(.textPrimary))
+
+                Text("""
+                    Duck.ai is private by design. Chats are anonymized by us and never used to train AI.
+
+                     Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.  You can re-enable it at any time.
+                    """)
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .fixMultilineScrollableText()
+                .foregroundColor(Color(.textPrimary))
+            } buttons: {
+                Spacer()
+                Button("Cancel") { showingDisableAIChatDialog = false }
+                Button(action: {
+                    showingDisableAIChatDialog = false
+                    model.isAIFeaturesEnabled.toggle()
+                }, label: {
+                    Text("Disable Duck.ai")
+                })
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            }
+            .frame(width: 360)
         }
     }
 }

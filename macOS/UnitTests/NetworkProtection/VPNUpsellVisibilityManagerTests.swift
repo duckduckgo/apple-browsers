@@ -18,10 +18,10 @@
 
 import XCTest
 import Combine
+import VPN
 import BrowserServicesKit
-import Common
-import Subscription
 import SubscriptionTestingUtilities
+import Subscription
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -30,18 +30,17 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     var sut: VPNUpsellVisibilityManager!
     var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
     var mockFeatureFlagger: MockFeatureFlagger!
-    var defaultBrowserSubject: CurrentValueSubject<Bool, Never>!
-    var contextualOnboardingSubject: CurrentValueSubject<Bool, Never>!
+    fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
+
     var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
-
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         mockFeatureFlagger = MockFeatureFlagger()
-        defaultBrowserSubject = CurrentValueSubject<Bool, Never>(false)
-        contextualOnboardingSubject = CurrentValueSubject<Bool, Never>(false)
+        mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         cancellables = Set<AnyCancellable>()
+
         mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
     }
 
@@ -49,134 +48,149 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         sut = nil
         mockSubscriptionManager = nil
         mockFeatureFlagger = nil
-        defaultBrowserSubject = nil
-        contextualOnboardingSubject = nil
+        mockPersistor = nil
+        cancellables?.removeAll()
         cancellables = nil
         super.tearDown()
     }
 
-    func testWhenUserIsSubscribed_ItDoesNotShowUpsell() {
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: true)
+    // MARK: - State Tests
 
-        XCTAssertFalse(sut.shouldShowUpsell)
+    func testWhenUserIsEligible_ItShowsTheUpsellOnSecondLaunch() {
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .visible)
     }
 
-    func testWhenUserIsNotNew_ItDoesNotShowUpsell() {
-        sut = createSUT(isFirstLaunch: true, isNewUser: false, isUserAuthenticated: false)
+    func testWhenUserIsIneligible_ItDoesNotShowTheUpsell() {
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: false)
 
-        XCTAssertFalse(sut.shouldShowUpsell)
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
     }
 
-    func testWhenNotFirstLaunch_ItShowsUpsellImmediately() {
-        sut = createSUT(isFirstLaunch: false, isNewUser: true, isUserAuthenticated: false)
+    func testWhenFeatureIsDisabled_ItDoesNotShowTheUpsell() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
 
-        XCTAssertTrue(sut.shouldShowUpsell)
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
     }
 
-    func testWhenContextualOnboardingIsComplete_AndDefaultBrowserIsSet_ItStartsTimer() {
-        let expectation = XCTestExpectation(description: "Timer should complete")
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
+    func testWhenUserIsAuthenticated_ItDoesNotShowTheUpsell() {
+        // Given
+        mockSubscriptionManager.accessTokenResult = .success("mock-token")
 
-        sut.$shouldShowUpsell
-            .dropFirst()
-            .sink { (shouldShow: Bool) in
-                if shouldShow {
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+    }
+
+    // MARK: - Manual Unpinning Tests
+
+    func testWhenUserManuallyUnpinsButton_ItDismissesTheUpsell() {
+        // Given
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+
+        let expectation = XCTestExpectation(description: "State should change to dismissed")
+
+        sut.$state
+            .sink { state in
+                if state == .dismissed {
                     expectation.fulfill()
                 }
             }
             .store(in: &cancellables)
 
         // When
-        contextualOnboardingSubject.send(true)
-        defaultBrowserSubject.send(true)
+        sut.handlePinningChange(isPinned: false)
 
-        wait(for: [expectation], timeout: 1.0)
         // Then
-        XCTAssertTrue(sut.shouldShowUpsell)
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(sut.state, .dismissed)
+        XCTAssertTrue(mockPersistor.vpnUpsellDismissed)
     }
 
-    func testWhenOnlyContextualOnboardingIsComplete_ItDoesNotStartTimer() {
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
-
-        let expectation = XCTestExpectation(description: "Should not show upsell")
-        expectation.isInverted = true
-
-        sut.$shouldShowUpsell
-            .dropFirst()
-            .sink { _ in
-                expectation.fulfill()
-            }
-            .store(in: &cancellables)
+    func testWhenUserPinsButton_ItStoresFirstPinnedDate() {
+        // Given
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
 
         // When
-        contextualOnboardingSubject.send(true)
+        sut.handlePinningChange(isPinned: true)
 
-        wait(for: [expectation], timeout: 1.0)
         // Then
-        XCTAssertFalse(sut.shouldShowUpsell)
+        XCTAssertNotNil(mockPersistor.vpnUpsellFirstPinnedDate)
     }
 
-    func testWhenOnlyDefaultBrowserIsSet_ItDoesNotStartTimer() {
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
-
-        let expectation = XCTestExpectation(description: "Should not show upsell")
-        expectation.isInverted = true
-
-        sut.$shouldShowUpsell
-            .dropFirst()
-            .sink { _ in
-                expectation.fulfill()
-            }
-            .store(in: &cancellables)
+    func testWhenUserPinsButtonAgain_ItDoesNotOverwriteFirstPinnedDate() {
+        // Given
+        let originalDate = Date().addingTimeInterval(-3600)
+        mockPersistor.vpnUpsellFirstPinnedDate = originalDate
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
 
         // When
-        defaultBrowserSubject.send(true)
+        sut.handlePinningChange(isPinned: true)
 
-        wait(for: [expectation], timeout: 1.0)
         // Then
-        XCTAssertFalse(sut.shouldShowUpsell)
+        XCTAssertEqual(mockPersistor.vpnUpsellFirstPinnedDate, originalDate)
     }
 
-    func testWhenMultipleTimerStartAttempts_OnlyOneTimerRuns() {
-        let expectation = XCTestExpectation(description: "Timer should complete once")
-        expectation.expectedFulfillmentCount = 1
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
+    func testWhenSevenDaysHavePassedSincePinning_ItDismissesTheUpsell() {
+        // Given
+        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        mockPersistor.vpnUpsellFirstPinnedDate = eightDaysAgo
 
-        sut.$shouldShowUpsell
-            .dropFirst()
-            .sink { (shouldShow: Bool) in
-                if shouldShow {
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, autoDismissDays: 7)
+
+        // Then
+        XCTAssertEqual(sut.state, .dismissed)
+    }
+
+    func testWhenSixDaysHavePassedSincePinning_ItShowsTheUpsell() {
+        // Given
+        let sixDaysAgo = Date().addingTimeInterval(-6 * 24 * 60 * 60)
+        mockPersistor.vpnUpsellFirstPinnedDate = sixDaysAgo
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true, autoDismissDays: 7)
+
+        // Then
+        XCTAssertEqual(sut.state, .visible)
+    }
+
+    func testWhenManuallyDismissed_ItDismissesTheUpsell() {
+        // Given
+        mockPersistor.vpnUpsellDismissed = true
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .dismissed)
+    }
+
+    func testWhenUserBecomesAuthenticated_ItDoesNotShowTheUpsell() {
+        // Given
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+
+        let expectation = XCTestExpectation(description: "State should change to notEligible")
+
+        sut.$state
+            .sink { state in
+                if state == .notEligible {
                     expectation.fulfill()
                 }
             }
             .store(in: &cancellables)
-
-        // When
-        contextualOnboardingSubject.send(true)
-        defaultBrowserSubject.send(true)
-        contextualOnboardingSubject.send(true)
-        defaultBrowserSubject.send(true)
-
-        wait(for: [expectation], timeout: 1.0)
-        // Then
-        XCTAssertTrue(sut.shouldShowUpsell)
-    }
-
-    func testWhenSubscriptionChanges_ItHidesUpsellAndCancelsTimer() {
-        let expectation = XCTestExpectation(description: "Visibility should be false")
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
-
-        sut.$shouldShowUpsell
-            .dropFirst()
-            .sink { (shouldShow: Bool) in
-                // Then
-                XCTAssertFalse(shouldShow)
-                expectation.fulfill()
-            }
-            .store(in: &cancellables)
-
-        contextualOnboardingSubject.send(true)
-        defaultBrowserSubject.send(true)
 
         // When
         mockSubscriptionManager.accessTokenResult = .success("mock-token")
@@ -184,71 +198,160 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(sut.state, .notEligible)
     }
 
-    func testWhenTimerCompletes_ItUpdatesVisibility() {
-        let expectation = XCTestExpectation(description: "Timer completion updates visibility")
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
+    // MARK: - First Launch Timer Tests
 
-        sut.$shouldShowUpsell
-            .dropFirst()
-            .sink { (shouldShow: Bool) in
-                // Then
-                XCTAssertTrue(shouldShow)
-                expectation.fulfill()
-            }
-            .store(in: &cancellables)
-
-        // When
-        contextualOnboardingSubject.send(true)
-        defaultBrowserSubject.send(true)
-
-        wait(for: [expectation], timeout: 1.0)
-    }
-
-    func testWhenFeatureFlagIsDisabled_ItDoesNotShowUpsell() {
+    func testWhenUserIsEligible_ItWaitsForConditionsOnFirstLaunch() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let expectation = XCTestExpectation(description: "Should not show upsell")
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        let defaultBrowserSubject = PassthroughSubject<Bool, Never>()
 
-        sut = createSUT(isFirstLaunch: true, isNewUser: true, isUserAuthenticated: false, timerDuration: 0.1)
+        let expectation = XCTestExpectation(description: "State should be waitingForConditions")
 
-        sut.$shouldShowUpsell
-            .dropFirst()
-            .sink { (shouldShow: Bool) in
-                // Then
-                XCTAssertFalse(shouldShow)
-                expectation.fulfill()
+        // When
+        sut = VPNUpsellVisibilityManager(
+            isFirstLaunch: true,
+            isNewUser: true,
+            subscriptionManager: mockSubscriptionManager,
+            defaultBrowserPublisher: defaultBrowserSubject.eraseToAnyPublisher(),
+            contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
+            featureFlagger: mockFeatureFlagger,
+            persistor: mockPersistor,
+            timerDuration: 0.1
+        )
+
+        sut.$state
+            .sink { state in
+                if state == .waitingForConditions {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(sut.state, .waitingForConditions)
+    }
+
+    func testWhenUserIsEligible_AndConditionsAreMetOnFirstLaunch_ItStartsTheTimer() {
+        // Given
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        let defaultBrowserSubject = PassthroughSubject<Bool, Never>()
+
+        sut = VPNUpsellVisibilityManager(
+            isFirstLaunch: true,
+            isNewUser: true,
+            subscriptionManager: mockSubscriptionManager,
+            defaultBrowserPublisher: defaultBrowserSubject.eraseToAnyPublisher(),
+            contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
+            featureFlagger: mockFeatureFlagger,
+            persistor: mockPersistor,
+            timerDuration: 10
+        )
+
+        let expectation = XCTestExpectation(description: "State should transition to waitingForTimer")
+
+        sut.$state
+            .sink { state in
+                if state == .waitingForTimer {
+                    expectation.fulfill()
+                }
             }
             .store(in: &cancellables)
 
         // When
-        contextualOnboardingSubject.send(true)
+        onboardingSubject.send(true)
         defaultBrowserSubject.send(true)
 
+        // Then
         wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(sut.state, .waitingForTimer)
+    }
+
+    func testWhenUserIsEligible_AndConditionsAreNotMetOnFirstLaunch_AndTimerCompletes_ItShowsTheUpsell() {
+        // Given
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        let defaultBrowserSubject = PassthroughSubject<Bool, Never>()
+
+        sut = VPNUpsellVisibilityManager(
+            isFirstLaunch: true,
+            isNewUser: true,
+            subscriptionManager: mockSubscriptionManager,
+            defaultBrowserPublisher: defaultBrowserSubject.eraseToAnyPublisher(),
+            contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
+            featureFlagger: mockFeatureFlagger,
+            persistor: mockPersistor,
+            timerDuration: 0.1
+        )
+
+        let expectation = XCTestExpectation(description: "State should transition to visible")
+
+        sut.$state
+            .sink { state in
+                if state == .visible {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        onboardingSubject.send(true)
+        defaultBrowserSubject.send(true)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(sut.state, .visible)
+    }
+
+    // MARK: - Edge Cases
+
+    func testWhenUserIsNewButAuthenticated_ItDoesNotShowTheUpsell() {
+        // Given
+        mockSubscriptionManager.accessTokenResult = .success("mock-token")
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: true, isNewUser: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+    }
+
+    func testWhenUserIsNotNew_ItDoesNotShowTheUpsell() {
+        // When
+        sut = createUpsellManager(isFirstLaunch: true, isNewUser: false)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
     }
 }
 
 // MARK: - Helpers
 
 extension VPNUpsellVisibilityManagerTests {
-    private func createSUT(
+    private func createUpsellManager(
         isFirstLaunch: Bool,
         isNewUser: Bool,
-        isUserAuthenticated: Bool,
-        timerDuration: TimeInterval = 0.1
+        autoDismissDays: Int = 7
     ) -> VPNUpsellVisibilityManager {
-        mockSubscriptionManager.accessTokenResult = isUserAuthenticated ? .success("mock-token") : .failure(SubscriptionManagerError.noTokenAvailable)
-
         return VPNUpsellVisibilityManager(
             isFirstLaunch: isFirstLaunch,
             isNewUser: isNewUser,
             subscriptionManager: mockSubscriptionManager,
-            defaultBrowserPublisher: defaultBrowserSubject.eraseToAnyPublisher(),
-            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher(),
+            defaultBrowserPublisher: Just(true).eraseToAnyPublisher(),
+            contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
             featureFlagger: mockFeatureFlagger,
-            timerDuration: timerDuration
+            persistor: mockPersistor,
+            timerDuration: 0.01,
+            autoDismissDays: autoDismissDays
         )
     }
+}
+
+// MARK: - Mock VPNUpsellUserDefaultsPersistor
+
+private final class MockVPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
+    var vpnUpsellDismissed: Bool = false
+    var vpnUpsellFirstPinnedDate: Date?
 }

@@ -140,13 +140,13 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     }
 
     private func setupUpsellSubscription() {
-        vpnUpsellVisibilityManager.$shouldShowUpsell.sink { [weak self] shouldShowUpsell in
+        vpnUpsellVisibilityManager.$state.sink { [weak self] state in
             guard let self = self else {
                 return
             }
 
             Task { @MainActor in
-                self.shouldShowUpsell = shouldShowUpsell
+                self.shouldShowUpsell = state == .visible
                 self.updateVisibility()
             }
         }.store(in: &cancellables)

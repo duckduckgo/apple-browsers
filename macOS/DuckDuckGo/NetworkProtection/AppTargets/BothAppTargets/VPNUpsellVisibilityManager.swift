@@ -23,13 +23,23 @@ import Foundation
 import Subscription
 import VPN
 
+extension VPNUpsellVisibilityManager {
+    enum State: Equatable {
+        case notEligible // User is not new, or already subscribed, or feature flag is off
+        case dismissed // User has dismissed the upsell, or it has been auto-dismissed
+        case waitingForConditions // 1st launch: waiting for the user to finish contextual onboarding and set default browser
+        case waitingForTimer // 1st launch: waiting for the timer to complete after meeting conditions
+        case visible // User is eligible and the upsell should be shown
+    }
+}
+
 /// Manages the visibility and state of VPN upsell messaging based on user onboarding flow.
 ///
 final class VPNUpsellVisibilityManager: ObservableObject {
-    @Published private(set) var shouldShowUpsell = false
+    // MARK: - Output
+    @Published private(set) var state: State = .notEligible
 
     // MARK: - Dependencies
-
     private let isFirstLaunch: Bool
     private let isNewUser: Bool
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -43,7 +53,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - State
     private var cancellables = Set<AnyCancellable>()
     private var timer: Timer?
-    private var timerCompleted = false
 
     init(isFirstLaunch: Bool,
          isNewUser: Bool,
@@ -64,30 +73,31 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.autoDismissDays = autoDismissDays
         self.persistor = persistor
 
-        guard isNewUser && !isUserAuthenticated else {
+        guard isUserEligible, isFeatureOn else {
             return
         }
 
-        guard isFirstLaunch else {
-            updateUpsellVisibility(shouldShow: true)
-            return
+        if isFirstLaunch {
+            monitorFirstLaunchConditions()
+        } else {
+            updateState(.visible)
         }
 
-        setupMonitoring()
+        monitorSubscriptionChanges()
     }
 
     // MARK: - Eligibility
+
+    private var isUserEligible: Bool {
+        isNewUser && !subscriptionManager.isUserAuthenticated
+    }
 
     private var isFeatureOn: Bool {
         featureFlagger.isFeatureOn(.vpnToolbarUpsell)
     }
 
-    private var isUserAuthenticated: Bool {
-        subscriptionManager.isUserAuthenticated
-    }
-
-    private var hasBeenDismissed: Bool {
-        persistor.vpnUpsellDismissed
+    private var shouldDismiss: Bool {
+        shouldDismissAutomatically || persistor.vpnUpsellDismissed
     }
 
     private var shouldDismissAutomatically: Bool {
@@ -100,17 +110,29 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
     // MARK: - Monitoring Setup
 
-    private func setupMonitoring() {
+    private func monitorFirstLaunchConditions() {
+        guard state == .notEligible else {
+            return
+        }
+
         Publishers.CombineLatest(
             contextualOnboardingPublisher,
             defaultBrowserPublisher
         )
         .receive(on: DispatchQueue.main)
         .sink { [weak self] onboardingDone, isDefault in
-            self?.startTimerIfNeeded(onboardingCompleted: onboardingDone, defaultBrowserSet: isDefault)
+            guard onboardingDone, isDefault else {
+                return
+            }
+
+            self?.startTimerIfNeeded()
         }
         .store(in: &cancellables)
 
+        updateState(.waitingForConditions)
+    }
+
+    private func monitorSubscriptionChanges() {
         NotificationCenter.default
             .publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
@@ -123,7 +145,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Event Handling
 
     public func handlePinningChange(isPinned: Bool) {
-        guard isFeatureOn, !isUserAuthenticated, !hasBeenDismissed else {
+        guard state == .visible else {
             return
         }
 
@@ -137,47 +159,59 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         }
     }
 
-    private func startTimerIfNeeded(onboardingCompleted: Bool, defaultBrowserSet: Bool) {
-        guard onboardingCompleted, defaultBrowserSet, timer == nil, !timerCompleted else {
+    private func startTimerIfNeeded() {
+        guard state == .waitingForConditions else {
             return
         }
 
         timer = Timer.scheduledTimer(withTimeInterval: timerDuration, repeats: false) { [weak self] _ in
             self?.handleTimerCompletion()
         }
+
+        updateState(.waitingForTimer)
     }
 
     private func handleTimerCompletion() {
-        timerCompleted = true
-        updateUpsellVisibility(shouldShow: timerCompleted)
+        guard state == .waitingForTimer else {
+            return
+        }
+
+        updateState(.visible)
     }
 
     private func handleSubscriptionChange() {
-        timer?.invalidate()
-        timer = nil
-        timerCompleted = false
-        updateUpsellVisibility(shouldShow: !isUserAuthenticated)
+        if case .waitingForTimer = state {
+            timer?.invalidate()
+            timer = nil
+        }
+
+        updateState(.notEligible)
     }
 
     private func dismissUpsell() {
+        guard state == .visible else {
+            return
+        }
+
         persistor.vpnUpsellDismissed = true
-        updateUpsellVisibility(shouldShow: false)
+
+        updateState(.dismissed)
     }
 
     // MARK: - Upsell Visibility
 
-    private func updateUpsellVisibility(shouldShow: Bool) {
-        guard isFeatureOn, !isUserAuthenticated, !hasBeenDismissed else {
-            shouldShowUpsell = false
+    private func updateState(_ newState: State) {
+        guard isFeatureOn, isUserEligible else {
+            state = .notEligible
             return
         }
 
-        guard !shouldDismissAutomatically else {
-            dismissUpsell()
+        guard !shouldDismiss else {
+            state = .dismissed
             return
         }
 
-        shouldShowUpsell = shouldShow
+        state = newState
     }
 
     deinit {

@@ -136,7 +136,6 @@ class MainViewController: UIViewController {
     private var aiChatCancellables = Set<AnyCancellable>()
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let subscriptionCookieManager: SubscriptionCookieManaging
     let privacyProDataReporter: PrivacyProDataReporting
 
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
@@ -250,7 +249,6 @@ class MainViewController: UIViewController {
         featureFlagger: FeatureFlagger,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
-        subscriptionCookieManager: SubscriptionCookieManaging,
         textZoomCoordinator: TextZoomCoordinating,
         websiteDataManager: WebsiteDataManaging,
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
@@ -288,7 +286,6 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.fireproofing = fireproofing
-        self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
@@ -3229,7 +3226,10 @@ extension MainViewController: AutoClearWorker {
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
 
         let pixel = TimedPixel(.forgetAllDataCleared)
-        await websiteDataManager.clear(dataStore: WKWebsiteDataStore.default())
+
+        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
+        //  this is the same as `WKWebsiteDataStore.default()`
+        await websiteDataManager.clear(dataStore: DDGWebsiteDataStoreProvider.current())
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
         AutoconsentManagement.shared.clearCache()

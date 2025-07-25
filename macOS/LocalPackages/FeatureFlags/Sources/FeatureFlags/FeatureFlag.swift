@@ -325,7 +325,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
-            return .disabled
+            return .internalOnly()
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:

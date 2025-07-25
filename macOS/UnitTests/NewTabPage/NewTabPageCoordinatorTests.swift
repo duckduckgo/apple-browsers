@@ -109,6 +109,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
+            newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

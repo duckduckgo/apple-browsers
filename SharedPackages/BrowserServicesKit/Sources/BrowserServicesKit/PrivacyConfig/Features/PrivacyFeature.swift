@@ -250,7 +250,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion

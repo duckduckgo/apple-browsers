@@ -42,6 +42,7 @@ import Onboarding
 import os.log
 import Navigation
 import Subscription
+import WKAbstractions
 
 class TabViewController: UIViewController {
 
@@ -125,7 +126,6 @@ class TabViewController: UIViewController {
 
     var featureFlagger: FeatureFlagger
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
-    let subscriptionCookieManager: SubscriptionCookieManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
     private lazy var autofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager
@@ -369,7 +369,6 @@ class TabViewController: UIViewController {
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                                    featureFlagger: FeatureFlagger,
                                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
-                                   subscriptionCookieManager: SubscriptionCookieManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
                                    websiteDataManager: WebsiteDataManaging,
                                    fireproofing: Fireproofing,
@@ -392,7 +391,6 @@ class TabViewController: UIViewController {
                               onboardingPixelReporter: onboardingPixelReporter,
                               featureFlagger: featureFlagger,
                               contentScopeExperimentManager: contentScopeExperimentManager,
-                              subscriptionCookieManager: subscriptionCookieManager,
                               textZoomCoordinator: textZoomCoordinator,
                               fireproofing: fireproofing,
                               websiteDataManager: websiteDataManager,
@@ -460,7 +458,6 @@ class TabViewController: UIViewController {
                    urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
                    featureFlagger: FeatureFlagger,
                    contentScopeExperimentManager: ContentScopeExperimentsManaging,
-                   subscriptionCookieManager: SubscriptionCookieManaging,
                    textZoomCoordinator: TextZoomCoordinating,
                    fireproofing: Fireproofing,
                    websiteDataManager: WebsiteDataManaging,
@@ -483,7 +480,6 @@ class TabViewController: UIViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentsManager = contentScopeExperimentManager
-        self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator
         self.fireproofing = fireproofing
         self.websiteDataManager = websiteDataManager
@@ -793,9 +789,7 @@ class TabViewController: UIViewController {
         Task { @MainActor in
             await webView.configuration.websiteDataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
             let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
-            await websiteDataManager.consumeCookies(into: cookieStore)
-            subscriptionCookieManager.resetLastRefreshDate()
-            await subscriptionCookieManager.refreshSubscriptionCookie()
+            await websiteDataManager.consumeCookies(into: HTTPCookieStoreWrapper(wrapped: cookieStore))
             doLoad()
         }
     }

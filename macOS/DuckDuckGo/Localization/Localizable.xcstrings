@@ -22932,6 +22932,18 @@
         }
       }
     },
+    "duckai.show-on-new-tab-page.toggle" : {
+      "comment" : "A checkbox to control AI Chat shortcut visibility on the New Tab Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show on New Tab Page"
+          }
+        }
+      }
+    },
     "duckai.summarize.context-menu-action" : {
       "comment" : "Context menu option that triggers Duck.ai-assisted summarization of selected text",
       "extractionState" : "extracted_with_value",

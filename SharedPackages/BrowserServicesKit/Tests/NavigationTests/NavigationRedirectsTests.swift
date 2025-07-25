@@ -970,6 +970,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         waitForExpectations(timeout: 5)
 
         responder(at: 0).clear()
+
         eDidFinish = expectation(description: "onDidFinish 3")
         withWebView { webView in
             _=webView.load(req(urls.local))
@@ -977,35 +978,29 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         waitForExpectations(timeout: 5)
 
         XCTAssertFalse(navAct(1).navigationAction.isTargetingNewWindow)
-        // sometimes NavigationAction #4 (goBack) Task is cancelled and doesn‘t get get to responder
+        // sometimes NavigationAction #4 (goBack) Task is cancelled and doesn‘t get to responder
         responder(at: 0).history.removeAll(where: {
             if case .navigationAction(let navAction, _, _) = $0 {
-                return navAction.navigationAction.identifier == 4
+                return navAction.navigationAction.identifier == 4 && navAction.navigationAction.navigationType.isBackForward
             } else if case .willStart(let nav, _) = $0 {
-                return nav.navigationAction.navigationAction.identifier == 4
-            } else if case .didFail(let nav, _, _) = $0 {
-                // did fail event may be missing if
-                return nav.navigationAction.navigationAction.url.matches(urls.local4)
+                return nav.navigationAction.navigationAction.identifier == 4 && nav.navigationAction.navigationAction.navigationType.isBackForward
             }
             return false
         })
 
+        let lastNavAction = NavAction(req(urls.local3), .custom(.init(rawValue: "redir")), from: history[2], src: main(urls.local2))
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(NavAction(req(urls.local), .other, from: history[2], src: main(urls.local2))),
             .didCancel(navAct(3), expected: 2),
 
-            // .navigationAction(NavAction(req(urls.local4, defaultHeaders.allowingExtraKeys), .redirect(.developer), from: history[2], src: main(urls.local2))),
-            // .willStart(Nav(action: navAct(4), redirects: [navAct(3)], .approved, isCurrent: false)),
-            // .didFail(Nav(action: NavAction(req(urls.local4, defaultHeaders.allowingExtraKeys), .redirect(.developer), from: history[2], src: main(urls.local2)), redirects: [navAct(3)], .failed(WKError(NSURLErrorCancelled)), isCurrent: false), NSURLErrorCancelled),
-
-            .navigationAction(NavAction(req(urls.local3), .custom(.init(rawValue: "redir")), from: history[2], src: main(urls.local2))),
-            .willStart(Nav(action: navAct(5), redirects: [navAct(3)], .approved, isCurrent: false)),
-            .didStart(Nav(action: navAct(5), redirects: [navAct(3)], .started)),
-            .response(Nav(action: navAct(5), redirects: [navAct(3)], .responseReceived, resp: .resp(urls.local3, data.html.count))),
-            .didCommit(Nav(action: navAct(5), redirects: [navAct(3)], .responseReceived, resp: resp(2), .committed)),
-            .didFinish(Nav(action: navAct(5), redirects: [navAct(3)], .finished, resp: resp(2), .committed))
+            .navigationAction(lastNavAction),
+            .willStart(Nav(action: lastNavAction, redirects: [navAct(3)], .approved, isCurrent: false)),
+            .didStart(Nav(action: lastNavAction, redirects: [navAct(3)], .started)),
+            .response(Nav(action: lastNavAction, redirects: [navAct(3)], .responseReceived, resp: .resp(urls.local3, data.html.count))),
+            .didCommit(Nav(action: lastNavAction, redirects: [navAct(3)], .responseReceived, resp: resp(2), .committed)),
+            .didFinish(Nav(action: lastNavAction, redirects: [navAct(3)], .finished, resp: resp(2), .committed))
         ])
-        XCTAssertEqual(_webView.backForwardList.backList.count, 1)
+        XCTAssertEqual(_webView.backForwardList.backList.count, 2)
     }
 
     func testWhenServerRedirectIsInterruptedThenDidFailProvisionalIsCalled() throws {

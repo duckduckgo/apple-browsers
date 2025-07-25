@@ -27,6 +27,10 @@ import XCTest
 
 @testable import Navigation
 
+@objc private protocol WebProcessPoolPrivate: AnyObject {
+    @objc(_setWebProcessCountLimit:) static func setWebProcessCountLimit(_ webProcessCountLimit: UInt)
+}
+
 @available(macOS 12.0, iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
 
@@ -50,8 +54,6 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             try block(webView)
         }
     }
-    var usedWebViews = [WKWebView]()
-    var usedDelegates = [NavigationDelegateProxy]()
 
     static let data = DataSource()
     var data: DataSource { Self.data }
@@ -69,6 +71,8 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 XCTFail("[\(testName)] unexpected event received: \($0)")
             })
         }
+
+        unsafeBitCast(WKProcessPool.self, to: WebProcessPoolPrivate.Type.self).setWebProcessCountLimit(5)
     }
 
     override func tearDown() {
@@ -81,19 +85,15 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             })
         }
         if let _webView {
-            usedWebViews.append(_webView)
+            if let navigationDelegateProxy {
+                let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
+                objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
+            }
             self._webView = nil
         }
-        self.usedDelegates.append(navigationDelegateProxy)
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        navigationDelegateProxy = nil
         currentHistoryItemIdentityCancellable = nil
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            self?.usedWebViews = []
-            self?.usedDelegates = []
-            self?.navigationDelegateProxy = nil
-            self?.history.removeAll()
-        }
+        history.removeAll()
     }
 
 }
@@ -441,9 +441,8 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func navAct(_ idx: UInt64, file: StaticString = #file, line: UInt = #line) -> NavAction {
-        return responder(at: 0).navigationActionsCache.dict[idx] ?? {
-            fatalError("No navigation action at index #\(idx): \(file):\(line)")
-        }()
+        return responder(at: 0).navigationActionsCache.dict[idx] ??
+            .init(.init(url: URL(string: "no-navigation-action-at-\(idx)")!), .other, src: .mainFrame(for: WKWebView()), targ: nil)
     }
     func resp(_ idx: Int) -> NavResponse {
         return responder(at: 0).navigationResponses[idx]

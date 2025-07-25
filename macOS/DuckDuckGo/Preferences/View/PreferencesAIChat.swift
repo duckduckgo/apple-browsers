@@ -26,7 +26,7 @@ extension Preferences {
 
     struct AIChatView: View {
         @ObservedObject var model: AIChatPreferences
-        @State private var showingDisableAIChatDialog = false
+        @State private var isShowingDisableAIChatDialog = false
 
         var body: some View {
             PreferencePane {
@@ -56,7 +56,7 @@ extension Preferences {
 
                             Button(model.isAIFeaturesEnabled ? UserText.aiChatDisableButton : UserText.aiChatEnableButton) {
                                 if model.isAIFeaturesEnabled {
-                                    showingDisableAIChatDialog = true
+                                    isShowingDisableAIChatDialog = true
                                 } else {
                                     model.isAIFeaturesEnabled = true
                                 }
@@ -155,9 +155,7 @@ extension Preferences {
                         }
                         .buttonStyle(.plain)
                     }
-
-                    //
-                } else { // Old UI
+                } else { // Legacy UI displayed when aiChatGlobalSwitch is disabled (to be removed after rollout)
                     // Duck.ai Shortcuts
                     PreferencePaneSection(UserText.duckAIShortcuts) {
 
@@ -240,7 +238,7 @@ extension Preferences {
                     }
                 }
             }
-            .sheet(isPresented: $showingDisableAIChatDialog) {
+            .sheet(isPresented: $isShowingDisableAIChatDialog) {
                 removeConfirmationDialog
             }
         }
@@ -250,7 +248,6 @@ extension Preferences {
             Dialog {
                 Image("DaxAIChat")
                     .frame(width: 96, height: 72)
-//                    .padding(.vertical, 16)
 
                 Text(UserText.aiChatDisableDialogTitle)
                     .font(.title2)
@@ -264,9 +261,9 @@ extension Preferences {
                 .foregroundColor(Color(.textPrimary))
             } buttons: {
                 Spacer()
-                Button(UserText.cancel) { showingDisableAIChatDialog = false }
+                Button(UserText.cancel) { isShowingDisableAIChatDialog = false }
                 Button(action: {
-                    showingDisableAIChatDialog = false
+                    isShowingDisableAIChatDialog = false
                     model.isAIFeaturesEnabled.toggle()
                 }, label: {
                     Text(UserText.aiChatDisableDialogConfirmButton)

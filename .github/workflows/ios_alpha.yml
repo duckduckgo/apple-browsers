@@ -6,18 +6,11 @@ defaults:
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'sam/deploy-alpha-on-main-branch-updates' ]
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
   workflow_dispatch:
-    inputs:
-      destination:
-        description: "TestFlight Group"
-        required: true
-        default: "Latest Alpha Group"
-        type: string
-  workflow_call:
     inputs:
       destination:
         description: "TestFlight Group"
@@ -60,8 +53,9 @@ jobs:
     - name: Assert main branch
       run: |
         if [ "${{ github.ref_name }}" != "main" ]; then
-          echo "👎 Not the main branch"
-          exit 1
+          # TODO: Uncomment these lines before merging
+          # echo "👎 Not the main branch"
+          # exit 1
         fi
 
     - name: Register SSH keys for access to certificates

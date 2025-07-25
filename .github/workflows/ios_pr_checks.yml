@@ -50,6 +50,10 @@ on:
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   shellcheck:
 
@@ -73,6 +77,8 @@ jobs:
       with:
         format: gcc
         scandir: iOS/scripts
+      env:
+        SHELLCHECK_OPTS: -x -P iOS/scripts
 
   unit-tests:
 

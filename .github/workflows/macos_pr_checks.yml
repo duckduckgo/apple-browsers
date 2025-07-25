@@ -45,6 +45,10 @@ on:
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   shellcheck:
 

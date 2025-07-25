@@ -439,16 +439,12 @@ struct UserText {
 
     // Misc
 
+    static let aiChatShowOnNewTabPageBarToggle = NSLocalizedString("duckai.show-on-new-tab-page.toggle", value: "Show on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page")
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
-
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
-
     static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
-
     static let aiChatPreferencesCaption = NSLocalizedString("ai-features.preferences.caption", value: "DuckDuckGo AI features are private and optional. Your data is not used to train AI.", comment: "Ai Chat preferences explanation")
-
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
-
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")
 
     static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
@@ -607,7 +603,12 @@ struct UserText {
     static let bookmarkImportedFromFolder = NSLocalizedString("bookmarks.imported.from.folder", value: "Imported from", comment: "Name of the folder the imported bookmarks are saved into")
 
     // MARK: Feedback
-    static let sendPProFeedback = NSLocalizedString("send.ppro.feedback", value: "Send Privacy Pro Feedback", comment: "Menu with feedback commands")
+    static func sendSubscriptionFeedback(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("send.subscription.feedback", value: "Send Subscription Feedback", comment: "Menu with feedback commands")
+        }
+        return NSLocalizedString("send.ppro.feedback", value: "Send Privacy Pro Feedback", comment: "Menu with feedback commands")
+    }
     static let reportBrokenSite = NSLocalizedString("report.broken.site", value: "Report Broken Site", comment: "Menu with feedback commands")
     static let browserFeedback = NSLocalizedString("send.browser.feedback", value: "Send Browser Feedback", comment: "Menu with feedback commands")
     static let browserFeedbackTitle = NSLocalizedString("send.browser.feedback.title", value: "Help Improve the DuckDuckGo Browser", comment: "Title of the interface to send feedback on the browser")
@@ -620,6 +621,8 @@ struct UserText {
 
     static let otherBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.other.folder.title", value: "Other bookmarks", comment: "Name of the \"Other bookmarks\" folder imported from other browser")
     static let mobileBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.mobile.folder.title", value: "Mobile bookmarks", comment: "Name of the \"Mobile bookmarks\" folder imported from other browser")
+    static let bookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.folder.title", value: "Bookmarks", comment: "Name of the \"Bookmarks\" folder for bookmarks imported from other browser")
+    static let bookmarksMenuImportedFolderTitle = NSLocalizedString("bookmarks.imported.menu.folder.title", value: "Bookmarks menu", comment: "Name of the \"Bookmarks menu\" folder imported from other browser")
 
     static let zoom = NSLocalizedString("zoom", value: "Zoom", comment: "Menu with Zooming commands")
     static let resetZoom = NSLocalizedString("reset-zoom", value: "Reset", comment: "Button that allows the user to reset the zoom level of the browser page")
@@ -726,6 +729,12 @@ struct UserText {
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
 
     static let privacyProtections = NSLocalizedString("preferences.privacy-protections", value: "Privacy Protections", comment: "The section header in Preferences representing browser features related to privacy protection")
+    static func subscriptionSettingsHeader(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("preferences.subscription.header", value: "DuckDuckGo Subscription", comment: "The section header in Preferences representing subscription features")
+        }
+        return "Privacy Pro"
+    }
     static let mainSettings = NSLocalizedString("preferences.main-settings", value: "Main Settings", comment: "Section header in Preferences for main settings")
     static let duckduckgoOnOtherPlatforms = NSLocalizedString("preferences.duckduckgo-on-other-platforms", value: "DuckDuckGo on Other Platforms", comment: "Button presented to users to navigate them to our product page which presents all other products for other platforms")
     static let defaultBrowser = NSLocalizedString("preferences.default-browser", value: "Default Browser", comment: "Title of the option to show the Default Browser Preferences")
@@ -1199,6 +1208,7 @@ struct UserText {
     static let stopLoadingTooltip = NSLocalizedString("tooltip.navigation.stop", value: "Stop loading this page", comment: "Tooltip for the Stop Navigation button")
     static let applicationMenuTooltip = NSLocalizedString("tooltip.application-menu.show", value: "Open application menu", comment: "Tooltip for the Application Menu button")
 
+    static let privacyDashboardButton = NSLocalizedString("title.privacy-dashboard.button", value: "Privacy Dashboard", comment: "Title for the Privacy Dashboard button")
     static let privacyDashboardTooltip = NSLocalizedString("tooltip.privacy-dashboard.show", value: "Show the Privacy Dashboard and manage site settings", comment: "Tooltip for the Privacy Dashboard button")
     static let addBookmarkTooltip = NSLocalizedString("tooltip.bookmark.add", value: "Bookmark this page", comment: "Tooltip for the Add Bookmark button")
     static let editBookmarkTooltip = NSLocalizedString("tooltip.bookmark.edit", value: "Edit bookmark", comment: "Tooltip for the Edit Bookmark button")
@@ -1516,7 +1526,12 @@ struct UserText {
 
     // Key: "subscription.menu.item"
     // Comment: "Title for Subscription item in the options menu"
-    static let subscriptionOptionsMenuItem = "Privacy Pro"
+    static func subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.options.menu.item", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
+        }
+        return "Privacy Pro"
+    }
     static let subscriptionOptionsMenuItemFreeTrialBadge = NSLocalizedString("subscription.free-trial.settings.menu.item", value: "TRY FOR FREE", comment: "Title for Subscription Free Trial promotion item in the options menu")
 
     static let identityTheftRestorationOptionsMenuItem = "Identity Theft Restoration"
@@ -1526,6 +1541,12 @@ struct UserText {
     // Key: "preferences.subscription"
     // Comment: "Show subscription preferences"
     static let subscription = "Privacy Pro"
+    static func purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")
+        }
+        return "Privacy Pro"
+    }
 
     static let purchasingSubscriptionTitle = NSLocalizedString("subscription.progress.view.purchasing.subscription", value: "Purchase in progress...", comment: "Progress view title when starting the purchase")
     static let restoringSubscriptionTitle = NSLocalizedString("subscription.progress.view.restoring.subscription", value: "Restoring subscription...", comment: "Progress view title when restoring past subscription purchase")

@@ -58,6 +58,7 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
             showTab: { _ in },
             )
@@ -75,6 +76,7 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: mockRemoteAISettings
         ) { content in
             self.showTabCalled = true
@@ -107,6 +109,7 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings()
         ) { content in
             self.showTabCalled = true

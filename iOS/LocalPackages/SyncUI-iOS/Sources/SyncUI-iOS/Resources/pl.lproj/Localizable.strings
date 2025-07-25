@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Otwórz DuckDuckGo na innym urządzeniu i zeskanuj ten kod, aby zsynchronizować.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Możesz też skanować za pomocą DuckDuckGo na innym urządzeniu";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Udostępnij kod tekstowy";
 

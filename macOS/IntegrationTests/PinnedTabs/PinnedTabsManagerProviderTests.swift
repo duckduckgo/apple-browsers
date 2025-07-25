@@ -145,9 +145,8 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
 
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         let window = WindowsManager.openNewWindow(with: tabCollectionViewModel)
-        window?.makeKeyAndOrderFront(nil)
 
-        let newManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: tabCollectionViewModel)
+        let newManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: tabCollectionViewModel, forceActive: true)
 
         let secondNewManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider))
 
@@ -163,14 +162,12 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
 
         let firstTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         let firstWindow = WindowsManager.openNewWindow(with: firstTabCollectionViewModel)
-        firstWindow?.makeKeyAndOrderFront(nil)
 
         let tab1 = Tab(content: .url(URL(string: "https://first.com")!, source: .ui))
         firstTabCollectionViewModel.pinnedTabsManager!.pin(tab1)
 
         let secondTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         let secondWindow = WindowsManager.openNewWindow(with: secondTabCollectionViewModel)
-        secondWindow?.makeKeyAndOrderFront(nil)
 
         let tab2 = Tab(content: .url(URL(string: "https://second.com")!, source: .ui))
         secondTabCollectionViewModel.pinnedTabsManager!.pin(tab2)

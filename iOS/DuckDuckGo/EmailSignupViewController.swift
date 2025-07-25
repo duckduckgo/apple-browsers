@@ -409,6 +409,12 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
         // no-op
     }
     
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToImportCredentialsForDomain domain: String,
+                            completionHandler: @escaping (Bool) -> Void) {
+        // no-op
+    }
+
     // Used on macOS to request authentication for individual autofill items
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager,
                             isAuthenticatedFor type: BrowserServicesKit.AutofillType,

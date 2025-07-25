@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Combine
 import Common
@@ -52,6 +53,7 @@ final class NewTabPageCoordinator {
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol,
         tabsPreferences: TabsPreferences,
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -82,7 +84,8 @@ final class NewTabPageCoordinator {
             keyValueStore: keyValueStore,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
-            tabsPreferences: tabsPreferences
+            tabsPreferences: tabsPreferences,
+            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

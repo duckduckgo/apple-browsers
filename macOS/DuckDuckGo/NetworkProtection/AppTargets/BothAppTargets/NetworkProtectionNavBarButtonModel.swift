@@ -30,6 +30,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     private let networkProtectionStatusReporter: NetworkProtectionStatusReporter
     private var status: VPN.ConnectionStatus = .default
     private let popoverManager: NetPPopoverManager
+    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
 
     // MARK: - Subscriptions
 
@@ -66,13 +67,18 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     private var isHavingConnectivityIssues = false
 
+    // MARK: - Upsell
+
+    private var shouldShowUpsell = false
+
     // MARK: - Initialization
 
     init(popoverManager: NetPPopoverManager,
          pinningManager: PinningManager = LocalPinningManager.shared,
          vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          statusReporter: NetworkProtectionStatusReporter,
-         iconProvider: IconProvider) {
+         iconProvider: IconProvider,
+         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = Application.appDelegate.vpnUpsellVisibilityManager) {
 
         self.popoverManager = popoverManager
         self.vpnGatekeeper = vpnGatekeeper
@@ -80,6 +86,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
         self.iconPublisher = NetworkProtectionIconPublisher(statusReporter: networkProtectionStatusReporter, iconProvider: iconProvider)
         self.pinningManager = pinningManager
         self.shortcutTitle = pinningManager.shortcutTitle(for: .networkProtection)
+        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
 
         isHavingConnectivityIssues = networkProtectionStatusReporter.connectivityIssuesObserver.recentValue
         buttonImage = .image(for: iconPublisher.icon)
@@ -95,6 +102,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
         setupIconSubscription()
         setupStatusSubscription()
         setupInterruptionSubscription()
+        setupUpsellSubscription()
     }
 
     private func setupIconSubscription() {
@@ -131,6 +139,19 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
         }.store(in: &cancellables)
     }
 
+    private func setupUpsellSubscription() {
+        vpnUpsellVisibilityManager.$shouldShowUpsell.sink { [weak self] shouldShowUpsell in
+            guard let self = self else {
+                return
+            }
+
+            Task { @MainActor in
+                self.shouldShowUpsell = shouldShowUpsell
+                self.updateVisibility()
+            }
+        }.store(in: &cancellables)
+    }
+
     @MainActor
     func updateVisibility() {
         Task { @MainActor in
@@ -147,7 +168,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
                 return
             }
 
-            showVPNButton = isPinned || popoverManager.isShown || isHavingConnectivityIssues
+            showVPNButton = isPinned || popoverManager.isShown || isHavingConnectivityIssues || shouldShowUpsell
         }
     }
 

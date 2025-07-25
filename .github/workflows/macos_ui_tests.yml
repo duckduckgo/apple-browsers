@@ -28,6 +28,10 @@ on:
       - '.github/**'
       - '.xcode-version'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   create-notarized-app:
     name: Build Notarized Review app
@@ -97,7 +101,7 @@ jobs:
         run: |
           # Check if a single test class was specified
           single_test_class="${{ inputs.single_test_class }}"
-          
+
           if [[ -n "$single_test_class" ]]; then
             echo "Running single test class: $single_test_class"
             test=$(jq -nc --arg class "$single_test_class" '[$class]')
@@ -107,7 +111,7 @@ jobs:
             test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
             test=$(echo $test_names | jq -cR 'split(" ")')
           fi
-          
+
           echo "test=${test}" >> $GITHUB_OUTPUT
 
   ui-tests:
@@ -206,7 +210,7 @@ jobs:
     - name: Extract and Copy app to /DerivedData
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
-        
+
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
         if [[ -n "${extracted_app}" ]]; then
@@ -216,7 +220,7 @@ jobs:
             mv "${extracted_app}" "DuckDuckGo Review.app"
           fi
         fi
-        
+
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests
@@ -264,12 +268,12 @@ jobs:
         archive_name="BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
-        
+
         # locate and copy all files, flattening the structure with verbose output
         cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
         find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
         cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
-        
+
         # Store archive name for upload step
         echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
 

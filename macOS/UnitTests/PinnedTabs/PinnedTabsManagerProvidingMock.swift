@@ -31,7 +31,7 @@ class PinnedTabsManagerProvidingMock: PinnedTabsManagerProviding {
     }
 
     var newPinnedTabsManager = PinnedTabsManager()
-    func getNewPinnedTabsManager(shouldMigrate: Bool, tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager {
+    func getNewPinnedTabsManager(shouldMigrate: Bool, tabCollectionViewModel: TabCollectionViewModel, forceActive: Bool? = nil) -> PinnedTabsManager {
         return newPinnedTabsManager
     }
 

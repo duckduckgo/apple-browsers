@@ -69,8 +69,8 @@ let package = Package(
         ),
         .binaryTarget(
             name: "GRDB",
-            url: "https://github.com/duckduckgo/GRDB.swift/releases/download/3.0.0/GRDB.xcframework.zip",
-            checksum: "41f01022f6a35986393e063e1ef386fd896646ed032f7d0419c4b02fa3afe61d"
+            url: "https://github.com/duckduckgo/GRDB.swift/releases/download/2.4.2/GRDB.xcframework.zip",
+            checksum: "5380265b0e70f0ed28eb1e12640eb6cde5e4bfd39893c86b31f8d17126887174"
         ),
         .target(
             name: "BrowserServicesKit",

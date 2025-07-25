@@ -79,6 +79,7 @@ protocol TabExtensionDependencies {
     var faviconManagement: FaviconManagement? { get }
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
+    var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -177,7 +178,8 @@ extension TabExtensionsBuilder {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
-                               featureFlagger: dependencies.featureFlagger)
+                               internalUserDecider: dependencies.featureFlagger.internalUserDecider,
+                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -248,6 +250,10 @@ extension TabExtensionsBuilder {
                 webViewPublisher: args.webViewFuture,
                 webViewErrorPublisher: args.errorPublisher
             )
+        }
+
+        add {
+            SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
         }
 
 #if SPARKLE

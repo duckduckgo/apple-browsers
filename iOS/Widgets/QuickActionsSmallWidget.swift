@@ -163,7 +163,7 @@ private struct SearchBoxView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 46)
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .controlsFillPrimary))
         )
     }
 }
@@ -174,7 +174,7 @@ private struct IconView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .controlsFillPrimary))
             image
                 .resizable()
                 .scaledToFit()

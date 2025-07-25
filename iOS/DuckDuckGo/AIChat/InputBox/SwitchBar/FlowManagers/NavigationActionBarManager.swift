@@ -19,7 +19,6 @@
 
 import Foundation
 import UIKit
-import SwiftUI
 
 /// Protocol for handling navigation action bar events
 protocol NavigationActionBarManagerDelegate: AnyObject {
@@ -36,7 +35,7 @@ final class NavigationActionBarManager {
     weak var delegate: NavigationActionBarManagerDelegate?
     
     private let switchBarHandler: SwitchBarHandling
-    private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
+    private var navigationActionBarViewController: NavigationActionBarViewController?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
     
     // MARK: - Initialization
@@ -44,7 +43,7 @@ final class NavigationActionBarManager {
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
     }
-    
+
     // MARK: - Public Methods
     
     /// Installs the navigation action bar in the provided parent view controller
@@ -67,31 +66,28 @@ final class NavigationActionBarManager {
         )
         navigationActionBarViewModel = viewModel
         
-        let actionBarView = NavigationActionBarView(viewModel: viewModel)
+        let actionBarViewController = NavigationActionBarViewController(viewModel: viewModel)
+        navigationActionBarViewController = actionBarViewController
         
-        let hostingController = UIHostingController(rootView: actionBarView)
-        navigationActionBarHostingController = hostingController
-        
-        hostingController.view.backgroundColor = .clear
-        viewController.addChild(hostingController)
-        viewController.view.addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        viewController.addChild(actionBarViewController)
+        viewController.view.addSubview(actionBarViewController.view)
+        actionBarViewController.view.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            hostingController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
+            actionBarViewController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
+            actionBarViewController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
+            actionBarViewController.view.bottomAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.bottomAnchor)
         ])
         
-        hostingController.didMove(toParent: viewController)
+        actionBarViewController.didMove(toParent: viewController)
     }
     
     /// Removes the navigation action bar from its parent
     func removeFromParent() {
-        navigationActionBarHostingController?.willMove(toParent: nil)
-        navigationActionBarHostingController?.view.removeFromSuperview()
-        navigationActionBarHostingController?.removeFromParent()
-        navigationActionBarHostingController = nil
+        navigationActionBarViewController?.willMove(toParent: nil)
+        navigationActionBarViewController?.view.removeFromSuperview()
+        navigationActionBarViewController?.removeFromParent()
+        navigationActionBarViewController = nil
         navigationActionBarViewModel = nil
     }
 }

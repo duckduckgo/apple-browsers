@@ -2,17 +2,12 @@
 
 set -eo pipefail
 
-if ! [[ $common_sh ]]; then
-	cwd="$(dirname "${BASH_SOURCE[0]}")"
-	source "${cwd}/helpers/common.sh"
-fi
-
 print_usage_and_exit() {
 	local reason=$1
 
 	cat <<- EOF
 	Usage:
-	  $ $(basename "$0") [-h] <class_name> <testcase_name> <message> <workflow_url>
+	  $ $(basename "$0") [-h] -s <section_gid> <class_name> <testcase_name> <message> <workflow_url>
 
 	Options:
 	  <class_name>       Name of the failing test case class
@@ -20,24 +15,33 @@ print_usage_and_exit() {
 	  <message>          Failure message
 	  <workflow_url>     URL of the workflow that failed
 	  -h                 Print this message
+	  -s <section_gid>   Section GID to add the task to
 
 	Note: This script is intended for CI use only. You shouldn't call it directly.
 	EOF
 
-	die "${reason}"
+	echo "${reason}"
+	exit 1
 }
 
 read_command_line_arguments() {
-	while getopts 'h' OPTION; do
+	while getopts 'hs:' OPTION; do
 		case "${OPTION}" in
 			h)
 				print_usage_and_exit
+				;;
+			s)
+				failing_tests_section_id="${OPTARG}"
 				;;
 			*)
 				print_usage_and_exit "Unknown option '${OPTION}'"
 				;;
 		esac
 	done
+
+	if [[ -z "${failing_tests_section_id}" ]]; then
+		print_usage_and_exit "Missing Section GID"
+	fi
 
 	shift $((OPTIND-1))
 
@@ -61,14 +65,13 @@ read_command_line_arguments() {
 workspace_id="137249556945"
 project_id="1205237866452338"
 occurrences_custom_field_id="1205237866452341"
-failing_tests_section_id="1205242009579904"
 asana_api_url="https://app.asana.com/api/1.0"
 
 find_task_and_occurrences() {
 	local task_name=$1
-	curl -s "${asana_api_url}/workspaces/${workspace_id}/tasks/search?text=${task_name}&opt_fields=custom_fields.number_value&resource_subtype=default_task&projects.any=${project_id}&is_subtask=false" \
+	curl -s "${asana_api_url}/workspaces/${workspace_id}/tasks/search?text=${task_name}&custom_fields.${occurrences_custom_field_id}.greater_than=0&opt_fields=name,custom_fields.number_value&resource_subtype=default_task&projects.any=${project_id}&is_subtask=false" \
 		-H "Authorization: Bearer ${asana_personal_access_token}" \
-		| jq -r "if (.data | length) != 0 then [.data[0].gid, (.data[0].custom_fields[] | select(.gid == \"${occurrences_custom_field_id}\") | (.number_value // 0))] | join(\" \") else empty end"
+		| jq -r "(.data | map(select(.name == \"${task_name}\")) | if length > 0 then first | [.gid, (.custom_fields[] | select(.gid == \"${occurrences_custom_field_id}\") | (.number_value // 0))] | join(\" \") else empty end)"
 }
 
 update_task() {
@@ -97,9 +100,10 @@ update_task() {
 create_task() {
 	local task_name=$1
 	local workflow_url=$2
-	local message="${3//\"/\\\"}"
+	local message
 	local occurrences=1
 	local task_id
+	message=$(sed -E -e 's/\\/\\\\/g' -e 's/"/\\"/g' <<< "$3")
 
 	task_id=$(curl -X POST -s "${asana_api_url}/tasks?opt_fields=gid" \
 		-H "Authorization: Bearer ${asana_personal_access_token}" \
@@ -154,6 +158,7 @@ add_subtask() {
 }
 
 main() {
+	local asana_personal_access_token="${ASANA_ACCESS_TOKEN}"
 	local class_name
 	local testcase_name
 	local message
@@ -161,14 +166,7 @@ main() {
 	local due_date
 	due_date=$(date -v +30d +%Y-%m-%d)
 
-	source "${cwd}/helpers/keychain.sh"
 	read_command_line_arguments "$@"
-	
-	# Load Asana-related functions. This calls `_asana_preflight` which
-	# will check for Asana access token if needed (if asana task was passed to the script).
-	source "${cwd}/helpers/asana.sh"
-
-	_asana_get_token
 
 	local task_name="${class_name}.${testcase_name}"
 	echo "Processing ${task_name}"

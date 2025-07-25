@@ -222,7 +222,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
             if removeBrokers {
                 let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
-                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler)
+                let privacyConfigManager = DBPPrivacyConfigurationManager()
+                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler, privacyConfigManager: privacyConfigManager)
                 let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
                 let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
                 let vault = try! vaultFactory.makeVault(reporter: reporter)

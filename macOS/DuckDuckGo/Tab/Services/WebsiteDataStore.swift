@@ -149,7 +149,7 @@ internal class WebCacheManager {
 
         // Don't clear fireproof domains
         let cookiesToRemove = cookies.filter { cookie in
-            !self.fireproofDomains.isFireproof(cookieDomain: cookie.domain) && ![URL.duckduckgoDomain, SubscriptionCookieManager.cookieDomain].contains(cookie.domain)
+            !self.fireproofDomains.isFireproof(cookieDomain: cookie.domain) && ![URL.duckduckgoDomain].contains(cookie.domain)
         }
 
         for cookie in cookiesToRemove {

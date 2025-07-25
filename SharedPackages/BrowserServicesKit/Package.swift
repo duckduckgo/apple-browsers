@@ -48,6 +48,7 @@ let package = Package(
         .library(name: "PageRefreshMonitor", targets: ["PageRefreshMonitor"]),
         .library(name: "PrivacyStats", targets: ["PrivacyStats"]),
         .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
+        .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.2.0"),
@@ -475,7 +476,13 @@ let package = Package(
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
-
+        .target(
+            name: "WKAbstractions",
+            dependencies: [],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
         // MARK: - Test Targets
         .target(
             name: "SharedObjCTestsUtils",
@@ -537,6 +544,7 @@ let package = Package(
                 "SecureStorageTestsUtils",
                 "Subscription",
                 "PersistenceTestingUtils",
+                "WKAbstractions",
             ],
             resources: [
                 .copy("Resources")

@@ -22452,6 +22452,78 @@
         }
       }
     },
+    "duckai.description" : {
+      "comment" : "Description of Duck.ai feature in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat privately with popular 3rd-party AI models"
+          }
+        }
+      }
+    },
+    "duckai.disable.button" : {
+      "comment" : "Button to disable Duck.ai feature",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.disable.dialog.confirm" : {
+      "comment" : "Button to confirm disabling Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.disable.dialog.message" : {
+      "comment" : "Message explaining consequences of disabling Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\n Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.You can re-enable it at any time."
+          }
+        }
+      }
+    },
+    "duckai.disable.dialog.title" : {
+      "comment" : "Title for dialog asking to disable Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disable Duck.ai?"
+          }
+        }
+      }
+    },
+    "duckai.enable.button" : {
+      "comment" : "Button to enable Duck.ai feature",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable Duck.ai"
+          }
+        }
+      }
+    },
     "duckai.menu.new" : {
       "comment" : "Menu item to launch AI Chat",
       "extractionState" : "extracted_with_value",
@@ -22512,6 +22584,30 @@
         }
       }
     },
+    "duckai.open-in-full-page.option" : {
+      "comment" : "Option to open Duck.ai chats in full page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Full page"
+          }
+        }
+      }
+    },
+    "duckai.open-in-sidebar.option" : {
+      "comment" : "Option to open Duck.ai chats in sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "In sidebar"
+          }
+        }
+      }
+    },
     "duckai.open-in-sidebar.toggle-setting" : {
       "comment" : "Settings option to open Duck.ai in the sidebar",
       "extractionState" : "extracted_with_value",
@@ -22568,6 +22664,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть Duck.ai на боковой панели."
+          }
+        }
+      }
+    },
+    "duckai.open-new-chats.section.title" : {
+      "comment" : "Section title for Duck.ai new chat location settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open New Chats"
           }
         }
       }
@@ -22812,6 +22920,18 @@
         }
       }
     },
+    "duckai.show-in-address-bar.label" : {
+      "comment" : "Label for showing Duck.ai in address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show in address bar"
+          }
+        }
+      }
+    },
     "duckai.show-in-address-bar.toggle" : {
       "comment" : "Show AI Chat in the address bar",
       "extractionState" : "extracted_with_value",
@@ -22932,6 +23052,18 @@
         }
       }
     },
+    "duckai.show-in-browser-menus.toggle" : {
+      "comment" : "Toggle for showing Duck.ai in browser menus",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show in browser menus"
+          }
+        }
+      }
+    },
     "duckai.show-on-new-tab-page.toggle" : {
       "comment" : "A checkbox to control AI Chat shortcut visibility on the New Tab Page",
       "extractionState" : "extracted_with_value",
@@ -23000,6 +23132,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Краткий пересказ от Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.title" : {
+      "comment" : "Title for Duck.ai feature",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.visibility.section.title" : {
+      "comment" : "Section title for Duck.ai visibility settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Visibility"
           }
         }
       }
@@ -71616,62 +71772,62 @@
         }
       }
     },
-    "title.privacy-dashboard.button": {
-      "comment": "Title for the Privacy Dashboard button",
-      "extractionState": "extracted_with_value",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+    "title.privacy-dashboard.button" : {
+      "comment" : "Title for the Privacy Dashboard button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Privacy Dashboard"
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Privacy Dashboard"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy Dashboard"
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Dashboard"
           }
         }
       }

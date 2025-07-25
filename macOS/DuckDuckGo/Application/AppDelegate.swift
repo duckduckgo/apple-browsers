@@ -180,8 +180,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
-    private let subscriptionCookieManager: any SubscriptionCookieManaging
-    private var subscriptionCookieManagerFeatureFlagCancellable: AnyCancellable?
 
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
@@ -249,8 +247,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
-    // swiftlint:disable cyclomatic_complexity
     @MainActor
+    // swiftlint:disable cyclomatic_complexity
     override init() {
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)
@@ -552,18 +550,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
 
-            subscriptionCookieManager = SubscriptionCookieManagerV2(subscriptionManager: subscriptionManager, currentCookieStore: {
-                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
-            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
             subscriptionManagerV2 = subscriptionManager
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
         } else {
             Logger.general.log("Configuring Subscription V1")
             let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
-            subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
-                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
-            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
             subscriptionManagerV1 = subscriptionManager
             subscriptionManagerV2 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
@@ -832,7 +824,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
@@ -879,29 +870,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statisticsLoader?.load()
 
         startupSync()
-
-        let privacyConfigurationManager = privacyFeatures.contentBlocking.privacyConfigurationManager
-
-        // Enable subscriptionCookieManager if feature flag is present
-        if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.setAccessTokenCookieForSubscriptionDomains) {
-            subscriptionCookieManager.enableSettingSubscriptionCookie()
-        }
-
-        // Keep track of feature flag changes
-        subscriptionCookieManagerFeatureFlagCancellable = privacyConfigurationManager.updatesPublisher
-            .sink { [weak self, weak privacyConfigurationManager] in
-                guard let self, let privacyConfigurationManager else { return }
-
-                let isEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.setAccessTokenCookieForSubscriptionDomains)
-
-                Task { @MainActor [weak self] in
-                    if isEnabled {
-                        self?.subscriptionCookieManager.enableSettingSubscriptionCookie()
-                    } else {
-                        await self?.subscriptionCookieManager.disableSettingSubscriptionCookie()
-                    }
-                }
-            }
 
         if [.normal, .uiTests].contains(AppVersion.runType) {
             stateRestorationManager.applicationDidFinishLaunching()
@@ -1040,7 +1008,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         Task { @MainActor in
             vpnAppEventsHandler.applicationDidBecomeActive()
-            await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
 

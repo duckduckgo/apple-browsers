@@ -25,18 +25,15 @@ import UIComponents
 class SwitchBarTextEntryViewController: UIViewController {
 
     // MARK: - Properties
-    let textEntryView: SwitchBarTextEntryView
+    private let textEntryView: SwitchBarTextEntryView
     private let handler: SwitchBarHandling
     private let containerView = CompositeShadowView()
 
-    // Constraint references for dynamic sizing
-    private var textEntryBottomConstraint: NSLayoutConstraint?
-    private var containerHeightConstraint: NSLayoutConstraint?
-    private var containerStaticHeightConstraint: NSLayoutConstraint?
-
     private var cancellables = Set<AnyCancellable>()
-    private var isExpanded = false
-    private var showsActionView: Bool { handler.currentToggleState == .aiChat && isExpanded }
+    var isExpandable: Bool {
+        get { textEntryView.isExpandable }
+        set { textEntryView.isExpandable = newValue }
+    }
 
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
@@ -54,15 +51,6 @@ class SwitchBarTextEntryViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
-        self.view.layoutIfNeeded()
-    }
-
-    func setExpanded(_ expanded: Bool) {
-        isExpanded = expanded
-        
-        containerStaticHeightConstraint?.isActive = !expanded
-        containerHeightConstraint?.isActive = expanded
-        textEntryView.alpha = expanded ? 1 : 0
     }
 
     func focusTextField() {
@@ -94,12 +82,6 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     private func setupConstraints() {
-        textEntryBottomConstraint = textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-        textEntryBottomConstraint?.priority = UILayoutPriority(999)
-        textEntryBottomConstraint?.isActive = true
-
-        containerHeightConstraint = containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 70).withPriority(.init(999))
-        containerStaticHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 44)
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -110,14 +92,11 @@ class SwitchBarTextEntryViewController: UIViewController {
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         ])
     }
 
     // MARK: - Action Handlers
-    private func handleWebSearchToggle() {
-        handler.toggleForceWebSearch()
-    }
-
     private func handleSend() {
         let currentText = handler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

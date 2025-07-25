@@ -1,6 +1,6 @@
 # DuckDuckGo Apple Browsers
 
-This repo contains the source code for the DuckDuckGo iOS and macOS browsers, and the libraries that are shared between them to provide cross-platform features. 
+This repo contains the source code for the DuckDuckGo iOS and macOS browsers, and the libraries that are shared between them to provide cross-platform features.
 
 ## Building
 

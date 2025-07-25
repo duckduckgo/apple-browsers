@@ -129,7 +129,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
             static let expandDuration: TimeInterval = 0.6
             static let expandDampingRatio: CGFloat = 0.65
             static let collapseDuration: TimeInterval = 0.5
-            static let collapseDampingRatio: CGFloat = 0.6
+            static let collapseDampingRatio: CGFloat = 0.7
         }
     }
 }

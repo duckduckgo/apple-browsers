@@ -1,0 +1,18 @@
+{
+    m_mac_dbp_secure_vault_database_recreated: {
+        description: 'Fired when the DBP secure vault database has been recreated in response to SQLITE_NOTADB or SQLITE_CORRUPT errors',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+        ],
+    },
+}

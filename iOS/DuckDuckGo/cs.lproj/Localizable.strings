@@ -1069,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "VLASTNÍ OBSAH BUŇKY";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Vlastní URL: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importovat soubor se záložkami...";
 
@@ -1129,9 +1135,6 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Jak exportovat hesla ze Safari:";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.select-file-button" = "Vybrat soubor...";
-
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Vyber soubor obsahující hesla vyexportovaná ze Safari nebo Chromu. Obvykle se jedná o soubor ZIP nebo CSV.";
 
@@ -1158,9 +1161,6 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import dokončen!";
-
-/* Data import summary of how many credit cards were successfully imported. */
-"data.import.summary.creditcards.success" = "Platební karty";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Přeskočeno duplikáty";
@@ -1665,6 +1665,9 @@
 
 /* Title of the feedback form */
 "feedback.form.title" = "Pomoz zlepšit službu Privacy Pro";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
 
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
@@ -2374,18 +2377,6 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Rozumím. Ostatní tipy přeskočím.";
 
-/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
-"onboarding.subscription.promo.buttons.tryItForFree" = "Vyzkoušej to vše zdarma!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo má také bezpečnou %1$@, které jsou dostupné v rámci %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN a dvě další prémiové ochrany";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Přidat widget";
 
@@ -2418,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplikaci nutnou k otevření tohoto odkazu nelze nalézt";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Nemám přístup k modelům Duck.ai, které jsou jen pro předplatitele";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Nemám se svým předplatným přístup k Duck.ai v jiných prohlížečích";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "VYBER KATEGORII";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Další zpětná vazba k Duck.ai";
 
 /* Activate button */
 "pm.activate" = "Znovu aktivovat";
@@ -2635,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "VYBER KATEGORII";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Nastavení vlastní adresy URL pro AI chat";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "O DuckDuckGo";
 
@@ -2830,12 +2836,6 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Zásady ochrany osobních údajů a podmínky služby";
 
-/* Privacy Pro description subtitle in settings */
-"settings.PPro.row.description" = "Zahrnuje naši VPN a službu Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.PPro.us.description" = "Zahrnuje naše funkce VPN, Personal Information Removal a Identity Theft Restoration.";
-
 /* Settings screen cell for long press previews */
 "settings.previews" = "Náhledy dlouhého stisknutí";
 
@@ -2869,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Akce trvá déle než obvykle. Stav se tady prosím později.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Odstraň své údaje z webů, které je prodávají";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Předplatitelé získají naši VPN a službu Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Předplatitelé získají naši VPN a služby Personal Information Removal a Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Předplatitelé získají naši VPN, pokročilé modely umělé inteligence ve funkci Duck.ai a službu Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Předplatitelé získají naši VPN, pokročilé modely AI ve funkci Duck.ai, službu Personal Information Removal a Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Mám předplatné";
@@ -2883,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Tvoje předplatné Privacy Pro vypršelo";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "Předplatné DuckDuckGo";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Pokud dojde ke krádeži tvé identity, pomůžeme ti ji obnovit.";
@@ -2896,11 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Nastavení předplatného";
 
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "Předplatné DuckDuckGo";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Předplatit si DuckDuckGo";
+
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Chraň své připojení a identitu se službou Privacy Pro";
+"settings.subscription.subscribe.title" = "Zabezpeč si Wi-Fi a chatuj soukromě s pokročilými modely AI";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Zabezpeč si Wi-Fi a chraň svou identitu";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Vyzkoušet předplatné DuckDuckGo zdarma";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Vyzkoušej zdarma službu Privacy Pro";
+"settings.subscription.try.free.no.ai.chat" = "Vyzkoušej zdarma službu Privacy Pro";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3052,6 +3085,15 @@
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Opravdu to chceš udělat?";
 
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Chatuj soukromě s modely AI jen pro předplatitele.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Spustit Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Předplatné spojené s tímhle e-mailem už není aktivní.";
 
@@ -3165,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Všechno je hotové.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "Předplatné DuckDuckGo";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Přihlášeno";
@@ -3618,9 +3663,6 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Pokračovat";
-
-/* Option to select to import credit cards */
-"zip.content.import.type.creditCards" = "Platební karty";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Hesla";

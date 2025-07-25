@@ -71,6 +71,9 @@ class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdate
 
     var state: ContextualOnboardingState = .onboardingCompleted
 
+    @Published var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
+
     var updatedForTab: Tab?
     var gotItPressedCalled = false
     var fireButtonUsedCalled = false

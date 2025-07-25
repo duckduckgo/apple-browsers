@@ -48,10 +48,6 @@ final class ToolbarHandler: ToolbarStateHandling {
 
     private let themeManager: ThemeManaging
 
-    private var isExperimentalThemingEnabled: Bool {
-        themeManager.properties.isExperimentalThemingEnabled
-    }
-
     lazy var backButton = {
         return createBarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
     }()
@@ -126,23 +122,19 @@ final class ToolbarHandler: ToolbarStateHandling {
     }
 
     private func createBarButtonItem(title: String, image: UIImage) -> UIBarButtonItem {
-        if self.isExperimentalThemingEnabled {
-            let button = BrowserChromeButton(.primary)
-            button.setImage(image)
-            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        let button = BrowserChromeButton(.primary)
+        button.setImage(image)
+        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
-            let barItem = UIBarButtonItem(customView: button)
-            barItem.title = title
+        let barItem = UIBarButtonItem(customView: button)
+        barItem.title = title
 
-            return barItem
-        } else {
-            return UIBarButtonItem(title: title, image: image, primaryAction: nil)
-        }
+        return barItem
     }
 
     private func createPageLoadedButtons() -> [UIBarButtonItem] {
         return [
-            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil,
+            .additionalFixedSpaceItem(),
             backButton,
             .flexibleSpace(),
             forwardButton,
@@ -152,13 +144,13 @@ final class ToolbarHandler: ToolbarStateHandling {
             tabSwitcherButton,
             .flexibleSpace(),
             browserMenuButton,
-            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil
+            .additionalFixedSpaceItem()
         ].compactMap { $0 }
     }
 
     private func createNewTabButtons() -> [UIBarButtonItem] {
         return [
-            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil,
+            .additionalFixedSpaceItem(),
             bookmarkButton,
             .flexibleSpace(),
             passwordsButton,
@@ -168,7 +160,7 @@ final class ToolbarHandler: ToolbarStateHandling {
             tabSwitcherButton,
             .flexibleSpace(),
             browserMenuButton,
-            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil
+            .additionalFixedSpaceItem()
         ].compactMap { $0 }
     }
 }

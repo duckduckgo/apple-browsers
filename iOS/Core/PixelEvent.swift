@@ -1025,11 +1025,6 @@ extension Pixel {
         case privacyProSubscriptionManagementRemoval
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
-        case privacyProSubscriptionCookieMissingTokenOnSignIn
-        case privacyProSubscriptionCookieMissingCookieOnSignOut
-        case privacyProSubscriptionCookieRefreshedWithAccessToken
-        case privacyProSubscriptionCookieRefreshedWithEmptyValue
-        case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
         // AUth V2
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
@@ -2245,11 +2240,6 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-        case .privacyProSubscriptionCookieMissingTokenOnSignIn: return "m_privacy-pro_subscription-cookie-missing_token_on_sign_in"
-        case .privacyProSubscriptionCookieMissingCookieOnSignOut: return "m_privacy-pro_subscription-cookie-missing_cookie_on_sign_out"
-        case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
-        case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
-        case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
         // AUth V2
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"

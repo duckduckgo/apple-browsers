@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Pro synchronizaci spusť DuckDuckGo na svém druhém zařízení a naskenuj kód.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Nebo skenuj pomocí DuckDuckGo na svém druhém zařízení.";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Sdílet textový kód?";
 

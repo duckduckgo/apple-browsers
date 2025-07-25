@@ -84,6 +84,16 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSubmitSearchContainsURL_ThenTabNavigatesDirectlyURL() {
+        let target: NewTabPageDataModel.OpenTarget = .sameTab
+
+        handler.submitSearch("wikipedia.org", target: target)
+
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.absoluteString, "http://wikipedia.org")
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
+    }
+
+    @MainActor
     func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
         let target: NewTabPageDataModel.OpenTarget = .sameTab
 

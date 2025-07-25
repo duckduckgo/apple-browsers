@@ -49,7 +49,6 @@ class TabManager {
     private let textZoomCoordinator: TextZoomCoordinating
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
-    private let subscriptionCookieManager: SubscriptionCookieManaging
     private let appSettings: AppSettings
     private let maliciousSiteProtectionManager: MaliciousSiteProtectionManaging
     private let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -76,7 +75,6 @@ class TabManager {
          onboardingPixelReporter: OnboardingPixelReporting,
          featureFlagger: FeatureFlagger,
          contentScopeExperimentManager: ContentScopeExperimentsManaging,
-         subscriptionCookieManager: SubscriptionCookieManaging,
          appSettings: AppSettings,
          textZoomCoordinator: TextZoomCoordinating,
          websiteDataManager: WebsiteDataManaging,
@@ -100,7 +98,6 @@ class TabManager {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentManager = contentScopeExperimentManager
-        self.subscriptionCookieManager = subscriptionCookieManager
         self.appSettings = appSettings
         self.textZoomCoordinator = textZoomCoordinator
         self.websiteDataManager = websiteDataManager
@@ -142,7 +139,6 @@ class TabManager {
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
                                                               contentScopeExperimentManager: contentScopeExperimentManager,
-                                                              subscriptionCookieManager: subscriptionCookieManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
@@ -235,7 +231,7 @@ class TabManager {
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
-                                                              contentScopeExperimentManager: contentScopeExperimentManager, subscriptionCookieManager: subscriptionCookieManager,
+                                                              contentScopeExperimentManager: contentScopeExperimentManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,

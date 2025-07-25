@@ -46,7 +46,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             NewTabPageGridView(geometry: geometry, isUsingDynamicSpacing: model.isNewTabPageCustomizationEnabled) { _ in
                 ReorderableForEach(result.items) { item in
                     viewFor(item)
-                        .previewShape(isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled)
+                        .previewShape()
                         .transition(.opacity)
                 } preview: { item in
                     previewFor(item)
@@ -83,9 +83,9 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
     private func previewFor(_ item: FavoriteItem) -> some View {
         switch item {
         case .favorite(let favorite):
-            FavoriteIconView(favorite: favorite, isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled, faviconLoading: model.faviconLoader)
+            FavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
                 .frame(width: NewTabPageGrid.Item.edgeSize)
-                .previewShape(isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled)
+                .previewShape()
                 .transition(.opacity)
         case .addFavorite, .placeholder:
             EmptyView()
@@ -102,7 +102,6 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             }, label: {
                 FavoriteItemView(
                     favorite: favorite,
-                    isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled,
                     faviconLoading: model.faviconLoader,
                     onMenuAction: { action in
                         switch action {
@@ -134,8 +133,8 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
 }
 
 private extension View {
-    func previewShape(isExperimentalAppearanceEnabled: Bool) -> some View {
-        contentShape(.dragPreview, FavoriteIconView.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled))
+    func previewShape() -> some View {
+        contentShape(.dragPreview, FavoriteIconView.itemShape())
     }
 }
 

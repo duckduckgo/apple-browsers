@@ -159,6 +159,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     private var shouldCheckNewApplicationVersion = true
 
+    private let updateCheckState: UpdateCheckState
+
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
@@ -173,11 +175,13 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // MARK: - Public
 
     init(internalUserDecider: InternalUserDecider,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         updateCheckState: UpdateCheckState = UpdateCheckState()) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
+        self.updateCheckState = updateCheckState
         super.init()
 
         _ = try? configureUpdater()
@@ -198,7 +202,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private func subscribeToResignKeyNotifications() {
         NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
             .sink { [weak self] _ in
-                self?.discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false)
+                self?.checkForUpdateRespectingRollout()
             }
             // Store subscription to keep it alive
             .store(in: &cancellables)
@@ -229,14 +233,35 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates while adhering to the rollout schedule
     // This is the default behavior
     func checkForUpdateRespectingRollout() {
-        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+        Task { @UpdateCheckActor in
+            await performUpdateCheck()
+        }
+    }
+
+    @UpdateCheckActor
+    private func performUpdateCheck() async {
+        // Check if we can start a new check (Sparkle availability + rate limiting)
+        guard await updateCheckState.canStartNewCheck(updater: updater) else {
+            Logger.updates.debug("Update check skipped - not allowed by Sparkle or rate limited")
             return
         }
 
-        guard let updater, !updater.sessionInProgress else { return }
+        if case .updaterError = userDriver?.updateProgress {
+            userDriver?.cancelAndDismissCurrentUpdate()
+        }
 
-        Logger.updates.log("Checking for updates respecting rollout")
-        updater.checkForUpdatesInBackground()
+        // Create the actual update task
+        Task { @MainActor in
+            // Handle expired builds first (critical path)
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+                return
+            }
+
+            guard let updater, !updater.sessionInProgress else { return }
+
+            Logger.updates.log("Checking for updates respecting rollout")
+            updater.checkForUpdatesInBackground()
+        }
     }
 
     private var isBuildExpired: Bool {
@@ -272,14 +297,37 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
-        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
+        Task { @UpdateCheckActor in
+            await performUpdateCheckSkippingRollout()
+        }
+    }
+
+    @UpdateCheckActor
+    private func performUpdateCheckSkippingRollout() async {
+        // User-initiated checks skip rate limiting but still respect Sparkle availability
+        guard await updateCheckState.canStartNewCheck(updater: updater, minimumInterval: 0) else {
+            Logger.updates.debug("User-initiated update check skipped - not allowed by Sparkle")
             return
         }
 
-        guard let updater, !updater.sessionInProgress else { return }
+        Logger.updates.debug("User-initiated update check starting")
 
-        Logger.updates.log("Checking for updates skipping rollout")
-        updater.checkForUpdates()
+        if case .updaterError = userDriver?.updateProgress {
+            userDriver?.cancelAndDismissCurrentUpdate()
+        }
+
+        // Create the actual update task
+        Task { @MainActor in
+            // Handle expired builds first (critical path)
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
+                return
+            }
+
+            guard let updater, !updater.sessionInProgress else { return }
+
+            Logger.updates.log("Checking for updates skipping rollout")
+            updater.checkForUpdates()
+        }
     }
 
     // MARK: - Private
@@ -453,7 +501,6 @@ extension UpdateController: SPUUpdaterDelegate {
         guard let item = nsError.userInfo[SPULatestAppcastItemFoundKey] as? SUAppcastItem else { return }
 
         Logger.updates.log("Updater did not find valid update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidNotFindUpdate, error: error))
 
         // Edge case: User upgrades to latest version within their rollout group
         // But fetched release notes are outdated due to rollout group reset
@@ -493,9 +540,11 @@ extension UpdateController: SPUUpdaterDelegate {
         if error == nil {
             Logger.updates.log("Updater did finish update cycle with no error")
             updateProgress = .updateCycleDone(.finishedWithNoError)
+            Task { @UpdateCheckActor in await updateCheckState.recordCheckTime() }
         } else if let errorCode = (error as? NSError)?.code, errorCode == Int(Sparkle.SUError.noUpdateError.rawValue) {
             Logger.updates.log("Updater did finish update cycle with no update found")
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
+            Task { @UpdateCheckActor in await updateCheckState.recordCheckTime() }
         } else if let error {
             Logger.updates.log("Updater did finish update cycle with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
         }

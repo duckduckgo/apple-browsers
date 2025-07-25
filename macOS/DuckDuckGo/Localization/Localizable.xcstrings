@@ -22932,6 +22932,18 @@
         }
       }
     },
+    "duckai.show-on-new-tab-page.toggle" : {
+      "comment" : "A checkbox to control AI Chat shortcut visibility on the New Tab Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show on New Tab Page"
+          }
+        }
+      }
+    },
     "duckai.summarize.context-menu-action" : {
       "comment" : "Context menu option that triggers Duck.ai-assisted summarization of selected text",
       "extractionState" : "extracted_with_value",
@@ -71600,6 +71612,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Версия браузера, из которого вы пытаетесь импортировать данные"
+          }
+        }
+      }
+    },
+    "title.privacy-dashboard.button": {
+      "comment": "Title for the Privacy Dashboard button",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Dashboard"
           }
         }
       }

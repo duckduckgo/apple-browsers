@@ -76,13 +76,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     private(set) var isFirstUpdate = true
 
-    private let themingProperties: ExperimentalThemingProperties
-    private var isExperimentalThemingEnabled: Bool {
-        themingProperties.isExperimentalThemingEnabled
-    }
-
-    init(themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
-        self.themingProperties = themingProperties
+    init() {
     }
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
@@ -123,7 +117,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
     func updateBottomBar() {
         var newItems: [UIBarButtonItem]
 
-        let leadingSideWidthDifference: CGFloat = isExperimentalThemingEnabled ? 6 : 11
+        let leadingSideWidthDifference: CGFloat = 6
 
         switch interfaceMode {
         case .regularSize:
@@ -162,7 +156,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             isBottomBarHidden = true
         }
 
-        if !newItems.isEmpty && isExperimentalThemingEnabled {
+        if !newItems.isEmpty {
             // This aligns items with the toolbar on main screen,
             // which is supposed to be aligned with Omnibar buttons.
             newItems = [.additionalFixedSpaceItem()] + newItems + [.additionalFixedSpaceItem()]
@@ -267,13 +261,7 @@ class LegacyTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     private(set) var isFirstUpdate = true
 
-    private let themingProperties: ExperimentalThemingProperties
-    private var isExperimentalThemingEnabled: Bool {
-        themingProperties.isExperimentalThemingEnabled
-    }
-
-    init(themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
-        self.themingProperties = themingProperties
+    init() {
     }
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
@@ -315,7 +303,7 @@ class LegacyTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         var newItems: [UIBarButtonItem]
 
         let regularItemWidth: CGFloat = 34
-        let leadingSideWidthDifference: CGFloat = isExperimentalThemingEnabled ? 6 : 11
+        let leadingSideWidthDifference: CGFloat = 6
 
         switch interfaceMode {
         case .regularSize:
@@ -352,7 +340,7 @@ class LegacyTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
             isBottomBarHidden = true
         }
 
-        if !newItems.isEmpty && isExperimentalThemingEnabled {
+        if !newItems.isEmpty {
             // This aligns items with the toolbar on main screen,
             // which is supposed to be aligned with Omnibar buttons.
             newItems = [.additionalFixedSpaceItem()] + newItems + [.additionalFixedSpaceItem()]

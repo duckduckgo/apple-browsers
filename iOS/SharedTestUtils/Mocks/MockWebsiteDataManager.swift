@@ -18,18 +18,15 @@
 //
 
 import WebKit
+import WKAbstractions
 
 @testable import Core
 
 class MockWebsiteDataManager: WebsiteDataManaging {
-
-    func removeCookies(forDomains domains: [String], fromDataStore: WKWebsiteDataStore) async {
-    }
-
-    func consumeCookies(into httpCookieStore: WKHTTPCookieStore) async {
-    }
-
-    func clear(dataStore: WKWebsiteDataStore) async {
-    }
+    func removeCookies(forDomains domains: [String], fromDataStore: any DDGWebsiteDataStore) async {}
+    
+    func consumeCookies(into httpCookieStore: any DDGHTTPCookieStore) async {}
+    
+    func clear(dataStore: any DDGWebsiteDataStore) async {}
 
 }

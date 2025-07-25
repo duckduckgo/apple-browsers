@@ -1069,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "CONȚINUT PERSONALIZAT CELULE";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "URL personalizat: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importă fișierul cu marcaje...";
 
@@ -1129,9 +1135,6 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Cum să exporți parolele din Safari:";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.select-file-button" = "Selectează fișierul...";
-
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Selectează fișierul care conține parolele exportate din Safari sau Chrome. Acesta est,e de obicei, un fișier ZIP sau CSV.";
 
@@ -1158,9 +1161,6 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import finalizat!";
-
-/* Data import summary of how many credit cards were successfully imported. */
-"data.import.summary.creditcards.success" = "Carduri de credit";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplicatele au fost omise";
@@ -1665,6 +1665,9 @@
 
 /* Title of the feedback form */
 "feedback.form.title" = "Contribuie la îmbunătățirea Privacy Pro";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
 
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
@@ -2374,18 +2377,6 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Am înțeles! O să omit celelalte sfaturi.";
 
-/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
-"onboarding.subscription.promo.buttons.tryItForFree" = "Încearcă gratuit!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo are și un %1$@, disponibile cu un %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "abonament opțional cu plată";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN securizat + încă 2 protecții premium";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Adăugare widget";
 
@@ -2418,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplicația necesară pentru a deschide acel link nu poate fi găsită";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Nu se pot accesa modelele Duck.ai disponibile doar pentru abonați";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Nu pot accesa Duck.ai cu abonamentul meu în alte browsere";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "SELECTEAZĂ O CATEGORIE";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Alt feedback privind Duck.ai";
 
 /* Activate button */
 "pm.activate" = "Reactivează";
@@ -2635,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "SELECTEAZĂ O CATEGORIE";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Setează adresa URL personalizată pentru chatul cu IA";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "Despre DuckDuckGo";
 
@@ -2830,12 +2836,6 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Politica de confidențialitate și Condițiile de prestare a serviciului";
 
-/* Privacy Pro description subtitle in settings */
-"settings.PPro.row.description" = "Include VPN-ul nostru și Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.PPro.us.description" = "Include VPN, Personal Information Removal și Identity Theft Restoration.";
-
 /* Settings screen cell for long press previews */
 "settings.previews" = "Previzualizări prin apăsare lungă";
 
@@ -2869,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Acest lucru durează mai mult decât de obicei, te rugăm să revii mai târziu.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Elimină-ți informațiile de pe site-urile care le vând";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Abonații beneficiază de VPN și Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Abonații beneficiază de VPN, Personal Information Removal și Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Abonații beneficiază de VPN, modele avansate de inteligență artificială în Duck.ai și Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Abonații beneficiază de VPN, modele avansate de IA în Duck.ai, Personal Information Removal și Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Am un abonament";
@@ -2883,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Abonamentul tău Privacy Pro a expirat";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "Abonament DuckDuckGo";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Dacă identitatea ta este furată, te vom ajuta să o restabilești.";
@@ -2896,11 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Setări pentru abonament";
 
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "Abonament DuckDuckGo";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Abonează-te la DuckDuckGo";
+
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Protejează-ți conexiunea și identitatea cu Privacy Pro";
+"settings.subscription.subscribe.title" = "Asigură-ți rețeaua Wi-Fi și discută în privat cu modele avansate de IA";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Protejează-ți Wi-Fi-ul și identitatea";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Încearcă gratuit abonamentul DuckDuckGo";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Încearcă Privacy Pro gratuit";
+"settings.subscription.try.free.no.ai.chat" = "Încearcă Privacy Pro gratuit";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3052,6 +3085,15 @@
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Sigur?";
 
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Fă chat în privat cu modele AI exclusive pentru abonați.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Deschide Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Abonamentul asociat acestei adrese de e-mail nu mai este activ.";
 
@@ -3165,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Ești gata.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "Abonament DuckDuckGo";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Abonat";
@@ -3618,9 +3663,6 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Continuați";
-
-/* Option to select to import credit cards */
-"zip.content.import.type.creditCards" = "Carduri de credit";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Parole";

@@ -146,7 +146,7 @@ public final class DataBrokerProtectionEventPixels {
             var orphanedCount = 0
             var completedCount = 0
             var terminatedCount = 0
-            var durations: [Int64] = []
+            var durations: [Double] = []
 
             for (_, sessionEvents) in sessionGroups where sessionEvents[.started] != nil {
                 startedCount += 1
@@ -160,7 +160,7 @@ public final class DataBrokerProtectionEventPixels {
 
                     // Exclude invalid durations (negative) & outliers (session lasting more than a day)
                     if let durationMs = endEvent.metadata?.duration, durationMs > 0, durationMs < .day * 1000.0 {
-                        durations.append(Int64(durationMs))
+                        durations.append(durationMs)
                     }
                 } else if let startEvent = sessionEvents[.started],
                           Date().timeIntervalSince(startEvent.timestamp) > .hours(1) {
@@ -300,7 +300,7 @@ private extension Int {
     }
 }
 
-private extension Array where Element == Int64 {
+private extension Array where Element == Double {
     func median() -> Double {
         guard !isEmpty else { return 0 }
 

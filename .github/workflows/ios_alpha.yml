@@ -50,6 +50,11 @@ jobs:
       should_skip: ${{ steps.check-upload.outputs.should_skip }}
 
     steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
     - name: Assert main branch
       run: |
         if [ "${{ github.ref_name }}" != "main" ]; then
@@ -62,11 +67,6 @@ jobs:
       uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-
-    - name: Check out the code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: Check for active upload job
       env:

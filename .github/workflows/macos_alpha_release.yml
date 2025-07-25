@@ -28,17 +28,17 @@ jobs:
       build-number: ${{ steps.update-build-number.outputs.build-number }}
 
     steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
     - name: Assert main branch
       run: |
         if [ "${{ github.ref_name }}" != "main" ]; then
           echo "👎 Not the main branch"
           exit 1
         fi
-
-    - name: Check out the code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

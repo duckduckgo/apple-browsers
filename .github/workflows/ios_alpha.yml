@@ -6,7 +6,7 @@ defaults:
 
 on:
   push:
-    branches: [ main, 'sam/deploy-alpha-on-main-branch-updates' ]
+    branches: [ main ]
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
@@ -57,10 +57,10 @@ jobs:
 
     - name: Assert main branch
       run: |
-        # if [ "${{ github.ref_name }}" != "main" ]; then
-          # echo "👎 Not the main branch"
-          # exit 1
-        # fi
+        if [ "${{ github.ref_name }}" != "main" ]; then
+          echo "👎 Not the main branch"
+          exit 1
+        fi
 
     - name: Register SSH keys for access to certificates
       uses: webfactory/ssh-agent@v0.9.1

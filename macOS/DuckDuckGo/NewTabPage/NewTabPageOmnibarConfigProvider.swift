@@ -93,6 +93,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     var mode: NewTabPageDataModel.OmnibarMode {
         get {
             do {
+                guard isAIChatShortcutEnabled && isAIChatSettingVisible else {
+                    return .search
+                }
                 if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
                    let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
                     return mode

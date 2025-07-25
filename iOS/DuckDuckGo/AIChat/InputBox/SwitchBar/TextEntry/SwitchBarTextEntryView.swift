@@ -157,7 +157,7 @@ class SwitchBarTextEntryView: UIView {
     private func updateForCurrentMode() {
         switch currentMode {
         case .search:
-            placeholderLabel.text = UserText.searchInputFieldPlacehodlerSearchWeb
+            placeholderLabel.text = UserText.searchInputFieldPlaceholderSearchWeb
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none

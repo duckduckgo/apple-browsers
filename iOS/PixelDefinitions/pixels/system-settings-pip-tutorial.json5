@@ -1,14 +1,10 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    pixel_name: {
+    systemSettingsPiPTutorialFailedToLoadVideo: {
         description: 'Fires when the the Picture-in-Picture video tutorial Fails to load.',
         owners: ['alessandroboron'],
         triggers: ['other'],
-        suffixes: [
-            'form_factor',
-            'daily',
-            'count',
-        ],
+        suffixes: ['form_factor', 'daily', 'count'],
         parameters: [
             // Commonly used param, defined in params_dictionary.json.
             'appVersion',

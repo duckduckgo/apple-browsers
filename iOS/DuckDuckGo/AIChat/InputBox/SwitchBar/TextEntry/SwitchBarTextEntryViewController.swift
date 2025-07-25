@@ -25,7 +25,7 @@ import UIComponents
 class SwitchBarTextEntryViewController: UIViewController {
 
     // MARK: - Properties
-    let textEntryView: SwitchBarTextEntryView
+    private let textEntryView: SwitchBarTextEntryView
     private let handler: SwitchBarHandling
     private let containerView = CompositeShadowView()
 

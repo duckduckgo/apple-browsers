@@ -44,15 +44,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     // MARK: - Properties
     
-    var textAreaView: UIView {
-        switchBarVC.textEntryViewController.textEntryView
-    }
-
-    var rootView: UIView { view }
     var logoView: UIView? { daxLogoManager.logoView }
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
-    var expectedStartFrame: CGRect?
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     var automaticallySelectsTextOnAppear = false
 

@@ -171,7 +171,6 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
         let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
         editingStateViewController.delegate = self
-        editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
 
         editingStateViewController.modalPresentationStyle = .custom
         editingStateViewController.transitioningDelegate = editModeTransitioningDelegate

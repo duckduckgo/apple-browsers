@@ -25,6 +25,7 @@ import Core
 import os.log
 import BrowserServicesKit
 import Networking
+import Persistence
 
 final class SubscriptionSettingsViewModelV2: ObservableObject {
 
@@ -69,12 +70,27 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     public let usesUnifiedFeedbackForm: Bool
 
-    init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!) {
+    @Published var showRebrandingMessage: Bool = false {
+        didSet {
+            keyValueStorage.set(showRebrandingMessage, forKey: "SubscriptionSettingsV2BannerDismissed")
+        }
+    }
+
+    private let keyValueStorage: KeyValueStoring
+
+    init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         keyValueStorage: KeyValueStoring = SubscriptionSettingsStore()) {
         self.subscriptionManager = subscriptionManager
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
+        self.keyValueStorage = keyValueStorage
+        setupNotificationObservers()
+        let notDismissed = keyValueStorage.object(forKey: "SubscriptionSettingsV2BannerDismissed") as? Bool ?? true
+        let isRebrandingOn = featureFlagger.isFeatureOn(.subscriptionRebranding)
+        self.showRebrandingMessage = notDismissed && isRebrandingOn
         setupNotificationObservers()
     }
 
@@ -321,7 +337,23 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
     }
 
+    func dismissRebrandingMessage() {
+        showRebrandingMessage = false
+    }
+
     deinit {
         signOutObserver = nil
     }
+}
+
+public struct SubscriptionSettingsStore: KeyValueStoring {
+
+    private var userDefaults: UserDefaults? { UserDefaults(suiteName: "com.duckduckgo.app.subscriptionSettingsStore") }
+
+    public init() {}
+
+    public func object(forKey defaultName: String) -> Any? { userDefaults?.object(forKey: defaultName) }
+    public func set(_ value: Any?, forKey defaultName: String) { userDefaults?.set(value, forKey: defaultName) }
+    public func removeObject(forKey defaultName: String) { userDefaults?.removeObject(forKey: defaultName) }
+
 }

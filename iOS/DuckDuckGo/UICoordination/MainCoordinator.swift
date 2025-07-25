@@ -371,8 +371,8 @@ extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
         NSLayoutConstraint.activate([
             view.widthAnchor.constraint(equalToConstant: 1),
             view.heightAnchor.constraint(equalToConstant: 1),
-            view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            view.topAnchor.constraint(equalTo: view.topAnchor),
+            view.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor),
+            view.topAnchor.constraint(equalTo: controller.view.topAnchor),
         ])
         controller.view.sendSubviewToBack(view)
     }

@@ -94,7 +94,7 @@ private extension SystemSettingsPiPTutorialManager {
                     switch status {
                     case .readyToPlay:
                         self.videoPlayer.play()
-                        Logger.pipTutorial.error("[PiP Tutorial Video] Opening Default Browser Settings")
+                        Logger.pipTutorial.debug("[PiP Tutorial Video] Opening Default Browser Settings")
                         self.urlOpener.open(destination.url)
                     case .failed:
                         Logger.pipTutorial.error("[PiP Tutorial Video] Could not play PiP video. Opening Default Browser Settings")

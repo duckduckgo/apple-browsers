@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserPromptNavigating.swift
+//  DefaultBrowserPromptSettingsNavigating.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.

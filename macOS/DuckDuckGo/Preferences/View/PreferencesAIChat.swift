@@ -48,13 +48,13 @@ extension Preferences {
                     PreferencePaneSection {
                         HStack {
                             VStack(alignment: .leading) {
-                                TextAndImageMenuItemHeader("Duck.ai",
+                                TextAndImageMenuItemHeader(UserText.aiChatTitle,
                                                            image: Image(nsImage: DesignSystemImages.Color.Size16.aiChatGradient),
                                                            bottomPadding: 0)
-                                TextMenuItemCaption("Chat privately with popular 3rd-party AI models")
+                                TextMenuItemCaption(UserText.aiChatDescription)
                             }
 
-                            Button(model.isAIFeaturesEnabled ? "Disable Duck.ai" : "Enable Duck.ai") {
+                            Button(model.isAIFeaturesEnabled ? UserText.aiChatDisableButton : UserText.aiChatEnableButton) {
                                 if model.isAIFeaturesEnabled {
                                     showingDisableAIChatDialog = true
                                 } else {
@@ -65,7 +65,7 @@ extension Preferences {
                         }
                     }
 
-                    PreferencePaneSection("Visibility") {
+                    PreferencePaneSection(UserText.aiChatVisibilitySectionTitle) {
                         ToggleMenuItem(UserText.aiChatShowOnNewTabPageBarToggle,
                                        isOn: $model.showShortcutOnNewTabPage)
                         .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
@@ -82,7 +82,7 @@ extension Preferences {
                         }
                         .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
 
-                        ToggleMenuItem("Show in browser menus",
+                        ToggleMenuItem(UserText.aiChatShowInBrowserMenusToggle,
                                        isOn: $model.showShortcutInApplicationMenu)
                         .accessibilityIdentifier("Preferences.AIChat.showInApplicationMenuToggle")
                         .onChange(of: model.showShortcutInApplicationMenu) { newValue in
@@ -97,7 +97,7 @@ extension Preferences {
                             }
                         }
 
-                        ToggleMenuItem("Show in address bar",
+                        ToggleMenuItem(UserText.aiChatShowInAddressBarLabel,
                                        isOn: $model.showShortcutInAddressBar)
                         .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
                         .onChange(of: model.showShortcutInAddressBar) { newValue in
@@ -114,11 +114,11 @@ extension Preferences {
                     }
                     .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
-                    PreferencePaneSection("Open New Chats") {
+                    PreferencePaneSection(UserText.aiChatOpenNewChatsSectionTitle) {
                         Picker(selection: $model.openAIChatInSidebar, content: {
-                            Text("In sidebar").tag(true)
+                            Text(UserText.aiChatOpenInSidebarOption).tag(true)
                                 .padding(.bottom, 4).accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.inSidebar")
-                            Text("Full page").tag(false)
+                            Text(UserText.aiChatOpenInFullPageOption).tag(false)
                                 .accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.fullPage")
                         }, label: {})
                         .pickerStyle(.radioGroup)
@@ -136,12 +136,13 @@ extension Preferences {
                         .padding(.bottom, 8)
 
                     PreferencePaneSection {
-                        TextAndImageMenuItemHeader("Search Assist Settings",
+                        TextAndImageMenuItemHeader(UserText.searchAssistSettings,
                                                    image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
                                                    bottomPadding: 0)
 
-                        TextMenuItemCaption("Choose how often you want AI-assisted answers to appear in your searches")
-
+                        TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                            .padding(.top, -6)
+                            .padding(.bottom, 6)
                         Button {
                             model.openSearchAssistSettings()
                         } label: {
@@ -153,7 +154,6 @@ extension Preferences {
                             .cursor(.pointingHand)
                         }
                         .buttonStyle(.plain)
-                        .padding(.vertical, 8)
                     }
 
                     //
@@ -252,28 +252,24 @@ extension Preferences {
                     .frame(width: 96, height: 72)
 //                    .padding(.vertical, 16)
 
-                Text("Disable Duck.ai?")
+                Text(UserText.aiChatDisableDialogTitle)
                     .font(.title2)
                     .bold()
                     .foregroundColor(Color(.textPrimary))
 
-                Text("""
-                    Duck.ai is private by design. Chats are anonymized by us and never used to train AI.
-
-                     Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.  You can re-enable it at any time.
-                    """)
+                Text(UserText.aiChatDisableDialogMessage)
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .fixMultilineScrollableText()
                 .foregroundColor(Color(.textPrimary))
             } buttons: {
                 Spacer()
-                Button("Cancel") { showingDisableAIChatDialog = false }
+                Button(UserText.cancel) { showingDisableAIChatDialog = false }
                 Button(action: {
                     showingDisableAIChatDialog = false
                     model.isAIFeaturesEnabled.toggle()
                 }, label: {
-                    Text("Disable Duck.ai")
+                    Text(UserText.aiChatDisableDialogConfirmButton)
                 })
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
             }

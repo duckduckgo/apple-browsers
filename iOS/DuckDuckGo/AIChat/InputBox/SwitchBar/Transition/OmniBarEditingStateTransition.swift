@@ -61,11 +61,8 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
         toVC.view.frame = containerView.bounds.offsetBy(dx: 0, dy: -yOffset)
         toVC.view.alpha = 0
-        toVC.switchBarVC.setExpanded(false)
+        toVC.switchBarVC.textEntryViewController.isExpandable = false
 
-        if let height = toVC.expectedStartFrame?.height {
-            toVC.switchBarVC.textEntryViewController.containerStaticHeightConstraint?.constant = height
-        }
         toVC.view.layoutIfNeeded()
 
         let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
@@ -73,7 +70,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
             toVC.view.alpha = 1.0
             toVC.view.frame = containerView.bounds
-            toVC.switchBarVC.setExpanded(true)
+            toVC.switchBarVC.textEntryViewController.isExpandable = true
             toVC.view.layoutIfNeeded()
 
             fromVC.hide(with: yOffset)
@@ -102,7 +99,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
                                               dampingRatio: Constants.TopTransition.collapseDampingRatio) {
 
             fromVC.view.frame = fromVC.view.frame.offsetBy(dx: 0, dy: -yOffset)
-            fromVC.switchBarVC.setExpanded(false)
+            fromVC.switchBarVC.textEntryViewController.isExpandable = false
             fromVC.view.layoutIfNeeded()
 
             fromVC.view.alpha = 0

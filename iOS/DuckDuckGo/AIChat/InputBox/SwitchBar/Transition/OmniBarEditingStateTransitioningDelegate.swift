@@ -21,14 +21,6 @@ import UIKit
 
 class OmniBarEditingStateTransitioningDelegate: NSObject, UIViewControllerTransitioningDelegate {
 
-    let expectedStartFrame: CGRect
-
-    init(expectedStartFrame: CGRect) {
-        self.expectedStartFrame = expectedStartFrame
-        
-        super.init()
-    }
-
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {

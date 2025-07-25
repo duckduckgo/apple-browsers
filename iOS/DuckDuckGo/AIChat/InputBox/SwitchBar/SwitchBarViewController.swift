@@ -40,8 +40,6 @@ class SwitchBarViewController: UIViewController {
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    private var isExpanded = false
-
     var segmentedPickerView: UIView? { segmentedPickerHostingController?.viewIfLoaded }
 
     // Items for the segmented picker
@@ -87,9 +85,6 @@ class SwitchBarViewController: UIViewController {
         setupViews()
         setupConstraints()
         setupSubscriptions()
-        view.backgroundColor = .clear
-
-        setExpanded(isExpanded)
     }
 
     private func setupSubscriptions() {
@@ -130,8 +125,8 @@ class SwitchBarViewController: UIViewController {
     }
 
     private func setupViews() {
-        view.backgroundColor = UIColor.systemBackground
-        
+        view.backgroundColor = .clear
+
         let pickerWrapper = PickerWrapper(
             viewModel: pickerViewModel
         )
@@ -154,15 +149,6 @@ class SwitchBarViewController: UIViewController {
         textEntryViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
         backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
-    }
-
-    func setExpanded(_ isExpanded: Bool) {
-        self.isExpanded = isExpanded
-
-        backButton.alpha = isExpanded ? 1 : 0
-        segmentedPickerHostingController?.view.alpha = isExpanded ? 1 : 0
-
-        textEntryViewController.setExpanded(isExpanded)
     }
 
     private func setupConstraints() {

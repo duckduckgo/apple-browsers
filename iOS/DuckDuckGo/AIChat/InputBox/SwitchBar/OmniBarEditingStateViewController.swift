@@ -82,10 +82,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -94,6 +90,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         setupView()
         installComponents()
         setupSubscriptions()
+
+        swipeContainerManager?.updateLayout(viewBounds: view.bounds)
+        suggestionTrayManager?.showInitialSuggestions()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -121,20 +120,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
     }
     
-    func setUpForInitialSelectedState() {
-        switchBarVC.textEntryViewController.selectAllText()
-        suggestionTrayManager?.showInitialSuggestions()
-        swipeContainerManager?.updateLayout(viewBounds: view.bounds)
-    }
-
-    func adjustForAppearance(yTranslation: CGFloat) {
-        delegate?.onAppear(yTranslation: yTranslation)
-    }
-
-    func adjustForDismissal() {
-        delegate?.onDismiss()
-    }
-
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
@@ -158,20 +143,17 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         view.bringSubviewToFront(switchBarVC.view)
     }
-    
-    private func setupTransitionAnimator() {
-        transitionAnimator.transitionDelegate = self
-    }
 
     private func installSwitchBarVC() {
         addChild(switchBarVC)
         view.addSubview(switchBarVC.view)
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
+        switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         NSLayoutConstraint.activate([
             switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             switchBarVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         ])
 
         switchBarVC.didMove(toParent: self)

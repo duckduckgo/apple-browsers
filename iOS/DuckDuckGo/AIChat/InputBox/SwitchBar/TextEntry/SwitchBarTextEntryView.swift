@@ -231,25 +231,32 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateTextViewHeight() {
-        guard isExpandable else {
+
+        let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
+        let contentExceedsMaxHeight = size.height > Constants.maxHeight
+
+        if isExpandable {
+            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
+
+            heightConstraint?.constant = newHeight
+
+            textView.isScrollEnabled = contentExceedsMaxHeight
+            textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
+        } else {
             heightConstraint?.constant = Constants.minHeight
             textView.isScrollEnabled = true
             textView.showsVerticalScrollIndicator = true
             return
         }
 
-        let size = textView.sizeThatFits(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
-        let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
-
-        heightConstraint?.constant = newHeight
-
-        let contentExceedsMaxHeight = size.height > Constants.maxHeight
-        textView.isScrollEnabled = contentExceedsMaxHeight
-        textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
-
         if contentExceedsMaxHeight {
-            let bottom = NSRange(location: textView.text.count, length: 0)
-            textView.scrollRangeToVisible(bottom)
+            let range: NSRange
+            if textView.selectedRange.length > 0 && isExpandable {
+                range = NSRange(location: textView.text.count, length: 0)
+            } else {
+                range = NSRange(location: 0, length: 0)
+            }
+            textView.scrollRangeToVisible(range)
         }
     }
 

@@ -170,6 +170,7 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         XCTAssertFalse(model.shouldShowBurnAnimation)
     }
 
+    @MainActor
     func testWhenBurnAnimationSettingChangesToTrueThenShouldShowBurnAnimationIsTrue() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(
@@ -185,6 +186,7 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         XCTAssertTrue(shouldShowBurnAnimation)
     }
 
+    @MainActor
     func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
@@ -200,6 +202,7 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         XCTAssertFalse(shouldShowBurnAnimation)
     }
 
+    @MainActor
     func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
@@ -220,10 +223,12 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
 
     // MARK: - Helpers
 
+    @MainActor
     private var shouldShowBurnAnimationStream: AsyncStream<Bool>!
     private struct ShouldShowBurnAnimationNotReceivedError: Error {}
 
     /// Creates AsyncStream that emits updates to `model.shouldShowBurnAnimation`.
+    @MainActor
     private func makeShouldShowBurnAnimationStream() throws {
         shouldShowBurnAnimationStream = AsyncStream { continuation in
             let cancellable = model.$shouldShowBurnAnimation.dropFirst()
@@ -238,6 +243,7 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     }
 
     /// Awaits first event emitted by the shouldShowBurnAnimation AsyncStream.
+    @MainActor
     private func getShouldShowBurnAnimationValue() async throws -> Bool {
         let values = try await getShouldShowBurnAnimationValues(1)
         guard let value = values.first else {
@@ -247,6 +253,7 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     }
 
     /// Awaits first `count` events emitted by the shouldShowBurnAnimation AsyncStream.
+    @MainActor
     private func getShouldShowBurnAnimationValues(_ count: Int) async throws -> [Bool] {
         var iterator = shouldShowBurnAnimationStream.makeAsyncIterator()
         var values: [Bool] = []

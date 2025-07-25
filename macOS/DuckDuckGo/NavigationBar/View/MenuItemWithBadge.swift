@@ -154,6 +154,7 @@ struct BadgeView: View {
             .padding(.bottom, MenuItemWithBadgeConstants.paddingBottom)
             .padding(.leading, MenuItemWithBadgeConstants.paddingLeft)
             .padding(.trailing, MenuItemWithBadgeConstants.paddingRight)
+            .frame(height: MenuItemWithBadgeConstants.height)
             .background(Self.badgeShape.fill(Color(baseColor: .yellow60)))
     }
 }

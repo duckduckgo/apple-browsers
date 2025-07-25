@@ -1000,7 +1000,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             .didCommit(Nav(action: lastNavAction, redirects: [navAct(3)], .responseReceived, resp: resp(2), .committed)),
             .didFinish(Nav(action: lastNavAction, redirects: [navAct(3)], .finished, resp: resp(2), .committed))
         ])
-        XCTAssertEqual(_webView.backForwardList.backList.count, 2)
+        XCTAssertEqual(_webView.backForwardList.backList.map(\.url), [
+            urls.local4
+        ])
     }
 
     func testWhenServerRedirectIsInterruptedThenDidFailProvisionalIsCalled() throws {

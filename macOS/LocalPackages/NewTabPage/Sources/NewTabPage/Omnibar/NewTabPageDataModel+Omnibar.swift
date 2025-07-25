@@ -28,6 +28,8 @@ public extension NewTabPageDataModel {
 
     struct OmnibarConfig: Codable, Equatable {
         let mode: OmnibarMode
+        let enableAi: Bool
+        let showAiSetting: Bool?
     }
 
     // MARK: - omnibar_getSuggestions

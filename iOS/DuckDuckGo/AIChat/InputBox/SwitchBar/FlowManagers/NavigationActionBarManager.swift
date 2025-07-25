@@ -37,7 +37,9 @@ final class NavigationActionBarManager {
     private let switchBarHandler: SwitchBarHandling
     private var navigationActionBarViewController: NavigationActionBarViewController?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
-    
+
+    var view: UIView? { navigationActionBarViewController?.viewIfLoaded }
+
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling) {

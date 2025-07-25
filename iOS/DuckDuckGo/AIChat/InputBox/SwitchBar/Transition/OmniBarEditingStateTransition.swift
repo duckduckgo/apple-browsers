@@ -76,6 +76,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
         toVC.view.frame = containerView.bounds.offsetBy(dx: 0, dy: -yOffset)
         toVC.view.alpha = 0
+        toVC.actionBarView?.alpha = 0
         toVC.switchBarVC.textEntryViewController.isExpandable = false
 
         toVC.view.layoutIfNeeded()
@@ -92,6 +93,10 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
             fromVC.hide(with: isTopBarPosition ? yOffset : yOffset/2)
             fromVC.view.layoutIfNeeded()
         }
+
+        animator.addAnimations({
+            toVC.actionBarView?.alpha = 1
+        }, delayFactor: 0.3)
 
         animator.addCompletion { position in
             transitionContext.completeTransition(position == .end)
@@ -127,6 +132,11 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
             transitionContext.completeTransition(position == .end)
         }
 
+        let actionBarAnimator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext) / 3.0, curve: .easeIn) {
+            fromVC.actionBarView?.alpha = 0
+        }
+
+        actionBarAnimator.startAnimation()
         animator.startAnimation()
     }
 

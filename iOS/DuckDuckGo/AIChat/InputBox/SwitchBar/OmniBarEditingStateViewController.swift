@@ -45,6 +45,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Properties
 
     var logoView: UIView? { daxLogoManager.logoView }
+    var actionBarView: UIView? { navigationActionBarManager?.view }
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var suggestionTrayDependencies: SuggestionTrayDependencies?

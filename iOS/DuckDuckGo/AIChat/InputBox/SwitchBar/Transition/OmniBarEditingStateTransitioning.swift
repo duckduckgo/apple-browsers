@@ -21,4 +21,5 @@ import UIKit
 
 protocol OmniBarEditingStateTransitioning: AnyObject {
     var switchBarVC: SwitchBarViewController { get }
+    var actionBarView: UIView? { get }
 }

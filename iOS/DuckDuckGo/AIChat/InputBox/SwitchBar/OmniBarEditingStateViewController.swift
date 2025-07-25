@@ -43,7 +43,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
 final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitioning {
 
     // MARK: - Properties
-    
+
     var logoView: UIView? { daxLogoManager.logoView }
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
@@ -87,6 +87,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         swipeContainerManager?.updateLayout(viewBounds: view.bounds)
         suggestionTrayManager?.showInitialSuggestions()
+
+        updateLogoPosition(progress: 0)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -247,6 +249,10 @@ extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 
+        updateLogoPosition(progress: progress)
+    }
+
+    private func updateLogoPosition(progress: CGFloat) {
         if let logoView {
             if suggestionTrayManager?.isShowingSuggestionTray == true {
                 logoView.alpha = Easing.inOutCirc(progress)

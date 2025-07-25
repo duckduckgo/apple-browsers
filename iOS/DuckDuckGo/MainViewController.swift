@@ -3545,3 +3545,15 @@ private extension UIBarButtonItem {
 
 /// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
 extension MainViewController: MessageNavigationDelegate { }
+
+extension MainViewController: MainViewEditingStateTransitioning {
+    func hide(with yOffset: CGFloat) {
+        additionalSafeAreaInsets.top = yOffset
+        omniBar.barView.hideButtons()
+    }
+
+    func show() {
+        additionalSafeAreaInsets.top = 0
+        omniBar.barView.revealButtons()
+    }
+}

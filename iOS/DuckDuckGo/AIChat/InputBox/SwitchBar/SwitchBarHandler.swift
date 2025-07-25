@@ -35,7 +35,6 @@ protocol SwitchBarHandling: AnyObject {
     var currentText: String { get }
     var currentToggleState: TextEntryMode { get }
     var isVoiceSearchEnabled: Bool { get }
-    var forceWebSearch: Bool { get }
     var hasUserInteractedWithText: Bool { get }
     var isCurrentTextValidURL: Bool { get }
 
@@ -43,7 +42,6 @@ protocol SwitchBarHandling: AnyObject {
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
-    var forceWebSearchPublisher: AnyPublisher<Bool, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -53,8 +51,6 @@ protocol SwitchBarHandling: AnyObject {
     func setToggleState(_ state: TextEntryMode)
     func clearText()
     func microphoneButtonTapped()
-    func toggleForceWebSearch()
-    func setForceWebSearch(_ enabled: Bool)
     func markUserInteraction()
 }
 
@@ -73,7 +69,6 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
     @Published private(set) var currentToggleState: TextEntryMode = .search
-    @Published private(set) var forceWebSearch: Bool = false
     @Published private(set) var hasUserInteractedWithText: Bool = false
     @Published private(set) var isCurrentTextValidURL: Bool = false
 
@@ -87,10 +82,6 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> {
         $currentToggleState.eraseToAnyPublisher()
-    }
-
-    var forceWebSearchPublisher: AnyPublisher<Bool, Never> {
-        $forceWebSearch.eraseToAnyPublisher()
     }
 
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> {
@@ -142,14 +133,6 @@ final class SwitchBarHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.send(())
     }
 
-    func toggleForceWebSearch() {
-        forceWebSearch.toggle()
-    }
-
-    func setForceWebSearch(_ enabled: Bool) {
-        forceWebSearch = enabled
-    }
-    
     func markUserInteraction() {
         hasUserInteractedWithText = true
     }

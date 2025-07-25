@@ -89,7 +89,7 @@ public final class DataBrokerProtectionEventPixels {
         return didWeekPassedBetweenDates(start: lastPixelFiredDate, end: Date())
     }
 
-    private func fireWeeklyReportPixels() {
+    public func fireWeeklyReportPixels() {
         let data: [BrokerProfileQueryData]
 
         do {

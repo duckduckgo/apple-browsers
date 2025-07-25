@@ -15,7 +15,7 @@
             'pixelSource',
             // Path of the embedded video. E.g. 'es.lproj/default-browser-tutorial.mp4'
             {
-                key: 'url',
+                key: 'video_url_path',
                 description: 'The local path of the embedded video that failed.',
                 type: 'string',
             },

@@ -155,7 +155,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
              .removeWWWInCanonicalizationInThreatProtection,
-             .june2025TabManagerLayoutChanges:
+             .june2025TabManagerLayoutChanges,
+             .setAsDefaultBrowserPiPVideoTutorial:
             true
         default:
             false
@@ -297,7 +298,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .setAsDefaultBrowserPiPVideoTutorial:
-            return .remoteReleasable(.subfeature(SystemSettingsPiPVideoTutorialSubfeature.defaultBrowserTutorial))
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.defaultBrowserTutorial))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:

@@ -68,6 +68,24 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
+    func testModeFallBackToSearchWhenAIFeaturesAreDisabled() throws {
+        let store = try makeStore(underlying: [storageKey: "ai"])
+        let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider)
+        settingProvider.isAIChatSettingVisible = false
+        XCTAssertEqual(provider.mode, .search)
+    }
+
+    @MainActor
+    func testModeFallBackToSearchWhenAIChatShortcutIsHidden() throws {
+        let store = try makeStore(underlying: [storageKey: "ai"])
+        let settingProvider = MockNewTabPageAIChatShortcutSettingProvider()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: settingProvider)
+        settingProvider.isAIChatShortcutEnabled = false
+        XCTAssertEqual(provider.mode, .search)
+    }
+
+    @MainActor
     func testModeDefaultsToSearchOnInvalidRawValue() throws {
         let store = try makeStore(underlying: [storageKey: "invalid"])
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider())

@@ -30,20 +30,21 @@ final class FirefoxLoginReader {
             case couldNotDetermineFormat = -2
 
             case couldNotFindLoginsFile = 0
-            case couldNotReadLoginsFile
+            case couldNotReadLoginsFile = 1
 
-            case key3readerStage1
-            case key3readerStage2
-            case key3readerStage3
+            case key3readerStage1 = 2
+            case key3readerStage2 = 3
+            case key3readerStage3 = 4
 
-            case key4readerStage1
-            case key4readerStage2
-            case key4readerStage3
+            case key4readerStage1 = 5
+            case key4readerStage2 = 6
+            case key4readerStage3 = 7
+            case key4readerStage4 = 11
 
-            case decryptUsername
-            case decryptPassword
+            case decryptUsername = 8
+            case decryptPassword = 9
 
-            case couldNotFindKeyDB
+            case couldNotFindKeyDB = 10
         }
 
         var action: DataImportAction { .passwords }
@@ -53,7 +54,7 @@ final class FirefoxLoginReader {
         var errorType: DataImport.ErrorType {
             switch type {
             case .couldNotFindLoginsFile, .couldNotFindKeyDB, .couldNotReadLoginsFile: .noData
-            case .key3readerStage1, .key3readerStage2, .key3readerStage3, .key4readerStage1, .key4readerStage2, .key4readerStage3, .decryptUsername, .decryptPassword: .decryptionError
+            case .key3readerStage1, .key3readerStage2, .key3readerStage3, .key4readerStage1, .key4readerStage2, .key4readerStage3, .key4readerStage4, .decryptUsername, .decryptPassword: .decryptionError
             case .couldNotDetermineFormat: .dataCorrupted
             case .requiresPrimaryPassword: .other
             }

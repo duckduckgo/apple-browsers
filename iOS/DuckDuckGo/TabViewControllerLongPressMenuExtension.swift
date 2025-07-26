@@ -114,7 +114,6 @@ extension TabViewController {
             onboardingPixelReporter: onboardingPixelReporter,
             featureFlagger: featureFlagger,
             contentScopeExperimentManager: contentScopeExperimentsManager,
-            subscriptionCookieManager: subscriptionCookieManager,
             textZoomCoordinator: textZoomCoordinator,
             websiteDataManager: websiteDataManager,
             fireproofing: fireproofing,

@@ -41,8 +41,9 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
                 fatalError("PixelKit not set up")
             }
             let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+            let privacyConfigManager = DBPPrivacyConfigurationManager()
 
-            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigManager)
             guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
                 fatalError("Failed to make secure storage vault")
             }

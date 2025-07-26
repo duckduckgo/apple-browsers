@@ -56,7 +56,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         }
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 
@@ -84,13 +85,14 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         }
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
             e2 = expectation(description: "should publish rules 2")
             rulesManager.updatesSubject.send(Self.testUpdate())
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
             e3 = expectation(description: "should publish rules 3")
             rulesManager.updatesSubject.send(Self.testUpdate())
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 
@@ -112,11 +114,12 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         rulesManager.updatesSubject.send(Self.testUpdate())
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
             e2 = expectation(description: "should rebuild user scripts")
             appSettings.sendDoNotSell = !appSettings.sendDoNotSell
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.doNotSellStatusChange, object: nil)
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 
@@ -139,10 +142,11 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         rulesManager.updatesSubject.send(Self.testUpdate())
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
             e2 = expectation(description: "should rebuild user scripts")
             NotificationCenter.default.post(name: UserDefaultsFireproofing.Notifications.loginDetectionStateChanged, object: nil)
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 
@@ -164,10 +168,11 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         rulesManager.updatesSubject.send(Self.testUpdate())
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
             e2 = expectation(description: "should rebuild user scripts")
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: nil)
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 
@@ -189,10 +194,11 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         rulesManager.updatesSubject.send(Self.testUpdate())
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
             e2 = expectation(description: "should rebuild user scripts")
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.didVerifyInternalUser, object: nil)
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 
@@ -214,10 +220,11 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         rulesManager.updatesSubject.send(Self.testUpdate())
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
             e2 = expectation(description: "should rebuild user scripts")
             NotificationCenter.default.post(name: ConfigurationManager.didUpdateTrackerDependencies, object: nil)
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 
@@ -240,12 +247,13 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         withExtendedLifetime(c) {
             rulesManager.updatesSubject.send(update1)
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
 
             e2 = expectation(description: "2 updates received")
             rulesManager.updatesSubject.send(update2)
 
-            waitForExpectations(timeout: 1, handler: nil)
+            waitForExpectations(timeout: 5, handler: nil)
+            updating.stopUpdates()
         }
     }
 

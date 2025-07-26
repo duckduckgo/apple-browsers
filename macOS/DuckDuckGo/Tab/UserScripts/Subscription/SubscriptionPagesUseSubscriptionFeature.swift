@@ -508,10 +508,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     ///
     /// - Note: This method is asynchronous when extracting the origin from the webview URL.
     private func setPixelOrigin(from message: WKScriptMessage) async {
-        // If the user has performed a Freemium scan, set a Freemium origin and return
-        guard !setFreemiumOriginIfScanPerformed() else { return }
-
-        // Else, Extract the origin from the webview URL to use for attribution pixel.
+        // Extract the origin from the webview URL to use for attribution pixel.
         subscriptionSuccessPixelHandler.origin = await originFrom(originalMessage: message)
     }
 }
@@ -579,23 +576,6 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         if freemiumDBPUserStateManager.didActivate && freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp == nil {
             freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp = Date()
         }
-    }
-
-    /// Sets the origin for attribution if the user has started their first Freemium PIR scan
-    ///
-    /// This method checks whether the user has started their first Freemium PIR scan.
-    /// If they have, the method sets the subscription success tracking origin to `"funnel_freescan_macos"` and returns `true`.
-    ///
-    /// - Returns:
-    ///   - `true` if the origin is set because the user has started their first Freemim PIR scan.
-    ///   - `false` if a first scan has not been started and the origin is not set.
-    func setFreemiumOriginIfScanPerformed() -> Bool {
-        let origin = SubscriptionFunnelOrigin.freeScan.rawValue
-        if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
-            subscriptionSuccessPixelHandler.origin = origin
-            return true
-        }
-        return false
     }
 
     /// Retrieves free trial subscription options for App Store.

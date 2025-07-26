@@ -92,7 +92,6 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: MockFireproofing(),
-            subscriptionCookieManager: SubscriptionCookieManagerMock(),
             textZoomCoordinator: MockTextZoomCoordinator(),
             websiteDataManager: MockWebsiteDataManager(),
             appDidFinishLaunchingStartTime: nil,

@@ -26,6 +26,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
 
     @ObservedObject var model: PreferencesSubscriptionSettingsModelV2
     @State private var showingRemoveConfirmationDialog = false
+    // Remove: @State private var showRebrandingMessage = true
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
     private var isSubscriptionRebrandingOn: () -> Bool
@@ -55,6 +56,11 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 }
             }
             .padding(.bottom, 16)
+
+            // Rebranding message
+            if model.showRebrandingMessage {
+                rebrandingMessage
+            }
 
             // Sections
             switch model.settingsState {
@@ -255,5 +261,21 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
         })
         .frame(width: 360)
+    }
+
+    private var rebrandingMessage: some View {
+        SubfeatureGroup {
+            HStack(spacing: 8) {
+                Image(.privacyPro)
+                Text(UserText.preferencesSubscriptionRebrandingMessage).bold()
+                Spacer()
+                CloseButton(
+                    icon: NSImage(resource: .closeLarge),
+                    size: 20,
+                    action: { model.dismissRebrandingMessage() }
+                )
+            }
+            .padding(12)
+        }
     }
 }

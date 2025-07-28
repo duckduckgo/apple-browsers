@@ -23,6 +23,7 @@ import enum Combine.Publishers
 import class Combine.AnyCancellable
 import BrowserServicesKit
 import os.log
+import Persistence
 
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
@@ -33,10 +34,14 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
+    @Published public var showRebrandingMessage: Bool = false
+
     private var subscriptionPlatform: PrivacyProSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
 
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
@@ -60,10 +65,14 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
-                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
-    ) {
+                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
+                keyValueStore: ThrowingKeyValueStoring,
+                isRebrandingOn: Bool) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
+        self.keyValueStore = keyValueStore
+        let rebrandingMessageDismissed = try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool ?? false
+        self.showRebrandingMessage = isRebrandingOn && !(rebrandingMessageDismissed ?? true)
 
         Task {
             await self.updateSubscription(cachePolicy: .cacheFirst)
@@ -327,6 +336,11 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         return dateFormatter
     }()
+
+    public func dismissRebrandingMessage() {
+        showRebrandingMessage = false
+        try? keyValueStore.set(true, forKey: rebrandingDismissedKey)
+    }
 }
 
 enum ManageSubscriptionSheet: Identifiable {

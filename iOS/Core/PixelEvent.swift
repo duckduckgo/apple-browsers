@@ -1324,6 +1324,9 @@ extension Pixel {
         case duckPlayerNativePrimingModalCTA
         /// Settings gear icon is tapped from Duck Player UI
         case duckPlayerNativeDuckPlayerSettingsOpened
+
+        // MARK: - System Settings Picture-in-Picture Video Tutorial
+        case systemSettingsPiPTutorialFailedToLoadVideo
     }
 
 }
@@ -2589,6 +2592,9 @@ extension Pixel.Event {
         /// Settings gear icon is tapped from Duck Player UI
         case .duckPlayerNativeDuckPlayerSettingsOpened:
             return "duckplayer_native_duckplayer_settings_opened"
+
+        // MARK: System Settings PiP Video Tutorial
+        case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
         }
     }
 }

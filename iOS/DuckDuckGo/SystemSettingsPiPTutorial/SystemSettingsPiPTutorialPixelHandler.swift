@@ -21,9 +21,27 @@ import Core
 import SystemSettingsPiPTutorial
 
 final class SystemSettingsPiPTutorialPixelHandler: SystemSettingsPiPTutorialEventMapper {
+    private static let regex = #"([a-zA-Z\-]+\.lproj/[^/]+)$"#
+
+    private let dailyPixelFiring: DailyPixelFiring.Type
+
+    init(dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+        self.dailyPixelFiring = dailyPixelFiring
+    }
 
     func fireFailedToLoadPiPTutorialEvent(error: (any Error)?, urlPath: String?) {
-        Logger.pipTutorial.error("[PiP Tutorial Video] Failed To Load video: \(String(describing: error)) \(String(describing: urlPath))")
+        let parameters = extractVideoUrlPath(from: urlPath).flatMap { ["video_url_path": $0] } ?? [:]
+        dailyPixelFiring.fireDailyAndCount(.systemSettingsPiPTutorialFailedToLoadVideo, error: error, withAdditionalParameters: parameters)
+    }
+
+    private func extractVideoUrlPath(from path: String?) -> String? {
+        guard
+            let path,
+            let range = path.range(of: Self.regex, options: .regularExpression)
+        else {
+            return nil
+        }
+        return String(path[range])
     }
 
 }

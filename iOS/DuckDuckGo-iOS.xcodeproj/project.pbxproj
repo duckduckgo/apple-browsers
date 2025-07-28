@@ -1283,6 +1283,7 @@
 		9FE59CDD2E31AD9D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CDC2E31AD8D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift */; };
 		9FE59CE22E31E5A500C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CE12E31E59D00C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift */; };
 		9FE59CE42E31E5F300C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CE32E31E5E700C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift */; };
+		9FE59CE72E3307AD00C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CE62E3307A000C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift */; };
 		9FE7CD592E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */; };
 		9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */; };
 		9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */; };
@@ -3435,6 +3436,7 @@
 		9FE59CDC2E31AD8D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPiPTutorialURLProviderTests.swift; sourceTree = "<group>"; };
 		9FE59CE12E31E59D00C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsPiPTutorialPixelHandler.swift; sourceTree = "<group>"; };
 		9FE59CE32E31E5E700C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift"; sourceTree = "<group>"; };
+		9FE59CE62E3307A000C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsPiPTutorialPixelHandlerTests.swift; sourceTree = "<group>"; };
 		9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityManager.swift; sourceTree = "<group>"; };
 		9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityManagerTests.swift; sourceTree = "<group>"; };
 		9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserPromptUserActivityStorage.swift; sourceTree = "<group>"; };
@@ -6756,6 +6758,14 @@
 			path = SystemSettingsPiPTutorial;
 			sourceTree = "<group>";
 		};
+		9FE59CE52E33078B00C4B65D /* SystemSettingsPiPTutorial */ = {
+			isa = PBXGroup;
+			children = (
+				9FE59CE62E3307A000C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift */,
+			);
+			path = SystemSettingsPiPTutorial;
+			sourceTree = "<group>";
+		};
 		9FE7CD562E13BF74006691AB /* UserActivityManager */ = {
 			isa = PBXGroup;
 			children = (
@@ -8000,6 +8010,7 @@
 				9F254AC92CF5CA860063B308 /* SpecialErrorPage */,
 				F1BDDBFC2C340D9C00459306 /* Subscription */,
 				569437222BDD402600C0881B /* Sync */,
+				9FE59CE52E33078B00C4B65D /* SystemSettingsPiPTutorial */,
 				F13B4BF71F18C9E800814661 /* Tabs */,
 				859DB8192CE6265F001F7210 /* TextZoom */,
 				98EA2C3A218B9A880023E1DC /* Themes */,
@@ -10769,6 +10780,7 @@
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
 				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
+				9FE59CE72E3307AD00C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,
 				9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */,
 				8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */,

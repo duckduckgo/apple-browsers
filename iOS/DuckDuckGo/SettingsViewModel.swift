@@ -31,6 +31,7 @@ import Subscription
 import VPN
 import AIChat
 import DataBrokerProtection_iOS
+import SystemSettingsPiPTutorial
 
 final class SettingsViewModel: ObservableObject {
 
@@ -87,6 +88,7 @@ final class SettingsViewModel: ObservableObject {
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     // Closures to interact with legacy view controllers through the container
     var onRequestPushLegacyView: ((UIViewController) -> Void)?
@@ -509,6 +511,7 @@ final class SettingsViewModel: ObservableObject {
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
          keyValueStore: ThrowingKeyValueStoring,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager? = .shared
     ) {
 
@@ -535,6 +538,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
         self.keyValueStore = keyValueStore
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.dataBrokerProtectionIOSManager = dataBrokerProtectionIOSManager
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
@@ -769,14 +773,14 @@ extension SettingsViewModel {
         self.deepLinkTarget = nil
     }
 
+    @MainActor
     func setAsDefaultBrowser(_ source: String? = nil) {
         var parameters: [String: String] = [:]
         if let source = source {
             parameters[PixelParameters.source] = source
         }
         Pixel.fire(pixel: .settingsSetAsDefault, withAdditionalParameters: parameters)
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+        systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
         if shouldShowSetAsDefaultBrowser {
             try? keyValueStore.set(true, forKey: Constants.shouldCheckIfDefaultBrowserKey)
         }

@@ -107,6 +107,7 @@ final class NavigationBarViewController: NSViewController {
     private let fireproofDomains: FireproofDomains
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
+    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -235,6 +236,7 @@ final class NavigationBarViewController: NSViewController {
         visualStyle: VisualStyleProviding,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
+        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = Application.appDelegate.vpnUpsellVisibilityManager,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -251,7 +253,8 @@ final class NavigationBarViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
                                                                                statusReporter: networkProtectionStatusReporter,
-                                                                               iconProvider: visualStyle.iconsProvider.vpnNavigationIconsProvider)
+                                                                               iconProvider: visualStyle.iconsProvider.vpnNavigationIconsProvider,
+                                                                               vpnUpsellVisibilityManager: vpnUpsellVisibilityManager)
         self.downloadListCoordinator = downloadListCoordinator
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
@@ -265,6 +268,7 @@ final class NavigationBarViewController: NSViewController {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.showTab = showTab
+        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         super.init(coder: coder)
@@ -573,6 +577,13 @@ final class NavigationBarViewController: NSViewController {
             homeButtonSeparator.isHidden = true
         }
     }
+
+    private func updateNetworkProtectionButton() {
+        let isPinned = LocalPinningManager.shared.isPinned(.networkProtection)
+        vpnUpsellVisibilityManager.handlePinningChange(isPinned: isPinned)
+        networkProtectionButtonModel.updateVisibility()
+    }
+
     private enum DownloadsButtonUpdateSource {
         case pinnedViewsNotification
         case popoverDidClose
@@ -732,7 +743,7 @@ final class NavigationBarViewController: NSViewController {
                 case .homeButton:
                     self.updateHomeButton()
                 case .networkProtection:
-                    self.networkProtectionButtonModel.updateVisibility()
+                    self.updateNetworkProtectionButton()
                 }
             } else {
                 assertionFailure("Failed to get changed pinned view type")

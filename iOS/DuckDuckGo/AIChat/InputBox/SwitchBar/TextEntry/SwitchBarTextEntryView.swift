@@ -84,6 +84,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupView() {
         textView.font = UIFont.systemFont(ofSize: Constants.fontSize)
         textView.backgroundColor = UIColor.clear
+        textView.tintColor = UIColor(designSystemColor: .accent)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
         textView.delegate = self

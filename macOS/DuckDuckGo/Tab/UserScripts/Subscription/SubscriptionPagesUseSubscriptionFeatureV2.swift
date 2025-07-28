@@ -44,6 +44,7 @@ public struct GetFeatureValue: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool
     let usePaidDuckAi: Bool
+    let supportsStripe: Bool
 }
 
 /// Use Subscription sub-feature
@@ -184,7 +185,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(useSubscriptionsAuthV2: true, usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled)
+        return GetFeatureValue(
+            useSubscriptionsAuthV2: true,
+            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
+            supportsStripe: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+        )
     }
 
     // MARK: -

@@ -135,7 +135,13 @@ public final class DataBrokerProtectionEventPixels {
 
         fireWeeklyChildBrokerOrphanedOptOutsPixels(for: data)
 
-        // Fire background task session metrics
+        #if os(iOS)
+        fireBackgroundTaskSessionMetrics()
+        #endif
+    }
+
+    #if os(iOS)
+    private func fireBackgroundTaskSessionMetrics() {
         do {
             let events = try database.fetchBackgroundTaskEvents(since: .daysAgo(7))
 
@@ -186,6 +192,7 @@ public final class DataBrokerProtectionEventPixels {
             Logger.dataBrokerProtection.error("Failed to fetch background task events: \(error.localizedDescription, privacy: .public)")
         }
     }
+    #endif
 
     private func hadScanThisWeek(_ brokerProfileQuery: BrokerProfileQueryData) -> Bool {
         return brokerProfileQuery.scanJobData.historyEvents.contains { historyEvent in

@@ -21,6 +21,7 @@ import WebKit
 import BrowserServicesKit
 import UserScript
 import Common
+import os.log
 
 public protocol SubJobWebRunning: CCFCommunicationDelegate {
     associatedtype ReturnValue
@@ -263,6 +264,8 @@ public extension SubJobWebRunning {
     }
 
     func conditionSuccess(actions: [Action]) async {
+        Logger.action.log("Condition action met its expectation, pushing new actions: \(actions, privacy: .public)")
+
         if actionsHandler?.stepType == .optOut {
             stageCalculator.fireOptOutConditionFound()
         }
@@ -302,6 +305,8 @@ public extension SubJobWebRunning {
 
     func onError(error: Error) async {
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
+            Logger.action.log("Condition action did NOT meet its expectation, continuing with regular action execution")
+
             if actionsHandler?.stepType == .optOut {
                 stageCalculator.fireOptOutConditionNotFound()
             }

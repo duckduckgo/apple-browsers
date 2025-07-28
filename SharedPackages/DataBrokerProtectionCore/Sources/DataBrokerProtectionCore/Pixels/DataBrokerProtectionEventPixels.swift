@@ -69,7 +69,9 @@ public final class DataBrokerProtectionEventPixels {
             fireWeeklyReportPixels()
             repository.markWeeklyPixelSent()
 
+            #if os(iOS)
             cleanupOldBackgroundTaskSessions()
+            #endif
         }
     }
 
@@ -210,6 +212,7 @@ public final class DataBrokerProtectionEventPixels {
         }
     }
 
+    #if os(iOS)
     private func cleanupOldBackgroundTaskSessions() {
         do {
             try database.deleteBackgroundTaskEvents(olderThan: .daysAgo(7))
@@ -218,6 +221,7 @@ public final class DataBrokerProtectionEventPixels {
             Logger.dataBrokerProtection.error("Failed to clean up old background task events: \(error.localizedDescription, privacy: .public)")
         }
     }
+    #endif
 }
 
 // MARK: - Orphaned profiles stuff

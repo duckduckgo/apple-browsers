@@ -438,6 +438,14 @@ public final class DataBrokerProtectionIOSManager {
         return queueManager.debugRunningStatusString == "running"
     }
 
+    public func tryToFireWeeklyPixels() {
+        let eventPixels = DataBrokerProtectionEventPixels(
+            database: jobDependencies.database,
+            handler: jobDependencies.pixelHandler
+        )
+        eventPixels.tryToFireWeeklyPixels()
+    }
+
     // MARK: - Run Prerequisites
 
     public var meetsProfileRunPrequisite: Bool {

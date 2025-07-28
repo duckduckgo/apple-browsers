@@ -37,7 +37,8 @@ final class SubscriptionService {
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                  purchasePlatform: .appStore,
-                                                                                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) })
+                                                                                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+                                                                                 supportsStripeStatusProvider: { featureFlagger.isFeatureOn(.supportsStripe) })
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()

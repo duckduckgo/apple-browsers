@@ -344,13 +344,23 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 }
 
 public struct SubscriptionSettingsStore: KeyValueStoring {
+    private let keyValueFileStore: KeyValueFileStore?
 
-    private var userDefaults: UserDefaults? { UserDefaults(suiteName: "com.duckduckgo.app.subscriptionSettingsStore") }
+    public init() {
+        if let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            self.keyValueFileStore = try? KeyValueFileStore(location: appSupportDir, name: "com.duckduckgo.app.subscriptionSettingsStore")
+        } else {
+            self.keyValueFileStore = nil
+        }
+    }
 
-    public init() {}
-
-    public func object(forKey defaultName: String) -> Any? { userDefaults?.object(forKey: defaultName) }
-    public func set(_ value: Any?, forKey defaultName: String) { userDefaults?.set(value, forKey: defaultName) }
-    public func removeObject(forKey defaultName: String) { userDefaults?.removeObject(forKey: defaultName) }
-
+    public func object(forKey defaultName: String) -> Any? {
+        try? keyValueFileStore?.object(forKey: defaultName)
+    }
+    public func set(_ value: Any?, forKey defaultName: String) {
+        try? keyValueFileStore?.set(value, forKey: defaultName)
+    }
+    public func removeObject(forKey defaultName: String) {
+        try? keyValueFileStore?.removeObject(forKey: defaultName)
+    }
 }

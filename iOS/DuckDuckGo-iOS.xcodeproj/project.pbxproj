@@ -3862,7 +3862,7 @@
 		D6FEB8B02B7498A300C3615F /* HeadlessWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadlessWebView.swift; sourceTree = "<group>"; };
 		D6FEB8B22B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadlessWebViewNavCoordinator.swift; sourceTree = "<group>"; };
 		D6FEB8B42B74994000C3615F /* HeadlessWebViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadlessWebViewCoordinator.swift; sourceTree = "<group>"; };
-		EA39B7E1268A1A35000C62CD /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "submodules/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
+		EA39B7E1268A1A35000C62CD /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Resources/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
 		EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DomainMatchingTests.swift; sourceTree = "<group>"; };
 		EE00D2D32DFB295000B79E9D /* UserDefaults+Autofill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Autofill.swift"; sourceTree = "<group>"; };
 		EE00D2D62DFB2D4000B79E9D /* AutofillUsageStore+App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutofillUsageStore+App.swift"; sourceTree = "<group>"; };

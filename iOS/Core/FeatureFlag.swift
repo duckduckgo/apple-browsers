@@ -351,10 +351,3 @@ public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescri
     /// Treatment cohort where the experiment modifications are applied.
     case treatment
 }
-
-public enum OnboardingSetAsDefaultBrowserPiPVideoCohort: String, FeatureFlagCohortDescribing {
-    /// Control cohort with no changes applied.
-    case control
-    /// Treatment cohort where the experiment modifications are applied.
-    case treatment
-}

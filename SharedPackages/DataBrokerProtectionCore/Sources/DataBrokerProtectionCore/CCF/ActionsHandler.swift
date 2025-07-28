@@ -57,7 +57,7 @@ public class ActionsHandler {
     }
 
     public func insert(actions: [Action]) {
-        if let lastExecutedActionIndex {
+        if let lastExecutedActionIndex, (lastExecutedActionIndex + 1) < self.actions.count {
             self.actions.insert(contentsOf: actions, at: lastExecutedActionIndex + 1)
         } else {
             self.actions.append(contentsOf: actions)

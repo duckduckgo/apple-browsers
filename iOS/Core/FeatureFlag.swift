@@ -195,7 +195,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionRebranding,
              .june2025TabManagerLayoutChanges,
              .canPromoteImportPasswordsInPasswordManagement,
-             .canPromoteImportPasswordsInBrowser:
+             .canPromoteImportPasswordsInBrowser,
+             .setAsDefaultBrowserPiPVideoTutorial:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {

@@ -426,9 +426,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-test-release-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-test-release-${{ matrix.cache-key }}
+          ${{ runner.os }}-mac-release-build-${{ matrix.cache-key }}
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version

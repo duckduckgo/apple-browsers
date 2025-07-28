@@ -30,11 +30,12 @@ import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
+import SystemSettingsPiPTutorialTestSupport
 
 // swiftlint:disable force_try
 
-@MainActor
-final class OnboardingDaxFavouritesTests: XCTestCase {
+ @MainActor
+ final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
     private var tutorialSettingsMock: MockTutorialSettings!
     private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
@@ -132,7 +133,8 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             themeManager: MockThemeManager(),
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -145,12 +147,12 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testWhenMakeOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
+    func testWhenMarkOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
         // GIVEN
         XCTAssertFalse(tutorialSettingsMock.hasSeenOnboarding)
 
         // WHEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        sut.markOnboardingSeen()
 
         // THEN
         XCTAssertTrue(tutorialSettingsMock.hasSeenOnboarding)

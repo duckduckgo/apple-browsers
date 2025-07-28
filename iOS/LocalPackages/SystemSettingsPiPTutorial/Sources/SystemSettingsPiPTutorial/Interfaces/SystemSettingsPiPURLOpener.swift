@@ -1,5 +1,5 @@
 //
-//  MockURLOpener.swift
+//  SystemSettingsPiPURLOpener.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,17 +17,16 @@
 //  limitations under the License.
 //
 
-import Foundation
-import SetDefaultBrowserCore
+import UIKit
 
-package final class MockURLOpener: URLOpener {
-    package private(set) var didCallOpenURL = false
-    package private(set) var capturedURL: URL?
+@MainActor
+protocol SystemSettingsPiPURLOpener {
+    func open(_ url: URL)
+}
 
-    package init() {}
-
-    package  func open(_ url: URL) {
-        didCallOpenURL = true
-        capturedURL = url
+extension UIApplication: SystemSettingsPiPURLOpener {
+    @MainActor
+    func open(_ url: URL) {
+        open(url, options: [:])
     }
 }

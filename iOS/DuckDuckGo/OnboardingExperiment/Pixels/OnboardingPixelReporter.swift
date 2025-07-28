@@ -113,12 +113,7 @@ protocol OnboardingAddToDockReporting {
     func measureAddToDockTutorialDismissCTAAction()
 }
 
-protocol OnboardingSetAsDefaultBrowserExperimentReporting {
-    func measureDidSetDDGAsDefaultBrowser()
-    func measureDidNotSetDDGAsDefaultBrowser()
-}
-
-typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingSetAsDefaultBrowserExperimentReporting
+typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting
 typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
 
 // MARK: - Implementation
@@ -337,42 +332,6 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
         fire(event: .onboardingAddToDockTutorialDismissCTATapped, unique: false)
     }
 
-}
-
-// MARK: - OnboardingPixelReporter + Set As Default Experiment
-
-extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReporting {
-
-    enum SetAsDefaultBrowserPipVideoExperimentMetrics {
-        /// Unique identifier for the subfeature being tested.
-        static let subfeatureIdentifier = OnboardingSubfeature.setAsDefaultBrowserPiPVideoExperiment.rawValue
-
-        /// Metric identifiers for various user actions during the experiment.
-        static let metricDefaultBrowserSet = "setAsDefaultBrowser"
-        static let metricDefaultBrowserNotSet = "rejectSetAsDefaultBrowser"
-
-        /// Conversion window in days for tracking user actions.
-        static let conversionWindowDays = 0...0
-    }
-
-    func measureDidSetDDGAsDefaultBrowser() {
-        experimentPixel.fireExperimentPixel(
-            for: SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier,
-            metric: SetAsDefaultBrowserPipVideoExperimentMetrics.metricDefaultBrowserSet,
-            conversionWindowDays: SetAsDefaultBrowserPipVideoExperimentMetrics.conversionWindowDays,
-            value: "1"
-        )
-    }
-
-    func measureDidNotSetDDGAsDefaultBrowser() {
-        experimentPixel.fireExperimentPixel(
-            for: SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier,
-            metric: SetAsDefaultBrowserPipVideoExperimentMetrics.metricDefaultBrowserNotSet,
-            conversionWindowDays: SetAsDefaultBrowserPipVideoExperimentMetrics.conversionWindowDays,
-            value: "1"
-        )
-    }
-    
 }
 
 struct EnqueuedPixel {

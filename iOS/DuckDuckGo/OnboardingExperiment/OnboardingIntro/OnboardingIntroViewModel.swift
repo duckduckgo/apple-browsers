@@ -22,6 +22,7 @@ import Common
 import Core
 import Foundation
 import Onboarding
+import SystemSettingsPiPTutorial
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
@@ -84,18 +85,18 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let contextualDaxDialogs: ContextualDaxDialogDisabling
     private let pixelReporter: LinearOnboardingPixelReporting
     private let onboardingManager: OnboardingManaging
-    private let urlOpener: URLOpener
+    private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
 
-    convenience init(pixelReporter: LinearOnboardingPixelReporting) {
+    convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging) {
         let onboardingManager = OnboardingManager()
         self.init(
             defaultBrowserManager: DefaultBrowserManager(),
             contextualDaxDialogs: DaxDialogs.shared,
             pixelReporter: pixelReporter,
             onboardingManager: onboardingManager,
-            urlOpener: UIApplication.shared,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog(isReturningUser: false),
             appIconProvider: { AppIconManager.shared.appIcon },
             addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
@@ -107,7 +108,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         contextualDaxDialogs: ContextualDaxDialogDisabling,
         pixelReporter: LinearOnboardingPixelReporting,
         onboardingManager: OnboardingManaging,
-        urlOpener: URLOpener,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         currentOnboardingStep: OnboardingIntroStep,
         appIconProvider: @escaping () -> AppIcon,
         addressBarPositionProvider: @escaping () -> AddressBarPosition
@@ -116,7 +117,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.contextualDaxDialogs = contextualDaxDialogs
         self.pixelReporter = pixelReporter
         self.onboardingManager = onboardingManager
-        self.urlOpener = urlOpener
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.appIconProvider = appIconProvider
         self.addressBarPositionProvider = addressBarPositionProvider
 
@@ -146,27 +147,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         onCompletingOnboardingIntro?()
     }
 
-    func enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial() -> Bool {
-        pixelReporter.measureChooseBrowserCTAAction()
-
-        return shouldShowSetDefaultBrowserTutorialVideo()
-    }
-
     func setDefaultBrowserAction() {
-        let urlPath = onboardingManager.settingsURLPath
-
-        if let url = URL(string: urlPath) {
-            urlOpener.open(url)
-        }
-
-        // If the user is in the treatment group do not transition to the next step as it will interrupt PiP.
-        // Manually stopping PiP on willEnterForeground event doesn't seem to work fine. Stopping it on didBecomeActive shows a UI glitch as the player tries to go back in place first.
-        guard !shouldShowSetDefaultBrowserTutorialVideo() else { return }
-
-        makeNextViewState()
-    }
-
-    func completedSetDefaultBrowserAction() {
+        systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
         makeNextViewState()
     }
 
@@ -189,9 +171,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func appIconPickerContinueAction() {
-        // Check if user set DDG as default browser.
-        measureDDGDefaultBrowserIfNeeded()
-
         if appIconProvider() != .defaultAppIcon {
             pixelReporter.measureChooseCustomAppIconColor()
         }
@@ -272,19 +251,6 @@ private extension OnboardingIntroViewModel {
         setViewState(introStep: currentIntroStep)
     }
 
-    func measureDDGDefaultBrowserIfNeeded() {
-        guard onboardingManager.isEnrolledInSetAsDefaultBrowserPipVideoExperiment else { return }
-
-        defaultBrowserManager.defaultBrowserInfo()
-            .onNewValue { newInfo in
-                if newInfo.isDefaultBrowser {
-                    pixelReporter.measureDidSetDDGAsDefaultBrowser()
-                } else {
-                    pixelReporter.measureDidNotSetDDGAsDefaultBrowser()
-                }
-            }
-    }
-
     func measureScreenImpression() {
         guard let intro = state.intro else { return }
         switch intro.type {
@@ -299,10 +265,6 @@ private extension OnboardingIntroViewModel {
         case .chooseAddressBarPositionDialog:
             pixelReporter.measureAddressBarPositionSelectionImpression()
         }
-    }
-
-    func shouldShowSetDefaultBrowserTutorialVideo() -> Bool {
-        onboardingManager.resolveSetAsDefaultBrowserPipVideoExperimentCohort() == .treatment ? true : false
     }
 
 }

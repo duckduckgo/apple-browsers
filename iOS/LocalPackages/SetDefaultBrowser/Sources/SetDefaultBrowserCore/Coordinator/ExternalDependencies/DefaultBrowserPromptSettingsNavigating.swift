@@ -1,5 +1,5 @@
 //
-//  URLOpener.swift
+//  DefaultBrowserPromptSettingsNavigating.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,10 +17,9 @@
 //  limitations under the License.
 //
 
-import Foundation
-import class UIKit.UIApplication
-
+// A type that can navigate to the default browser settings.
 @MainActor
-package protocol URLOpener {
-    func open(_ url: URL)
+public protocol DefaultBrowserPromptSettingsNavigating {
+    /// Navigates the user to the settings where they can set the default browser.
+    func navigateToSetDefaultBrowserSettings()
 }

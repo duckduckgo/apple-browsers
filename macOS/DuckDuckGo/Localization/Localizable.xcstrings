@@ -70120,6 +70120,18 @@
         }
       }
     },
+    "subscription.general.name" : {
+      "comment" : "Title for Subscription item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo Subscription"
+          }
+        }
+      }
+    },
     "subscription.options.menu.item" : {
       "comment" : "Title for Subscription item in the options menu",
       "extractionState" : "extracted_with_value",

@@ -47,6 +47,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
     private var subscriptionChangeObserver: Any?
+    var isRebrandingOn: Bool
 
     @Published public var settingsState: PreferencesSubscriptionSettingsState = .subscriptionPendingActivation
 
@@ -71,6 +72,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
+        self.isRebrandingOn = isRebrandingOn
         let rebrandingMessageDismissed = try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool ?? false
         self.showRebrandingMessage = isRebrandingOn && !(rebrandingMessageDismissed ?? true)
 
@@ -318,7 +320,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             }
 
         case .expired, .inactive:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
+            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(isRebrandingOn: isRebrandingOn, formattedDate: formattedDate)
         default:
             if hasActiveTrialOffer {
                 self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)

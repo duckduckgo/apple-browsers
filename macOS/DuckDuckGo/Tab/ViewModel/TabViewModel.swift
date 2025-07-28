@@ -596,7 +596,7 @@ private extension NSAttributedString {
     static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: .personalInformationRemovalMulticolor16,
                                                                       title: UserText.tabDataBrokerProtectionTitle)
     static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: .privacyPro,
-                                                                               title: UserText.subscription)
+                                                                               title: UserText.subscriptionName(isSubscriptionRebrandingOn: Application.appDelegate.featureFlagger.isFeatureOn(.subscriptionRebranding)))
     static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: .identityTheftRestorationMulticolor16,
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
     static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: .duckPlayerSettings,

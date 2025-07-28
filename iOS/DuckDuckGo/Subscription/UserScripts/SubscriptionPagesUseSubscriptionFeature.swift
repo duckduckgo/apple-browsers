@@ -732,7 +732,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         return GetFeatureConfigurationResponse(
             useSubscriptionsAuthV2: true,
             usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-            supportsStripe: subscriptionFeatureAvailability.isSupportsStripeEnabled
+            supportsStripe: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
         )
     }
 

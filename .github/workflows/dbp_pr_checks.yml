@@ -267,6 +267,7 @@ jobs:
           check_name: DBP Test Report (iOS)
           report_paths: SharedPackages/DataBrokerProtectionCore/dbp-ios-unittests.xml
           require_tests: true
+          check_retries: true
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

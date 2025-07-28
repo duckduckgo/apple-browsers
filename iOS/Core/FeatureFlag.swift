@@ -155,8 +155,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
              .removeWWWInCanonicalizationInThreatProtection,
-             .june2025TabManagerLayoutChanges,
-             .setAsDefaultBrowserPiPVideoTutorial:
+             .june2025TabManagerLayoutChanges:
             true
         default:
             false

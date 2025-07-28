@@ -1170,16 +1170,14 @@
 		9F012C632DF7BD9D00AE0F43 /* AudioSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F012C622DF7BD9100AE0F43 /* AudioSession.swift */; };
 		9F012C652DF7BE1F00AE0F43 /* PictureInPictureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F012C642DF7BE1800AE0F43 /* PictureInPictureController.swift */; };
 		9F03113A2DF7C6B700AC4DB5 /* Logger+VideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */; };
-		9F03113D2DF7DD4200AC4DB5 /* SetAsDefaultTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F03113C2DF7DD3B00AC4DB5 /* SetAsDefaultTutorialView.swift */; };
-		9F0311402DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9F03113F2DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 */; };
 		9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */; };
 		9F06EB922D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */; };
+		9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */ = {isa = PBXBuildFile; productRef = 9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */; };
 		9F0949A02D372AE60079291B /* MaliciousSiteProtectionDatasetsFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F09499F2D372ADB0079291B /* MaliciousSiteProtectionDatasetsFetcher.swift */; };
 		9F0949A52D3898FF0079291B /* MaliciousSiteProtectionPreferencesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0949A42D3898F80079291B /* MaliciousSiteProtectionPreferencesManager.swift */; };
 		9F0949A72D389F1E0079291B /* MaliciousSiteProtectionAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0949A62D389F180079291B /* MaliciousSiteProtectionAPI.swift */; };
 		9F16230B2CA0F0190093C4FC /* DebouncerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F16230A2CA0F0190093C4FC /* DebouncerTests.swift */; };
 		9F1798572CD2443F0073018B /* AddToDockPromoViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */; };
-		9F1C69212D7FEA5C0072F97D /* OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1C69202D7FEA5C0072F97D /* OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift */; };
 		9F23B8012C2BC94400950875 /* OnboardingBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F23B8002C2BC94400950875 /* OnboardingBackground.swift */; };
 		9F23B8032C2BCD0000950875 /* DaxDialogStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F23B8022C2BCD0000950875 /* DaxDialogStyles.swift */; };
 		9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F23B8052C2BE22700950875 /* OnboardingIntroViewModelTests.swift */; };
@@ -1224,6 +1222,7 @@
 		9F63BABD2D7ECFD800BD31F4 /* DefaultBrowserManagerTesting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F63BABC2D7ECFD800BD31F4 /* DefaultBrowserManagerTesting.swift */; };
 		9F678B892C9BAA4800CA0E19 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F678B882C9BAA4800CA0E19 /* Debouncer.swift */; };
 		9F69331F2C5B1D0C00CD6A5D /* OnFirstAppearViewModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F69331E2C5B1D0C00CD6A5D /* OnFirstAppearViewModifier.swift */; };
+		9F69DE842E333CAD00676C6D /* default-browser.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9F69DE832E333CAD00676C6D /* default-browser.mp4 */; };
 		9F70B8562D6D942800199D4B /* CheckDefaultBrowserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F70B8552D6D942200199D4B /* CheckDefaultBrowserService.swift */; };
 		9F72FE272CD223A000BA35F5 /* add-to-dock-promo.json in Resources */ = {isa = PBXBuildFile; fileRef = 9F72FE262CD223A000BA35F5 /* add-to-dock-promo.json */; };
 		9F74B7922D49E43A00A7F174 /* MaliciousSiteProtection+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F74B7912D49E42D00A7F174 /* MaliciousSiteProtection+Pixel.swift */; };
@@ -1251,7 +1250,10 @@
 		9FB0271B2C2927D0009EA190 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271A2C2927D0009EA190 /* OnboardingView.swift */; };
 		9FB0271D2C293619009EA190 /* OnboardingIntroViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */; };
 		9FB6272E2E08251D00CBDEED /* SetDefaultBrowserUI in Frameworks */ = {isa = PBXBuildFile; productRef = 9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */; };
+		9FB859892E2DD2C900BA68E4 /* SystemSettingsPiPTutorialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB859882E2DD2BB00BA68E4 /* SystemSettingsPiPTutorialService.swift */; };
 		9FBC76672CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBC76662CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift */; };
+		9FC555D12E2F4AFC00763BEC /* default-browser-tutorial.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9FC555CF2E2F4AFC00763BEC /* default-browser-tutorial.mp4 */; };
+		9FC555D32E2F4B4100763BEC /* DefaultBrowserPiPTutorialURLProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FC555D22E2F4B4100763BEC /* DefaultBrowserPiPTutorialURLProvider.swift */; };
 		9FCFCD802C6AF56D006EB7A0 /* LaunchOptionsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCFCD7F2C6AF56D006EB7A0 /* LaunchOptionsHandlerTests.swift */; };
 		9FCFCD812C6B020D006EB7A0 /* LaunchOptionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCFCD7D2C6AF52A006EB7A0 /* LaunchOptionsHandler.swift */; };
 		9FCFCD852C75C91A006EB7A0 /* ProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCFCD842C75C91A006EB7A0 /* ProgressBarView.swift */; };
@@ -1279,6 +1281,12 @@
 		9FE08BD62C2A60CD001D5EBC /* MetricBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE08BD52C2A60CD001D5EBC /* MetricBuilder.swift */; };
 		9FE08BDA2C2A86D0001D5EBC /* URLOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE08BD92C2A86D0001D5EBC /* URLOpener.swift */; };
 		9FE08BDC2C2A88FA001D5EBC /* OnboardingIntroViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE08BDB2C2A88FA001D5EBC /* OnboardingIntroViewController.swift */; };
+		9FE59CD82E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9FE59CD72E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport */; };
+		9FE59CDA2E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 9FE59CD92E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport */; };
+		9FE59CDD2E31AD9D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CDC2E31AD8D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift */; };
+		9FE59CE22E31E5A500C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CE12E31E59D00C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift */; };
+		9FE59CE42E31E5F300C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CE32E31E5E700C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift */; };
+		9FE59CE72E3307AD00C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE59CE62E3307A000C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift */; };
 		9FE7CD592E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */; };
 		9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */; };
 		9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */; };
@@ -3316,16 +3324,14 @@
 		9F012C622DF7BD9100AE0F43 /* AudioSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSession.swift; sourceTree = "<group>"; };
 		9F012C642DF7BE1800AE0F43 /* PictureInPictureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureController.swift; sourceTree = "<group>"; };
 		9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+VideoPlayer.swift"; sourceTree = "<group>"; };
-		9F03113C2DF7DD3B00AC4DB5 /* SetAsDefaultTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetAsDefaultTutorialView.swift; sourceTree = "<group>"; };
-		9F03113F2DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "default-browser-tutorial.mp4"; sourceTree = "<group>"; };
 		9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferencesManagerTests.swift; sourceTree = "<group>"; };
+		9F0727862E2F2439005894C8 /* SystemSettingsPiPTutorial */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemSettingsPiPTutorial; sourceTree = "<group>"; };
 		9F09499F2D372ADB0079291B /* MaliciousSiteProtectionDatasetsFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionDatasetsFetcher.swift; sourceTree = "<group>"; };
 		9F0949A42D3898F80079291B /* MaliciousSiteProtectionPreferencesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferencesManager.swift; sourceTree = "<group>"; };
 		9F0949A62D389F180079291B /* MaliciousSiteProtectionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionAPI.swift; sourceTree = "<group>"; };
 		9F16230A2CA0F0190093C4FC /* DebouncerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebouncerTests.swift; sourceTree = "<group>"; };
 		9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoViewModelTests.swift; sourceTree = "<group>"; };
-		9F1C69202D7FEA5C0072F97D /* OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift"; sourceTree = "<group>"; };
 		9F23B8002C2BC94400950875 /* OnboardingBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingBackground.swift; sourceTree = "<group>"; };
 		9F23B8022C2BCD0000950875 /* DaxDialogStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxDialogStyles.swift; sourceTree = "<group>"; };
 		9F23B8052C2BE22700950875 /* OnboardingIntroViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewModelTests.swift; sourceTree = "<group>"; };
@@ -3370,6 +3376,7 @@
 		9F63BABC2D7ECFD800BD31F4 /* DefaultBrowserManagerTesting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserManagerTesting.swift; sourceTree = "<group>"; };
 		9F678B882C9BAA4800CA0E19 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		9F69331E2C5B1D0C00CD6A5D /* OnFirstAppearViewModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnFirstAppearViewModifier.swift; sourceTree = "<group>"; };
+		9F69DE832E333CAD00676C6D /* default-browser.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "default-browser.mp4"; sourceTree = "<group>"; };
 		9F70B8552D6D942200199D4B /* CheckDefaultBrowserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckDefaultBrowserService.swift; sourceTree = "<group>"; };
 		9F72FE262CD223A000BA35F5 /* add-to-dock-promo.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "add-to-dock-promo.json"; sourceTree = "<group>"; };
 		9F74B7912D49E42D00A7F174 /* MaliciousSiteProtection+Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MaliciousSiteProtection+Pixel.swift"; sourceTree = "<group>"; };
@@ -3395,7 +3402,16 @@
 		9FB027182C26BC29009EA190 /* BrowsersComparisonModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsersComparisonModel.swift; sourceTree = "<group>"; };
 		9FB0271A2C2927D0009EA190 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewModel.swift; sourceTree = "<group>"; };
+		9FB859882E2DD2BB00BA68E4 /* SystemSettingsPiPTutorialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsPiPTutorialService.swift; sourceTree = "<group>"; };
 		9FBC76662CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionNavigationHandlerTests.swift; sourceTree = "<group>"; };
+		9FC555C82E2F4AFC00763BEC /* en */ = {isa = PBXFileReference; lastKnownFileType = file; name = en; path = "en.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
+		9FC555C92E2F4AFC00763BEC /* de */ = {isa = PBXFileReference; lastKnownFileType = file; name = de; path = "de.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
+		9FC555CA2E2F4AFC00763BEC /* es */ = {isa = PBXFileReference; lastKnownFileType = file; name = es; path = "es.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
+		9FC555CB2E2F4AFC00763BEC /* fr */ = {isa = PBXFileReference; lastKnownFileType = file; name = fr; path = "fr.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
+		9FC555CC2E2F4AFC00763BEC /* it */ = {isa = PBXFileReference; lastKnownFileType = file; name = it; path = "it.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
+		9FC555CD2E2F4AFC00763BEC /* nl */ = {isa = PBXFileReference; lastKnownFileType = file; name = nl; path = "nl.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
+		9FC555CE2E2F4AFC00763BEC /* pt */ = {isa = PBXFileReference; lastKnownFileType = file; name = pt; path = "pt.lproj/default-browser-tutorial.mp4"; sourceTree = "<group>"; };
+		9FC555D22E2F4B4100763BEC /* DefaultBrowserPiPTutorialURLProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPiPTutorialURLProvider.swift; sourceTree = "<group>"; };
 		9FCFCD7D2C6AF52A006EB7A0 /* LaunchOptionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LaunchOptionsHandler.swift; path = ../DuckDuckGo/LaunchOptionsHandler.swift; sourceTree = "<group>"; };
 		9FCFCD7F2C6AF56D006EB7A0 /* LaunchOptionsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchOptionsHandlerTests.swift; sourceTree = "<group>"; };
 		9FCFCD842C75C91A006EB7A0 /* ProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBarView.swift; sourceTree = "<group>"; };
@@ -3422,6 +3438,10 @@
 		9FE08BD52C2A60CD001D5EBC /* MetricBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricBuilder.swift; sourceTree = "<group>"; };
 		9FE08BD92C2A86D0001D5EBC /* URLOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLOpener.swift; sourceTree = "<group>"; };
 		9FE08BDB2C2A88FA001D5EBC /* OnboardingIntroViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewController.swift; sourceTree = "<group>"; };
+		9FE59CDC2E31AD8D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPiPTutorialURLProviderTests.swift; sourceTree = "<group>"; };
+		9FE59CE12E31E59D00C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsPiPTutorialPixelHandler.swift; sourceTree = "<group>"; };
+		9FE59CE32E31E5E700C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift"; sourceTree = "<group>"; };
+		9FE59CE62E3307A000C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsPiPTutorialPixelHandlerTests.swift; sourceTree = "<group>"; };
 		9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityManager.swift; sourceTree = "<group>"; };
 		9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityManagerTests.swift; sourceTree = "<group>"; };
 		9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserPromptUserActivityStorage.swift; sourceTree = "<group>"; };
@@ -4055,6 +4075,7 @@
 				315C77822CFA41A400699683 /* AIChat in Frameworks */,
 				4BF557F02DF79393008E16A8 /* WebKit.framework in Frameworks */,
 				9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */,
+				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
 				4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */,
@@ -4084,6 +4105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9FE59CDA2E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */,
 				F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */,
 				BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */,
 				7BC26CB22DFC155500E52480 /* VPNTestUtils in Frameworks */,
@@ -4185,6 +4207,7 @@
 				98E564942DE8DE7D00E6E75F /* SubscriptionTestingUtilities in Frameworks */,
 				98E5648C2DE8DE6200E6E75F /* History in Frameworks */,
 				98E564862DE8DE5700E6E75F /* Persistence in Frameworks */,
+				9FE59CD82E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport in Frameworks */,
 				98E564922DE8DE7500E6E75F /* Configuration in Frameworks */,
 				98E564842DE8DE3F00E6E75F /* Common in Frameworks */,
 				98E5648A2DE8DE5F00E6E75F /* DDGSync in Frameworks */,
@@ -4847,6 +4870,7 @@
 		31E69A60280F4BAD00478327 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
+				9F0727862E2F2439005894C8 /* SystemSettingsPiPTutorial */,
 				9F454D202E052D1E00B8CC5A /* SetDefaultBrowser */,
 				9F454D162E050B8B00B8CC5A /* MetricBuilder */,
 				85B6ABB62DE5E4CC009C85C7 /* Onboarding */,
@@ -5653,6 +5677,7 @@
 				B652DF02287C01EE00C12A9C /* ContentBlocking */,
 				37CF915E2BB4735F00BADCAE /* Crashes */,
 				C1C23C242D4C0C4F00B6BDF6 /* DataImport */,
+				9FC555C72E2F475100763BEC /* DefaultBrowserPiPVideo */,
 				9FF967AD2E0E241E00E45B54 /* DefaultBrowserPrompt */,
 				D6E0C1812B7A2B0700D5E1E9 /* DesktopDownloads */,
 				310D09192799EF5C00DC0060 /* Downloads */,
@@ -5683,6 +5708,7 @@
 				9F254AA62CF4777F0063B308 /* SpecialErrorPage */,
 				D664C7922B289AA000CBFA76 /* Subscription */,
 				85F98F8C296F0ED100742F4A /* Sync */,
+				9FE59CE02E31E57500C4B65D /* SystemSettingsPiPTutorial */,
 				F13B4BF41F18C74500814661 /* Tabs */,
 				F1386BA21E6846320062FC3C /* TabSwitcher */,
 				859DB80C2CE6262A001F7210 /* TextZoom */,
@@ -6351,23 +6377,6 @@
 			path = PictureInPicture;
 			sourceTree = "<group>";
 		};
-		9F03113B2DF7DD2D00AC4DB5 /* SetAsDefault */ = {
-			isa = PBXGroup;
-			children = (
-				9F03113E2DF7EBFD00AC4DB5 /* Resources */,
-				9F03113C2DF7DD3B00AC4DB5 /* SetAsDefaultTutorialView.swift */,
-			);
-			path = SetAsDefault;
-			sourceTree = "<group>";
-		};
-		9F03113E2DF7EBFD00AC4DB5 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				9F03113F2DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 		9F06EB882D0D737500905426 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -6421,7 +6430,6 @@
 				9FE05CEF2C3642F900D9046B /* OnboardingPixelReporterTests.swift */,
 				9F5E5AB12C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift */,
 				9F4CC5162C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift */,
-				9F1C69202D7FEA5C0072F97D /* OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift */,
 				9F7CFF7C2C89B69A0012833E /* AppIconPickerViewModelTests.swift */,
 				9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */,
 				9FDEC7B92C9006E000C7A692 /* BrowserComparisonModelTests.swift */,
@@ -6639,6 +6647,23 @@
 			path = BrowsersComparison;
 			sourceTree = "<group>";
 		};
+		9FC555C72E2F475100763BEC /* DefaultBrowserPiPVideo */ = {
+			isa = PBXGroup;
+			children = (
+				9FC555D22E2F4B4100763BEC /* DefaultBrowserPiPTutorialURLProvider.swift */,
+				9FC555D02E2F4AFC00763BEC /* Resources */,
+			);
+			path = DefaultBrowserPiPVideo;
+			sourceTree = "<group>";
+		};
+		9FC555D02E2F4AFC00763BEC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9FC555CF2E2F4AFC00763BEC /* default-browser-tutorial.mp4 */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		9FD6E6062DF8FA3700C2B032 /* AudioSession */ = {
 			isa = PBXGroup;
 			children = (
@@ -6651,6 +6676,7 @@
 		9FD6E6072DF9025500C2B032 /* VideoPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				9F69DE832E333CAD00676C6D /* default-browser.mp4 */,
 				9FD6E60A2DF902DE00C2B032 /* Mocks */,
 				9FD6E6082DF9025D00C2B032 /* AudioSessionManagerTests.swift */,
 				9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */,
@@ -6732,6 +6758,31 @@
 			path = MetricBuilder;
 			sourceTree = "<group>";
 		};
+		9FE59CDB2E31AD6300C4B65D /* DefaultBrowserPiPVideo */ = {
+			isa = PBXGroup;
+			children = (
+				9FE59CDC2E31AD8D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift */,
+			);
+			path = DefaultBrowserPiPVideo;
+			sourceTree = "<group>";
+		};
+		9FE59CE02E31E57500C4B65D /* SystemSettingsPiPTutorial */ = {
+			isa = PBXGroup;
+			children = (
+				9FE59CE12E31E59D00C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift */,
+				9FE59CE32E31E5E700C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift */,
+			);
+			path = SystemSettingsPiPTutorial;
+			sourceTree = "<group>";
+		};
+		9FE59CE52E33078B00C4B65D /* SystemSettingsPiPTutorial */ = {
+			isa = PBXGroup;
+			children = (
+				9FE59CE62E3307A000C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift */,
+			);
+			path = SystemSettingsPiPTutorial;
+			sourceTree = "<group>";
+		};
 		9FE7CD562E13BF74006691AB /* UserActivityManager */ = {
 			isa = PBXGroup;
 			children = (
@@ -6771,7 +6822,6 @@
 			isa = PBXGroup;
 			children = (
 				9F8E0F2B2CCA617C001EA7C5 /* VideoPlayer */,
-				9F03113B2DF7DD2D00AC4DB5 /* SetAsDefault */,
 				9F8E0F282CCA577E001EA7C5 /* AddToDock */,
 				9F96F73D2C914C3D009E45D5 /* Background */,
 				9FDEC7BD2C9125EC00C7A692 /* AddressBarPositionPicker */,
@@ -7508,6 +7558,7 @@
 				CBF259BA2D4D020200AC63E4 /* AutoClearService.swift */,
 				CBF259BC2D4E56E900AC63E4 /* ReportingService.swift */,
 				CB3B4D432D5F757A006DAD63 /* StatisticsService.swift */,
+				9FB859882E2DD2BB00BA68E4 /* SystemSettingsPiPTutorialService.swift */,
 				9D41D8DE2DC5213500BA0B63 /* DBPService.swift */,
 			);
 			path = AppServices;
@@ -7958,6 +8009,7 @@
 				563A3CFF2D37BF60001966FD /* Configuration */,
 				98559FD0267099F400A83094 /* ContentBlocker */,
 				C13EEA1C2D64CFBA001D5DC3 /* DataImport */,
+				9FE59CDB2E31AD6300C4B65D /* DefaultBrowserPiPVideo */,
 				9FF967B02E0E26CC00E45B54 /* DefaultBrowserPrompt */,
 				31C138A127A334F600FFD4B2 /* Downloads */,
 				65F436152D9AD4610034CC36 /* DuckPlayer */,
@@ -7974,6 +8026,7 @@
 				9F254AC92CF5CA860063B308 /* SpecialErrorPage */,
 				F1BDDBFC2C340D9C00459306 /* Subscription */,
 				569437222BDD402600C0881B /* Sync */,
+				9FE59CE52E33078B00C4B65D /* SystemSettingsPiPTutorial */,
 				F13B4BF71F18C9E800814661 /* Tabs */,
 				859DB8192CE6265F001F7210 /* TextZoom */,
 				98EA2C3A218B9A880023E1DC /* Themes */,
@@ -8820,6 +8873,7 @@
 				7BC26C9F2DFC0CAC00E52480 /* VPN */,
 				9F454D232E05489200B8CC5A /* SetDefaultBrowserCore */,
 				9FB6272D2E08251D00CBDEED /* SetDefaultBrowserUI */,
+				9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -8851,6 +8905,7 @@
 				84EFBCCD2D817CB500706739 /* SnapshotTesting */,
 				BD408CEC2DCDB17900265476 /* ZIPFoundation */,
 				7BC26CB12DFC155500E52480 /* VPNTestUtils */,
+				9FE59CD92E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 84E341A61E2F7EFB00BDBA6F /* UnitTests.xctest */;
@@ -9040,6 +9095,7 @@
 				98E564952DE8DE8100E6E75F /* Subscription */,
 				986CD5412DE8FBCA00AFA98A /* PersistenceTestingUtils */,
 				7BC26CB32DFC155E00E52480 /* VPNTestUtils */,
+				9FE59CD72E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport */,
 			);
 			productName = SharedStateTests;
 			productReference = 98E5643E2DE8DDA200E6E75F /* SharedStateTests.xctest */;
@@ -9355,7 +9411,7 @@
 				984147A824F0259000362052 /* Onboarding.storyboard in Resources */,
 				984147AE24F0261A00362052 /* Feedback.storyboard in Resources */,
 				984147B724F0268D00362052 /* PrivacyDashboard.storyboard in Resources */,
-				9F0311402DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 in Resources */,
+				9FC555D12E2F4AFC00763BEC /* default-browser-tutorial.mp4 in Resources */,
 				F176699F1E40BC86003D3222 /* Settings.storyboard in Resources */,
 				854A012F2A5563A400FCC628 /* FindInPage.xib in Resources */,
 				1E8AD1DD27C653F800ABA377 /* Downloads.xcassets in Resources */,
@@ -9405,6 +9461,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F69DE842E333CAD00676C6D /* default-browser.mp4 in Resources */,
 				EA39B7E2268A1A35000C62CD /* privacy-reference-tests in Resources */,
 				1E4E6C552C775B400059C0FA /* Subscription.storekit in Resources */,
 				F17843E91F36226700390DCD /* MockFiles in Resources */,
@@ -9771,6 +9828,7 @@
 				31EEBCD92E2AAB4C00901255 /* NavigationActionBarViewController.swift in Sources */,
 				F1CA3C371F045878005FADB3 /* PrivacyStore.swift in Sources */,
 				985818A02D8C297300993B04 /* AppKeyValueFileStoreService.swift in Sources */,
+				9FE59CE42E31E5F300C4B65D /* VideoPlayerCoordinator+SystemSettingsPiPTutorial.swift in Sources */,
 				31DE43C42C2C60E800F8C51F /* DuckPlayerModalPresenter.swift in Sources */,
 				C1C18BF82D95925C00FFBA2E /* AutofillDeleteButtonCell.swift in Sources */,
 				37FCAAC029930E26000E420A /* FailedAssertionView.swift in Sources */,
@@ -9787,6 +9845,7 @@
 				3768D8472C2CC98C004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */,
 				1D200C992BA3176D00108701 /* SettingsOthersView.swift in Sources */,
 				31DD208427395A5A008FB313 /* VoiceSearchHelper.swift in Sources */,
+				9FE59CE22E31E5A500C4B65D /* SystemSettingsPiPTutorialPixelHandler.swift in Sources */,
 				9874F9EE2187AFCE00CAF33D /* Themable.swift in Sources */,
 				0283A1FC2C6E3D8100508FBD /* BrokenSitePromptView.swift in Sources */,
 				F44D279E27F331BB0037F371 /* AutofillLoginPromptViewModel.swift in Sources */,
@@ -10227,6 +10286,7 @@
 				D65625922C22D340006EF297 /* WebDuckPlayerNavigationHandler.swift in Sources */,
 				C17BA71F2D945A1600562138 /* AutofillCreditCardDetailsViewController.swift in Sources */,
 				C17BA7202D945A1600562138 /* AutofillCreditCardDetailsView.swift in Sources */,
+				9FC555D32E2F4B4100763BEC /* DefaultBrowserPiPTutorialURLProvider.swift in Sources */,
 				C17BA7212D945A1600562138 /* AutofillCreditCardDetailsViewModel.swift in Sources */,
 				9FD6E6132DFA6B4900C2B032 /* PictureInPictureEvent.swift in Sources */,
 				31951E8E2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift in Sources */,
@@ -10345,6 +10405,7 @@
 				3151F0EC27357FEE00226F58 /* VoiceSearchFeedbackViewModel.swift in Sources */,
 				6F922EE12D8C5C6B0062DFC1 /* URLSeparatorView.swift in Sources */,
 				CBD72E6E2E2528EB00DB0938 /* ClearInteractionStateTask.swift in Sources */,
+				9FB859892E2DD2C900BA68E4 /* SystemSettingsPiPTutorialService.swift in Sources */,
 				1E53508F2C7C9A1F00818DAA /* DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift in Sources */,
 				9F254AB12CF48A6B0063B308 /* SpecialErrorPageNavigationHandler+SSL.swift in Sources */,
 				1DDF402D2BA09482006850D9 /* SettingsMainSettingsView.swift in Sources */,
@@ -10536,7 +10597,6 @@
 				1DEAADFB2BA71E9A00E25A97 /* SettingsDescriptionView.swift in Sources */,
 				6F3537A02C4AAFD2009F8717 /* NewTabPageSettingsSectionItemView.swift in Sources */,
 				2DC3FC65C6D9DA634426672D /* AutofillNoAuthAvailableView.swift in Sources */,
-				9F03113D2DF7DD4200AC4DB5 /* SetAsDefaultTutorialView.swift in Sources */,
 				6F03CAFC2C32C6F6004179A8 /* NewTabPageMessagesModel.swift in Sources */,
 				31E2655F2D66392E002B5624 /* VoiceSearchFeedbackView.swift in Sources */,
 			);
@@ -10633,7 +10693,6 @@
 				5694372B2BE3F2D900C0881B /* SyncErrorHandlerTests.swift in Sources */,
 				4B27FBB52C927435007E21A7 /* PersistentPixelTests.swift in Sources */,
 				987130C7294AAB9F00AB05E0 /* MenuBookmarksViewModelTests.swift in Sources */,
-				9F1C69212D7FEA5C0072F97D /* OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift in Sources */,
 				9FFDA83D2DFA8F6F007923F7 /* MockAudioSessionManager.swift in Sources */,
 				9FE7CD672E14F03B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift in Sources */,
 				858650D32469BFAD00C36F8A /* DaxDialogTests.swift in Sources */,
@@ -10739,6 +10798,7 @@
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
 				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
+				9FE59CE72E3307AD00C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,
 				9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */,
 				8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */,
@@ -10833,6 +10893,7 @@
 				6AC98419288055C1005FA9CA /* BarsAnimatorTests.swift in Sources */,
 				8536A1CA209AF6490050739E /* HomeRowReminderTests.swift in Sources */,
 				5650E36F2D3E8E5900D41ECF /* PageRefreshMonitorExtensionTests.swift in Sources */,
+				9FE59CDD2E31AD9D00C4B65D /* DefaultBrowserPiPTutorialURLProviderTests.swift in Sources */,
 				851DFD8A212C5EE800D95F20 /* TabSwitcherAnimatedButtonTests.swift in Sources */,
 				9F06EB922D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift in Sources */,
 				98983096255B5019003339A2 /* BookmarksCachingSearchTests.swift in Sources */,
@@ -11907,6 +11968,20 @@
 				98D16974250CE707009513CC /* Base */,
 			);
 			name = PrivacyInfoContainer.xib;
+			sourceTree = "<group>";
+		};
+		9FC555CF2E2F4AFC00763BEC /* default-browser-tutorial.mp4 */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9FC555C82E2F4AFC00763BEC /* en */,
+				9FC555C92E2F4AFC00763BEC /* de */,
+				9FC555CA2E2F4AFC00763BEC /* es */,
+				9FC555CB2E2F4AFC00763BEC /* fr */,
+				9FC555CC2E2F4AFC00763BEC /* it */,
+				9FC555CD2E2F4AFC00763BEC /* nl */,
+				9FC555CE2E2F4AFC00763BEC /* pt */,
+			);
+			name = "default-browser-tutorial.mp4";
 			sourceTree = "<group>";
 		};
 		C1E4E9A42D0861AD00AA39AF /* InfoPlist.strings */ = {
@@ -14764,6 +14839,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = "DataBrokerProtection-iOS";
 		};
+		9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SystemSettingsPiPTutorial;
+		};
 		9F254AF02CF8D5250063B308 /* MaliciousSiteProtection */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MaliciousSiteProtection;
@@ -14785,6 +14864,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */;
 			productName = CombineSchedulers;
+		};
+		9FE59CD72E3097B200C4B65D /* SystemSettingsPiPTutorialTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SystemSettingsPiPTutorialTestSupport;
+		};
+		9FE59CD92E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SystemSettingsPiPTutorialTestSupport;
 		};
 		B6DFE6D52BC7E47F00A9CE59 /* SwiftLintTool */ = {
 			isa = XCSwiftPackageProductDependency;

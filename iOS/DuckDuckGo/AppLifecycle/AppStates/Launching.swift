@@ -91,11 +91,14 @@ struct Launching: LaunchingHandling {
                                                             privacyConfigurationManager: privacyConfigurationManager)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+
         // Service to display the Default Browser prompt.
         let defaultBrowserPromptService = DefaultBrowserPromptService(
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
-            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore
+            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
 
         // MARK: - Main Coordinator Setup
@@ -117,11 +120,14 @@ struct Launching: LaunchingHandling {
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter)
+                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
+                                              systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
+        )
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
 
+        systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
         let vpnService = VPNService(mainCoordinator: mainCoordinator)
         let overlayWindowManager = OverlayWindowManager(window: window,
@@ -154,7 +160,8 @@ struct Launching: LaunchingHandling {
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
-                               defaultBrowserPromptService: defaultBrowserPromptService
+                               defaultBrowserPromptService: defaultBrowserPromptService,
+                               systemSettingsPiPTutorialService: systemSettingsPiPTutorialService
         )
 
         // Register background tasks that run after app is ready

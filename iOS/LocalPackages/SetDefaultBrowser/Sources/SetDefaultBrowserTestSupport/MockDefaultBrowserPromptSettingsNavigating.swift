@@ -1,5 +1,5 @@
 //
-//  UIApplication+URLOpener.swift
+//  MockDefaultBrowserPromptSettingsNavigating.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -16,13 +16,15 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import UIKit
+
 import SetDefaultBrowserCore
 
-extension UIApplication: URLOpener {
+public final class MockDefaultBrowserPromptSettingsNavigating: DefaultBrowserPromptSettingsNavigating {
+    public private(set) var didCallNavigateToSetDefaultBrowserSettings: Bool = false
 
-    package func open(_ url: URL) {
-        self.open(url, options: [:], completionHandler: nil)
+    public init() {}
+
+    public func navigateToSetDefaultBrowserSettings() {
+        didCallNavigateToSetDefaultBrowserSettings = true
     }
-
 }

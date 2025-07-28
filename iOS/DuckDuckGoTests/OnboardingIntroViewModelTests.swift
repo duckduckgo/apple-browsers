@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import SystemSettingsPiPTutorialTestSupport
 @testable import DuckDuckGo
 
 @MainActor
@@ -26,7 +27,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
     private var contextualDaxDialogs: ContextualOnboardingLogicMock!
     private var pixelReporterMock: OnboardingPixelReporterMock!
     private var onboardingManagerMock: OnboardingManagerMock!
-    private var urlOpenerMock: MockURLOpener!
+    private var systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager!
     private var appIconProvider: (() -> AppIcon)!
     private var addressBarPositionProvider: (() -> AddressBarPosition)!
 
@@ -36,7 +37,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         contextualDaxDialogs = ContextualOnboardingLogicMock()
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()
-        urlOpenerMock = MockURLOpener()
+        systemSettingsPiPTutorialManager = MockSystemSettingsPiPTutorialManager()
         appIconProvider = { .defaultAppIcon }
         addressBarPositionProvider = { .top }
     }
@@ -46,7 +47,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         contextualDaxDialogs = nil
         pixelReporterMock = nil
         onboardingManagerMock = nil
-        urlOpenerMock = nil
+        systemSettingsPiPTutorialManager = nil
         appIconProvider = nil
         addressBarPositionProvider = nil
         super.tearDown()
@@ -78,21 +79,18 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: false), step: .hidden)))
     }
 
-    func testWhenSetDefaultBrowserActionIsCalledThenURLOpenerOpensURL() {
+    func testWhenSetDefaultBrowserActionIsCalled_ThenAskPiPManagerToPlayPipForSetDefault_AndMakeNextViewState() {
         // GIVEN
-        let urlPath = UIApplication.openSettingsURLString
-        onboardingManagerMock.settingsURLPath = urlPath
         let sut = makeSUT()
-        XCTAssertFalse(urlOpenerMock.didCallOpenURL)
-        XCTAssertNil(urlOpenerMock.capturedURL)
+        XCTAssertFalse(systemSettingsPiPTutorialManager.didCallPlayPiPTutorialAndNavigateToDestination)
+        XCTAssertNil(systemSettingsPiPTutorialManager.capturedDestination)
 
         // WHEN
         sut.setDefaultBrowserAction()
 
         // THEN
-        XCTAssertTrue(onboardingManagerMock.didCallSettingsURLPath)
-        XCTAssertTrue(urlOpenerMock.didCallOpenURL)
-        XCTAssertEqual(urlOpenerMock.capturedURL?.absoluteString, urlPath)
+        XCTAssertTrue(systemSettingsPiPTutorialManager.didCallPlayPiPTutorialAndNavigateToDestination)
+        XCTAssertEqual(systemSettingsPiPTutorialManager.capturedDestination, .defaultBrowser)
     }
 
     // MARK: iPhone Flow
@@ -581,217 +579,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
     }
 
-    // MARK: - Set As Default Experiment
-
-    func testWhenAppIconPickerContinueActionIsCalledAndSetAsDefaultBrowserEnabledThenCheckIfBrowserIsDefault() {
-        // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
-        let sut = makeSUT()
-        XCTAssertFalse(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-
-        // WHEN
-        sut.appIconPickerContinueAction()
-
-        // THEN
-        XCTAssertTrue(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-    }
-
-    func testWhenAppIconPickerContinueActionIsCalledAndSetAsDefaultBrowserDisabledThenDoNotCheckIfBrowserIsDefault() {
-        // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = false
-        let sut = makeSUT()
-        XCTAssertFalse(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-
-        // WHEN
-        sut.appIconPickerContinueAction()
-
-        // THEN
-        XCTAssertFalse(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
-    }
-
-    func testWhenDefaultBrowserInfoIsSuccessfulResult_AndIsDefaultBrowserIsTrue_ThenFireDidSetDefaultBrowserPixel() {
-        // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
-        defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
-        let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-
-        // WHEN
-        sut.appIconPickerContinueAction()
-
-        // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-    }
-
-    func testWhenDefaultBrowserInfoIsSuccessfulResult_AndIsDefaultBrowserIsFalse_ThenFireDidNotSetDefaultBrowserPixel() {
-        // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
-        defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
-        let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-
-        // WHEN
-        sut.appIconPickerContinueAction()
-
-        // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertTrue(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-    }
-
-    func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsRateLimited_ThenDoNotFireSetDefaultBrowserPixels() {
-        // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
-        defaultBrowserManagerMock.resultToReturn = .failed(reason: .rateLimitReached(updatedStoredInfo: nil))
-        let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-
-        // WHEN
-        sut.appIconPickerContinueAction()
-
-        // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-    }
-
-    func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsUnkownError_ThenDoNotFireSetDefaultBrowserPixels() {
-        // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
-        defaultBrowserManagerMock.resultToReturn = .failed(reason: .unknownError(NSError(domain: #function, code: 0)))
-        let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-
-        // WHEN
-        sut.appIconPickerContinueAction()
-
-        // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-    }
-
-    func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsNotSupportedOnCurrentOSVersion_ThenDoNotFireSetDefaultBrowserPixels() {
-        // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
-        defaultBrowserManagerMock.resultToReturn = .failed(reason: .notSupportedOnCurrentOSVersion)
-        let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-
-        // WHEN
-        sut.appIconPickerContinueAction()
-
-        // THEN
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
-    }
-
-    // MARK: - Set As Default Browser PiP Experiment
-
-    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_AndUserIsNotEnrolledInExperiment_ThenDoNotShowVideoTutorial() {
-        // GIVEN
-        onboardingManagerMock.cohortToReturn = nil
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let sut = makeSUT()
-
-        // WHEN
-        let result = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
-
-        // THEN
-        XCTAssertFalse(result)
-    }
-
-    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_AndUserIsInControlGroup_ThenDoNotShowVideoTutorial() {
-        // GIVEN
-        onboardingManagerMock.cohortToReturn = .control
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let sut = makeSUT()
-
-        // WHEN
-        let result = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
-
-        // THEN
-        XCTAssertFalse(result)
-    }
-
-    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_AndUserIsInTreatmentGroup_ThenShowVideoTutorial() {
-        // GIVEN
-        onboardingManagerMock.cohortToReturn = .treatment
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let sut = makeSUT()
-
-        // WHEN
-        let result = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
-
-        // THEN
-        XCTAssertTrue(result)
-    }
-
-    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_ThenPixelReporterTrackChooseBrowserCTAAction() {
-        // GIVEN
-        let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
-
-        // WHEN
-        _ = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
-
-        // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
-    }
-
-    func testWhenSetDefaultBrowserActionIsCalled_AndUserIsInControlGroup_ThenMakeNextViewState() {
-        // GIVEN
-        onboardingManagerMock.cohortToReturn = .control
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
-
-        // WHEN
-        sut.setDefaultBrowserAction()
-
-        // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
-    }
-
-    func testWhenSetDefaultBrowserActionIsCalled_AndUserNotEnrolledInPiPExperiment_ThenMakeNextViewState() {
-        // GIVEN
-        onboardingManagerMock.cohortToReturn = nil
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
-
-        // WHEN
-        sut.setDefaultBrowserAction()
-
-        // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
-    }
-
-    func testWhenSetDefaultBrowserActionIsCalled_AndUserIsInTreatmentGroup_ThenDoNotMakeNextViewState() {
-        // GIVEN
-        onboardingManagerMock.cohortToReturn = .treatment
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
-
-        // WHEN
-        sut.setDefaultBrowserAction()
-
-        // THEN
-        XCTAssertNotEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
-    }
-
-    func testWhenCompletedSetDefaultBrowserActionIsCalled_ThenMakeNextViewState() {
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let sut = makeSUT(currentOnboardingStep: .browserComparison)
-
-        // WHEN
-        sut.completedSetDefaultBrowserAction()
-
-        // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
-    }
-
 }
 
 extension OnboardingIntroViewModelTests {
@@ -802,7 +589,7 @@ extension OnboardingIntroViewModelTests {
             contextualDaxDialogs: contextualDaxDialogs,
             pixelReporter: pixelReporterMock,
             onboardingManager: onboardingManagerMock,
-            urlOpener: urlOpenerMock,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             currentOnboardingStep: currentOnboardingStep,
             appIconProvider: appIconProvider,
             addressBarPositionProvider: addressBarPositionProvider

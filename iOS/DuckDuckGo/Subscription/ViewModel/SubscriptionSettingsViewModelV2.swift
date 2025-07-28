@@ -70,11 +70,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     public let usesUnifiedFeedbackForm: Bool
 
-    @Published var showRebrandingMessage: Bool = false {
-        didSet {
-            keyValueStorage.set(showRebrandingMessage, forKey: "SubscriptionSettingsV2BannerDismissed")
-        }
-    }
+    @Published var showRebrandingMessage: Bool = false
 
     private let keyValueStorage: KeyValueStoring
 
@@ -88,9 +84,9 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
         setupNotificationObservers()
-        let notDismissed = keyValueStorage.object(forKey: "SubscriptionSettingsV2BannerDismissed") as? Bool ?? true
+        let rebrandingMessageDismissed = keyValueStorage.object(forKey: "SubscriptionSettingsV2BannerDismissed") as? Bool ?? false
         let isRebrandingOn = featureFlagger.isFeatureOn(.subscriptionRebranding)
-        self.showRebrandingMessage = notDismissed && isRebrandingOn
+        self.showRebrandingMessage = !rebrandingMessageDismissed && isRebrandingOn
         setupNotificationObservers()
     }
 
@@ -338,6 +334,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     }
 
     func dismissRebrandingMessage() {
+        keyValueStorage.set(true, forKey: "SubscriptionSettingsV2BannerDismissed")
         showRebrandingMessage = false
     }
 

@@ -363,7 +363,7 @@ private class CircularButton: UIButton {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         assert(Constants.hitSize >= frame.height)
         let offset = (frame.height - Constants.hitSize) / 2
-        let rect = CGRect(x: -offset, y: -offset, width: Constants.hitSize, height: Constants.hitSize)
+        let rect = CGRect(x: offset, y: offset, width: Constants.hitSize, height: Constants.hitSize)
         guard rect.contains(point) else { return nil }
         return self
     }

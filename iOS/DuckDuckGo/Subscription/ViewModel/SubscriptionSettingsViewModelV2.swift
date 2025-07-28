@@ -73,6 +73,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     @Published var showRebrandingMessage: Bool = false
 
     private let keyValueStorage: KeyValueStoring
+    private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
 
     init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
@@ -83,7 +84,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
-        let rebrandingMessageDismissed = keyValueStorage.object(forKey: "SubscriptionSettingsV2BannerDismissed") as? Bool ?? false
+        let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
         let isRebrandingOn = featureFlagger.isFeatureOn(.subscriptionRebranding)
         self.showRebrandingMessage = !rebrandingMessageDismissed && isRebrandingOn
         setupNotificationObservers()
@@ -333,7 +334,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     }
 
     func dismissRebrandingMessage() {
-        keyValueStorage.set(true, forKey: "SubscriptionSettingsV2BannerDismissed")
+        keyValueStorage.set(true, forKey: bannerDismissedKey)
         showRebrandingMessage = false
     }
 

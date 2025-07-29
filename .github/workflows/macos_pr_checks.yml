@@ -203,7 +203,6 @@ jobs:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
           ${{ runner.os }}-macos-${{ matrix.cache-key }}
 
     - name: Select Xcode

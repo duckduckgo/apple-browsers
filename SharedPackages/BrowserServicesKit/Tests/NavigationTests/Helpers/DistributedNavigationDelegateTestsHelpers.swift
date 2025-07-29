@@ -137,6 +137,8 @@ extension DistributedNavigationDelegateTestsBase {
         let local2 = URL(string: "http://localhost:8084/2")!
         let local3 = URL(string: "http://localhost:8084/3")!
         let local4 = URL(string: "http://localhost:8084/4")!
+        let local5 = URL(string: "http://localhost:8084/5")!
+        let local6 = URL(string: "http://localhost:8084/6")!
 
         let localHashed = URL(string: "http://localhost:8084#")!
         let localHashed1 = URL(string: "http://localhost:8084#navlink")!

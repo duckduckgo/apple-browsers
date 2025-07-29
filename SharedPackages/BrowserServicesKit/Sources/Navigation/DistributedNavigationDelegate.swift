@@ -990,34 +990,20 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     @MainActor
     private func excludeUnwantedBackForwardListItemsIfNeeded(for navigation: Navigation, in webView: WKWebView) {
 #if _SESSION_STATE_WITH_FILTER_ENABLED
+        guard !(navigation.redirectHistory.first ?? navigation.navigationAction).navigationType.isBackForward else { return }
+
         // when developer redirect breaks client redirect in decidePolicyForNavigationAction
         // the page initiated client-redirect lands in back history
         // https://app.asana.com/1/137249556945/project/1177771139624306/task/1201280322539473?focus=true
-        let originalHistoryItemIdentity = navigation.redirectHistory.first?.fromHistoryItemIdentity
-        // 1. find if the navigation redirect history contains client-redirect
-        if let clientRedirectNavActionIdx = navigation.redirectHistory.firstIndex(where: { $0.navigationType.redirect?.isClient == true }),
-           // 2. …followed by a developer redirect
-           navigation.redirectHistory.indices.contains(clientRedirectNavActionIdx + 1),
-           navigation.redirectHistory[(clientRedirectNavActionIdx + 1)...].contains(where: { $0.navigationType.redirect == .developer }) {
+        let originalHistoryItemIdentity = (navigation.redirectHistory.first ?? navigation.navigationAction)?.fromHistoryItemIdentity
+        lazy var backList = webView.backForwardList.backList
+        // if extra back list item created during the navigation transaction - remove the extra item
+        if navigation.navigationAction.fromHistoryItemIdentity != originalHistoryItemIdentity,
+           !backList.isEmpty,
+           navigation.navigationAction.fromHistoryItemIdentity?.url == backList.last?.url {
 
-            // 3. collect all the unwanted back history items created during the navigation
-            let firstBackListItemIdxToRemove: Int? = if let originalHistoryItemIdentity {
-                webView.backForwardList.backList.lastIndex(where: { $0.identity == originalHistoryItemIdentity }).map { $0 + 1 }
-            } else if !webView.backForwardList.backList.isEmpty {
-                0
-            } else {
-                nil
-            }
-
-            // 4. get session state with back-forward items excluding the unwanted items
-            let itemsToRemove = firstBackListItemIdxToRemove.map {
-                Array(webView.backForwardList.backList[$0...])
-            } ?? {
-                webView.backForwardList.backList // if navigation started from empty state - drop all
-            }()
-
-            // 5. reload webView history without navigation excluding the filtered-out item
-            if let sessionState = webView.sessionState(withFilter: { !itemsToRemove.contains($0) }) {
+            // reload webView history without navigation excluding the filtered-out item
+            if let sessionState = webView.sessionState(withFilter: { $0.identity != navigation.navigationAction.fromHistoryItemIdentity }) {
                 webView.restoreSessionState(from: sessionState, andNavigate: false)
             }
         }

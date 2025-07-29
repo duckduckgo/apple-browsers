@@ -34,6 +34,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     // MARK: - Menus
 
     private let environmentMenu = NSMenu()
+    private let upsellMenu = NSMenu()
 
     private let preferredServerMenu: NSMenu
     private let preferredServerAutomaticItem = NSMenuItem(title: "Automatic", action: #selector(NetworkProtectionDebugMenu.setSelectedServer))
@@ -165,6 +166,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Simulate Failure")
                 .submenu(NetworkProtectionSimulateFailureMenu())
 
+            NSMenuItem(title: "Upsell")
+                .submenu(upsellMenu)
+
             NSMenuItem.separator()
 
             NSMenuItem(title: "Open App Container in Finder", action: #selector(NetworkProtectionDebugMenu.openAppContainerInFinder))
@@ -173,6 +177,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
         preferredServerMenu.autoenablesItems = false
         populateNetworkProtectionEnvironmentListMenuItems()
+        populateNetworkProtectionUpsellMenuItems()
         Task {
             try? await populateNetworkProtectionServerListMenuItems()
         }
@@ -187,6 +192,12 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     private var settings: VPNSettings {
         Application.appDelegate.vpnSettings
+    }
+
+    // MARK: - Upsell Visibility
+
+    private var upsellVisibilityManager: VPNUpsellVisibilityManager {
+        Application.appDelegate.vpnUpsellVisibilityManager
     }
 
     // MARK: - Debug Logic
@@ -379,6 +390,16 @@ final class NetworkProtectionDebugMenu: NSMenu {
         ]
     }
 
+    private func populateNetworkProtectionUpsellMenuItems() {
+        let toggleTitle = upsellVisibilityManager.state == .visible ? "Hide Upsell Button" : "Show Upsell Button"
+        upsellMenu.items = [
+            NSMenuItem(title: "⚠️ Please restart the browser after resetting upsell state", action: nil, target: nil),
+            NSMenuItem.separator(),
+            NSMenuItem(title: "Reset Upsell State", action: #selector(resetUpsellState), target: self, keyEquivalent: ""),
+            NSMenuItem(title: toggleTitle, action: #selector(toggleUpsellVisibility), target: self, keyEquivalent: ""),
+        ]
+    }
+
     @MainActor
     private func populateNetworkProtectionServerListMenuItems() async throws {
         let servers = try await networkProtectionDeviceManager.refreshServerList()
@@ -454,6 +475,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         updatePreferredServerMenu()
         updateRekeyValidityMenu()
         updateNetworkProtectionMenuItemsState()
+        updateUpsellMenuToggleTitle()
     }
 
     private func updateEnvironmentMenu() {
@@ -513,6 +535,27 @@ final class NetworkProtectionDebugMenu: NSMenu {
         shouldIncludeAllNetworksMenuItem.state = settings.includeAllNetworks ? .on : .off
         excludeLocalNetworksMenuItem.state = settings.excludeLocalNetworks ? .on : .off
         disableRekeyingMenuItem.state = settings.disableRekeying ? .on : .off
+    }
+
+    private func updateUpsellMenuToggleTitle() {
+        let toggleTitle = upsellVisibilityManager.state == .visible ? "Hide Upsell Button" : "Show Upsell Button"
+        upsellMenu.items[3].title = toggleTitle
+    }
+
+    // MARK: - Upsell
+
+    @objc func toggleUpsellVisibility(_ sender: Any?) {
+        if upsellVisibilityManager.state == .visible {
+            upsellVisibilityManager.makeNotEligible()
+        } else {
+            upsellVisibilityManager.makeVisible()
+        }
+
+        updateUpsellMenuToggleTitle()
+    }
+
+    @objc func resetUpsellState(_ sender: Any?) {
+
     }
 
     // MARK: - Exclusions

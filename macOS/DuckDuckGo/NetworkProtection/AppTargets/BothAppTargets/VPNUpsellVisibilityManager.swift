@@ -218,3 +218,16 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         timer?.invalidate()
     }
 }
+
+// MARK: - Debug Menu
+/// These methods are triggered from the VPN Debug Menu (Debug > VPN > Upsell)
+/// They explicitly set the state, bypassing all eligibility checks.
+extension VPNUpsellVisibilityManager {
+    func makeVisible() {
+        state = .visible
+    }
+
+    func makeNotEligible() {
+        state = .notEligible
+    }
+}

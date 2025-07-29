@@ -27,10 +27,12 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
     @Published var sortColumn: String?
     @Published var sortAscending: Bool = true
     @Published var columnWidths: [String: CGFloat] = [:]
+    @Published var searchText: String = ""
 
     // Table-specific state storage
     private var tableSortState: [String: (column: String?, ascending: Bool)] = [:]
     private var tableColumnWidths: [String: [String: CGFloat]] = [:]
+    private var tableSearchText: [String: String] = [:]
     private let dataManager: DataBrokerProtectionDataManager?
 
     internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, localBrokerService: LocalBrokerJSONServiceProvider) {
@@ -104,15 +106,32 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
  }
 
     func sortedRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
+        let filteredRows = filteredRows(for: table)
+
         guard let sortState = tableSortState[table.name],
               let sortColumn = sortState.column else {
-            return table.rows
+            return filteredRows
         }
 
-        return table.rows.sorted { row1, row2 in
+        return filteredRows.sorted { row1, row2 in
             let val1 = row1.data[sortColumn]?.description.lowercased() ?? ""
             let val2 = row2.data[sortColumn]?.description.lowercased() ?? ""
             return sortState.ascending ? val1 < val2 : val1 > val2
+        }
+    }
+
+    func filteredRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
+        let searchText = tableSearchText[table.name] ?? ""
+
+        guard !searchText.isEmpty else {
+            return table.rows
+        }
+
+        let lowercasedSearch = searchText.lowercased()
+        return table.rows.filter { row in
+            return row.data.values.contains { value in
+                value.description.lowercased().contains(lowercasedSearch)
+            }
         }
     }
 
@@ -191,6 +210,15 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
         } else {
             columnWidths = [:]
         }
+
+        // Update search text
+        searchText = tableSearchText[tableName] ?? ""
+    }
+
+    func setSearchText(_ searchText: String, for table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        tableSearchText[tableName] = searchText
+        self.searchText = searchText
     }
 
     private func convertToGenericRowData<T>(_ item: T) -> DataBrokerDatabaseBrowserData.Row {

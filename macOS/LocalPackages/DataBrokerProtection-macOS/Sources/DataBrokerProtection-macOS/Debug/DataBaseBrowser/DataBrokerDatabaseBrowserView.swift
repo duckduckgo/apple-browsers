@@ -44,6 +44,33 @@ struct DataBrokerDatabaseBrowserView: View {
             }
         }
         .frame(minWidth: 1300, minHeight: 800)
+        .onReceive(NotificationCenter.default.publisher(for: .init("CommandF"))) { _ in }
+        .background(CommandFResponder())
+    }
+}
+
+struct CommandFResponder: NSViewRepresentable {
+    func makeNSView(context: Context) -> CommandFView {
+        return CommandFView()
+    }
+
+    func updateNSView(_ nsView: CommandFView, context: Context) {}
+}
+
+final class CommandFView: NSView {
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "f" {
+            NotificationCenter.default.post(name: NSNotification.Name("CommandF"), object: nil)
+            return
+        }
+        super.keyDown(with: event)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.makeFirstResponder(self)
     }
 }
 
@@ -51,9 +78,17 @@ struct DatabaseTableContainer: View {
     let table: DataBrokerDatabaseBrowserData.Table
     @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
     @State private var selectedData: String = ""
-
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            // Search bar
+            SearchBarView(searchText: Binding(
+                get: { viewModel.searchText },
+                set: { viewModel.setSearchText($0, for: table) }
+            ))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(Color(NSColor.controlBackgroundColor))
+
             DatabaseTableView(table: table, viewModel: viewModel, selectedData: $selectedData)
 
             if !selectedData.isEmpty {
@@ -77,6 +112,61 @@ struct DatabaseTableContainer: View {
         .onAppear {
             viewModel.initializeColumnWidths(for: table)
             viewModel.updatePublishedState(for: table)
+        }
+    }
+}
+
+struct SearchBarView: NSViewRepresentable {
+    @Binding var searchText: String
+
+    func makeNSView(context: Context) -> NSSearchField {
+        let searchField = NSSearchField()
+        searchField.placeholderString = "Search table..."
+        searchField.target = context.coordinator
+        searchField.action = #selector(Coordinator.searchChanged)
+
+        context.coordinator.searchField = searchField
+
+        // Register for Command+F notification
+        NotificationCenter.default.addObserver(
+            context.coordinator,
+            selector: #selector(Coordinator.handleCommandF),
+            name: NSNotification.Name("CommandF"),
+            object: nil
+        )
+
+        return searchField
+    }
+
+    func updateNSView(_ nsView: NSSearchField, context: Context) {
+        if nsView.stringValue != searchText {
+            nsView.stringValue = searchText
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    final class Coordinator: NSObject {
+        let parent: SearchBarView
+        weak var searchField: NSSearchField?
+
+        init(_ parent: SearchBarView) {
+            self.parent = parent
+        }
+
+        @objc func searchChanged() {
+            guard let searchField = searchField else { return }
+            parent.searchText = searchField.stringValue
+        }
+
+        @objc func handleCommandF() {
+            searchField?.becomeFirstResponder()
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
         }
     }
 }

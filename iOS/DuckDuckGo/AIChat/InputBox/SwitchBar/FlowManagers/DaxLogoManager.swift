@@ -140,7 +140,7 @@ private final class DaxLogoView: UIView {
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: topAnchor, constant: -Metrics.paddingDiff),
+            stackView.topAnchor.constraint(equalTo: topAnchor, constant: isAIDax ? -Metrics.paddingDiff/2 : 0),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: maxSize),

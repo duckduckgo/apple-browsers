@@ -555,7 +555,26 @@ final class NetworkProtectionDebugMenu: NSMenu {
     }
 
     @objc func resetUpsellState(_ sender: Any?) {
+        upsellVisibilityManager.makeNotEligible()
 
+        // Clear all statistics to simulate first launch
+        Application.appDelegate.resetInstallStatistics()
+
+        // Set install date to today to simulate new user
+        Application.appDelegate.changeInstallDateToToday(nil)
+
+        // Reset onboarding states using existing AppDelegate methods
+        Application.appDelegate.resetOnboarding(nil)
+        Application.appDelegate.resetContextualOnboarding(nil)
+        Application.appDelegate.resetHomePageSettingsOnboarding(nil)
+
+        // Clear VPN upsell state
+        var upsellPersistor = VPNUpsellUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+        upsellPersistor.vpnUpsellDismissed = false
+        upsellPersistor.vpnUpsellFirstPinnedDate = nil
+
+        // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
+        upsellPersistor.expectedUpsellTimeInterval = 10
     }
 
     // MARK: - Exclusions

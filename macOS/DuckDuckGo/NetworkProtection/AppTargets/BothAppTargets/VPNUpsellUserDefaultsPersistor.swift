@@ -22,6 +22,7 @@ import Persistence
 protocol VPNUpsellUserDefaultsPersisting {
     var vpnUpsellDismissed: Bool { get set }
     var vpnUpsellFirstPinnedDate: Date? { get set }
+    var expectedUpsellTimeInterval: TimeInterval { get set }
 }
 
 struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
@@ -29,6 +30,7 @@ struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
     enum Key: String {
         case vpnUpsellDismissed = "vpn.upsell.dismissed"
         case vpnUpsellFirstPinnedDate = "vpn.upsell.first-pinned-date"
+        case expectedUpsellTimeInterval = "vpn.upsell.expected.time.interval"
     }
 
     private let keyValueStore: KeyValueStoring
@@ -51,5 +53,10 @@ struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
                 keyValueStore.removeObject(forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
             }
         }
+    }
+
+    var expectedUpsellTimeInterval: TimeInterval {
+        get { keyValueStore.object(forKey: Key.expectedUpsellTimeInterval.rawValue) as? TimeInterval ?? 10 * 60 }
+        set { keyValueStore.set(newValue, forKey: Key.expectedUpsellTimeInterval.rawValue) }
     }
 }

@@ -643,17 +643,12 @@ class TabViewController: UIViewController {
     }
 
     private func fireWebViewDebugPixels() {
-        if !webView.isDescendant(of: view) {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotInVisibleTabHierarchy)
-        }
-        if webView.window == nil {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
-        }
         if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
-        }
-        if webView.frame == .zero {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewHasZeroFrameSize)
+            
+            // Fix inconsistent state - if webView is hidden but no error shown, show webView
+            // https://app.asana.com/1/137249556945/project/414709148257752/task/1210155968610460?focus=true
+            hideErrorMessage()
         }
     }
 
@@ -1051,6 +1046,11 @@ class TabViewController: UIViewController {
     }
     
     private func showError(message: String) {
+        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            // Prevent inconsistent state where webView is hidden but no error shown
+            // https://app.asana.com/1/137249556945/project/414709148257752/task/1210155968610460?focus=true
+            return
+        }
         webView.isHidden = true
         error.isHidden = false
         errorMessage.text = message

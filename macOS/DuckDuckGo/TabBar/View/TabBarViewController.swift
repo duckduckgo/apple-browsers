@@ -28,7 +28,7 @@ import RemoteMessaging
 final class TabBarViewController: NSViewController, TabBarRemoteMessagePresenting {
 
     enum HorizontalSpace: CGFloat {
-        case pinnedTabsScrollViewPadding = 76
+        case pinnedTabsScrollViewPadding = 84
     }
 
     private let standardTabHeight: CGFloat

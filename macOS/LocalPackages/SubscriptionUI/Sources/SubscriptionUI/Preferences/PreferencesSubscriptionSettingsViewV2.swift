@@ -26,7 +26,6 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
 
     @ObservedObject var model: PreferencesSubscriptionSettingsModelV2
     @State private var showingRemoveConfirmationDialog = false
-    // Remove: @State private var showRebrandingMessage = true
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
     private var isSubscriptionRebrandingOn: () -> Bool

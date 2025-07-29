@@ -34,7 +34,12 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
-    @Published public var showRebrandingMessage: Bool = false
+    private var isRebrandingOn: () -> Bool
+    @Published private(set) var rebrandingMessageDismissed: Bool = false
+
+    public var showRebrandingMessage: Bool {
+        return isRebrandingOn() && !rebrandingMessageDismissed
+    }
 
     private var subscriptionPlatform: PrivacyProSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
@@ -67,12 +72,12 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
                 subscriptionManager: SubscriptionManagerV2,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
                 keyValueStore: ThrowingKeyValueStoring,
-                isRebrandingOn: Bool) {
+                isRebrandingOn: @escaping () -> Bool) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
-        let rebrandingMessageDismissed = try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool ?? false
-        self.showRebrandingMessage = isRebrandingOn && !(rebrandingMessageDismissed ?? true)
+        self.isRebrandingOn = isRebrandingOn
+        self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
 
         Task {
             await self.updateSubscription(cachePolicy: .cacheFirst)
@@ -338,7 +343,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     }()
 
     public func dismissRebrandingMessage() {
-        showRebrandingMessage = false
+        rebrandingMessageDismissed = true
         try? keyValueStore.set(true, forKey: rebrandingDismissedKey)
     }
 }

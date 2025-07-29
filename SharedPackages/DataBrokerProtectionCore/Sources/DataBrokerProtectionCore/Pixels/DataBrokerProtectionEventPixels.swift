@@ -51,6 +51,12 @@ public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtec
 
 public final class DataBrokerProtectionEventPixels {
 
+    enum Consts {
+        static let orphanedSessionThreshold: TimeInterval = .hours(1)
+        static let minimumValidDurationMs: Double = 0
+        static let maximumValidDurationMs: Double = TimeInterval.day * 1000.0
+    }
+
     private let database: DataBrokerProtectionRepository
     private let repository: DataBrokerProtectionEventPixelsRepository
     private let handler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -167,12 +173,12 @@ public final class DataBrokerProtectionEventPixels {
                     }
 
                     // Exclude invalid durations (negative) & outliers (session lasting more than a day)
-                    if let durationMs = endEvent.metadata?.duration, durationMs > 0, durationMs < .day * 1000.0 {
+                    if let durationMs = endEvent.metadata?.duration, durationMs > Consts.minimumValidDurationMs, durationMs < Consts.maximumValidDurationMs {
                         durations.append(durationMs)
                     }
                 } else if let startEvent = sessionEvents[.started],
-                          Date().timeIntervalSince(startEvent.timestamp) > .hours(1) {
-                    // Consider orphaned if the session started more than a hour ago
+                          Date().timeIntervalSince(startEvent.timestamp) > Consts.orphanedSessionThreshold {
+                    // Consider orphaned if the session started more than the threshold
                     orphanedCount += 1
                 }
             }

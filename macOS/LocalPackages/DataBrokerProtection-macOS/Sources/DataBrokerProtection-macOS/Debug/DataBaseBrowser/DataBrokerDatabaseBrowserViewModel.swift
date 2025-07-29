@@ -24,6 +24,8 @@ import PixelKit
 final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
     @Published var selectedTable: DataBrokerDatabaseBrowserData.Table?
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
+    @Published var sortColumn: String?
+    @Published var sortAscending: Bool = true
     private let dataManager: DataBrokerProtectionDataManager?
 
     internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, localBrokerService: LocalBrokerJSONServiceProvider) {
@@ -95,6 +97,25 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             }
         }
  }
+
+    func sortedRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
+        guard let sortColumn = sortColumn else { return table.rows }
+
+        return table.rows.sorted { row1, row2 in
+            let val1 = row1.data[sortColumn]?.description.lowercased() ?? ""
+            let val2 = row2.data[sortColumn]?.description.lowercased() ?? ""
+            return sortAscending ? val1 < val2 : val1 > val2
+        }
+    }
+
+    func toggleSort(for column: String) {
+        if sortColumn == column {
+            sortAscending.toggle()
+        } else {
+            sortColumn = column
+            sortAscending = true
+        }
+    }
 
     private func convertToGenericRowData<T>(_ item: T) -> DataBrokerDatabaseBrowserData.Row {
         let mirror = Mirror(reflecting: item)

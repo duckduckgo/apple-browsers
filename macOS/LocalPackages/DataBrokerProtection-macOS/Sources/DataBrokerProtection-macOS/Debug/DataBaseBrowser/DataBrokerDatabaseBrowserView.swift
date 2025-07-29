@@ -26,7 +26,7 @@ struct DataBrokerDatabaseBrowserView: View {
         NavigationView {
             List {
                 ForEach(viewModel.tables) { table in
-                    NavigationLink(destination: DatabaseView(data: table.rows).navigationTitle(table.name),
+                    NavigationLink(destination: DatabaseView(data: table.rows, table: table, viewModel: viewModel).navigationTitle(table.name),
                                    tag: table,
                                    selection: $viewModel.selectedTable) {
                         Text(table.name)
@@ -36,7 +36,7 @@ struct DataBrokerDatabaseBrowserView: View {
             .listStyle(.sidebar)
 
             if let table = viewModel.selectedTable {
-                DatabaseView(data: table.rows)
+                DatabaseView(data: table.rows, table: table, viewModel: viewModel)
                     .navigationTitle(table.name)
             } else {
                 Text("No selection")
@@ -50,10 +50,13 @@ struct DatabaseView: View {
     @State private var isPopoverVisible = false
     @State private var selectedData: String = ""
     let data: [DataBrokerDatabaseBrowserData.Row]
+    let table: DataBrokerDatabaseBrowserData.Table
+    @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
     let rowHeight: CGFloat = 40.0
 
     var body: some View {
-        if data.count > 0 {
+        let sortedData = viewModel.sortedRows(for: table)
+        if sortedData.count > 0 {
             VStack {
                 dataView()
                 TextEditor(text: $selectedData)
@@ -65,30 +68,43 @@ struct DatabaseView: View {
     }
 
     private func spacerHeight(_ geometry: GeometryProxy) -> CGFloat {
-        let result = geometry.size.height - CGFloat(data.count) * rowHeight
+        let sortedData = viewModel.sortedRows(for: table)
+        let result = geometry.size.height - CGFloat(sortedData.count) * rowHeight
         return max(0, result)
     }
 
     private func dataView() -> some View {
-        GeometryReader { geometry in
+        let sortedData = viewModel.sortedRows(for: table)
+        return GeometryReader { geometry in
             ScrollView([.horizontal, .vertical]) {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 0) {
-                        ForEach(data[0].data.keys.sorted(), id: \.self) { key in
+                        ForEach(sortedData[0].data.keys.sorted(), id: \.self) { key in
                             VStack {
-                                Text(key)
-                                    .font(.headline)
-                                    .frame(maxWidth: 200)
-                                    .frame(height: 35)
+                                Button(action: {
+                                    viewModel.toggleSort(for: key)
+                                }) {
+                                    HStack {
+                                        Text(key)
+                                            .font(.headline)
+                                        if viewModel.sortColumn == key {
+                                            Text(viewModel.sortAscending ? "▲" : "▼")
+                                                .font(.caption)
+                                        }
+                                    }
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .frame(maxWidth: 200)
+                                .frame(height: 35)
                                 Divider()
                             }
-                            if key != data[0].data.keys.sorted().last {
+                            if key != sortedData[0].data.keys.sorted().last {
                                 Divider()
                                     .background(Color.gray)
                             }
                         }
                     }
-                    ForEach(data) { row in
+                    ForEach(viewModel.sortedRows(for: table)) { row in
                         HStack(alignment: .top, spacing: 0) {
                             ForEach(row.data.keys.sorted(), id: \.self) { key in
                                 VStack {

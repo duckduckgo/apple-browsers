@@ -133,6 +133,7 @@ jobs:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
         restore-keys: |
+          ${{ runner.os }}-ios-${{ env.cache_key_hash }}
           ${{ runner.os }}-ios-
 
     - name: Select Xcode
@@ -262,6 +263,7 @@ jobs:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-release-${{ env.cache_key_hash }}
         restore-keys: |
+          ${{ runner.os }}-ios-release-${{ env.cache_key_hash }}
           ${{ runner.os }}-ios-release-
 
     - name: Select Xcode

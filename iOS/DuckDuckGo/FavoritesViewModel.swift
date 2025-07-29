@@ -136,7 +136,7 @@ class FavoritesViewModel: ObservableObject {
         onFaviconMissing()
     }
 
-    var onFavoriteURLSelected: ((URL) -> Void)?
+    var onFavoriteURLSelected: ((BookmarkEntity) -> Void)?
     func favoriteSelected(_ favorite: Favorite) {
         guard let url = favorite.urlObject else { return }
 
@@ -146,7 +146,11 @@ class FavoritesViewModel: ObservableObject {
             faviconsCache.populateFavicon(for: host, intoCache: .fireproof, fromCache: .tabs)
         }
 
-        onFavoriteURLSelected?(url)
+        guard let entity = favoriteDataSource.bookmarkEntity(for: favorite) else {
+            return
+        }
+
+        onFavoriteURLSelected?(entity)
     }
 
     var onFavoriteDeleted: ((BookmarkEntity) -> Void)?

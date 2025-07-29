@@ -331,13 +331,25 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+
+        let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
+                                                                                         homePageMessagesConfiguration: homePageConfiguration,
+                                                                                         privacyProDataReporting: privacyProDataReporter,
+                                                                                         variantManager: variantManager,
+                                                                                         newTabDialogFactory: newTabDaxDialogFactory,
+                                                                                         newTabDaxDialogProvider: DaxDialogs.shared,
+                                                                                         faviconLoader: faviconLoader,
+                                                                                         messageNavigationDelegate: self,
+                                                                                         appSettings: appSettings)
+
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
                                                                     historyManager: historyManager,
                                                                     tabsModel: tabManager.model,
                                                                     featureFlagger: featureFlagger,
-                                                                    appSettings: appSettings)
-
+                                                                    appSettings: appSettings,
+                                                                    newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -2697,7 +2709,9 @@ extension MainViewController {
 }
 
 extension MainViewController: NewTabPageControllerDelegate {
-    func newTabPageDidOpenFavoriteURL(_ controller: NewTabPageViewController, url: URL) {
+
+    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
         handleRequestedURL(url)
     }
 

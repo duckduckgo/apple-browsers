@@ -175,10 +175,10 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
             delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(self)
         }
 
-        favoritesModel.onFavoriteURLSelected = { [weak self] url in
+        favoritesModel.onFavoriteURLSelected = { [weak self] favorite in
             guard let self else { return }
 
-            delegate?.newTabPageDidOpenFavoriteURL(self, url: url)
+            delegate?.newTabPageDidSelectFavorite(self, favorite: favorite)
         }
 
         favoritesModel.onFavoriteEdit = { [weak self] favorite in

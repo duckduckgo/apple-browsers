@@ -39,7 +39,8 @@ class SuggestionTrayViewController: UIViewController {
 
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var favoritesOverlayDelegate: FavoritesOverlayDelegate?
-    
+    weak var newTabPageControllerDelegate: NewTabPageControllerDelegate?
+
     var dismissHandler: (() -> Void)?
 
     var isShowingAutocompleteSuggestions: Bool {
@@ -62,6 +63,7 @@ class SuggestionTrayViewController: UIViewController {
 
     private var autocompleteController: AutocompleteViewController?
     private var favoritesOverlay: FavoritesOverlay?
+    private var newTabPage: NewTabPageViewController?
     private var willRemoveAutocomplete = false
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesModel: FavoritesListInteracting
@@ -100,20 +102,36 @@ class SuggestionTrayViewController: UIViewController {
             }
         }
     }
-    
+
+    let newTabPageDependencies: NewTabPageDependencies?
+
+    struct NewTabPageDependencies {
+        let favoritesModel: FavoritesListInteracting
+        let homePageMessagesConfiguration: HomePageMessagesConfiguration
+        let privacyProDataReporting: PrivacyProDataReporting?
+        let variantManager: VariantManager
+        let newTabDialogFactory: NewTabDaxDialogFactory
+        let newTabDaxDialogProvider: NewTabDialogSpecProvider
+        let faviconLoader: FavoritesFaviconLoading
+        let messageNavigationDelegate: MessageNavigationDelegate
+        let appSettings: AppSettings
+    }
+
     required init?(coder: NSCoder,
                    favoritesViewModel: FavoritesListInteracting,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
                    tabsModel: TabsModel,
                    featureFlagger: FeatureFlagger,
-                   appSettings: AppSettings) {
+                   appSettings: AppSettings,
+                   newTabPageDependencies: NewTabPageDependencies? = nil) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.tabsModel = tabsModel
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
+        self.newTabPageDependencies = newTabPageDependencies
         super.init(coder: coder)
     }
     
@@ -239,13 +257,47 @@ class SuggestionTrayViewController: UIViewController {
     }
     
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
-        if favoritesOverlay == nil {
+        if isUsingSearchInputCustomStyling && newTabPage == nil {
+            installNewTabPage(animated: animated, onInstall: onInstall)
+        } else if !isUsingSearchInputCustomStyling && favoritesOverlay == nil {
             installFavoritesOverlay(animated: animated, onInstall: onInstall)
         } else {
             onInstall()
         }
     }
-    
+
+    private func installNewTabPage(animated: Bool, onInstall: @escaping () -> Void = {}) {
+        guard let dependencies = newTabPageDependencies else {
+            assertionFailure("No dependencies found for NTP")
+            return
+        }
+
+        let controller = NewTabPageViewController(
+            tab: Tab(),
+            isNewTabPageCustomizationEnabled: false,
+            interactionModel: dependencies.favoritesModel,
+            homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,
+            privacyProDataReporting: dependencies.privacyProDataReporting,
+            variantManager: dependencies.variantManager,
+            newTabDialogFactory: dependencies.newTabDialogFactory,
+            newTabDialogTypeProvider: dependencies.newTabDaxDialogProvider,
+            faviconLoader: dependencies.faviconLoader,
+            messageNavigationDelegate: dependencies.messageNavigationDelegate,
+            appSettings: dependencies.appSettings
+        )
+
+        // TODO pass this in separately and delegate to it?!
+        controller.delegate = newTabPageControllerDelegate
+
+//        controller.delegate = favoritesOverlayDelegate
+//        controller.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
+        install(controller: controller,
+                animated: animated,
+                additionalInsets: additionalFavoritesOverlayInsets,
+                completion: onInstall)
+        newTabPage = controller
+    }
+
     private func installFavoritesOverlay(animated: Bool, onInstall: @escaping () -> Void = {}) {
         let controller = FavoritesOverlay(viewModel: favoritesModel)
         controller.delegate = favoritesOverlayDelegate

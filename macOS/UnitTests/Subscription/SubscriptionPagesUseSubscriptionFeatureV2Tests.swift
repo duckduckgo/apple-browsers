@@ -213,7 +213,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertTrue(featureValue.supportsStripe)
+        XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
     }
 
     func testGetFeatureConfig_WhenStripeNotSupported_ReturnsCorrectConfig() async throws {
@@ -231,7 +231,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertFalse(featureValue.supportsStripe)
+        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
     func testGetFeatureConfig_WhenBothFeaturesEnabled_ReturnsCorrectConfig() async throws {
@@ -251,7 +251,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
         XCTAssertTrue(featureValue.usePaidDuckAi)
-        XCTAssertTrue(featureValue.supportsStripe)
+        XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
     }
 
     func testGetFeatureConfig_WhenBothFeaturesDisabled_ReturnsCorrectConfig() async throws {
@@ -271,7 +271,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
         XCTAssertFalse(featureValue.usePaidDuckAi)
-        XCTAssertFalse(featureValue.supportsStripe)
+        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
     // MARK: - Feature Selection Tests

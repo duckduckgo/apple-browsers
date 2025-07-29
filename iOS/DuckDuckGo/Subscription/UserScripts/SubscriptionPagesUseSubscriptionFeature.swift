@@ -87,7 +87,7 @@ public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool
     let usePaidDuckAi: Bool
-    let supportsStripe: Bool
+    let useAlternateStripePaymentFlow: Bool
 }
 
 public struct AccessTokenValue: Codable {
@@ -732,7 +732,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         return GetFeatureConfigurationResponse(
             useSubscriptionsAuthV2: true,
             usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-            supportsStripe: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
         )
     }
 

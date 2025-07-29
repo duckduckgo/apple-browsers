@@ -359,6 +359,10 @@ final class AddressBarButtonsViewController: NSViewController {
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
         }
+
+        for case let .some(animationView) in [trackerAnimationView1, trackerAnimationView2, trackerAnimationView3, shieldDotAnimationView, shieldAnimationView] {
+            animationView.stop()
+        }
     }
 
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {

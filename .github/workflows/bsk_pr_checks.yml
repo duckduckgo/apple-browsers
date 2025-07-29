@@ -291,6 +291,7 @@ jobs:
           check_name: BSK Test Report (iOS)
           report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
+          check_retries: true
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'

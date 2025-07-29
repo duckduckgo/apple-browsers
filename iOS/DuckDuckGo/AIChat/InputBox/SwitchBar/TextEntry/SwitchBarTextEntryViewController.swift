@@ -51,6 +51,7 @@ class SwitchBarTextEntryViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
+        setupPasteAndGo()
     }
 
     func focusTextField() {
@@ -96,7 +97,19 @@ class SwitchBarTextEntryViewController: UIViewController {
         ])
     }
 
+    private func setupPasteAndGo() {
+        let title = UserText.actionPasteAndGo
+        UIMenuController.shared.menuItems = [UIMenuItem(title: title, action: #selector(self.pasteURLAndGo))]
+    }
+
     // MARK: - Action Handlers
+    @objc private func pasteURLAndGo(sender: UIMenuItem) {
+        guard let pastedText = UIPasteboard.general.string,
+              !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        handler.updateCurrentText(pastedText)
+        handleSend()
+    }
+
     private func handleSend() {
         let currentText = handler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

@@ -1,7 +1,7 @@
 //
 //  CloseButton.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 
-struct CloseButton: View {
+public struct CloseButton: View {
     let icon: NSImage
     let size: CGFloat
     let backgroundColor: Color
@@ -28,23 +28,23 @@ struct CloseButton: View {
 
     @State var isHovering = false
 
-    init(icon: NSImage, size: CGFloat, backgroundColor: Color = .clear, backgroundColorOnHover: Color = .homeFavoritesHover, action: @escaping () -> Void) {
+    public init(icon: NSImage, size: CGFloat, backgroundColor: Color = .clear, backgroundColorOnHover: Color? = nil, action: @escaping () -> Void) {
         self.icon = icon
         self.size = size
         self.backgroundColor = backgroundColor
-        self.backgroundColorOnHover = backgroundColorOnHover
+        self.backgroundColorOnHover = backgroundColorOnHover ?? Color(.hover)
         self.action = action
         self.isHovering = isHovering
     }
 
-    var body: some View {
+    public var body: some View {
         Button(action: action) {
             ZStack {
                 Circle()
                     .fill(isHovering ? backgroundColorOnHover : backgroundColor)
                     .frame(width: size, height: size)
                 Image(nsImage: icon)
-                    .foregroundColor(.blackWhite80)
+                    .foregroundColor(Color(.blackWhite80))
             }
         }
         .buttonStyle(.plain)

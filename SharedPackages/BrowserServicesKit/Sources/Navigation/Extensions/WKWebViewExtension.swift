@@ -67,7 +67,7 @@ extension WKWebView {
     public typealias SessionStateFilterBlockType = @convention(block) (WKBackForwardListItem) -> Bool
     @nonobjc
     public func sessionState(withFilter filter: @escaping SessionStateFilterBlockType) -> Any? {
-        guard self.responds(to: Selector.restoreSessionStateAndNavigate) else {
+        guard self.responds(to: Selector.sessionStateWithFilter) else {
             assertionFailure("\(Self.self) does not respond to _sessionStateWithFilter:")
             return nil
         }

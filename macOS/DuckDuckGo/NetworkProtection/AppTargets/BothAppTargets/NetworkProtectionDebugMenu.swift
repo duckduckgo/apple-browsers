@@ -162,6 +162,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
 #endif
             }
 
+            NSMenuItem(title: "Simulate Subscription Expiration in Tunnel", action: #selector(NetworkProtectionDebugMenu.simulateSubscriptionExpirationInTunnel))
+                .targetting(self)
+
             NSMenuItem(title: "Simulate Failure")
                 .submenu(NetworkProtectionSimulateFailureMenu())
 
@@ -267,6 +270,16 @@ final class NetworkProtectionDebugMenu: NSMenu {
         Task { @MainActor in
             do {
                 try await debugUtilities.restartAdapter()
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
+    }
+
+    @objc func simulateSubscriptionExpirationInTunnel(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await NetworkProtectionDebugUtilities().simulateSubscriptionExpirationInTunnel()
             } catch {
                 await NSAlert(error: error).runModal()
             }

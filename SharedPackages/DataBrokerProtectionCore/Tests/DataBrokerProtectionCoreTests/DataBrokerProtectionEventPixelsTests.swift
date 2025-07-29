@@ -680,6 +680,8 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
                                             DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "-1"])
     }
+
+    #if os(iOS)
     func testTryToFireWeeklyPixels_includesBackgroundTaskSessionMetrics() {
         // Create test events with different session types
         let events = [
@@ -729,6 +731,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         XCTAssertEqual(sessionPixel?.params?["duration_max_ms"], "60000.0")
         XCTAssertEqual(sessionPixel?.params?["duration_median_ms"], "35000.0")
     }
+    #endif
 }
 
 final class MockDataBrokerProtectionEventPixelsRepository: DataBrokerProtectionEventPixelsRepository {

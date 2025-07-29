@@ -38,6 +38,9 @@ struct DataBrokerDatabaseBrowserView: View {
             if let table = viewModel.selectedTable {
                 DatabaseView(data: table.rows, table: table, viewModel: viewModel)
                     .navigationTitle(table.name)
+                    .onAppear {
+                        viewModel.updatePublishedState(for: table)
+                    }
             } else {
                 Text("No selection")
             }
@@ -62,6 +65,10 @@ struct DatabaseView: View {
                 TextEditor(text: $selectedData)
                     .frame(height: 100)
             }
+            .onAppear {
+                viewModel.initializeColumnWidths(for: table)
+                viewModel.updatePublishedState(for: table)
+            }
         } else {
             Text("No Data")
         }
@@ -75,61 +82,128 @@ struct DatabaseView: View {
 
     private func dataView() -> some View {
         let sortedData = viewModel.sortedRows(for: table)
+        let columnKeys = Array(sortedData[0].data.keys).sorted()
+
         return GeometryReader { geometry in
-            ScrollView([.horizontal, .vertical]) {
+            ScrollView([.horizontal, .vertical], showsIndicators: true) {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 0) {
-                        ForEach(sortedData[0].data.keys.sorted(), id: \.self) { key in
-                            VStack {
-                                Button(action: {
-                                    viewModel.toggleSort(for: key)
-                                }) {
-                                    HStack {
-                                        Text(key)
-                                            .font(.headline)
-                                        if viewModel.sortColumn == key {
-                                            Text(viewModel.sortAscending ? "▲" : "▼")
-                                                .font(.caption)
-                                        }
-                                    }
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .frame(maxWidth: 200)
-                                .frame(height: 35)
-                                Divider()
-                            }
-                            if key != sortedData[0].data.keys.sorted().last {
-                                Divider()
-                                    .background(Color.gray)
-                            }
-                        }
-                    }
-                    ForEach(viewModel.sortedRows(for: table)) { row in
-                        HStack(alignment: .top, spacing: 0) {
-                            ForEach(row.data.keys.sorted(), id: \.self) { key in
-                                VStack {
-                                    Text("\(row.data[key]?.description ?? "")")
-                                        .frame(maxWidth: 200)
-                                        .frame(height: rowHeight)
-                                        .frame(minWidth: 60)
-                                        .onTapGesture {
-                                            selectedData = row.data[key]?.description ?? ""
-                                        }
-                                    Divider()
-                                }
-                                if key != row.data.keys.sorted().last {
-                                    Divider()
-                                        .background(Color.gray)
-                                }
-                            }
-                        }
-                    }
-                    Spacer()
-                        .frame(height: spacerHeight(geometry))
+                    columnHeadersView(columnKeys: columnKeys)
+                    dataRowsView(columnKeys: columnKeys)
+                    spacerView(geometry)
                 }
                 .frame(minWidth: geometry.size.width, minHeight: 0, alignment: .topLeading)
             }
+            .clipped()
         }
+    }
+
+    private func columnHeadersView(columnKeys: [String]) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                ForEach(Array(columnKeys.enumerated()), id: \.offset) { index, key in
+                    columnHeaderCell(key: key, isLastColumn: index == columnKeys.count - 1)
+                }
+            }
+            Divider()
+                .background(Color.gray)
+        }
+    }
+
+    private func columnHeaderCell(key: String, isLastColumn: Bool) -> some View {
+        HStack(spacing: 0) {
+            sortableColumnButton(for: key)
+
+            if !isLastColumn {
+                columnResizeHandle(for: key)
+            }
+        }
+    }
+
+    private func sortableColumnButton(for key: String) -> some View {
+        Button(action: {
+            viewModel.toggleSort(for: key, in: table)
+        }) {
+            HStack {
+                Text(key)
+                    .font(.headline)
+                if viewModel.sortColumn == key {
+                    Text(viewModel.sortAscending ? "▲" : "▼")
+                        .font(.caption)
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .frame(width: viewModel.columnWidth(for: key, in: table), height: 35, alignment: .center)
+        .clipped()
+    }
+
+    private func columnResizeHandle(for key: String) -> some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.5))
+            .frame(width: 4, height: 35)
+            .onHover { isHovering in
+                if isHovering {
+                    NSCursor.resizeLeftRight.set()
+                } else {
+                    NSCursor.arrow.set()
+                }
+            }
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let translation = value.translation
+                        let newWidth = viewModel.columnWidth(for: key, in: table) + translation.width
+                        viewModel.setColumnWidth(newWidth, for: key, in: table)
+                    }
+            )
+    }
+
+    private func dataRowsView(columnKeys: [String]) -> some View {
+        let sortedRows = viewModel.sortedRows(for: table)
+        return ForEach(Array(sortedRows.enumerated()), id: \.offset) { index, row in
+            VStack(spacing: 0) {
+                dataRowView(row: row, columnKeys: columnKeys)
+                if index < sortedRows.count - 1 {
+                    Divider()
+                        .background(Color.gray)
+                }
+            }
+        }
+    }
+
+    private func dataRowView(row: DataBrokerDatabaseBrowserData.Row, columnKeys: [String]) -> some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(Array(columnKeys.enumerated()), id: \.offset) { index, key in
+                dataCell(row: row, key: key, isLastColumn: index == columnKeys.count - 1)
+            }
+        }
+    }
+
+    private func dataCell(row: DataBrokerDatabaseBrowserData.Row, key: String, isLastColumn: Bool) -> some View {
+        HStack(spacing: 0) {
+            Text("\(row.data[key]?.description ?? "")")
+                .padding(.horizontal, 8)
+                .frame(width: viewModel.columnWidth(for: key, in: table), height: rowHeight, alignment: .center)
+                .background(Color.clear)
+                .clipped()
+                .onTapGesture {
+                    selectedData = row.data[key]?.description ?? ""
+                }
+
+            if !isLastColumn {
+                Rectangle()
+                    .fill(Color.gray)
+                    .frame(width: 1)
+                    .padding(.horizontal, 1.5)
+            }
+        }
+        .frame(height: rowHeight)
+    }
+
+    private func spacerView(_ geometry: GeometryProxy) -> some View {
+        Spacer()
+            .frame(height: spacerHeight(geometry))
     }
 }
 

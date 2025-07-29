@@ -26,6 +26,11 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
     @Published var sortColumn: String?
     @Published var sortAscending: Bool = true
+    @Published var columnWidths: [String: CGFloat] = [:]
+
+    // Table-specific state storage
+    private var tableSortState: [String: (column: String?, ascending: Bool)] = [:]
+    private var tableColumnWidths: [String: [String: CGFloat]] = [:]
     private let dataManager: DataBrokerProtectionDataManager?
 
     internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, localBrokerService: LocalBrokerJSONServiceProvider) {
@@ -99,21 +104,88 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
  }
 
     func sortedRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
-        guard let sortColumn = sortColumn else { return table.rows }
+        guard let sortState = tableSortState[table.name],
+              let sortColumn = sortState.column else {
+            return table.rows
+        }
 
         return table.rows.sorted { row1, row2 in
             let val1 = row1.data[sortColumn]?.description.lowercased() ?? ""
             let val2 = row2.data[sortColumn]?.description.lowercased() ?? ""
-            return sortAscending ? val1 < val2 : val1 > val2
+            return sortState.ascending ? val1 < val2 : val1 > val2
         }
     }
 
-    func toggleSort(for column: String) {
-        if sortColumn == column {
-            sortAscending.toggle()
+    func toggleSort(for column: String, in table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        let currentState = tableSortState[tableName]
+
+        if currentState?.column == column {
+            // Toggle ascending/descending for same column
+            let newAscending = !(currentState?.ascending ?? true)
+            tableSortState[tableName] = (column: column, ascending: newAscending)
+            sortColumn = column
+            sortAscending = newAscending
         } else {
+            // New column, default to ascending
+            tableSortState[tableName] = (column: column, ascending: true)
             sortColumn = column
             sortAscending = true
+        }
+    }
+
+    func columnWidth(for column: String, in table: DataBrokerDatabaseBrowserData.Table) -> CGFloat {
+        return tableColumnWidths[table.name]?[column] ?? 200.0
+    }
+
+    func setColumnWidth(_ width: CGFloat, for column: String, in table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        if tableColumnWidths[tableName] == nil {
+            tableColumnWidths[tableName] = [:]
+        }
+        tableColumnWidths[tableName]?[column] = max(60.0, width) // Minimum width of 60
+
+        // Update the published property for UI binding
+        columnWidths[column] = max(60.0, width)
+    }
+
+    func initializeColumnWidths(for table: DataBrokerDatabaseBrowserData.Table) {
+        guard !table.rows.isEmpty else { return }
+
+        let tableName = table.name
+        let columnKeys = Array(table.rows[0].data.keys).sorted()
+
+        if tableColumnWidths[tableName] == nil {
+            tableColumnWidths[tableName] = [:]
+        }
+
+        for key in columnKeys {
+            if tableColumnWidths[tableName]?[key] == nil {
+                tableColumnWidths[tableName]?[key] = 200.0 // Default width
+            }
+        }
+
+        // Update published properties for current table
+        updatePublishedState(for: table)
+    }
+
+    func updatePublishedState(for table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+
+        // Update sort state
+        if let sortState = tableSortState[tableName] {
+            sortColumn = sortState.column
+            sortAscending = sortState.ascending
+        } else {
+            sortColumn = nil
+            sortAscending = true
+        }
+
+        // Update column widths
+        if let tableWidths = tableColumnWidths[tableName] {
+            columnWidths = tableWidths
+        } else {
+            columnWidths = [:]
         }
     }
 

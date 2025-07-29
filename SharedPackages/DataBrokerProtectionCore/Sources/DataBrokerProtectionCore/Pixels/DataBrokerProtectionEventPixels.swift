@@ -145,6 +145,9 @@ public final class DataBrokerProtectionEventPixels {
 
         #if os(iOS)
         fireBackgroundTaskSessionMetrics()
+        #endif
+
+        #if os(iOS) || DEBUG
         fireStalledOperationMetrics(for: data)
         #endif
     }

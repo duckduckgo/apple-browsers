@@ -522,7 +522,7 @@ enum Preferences {
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
                                                           keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                          isRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding))
+                                                          isRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

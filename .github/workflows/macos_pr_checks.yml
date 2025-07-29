@@ -428,7 +428,7 @@ jobs:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-mac-release-build-${{ matrix.cache-key }}
+          ${{ runner.os }}-mac-release-build-
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version

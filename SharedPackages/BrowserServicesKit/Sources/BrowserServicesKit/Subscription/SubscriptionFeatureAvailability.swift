@@ -22,6 +22,8 @@ import Subscription
 public protocol SubscriptionFeatureAvailability {
     var isSubscriptionPurchaseAllowed: Bool { get }
     var isPaidAIChatEnabled: Bool { get }
+    /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
+    var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
@@ -29,13 +31,23 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
     private let paidAIChatFlagStatusProvider: () -> Bool
+    private let supportsAlternateStripePaymentFlowStatusProvider: () -> Bool
 
+    /// Initializes a new instance of `DefaultSubscriptionFeatureAvailability`.
+    ///
+    /// - Parameters:
+    ///   - privacyConfigurationManager: The privacy configuration manager used to check feature availability.
+    ///   - purchasePlatform: The platform through which purchases are made (App Store or Stripe).
+    ///   - paidAIChatFlagStatusProvider: A closure that returns whether paid AI chat features are enabled.
+    ///   - supportsAlternateStripePaymentFlowStatusProvider: A closure that returns whether the alternate Stripe payment flow is supported.
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
                 purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
-                paidAIChatFlagStatusProvider: @escaping () -> Bool) {
+                paidAIChatFlagStatusProvider: @escaping () -> Bool,
+                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.purchasePlatform = purchasePlatform
         self.paidAIChatFlagStatusProvider = paidAIChatFlagStatusProvider
+        self.supportsAlternateStripePaymentFlowStatusProvider = supportsAlternateStripePaymentFlowStatusProvider
     }
 
     public var isSubscriptionPurchaseAllowed: Bool {
@@ -53,6 +65,14 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
 
     public var isPaidAIChatEnabled: Bool {
         return paidAIChatFlagStatusProvider()
+    }
+
+    /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
+    /// This property delegates to the `supportsAlternateStripePaymentFlowStatusProvider` function provided during initialization.
+    ///
+    /// - Returns: `true` if the alternate Stripe payment flow is supported, `false` otherwise.
+    public var isSupportsAlternateStripePaymentFlowEnabled: Bool {
+        supportsAlternateStripePaymentFlowStatusProvider()
     }
 
 // MARK: - Conditions

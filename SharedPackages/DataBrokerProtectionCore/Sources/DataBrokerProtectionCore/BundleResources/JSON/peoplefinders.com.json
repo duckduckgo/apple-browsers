@@ -1,7 +1,7 @@
 {
   "name": "PeopleFinders",
   "url": "peoplefinders.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "addedDatetime": 1677132000000,
   "optOutUrl": "https://www.peoplefinders.com/opt-out",
   "steps": [
@@ -98,7 +98,7 @@
           "elements": [
             {
               "type": "button",
-              "selector": "//input[@type='checkbox']"
+              "selector": "//div[@class='terms-wrapper']/input[@type='checkbox']"
             }
           ],
           "id": "5ec1e28f-c179-424d-a50c-8808040668c3"
@@ -195,7 +195,7 @@
           "elements": [
             {
               "type": "button",
-              "selector": ".//input[@type='checkbox']"
+              "selector": "//div[contains(@class, 'opt-out-card')]//input[@type='checkbox']"
             }
           ],
           "id": "3a6a98ff-0ad6-4d0e-9537-a0844ced4598"

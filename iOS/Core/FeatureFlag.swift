@@ -88,15 +88,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
-    /// Flag for visual updates changes
-    /// https://app.asana.com/0/1206226850447395/1209291055975934
-    case visualUpdates
-
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
 
-    /// https://app.asana.com/1/137249556945/project/1108686900785972/task/1209304767941984?focus=true
-    case onboardingSetAsDefaultBrowserPiPVideo
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191
+    case setAsDefaultBrowserPiPVideoTutorial
 
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
@@ -144,6 +140,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
 
+    case subscriptionRebranding
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210259429792293?focus=true
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
@@ -168,8 +166,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .privacyProFreeTrialJan25:
             PrivacyProFreeTrialExperimentCohort.self
-        case .onboardingSetAsDefaultBrowserPiPVideo:
-            OnboardingSetAsDefaultBrowserPiPVideoCohort.self
         default:
             nil
         }
@@ -196,16 +192,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition,
+             .subscriptionRebranding,
              .june2025TabManagerLayoutChanges,
-             .canPromoteImportPasswordsInPasswordManagement:
+             .canPromoteImportPasswordsInPasswordManagement,
+             .canPromoteImportPasswordsInBrowser,
+             .setAsDefaultBrowserPiPVideoTutorial:
             return true
         case .showSettingsCompleteSetupSection:
-            if #available(iOS 18.2, *) {
-                return true
-            } else {
-                return false
-            }
-        case .onboardingSetAsDefaultBrowserPiPVideo:
             if #available(iOS 18.2, *) {
                 return true
             } else {
@@ -302,12 +295,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .visualUpdates: // full clean up coming in separate PR
-            return .enabled
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .onboardingSetAsDefaultBrowserPiPVideo:
-            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserPiPVideoExperiment))
+        case .setAsDefaultBrowserPiPVideoTutorial:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.defaultBrowserTutorial))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
@@ -331,7 +322,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
         case .paidAIChat:
-            return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .canInterceptSyncSetupUrls:
             return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -342,6 +333,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         case .scheduledSetDefaultBrowserPrompts:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
+        case .subscriptionRebranding:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         }
     }
 }
@@ -353,13 +346,6 @@ extension FeatureFlagger {
 }
 
 public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
-    /// Control cohort with no changes applied.
-    case control
-    /// Treatment cohort where the experiment modifications are applied.
-    case treatment
-}
-
-public enum OnboardingSetAsDefaultBrowserPiPVideoCohort: String, FeatureFlagCohortDescribing {
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

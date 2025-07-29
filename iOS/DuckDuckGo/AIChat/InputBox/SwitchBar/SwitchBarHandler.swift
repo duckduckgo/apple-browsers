@@ -35,7 +35,6 @@ protocol SwitchBarHandling: AnyObject {
     var currentText: String { get }
     var currentToggleState: TextEntryMode { get }
     var isVoiceSearchEnabled: Bool { get }
-    var forceWebSearch: Bool { get }
     var hasUserInteractedWithText: Bool { get }
     var isCurrentTextValidURL: Bool { get }
 
@@ -43,7 +42,6 @@ protocol SwitchBarHandling: AnyObject {
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
-    var forceWebSearchPublisher: AnyPublisher<Bool, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -53,8 +51,6 @@ protocol SwitchBarHandling: AnyObject {
     func setToggleState(_ state: TextEntryMode)
     func clearText()
     func microphoneButtonTapped()
-    func toggleForceWebSearch()
-    func setForceWebSearch(_ enabled: Bool)
     func markUserInteraction()
 }
 
@@ -73,7 +69,6 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
     @Published private(set) var currentToggleState: TextEntryMode = .search
-    @Published private(set) var forceWebSearch: Bool = false
     @Published private(set) var hasUserInteractedWithText: Bool = false
     @Published private(set) var isCurrentTextValidURL: Bool = false
 
@@ -87,10 +82,6 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> {
         $currentToggleState.eraseToAnyPublisher()
-    }
-
-    var forceWebSearchPublisher: AnyPublisher<Bool, Never> {
-        $forceWebSearch.eraseToAnyPublisher()
     }
 
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> {
@@ -115,13 +106,13 @@ final class SwitchBarHandler: SwitchBarHandling {
     init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
-        restoreToggleState()
     }
 
     // MARK: - SwitchBarHandling Implementation
     func updateCurrentText(_ text: String) {
         currentText = text
-        isCurrentTextValidURL = URL.webUrl(from: text) != nil
+        /// URL.webUrl converts spaces to %20, but this is not a concern in this context, as we are validating the user's input in the address bar to ensure it is a valid URL.
+        isCurrentTextValidURL = !text.contains(where: { $0.isWhitespace }) && URL.webUrl(from: text) != nil
     }
 
     func submitText(_ text: String) {
@@ -142,14 +133,6 @@ final class SwitchBarHandler: SwitchBarHandling {
         microphoneButtonTappedSubject.send(())
     }
 
-    func toggleForceWebSearch() {
-        forceWebSearch.toggle()
-    }
-
-    func setForceWebSearch(_ enabled: Bool) {
-        forceWebSearch = enabled
-    }
-    
     func markUserInteraction() {
         hasUserInteractedWithText = true
     }
@@ -158,6 +141,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
     }
 
+    /// Intentionally not called yet, https://app.asana.com/1/137249556945/project/72649045549333/task/1210814996510636?focus=true
     func restoreToggleState() {
         if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
            let restoredState = TextEntryMode(rawValue: storedValue) {

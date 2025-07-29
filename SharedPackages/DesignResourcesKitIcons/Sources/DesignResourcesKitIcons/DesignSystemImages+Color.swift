@@ -25,6 +25,7 @@ public extension DesignSystemImages {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor16) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatColorGradient16) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor16) }
+            public static var assist: DesignSystemImage { .init(resource: .assistColor16) }
             public static var autofill: DesignSystemImage { .init(resource: .autofillColor16) }
             public static var bitwarden: DesignSystemImage { .init(resource: .bitwardenColor16) }
             public static var bitwardenLocked: DesignSystemImage { .init(resource: .bitwardenLockedColor16) }

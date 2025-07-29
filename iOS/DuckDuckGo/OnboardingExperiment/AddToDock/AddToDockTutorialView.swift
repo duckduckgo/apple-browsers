@@ -40,7 +40,7 @@ struct AddToDockTutorialView: View {
     @State private var animateMessage = false
     @State private var showContent = false
     @State private var videoPlayerWidth: CGFloat = 0.0
-    @StateObject private var videoPlayerModel = VideoPlayerCoordinator(url: Self.videoURL, configuration: .init(loopVideo: true))
+    @StateObject private var videoPlayerModel = VideoPlayerCoordinator(configuration: VideoPlayerConfiguration())
 
     init(
         title: String,
@@ -84,7 +84,10 @@ struct AddToDockTutorialView: View {
                         }
                     }
                 }
-            
+                .onFirstAppear {
+                    videoPlayerModel.loadAsset(url: Self.videoURL, shouldLoopVideo: true)
+                }
+
             Button(action: action) {
                 Text(cta)
             }

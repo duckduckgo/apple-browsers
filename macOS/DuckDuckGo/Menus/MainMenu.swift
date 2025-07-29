@@ -348,6 +348,7 @@ final class MainMenu: NSMenu {
             .withAccessibilityIdentifier("MainMenu.bookmarks")
             .submenu(bookmarksMenu.buildItems {
                 NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(MainViewController.bookmarkThisPage), keyEquivalent: "d")
+                    .withAccessibilityIdentifier("MainMenu.addBookmark")
                 NSMenuItem(title: UserText.bookmarkAllTabs, action: #selector(MainViewController.bookmarkAllOpenTabs), keyEquivalent: [.command, .shift, "d"])
                 manageBookmarksMenuItem
                 bookmarksMenuToggleBookmarksBarMenuItem
@@ -487,7 +488,7 @@ final class MainMenu: NSMenu {
 
     private func updateAppAboutDDGMenuItem() {
         if internalUserDecider.isInternalUser {
-            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(appVersion.versionAndBuildNumber))"
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
         } else {
             appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
         }

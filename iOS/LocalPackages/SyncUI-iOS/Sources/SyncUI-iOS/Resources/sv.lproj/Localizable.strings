@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Öppna DuckDuckGo på din andra enhet och skanna den här koden för att synka.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Eller skanna med DuckDuckGo på din andra enhet";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Dela textkod";
 

@@ -690,6 +690,23 @@ struct SubscriptionSettingsViewV2: View {
     }
 
     @ViewBuilder
+    private var rebrandingMessage: some View {
+        if viewModel.showRebrandingMessage {
+            HStack(alignment: .top) {
+                Text(UserText.subscriptionRebrandingMessage)
+                    .font(.headline)
+                Spacer()
+                Button(action: {
+                    viewModel.dismissRebrandingMessage()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private var optionsView: some View {
         NavigationLink(destination: SubscriptionGoogleView(),
                        isActive: $isShowingGoogleView) {
@@ -709,6 +726,7 @@ struct SubscriptionSettingsViewV2: View {
             headerSection
                 .padding(.horizontal, -20)
                 .padding(.vertical, -10)
+            rebrandingMessage
             if configuration == .subscribed || configuration == .expired || configuration == .trial {
                 devicesSection
             }

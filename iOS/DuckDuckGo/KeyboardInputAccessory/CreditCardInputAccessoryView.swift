@@ -52,7 +52,7 @@ class CreditCardInputAccessoryView: UIView {
     }()
 
     private let manageButton: UIButton = {
-        let button = ThemeManager.shared.properties.isExperimentalThemingEnabled ? BrowserChromeButton() : UIButton(type: .system)
+        let button = BrowserChromeButton()
         button.setImage(DesignSystemImages.Glyphs.Size24.expand, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .buttonsSecondaryFillText)
@@ -271,13 +271,8 @@ class CreditCardInputAccessoryView: UIView {
     private func createCardView(for card: CreditCardRowViewModel) -> UIView {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        if ThemeManager.shared.properties.isExperimentalThemingEnabled {
-            containerView.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-            containerView.layer.cornerRadius = 16
-        } else {
-            containerView.backgroundColor = UIColor(designSystemColor: .container)
-            containerView.layer.cornerRadius = 8
-        }
+        containerView.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        containerView.layer.cornerRadius = 16
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(cardTapped(_:)))
         containerView.addGestureRecognizer(tapGesture)

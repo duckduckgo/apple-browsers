@@ -505,14 +505,14 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
         super.init { _, _, _, _ in
         }
 
-        self.eventMapper = { event, _, _, _ in
+        self.eventMapper = { event, _, parameters, _ in
             switch event {
             case .generateEmailHTTPErrorDaily:
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultDatabaseRecreated:
-                self.pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _),
                     .actionFailedError(let error, _, _, _, _),
                     .otherError(let error, _, _):

@@ -67,6 +67,7 @@ jobs:
       uses: mikepenz/action-junit-report@v3
       with:
         report_paths: iOS/unittests.xml
+        check_retries: true
 
   fingerprinting-ui-tests:
     name: Fingerprinting UI Tests
@@ -96,16 +97,22 @@ jobs:
       uses: mikepenz/action-junit-report@v3
       with:
         report_paths: iOS/unittests.xml
+        check_retries: true
 
-  deploy-alpha:
-    name: Deploy Nightly Alpha Build
-    uses: ./.github/workflows/ios_alpha.yml
-    with:
-      destination: "Nightly Alpha Group"
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+  notify-failure:
+    name: Notify on failure
+    if: ${{ always() && (needs.atb-ui-tests.result == 'failure' || needs.atb-ui-tests.result == 'cancelled' || needs.fingerprinting-ui-tests.result == 'failure' || needs.fingerprinting-ui-tests.result == 'cancelled') }}
+    needs: [atb-ui-tests, fingerprinting-ui-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+    - name: Create Asana task when workflow failed
+      uses: duckduckgo/native-github-asana-sync@v1.1
+      with:
+        action: create-asana-task
+        asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+        asana-project: ${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}
+        asana-task-name: GH Workflow Failure - iOS Nightly Tests
+        asana-task-description: The iOS Nightly Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

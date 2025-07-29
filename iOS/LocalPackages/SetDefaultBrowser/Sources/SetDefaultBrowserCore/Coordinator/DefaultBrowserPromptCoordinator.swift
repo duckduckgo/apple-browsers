@@ -48,7 +48,7 @@ package final class DefaultBrowserPromptCoordinator {
     private let promptStore: DefaultBrowserPromptStorage
     private let userActivityManager: DefaultBrowserPromptUserActivityManaging
     private let promptTypeDecider: DefaultBrowserPromptTypeDeciding
-    private let urlOpener: URLOpener
+    private let defaultBrowserSettingsNavigator: DefaultBrowserPromptSettingsNavigating
     private let eventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>
     private let dateProvider: () -> Date
 
@@ -57,7 +57,7 @@ package final class DefaultBrowserPromptCoordinator {
         promptStore: DefaultBrowserPromptStorage,
         userActivityManager: DefaultBrowserPromptUserActivityManaging,
         promptTypeDecider: DefaultBrowserPromptTypeDeciding,
-        urlOpener: URLOpener,
+        defaultBrowserSettingsNavigator: DefaultBrowserPromptSettingsNavigating,
         eventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
         dateProvider: @escaping () -> Date = Date.init
     ) {
@@ -65,7 +65,7 @@ package final class DefaultBrowserPromptCoordinator {
         self.promptStore = promptStore
         self.userActivityManager = userActivityManager
         self.promptTypeDecider = promptTypeDecider
-        self.urlOpener = urlOpener
+        self.defaultBrowserSettingsNavigator = defaultBrowserSettingsNavigator
         self.eventMapper = eventMapper
         self.dateProvider = dateProvider
     }
@@ -92,10 +92,8 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
     }
 
     package func setDefaultBrowserAction() {
-        // Open Settings
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-
-        urlOpener.open(url)
+        // Navigate To Settings
+        defaultBrowserSettingsNavigator.navigateToSetDefaultBrowserSettings()
 
         // Send event
         fireSetUserDefaultEvent()

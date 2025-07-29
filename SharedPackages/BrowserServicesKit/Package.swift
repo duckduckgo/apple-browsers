@@ -18,6 +18,7 @@ let package = Package(
         .library(name: "BrowserServicesKitTestsUtils", targets: ["BrowserServicesKitTestsUtils"]),
         .library(name: "Persistence", targets: ["Persistence"]),
         .library(name: "PersistenceTestingUtils", targets: ["PersistenceTestingUtils"]),
+        .library(name: "SecureStorageTestsUtils", targets: ["SecureStorageTestsUtils"]),
         .library(name: "Bookmarks", targets: ["Bookmarks"]),
         .library(name: "BloomFilterWrapper", targets: ["BloomFilterWrapper"]),
         .library(name: "UserScript", targets: ["UserScript"]),
@@ -48,11 +49,12 @@ let package = Package(
         .library(name: "PrivacyStats", targets: ["PrivacyStats"]),
         .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
         .library(name: "ContentScopeScripts", targets: ["ContentScopeScripts"]),
+        .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.1.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.2.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
-        .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.5.0"),
+        .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
         .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
@@ -68,8 +70,8 @@ let package = Package(
         ),
         .binaryTarget(
             name: "GRDB",
-            url: "https://github.com/duckduckgo/GRDB.swift/releases/download/3.0.0/GRDB.xcframework.zip",
-            checksum: "41f01022f6a35986393e063e1ef386fd896646ed032f7d0419c4b02fa3afe61d"
+            url: "https://github.com/duckduckgo/GRDB.swift/releases/download/2.4.2/GRDB.xcframework.zip",
+            checksum: "5380265b0e70f0ed28eb1e12640eb6cde5e4bfd39893c86b31f8d17126887174"
         ),
         .target(
             name: "BrowserServicesKit",
@@ -483,7 +485,13 @@ let package = Package(
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
-
+        .target(
+            name: "WKAbstractions",
+            dependencies: [],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
         // MARK: - Test Targets
         .target(
             name: "SharedObjCTestsUtils",
@@ -545,6 +553,7 @@ let package = Package(
                 "SecureStorageTestsUtils",
                 "Subscription",
                 "PersistenceTestingUtils",
+                "WKAbstractions",
             ],
             resources: [
                 .copy("Resources")

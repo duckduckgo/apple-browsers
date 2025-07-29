@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import Common
 
 struct AboutView: View {
 
@@ -84,8 +85,15 @@ struct AboutViewVersion: View {
 
     var body: some View {
         Section(header: Text("DuckDuckGo for iOS"), footer: Text(UserText.settingsSendCrashReportsDescription)) {
-            SettingsCellView(label: UserText.settingsVersion,
-                             accessory: .rightDetail(viewModel.state.version))
+#if (ALPHA && !DEBUG)
+            // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
+            let version = "\(viewModel.state.version) (Alpha)"
+            SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+            SettingsCellView(label: "Build", accessory: .rightDetail(AppVersion.shared.commitSHAShort))
+#else
+            let version = viewModel.state.version
+            SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+#endif
 
             // Send Crash Reports
             SettingsCellView(label: UserText.settingsSendCrashReports,

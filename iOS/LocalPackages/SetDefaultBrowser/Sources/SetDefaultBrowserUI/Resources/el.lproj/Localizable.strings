@@ -4,7 +4,7 @@
 /* The title of the CTA to permanently dismiss the modal sheet. */
 "setDefaultBrowser.cta.secondary.title" = "Μη ρωτήσετε ξανά";
 
-/* The title of the button to dismiss the modal sheet. */
+/* (No Comment) */
 "setDefaultBrowser.modal.cta.cancel" = "Κλείσιμο";
 
 /* Set Default Browser Modal Sheet Message. */

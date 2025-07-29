@@ -33,14 +33,14 @@ struct FavoriteView: View {
 
         ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .controlsFillPrimary))
 
             if let favorite = favorite {
 
                 Link(destination: favorite.url) {
                     ZStack {
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .container))
+                            .fill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .controlsFillPrimary))
                             .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
                         
                         if let image = favorite.favicon {
@@ -206,7 +206,7 @@ struct SearchWidgetView: View {
                 ZStack(alignment: Alignment(horizontal: .trailing, vertical: .center)) {
 
                     RoundedRectangle(cornerSize: CGSize(width: 8, height: 8))
-                        .fill(Color(designSystemColor: .container))
+                        .fill(Color(designSystemColor: .controlsFillPrimary))
                         .frame(width: 126, height: 46)
 
                     Image(uiImage: DesignSystemImages.Glyphs.Size20.findSearch)

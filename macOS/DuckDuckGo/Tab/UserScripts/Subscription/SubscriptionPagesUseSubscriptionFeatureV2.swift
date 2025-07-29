@@ -311,6 +311,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActivated, frequency: .uniqueByName)
                     subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
                     sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
+                    notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
                 case .failure(let error):
                     switch error {
@@ -414,6 +415,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         saveSubscriptionUpgradeTimestampIfFreemiumActivated()
         subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
+        notificationCenter.post(name: .subscriptionDidChange, object: self)
         return [String: String]() // cannot be nil, the web app expect something back before redirecting the user to the final page
     }
 
@@ -527,10 +529,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     ///
     /// - Note: This method is asynchronous when extracting the origin from the webview URL.
     private func setPixelOrigin(from message: WKScriptMessage) async {
-        // If the user has performed a Freemium scan, set a Freemium origin and return
-        guard !setFreemiumOriginIfScanPerformed() else { return }
-
-        // Else, Extract the origin from the webview URL to use for attribution pixel.
+        // Extract the origin from the webview URL to use for attribution pixel.
         subscriptionSuccessPixelHandler.origin = await originFrom(originalMessage: message)
     }
 }
@@ -596,23 +595,6 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
         if freemiumDBPUserStateManager.didActivate && freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp == nil {
             freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp = Date()
         }
-    }
-
-    /// Sets the origin for attribution if the user has started their first Freemium PIR scan
-    ///
-    /// This method checks whether the user has started their first Freemium PIR scan.
-    /// If they have, the method sets the subscription success tracking origin to `"funnel_freescan_macos"` and returns `true`.
-    ///
-    /// - Returns:
-    ///   - `true` if the origin is set because the user has started their first Freemim PIR scan.
-    ///   - `false` if a first scan has not been started and the origin is not set.
-    func setFreemiumOriginIfScanPerformed() -> Bool {
-        let origin = SubscriptionFunnelOrigin.freeScan.rawValue
-        if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
-            subscriptionSuccessPixelHandler.origin = origin
-            return true
-        }
-        return false
     }
 
     /// Retrieves free trial subscription options for App Store.

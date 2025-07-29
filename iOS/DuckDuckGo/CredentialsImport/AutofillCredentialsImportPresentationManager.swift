@@ -31,6 +31,7 @@ public protocol AutofillLoginImportStateProvider {
     var isAutofillEnabled: Bool { get }
     var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool { get }
     var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool { get }
+    var credentialsImportPromptPresentationCount: Int { get }
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool
 }
 
@@ -38,6 +39,8 @@ final public class AutofillCredentialsImportPresentationManager {
     private var loginImportStateProvider: AutofillLoginImportStateProvider & AutofillLoginImportStateStoring
 
     weak var presentationDelegate: AutofillCredentialsImportPresentationDelegate?
+
+    var domainPasswordImportLastShownOn: String?
 
     init(loginImportStateProvider: AutofillLoginImportStateProvider & AutofillLoginImportStateStoring) {
         self.loginImportStateProvider = loginImportStateProvider
@@ -60,6 +63,10 @@ extension AutofillCredentialsImportPresentationManager: AutofillPasswordImportDe
 
     public func passwordsScreenDidRequestPermanentCredentialsImportPromptDismissal() {
         loginImportStateProvider.isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed = true
+    }
+
+    public func incrementCredentialsImportPromptPresentationCount() {
+        loginImportStateProvider.credentialsImportPromptPresentationCount += 1
     }
 
     public func autofillUserScriptShouldDisplayOverlay(_ serializedInputContext: String, for domain: String) -> Bool {
@@ -112,6 +119,9 @@ private extension AutofillLoginImportStateProvider {
             return false
         }
         guard !isCredentialsImportPromoInBrowserPermanentlyDismissed else {
+            return false
+        }
+        guard credentialsImportPromptPresentationCount < 5 else {
             return false
         }
         return true

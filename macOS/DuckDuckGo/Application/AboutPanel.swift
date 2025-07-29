@@ -24,7 +24,7 @@ import Common
 // SwiftUI view for the About panel
 struct AboutPanelView: View {
 
-    let isInternal: Bool
+    let model: AppVersionModel
 
     private var appName: String {
 #if APPSTORE
@@ -33,21 +33,9 @@ struct AboutPanelView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
 #endif
     }
-    private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-    }
-    private var appBuild: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
-    }
     private var copyright: String {
         Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
     }
-
-#if ALPHA
-    private let prereleaseLabel: String = "ALPHA"
-#else
-    private let prereleaseLabel: String = "BETA"
-#endif
 
     var body: some View {
         VStack(spacing: 8) {
@@ -60,20 +48,20 @@ struct AboutPanelView: View {
                 .font(.title3)
 
             HStack(spacing: 8) {
-                Text(UserText.versionLabel(version: appVersion, build: appBuild))
+                Text(model.versionLabel)
                     .font(.footnote)
                     .onTapGesture {
                         let pasteboard = NSPasteboard.general
                         pasteboard.clearContents()
                         pasteboard.setString(
-                            AppVersion.shared.versionAndBuildNumber,
+                            model.versionLabel,
                             forType: .string
                         )
                     }
                     .cursor(.pointingHand)
                     .help(UserText.clickToCopyVersion)
-                if isInternal {
-                    Text(prereleaseLabel)
+                if model.shouldDisplayPrereleaseLabel {
+                    Text(model.prereleaseLabel)
                         .font(.footnote)
                         .fontWeight(.bold)
                         .padding(.horizontal, 8)
@@ -112,7 +100,8 @@ final class AboutPanelController {
         panel.isReleasedWhenClosed = false
         panel.center()
 
-        let hosting = NSHostingController(rootView: AboutPanelView(isInternal: internalUserDecider.isInternalUser))
+        let appVersionModel = AppVersionModel(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
+        let hosting = NSHostingController(rootView: AboutPanelView(model: appVersionModel))
         panel.contentView = hosting.view
     }
 

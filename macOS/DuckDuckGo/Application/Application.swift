@@ -86,7 +86,7 @@ final class Application: NSApplication {
             .pressure,
         ]
         if #available(macOS 26.0, *) {
-            testIgnoredEvents.append(.mouseCancelled)
+            testIgnoredEvents.append(.init(rawValue: 40)! /* .mouseCancelled */)
         }
         return testIgnoredEvents
     }()

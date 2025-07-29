@@ -203,6 +203,7 @@ jobs:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
         restore-keys: |
+          ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
           ${{ runner.os }}-macos-${{ matrix.cache-key }}
 
     - name: Select Xcode
@@ -428,6 +429,7 @@ jobs:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
         restore-keys: |
+          ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
           ${{ runner.os }}-mac-release-build-
 
     - name: Select Xcode

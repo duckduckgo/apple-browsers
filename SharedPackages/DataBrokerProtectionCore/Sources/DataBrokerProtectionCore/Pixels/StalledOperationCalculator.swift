@@ -22,6 +22,7 @@ struct StalledOperationCalculator {
     let isStartEvent: (HistoryEvent) -> Bool
     let isCompletionEvent: (HistoryEvent) -> Bool
     let extractEvents: (BrokerProfileQueryData) -> [[HistoryEvent]]
+    let dateRange: Range<Date>
 
     func calculate(
         from profileQueryData: [BrokerProfileQueryData]
@@ -35,7 +36,7 @@ struct StalledOperationCalculator {
             let eventGroups = extractEvents(data)
 
             for historyEvents in eventGroups {
-                let (startCount, stalledCount) = checkForStalledOperations(in: historyEvents)
+                let (startCount, stalledCount) = checkForStalledOperations(in: historyEvents, range: dateRange)
 
                 totalOperations += startCount
                 totalOperationsByBroker[data.key] = (totalOperationsByBroker[data.key] ?? 0) + startCount
@@ -53,8 +54,8 @@ struct StalledOperationCalculator {
         )
     }
 
-    private func checkForStalledOperations(in historyEvents: [HistoryEvent]) -> (startCount: Int, stalledCount: Int) {
-        let recentEvents = historyEvents.filter { $0.date >= .daysAgo(7) }
+    private func checkForStalledOperations(in historyEvents: [HistoryEvent], range: Range<Date>) -> (startCount: Int, stalledCount: Int) {
+        let recentEvents = historyEvents.filter { range.contains($0.date) }
         let sortedEvents = recentEvents.sorted(by: { $0.date < $1.date })
 
         let startEvents = sortedEvents.filter(isStartEvent)
@@ -93,7 +94,8 @@ extension StalledOperationCalculator {
                 return false
             }
         },
-        extractEvents: { [$0.scanJobData.historyEvents] }
+        extractEvents: { [$0.scanJobData.historyEvents] },
+        dateRange: Date.daysAgo(7)..<Date().addingTimeInterval(-BrokerJobExecutionConfig().scanJobTimeout)
     )
 
     static let optOut = StalledOperationCalculator(
@@ -111,7 +113,8 @@ extension StalledOperationCalculator {
                 return false
             }
         },
-        extractEvents: { $0.optOutJobData.map { $0.historyEvents } }
+        extractEvents: { $0.optOutJobData.map { $0.historyEvents } },
+        dateRange: Date.daysAgo(7)..<Date().addingTimeInterval(-BrokerJobExecutionConfig().optOutJobTimeout)
     )
 }
 

@@ -41,9 +41,11 @@ final class StalledOperationCalculatorTests: XCTestCase {
     func testCompletedOperations_NoStalledOperations() {
         // Given
         let calculator = StalledOperationCalculator.scan
+        // Events within the last 7 days but older than scan timeout
+        let baseTime = Date().addingTimeInterval(-4 * 3600) // 4 hours ago
         let historyEvents = [
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-3600)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: Date().addingTimeInterval(-1800))
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: baseTime.addingTimeInterval(1800))
         ]
         let profileData = createProfileData(with: historyEvents)
 
@@ -60,8 +62,9 @@ final class StalledOperationCalculatorTests: XCTestCase {
     func testStalledOperation_CountsCorrectly() {
         // Given
         let calculator = StalledOperationCalculator.scan
+        // Event within date range (older than timeout)
         let historyEvents = [
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-3600))
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-4 * 3600))
             // No completion event
         ]
         let profileData = createProfileData(with: historyEvents)
@@ -79,10 +82,12 @@ final class StalledOperationCalculatorTests: XCTestCase {
     func testMultipleStalledOperations_CountsAllStalled() {
         // Given
         let calculator = StalledOperationCalculator.scan
+        // All events within date range but older than timeout
+        let baseTime = Date().addingTimeInterval(-2 * 24 * 3600) // 2 days ago
         let historyEvents = [
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-7200)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-3600)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-1800))
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime.addingTimeInterval(3600)),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime.addingTimeInterval(7200))
             // No completion events for any
         ]
         let profileData = createProfileData(with: historyEvents)
@@ -98,15 +103,16 @@ final class StalledOperationCalculatorTests: XCTestCase {
     func testMixedCompletedAndStalled_CountsCorrectly() {
         // Given
         let calculator = StalledOperationCalculator.scan
+        let baseTime = Date().addingTimeInterval(-3 * 24 * 3600) // 3 days ago
         let historyEvents = [
             // First operation: completed
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-7200)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .noMatchFound, date: Date().addingTimeInterval(-6600)),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .noMatchFound, date: baseTime.addingTimeInterval(600)),
             // Second operation: stalled
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-3600)),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime.addingTimeInterval(3600)),
             // Third operation: completed
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-1800)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: Date().addingTimeInterval(-900))
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime.addingTimeInterval(7200)),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 1), date: baseTime.addingTimeInterval(7800))
         ]
         let profileData = createProfileData(with: historyEvents)
 
@@ -124,8 +130,8 @@ final class StalledOperationCalculatorTests: XCTestCase {
         let historyEvents = [
             // Old operation (>7 days): should be excluded
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-8 * 24 * 3600)),
-            // Recent operation (<7 days): should be included
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-3600))
+            // Recent operation (<7 days but older than timeout): should be included
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-4 * 3600))
         ]
         let profileData = createProfileData(with: historyEvents)
 
@@ -139,35 +145,37 @@ final class StalledOperationCalculatorTests: XCTestCase {
 
     func testMixedScansAndOptOuts_CalculatesSeparately() {
         // Given - Mixed scan and opt-out events
+        let baseTime = Date().addingTimeInterval(-2 * 24 * 3600) // 2 days ago
+        
         let scanEvents = [
             // First scan: completed with match
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-7200)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 2), date: Date().addingTimeInterval(-6600)),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 2), date: baseTime.addingTimeInterval(600)),
 
             // Second scan: stalled (started but no completion)
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-3600)),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime.addingTimeInterval(3600)),
             // No completion event - this is stalled
 
             // Third scan: completed with no match
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-1800)),
-            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .noMatchFound, date: Date().addingTimeInterval(-1700))
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime.addingTimeInterval(7200)),
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .noMatchFound, date: baseTime.addingTimeInterval(7300))
         ]
 
         let optOutEvents = [
             // First opt-out: completed with optOutRequested
             [
-                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: Date().addingTimeInterval(-5400)),
-                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutRequested, date: Date().addingTimeInterval(-5000))
+                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: baseTime.addingTimeInterval(1800)),
+                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutRequested, date: baseTime.addingTimeInterval(2200))
             ],
             // Second opt-out: stalled (started but no completion)
             [
-                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: Date().addingTimeInterval(-2400))
+                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: baseTime.addingTimeInterval(5000))
                 // No completion event - this is stalled
             ],
             // Third opt-out: completed with optOutConfirmed
             [
-                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: Date().addingTimeInterval(-1000)),
-                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutConfirmed, date: Date().addingTimeInterval(-800))
+                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: baseTime.addingTimeInterval(8000)),
+                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutConfirmed, date: baseTime.addingTimeInterval(8200))
             ]
         ]
 
@@ -191,6 +199,63 @@ final class StalledOperationCalculatorTests: XCTestCase {
         XCTAssertEqual(optOutResult.stalledByBroker["test-1.0.0"], 1)
     }
 
+    func testEventsWithinTimeoutWindow_AreExcluded() {
+        // Given - The scan calculator excludes events within the timeout window
+        let calculator = StalledOperationCalculator.scan
+        let historyEvents = [
+            // Event too recent (within timeout window): should be excluded
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-60)), // 1 minute ago
+            
+            // Event older than timeout: should be included
+            HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-35 * 60)) // 35 minutes ago (macOS timeout is 30 min)
+        ]
+        let profileData = createProfileData(with: historyEvents)
+
+        // When
+        let result = calculator.calculate(from: profileData)
+
+        // Then
+        #if os(iOS)
+        // iOS has 5 minute timeout, so the 35 minute old event should be included
+        XCTAssertEqual(result.total, 1)
+        XCTAssertEqual(result.stalled, 1)
+        #else
+        // macOS has 30 minute timeout, so the 35 minute old event should be included
+        XCTAssertEqual(result.total, 1)
+        XCTAssertEqual(result.stalled, 1)
+        #endif
+    }
+    
+    func testOptOutTimeoutWindow_DifferentFromScan() {
+        // Given - The opt-out calculator has its own timeout window
+        let calculator = StalledOperationCalculator.optOut
+        let optOutEvents = [
+            // First opt-out: too recent (within timeout)
+            [
+                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: Date().addingTimeInterval(-60))
+            ],
+            // Second opt-out: older than timeout
+            [
+                HistoryEvent(brokerId: 1, profileQueryId: 1, type: .optOutStarted, date: Date().addingTimeInterval(-35 * 60))
+            ]
+        ]
+        let profileData = createProfileData(with: [], optOutEvents: optOutEvents)
+
+        // When
+        let result = calculator.calculate(from: profileData)
+
+        // Then
+        #if os(iOS)
+        // iOS has 5 minute timeout
+        XCTAssertEqual(result.total, 1)
+        XCTAssertEqual(result.stalled, 1)
+        #else
+        // macOS has 30 minute timeout
+        XCTAssertEqual(result.total, 1)
+        XCTAssertEqual(result.stalled, 1)
+        #endif
+    }
+    
     private func createProfileData(with scanEvents: [HistoryEvent], optOutEvents: [[HistoryEvent]] = []) -> [BrokerProfileQueryData] {
         let optOutJobData = optOutEvents.map { events in
             OptOutJobData.mock(with: .mockWithoutRemovedDate, historyEvents: events)

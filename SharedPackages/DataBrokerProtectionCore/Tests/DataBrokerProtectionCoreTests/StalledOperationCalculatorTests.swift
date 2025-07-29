@@ -146,7 +146,6 @@ final class StalledOperationCalculatorTests: XCTestCase {
     func testMixedScansAndOptOuts_CalculatesSeparately() {
         // Given - Mixed scan and opt-out events
         let baseTime = Date().addingTimeInterval(-2 * 24 * 3600) // 2 days ago
-        
         let scanEvents = [
             // First scan: completed with match
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: baseTime),
@@ -205,7 +204,6 @@ final class StalledOperationCalculatorTests: XCTestCase {
         let historyEvents = [
             // Event too recent (within timeout window): should be excluded
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-60)), // 1 minute ago
-            
             // Event older than timeout: should be included
             HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: Date().addingTimeInterval(-35 * 60)) // 35 minutes ago (macOS timeout is 30 min)
         ]
@@ -225,7 +223,6 @@ final class StalledOperationCalculatorTests: XCTestCase {
         XCTAssertEqual(result.stalled, 1)
         #endif
     }
-    
     func testOptOutTimeoutWindow_DifferentFromScan() {
         // Given - The opt-out calculator has its own timeout window
         let calculator = StalledOperationCalculator.optOut
@@ -255,7 +252,6 @@ final class StalledOperationCalculatorTests: XCTestCase {
         XCTAssertEqual(result.stalled, 1)
         #endif
     }
-    
     private func createProfileData(with scanEvents: [HistoryEvent], optOutEvents: [[HistoryEvent]] = []) -> [BrokerProfileQueryData] {
         let optOutJobData = optOutEvents.map { events in
             OptOutJobData.mock(with: .mockWithoutRemovedDate, historyEvents: events)

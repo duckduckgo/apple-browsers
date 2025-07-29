@@ -3323,6 +3323,10 @@
 		BBDE056D2E324A6D001914BF /* VPNUpsellUserDefaultsPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE056B2E324A6D001914BF /* VPNUpsellUserDefaultsPersistor.swift */; };
 		BBE013EA2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
 		BBE013EB2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
+		BBE5FD872E391914008674A2 /* NavigationBarViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE5FD862E391914008674A2 /* NavigationBarViewControllerTests.swift */; };
+		BBE5FD882E391914008674A2 /* NavigationBarViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE5FD862E391914008674A2 /* NavigationBarViewControllerTests.swift */; };
+		BBE5FD8A2E393ADE008674A2 /* VPNMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE5FD892E393ADE008674A2 /* VPNMocks.swift */; };
+		BBE5FD8B2E393ADE008674A2 /* VPNMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE5FD892E393ADE008674A2 /* VPNMocks.swift */; };
 		BBE948D02D6FD11200FAC581 /* DefaultBrowserAndDockPromptStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */; };
 		BBE948D12D6FD11200FAC581 /* DefaultBrowserAndDockPromptStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */; };
 		BBFB727F2C48047C0088884C /* SortBookmarksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */; };
@@ -5522,6 +5526,8 @@
 		BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptContent.swift; sourceTree = "<group>"; };
 		BBDE056B2E324A6D001914BF /* VPNUpsellUserDefaultsPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellUserDefaultsPersistor.swift; sourceTree = "<group>"; };
 		BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateContent.swift; sourceTree = "<group>"; };
+		BBE5FD862E391914008674A2 /* NavigationBarViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarViewControllerTests.swift; sourceTree = "<group>"; };
+		BBE5FD892E393ADE008674A2 /* VPNMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMocks.swift; sourceTree = "<group>"; };
 		BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptStoring.swift; sourceTree = "<group>"; };
 		BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModel.swift; sourceTree = "<group>"; };
 		BBFD526D2E12FB730043B00C /* VisualizeFireAnimationDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualizeFireAnimationDecider.swift; sourceTree = "<group>"; };
@@ -10591,6 +10597,7 @@
 		BDA7648F2BC4E56200D0400C /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				BBE5FD892E393ADE008674A2 /* VPNMocks.swift */,
 				7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */,
 				7B1522B02DE9CCA500887371 /* MockFeatureGatekeeper.swift */,
 				BDA764902BC4E57200D0400C /* MockVPNLocationFormatter.swift */,
@@ -10645,6 +10652,7 @@
 		C17CA7AF2B9B52EB008EC3C1 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				BBE5FD862E391914008674A2 /* NavigationBarViewControllerTests.swift */,
 				C17CA7AC2B9B52E6008EC3C1 /* NavigationBarPopoversTests.swift */,
 			);
 			path = View;
@@ -13716,6 +13724,7 @@
 				3706FE40293F661700E42796 /* BWResponseTests.swift in Sources */,
 				377D7BC12D0AC7E000ADFD06 /* NewTabPageNextStepsCardsProviderTests.swift in Sources */,
 				986189E72A7CFB3E001B4519 /* LocalBookmarkStoreSavingTests.swift in Sources */,
+				BBE5FD872E391914008674A2 /* NavigationBarViewControllerTests.swift in Sources */,
 				3706FE42293F661700E42796 /* BWMessageIdGeneratorTests.swift in Sources */,
 				3706FE43293F661700E42796 /* TestDataModel.xcdatamodeld in Sources */,
 				B6E6BA242BA2EDDE008AA7E1 /* FileReadResult.swift in Sources */,
@@ -13731,6 +13740,7 @@
 				6590DB552DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift in Sources */,
 				9F8D57332BCCCB9A00AEA660 /* UserDefaultsBookmarkFoldersStoreTests.swift in Sources */,
 				F1F861172C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift in Sources */,
+				BBE5FD8A2E393ADE008674A2 /* VPNMocks.swift in Sources */,
 				317295D52AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */,
 				56504F0D2E0D900300333A1E /* SubscriptionNavigationCoordinatorTests.swift in Sources */,
 				3706FE49293F661700E42796 /* BookmarkNodePathTests.swift in Sources */,
@@ -15425,6 +15435,7 @@
 				37A0BA2B2D747C0900130447 /* CapturingHistoryViewDeleteDialogPresenter.swift in Sources */,
 				4B9292BD2667103100AD2C21 /* BookmarkOutlineViewDataSourceTests.swift in Sources */,
 				84DBC84E2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */,
+				BBE5FD882E391914008674A2 /* NavigationBarViewControllerTests.swift in Sources */,
 				3730F2102D2E725D00239F96 /* NewTabPageCustomizationProviderTests.swift in Sources */,
 				C17CA7B22B9B5317008EC3C1 /* MockAutofillPopoverPresenter.swift in Sources */,
 				560C6ED62CCA5CE100D411E2 /* FindInView.swift in Sources */,
@@ -15459,6 +15470,7 @@
 				1D8C2FEA2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,
 				AAC9C01724CAFBDC00AD1325 /* TabCollectionTests.swift in Sources */,
 				378205F8283BC6A600D1D4AA /* StartupPreferencesTests.swift in Sources */,
+				BBE5FD8B2E393ADE008674A2 /* VPNMocks.swift in Sources */,
 				56EA40292DB7830800B5061E /* LocalizationTests.swift in Sources */,
 				C1F142DC2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift in Sources */,
 				3714B1E928EDBAAB0056C57A /* DuckPlayerTests.swift in Sources */,

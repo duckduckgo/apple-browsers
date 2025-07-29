@@ -348,10 +348,3 @@ extension VPNUpsellVisibilityManagerTests {
         )
     }
 }
-
-// MARK: - Mock VPNUpsellUserDefaultsPersistor
-
-private final class MockVPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
-    var vpnUpsellDismissed: Bool = false
-    var vpnUpsellFirstPinnedDate: Date?
-}

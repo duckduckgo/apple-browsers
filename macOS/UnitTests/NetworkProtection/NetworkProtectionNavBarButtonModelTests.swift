@@ -250,31 +250,3 @@ extension NetworkProtectionNavBarButtonModelTests {
         )
     }
 }
-
-// MARK: - Mocks
-
-private final class TestPinningManager: PinningManager {
-    func togglePinning(for view: PinnableView) {}
-    func isPinned(_ view: PinnableView) -> Bool { false }
-    func wasManuallyToggled(_ view: PinnableView) -> Bool { false }
-    func pin(_ view: PinnableView) {}
-    func unpin(_ view: PinnableView) {}
-    func shortcutTitle(for view: PinnableView) -> String { "" }
-}
-
-private final class TestNetworkProtectionStatusReporter: NetworkProtectionStatusReporter {
-    private let ipcClient = IPCClientMock()
-
-    var statusObserver: ConnectionStatusObserver { ipcClient.ipcStatusObserver }
-    var serverInfoObserver: ConnectionServerInfoObserver { ipcClient.ipcServerInfoObserver }
-    var connectionErrorObserver: ConnectionErrorObserver { ipcClient.ipcConnectionErrorObserver }
-    var connectivityIssuesObserver: ConnectivityIssueObserver { ipcClient.ipcConnectivityIssuesObserver }
-    var controllerErrorMessageObserver: ControllerErrorMesssageObserver { ipcClient.ipcControllerErrorMessageObserver }
-    var dataVolumeObserver: DataVolumeObserver { ipcClient.ipcDataVolumeObserver }
-    var knownFailureObserver: KnownFailureObserver { ipcClient.ipcKnownFailureObserver }
-}
-
-private final class MockVPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
-    var vpnUpsellDismissed: Bool = false
-    var vpnUpsellFirstPinnedDate: Date?
-}

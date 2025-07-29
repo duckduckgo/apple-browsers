@@ -600,7 +600,7 @@ class TabViewController: UIViewController {
         // Update DuckPlayer when WebView appears
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
-        fireWebViewDebugPixels()
+        checkWebViewVisibilityConsistency()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -642,7 +642,7 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
-    private func fireWebViewDebugPixels() {
+    private func checkWebViewVisibilityConsistency() {
         if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
             

@@ -50,7 +50,7 @@ extension WKWebView {
             return nil
         }
 
-        return self.perform(Selector.sessionStateData).takeUnretainedValue() as? Data
+        return self.perform(Selector.sessionStateData)?.takeUnretainedValue() as? Data
     }
 
     @nonobjc

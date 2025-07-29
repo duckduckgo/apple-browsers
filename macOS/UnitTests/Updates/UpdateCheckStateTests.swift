@@ -18,31 +18,89 @@
 
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
+import Sparkle
 
-/// Tests for UpdateCheckState actor that manages update check coordination and rate limiting.
+// Mock SPUUpdater for testing
+class MockSPUUpdater: SPUUpdater {
+    var mockCanCheckForUpdates: Bool = true
+
+    override var canCheckForUpdates: Bool {
+        return mockCanCheckForUpdates
+    }
+
+    convenience init() {
+        // Create a minimal mock user driver for testing
+        let mockUserDriver = MockUserDriver()
+        self.init(hostBundle: Bundle.main,
+                  applicationBundle: Bundle.main,
+                  userDriver: mockUserDriver,
+                  delegate: nil)
+        // Note: We intentionally don't call start() here since:
+        // 1. It might throw and we don't need it for these tests
+        // 2. We're only testing UpdateCheckState rate limiting, not SPUUpdater functionality
+    }
+}
+
+// Mock user driver to satisfy SPUUpdater requirements
+class MockUserDriver: NSObject, SPUUserDriver {
+    func showCanCheckForUpdatesNow(_ canCheckForUpdatesNow: Bool) {}
+    func showUserInitiatedUpdateCheck(cancellation: @escaping () -> Void) {}
+    func dismissUserInitiatedUpdateCheck() {}
+    func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {
+        return SUUpdatePermissionResponse(automaticUpdateChecks: false, sendSystemProfile: false)
+    }
+    func showUpdateFound(with appcastItem: SUAppcastItem, state: SPUUserUpdateState, reply: @escaping (SPUUserUpdateChoice) -> Void) {
+        reply(.dismiss)
+    }
+    func showUpdateReleaseNotes(with downloadData: SPUDownloadData) {}
+    func showUpdateReleaseNotesFailedToDownloadWithError(_ error: any Error) {}
+    func showUpdateNotFoundWithError(_ error: any Error, acknowledgement: @escaping () -> Void) {
+        acknowledgement()
+    }
+    func showUpdaterError(_ error: any Error, acknowledgement: @escaping () -> Void) {
+        acknowledgement()
+    }
+    func showDownloadInitiated(cancellation: @escaping () -> Void) {}
+    func showDownloadDidReceiveExpectedContentLength(_ expectedContentLength: UInt64) {}
+    func showDownloadDidReceiveData(ofLength length: UInt64) {}
+    func showDownloadDidStartExtractingUpdate() {}
+    func showExtractionReceivedProgress(_ progress: Double) {}
+    func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
+        reply(.dismiss)
+    }
+    func showInstallingUpdate(withApplicationTerminated applicationTerminated: Bool, retryTerminatingApplication: @escaping () -> Void) {}
+    func showSendingTerminationSignal() {}
+    func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
+        acknowledgement()
+    }
+    func showUpdateInFocus() {}
+    func dismissUpdateInstallation() {}
+}
+
+/// Tests for UpdateCheckState actor that manages update check rate limiting.
 ///
-/// This test suite validates two critical behaviors:
-/// 1. **Rate Limiting**: Prevents excessive update checks that could impact performance or server load
-/// 2. **Task Coordination**: Ensures only one update check runs at a time to prevent resource conflicts
+/// This test suite validates rate limiting behavior that prevents excessive update checks
+/// which could impact performance or server load.
 ///
 /// These behaviors are essential for:
 /// - Maintaining app responsiveness during update checks
 /// - Preventing server abuse from rapid-fire update requests
-/// - Ensuring user-initiated checks take priority over automatic background checks
-/// - Handling edge cases like cancelled tasks and concurrent access safely
+/// - Ensuring user-initiated checks can bypass rate limiting when needed
 @available(macOS 10.15.0, *)
 final class UpdateCheckStateTests: XCTestCase {
 
     var updateCheckState: UpdateCheckState!
+    var mockUpdater: MockSPUUpdater!
 
     override func setUp() async throws {
         try await super.setUp()
         updateCheckState = UpdateCheckState()
+        mockUpdater = MockSPUUpdater()
     }
 
     override func tearDown() async throws {
-        await updateCheckState.cancelActiveTask()
         updateCheckState = nil
+        mockUpdater = nil
         try await super.tearDown()
     }
 
@@ -50,41 +108,15 @@ final class UpdateCheckStateTests: XCTestCase {
 
     /// Tests that update checks are allowed when the system is in its initial state.
     func testAllowsUpdateChecksInInitialState() async {
-        let canStart = await updateCheckState.canStartNewCheck()
+        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
         XCTAssertTrue(canStart, "Should be able to start check in initial state")
-    }
-
-    /// Tests that concurrent update checks are prevented when one is already running.
-    func testPreventsConcurrentUpdateChecks() async {
-        let activeTask = Task<Void, Never> { @MainActor in
-            try? await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
-        }
-        await updateCheckState.setActiveTask(activeTask)
-
-        let canStart = await updateCheckState.canStartNewCheck()
-        XCTAssertFalse(canStart, "Should not be able to start check with active task")
-
-        activeTask.cancel()
-        await updateCheckState.setActiveTask(nil)
-    }
-
-    /// Tests that cancelled update tasks don't block new update checks.
-    func testCancelledTasksDontBlockNewChecks() async {
-        let cancelledTask = Task<Void, Never> { @MainActor in
-            try? await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
-        }
-        cancelledTask.cancel()
-        await updateCheckState.setActiveTask(cancelledTask)
-
-        let canStart = await updateCheckState.canStartNewCheck()
-        XCTAssertTrue(canStart, "Should be able to start check with cancelled task")
     }
 
     /// Tests that update checks are rate limited to prevent excessive requests.
     func testRateLimitingPreventsExcessiveRequests() async {
         await updateCheckState.recordCheckTime()
 
-        let canStart = await updateCheckState.canStartNewCheck()
+        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
         XCTAssertFalse(canStart, "Should be rate limited when checking too soon")
     }
 
@@ -92,126 +124,112 @@ final class UpdateCheckStateTests: XCTestCase {
     func testRateLimitingCanBeBypassed() async {
         await updateCheckState.recordCheckTime()
 
-        let canStart = await updateCheckState.canStartNewCheck(minimumInterval: 0)
+        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
         XCTAssertTrue(canStart, "Should be able to start check when rate limit is disabled")
     }
 
-    /// Tests that rate limiting intervals can be configured for different scenarios.
+    /// Tests that rate limiting intervals are configurable for different scenarios.
     func testRateLimitingIntervalsAreConfigurable() async {
         await updateCheckState.recordCheckTime()
 
-        let canStart = await updateCheckState.canStartNewCheck(minimumInterval: 0.1)
+        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0.1)
         XCTAssertFalse(canStart, "Should respect custom minimum interval")
     }
 
-    // MARK: - cancelActiveTask Tests
+    /// Tests that checks are blocked when Sparkle doesn't allow updates.
+    func testChecksAreBlockedWhenSparkleDoesntAllow() async {
+        mockUpdater.mockCanCheckForUpdates = false
 
-    /// Tests that running update checks can be cancelled to allow new ones to start.
-    func testRunningChecksCanBeCancelled() async {
-        let activeTask = Task<Void, Never> { @MainActor in
-            try? await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
-        }
-        await updateCheckState.setActiveTask(activeTask)
-
-        await updateCheckState.cancelActiveTask()
-
-        XCTAssertTrue(activeTask.isCancelled, "Task should be cancelled")
-
-        let canStart = await updateCheckState.canStartNewCheck()
-        XCTAssertTrue(canStart, "Should be able to start new check after cancellation")
+        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
+        XCTAssertFalse(canStart, "Should not be able to start check when Sparkle doesn't allow it")
     }
 
-    /// Tests that cancelling update checks is safe even when none are running.
-    func testCancellingIsSafeWhenNoneRunning() async {
-        await updateCheckState.cancelActiveTask()
+    /// Tests that checks are allowed when Sparkle allows updates.
+    func testChecksAreAllowedWhenSparkleAllows() async {
+        mockUpdater.mockCanCheckForUpdates = true
 
-        let canStart = await updateCheckState.canStartNewCheck()
-        XCTAssertTrue(canStart, "Should still be able to start check")
+        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
+        XCTAssertTrue(canStart, "Should be able to start check when Sparkle allows it")
     }
 
-    // MARK: - setActiveTask Tests
-
-    /// Tests that update checks are blocked while another check is tracked as active.
-    func testChecksAreBlockedWhileAnotherIsActive() async {
-        let task = Task<Void, Never> { @MainActor in
-        }
-
-        await updateCheckState.setActiveTask(task)
-
-        let canStart = await updateCheckState.canStartNewCheck()
-        XCTAssertFalse(canStart, "Should not be able to start check with active task set")
-
-        task.cancel()
-        await updateCheckState.setActiveTask(nil)
+    /// Tests that nil updater allows update checks (doesn't block them).
+    func testNilUpdaterAllowsChecks() async {
+        let canStart = await updateCheckState.canStartNewCheck(updater: nil)
+        XCTAssertTrue(canStart, "Should be able to start check with nil updater")
     }
 
-    /// Tests that update checks are unblocked when the active check is cleared.
-    func testChecksAreUnblockedWhenActiveCheckCleared() async {
-        let task = Task<Void, Never> { @MainActor in
-            try? await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
-        }
-        await updateCheckState.setActiveTask(task)
+    /// Tests that nil updater still respects rate limiting.
+    func testNilUpdaterRespectsRateLimiting() async {
+        await updateCheckState.recordCheckTime()
 
-        await updateCheckState.setActiveTask(nil)
-
-        let canStart = await updateCheckState.canStartNewCheck()
-        XCTAssertTrue(canStart, "Should be able to start check after clearing active task")
-
-        task.cancel()
+        let canStart = await updateCheckState.canStartNewCheck(updater: nil)
+        XCTAssertFalse(canStart, "Should still be rate limited with nil updater")
     }
 
     // MARK: - recordCheckTime Tests
 
     /// Tests that recording check timestamps enables rate limiting behavior.
     func testRecordingTimestampsEnablesRateLimiting() async {
-        let initialCanStart = await updateCheckState.canStartNewCheck()
+        let initialCanStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
         XCTAssertTrue(initialCanStart, "Should initially be able to start check")
 
         await updateCheckState.recordCheckTime()
 
-        let canStartAfterRecord = await updateCheckState.canStartNewCheck()
+        let canStartAfterRecord = await updateCheckState.canStartNewCheck(updater: mockUpdater)
         XCTAssertFalse(canStartAfterRecord, "Should be rate limited after recording check time")
+    }
+
+    /// Tests that rate limiting expires after sufficient time passes.
+    func testRateLimitingExpiresAfterTime() async {
+        await updateCheckState.recordCheckTime()
+
+        // Check immediately after recording - should be rate limited
+        let canStartImmediately = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0.01)
+        XCTAssertFalse(canStartImmediately, "Should be rate limited immediately after recording")
+
+        // Wait for rate limit to expire
+        try? await Task.sleep(nanoseconds: 20_000_000) // 20ms
+
+        let canStartAfterWait = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0.01)
+        XCTAssertTrue(canStartAfterWait, "Should be able to start check after rate limit expires")
     }
 
     // MARK: - Integration Tests
 
-    /// Tests the complete update check workflow from start to finish including rate limiting.
-    func testCompleteUpdateCheckWorkflow() async {
-        let initialCanStart = await updateCheckState.canStartNewCheck()
+    /// Tests the basic rate limiting workflow.
+    func testBasicRateLimitingWorkflow() async {
+        // Initial state - should allow checks
+        let initialCanStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
         XCTAssertTrue(initialCanStart, "Should initially be able to start check")
 
+        // Record check time - should now be rate limited
         await updateCheckState.recordCheckTime()
-        let task = Task<Void, Never> { @MainActor in
-            try? await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
-        }
-        await updateCheckState.setActiveTask(task)
+        let canStartAfterRecord = await updateCheckState.canStartNewCheck(updater: mockUpdater)
+        XCTAssertFalse(canStartAfterRecord, "Should be rate limited after recording check time")
 
-        let canStartDuringTask = await updateCheckState.canStartNewCheck()
-        XCTAssertFalse(canStartDuringTask, "Should not be able to start with active task and rate limit")
-
-        await task.value
-        await updateCheckState.setActiveTask(nil)
-
-        let canStartAfterTask = await updateCheckState.canStartNewCheck()
-        XCTAssertFalse(canStartAfterTask, "Should still be rate limited after task completion")
-
-        let canStartWithoutRateLimit = await updateCheckState.canStartNewCheck(minimumInterval: 0)
-        XCTAssertTrue(canStartWithoutRateLimit, "Should be able to start when rate limit is disabled")
+        // User-initiated check can bypass rate limit
+        let canStartUserInitiated = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
+        XCTAssertTrue(canStartUserInitiated, "User-initiated check should bypass rate limit")
     }
 
-    /// Tests that user-initiated update checks can override automatic rate limiting.
-    func testUserInitiatedChecksOverrideRateLimiting() async {
+    /// Tests behavior with different Sparkle states and rate limiting.
+    func testSparkleStateAndRateLimitingInteraction() async {
+        // Record a check time to enable rate limiting
         await updateCheckState.recordCheckTime()
-        let automaticTask = Task<Void, Never> { @MainActor in
-            try? await Task.sleep(nanoseconds: 200 * NSEC_PER_MSEC)
-        }
-        await updateCheckState.setActiveTask(automaticTask)
 
-        await updateCheckState.cancelActiveTask()
+        // Even if rate limited, Sparkle state should still be respected
+        mockUpdater.mockCanCheckForUpdates = false
+        let canStartWithBlockedSparkle = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
+        XCTAssertFalse(canStartWithBlockedSparkle, "Should not be able to start even when bypassing rate limit if Sparkle blocks")
 
-        let canStartUserInitiated = await updateCheckState.canStartNewCheck(minimumInterval: 0)
-        XCTAssertTrue(canStartUserInitiated, "User-initiated check should be able to start immediately")
-        XCTAssertTrue(automaticTask.isCancelled, "Automatic task should be cancelled")
+        // When Sparkle allows but we're rate limited
+        mockUpdater.mockCanCheckForUpdates = true
+        let canStartWithAllowedSparkle = await updateCheckState.canStartNewCheck(updater: mockUpdater)
+        XCTAssertFalse(canStartWithAllowedSparkle, "Should still be rate limited even when Sparkle allows")
+
+        // When both Sparkle allows and rate limit is bypassed
+        let canStartBothAllowed = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
+        XCTAssertTrue(canStartBothAllowed, "Should be able to start when both conditions are met")
     }
 
     // MARK: - Constants Tests

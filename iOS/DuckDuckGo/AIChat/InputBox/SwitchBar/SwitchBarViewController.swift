@@ -39,11 +39,9 @@ class SwitchBarViewController: UIViewController {
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
-    
-    private var segmentedControlTopConstraint: NSLayoutConstraint?
 
-    private var isExpanded = false
-    
+    var segmentedPickerView: UIView? { segmentedPickerHostingController?.viewIfLoaded }
+
     // Items for the segmented picker
     private let pickerItems = [
         ImageSegmentedPickerItem(
@@ -87,9 +85,6 @@ class SwitchBarViewController: UIViewController {
         setupViews()
         setupConstraints()
         setupSubscriptions()
-        view.backgroundColor = .clear
-
-        setExpanded(isExpanded)
     }
 
     private func setupSubscriptions() {
@@ -130,8 +125,8 @@ class SwitchBarViewController: UIViewController {
     }
 
     private func setupViews() {
-        view.backgroundColor = UIColor.systemBackground
-        
+        view.backgroundColor = .clear
+
         let pickerWrapper = PickerWrapper(
             viewModel: pickerViewModel
         )
@@ -156,32 +151,19 @@ class SwitchBarViewController: UIViewController {
         backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
     }
 
-    func setExpanded(_ isExpanded: Bool) {
-        self.isExpanded = isExpanded
-
-        segmentedControlTopConstraint?.isActive = isExpanded
-
-        backButton.alpha = isExpanded ? 1 : 0
-        segmentedPickerHostingController?.view.alpha = isExpanded ? 1 : 0
-
-        textEntryViewController.setExpanded(isExpanded)
-    }
-
     private func setupConstraints() {
 
         guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
 
-        segmentedControlTopConstraint = segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-
         NSLayoutConstraint.activate([
+            segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             segmentedPickerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedPickerView.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 
             textEntryViewController.view.topAnchor.constraint(equalTo: segmentedPickerView.bottomAnchor, constant: Constants.textEntryViewTopPadding),
             textEntryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.textEntryViewSidePadding),
             textEntryViewController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
-            // Create bottom constraint with lower priority to avoid conflicts with parent constraints
-            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor), // .withPriority(.init(999)),
+            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
             backButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.backButtonHorizontalPadding),
             backButton.centerYAnchor.constraint(equalTo: segmentedPickerView.centerYAnchor),

@@ -27,7 +27,7 @@ final class NavigationActionBarView: UIView {
     // MARK: - Constants
     enum Constants {
         static let barHeight: CGFloat = 76
-        static let buttonSize: CGFloat = 44
+        static let buttonSize: CGFloat = 40
         static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
@@ -45,7 +45,6 @@ final class NavigationActionBarView: UIView {
     // MARK: - UI Elements
     private let mainStackView = UIStackView()
     private let rightStackView = UIStackView()
-    private let webSearchToggleButton = CircularButton()
     private let microphoneButton = CircularButton()
     private let newLineButton = CircularButton()
     private let searchButton = CircularButton()
@@ -55,7 +54,7 @@ final class NavigationActionBarView: UIView {
     // MARK: - Initialization
     init(viewModel: NavigationActionBarViewModel) {
         self.viewModel = viewModel
-        super.init(frame: .zero)
+        super.init(frame: .init(x: 0, y: 0, width: 300, height: 100))
         setupUI()
         setupBindings()
         updateUI()
@@ -74,18 +73,17 @@ final class NavigationActionBarView: UIView {
         // Setup stack views
         mainStackView.axis = .horizontal
         mainStackView.spacing = Constants.buttonSpacing
-        mainStackView.alignment = .center
+        mainStackView.alignment = .fill
         mainStackView.distribution = .fill
         
         rightStackView.axis = .horizontal
         rightStackView.spacing = Constants.buttonSpacing
-        rightStackView.alignment = .center
+        rightStackView.alignment = .fill
         rightStackView.distribution = .fill
 
         solidView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8)
 
         // Setup buttons
-        setupWebSearchToggleButton()
         setupMicrophoneButton()
         setupNewLineButton()
         setupSearchButton()
@@ -94,12 +92,10 @@ final class NavigationActionBarView: UIView {
         rightStackView.addArrangedSubview(microphoneButton)
         rightStackView.addArrangedSubview(newLineButton)
         rightStackView.addArrangedSubview(searchButton)
-        
-        mainStackView.addArrangedSubview(webSearchToggleButton)
-        
+
         let spacer = UIView()
-        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        spacer.setContentHuggingPriority(.init(1), for: .horizontal)
+        spacer.setContentCompressionResistancePriority(.init(1), for: .horizontal)
         mainStackView.addArrangedSubview(spacer)
         
         mainStackView.addArrangedSubview(rightStackView)
@@ -134,8 +130,6 @@ final class NavigationActionBarView: UIView {
             solidView.trailingAnchor.constraint(equalTo: backgroundGradientView.trailingAnchor),
 
             // Button size constraints
-            webSearchToggleButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            webSearchToggleButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
             microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             microphoneButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
             newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
@@ -144,12 +138,7 @@ final class NavigationActionBarView: UIView {
             searchButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
         ])
     }
-    
-    private func setupWebSearchToggleButton() {
-        webSearchToggleButton.setIcon(DesignSystemImages.Glyphs.Size24.globe)
-        webSearchToggleButton.addTarget(self, action: #selector(webSearchToggleTapped), for: .touchUpInside)
-    }
-    
+
     private func setupMicrophoneButton() {
         microphoneButton.setIcon(DesignSystemImages.Glyphs.Size24.microphone)
         microphoneButton.addTarget(self, action: #selector(microphoneTapped), for: .touchUpInside)
@@ -186,13 +175,6 @@ final class NavigationActionBarView: UIView {
             }
             .store(in: &cancellables)
         
-        viewModel.$isWebSearchEnabled
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateUI()
-            }
-            .store(in: &cancellables)
-        
         viewModel.$isVoiceSearchEnabled
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -209,10 +191,6 @@ final class NavigationActionBarView: UIView {
     }
     
     // MARK: - Actions
-    @objc private func webSearchToggleTapped() {
-        viewModel.handleWebSearchToggle()
-    }
-    
     @objc private func microphoneTapped() {
         viewModel.onMicrophoneTapped()
     }
@@ -227,20 +205,11 @@ final class NavigationActionBarView: UIView {
 
     // MARK: - UI Updates
     private func updateUI() {
-        updateWebSearchToggleButton()
         updateMicrophoneButton()
         updateSearchButton()
         updateButtonVisibility()
     }
-    
-    private func updateWebSearchToggleButton() {
-        let isEnabled = viewModel.isWebSearchEnabled
-        webSearchToggleButton.setColors(
-            foreground: isEnabled ? .white : UIColor(designSystemColor: .textPrimary),
-            background: isEnabled ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
-        )
-    }
-    
+
     private func updateMicrophoneButton() {
         let isEnabled = viewModel.isVoiceSearchEnabled
         microphoneButton.alpha = isEnabled ? 1.0 : 0.5
@@ -281,11 +250,7 @@ final class NavigationActionBarView: UIView {
     }
     
     private func updateButtonVisibility() {
-        // Update web search toggle visibility
-        let shouldShowWebSearchToggle = !viewModel.isSearchMode
-        webSearchToggleButton.isHidden = !shouldShowWebSearchToggle
-        
-        // Update microphone button visibility  
+        // Update microphone button visibility
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
         
@@ -303,7 +268,7 @@ final class NavigationActionBarView: UIView {
         }
         
         // If the hit view is one of our buttons or their subviews, allow the touch
-        let buttons: [UIView] = [webSearchToggleButton, microphoneButton, newLineButton, searchButton]
+        let buttons: [UIView] = [microphoneButton, newLineButton, searchButton]
         
         for button in buttons {
             if !button.isHidden && (hitView == button || hitView.isDescendant(of: button)) {
@@ -319,6 +284,10 @@ final class NavigationActionBarView: UIView {
 // MARK: - CircularButton
 
 private class CircularButton: UIButton {
+
+    enum Constants {
+        static let hitSize: CGFloat = 44.0
+    }
 
     private let secondShadowLayer = CALayer()
     private var definedBackgroundColor: UIColor?
@@ -389,6 +358,14 @@ private class CircularButton: UIButton {
             layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
             secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         }
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        assert(Constants.hitSize >= frame.height)
+        let offset = (frame.height - Constants.hitSize) / 2
+        let rect = CGRect(x: offset, y: offset, width: Constants.hitSize, height: Constants.hitSize)
+        guard rect.contains(point) else { return nil }
+        return self
     }
 }
 

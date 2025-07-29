@@ -674,16 +674,12 @@ extension DefaultOmniBarView {
     }
 
     func hideButtons() {
-        let moveFactor = 0.1
-        privacyInfoContainer.transform = CGAffineTransform(translationX: -privacyInfoContainer.frame.maxX * moveFactor, y: 0)
         privacyInfoContainer.alpha = 0
-        searchAreaView.hideButtons(moveFactor: moveFactor)
+        searchAreaView.hideButtons()
     }
 
     func revealButtons() {
-        privacyInfoContainer.transform = .identity
         privacyInfoContainer.alpha = 1
-        searchAreaView.transform = .identity
         searchAreaView.revealButtons()
     }
 

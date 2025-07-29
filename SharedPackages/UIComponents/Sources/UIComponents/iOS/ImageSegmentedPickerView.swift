@@ -175,7 +175,11 @@ public struct ImageSegmentedPickerView: View {
                 }
             }
             .onAppear {
-                currentOffset = calculateCurrentOffset(geometry: geo)
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    currentOffset = calculateCurrentOffset(geometry: geo)
+                }
             }
             .onChange(of: viewModel.selectedItem.id) { _ in
                 if viewModel.scrollProgress == nil {

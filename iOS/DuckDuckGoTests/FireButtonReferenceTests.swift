@@ -22,7 +22,10 @@ import os.log
 import WebKit
 @testable import Core
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
+import WKAbstractions
 
+@MainActor
 final class FireButtonReferenceTests: XCTestCase {
 
     private enum Resource {
@@ -46,18 +49,16 @@ final class FireButtonReferenceTests: XCTestCase {
     }
 
     @MainActor
-    func testClearDataUsingLegacyContainer() async throws {
+    func testClearData() async throws {
 
-        // Using WKWebsiteDataStore(forIdentifier:) doesn't persist cookies in a testable way, so use the legacy container here.
-        let fireproofing = UserDefaultsFireproofing.xshared
-        fireproofing.clearAll()
-        
+        var sanitizedSites = [String]()
         for site in testData.fireButtonFireproofing.fireproofedSites {
             let sanitizedSite = sanitizedSite(site)
-            print("Adding %s to fireproofed sites", sanitizedSite)
-            fireproofing.addToAllowed(domain: sanitizedSite)
+            sanitizedSites.append(sanitizedSite)
         }
-        
+
+        let fireproofing = MockFireproofing(domains: sanitizedSites)
+
         let referenceTests = testData.fireButtonFireproofing.tests.filter {
             $0.exceptPlatforms.contains("ios-browser") == false
         }
@@ -65,30 +66,17 @@ final class FireButtonReferenceTests: XCTestCase {
         for test in referenceTests {
             let cookie = try XCTUnwrap(cookie(for: test))
 
-            let warmupCompleted = XCTestExpectation(description: "Warmup Completed")
-            let warmup = WebViewWarmupHelper()
-            warmup.warmupWebView(expectation: warmupCompleted)
-
-            await fulfillment(of: [warmupCompleted], timeout: 5)
-
-            let dataStore = WKWebsiteDataStore.default()
-            let cookieStore = dataStore.httpCookieStore
-            await cookieStore.setCookie(cookie)
+            let cookieStore = MockHTTPCookieStore(allCookiesReturnValue: [cookie])
+            let dataStore = MockWebsiteDataStore(httpCookieStore: cookieStore,
+                                                dataRecordsOfTypesReturnValue: [
+                                                    MockWebsiteDataRecord(displayName: test.cookieDomain)
+                                                ])
 
             await WebCacheManager(cookieStorage: MigratableCookieStorage(), fireproofing: fireproofing, dataStoreIDManager: DataStoreIDManager(store: MockKeyValueStore())).clear(dataStore: dataStore)
 
-            let testCookie = await cookieStore.allCookies().filter { $0.name == test.cookieName }.first
-
-            if test.expectCookieRemoved {
-                XCTAssertNil(testCookie, "Cookie should not exist for test: \(test.name)")
-            } else {
-                XCTAssertNotNil(testCookie, "Cookie should exist for test: \(test.name)")
-            }
-            
-            // Reset cache
-            // cookieStorage.cookies = []
+            let cookieWasRemoved = cookieStore.cookiesThatWereDeleted.contains(where: { $0.name == test.cookieName })
+            XCTAssertEqual(cookieWasRemoved, test.expectCookieRemoved)
         }
-
     }
 
     private func cookie(for test: Test) -> HTTPCookie? {

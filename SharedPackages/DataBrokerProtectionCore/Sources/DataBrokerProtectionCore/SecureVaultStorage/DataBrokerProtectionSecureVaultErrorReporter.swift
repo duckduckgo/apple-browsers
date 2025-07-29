@@ -25,8 +25,12 @@ import Common
 public final class DataBrokerProtectionSecureVaultErrorReporter: SecureVaultReporting {
 
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public init(pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
+    let privacyConfigManager: PrivacyConfigurationManaging?
+
+    public init(pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                privacyConfigManager: PrivacyConfigurationManaging? = nil) {
         self.pixelHandler = pixelHandler
+        self.privacyConfigManager = privacyConfigManager
     }
 
     public func secureVaultError(_ error: SecureStorageError) {
@@ -52,7 +56,11 @@ public final class DataBrokerProtectionSecureVaultErrorReporter: SecureVaultRepo
     public func secureVaultKeyStoreEvent(_ event: SecureStorageKeyStoreEvent) {
         switch event {
         case .databaseRecreation:
-            pixelHandler.fire(.secureVaultDatabaseRecreated)
+            var parameters: [String: String]?
+            if let privacyConfigManager = privacyConfigManager {
+                parameters = ["isInternalUser": String(privacyConfigManager.internalUserDecider.isInternalUser)]
+            }
+            pixelHandler.fire(.secureVaultDatabaseRecreated, parameters: parameters)
         default:
             break
         }

@@ -242,6 +242,8 @@ class TabSwitcherViewController: UIViewController {
         // These can be done more than once but don't need to
         decorate()
         becomeFirstResponder()
+        collectionView.dragDelegate = self
+        collectionView.dropDelegate = self
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true

@@ -265,16 +265,19 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     private var rebrandingMessage: some View {
         SubfeatureGroup {
             HStack(spacing: 8) {
-                Image(.privacyPro)
-                Text(UserText.preferencesSubscriptionRebrandingMessage).bold()
+                Image(.privacyProColor24)
+                Text(UserText.preferencesSubscriptionRebrandingMessage)
+                    .font(
+                        Font.custom("SF Pro", size: 13).weight(.bold)
+                    )
                 Spacer()
                 CloseButton(
-                    icon: NSImage(resource: .closeLarge),
+                    icon: NSImage(resource: .close16),
                     size: 20,
                     action: { model.dismissRebrandingMessage() }
                 )
             }
-            .padding(12)
+            .padding(2)
         }
     }
 }

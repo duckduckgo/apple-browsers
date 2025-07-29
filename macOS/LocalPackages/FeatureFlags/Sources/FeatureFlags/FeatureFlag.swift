@@ -148,6 +148,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
     case vpnToolbarUpsell
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
+    /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
+    case supportsAlternateStripePaymentFlow
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -159,7 +163,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualUpdatesInternalOnly,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
-                .updateFirefoxBookmarksImport:
+                .updateFirefoxBookmarksImport,
+                .supportsAlternateStripePaymentFlow:
             true
         default:
             false
@@ -215,7 +220,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .disableFireAnimation,
                 .newTabPageOmnibar,
                 .newFeedbackForm,
-                .vpnToolbarUpsell:
+                .vpnToolbarUpsell,
+                .supportsAlternateStripePaymentFlow:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -332,6 +338,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
+        case .supportsAlternateStripePaymentFlow:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         }
     }
 }

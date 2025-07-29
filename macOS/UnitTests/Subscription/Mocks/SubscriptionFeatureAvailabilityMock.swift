@@ -23,6 +23,7 @@ import BrowserServicesKit
 public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
     public var isPaidAIChatEnabled: Bool = true
     public var isSubscriptionPurchaseAllowed: Bool
+    public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
 
     public init(isSubscriptionPurchaseAllowed: Bool, usesUnifiedFeedbackForm: Bool) {
         self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed

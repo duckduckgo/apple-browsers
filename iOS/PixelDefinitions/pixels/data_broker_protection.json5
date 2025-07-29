@@ -1,4 +1,60 @@
 {
+    'm_ios_dbp_event_weekly-report_stalled-scans': {
+        description: 'Fired weekly with metrics about stalled scan operations',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'num_total',
+                description: 'Total number of scan operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'num_stalled',
+                description: 'Number of stalled scan operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'total_by_broker',
+                description: 'JSON object mapping broker names to total scan counts',
+                type: 'string',
+            },
+            {
+                key: 'stalled_by_broker',
+                description: 'JSON object mapping broker names to stalled scan counts',
+                type: 'string',
+            },
+        ],
+    },
+    'm_ios_dbp_event_weekly-report_stalled-optouts': {
+        description: 'Fired weekly with metrics about stalled opt-out operations',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'num_total',
+                description: 'Total number of opt-out operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'num_stalled',
+                description: 'Number of stalled opt-out operations in the last 7 days',
+                type: 'number',
+            },
+            {
+                key: 'total_by_broker',
+                description: 'JSON object mapping broker names to total opt-out counts',
+                type: 'string',
+            },
+            {
+                key: 'stalled_by_broker',
+                description: 'JSON object mapping broker names to stalled opt-out counts',
+                type: 'string',
+            },
+        ],
+    },
     'm_ios_dbp_event_weekly-report_background-task_session': {
         description: 'Fired weekly with background task session metrics including started, orphaned, completed, terminated counts, and duration statistics',
         owners: ['quanganhdo'],

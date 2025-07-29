@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import AppKit
 import DataBrokerProtectionCore
 
 struct DataBrokerDatabaseBrowserView: View {
@@ -26,7 +27,7 @@ struct DataBrokerDatabaseBrowserView: View {
         NavigationView {
             List {
                 ForEach(viewModel.tables) { table in
-                    NavigationLink(destination: DatabaseView(data: table.rows, table: table, viewModel: viewModel).navigationTitle(table.name),
+                    NavigationLink(destination: DatabaseTableContainer(table: table, viewModel: viewModel).navigationTitle(table.name),
                                    tag: table,
                                    selection: $viewModel.selectedTable) {
                         Text(table.name)
@@ -36,11 +37,8 @@ struct DataBrokerDatabaseBrowserView: View {
             .listStyle(.sidebar)
 
             if let table = viewModel.selectedTable {
-                DatabaseView(data: table.rows, table: table, viewModel: viewModel)
+                DatabaseTableContainer(table: table, viewModel: viewModel)
                     .navigationTitle(table.name)
-                    .onAppear {
-                        viewModel.updatePublishedState(for: table)
-                    }
             } else {
                 Text("No selection")
             }
@@ -49,161 +47,213 @@ struct DataBrokerDatabaseBrowserView: View {
     }
 }
 
-struct DatabaseView: View {
-    @State private var isPopoverVisible = false
-    @State private var selectedData: String = ""
-    let data: [DataBrokerDatabaseBrowserData.Row]
+struct DatabaseTableContainer: View {
     let table: DataBrokerDatabaseBrowserData.Table
     @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
-    let rowHeight: CGFloat = 40.0
+    @State private var selectedData: String = ""
 
     var body: some View {
-        let sortedData = viewModel.sortedRows(for: table)
-        if sortedData.count > 0 {
-            VStack {
-                dataView()
-                TextEditor(text: $selectedData)
-                    .frame(height: 100)
+        VStack {
+            DatabaseTableView(table: table, viewModel: viewModel, selectedData: $selectedData)
+
+            if !selectedData.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Selected Row Details:")
+                        .font(.headline)
+                        .padding(.horizontal, 4)
+                        .padding(.top, 8)
+                        .padding(.bottom, 8)
+
+                    ScrollView {
+                        TextEditor(text: $selectedData)
+                    }
+                    .frame(height: 120)
+                }
+                .background(Color(NSColor.controlBackgroundColor))
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .onAppear {
-                viewModel.initializeColumnWidths(for: table)
-                viewModel.updatePublishedState(for: table)
-            }
-        } else {
-            Text("No Data")
+        }
+        .animation(.easeInOut(duration: 0.2), value: selectedData.isEmpty)
+        .onAppear {
+            viewModel.initializeColumnWidths(for: table)
+            viewModel.updatePublishedState(for: table)
         }
     }
+}
 
-    private func spacerHeight(_ geometry: GeometryProxy) -> CGFloat {
-        let sortedData = viewModel.sortedRows(for: table)
-        let result = geometry.size.height - CGFloat(sortedData.count) * rowHeight
-        return max(0, result)
+// MARK: - NSTableView Implementation
+
+struct DatabaseTableView: NSViewRepresentable {
+    let table: DataBrokerDatabaseBrowserData.Table
+    @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
+    @Binding var selectedData: String
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        let tableView = NSTableView()
+
+        // Configure table view
+        tableView.delegate = context.coordinator
+        tableView.dataSource = context.coordinator
+        tableView.allowsColumnResizing = true
+        tableView.allowsColumnReordering = false
+        tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        tableView.allowsMultipleSelection = false
+        tableView.allowsEmptySelection = true
+        tableView.intercellSpacing = NSSize(width: 1, height: 1)
+        tableView.gridStyleMask = [.solidHorizontalGridLineMask, .solidVerticalGridLineMask]
+
+        // Setup columns
+        setupColumns(for: tableView, context: context)
+
+        // Configure scroll view
+        scrollView.documentView = tableView
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = true
+        scrollView.autohidesScrollers = false
+
+        // Store references for updates
+        context.coordinator.tableView = tableView
+        context.coordinator.scrollView = scrollView
+
+        return scrollView
     }
 
-    private func dataView() -> some View {
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let tableView = nsView.documentView as? NSTableView else { return }
+
+        context.coordinator.updateData()
+        tableView.reloadData()
+
+        // Update sort indicators
+        updateSortIndicators(for: tableView, context: context)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    private func setupColumns(for tableView: NSTableView, context: Context) {
         let sortedData = viewModel.sortedRows(for: table)
+        guard !sortedData.isEmpty else { return }
+
         let columnKeys = Array(sortedData[0].data.keys).sorted()
 
-        return GeometryReader { geometry in
-            ScrollView([.horizontal, .vertical], showsIndicators: true) {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    columnHeadersView(columnKeys: columnKeys)
-                    dataRowsView(columnKeys: columnKeys)
-                    spacerView(geometry)
-                }
-                .frame(minWidth: geometry.size.width, minHeight: 0, alignment: .topLeading)
-            }
-            .clipped()
+        // Remove existing columns
+        tableView.tableColumns.forEach { tableView.removeTableColumn($0) }
+
+        for key in columnKeys {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(key))
+            column.title = key
+            column.isEditable = false
+            column.width = viewModel.columnWidth(for: key, in: table)
+            column.minWidth = 60
+            column.maxWidth = 1000
+
+            // Create custom header cell with bold font
+            let headerCell = NSTableHeaderCell(textCell: key)
+            headerCell.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            column.headerCell = headerCell
+
+            // Enable sorting
+            let descriptor = NSSortDescriptor(key: key, ascending: true)
+            column.sortDescriptorPrototype = descriptor
+
+            tableView.addTableColumn(column)
         }
     }
 
-    private func columnHeadersView(columnKeys: [String]) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                ForEach(Array(columnKeys.enumerated()), id: \.offset) { index, key in
-                    columnHeaderCell(key: key, isLastColumn: index == columnKeys.count - 1)
-                }
-            }
-            Divider()
-                .background(Color.gray)
+    private func updateSortIndicators(for tableView: NSTableView, context: Context) {
+        // First clear all sort indicators
+        for column in tableView.tableColumns {
+            tableView.setIndicatorImage(nil, in: column)
+        }
+
+        // Set the sort indicator for the current sort column
+        if let sortColumn = viewModel.sortColumn,
+           let column = tableView.tableColumn(withIdentifier: NSUserInterfaceItemIdentifier(sortColumn)) {
+            let ascending = viewModel.sortAscending
+            let image = ascending ? NSImage(named: "NSAscendingSortIndicator") : NSImage(named: "NSDescendingSortIndicator")
+            tableView.setIndicatorImage(image, in: column)
         }
     }
+}
 
-    private func columnHeaderCell(key: String, isLastColumn: Bool) -> some View {
-        HStack(spacing: 0) {
-            sortableColumnButton(for: key)
+// MARK: - NSTableView Coordinator
 
-            if !isLastColumn {
-                columnResizeHandle(for: key)
+extension DatabaseTableView {
+    final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+        let parent: DatabaseTableView
+        private var sortedRows: [DataBrokerDatabaseBrowserData.Row] = []
+        private var columnKeys: [String] = []
+
+        weak var tableView: NSTableView?
+        weak var scrollView: NSScrollView?
+
+        init(_ parent: DatabaseTableView) {
+            self.parent = parent
+            super.init()
+            updateData()
+        }
+
+        func updateData() {
+            sortedRows = parent.viewModel.sortedRows(for: parent.table)
+            if !sortedRows.isEmpty {
+                columnKeys = Array(sortedRows[0].data.keys).sorted()
             }
         }
-    }
 
-    private func sortableColumnButton(for key: String) -> some View {
-        Button(action: {
-            viewModel.toggleSort(for: key, in: table)
-        }) {
-            HStack {
-                Text(key)
-                    .font(.headline)
-                if viewModel.sortColumn == key {
-                    Text(viewModel.sortAscending ? "▲" : "▼")
-                        .font(.caption)
-                }
-            }
-            .padding(.horizontal, 8)
+        // MARK: - NSTableViewDataSource
+
+        func numberOfRows(in tableView: NSTableView) -> Int {
+            return sortedRows.count
         }
-        .buttonStyle(PlainButtonStyle())
-        .frame(width: viewModel.columnWidth(for: key, in: table), height: 35, alignment: .center)
-        .clipped()
-    }
 
-    private func columnResizeHandle(for key: String) -> some View {
-        Rectangle()
-            .fill(Color.gray.opacity(0.5))
-            .frame(width: 4, height: 35)
-            .onHover { isHovering in
-                if isHovering {
-                    NSCursor.resizeLeftRight.set()
-                } else {
-                    NSCursor.arrow.set()
-                }
-            }
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        let translation = value.translation
-                        let newWidth = viewModel.columnWidth(for: key, in: table) + translation.width
-                        viewModel.setColumnWidth(newWidth, for: key, in: table)
+        func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
+            guard let identifier = tableColumn?.identifier.rawValue,
+                  row < sortedRows.count else { return nil }
+
+            return sortedRows[row].data[identifier]?.description ?? ""
+        }
+
+        // MARK: - NSTableViewDelegate
+
+        func tableView(_ tableView: NSTableView, didClick tableColumn: NSTableColumn) {
+            let key = tableColumn.identifier.rawValue
+            parent.viewModel.toggleSort(for: key, in: parent.table)
+        }
+
+        func tableViewSelectionDidChange(_ notification: Notification) {
+            guard let tableView = notification.object as? NSTableView else { return }
+
+            if tableView.selectedRow >= 0 && tableView.selectedRow < sortedRows.count {
+                let selectedRow = sortedRows[tableView.selectedRow]
+                // Show all data from the selected row with improved formatting
+                let rowData = columnKeys.compactMap { key in
+                    if let value = selectedRow.data[key] {
+                        return "\(key): \(value)"
                     }
-            )
-    }
+                    return nil
+                }.joined(separator: "\n\n")  // Double newline for better readability
 
-    private func dataRowsView(columnKeys: [String]) -> some View {
-        let sortedRows = viewModel.sortedRows(for: table)
-        return ForEach(Array(sortedRows.enumerated()), id: \.offset) { index, row in
-            VStack(spacing: 0) {
-                dataRowView(row: row, columnKeys: columnKeys)
-                if index < sortedRows.count - 1 {
-                    Divider()
-                        .background(Color.gray)
-                }
+                parent.selectedData = rowData
+            } else {
+                parent.selectedData = ""
             }
         }
-    }
 
-    private func dataRowView(row: DataBrokerDatabaseBrowserData.Row, columnKeys: [String]) -> some View {
-        HStack(alignment: .top, spacing: 0) {
-            ForEach(Array(columnKeys.enumerated()), id: \.offset) { index, key in
-                dataCell(row: row, key: key, isLastColumn: index == columnKeys.count - 1)
-            }
+        func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+            return true
         }
-    }
 
-    private func dataCell(row: DataBrokerDatabaseBrowserData.Row, key: String, isLastColumn: Bool) -> some View {
-        HStack(spacing: 0) {
-            Text("\(row.data[key]?.description ?? "")")
-                .padding(.horizontal, 8)
-                .frame(width: viewModel.columnWidth(for: key, in: table), height: rowHeight, alignment: .center)
-                .background(Color.clear)
-                .clipped()
-                .onTapGesture {
-                    selectedData = row.data[key]?.description ?? ""
-                }
+        // Handle column resizing to update view model
+        func tableViewColumnDidResize(_ notification: Notification) {
+            guard let userInfo = notification.userInfo,
+                  let column = userInfo["NSTableColumn"] as? NSTableColumn else { return }
 
-            if !isLastColumn {
-                Rectangle()
-                    .fill(Color.gray)
-                    .frame(width: 1)
-                    .padding(.horizontal, 1.5)
-            }
+            let key = column.identifier.rawValue
+            parent.viewModel.setColumnWidth(column.width, for: key, in: parent.table)
         }
-        .frame(height: rowHeight)
-    }
-
-    private func spacerView(_ geometry: GeometryProxy) -> some View {
-        Spacer()
-            .frame(height: spacerHeight(geometry))
     }
 }
 

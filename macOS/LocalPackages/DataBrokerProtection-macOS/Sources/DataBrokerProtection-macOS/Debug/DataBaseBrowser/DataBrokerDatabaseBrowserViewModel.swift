@@ -140,13 +140,17 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
 
     func setColumnWidth(_ width: CGFloat, for column: String, in table: DataBrokerDatabaseBrowserData.Table) {
         let tableName = table.name
+        let clampedWidth = max(60.0, width)
+
         if tableColumnWidths[tableName] == nil {
             tableColumnWidths[tableName] = [:]
         }
-        tableColumnWidths[tableName]?[column] = max(60.0, width) // Minimum width of 60
+        tableColumnWidths[tableName]?[column] = clampedWidth
 
-        // Update the published property for UI binding
-        columnWidths[column] = max(60.0, width)
+        // Only update published property if there's a meaningful change
+        if abs((columnWidths[column] ?? 0) - clampedWidth) > 1.0 {
+            columnWidths[column] = clampedWidth
+        }
     }
 
     func initializeColumnWidths(for table: DataBrokerDatabaseBrowserData.Table) {

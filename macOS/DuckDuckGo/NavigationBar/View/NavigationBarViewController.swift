@@ -50,7 +50,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var homeButton: MouseOverButton!
     @IBOutlet weak var homeButtonSeparator: NSView!
     @IBOutlet weak var downloadsButton: MouseOverButton!
-    @IBOutlet weak var networkProtectionButton: MouseOverButton!
+    @IBOutlet weak var networkProtectionButton: NetworkProtectionButton!
     @IBOutlet weak var navigationButtons: NSStackView!
     @IBOutlet weak var addressBarContainer: NSView!
     @IBOutlet weak var daxLogo: NSImageView!
@@ -1706,6 +1706,14 @@ extension NavigationBarViewController: NSMenuDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] image in
                 self?.networkProtectionButton.image = image
+            }
+            .store(in: &cancellables)
+
+        // Show notification dot when VPN upsell should be shown
+        networkProtectionButtonModel.$shouldShowUpsell
+            .receive(on: RunLoop.main)
+            .sink { [weak self] shouldShowUpsell in
+                self?.networkProtectionButton.isNotificationVisible = shouldShowUpsell
             }
             .store(in: &cancellables)
     }

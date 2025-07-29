@@ -72,7 +72,6 @@ jobs:
             SharedPackages/BrowserServicesKit/.build/workspace-state.json
           key: ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
           restore-keys: |
-            ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
             ${{ runner.os }}-bsk-spm-
 
       - name: Select Xcode
@@ -227,7 +226,6 @@ jobs:
           path: SharedPackages/BrowserServicesKit/DerivedData/SourcePackages
           key: ${{ runner.os }}-bsk-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
-            ${{ runner.os }}-bsk-spm-ios-${{ env.cache_key_hash }}
             ${{ runner.os }}-bsk-spm-ios-
 
       - name: Select Xcode

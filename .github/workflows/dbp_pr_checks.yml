@@ -72,7 +72,6 @@ jobs:
             SharedPackages/DataBrokerProtectionCore/.build/workspace-state.json
           key: ${{ runner.os }}-dbp-spm-${{ env.cache_key_hash }}
           restore-keys: |
-            ${{ runner.os }}-dbp-spm-${{ env.cache_key_hash }}
             ${{ runner.os }}-dbp-spm-
 
       - name: Select Xcode
@@ -218,7 +217,6 @@ jobs:
           path: SharedPackages/DataBrokerProtectionCore/DerivedData/SourcePackages
           key: ${{ runner.os }}-dbp-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
-            ${{ runner.os }}-dbp-spm-ios-${{ env.cache_key_hash }}
             ${{ runner.os }}-dbp-spm-ios-
 
       - name: Select Xcode

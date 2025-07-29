@@ -126,7 +126,6 @@ jobs:
         path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-ios-${{ env.cache_key_hash }}
           ${{ runner.os }}-ios-
 
     - name: Select Xcode

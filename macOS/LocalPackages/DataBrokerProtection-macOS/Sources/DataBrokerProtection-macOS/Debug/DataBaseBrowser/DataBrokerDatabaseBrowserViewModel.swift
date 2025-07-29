@@ -176,7 +176,7 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
         guard !table.rows.isEmpty else { return }
 
         let tableName = table.name
-        let columnKeys = Array(table.rows[0].data.keys).sorted()
+        let columnKeys = sortedColumnKeys(for: table)
 
         if tableColumnWidths[tableName] == nil {
             tableColumnWidths[tableName] = [:]
@@ -219,6 +219,61 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
         let tableName = table.name
         tableSearchText[tableName] = searchText
         self.searchText = searchText
+    }
+
+    func sortedColumnKeys(for table: DataBrokerDatabaseBrowserData.Table) -> [String] {
+        guard !table.rows.isEmpty else { return [] }
+
+        return Array(table.rows[0].data.keys).sorted { key1, key2 in
+            let key1Lower = key1.lowercased()
+            let key2Lower = key2.lowercased()
+
+            // Prioritize ID columns first
+            let key1IsId = key1Lower.hasSuffix("id") || key1Lower == "id"
+            let key2IsId = key2Lower.hasSuffix("id") || key2Lower == "id"
+
+            if key1IsId && !key2IsId {
+                return true
+            } else if !key1IsId && key2IsId {
+                return false
+            } else {
+                // Both are ID columns or neither are ID columns, sort alphabetically
+                return key1 < key2
+            }
+        }
+    }
+
+    func exportTableAsCSV(_ table: DataBrokerDatabaseBrowserData.Table) -> String {
+        let columnKeys = sortedColumnKeys(for: table)
+        let rows = sortedRows(for: table)
+
+        guard !columnKeys.isEmpty else { return "" }
+
+        var csvContent = ""
+
+        // Add header row
+        let headers = columnKeys.map { escapeCSVField($0) }
+        csvContent += headers.joined(separator: ",") + "\n"
+
+        // Add data rows
+        for row in rows {
+            let values = columnKeys.map { key in
+                let value = row.data[key]?.description ?? ""
+                return escapeCSVField(value)
+            }
+            csvContent += values.joined(separator: ",") + "\n"
+        }
+
+        return csvContent
+    }
+
+    private func escapeCSVField(_ field: String) -> String {
+        // If field contains comma, newline, or quotes, wrap in quotes and escape internal quotes
+        if field.contains(",") || field.contains("\n") || field.contains("\"") {
+            let escapedField = field.replacingOccurrences(of: "\"", with: "\"\"")
+            return "\"\(escapedField)\""
+        }
+        return field
     }
 
     private func convertToGenericRowData<T>(_ item: T) -> DataBrokerDatabaseBrowserData.Row {

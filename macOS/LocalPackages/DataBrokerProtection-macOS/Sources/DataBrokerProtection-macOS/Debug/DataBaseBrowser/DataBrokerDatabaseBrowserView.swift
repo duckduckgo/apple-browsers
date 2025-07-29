@@ -80,38 +80,75 @@ struct DatabaseTableContainer: View {
     @State private var selectedData: String = ""
     var body: some View {
         VStack(spacing: 0) {
-            // Search bar
-            SearchBarView(searchText: Binding(
-                get: { viewModel.searchText },
-                set: { viewModel.setSearchText($0, for: table) }
-            ))
+            // Search bar with export button
+            HStack(spacing: 8) {
+                SearchBarView(searchText: Binding(
+                    get: { viewModel.searchText },
+                    set: { viewModel.setSearchText($0, for: table) }
+                ))
+
+                Button("Export as CSV") {
+                    exportTableAsCSV()
+                }
+                .buttonStyle(.bordered)
+            }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
             .background(Color(NSColor.controlBackgroundColor))
 
             DatabaseTableView(table: table, viewModel: viewModel, selectedData: $selectedData)
 
-            if !selectedData.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Selected Row Details:")
-                        .font(.headline)
-                        .padding(.horizontal, 4)
-                        .padding(.top, 8)
-                        .padding(.bottom, 8)
+            VStack(spacing: 0) {
+                if !selectedData.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Selected Row Details:")
+                            .font(.headline)
+                            .padding(.horizontal, 4)
+                            .padding(.top, 8)
+                            .padding(.bottom, 8)
 
-                    ScrollView {
-                        TextEditor(text: $selectedData)
+                        ScrollView {
+                            TextEditor(text: $selectedData)
+                        }
+                        .frame(height: 120)
                     }
-                    .frame(height: 120)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .background(Color(NSColor.controlBackgroundColor))
-                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.easeInOut(duration: 0.2), value: selectedData.isEmpty)
         .onAppear {
             viewModel.initializeColumnWidths(for: table)
             viewModel.updatePublishedState(for: table)
+        }
+    }
+
+    private func exportTableAsCSV() {
+        let csvContent = viewModel.exportTableAsCSV(table)
+
+        let savePanel = NSSavePanel()
+        savePanel.title = "Export \(table.name) as CSV"
+        savePanel.nameFieldStringValue = "\(table.name).csv"
+        savePanel.allowedContentTypes = [.commaSeparatedText]
+        savePanel.canCreateDirectories = true
+
+        savePanel.begin { response in
+            if response == .OK, let url = savePanel.url {
+                do {
+                    try csvContent.write(to: url, atomically: true, encoding: .utf8)
+
+                    // Open the file location in Finder
+                    NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: url.deletingLastPathComponent().path)
+                } catch {
+                    // Show error alert
+                    let alert = NSAlert()
+                    alert.messageText = "Export Failed"
+                    alert.informativeText = "Could not save CSV file: \(error.localizedDescription)"
+                    alert.alertStyle = .warning
+                    alert.runModal()
+                }
+            }
         }
     }
 }
@@ -227,7 +264,7 @@ struct DatabaseTableView: NSViewRepresentable {
         let sortedData = viewModel.sortedRows(for: table)
         guard !sortedData.isEmpty else { return }
 
-        let columnKeys = Array(sortedData[0].data.keys).sorted()
+        let columnKeys = viewModel.sortedColumnKeys(for: table)
 
         // Remove existing columns
         tableView.tableColumns.forEach { tableView.removeTableColumn($0) }
@@ -289,7 +326,7 @@ extension DatabaseTableView {
         func updateData() {
             sortedRows = parent.viewModel.sortedRows(for: parent.table)
             if !sortedRows.isEmpty {
-                columnKeys = Array(sortedRows[0].data.keys).sorted()
+                columnKeys = parent.viewModel.sortedColumnKeys(for: parent.table)
             }
         }
 

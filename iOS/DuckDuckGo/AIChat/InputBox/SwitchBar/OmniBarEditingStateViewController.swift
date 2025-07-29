@@ -50,14 +50,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
 
-    private var isShowingDaxLogo: Bool {
-        suggestionTrayManager?.isShowingSuggestionTray == false
-    }
-
-    private var isShowingFavoritesOverlay: Bool {
-        suggestionTrayManager?.suggestionTrayViewController?.isShowingFavoritesOverlay == true
-    }
-
     // MARK: - Core Components
     
     private let switchBarHandler: SwitchBarHandling

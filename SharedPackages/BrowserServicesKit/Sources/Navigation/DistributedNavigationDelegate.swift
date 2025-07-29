@@ -974,6 +974,18 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             assert(wkNavigation == nil, "Unexpected didCommitNavigation without preceding didStart")
             return
         }
+        // when developer redirect breaks client redirect in decidePolicyForNavigationAction
+        // the page initiated client-redirect lands in back history
+        if case .redirect(.developer) = navigation.navigationAction.navigationType,
+           let clientRedirectNavigationAction = navigation.redirectHistory.last,
+           case .redirect(.client) = clientRedirectNavigationAction.navigationType,
+           let clientRedirectPageHistoryItemIdentity = navigation.navigationAction.fromHistoryItemIdentity,
+           // get back-forward items excluding the page that initiated the client-redirect
+           let sessionState = webView.sessionState(withFilter: { $0.identity != clientRedirectPageHistoryItemIdentity }) {
+            // reload webView history without navigation excluding the filtered-out item
+            webView.restoreSessionState(from: sessionState, andNavigate: false)
+        }
+
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
         updateCurrentHistoryItemIdentity(webView.backForwardList.currentItem)
 #endif

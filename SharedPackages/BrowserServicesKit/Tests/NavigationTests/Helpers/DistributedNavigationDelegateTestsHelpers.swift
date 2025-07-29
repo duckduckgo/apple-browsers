@@ -44,6 +44,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     var history = [UInt64: HistoryItemIdentity]()
 
     var _webView: WKWebView!
+    @discardableResult
     func withWebView<T>(do block: (WKWebView) throws -> T) rethrows -> T {
         let webView = _webView ?? {
             let webView = makeWebView()

@@ -702,7 +702,7 @@ protocol NewWindowPolicyDecisionMaker {
         if #available(macOS 12.0, *) {
             self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
         } else {
-            self.interactionState = (try? webView.sessionStateData()).map { .webViewProvided($0) } ?? .none
+            self.interactionState = webView.sessionStateData().map { .webViewProvided($0) } ?? .none
         }
 
         return self.interactionState.data
@@ -1063,7 +1063,7 @@ protocol NewWindowPolicyDecisionMaker {
 
     private func restoreInteractionState(with interactionStateData: Data) {
         guard #available(macOS 12.0, *) else {
-            try? webView.restoreSessionState(from: interactionStateData)
+            webView.restoreSessionState(from: interactionStateData)
             return
         }
         webView.interactionState = interactionStateData

@@ -156,6 +156,8 @@ private final class DaxLogoView: UIView {
         static let maxLogoSize: CGFloat = 96
         static let maxDuckAILogoSize: CGFloat = 140
         static let spacing: CGFloat = 12
+
+        // DuckAI logo contains padding around an icon. Calculating the difference to compensate in the layout.
         static let paddingDiff: CGFloat = maxDuckAILogoSize - maxLogoSize
 
         static func maxLogoSize(isDuckAI: Bool) -> CGFloat {
@@ -163,6 +165,8 @@ private final class DaxLogoView: UIView {
         }
 
         static func spacing(isDuckAI: Bool) -> CGFloat {
+            // For AI mode, adjust the spacing by subtracting half of the padding difference.
+            // This ensures the layout remains visually balanced despite the larger AI logo size.
             isDuckAI ? spacing - (paddingDiff/2) : spacing
         }
     }

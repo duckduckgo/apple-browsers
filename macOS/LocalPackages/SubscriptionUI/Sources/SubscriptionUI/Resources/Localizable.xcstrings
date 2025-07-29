@@ -5399,6 +5399,18 @@
         }
       }
     },
+    "subscription.preferences.subscription.rebranding.message" : {
+      "comment" : "Message informing users that Privacy Pro is now called the DuckDuckGo subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Privacy Pro is now just called the DuckDuckGo subscription."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.activating" : {
       "comment" : "Title for the status indicator informing that user's subscription is still activating",
       "extractionState" : "extracted_with_value",

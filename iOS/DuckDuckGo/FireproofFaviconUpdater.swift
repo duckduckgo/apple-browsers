@@ -75,6 +75,7 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
                                                object: nil)
     }
 
+    @MainActor
     func faviconUserScript(_ script: FaviconUserScript, didRequestUpdateFaviconForHost host: String, withUrl url: URL?) {
         assert(Thread.isMainThread)
 
@@ -82,10 +83,18 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
             guard let self = self else { return }
             self.tab.didUpdateFavicon()
 
-            guard self.bookmarkExists(for: host) || self.autofillLoginExists(for: host),
-                  let image = image else { return }
+            guard let image = image else { return }
+            if self.bookmarkExists(for: host) {
+                self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+                return
+            }
 
-            self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+            Task { @MainActor in
+                let autofillExists = await self.autofillLoginExists(for: host)
+                if autofillExists {
+                    self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+                }
+            }
         }
 
     }
@@ -114,7 +123,7 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
         return result
     }
 
-    private func initSecureVault() -> (any AutofillSecureVault)? {
+    private func initSecureVault() async -> (any AutofillSecureVault)? {
         if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
             if secureVault == nil {
                 secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
@@ -124,8 +133,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
         return nil
     }
 
-    private func autofillLoginExists(for domain: String) -> Bool {
-        guard let secureVault = initSecureVault() else {
+    private func autofillLoginExists(for domain: String) async -> Bool {
+        guard let secureVault = await initSecureVault() else {
             return false
         }
 
@@ -139,8 +148,11 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
 
     @objc private func deleteFireproofFavicon(_ notification: Notification) {
         guard let domain = notification.userInfo?[UserInfoKeys.faviconDomain] as? String,
-              !bookmarkExists(for: domain) &&
-              !autofillLoginExists(for: domain) else { return }
-        Favicons.shared.removeBookmarkFavicon(forDomain: domain)
+              !bookmarkExists(for: domain) else { return }
+        Task { @MainActor in
+            let autofillLoginExists = await !autofillLoginExists(for: domain)
+            guard autofillLoginExists else { return }
+            Favicons.shared.removeBookmarkFavicon(forDomain: domain)
+        }
     }
 }

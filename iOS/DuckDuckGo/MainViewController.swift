@@ -43,6 +43,7 @@ import NetworkExtension
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PixelKit
+import SystemSettingsPiPTutorial
 
 class MainViewController: UIViewController {
 
@@ -223,6 +224,7 @@ class MainViewController: UIViewController {
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
+    let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
@@ -257,7 +259,8 @@ class MainViewController: UIViewController {
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
         themeManager: ThemeManaging,
-        keyValueStore: ThrowingKeyValueStoring
+        keyValueStore: ThrowingKeyValueStoring,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -293,6 +296,7 @@ class MainViewController: UIViewController {
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self

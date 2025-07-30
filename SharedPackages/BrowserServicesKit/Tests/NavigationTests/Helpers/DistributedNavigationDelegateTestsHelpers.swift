@@ -27,6 +27,10 @@ import XCTest
 
 @testable import Navigation
 
+@objc private protocol WebProcessPoolPrivate: AnyObject {
+    @objc(_setWebProcessCountLimit:) static func setWebProcessCountLimit(_ webProcessCountLimit: UInt)
+}
+
 @available(macOS 12.0, iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
 
@@ -40,6 +44,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     var history = [UInt64: HistoryItemIdentity]()
 
     var _webView: WKWebView!
+    @discardableResult
     func withWebView<T>(do block: (WKWebView) throws -> T) rethrows -> T {
         let webView = _webView ?? {
             let webView = makeWebView()
@@ -50,8 +55,6 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             try block(webView)
         }
     }
-    var usedWebViews = [WKWebView]()
-    var usedDelegates = [NavigationDelegateProxy]()
 
     static let data = DataSource()
     var data: DataSource { Self.data }
@@ -69,6 +72,8 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 XCTFail("[\(testName)] unexpected event received: \($0)")
             })
         }
+
+        unsafeBitCast(WKProcessPool.self, to: WebProcessPoolPrivate.Type.self).setWebProcessCountLimit(5)
     }
 
     override func tearDown() {
@@ -81,19 +86,15 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             })
         }
         if let _webView {
-            usedWebViews.append(_webView)
+            if let navigationDelegateProxy {
+                let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
+                objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
+            }
             self._webView = nil
         }
-        self.usedDelegates.append(navigationDelegateProxy)
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        navigationDelegateProxy = nil
         currentHistoryItemIdentityCancellable = nil
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            self?.usedWebViews = []
-            self?.usedDelegates = []
-            self?.navigationDelegateProxy = nil
-            self?.history.removeAll()
-        }
+        history.removeAll()
     }
 
 }
@@ -136,6 +137,8 @@ extension DistributedNavigationDelegateTestsBase {
         let local2 = URL(string: "http://localhost:8084/2")!
         let local3 = URL(string: "http://localhost:8084/3")!
         let local4 = URL(string: "http://localhost:8084/4")!
+        let local5 = URL(string: "http://localhost:8084/5")!
+        let local6 = URL(string: "http://localhost:8084/6")!
 
         let localHashed = URL(string: "http://localhost:8084#")!
         let localHashed1 = URL(string: "http://localhost:8084#navlink")!
@@ -441,9 +444,8 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func navAct(_ idx: UInt64, file: StaticString = #file, line: UInt = #line) -> NavAction {
-        return responder(at: 0).navigationActionsCache.dict[idx] ?? {
-            fatalError("No navigation action at index #\(idx): \(file):\(line)")
-        }()
+        return responder(at: 0).navigationActionsCache.dict[idx] ??
+            .init(.init(url: URL(string: "no-navigation-action-at-\(idx)")!), .other, src: .mainFrame(for: WKWebView()), targ: nil)
     }
     func resp(_ idx: Int) -> NavResponse {
         return responder(at: 0).navigationResponses[idx]

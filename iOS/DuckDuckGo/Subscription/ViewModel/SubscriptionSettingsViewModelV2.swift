@@ -25,6 +25,7 @@ import Core
 import os.log
 import BrowserServicesKit
 import Networking
+import Persistence
 
 final class SubscriptionSettingsViewModelV2: ObservableObject {
 
@@ -69,12 +70,23 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     public let usesUnifiedFeedbackForm: Bool
 
-    init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!) {
+    @Published var showRebrandingMessage: Bool = false
+
+    private let keyValueStorage: KeyValueStoring
+    private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
+
+    init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         keyValueStorage: KeyValueStoring = SubscriptionSettingsStore()) {
         self.subscriptionManager = subscriptionManager
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
+        self.keyValueStorage = keyValueStorage
+        let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
+        let isRebrandingOn = featureFlagger.isFeatureOn(.subscriptionRebranding)
+        self.showRebrandingMessage = !rebrandingMessageDismissed && isRebrandingOn
         setupNotificationObservers()
     }
 
@@ -321,7 +333,34 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
     }
 
+    func dismissRebrandingMessage() {
+        keyValueStorage.set(true, forKey: bannerDismissedKey)
+        showRebrandingMessage = false
+    }
+
     deinit {
         signOutObserver = nil
+    }
+}
+
+public struct SubscriptionSettingsStore: KeyValueStoring {
+    private let keyValueFileStore: KeyValueFileStore?
+
+    public init() {
+        if let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            self.keyValueFileStore = try? KeyValueFileStore(location: appSupportDir, name: "com.duckduckgo.app.subscriptionSettingsStore")
+        } else {
+            self.keyValueFileStore = nil
+        }
+    }
+
+    public func object(forKey defaultName: String) -> Any? {
+        try? keyValueFileStore?.object(forKey: defaultName)
+    }
+    public func set(_ value: Any?, forKey defaultName: String) {
+        try? keyValueFileStore?.set(value, forKey: defaultName)
+    }
+    public func removeObject(forKey defaultName: String) {
+        try? keyValueFileStore?.removeObject(forKey: defaultName)
     }
 }

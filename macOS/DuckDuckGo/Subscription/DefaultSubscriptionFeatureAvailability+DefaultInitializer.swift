@@ -28,6 +28,8 @@ extension DefaultSubscriptionFeatureAvailability {
                   purchasePlatform: Application.appDelegate.subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                   paidAIChatFlagStatusProvider: {
             Application.appDelegate.featureFlagger.isFeatureOn(.paidAIChat)
+        }, supportsAlternateStripePaymentFlowStatusProvider: {
+            Application.appDelegate.featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
         })
     }
 }

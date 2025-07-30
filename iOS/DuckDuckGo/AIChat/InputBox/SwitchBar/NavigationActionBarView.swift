@@ -27,7 +27,7 @@ final class NavigationActionBarView: UIView {
     // MARK: - Constants
     enum Constants {
         static let barHeight: CGFloat = 76
-        static let buttonSize: CGFloat = 44
+        static let buttonSize: CGFloat = 40
         static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
@@ -285,6 +285,10 @@ final class NavigationActionBarView: UIView {
 
 private class CircularButton: UIButton {
 
+    enum Constants {
+        static let hitSize: CGFloat = 44.0
+    }
+
     private let secondShadowLayer = CALayer()
     private var definedBackgroundColor: UIColor?
 
@@ -354,6 +358,14 @@ private class CircularButton: UIButton {
             layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
             secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         }
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        assert(Constants.hitSize >= frame.height)
+        let offset = (frame.height - Constants.hitSize) / 2
+        let rect = CGRect(x: offset, y: offset, width: Constants.hitSize, height: Constants.hitSize)
+        guard rect.contains(point) else { return nil }
+        return self
     }
 }
 

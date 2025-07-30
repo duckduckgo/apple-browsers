@@ -567,7 +567,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
-                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
+                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
+                paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger

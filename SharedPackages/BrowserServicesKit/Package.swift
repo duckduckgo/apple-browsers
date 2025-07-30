@@ -55,7 +55,7 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "10.15.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "10.17.0"),
         .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
@@ -102,6 +102,7 @@ let package = Package(
             name: "BrowserServicesKitTestsUtils",
             dependencies: [
                 "BrowserServicesKit",
+                "WKAbstractions",
             ]
         ),
         .target(
@@ -251,6 +252,7 @@ let package = Package(
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
+                .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .target(
@@ -606,10 +608,14 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("_IS_USER_INITIATED_ENABLED", .when(platforms: [.macOS])),
+                .define("WILLPERFORMCLIENTREDIRECT_ENABLED", .when(platforms: [.macOS])),
+                .define("_IS_REDIRECT_ENABLED", .when(platforms: [.macOS])),
+                .define("_MAIN_FRAME_NAVIGATION_ENABLED", .when(platforms: [.macOS])),
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
-                .define("_NAVIGATION_REQUEST_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
+                .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
+                .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .testTarget(

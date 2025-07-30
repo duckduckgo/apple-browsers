@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SyncUI_iOS
 import Persistence
 import Common
+import SystemSettingsPiPTutorial
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -43,6 +44,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let keyValueStore: ThrowingKeyValueStoring
+    let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -52,7 +54,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncPausedStateManager: any SyncPausedStateManaging,
          fireproofing: Fireproofing,
          websiteDataManager: WebsiteDataManaging,
-         keyValueStore: ThrowingKeyValueStoring) {
+         keyValueStore: ThrowingKeyValueStoring,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -62,6 +65,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.fireproofing = fireproofing
         self.websiteDataManager = websiteDataManager
         self.keyValueStore = keyValueStore
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
     }
     
     enum LegacyView {
@@ -114,7 +118,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
             fireproofing: self.fireproofing,
-            keyValueStore: self.keyValueStore))
+            keyValueStore: self.keyValueStore,
+            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

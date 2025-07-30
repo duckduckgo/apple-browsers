@@ -66,6 +66,8 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     override func setUp() async throws {
+        TestRunHelper.allowAppSendUserEvents = true
+
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
@@ -94,6 +96,8 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     override func tearDown() async throws {
+        TestRunHelper.allowAppSendUserEvents = false
+
         autoreleasepool {
             window?.close()
             window = nil

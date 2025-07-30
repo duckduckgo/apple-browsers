@@ -102,6 +102,7 @@ let package = Package(
             name: "BrowserServicesKitTestsUtils",
             dependencies: [
                 "BrowserServicesKit",
+                "WKAbstractions",
             ]
         ),
         .target(
@@ -251,6 +252,7 @@ let package = Package(
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
+                .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .target(
@@ -606,10 +608,14 @@ let package = Package(
             ],
             swiftSettings: [
                 .define("_IS_USER_INITIATED_ENABLED", .when(platforms: [.macOS])),
+                .define("WILLPERFORMCLIENTREDIRECT_ENABLED", .when(platforms: [.macOS])),
+                .define("_IS_REDIRECT_ENABLED", .when(platforms: [.macOS])),
+                .define("_MAIN_FRAME_NAVIGATION_ENABLED", .when(platforms: [.macOS])),
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
-                .define("_NAVIGATION_REQUEST_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
+                .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
+                .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
             ]
         ),
         .testTarget(

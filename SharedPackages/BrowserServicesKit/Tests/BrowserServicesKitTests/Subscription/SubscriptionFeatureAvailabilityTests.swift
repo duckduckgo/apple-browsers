@@ -55,7 +55,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true })
+                                                                                     paidAIChatFlagStatusProvider: { true },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -69,7 +70,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true })
+                                                                                     paidAIChatFlagStatusProvider: { true },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -81,7 +83,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true })
+                                                                                     paidAIChatFlagStatusProvider: { true },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -92,7 +95,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { false })
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertFalse(subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
@@ -103,7 +107,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     paidAIChatFlagStatusProvider: { true })
+                                                                                     paidAIChatFlagStatusProvider: { true },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
@@ -117,7 +122,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     paidAIChatFlagStatusProvider: { true })
+                                                                                     paidAIChatFlagStatusProvider: { true },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -131,7 +137,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     paidAIChatFlagStatusProvider: { true })
+                                                                                     paidAIChatFlagStatusProvider: { true },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -143,8 +150,27 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     paidAIChatFlagStatusProvider: { true })
+                                                                                     paidAIChatFlagStatusProvider: { true },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
+    }
+
+    // MARK: - Tests for Alternate Stripe Payment Flow Support
+
+    func testSupportsAlternateStripePaymentFlowDisabledWhenProviderReturnsFalse() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+        XCTAssertFalse(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
+    }
+
+    func testSupportsAlternateStripePaymentFlowEnabledWhenProviderReturnsTrue() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { true })
+        XCTAssertTrue(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
     // MARK: - Helper

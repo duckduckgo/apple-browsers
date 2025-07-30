@@ -136,7 +136,7 @@ jobs:
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     env:
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
@@ -376,7 +376,7 @@ jobs:
     if: github.actor != 'dependabot[bot]' && (github.event_name == 'push' || github.event_name == 'pull_request')
 
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       RUNS_ON: macos-15 # keep this in sync with runs-on above
 
@@ -416,7 +416,7 @@ jobs:
       run: |
         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
         if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
         else
           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
         fi
@@ -426,9 +426,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-test-release-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-test-release-${{ matrix.cache-key }}
+          ${{ runner.os }}-mac-release-build-
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version

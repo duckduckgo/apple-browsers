@@ -275,4 +275,7 @@ enum UserText {
     static let subscriptionFoundAlertDescription = NSLocalizedString("subscription.alert.subscription.found.description", bundle: Bundle.module, value: "We found a subscription associated with this Apple Account.", comment: "Alert message when subscription was found")
 
     static let subscriptionAppleIDSyncFailedAlertTitle = NSLocalizedString("subscription.alert.subscription.apple-id.sync-failed.title", bundle: Bundle.module, value: "Something Went Wrong When Syncing Your Apple Account", comment: "Alert message when the subscription failed to restore")
+
+    // MARK: - Rebranding Message
+    static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Privacy Pro is now called the DuckDuckGo subscription")
 }

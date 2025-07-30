@@ -27,7 +27,7 @@ struct SerpHeadersNavigationResponder: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         // add X-DuckDuckGo-Client header for main-frame SERP navigations
-        guard navigationAction.isForMainFrame,
+        guard let mainFrameTarget = navigationAction.mainFrameTarget,
               navigationAction.url.isDuckDuckGo,
               Self.headers.contains(where: { navigationAction.request.value(forHTTPHeaderField: $0.key) == nil }) else {
             return .next
@@ -49,7 +49,7 @@ struct SerpHeadersNavigationResponder: NavigationResponder {
         for (key, value) in Self.headers {
             request.setValue(value, forHTTPHeaderField: key)
         }
-        return .redirectInvalidatingBackItemIfNeeded(navigationAction) { navigator in
+        return .redirect(mainFrameTarget) { navigator in
             navigator.load(request)
         }
     }

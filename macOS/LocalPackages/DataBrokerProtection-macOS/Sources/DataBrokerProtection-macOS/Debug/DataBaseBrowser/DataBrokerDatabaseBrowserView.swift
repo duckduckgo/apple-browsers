@@ -43,34 +43,7 @@ struct DataBrokerDatabaseBrowserView: View {
                 Text("No selection")
             }
         }
-        .frame(minWidth: 1300, minHeight: 800)
-        .onReceive(NotificationCenter.default.publisher(for: .init("CommandF"))) { _ in }
-        .background(CommandFResponder())
-    }
-}
-
-struct CommandFResponder: NSViewRepresentable {
-    func makeNSView(context: Context) -> CommandFView {
-        return CommandFView()
-    }
-
-    func updateNSView(_ nsView: CommandFView, context: Context) {}
-}
-
-final class CommandFView: NSView {
-    override var acceptsFirstResponder: Bool { true }
-
-    override func keyDown(with event: NSEvent) {
-        if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "f" {
-            NotificationCenter.default.post(name: NSNotification.Name("CommandF"), object: nil)
-            return
-        }
-        super.keyDown(with: event)
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        window?.makeFirstResponder(self)
+        .frame(minWidth: 1000, minHeight: 800)
     }
 }
 
@@ -164,14 +137,6 @@ struct SearchBarView: NSViewRepresentable {
 
         context.coordinator.searchField = searchField
 
-        // Register for Command+F notification
-        NotificationCenter.default.addObserver(
-            context.coordinator,
-            selector: #selector(Coordinator.handleCommandF),
-            name: NSNotification.Name("CommandF"),
-            object: nil
-        )
-
         return searchField
     }
 
@@ -197,14 +162,6 @@ struct SearchBarView: NSViewRepresentable {
             guard let searchField = searchField else { return }
             parent.searchText = searchField.stringValue
         }
-
-        @objc func handleCommandF() {
-            searchField?.becomeFirstResponder()
-        }
-
-        deinit {
-            NotificationCenter.default.removeObserver(self)
-        }
     }
 }
 
@@ -229,6 +186,7 @@ struct DatabaseTableView: NSViewRepresentable {
         tableView.allowsEmptySelection = true
         tableView.intercellSpacing = NSSize(width: 1, height: 1)
         tableView.gridStyleMask = [.solidHorizontalGridLineMask, .solidVerticalGridLineMask]
+        tableView.focusRingType = .none
 
         // Setup columns
         setupColumns(for: tableView, context: context)

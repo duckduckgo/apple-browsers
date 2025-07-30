@@ -39,12 +39,6 @@ final class SwipeContainerViewController: UIViewController {
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    private var mode: TextEntryMode = .search {
-        didSet {
-            updateScrollViewPosition(animated: true)
-        }
-    }
-
     // MARK: - UI Elements
 
     private(set) var swipeScrollView: UIScrollView!

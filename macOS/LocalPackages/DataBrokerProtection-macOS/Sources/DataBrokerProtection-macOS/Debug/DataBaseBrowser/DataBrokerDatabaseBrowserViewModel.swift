@@ -182,10 +182,8 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             tableColumnWidths[tableName] = [:]
         }
 
-        for key in columnKeys {
-            if tableColumnWidths[tableName]?[key] == nil {
-                tableColumnWidths[tableName]?[key] = 200.0 // Default width
-            }
+        for key in columnKeys where tableColumnWidths[tableName]?[key] == nil  {
+            tableColumnWidths[tableName]?[key] = 200.0 // Default width
         }
 
         // Update published properties for current table

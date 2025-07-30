@@ -61,6 +61,19 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.view.isHidden == false
     }
 
+    var shouldDisplayFavoritesOverlay: Bool {
+        let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
+
+        return !shouldDisplaySuggestionTray && canDisplayFavorites
+    }
+
+    var shouldDisplaySuggestionTray: Bool {
+        let query = switchBarHandler.currentText
+        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
+
+        return !(query.isEmpty || !hasUserInteracted)
+    }
+
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies) {
@@ -100,8 +113,9 @@ final class SuggestionTrayManager: NSObject {
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
         suggestionTrayViewController = controller
+
         controller.view.translatesAutoresizingMaskIntoConstraints = false
-        
+
         // Prevent flash during initial load
         controller.view.isHidden = true
 
@@ -115,33 +129,24 @@ final class SuggestionTrayManager: NSObject {
         controller.autocompleteDelegate = self
         controller.favoritesOverlayDelegate = self
         controller.didMove(toParent: parentViewController)
-        
-        containerView.layoutIfNeeded()
 
         showInitialSuggestions()
+        containerView.layoutIfNeeded()
     }
     
     /// Handles query updates and shows appropriate suggestions
     func handleQueryUpdate(_ query: String) {
         guard switchBarHandler.currentToggleState == .search else { return }
 
-        updateSuggestionForQuery(query)
+        updateSuggestionTrayForCurrentState()
     }
     
     /// Shows the suggestion tray for the initial selected state
     func showInitialSuggestions() {
-        updateSuggestionForQuery(switchBarHandler.currentText)
+        updateSuggestionTrayForCurrentState()
     }
     
     // MARK: - Private Methods
-
-    private func updateSuggestionForQuery(_ query: String) {
-        if query.isEmpty {
-            showSuggestionTray(.favorites)
-        } else {
-            showSuggestionTray(.autocomplete(query: query))
-        }
-    }
 
     private func setupBindings() {
         switchBarHandler.toggleStatePublisher
@@ -171,9 +176,8 @@ final class SuggestionTrayManager: NSObject {
     
     private func updateSuggestionTrayForCurrentState() {
         let query = switchBarHandler.currentText
-        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
-        
-        if query.isEmpty || !hasUserInteracted {
+
+        if !shouldDisplaySuggestionTray {
             showSuggestionTray(.favorites)
         } else {
             showSuggestionTray(.autocomplete(query: query))

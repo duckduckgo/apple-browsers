@@ -62,6 +62,12 @@ class SwitchBarTextEntryView: UIView {
     private var textViewTrailingConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
 
+    var isExpandable: Bool = false {
+        didSet {
+            updateTextViewHeight()
+        }
+    }
+
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
         self.handler = handler
@@ -78,6 +84,8 @@ class SwitchBarTextEntryView: UIView {
     private func setupView() {
         textView.font = UIFont.systemFont(ofSize: Constants.fontSize)
         textView.backgroundColor = UIColor.clear
+        textView.tintColor = UIColor(designSystemColor: .accent)
+        textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
         textView.delegate = self
@@ -89,7 +97,7 @@ class SwitchBarTextEntryView: UIView {
                                                    right: 0)
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
-        placeholderLabel.textColor = UIColor.placeholderText
+        placeholderLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
         placeholderLabel.numberOfLines = 0
 
         setupButtonsView()
@@ -157,14 +165,14 @@ class SwitchBarTextEntryView: UIView {
     private func updateForCurrentMode() {
         switch currentMode {
         case .search:
-            placeholderLabel.text = "Search..."
+            placeholderLabel.text = UserText.searchInputFieldPlaceholderSearchWeb
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none
             textView.autocorrectionType = .no
             textView.spellCheckingType = .no
         case .aiChat:
-            placeholderLabel.text = "Ask..."
+            placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.keyboardType = .default
             textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences
@@ -225,24 +233,39 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateTextViewHeight() {
-        let size = textView.sizeThatFits(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
-        let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
-        heightConstraint?.constant = newHeight
-
+        let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
         let contentExceedsMaxHeight = size.height > Constants.maxHeight
-        textView.isScrollEnabled = contentExceedsMaxHeight
-        textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
+
+        if isExpandable {
+            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
+
+            heightConstraint?.constant = newHeight
+
+            textView.isScrollEnabled = contentExceedsMaxHeight
+            textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
+        } else {
+            heightConstraint?.constant = Constants.minHeight
+            textView.isScrollEnabled = true
+            textView.showsVerticalScrollIndicator = true
+            return
+        }
 
         if contentExceedsMaxHeight {
-            let bottom = NSRange(location: textView.text.count, length: 0)
-            textView.scrollRangeToVisible(bottom)
+            let range: NSRange
+            if textView.selectedRange.length > 0 && isExpandable {
+                range = NSRange(location: textView.text.count, length: 0)
+            } else {
+                range = NSRange(location: 0, length: 0)
+            }
+            textView.scrollRangeToVisible(range)
         }
     }
 
     private func setupSubscriptions() {
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateForCurrentMode()
             }
@@ -250,6 +273,7 @@ class SwitchBarTextEntryView: UIView {
 
         handler.currentTextPublisher
             .receive(on: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] text in
                 guard let self = self else { return }
 

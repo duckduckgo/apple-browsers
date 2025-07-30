@@ -33,6 +33,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
 
+//    let editModeTransitioningDelegate = OmniBarEditingStateTransitioningDelegate()
+
     override func loadView() {
         view = omniBarView
     }
@@ -163,22 +165,22 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private func presentExperimentalEditingState(for textField: UITextField) {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
+
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
         editingStateViewController.delegate = self
-        editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
-        editingStateViewController.modalPresentationStyle = .overFullScreen
+
+        editingStateViewController.modalPresentationStyle = .custom
+        editingStateViewController.transitioningDelegate = self
+
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
-        present(editingStateViewController, animated: false)
+        editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
+        
         self.editingStateViewController = editingStateViewController
 
-        if shouldAutoSelectText {
-            DispatchQueue.main.async {
-                editingStateViewController.setUpForInitialSelectedState()
-            }
-        }
+        present(editingStateViewController, animated: true)
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
@@ -243,12 +245,19 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
     }
+}
 
-    func onAppear() {
-        barView.hideButtons()
+extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
+
+    func animationController(forPresented presented: UIViewController,
+                             presenting: UIViewController,
+                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return OmniBarEditingStateTransition(isPresenting: true,
+                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 
-    func onDismiss() {
-        barView.revealButtons()
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return OmniBarEditingStateTransition(isPresenting: false,
+                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 }

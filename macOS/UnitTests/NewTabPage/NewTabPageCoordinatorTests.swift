@@ -109,6 +109,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
+            newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }
@@ -121,6 +122,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         firePixelCalls = []
         keyValueStore = nil
         notificationCenter = nil
+        tabsPreferences = nil
+        windowControllersManager = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

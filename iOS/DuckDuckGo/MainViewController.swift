@@ -43,6 +43,7 @@ import NetworkExtension
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PixelKit
+import SystemSettingsPiPTutorial
 
 class MainViewController: UIViewController {
 
@@ -136,7 +137,6 @@ class MainViewController: UIViewController {
     private var aiChatCancellables = Set<AnyCancellable>()
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let subscriptionCookieManager: SubscriptionCookieManaging
     let privacyProDataReporter: PrivacyProDataReporting
 
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
@@ -224,6 +224,7 @@ class MainViewController: UIViewController {
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
+    let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
@@ -250,7 +251,6 @@ class MainViewController: UIViewController {
         featureFlagger: FeatureFlagger,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
-        subscriptionCookieManager: SubscriptionCookieManaging,
         textZoomCoordinator: TextZoomCoordinating,
         websiteDataManager: WebsiteDataManaging,
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
@@ -259,7 +259,8 @@ class MainViewController: UIViewController {
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
         themeManager: ThemeManaging,
-        keyValueStore: ThrowingKeyValueStoring
+        keyValueStore: ThrowingKeyValueStoring,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -288,7 +289,6 @@ class MainViewController: UIViewController {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.fireproofing = fireproofing
-        self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
@@ -296,6 +296,7 @@ class MainViewController: UIViewController {
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -3229,7 +3230,10 @@ extension MainViewController: AutoClearWorker {
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
 
         let pixel = TimedPixel(.forgetAllDataCleared)
-        await websiteDataManager.clear(dataStore: WKWebsiteDataStore.default())
+
+        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
+        //  this is the same as `WKWebsiteDataStore.default()`
+        await websiteDataManager.clear(dataStore: DDGWebsiteDataStoreProvider.current())
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
         AutoconsentManagement.shared.clearCache()
@@ -3545,3 +3549,15 @@ private extension UIBarButtonItem {
 
 /// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
 extension MainViewController: MessageNavigationDelegate { }
+
+extension MainViewController: MainViewEditingStateTransitioning {
+    func hide(with yOffset: CGFloat) {
+        additionalSafeAreaInsets.top = yOffset
+        omniBar.barView.hideButtons()
+    }
+
+    func show() {
+        additionalSafeAreaInsets.top = 0
+        omniBar.barView.revealButtons()
+    }
+}

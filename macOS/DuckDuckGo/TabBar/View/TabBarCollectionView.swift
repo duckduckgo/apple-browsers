@@ -108,6 +108,45 @@ final class TabBarCollectionView: NSCollectionView {
         }
     }
 
+    // MARK: - Accessibility
+
+    override func accessibilityChildren() -> [Any]? {
+        // matches the internal [NSCollectionViewAccessibilityHelper accessibilityChildren] implementation
+        return accessibilityVisibleChildren()
+    }
+
+    override func accessibilityVisibleChildren() -> [Any]? {
+        let children = super.accessibilityVisibleChildren()
+
+        // return children from first section (TabBarViewItem-s)
+        guard let section = children?.first(where: { ($0 as? NSAccessibilityElement)?.accessibilityRole() == .list }) as? NSAccessibilityElement else { return children }
+        var sectionChildren = section.accessibilityVisibleChildren()
+
+        if let footerIndex = sectionChildren?.lastIndex(where: { ($0 as? NSAccessibilityElement)?.accessibilityRole() == .group && ($0 as AnyObject).className.contains("Footer") }) {
+            let footer = sectionChildren?.remove(at: footerIndex) as? NSAccessibilityElement
+            // move Add Tab button from the Footer to direct Collection View children
+            sectionChildren?.append(contentsOf: footer?.accessibilityChildren() ?? [])
+        }
+
+        return sectionChildren
+    }
+
+    /// prevent NSCollectionView default implementation from returning NSCollectionViewSectionAccessibility object
+    override func accessibilityArrayAttributeValues(_ attribute: NSAccessibility.Attribute, index: Int, maxCount: Int) -> [Any] {
+        let values: [Any]
+        if case .children = attribute {
+            guard let children = accessibilityVisibleChildren(),
+                  children.indices.contains(index) else { return [] }
+            let range = Range(NSRange(location: index, length: maxCount))!
+            let upperBound = min(range.upperBound, children.endIndex)
+
+            values = Array(children[index..<upperBound])
+        } else {
+            values = super.accessibilityArrayAttributeValues(attribute, index: index, maxCount: maxCount)
+        }
+        return values
+    }
+
 }
 
 extension NSCollectionView {

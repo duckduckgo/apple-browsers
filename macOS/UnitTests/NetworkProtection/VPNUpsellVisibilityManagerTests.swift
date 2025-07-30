@@ -222,6 +222,8 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             timerDuration: 0.1
         )
 
+        sut.setup(isFirstLaunch: true)
+
         sut.$state
             .sink { state in
                 if state == .waitingForConditions {
@@ -251,6 +253,8 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             timerDuration: 10
         )
 
+        sut.setup(isFirstLaunch: true)
+
         let expectation = XCTestExpectation(description: "State should transition to waitingForTimer")
 
         sut.$state
@@ -270,7 +274,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .waitingForTimer)
     }
 
-    func testWhenUserIsEligible_AndConditionsAreNotMetOnFirstLaunch_AndTimerCompletes_ItShowsTheUpsell() {
+    func testWhenUserIsEligible_AndConditionsAreMetOnFirstLaunch_AndTimerCompletes_ItShowsTheUpsell() {
         // Given
         let onboardingSubject = PassthroughSubject<Bool, Never>()
         let defaultBrowserSubject = PassthroughSubject<Bool, Never>()
@@ -285,6 +289,8 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             persistor: mockPersistor,
             timerDuration: 0.1
         )
+
+        sut.setup(isFirstLaunch: true)
 
         let expectation = XCTestExpectation(description: "State should transition to visible")
 
@@ -335,7 +341,7 @@ extension VPNUpsellVisibilityManagerTests {
         isNewUser: Bool,
         autoDismissDays: Int = 7
     ) -> VPNUpsellVisibilityManager {
-        return VPNUpsellVisibilityManager(
+        let manager = VPNUpsellVisibilityManager(
             isFirstLaunch: isFirstLaunch,
             isNewUser: isNewUser,
             subscriptionManager: mockSubscriptionManager,
@@ -346,5 +352,9 @@ extension VPNUpsellVisibilityManagerTests {
             timerDuration: 0.01,
             autoDismissDays: autoDismissDays
         )
+
+        manager.setup(isFirstLaunch: isFirstLaunch)
+
+        return manager
     }
 }

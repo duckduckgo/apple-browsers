@@ -188,6 +188,7 @@ final class NavigationBarViewController: NSViewController {
                        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
+                       vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -213,6 +214,7 @@ final class NavigationBarViewController: NSViewController {
                 visualStyle: visualStyle,
                 aiChatMenuConfig: aiChatMenuConfig,
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
+                vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
                 showTab: showTab
             )
         }!
@@ -236,7 +238,7 @@ final class NavigationBarViewController: NSViewController {
         visualStyle: VisualStyleProviding,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
-        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = Application.appDelegate.vpnUpsellVisibilityManager,
+        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 

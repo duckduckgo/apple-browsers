@@ -216,7 +216,7 @@ extension NetworkProtectionNavBarButtonModelTests {
             mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
         }
 
-        return VPNUpsellVisibilityManager(
+        let manager = VPNUpsellVisibilityManager(
             isFirstLaunch: false,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
@@ -226,6 +226,10 @@ extension NetworkProtectionNavBarButtonModelTests {
             persistor: mockPersistor,
             timerDuration: 0.01
         )
+
+        manager.setup(isFirstLaunch: false)
+
+        return manager
     }
 
     private func createButtonModel(with upsellManager: VPNUpsellVisibilityManager) -> NetworkProtectionNavBarButtonModel {

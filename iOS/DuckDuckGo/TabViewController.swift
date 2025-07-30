@@ -643,7 +643,7 @@ class TabViewController: UIViewController {
     }
 
     private func checkWebViewVisibilityConsistency() {
-        if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
+        if webView.isHidden && error.isHidden {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
             
             // Fix inconsistent state - if webView is hidden but no error shown, show webView
@@ -1046,11 +1046,6 @@ class TabViewController: UIViewController {
     }
     
     private func showError(message: String) {
-        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            // Prevent inconsistent state where webView is hidden but no error shown
-            // https://app.asana.com/1/137249556945/project/414709148257752/task/1210155968610460?focus=true
-            return
-        }
         webView.isHidden = true
         error.isHidden = false
         errorMessage.text = message

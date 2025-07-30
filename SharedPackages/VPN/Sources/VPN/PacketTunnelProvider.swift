@@ -138,7 +138,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .couldNotGenerateTunnelConfiguration: return 1
             case .simulateTunnelFailureError: return 2
             case .simulateSubscriptionExpiration: return 3
-            case .tokenReset: return 3
+            case .tokenReset: return 4
                 // Subscription Errors - 100+
             case .vpnAccessRevoked: return 100
             case .vpnAccessRevokedDetectedByMonitorCheck: return 101
@@ -1624,7 +1624,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         do {
             try await shutdown(dueTo: error)
         } catch {
-            // If the VPN can't be shut down cleanly, we removes the token so
+            // If the VPN can't be shut down cleanly, we remove the token so
             // that even if the VPN is stuck trying to reconnect, we won't be
             // hitting our backend or firing pixels.
             //

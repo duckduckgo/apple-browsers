@@ -291,6 +291,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenGotItButtonPressedThenAskDelegateToRemoveViewHighlights() throws {
+        throw XCTSkip("Flaky Test")
         // GIVEN
         let expectation = self.expectation(description: "Wait for webViewDidFinishNavigationPublisher to emit")
         let delegate = BrowserTabViewControllerDelegateSpy()

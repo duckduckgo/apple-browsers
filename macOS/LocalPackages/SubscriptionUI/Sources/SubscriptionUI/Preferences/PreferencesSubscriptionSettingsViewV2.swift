@@ -56,6 +56,11 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
             }
             .padding(.bottom, 16)
 
+            // Rebranding message
+            if model.showRebrandingMessage {
+                rebrandingMessage
+            }
+
             // Sections
             switch model.settingsState {
             case .subscriptionActive, .subscriptionFreeTrialActive:
@@ -255,5 +260,24 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
         })
         .frame(width: 360)
+    }
+
+    private var rebrandingMessage: some View {
+        SubfeatureGroup {
+            HStack(spacing: 8) {
+                Image(.privacyProColor24)
+                Text(UserText.preferencesSubscriptionRebrandingMessage)
+                    .font(
+                        Font.custom("SF Pro", size: 13).weight(.bold)
+                    )
+                Spacer()
+                CloseButton(
+                    icon: NSImage(resource: .close16),
+                    size: 20,
+                    action: { model.dismissRebrandingMessage() }
+                )
+            }
+            .padding(2)
+        }
     }
 }

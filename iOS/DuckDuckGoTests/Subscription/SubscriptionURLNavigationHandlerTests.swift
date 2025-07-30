@@ -88,9 +88,18 @@ final class SubscriptionURLNavigationHandlerTests: XCTestCase {
                 return false
             }
 
-            // Check if it's subscriptionFlow with no redirect components
+            // Check if it's subscriptionFlow with redirect components
             if case .subscriptionFlow(let components) = deepLinkTarget {
-                return components == nil
+                guard let urlComponents = components,
+                      let url = urlComponents.url,
+                      let queryItems = urlComponents.queryItems else {
+                    XCTFail("URLComponents should contain URL and query items")
+                    return false
+                }
+                // Verify the featurePage=duckai parameter is present
+                let hasFeaturePage = queryItems.contains { $0.name == "featurePage" && $0.value == "duckai" }
+                let urlContainsFeaturePage = url.absoluteString.contains("featurePage=duckai")
+                return hasFeaturePage && urlContainsFeaturePage
             }
             return false
         }
@@ -125,8 +134,10 @@ final class SubscriptionURLNavigationHandlerTests: XCTestCase {
                 // Verify the origin parameter is present in the URL
                 let hasOriginParameter = queryItems.contains { $0.name == "origin" && $0.value == testOrigin }
                 let urlContainsOrigin = url.absoluteString.contains("origin=\(testOrigin)")
-
-                return hasOriginParameter && urlContainsOrigin
+                // Verify the featurePage=duckai parameter is present
+                let hasFeaturePage = queryItems.contains { $0.name == "featurePage" && $0.value == "duckai" }
+                let urlContainsFeaturePage = url.absoluteString.contains("featurePage=duckai")
+                return hasOriginParameter && urlContainsOrigin && hasFeaturePage && urlContainsFeaturePage
             }
             return false
         }

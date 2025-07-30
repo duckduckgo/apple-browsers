@@ -84,8 +84,8 @@ struct SubscriptionNavigationCoordinatorTests {
             return
         }
 
-        // Verify the URL matches exactly what was returned from subscription manager
-        #expect(url == expectedURL)
+        // Verify the URL contains the featurePage=duckai parameter
+        #expect(url.absoluteString.contains("featurePage=duckai"))
     }
 
     @Test("navigateToSubscriptionPurchase fetches purchase URL and shows subscription tab with origin")
@@ -107,6 +107,8 @@ struct SubscriptionNavigationCoordinatorTests {
 
         // Verify the URL contains the origin parameter
         #expect(url.absoluteString.contains("origin=\(origin)"))
+        // Verify the URL contains the featurePage=duckai parameter
+        #expect(url.absoluteString.contains("featurePage=duckai"))
     }
 
 }

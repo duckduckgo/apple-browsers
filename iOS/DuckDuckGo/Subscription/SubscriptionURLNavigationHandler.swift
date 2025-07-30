@@ -57,12 +57,13 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
     func navigateToSubscriptionPurchase(origin: String?) {
         let settingsDeepLink: SettingsViewModel.SettingsDeepLinkSection
 
+        var url = SubscriptionURL.purchase.subscriptionURL(environment: .production)
+        url = url.appendingParameter(name: "featurePage", value: "duckai")
         if let origin = origin {
-            let redirectURLComponents = SubscriptionURL.purchaseURLComponentsWithOrigin(origin)
-            settingsDeepLink = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
-        } else {
-            settingsDeepLink = .subscriptionFlow()
+            url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
         }
+        let redirectURLComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        settingsDeepLink = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
 
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,

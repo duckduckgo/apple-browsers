@@ -50,7 +50,26 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
     override func tearDown() {
         autoreleasepool {
-            coordinator?.cancelAll()
+            if let coordinator {
+                let activeItems = coordinator.downloadListItems.filter { item in
+                    if let progress = item.progress, !progress.isCancelled { true } else { false }
+                }
+                if !activeItems.isEmpty {
+                    var expectations = activeItems.reduce(into: [:]) { expectations, item in
+                        expectations[item.identifier] = expectation(description: "\(item) tearDown cancellation")
+                    }
+                    let cancellable = coordinator.updates.sink {
+                        if $0.isDownloadCompletedUpdate {
+                            expectations[$0.item.identifier]?.fulfill()
+                            expectations[$0.item.identifier] = nil
+                        }
+                    }
+                    activeItems.forEach { $0.progress?.cancel() }
+
+                    waitForExpectations(timeout: 5)
+                    withExtendedLifetime(cancellable) {}
+                }
+            }
 
             self.store = nil
             self.downloadManager = nil

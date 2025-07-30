@@ -64,7 +64,6 @@ struct SettingsState {
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
-    var isExperimentalThemingEnabled: Bool
     var isExperimentalAIChatEnabled: Bool
     var isExperimentalAIChatTransitionEnabled: Bool
 
@@ -125,7 +124,6 @@ struct SettingsState {
             textZoom: TextZoom(enabled: false, level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
-            isExperimentalThemingEnabled: false,
             isExperimentalAIChatEnabled: false,
             isExperimentalAIChatTransitionEnabled: false,
             sendDoNotSell: true,

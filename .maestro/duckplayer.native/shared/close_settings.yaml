@@ -1,0 +1,9 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+# Load constants
+- runFlow:
+    file: constants.yaml
+
+- tapOn: ${output.settingsLabel}
+- tapOn: ${output.doneLabel}

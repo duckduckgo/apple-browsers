@@ -96,6 +96,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         subscriptionManagerV2 = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
+        broker = nil
     }
 
     // MARK: - Free Trials
@@ -196,6 +197,82 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
         XCTAssertFalse(featureValue.usePaidDuckAi)
+    }
+
+    func testGetFeatureConfig_WhenStripeSupported_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureValue else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
+    }
+
+    func testGetFeatureConfig_WhenStripeNotSupported_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureValue else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
+    }
+
+    func testGetFeatureConfig_WhenBothFeaturesEnabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureValue else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertTrue(featureValue.usePaidDuckAi)
+        XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
+    }
+
+    func testGetFeatureConfig_WhenBothFeaturesDisabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureValue else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertFalse(featureValue.usePaidDuckAi)
+        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
     // MARK: - Feature Selection Tests
@@ -327,51 +404,5 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         // Then
         XCTAssertNil(result)
         await fulfillment(of: [uiHandlerExpectation], timeout: 0.1)
-    }
-
-    @MainActor
-    func testFreemiumPixelOriginSetWhenSubscriptionSelectedSuccessFromFreemium() async throws {
-        // Given
-        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
-        mockStorePurchaseManager.hasActiveSubscriptionResult = false
-        mockStorePurchaseManager.purchaseSubscriptionResult = .success("mock-transaction-jws")
-        let validTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerV2.resultTokenContainer = validTokenContainer
-        subscriptionManagerV2.resultCreateAccountTokenContainer = validTokenContainer
-        subscriptionManagerV2.confirmPurchaseResponse = .success(SubscriptionMockFactory.appleSubscription)
-        subscriptionManagerV2.resultSubscription = SubscriptionMockFactory.appleSubscription
-
-        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = try await sut.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertNil(result)
-        XCTAssertEqual(subscriptionSuccessPixelHandler.origin, freemiumOrigin)
-    }
-
-    @MainActor
-    func testFreemiumPixelOriginNotSetWhenSubscriptionSelectedSuccessNotFromFreemium() async throws {
-        // Given
-        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false
-        mockStorePurchaseManager.hasActiveSubscriptionResult = false
-        mockStorePurchaseManager.purchaseSubscriptionResult = .success("mock-transaction-jws")
-        let validTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerV2.resultTokenContainer = validTokenContainer
-        subscriptionManagerV2.resultCreateAccountTokenContainer = validTokenContainer
-        subscriptionManagerV2.confirmPurchaseResponse = .success(SubscriptionMockFactory.appleSubscription)
-        subscriptionManagerV2.resultSubscription = SubscriptionMockFactory.appleSubscription
-
-        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = try await sut.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertNil(result)
-        XCTAssertNotEqual(subscriptionSuccessPixelHandler.origin, freemiumOrigin)
     }
 }

@@ -44,12 +44,6 @@ class PrivacyIconView: UIView {
     @IBOutlet var shieldAnimationView: LottieAnimationView!
     @IBOutlet var shieldDotAnimationView: LottieAnimationView!
 
-    var isUsingExperimentalAnimations: Bool = false {
-        didSet {
-            loadAnimations()
-        }
-    }
-
     public required init?(coder aDecoder: NSCoder) {
         icon = .shield
         super.init(coder: aDecoder)
@@ -76,10 +70,8 @@ class PrivacyIconView: UIView {
     func loadAnimations(animationCache cache: AnimationCacheProvider = DefaultAnimationCache.sharedCache) {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
 
-        let shieldBaseAnimationName = (useDarkStyle ? "dark-shield" : "shield")
-        let shieldDotBaseAnimationName = (useDarkStyle ? "dark-shield-dot" : "shield-dot")
-        let shieldAnimationName = shieldBaseAnimationName.appending(isUsingExperimentalAnimations ? "-new" : "")
-        let shieldDotAnimationName = shieldDotBaseAnimationName.appending(isUsingExperimentalAnimations ? "-new" : "")
+        let shieldAnimationName = (useDarkStyle ? "dark-shield" : "shield")
+        let shieldDotAnimationName = (useDarkStyle ? "dark-shield-dot" : "shield-dot")
 
         let shieldAnimation = LottieAnimation.named(shieldAnimationName, animationCache: cache)
 

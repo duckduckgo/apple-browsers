@@ -325,9 +325,12 @@ private class DummyFeatureFlagger: FeatureFlagger {
 }
 
 private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
-    var openAIChatInSidebar = false
+    var shouldDisplayAnyAIChatFeature = false
+    var shouldOpenAIChatInSidebar = false
+    var shouldDisplaySummarizationMenuItem = false
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()

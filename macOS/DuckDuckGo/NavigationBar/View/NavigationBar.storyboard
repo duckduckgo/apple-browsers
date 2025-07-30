@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="o2v-eH-jTI">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24093.9" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="o2v-eH-jTI">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24093.9"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -904,7 +904,7 @@
                                             </userDefinedRuntimeAttribute>
                                         </userDefinedRuntimeAttributes>
                                         <connections>
-                                            <action selector="privacyEntryPointButtonAction:" target="mcr-nj-GmC" id="YFW-MB-o9A"/>
+                                            <action selector="privacyDashboardButtonAction:" target="mcr-nj-GmC" id="YFW-MB-o9A"/>
                                         </connections>
                                     </button>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="lbX-yW-2eM" userLabel="Separator">
@@ -1174,7 +1174,7 @@
                         <outlet property="permissionButtons" destination="8UU-A8-1nD" id="gYJ-VW-MEG"/>
                         <outlet property="popupsButton" destination="qqY-h9-UQ7" id="1QY-I6-oNC"/>
                         <outlet property="popupsButtonHeightConstraint" destination="Lys-Hh-cYc" id="aif-wm-FWV"/>
-                        <outlet property="privacyEntryPointButton" destination="nOW-iY-XmO" id="r0A-EO-srN"/>
+                        <outlet property="privacyDashboardButton" destination="nOW-iY-XmO" id="r0A-EO-srN"/>
                         <outlet property="privacyShieldButtonHeightConstraint" destination="NcD-Mf-Vae" id="Ssh-nD-Yv5"/>
                         <outlet property="privacyShieldButtonWidthConstraint" destination="Hf1-nK-Kb4" id="uss-0B-3pT"/>
                         <outlet property="privacyShieldLeadingConstraint" destination="aq1-9u-eHl" id="aEU-Iy-fau"/>

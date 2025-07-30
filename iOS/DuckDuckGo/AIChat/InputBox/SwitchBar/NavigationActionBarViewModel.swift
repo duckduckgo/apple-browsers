@@ -29,7 +29,6 @@ final class NavigationActionBarViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var isSearchMode: Bool = true
     @Published var hasText: Bool = false
-    @Published var isWebSearchEnabled: Bool = false
     @Published var isVoiceSearchEnabled: Bool = true
     @Published var hasUserInteractedWithText: Bool = false
     @Published var isCurrentTextValidURL: Bool = false
@@ -75,13 +74,6 @@ final class NavigationActionBarViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        switchBarHandler.forceWebSearchPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] forceWebSearch in
-                self?.isWebSearchEnabled = forceWebSearch
-            }
-            .store(in: &cancellables)
-
         switchBarHandler.hasUserInteractedWithTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] hasUserInteractedWithText in
@@ -100,17 +92,12 @@ final class NavigationActionBarViewModel: ObservableObject {
     private func updateInitialState() {
         isSearchMode = switchBarHandler.currentToggleState == .search
         hasText = !switchBarHandler.currentText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
-        isWebSearchEnabled = switchBarHandler.forceWebSearch
         isVoiceSearchEnabled = switchBarHandler.isVoiceSearchEnabled
         hasUserInteractedWithText = false
         isCurrentTextValidURL = switchBarHandler.isCurrentTextValidURL
     }
 
     // MARK: - Public Methods
-    func handleWebSearchToggle() {
-        switchBarHandler.toggleForceWebSearch()
-    }
-
     var shouldShowMicButton: Bool {
         /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
         guard isVoiceSearchEnabled else { return false }

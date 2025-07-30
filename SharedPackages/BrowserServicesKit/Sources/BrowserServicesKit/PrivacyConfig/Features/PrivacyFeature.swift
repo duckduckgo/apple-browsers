@@ -99,6 +99,15 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
+
+    // Import Chrome's new tab shortcuts when bookmarks are imported
+    case importChromeShortcuts
+
+    // Import Safari's bookmarks and favorites to better match Safari's behavior
+    case updateSafariBookmarksImport
+
+    // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
+    case updateFirefoxBookmarksImport
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -111,6 +120,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // This is fairly temporary and will likely be removed in a release or two one way or another
     case june2025TabManagerLayoutChanges
+
+    // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
+    case defaultBrowserTutorial
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -241,13 +254,14 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
+    case subscriptionRebranding
     case vpnToolbarUpsell
+    case supportsAlternateStripePaymentFlow
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -343,8 +357,6 @@ public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
     case showSettingsCompleteSetupSection
-    /// https://app.asana.com/1/137249556945/project/1108686900785972/task/1210454186090900?focus=true
-    case setAsDefaultBrowserPiPVideoExperiment
 }
 
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {

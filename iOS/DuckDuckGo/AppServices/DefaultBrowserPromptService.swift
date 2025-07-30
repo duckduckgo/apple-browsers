@@ -23,6 +23,7 @@ import Persistence
 import Core
 import SetDefaultBrowserCore
 import SetDefaultBrowserUI
+import SystemSettingsPiPTutorial
 
 @MainActor
 final class DefaultBrowserPromptService {
@@ -33,7 +34,8 @@ final class DefaultBrowserPromptService {
     init(
         featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
-        keyValueFilesStore: ThrowingKeyValueStoring
+        keyValueFilesStore: ThrowingKeyValueStoring,
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager,
     ) {
 
 #if DEBUG || ALPHA
@@ -61,6 +63,7 @@ final class DefaultBrowserPromptService {
             userTypeProviding: userTypeManager,
             userActivityManager: userActivityManager,
             checkDefaultBrowserContextStorage: checkDefaultBrowserInfoStorage,
+            defaultBrowserSettingsNavigator: systemSettingsPiPTutorialManager,
             checkDefaultBrowserDebugEventMapper: checkDefaultBrowserPixelHandler,
             promptUserInteractionEventMapper: promptActivityPixelHandler,
             isOnboardingCompletedProvider: { !DaxDialogs.shared.isEnabled },
@@ -78,6 +81,14 @@ final class DefaultBrowserPromptService {
 }
 
 // MARK: - Adapters
+
+extension SystemSettingsPiPTutorialManager: @retroactive DefaultBrowserPromptSettingsNavigating {
+
+    public func navigateToSetDefaultBrowserSettings() {
+        playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
+    }
+
+}
 
 extension DefaultBrowserInfoStore: DefaultBrowserContextStorage {
 

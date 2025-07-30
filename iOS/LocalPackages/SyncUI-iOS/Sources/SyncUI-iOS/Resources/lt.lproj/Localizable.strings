@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Kitame įrenginyje atidaryk „DuckDuckGo“ ir nuskaityk šį kodą, kad sinchronizuotum.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Arba nuskaityk su „DuckDuckGo“ savo kitame įrenginyje";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Bendrinti teksto kodą?";
 

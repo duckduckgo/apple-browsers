@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "A szinkronizáláshoz nyisd meg a DuckDuckGo alkalmazást a másik eszközödön, és olvasd be ezt a kódot.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Vagy olvasd be a másik eszközödön található DuckDuckGo használatával";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Szöveges kód megosztása";
 

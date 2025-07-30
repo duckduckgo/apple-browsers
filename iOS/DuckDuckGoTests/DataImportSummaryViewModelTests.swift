@@ -49,11 +49,12 @@ class DataImportSummaryViewModelTests: XCTestCase {
     }
     
     func testInit_WithValidSummary_SetsCorrectState() {
-        let summary = createSummary(passwords: true, bookmarks: true)
+        let summary = createSummary(passwords: true, bookmarks: true, creditCards: true)
         viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
 
         XCTAssertNotNil(viewModel.passwordsSummary)
         XCTAssertNotNil(viewModel.bookmarksSummary)
+        XCTAssertNotNil(viewModel.creditCardsSummary)
     }
     
     func testInit_WithFailedSummary_HandlesErrorsGracefully() {
@@ -62,6 +63,7 @@ class DataImportSummaryViewModelTests: XCTestCase {
 
         XCTAssertNil(viewModel.passwordsSummary)
         XCTAssertNil(viewModel.bookmarksSummary)
+        XCTAssertNil(viewModel.creditCardsSummary)
     }
     
     func testIsAllSuccessful_WithPerfectImport_ReturnsTrue() {
@@ -108,6 +110,25 @@ class DataImportSummaryViewModelTests: XCTestCase {
         viewModel.dismiss()
         
         XCTAssertTrue(mockDelegate.completeCalled)
+    }
+
+    func testInit_WithCreditCardsSummary_SetsCreditCardsProperty() {
+        let summary = createSummary(creditCards: true)
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
+        XCTAssertNotNil(viewModel.creditCardsSummary)
+        XCTAssertEqual(viewModel.creditCardsSummary?.successful, 3)
+        XCTAssertEqual(viewModel.creditCardsSummary?.duplicate, 0)
+        XCTAssertEqual(viewModel.creditCardsSummary?.failed, 0)
+    }
+
+    func testInit_WithAllDataTypes_SetsAllProperties() {
+        let summary = createSummary(passwords: true, bookmarks: true, creditCards: true)
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
+        XCTAssertNotNil(viewModel.passwordsSummary)
+        XCTAssertNotNil(viewModel.bookmarksSummary)
+        XCTAssertNotNil(viewModel.creditCardsSummary)
     }
 
 }
@@ -168,7 +189,7 @@ private extension DataImportSummaryViewModelTests {
         }
     }
 
-    func createSummary(passwords: Bool = false, bookmarks: Bool = false) -> DataImportSummary {
+    func createSummary(passwords: Bool = false, bookmarks: Bool = false, creditCards: Bool = false) -> DataImportSummary {
         var summary: DataImportSummary = [:]
 
         if passwords {
@@ -181,11 +202,16 @@ private extension DataImportSummaryViewModelTests {
             summary[.bookmarks] = .success(bookmarksSummary)
         }
 
+        if creditCards {
+            let creditCardsSummary = DataImport.DataTypeSummary(successful: 3, duplicate: 0, failed: 0)
+            summary[.creditCards] = .success(creditCardsSummary)
+        }
+
         return summary
     }
 
     func createPerfectSummary() -> DataImportSummary {
-        createSummary(passwords: true, bookmarks: true)
+        createSummary(passwords: true, bookmarks: true, creditCards: true)
     }
 
     func createSummaryWithFailures() -> DataImportSummary {
@@ -199,6 +225,7 @@ private extension DataImportSummaryViewModelTests {
         var summary: DataImportSummary = [:]
         summary[.passwords] = .failure(TestError())
         summary[.bookmarks] = .failure(TestError())
+        summary[.creditCards] = .failure(TestError())
         return summary
     }
 }

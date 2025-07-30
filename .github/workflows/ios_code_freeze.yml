@@ -12,6 +12,10 @@ on:
         required: false
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
 
   create_release_branch:

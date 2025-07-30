@@ -65,14 +65,12 @@ class FavoritesViewModel: ObservableObject {
     private let dailyPixelFiring: DailyPixelFiring.Type
 
     let isNewTabPageCustomizationEnabled: Bool
-    let isExperimentalAppearanceEnabled: Bool
-
+   
     var isEmpty: Bool {
         allFavorites.filter(\.isFavorite).isEmpty
     }
 
     init(isNewTabPageCustomizationEnabled: Bool = false,
-         isExperimentalAppearanceEnabled: Bool = false,
          favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
          faviconsCache: FavoritesFaviconCaching = Favicons.shared,
@@ -82,7 +80,6 @@ class FavoritesViewModel: ObservableObject {
         self.pixelFiring = pixelFiring
         self.dailyPixelFiring = dailyPixelFiring
         self.isNewTabPageCustomizationEnabled = isNewTabPageCustomizationEnabled
-        self.isExperimentalAppearanceEnabled = isExperimentalAppearanceEnabled
         self.isCollapsed = isNewTabPageCustomizationEnabled
         self.faviconsCache = faviconsCache
 

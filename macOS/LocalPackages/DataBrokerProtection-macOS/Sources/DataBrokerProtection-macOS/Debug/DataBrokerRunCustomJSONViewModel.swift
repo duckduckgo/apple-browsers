@@ -198,7 +198,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
         let pixelKit = PixelKit.shared!
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigurationManager)
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let vault = try! vaultFactory.makeVault(reporter: reporter)
@@ -389,6 +389,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 captchaService: self.captchaService,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
                                 pixelHandler: fakePixelHandler,
+                                executionConfig: .init(),
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
@@ -441,6 +442,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     captchaService: self.captchaService,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
+                    executionConfig: .init(),
                     shouldRunNextStep: { true }
                 )
 

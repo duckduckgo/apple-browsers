@@ -44,4 +44,17 @@ final class PinnedTabsHostingView: NSHostingView<PinnedTabsView> {
     }
 
     private let middleClickSubject = PassthroughSubject<CGPoint, Never>()
+
+    override func accessibilityRole() -> NSAccessibility.Role? {
+        .tabGroup
+    }
+
+    override func accessibilityIdentifier() -> String {
+        "PinnedTabsView"
+    }
+
+    override func accessibilityTitle() -> String? {
+        "Pinned Tabs"
+    }
+
 }

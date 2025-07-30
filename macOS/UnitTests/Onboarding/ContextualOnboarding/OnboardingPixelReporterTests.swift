@@ -183,6 +183,9 @@ class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Contextua
 
     var state: ContextualOnboardingState = .onboardingCompleted
 
+    @Published var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
+
     func updateStateFor(tab: Tab) {
     }
 

@@ -54,6 +54,7 @@ extension TabViewModel: TabBarViewModel {
 protocol TabBarViewItemDelegate: AnyObject {
 
     @MainActor func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool)
+    @MainActor func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem)
 
     @MainActor func tabBarViewItemCanBeDuplicated(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool
@@ -183,6 +184,7 @@ final class TabBarItemCellView: NSView {
         closeButton.mouseOverColor = .buttonMouseOver
         closeButton.imagePosition = .imageOnly
         closeButton.imageScaling = .scaleNone
+        closeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
         return closeButton
     }()
 
@@ -288,11 +290,31 @@ final class TabBarItemCellView: NSView {
         addSubview(mouseOverView)
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             roundedBackgroundColorView.cornerRadius = 6
-            crashIndicatorButton.setCornerRadius(5)
-            audioButton.setCornerRadius(5)
-            closeButton.setCornerRadius(5)
             addSubview(roundedBackgroundColorView)
         }
+
+        faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+        titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
+
+        closeButton.toolTip = UserText.closeTab
+        closeButton.setAccessibilityLabel(UserText.closeTab)
+        closeButton.setAccessibilityIdentifier("TabBarViewItem.closeButton")
+        closeButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
+        permissionButton.setAccessibilityIdentifier("TabBarViewItem.permissionButton")
+        // Accessibility label and toolTip are updated in `updateUsedPermissions`
+        permissionButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
+        audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
+        // Accessibility Title and toolTip are updated in `updateAudioPlayState`
+        audioButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
+        crashIndicatorButton.setAccessibilityIdentifier("TabBarViewItem.crashButton")
+        crashIndicatorButton.toolTip = UserText.tabCrashPopoverTitle
+        crashIndicatorButton.setAccessibilityTitle(UserText.tabCrashPopoverTitle)
+        crashIndicatorButton.setAccessibilityLabel(UserText.tabCrashPopoverMessage)
+        crashIndicatorButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
         addSubview(faviconImageView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
@@ -300,11 +322,6 @@ final class TabBarItemCellView: NSView {
         addSubview(permissionButton)
         addSubview(closeButton)
         addSubview(rightSeparatorView)
-
-        closeButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
-        permissionButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
-        audioButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
-        crashIndicatorButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
     }
 
     required init?(coder: NSCoder) {
@@ -440,6 +457,102 @@ final class TabBarItemCellView: NSView {
             }
         }
     }
+}
+
+extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
+
+    @objc func isAccessibilityElement() -> Bool {
+        true
+    }
+
+    @objc func isAccessibilityEnabled() -> Bool {
+        true
+    }
+
+    @objc func accessibilityIdentifier() -> String {
+        return "TabBarViewItem"
+    }
+
+    @objc func accessibilityRole() -> NSAccessibility.Role {
+        .radioButton
+    }
+
+    @objc func accessibilityRoleDescription() -> String? {
+        "Tab"
+    }
+
+    @objc func accessibilityParent() -> Any? {
+        collectionView
+    }
+
+    @objc func accessibilityTitle() -> String? {
+        guard let tabViewModel else { return nil }
+        return tabViewModel.title
+    }
+
+    @objc func accessibilityURL() -> NSURL? {
+        guard let tabViewModel else { return nil }
+        let url = tabViewModel.tabContent.userEditableUrl
+        return url as NSURL?
+    }
+
+    @objc func accessibilityValue() -> NSNumber? {
+        NSNumber(value: isSelected)
+    }
+
+    @objc func isAccessibilitySelected() -> NSNumber? {
+        NSNumber(value: isSelected)
+    }
+
+    @objc func setAccessibilityValue(_ value: Any?) {
+        let newValue = (value as? String) == "1"
+        let isSelected = self.isSelected
+
+        switch (isSelected, newValue) {
+        case (false, true):
+            selectTab()
+        case (true, false):
+            // we can‘t unselect the Tab
+            break
+        default: break
+        }
+    }
+
+    @objc func setAccessibilitySelected(_ newValue: Bool) {
+        let isSelected = self.isSelected
+
+        switch (isSelected, newValue) {
+        case (false, true):
+            selectTab()
+        case (true, false):
+            // we can‘t unselect the Tab
+            break
+        default: break
+        }
+    }
+
+    @objc func accessibilityPerformPress() -> Bool {
+        if !isSelected {
+            selectTab()
+            return true
+        }
+        return false
+    }
+
+    @objc func accessibilityPerformShowMenu() -> Bool {
+        self.view.accessibilityPerformShowMenu()
+    }
+
+    @objc func accessibilityCustomActions() -> [NSAccessibilityCustomAction] {
+        return [
+            .init(name: "Close Tab", target: self, selector: #selector(closeButtonAction))
+        ]
+    }
+
+    private func selectTab() {
+        delegate?.tabBarViewItemSelectTab(self)
+    }
+
 }
 
 @MainActor
@@ -797,18 +910,33 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
     private func updateUsedPermissions() {
         cell.needsLayout = true
+        let permission: PermissionType
+        let isActive: Bool
         if usedPermissions.camera.isActive {
             cell.permissionButton.image = .cameraTabActive
+            permission = .camera
+            isActive = true
         } else if usedPermissions.microphone.isActive {
             cell.permissionButton.image = .microphoneActive
+            permission = .microphone
+            isActive = true
         } else if usedPermissions.camera.isPaused {
             cell.permissionButton.image = .cameraTabBlocked
+            permission = .camera
+            isActive = false
         } else if usedPermissions.microphone.isPaused {
             cell.permissionButton.image = .microphoneIcon
+            permission = .microphone
+            isActive = false
         } else {
             cell.permissionButton.isHidden = true
             return
         }
+
+        let toolTip = String(format: isActive ? UserText.permissionMuteFormat : UserText.permissionUnmuteFormat, permission.localizedDescription.lowercased(), currentURL?.host ?? "")
+        cell.permissionButton.toolTip = toolTip
+        cell.permissionButton.setAccessibilityTitle(toolTip)
+
         cell.permissionButton.isHidden = false
     }
 
@@ -856,10 +984,14 @@ final class TabBarViewItem: NSCollectionViewItem {
         case .muted(isPlayingAudio: true):
             cell.audioButton.image = .audioMute
             cell.audioButton.isHidden = false
+            cell.audioButton.toolTip = UserText.unmuteTab
+            cell.audioButton.setAccessibilityTitle(UserText.unmuteTab)
 
         case .unmuted(isPlayingAudio: true):
             cell.audioButton.image = .audio
             cell.audioButton.isHidden = false
+            cell.audioButton.toolTip = UserText.muteTab
+            cell.audioButton.setAccessibilityTitle(UserText.muteTab)
         }
     }
 
@@ -1113,7 +1245,9 @@ extension TabBarViewItem: MouseClickViewDelegate {
             .init(width: TabBarViewItem.Width.maximum, title: "Bookmarks", favicon: .bookmarksFolder, selected: false),
         ],
         [
-            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: .aDark, selected: true),
+            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: .aDark, usedPermissions: [
+                .camera: .paused,
+            ], audioState: .muted(isPlayingAudio: true)),
             .init(width: TabBarViewItem.Width.maximum, title: "Somewhere all we go now to get totally drunk", favicon: nil),
             .init(width: TabBarViewItem.Width.maximum, title: "Long Previewable Title with Permissions", favicon: .h, usedPermissions: [
                 .camera: .paused,
@@ -1317,6 +1451,7 @@ extension TabBarViewItem {
         }
 
         func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool) {}
+        func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {}
         func tabBarViewItemCanBeDuplicated(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool { false }

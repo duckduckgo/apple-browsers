@@ -61,7 +61,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          defaultBrowserPublisher: AnyPublisher<Bool, Never>,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
          featureFlagger: FeatureFlagger,
-         persistor: VPNUpsellUserDefaultsPersisting = VPNUpsellUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
+         persistor: VPNUpsellUserDefaultsPersisting,
          timerDuration: TimeInterval = 600,
          autoDismissDays: Int = 7) {
         self.isFirstLaunch = isFirstLaunch

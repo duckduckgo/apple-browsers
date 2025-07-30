@@ -217,8 +217,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
-    private lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
-        return VPNUpsellUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
+    lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
+        return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
 
     // MARK: - DBP

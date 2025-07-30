@@ -33,30 +33,30 @@ struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
         case expectedUpsellTimeInterval = "vpn.upsell.expected.time.interval"
     }
 
-    private let keyValueStore: KeyValueStoring
+    private let keyValueStore: ThrowingKeyValueStoring
 
-    init(keyValueStore: KeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
     }
 
     var vpnUpsellDismissed: Bool {
-        get { keyValueStore.object(forKey: Key.vpnUpsellDismissed.rawValue) as? Bool ?? false }
-        set { keyValueStore.set(newValue, forKey: Key.vpnUpsellDismissed.rawValue) }
+        get { (try? keyValueStore.object(forKey: Key.vpnUpsellDismissed.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.vpnUpsellDismissed.rawValue) }
     }
 
     var vpnUpsellFirstPinnedDate: Date? {
-        get { keyValueStore.object(forKey: Key.vpnUpsellFirstPinnedDate.rawValue) as? Date }
+        get { try? keyValueStore.object(forKey: Key.vpnUpsellFirstPinnedDate.rawValue) as? Date }
         set {
             if let value = newValue {
-                keyValueStore.set(value, forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
+                try? keyValueStore.set(value, forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
             } else {
-                keyValueStore.removeObject(forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
+                try? keyValueStore.removeObject(forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
             }
         }
     }
 
     var expectedUpsellTimeInterval: TimeInterval {
-        get { keyValueStore.object(forKey: Key.expectedUpsellTimeInterval.rawValue) as? TimeInterval ?? 10 * 60 }
-        set { keyValueStore.set(newValue, forKey: Key.expectedUpsellTimeInterval.rawValue) }
+        get { (try? keyValueStore.object(forKey: Key.expectedUpsellTimeInterval.rawValue) as? TimeInterval) ?? 10 * 60 }
+        set { try? keyValueStore.set(newValue, forKey: Key.expectedUpsellTimeInterval.rawValue) }
     }
 }

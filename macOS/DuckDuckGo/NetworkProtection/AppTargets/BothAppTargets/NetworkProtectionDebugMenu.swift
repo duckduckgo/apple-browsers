@@ -568,13 +568,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         Application.appDelegate.resetContextualOnboarding(nil)
         Application.appDelegate.resetHomePageSettingsOnboarding(nil)
 
-        // Clear VPN upsell state
-        var upsellPersistor = VPNUpsellUserDefaultsPersistor(keyValueStore: UserDefaults.standard)
-        upsellPersistor.vpnUpsellDismissed = false
-        upsellPersistor.vpnUpsellFirstPinnedDate = nil
-
-        // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
-        upsellPersistor.expectedUpsellTimeInterval = 10
+        Application.appDelegate.resetVPNUpsell()
     }
 
     // MARK: - Exclusions

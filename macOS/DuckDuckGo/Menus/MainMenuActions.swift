@@ -684,6 +684,14 @@ extension AppDelegate {
         pixelDataStore.removeValue(forKey: "stats.appretentionatb.last.request.key")
         pixelDataStore.removeValue(forKey: "stats.variant.key")
     }
+
+    @objc func resetVPNUpsell() {
+        // Clear VPN upsell state
+        vpnUpsellUserDefaultsPersistor.vpnUpsellDismissed = false
+        vpnUpsellUserDefaultsPersistor.vpnUpsellFirstPinnedDate = nil
+        // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
+        vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval = 10
+    }
 }
 
 extension MainViewController {

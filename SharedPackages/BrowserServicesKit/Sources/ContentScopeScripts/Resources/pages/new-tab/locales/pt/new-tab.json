@@ -124,6 +124,58 @@
     "title" : "{count} tentativas de outras redes",
     "note" : "An aggregated count of blocked entries not present in the main list. For example, '200 attempts from other networks'"
   },
+  "omnibar_menuTitle" : {
+    "title" : "Pesquisar",
+    "description" : "Title of the omnibar widget in the customizer panel."
+  },
+  "omnibar_aiChatFormPlaceholder" : {
+    "title" : "Perguntar em privado",
+    "description" : "Placeholder text for the AI chat input field."
+  },
+  "omnibar_aiChatFormSubmitButtonLabel" : {
+    "title" : "Enviar",
+    "description" : "Accesible label for the AI chat submit button."
+  },
+  "omnibar_logoAlt" : {
+    "title" : "DuckDuckGo",
+    "description" : "Alt text for the DuckDuckGo logo."
+  },
+  "omnibar_tabSwitcherLabel" : {
+    "title" : "Comutador de separadores Duck.ai e pesquisa",
+    "description" : "Accessible label for the tab switcher between search and AI modes."
+  },
+  "omnibar_searchTabLabel" : {
+    "title" : "Pesquisar",
+    "description" : "Label for the search tab."
+  },
+  "omnibar_aiTabLabel" : {
+    "title" : "Duck.ai",
+    "description" : "Label for the AI chat tab."
+  },
+  "omnibar_searchFormPlaceholder" : {
+    "title" : "Pesquisar em privado",
+    "description" : "Placeholder text for the search input field."
+  },
+  "omnibar_hideDuckAi" : {
+    "title" : "Ocultar Duck.ai",
+    "description" : "Label for the button to hide the Duck.ai chat interface."
+  },
+  "omnibar_showDuckAi" : {
+    "title" : "Mostrar Duck.ai",
+    "description" : "Label for the button to show the Duck.ai chat interface."
+  },
+  "omnibar_searchDuckDuckGoSuffix" : {
+    "title" : "Pesquisar no DuckDuckGo",
+    "description" : "Text placed after suggestions that will search DuckDuckGo."
+  },
+  "omnibar_duckDuckGoSuffix" : {
+    "title" : "DuckDuckGo",
+    "description" : "Text placed after suggestions that will open a DuckDuckGo page."
+  },
+  "omnibar_visitSuffix" : {
+    "title" : "Visitar {url}",
+    "description" : "Text placed after suggestions that will open a webpage."
+  },
   "nextSteps_sectionTitle" : {
     "title" : "Passos seguintes",
     "note" : "Text that goes in the Next Steps bubble above the first card"

@@ -225,7 +225,6 @@ button {
   --ntp-drawer-width: calc(224 * var(--px-in-rem));
   --ntp-drawer-scroll-width: 12px;
   --ntp-combined-width: calc(var(--ntp-drawer-width) + var(--ntp-drawer-scroll-width));
-  --ntp-surface-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.13);
   --callout-font-size: 12px;
   --callout-font-weight: 400;
   --callout-line-height: 15px;
@@ -247,9 +246,6 @@ button {
   --border-radius-xs: 4px;
   --focus-ring: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--ntp-focus-outline-color);
   --focus-ring-thin: 0px 0px 0px 1px var(--ntp-focus-outline-color), 0px 0px 0px 1px var(--color-white);
-  --duckai-purple: rgba(107, 78, 186, 1);
-  --duckai-purple-hover: rgb(128, 101, 208);
-  --duckai-purple-active: rgb(85, 64, 160);
 }
 body {
   --default-light-background-color: var(--color-gray-0);
@@ -267,6 +263,9 @@ body {
   --focus-ring: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--ntp-focus-outline-color);
   --focus-ring-thin: 0px 0px 0px 1px var(--ntp-focus-outline-color), 0px 0px 0px 1px var(--color-white);
   --focus-ring-primary: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--ntp-color-primary);
+  --ntp-surface-tertiary: var(--color-white);
+  --ntp-controls-raised-backdrop: var(--color-black-at-9);
+  --ntp-controls-raised-fill-primary: var(--color-white);
 }
 [data-theme=dark] {
   --ntp-surface-background-color: var(--color-black-at-18);
@@ -280,6 +279,9 @@ body {
   --focus-ring: 0px 0px 0px 1px var(--ntp-focus-outline-color), 0px 0px 0px 3px var(--color-white);
   --focus-ring-thin: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 1px var(--ntp-focus-outline-color);
   --focus-ring-primary: 0px 0px 0px 1px var(--default-dark-background-color), 0px 0px 0px 3px var(--ntp-color-primary);
+  --ntp-surface-tertiary: rgba(71, 71, 71, 0.66);
+  --ntp-controls-raised-backdrop: var(--color-black-at-60);
+  --ntp-controls-raised-fill-primary: var(--color-white-at-18);
 }
 :root:has(body[data-platform-name=windows]) {
   --body-font-size: 14px;
@@ -318,6 +320,9 @@ body[data-animate-background=true] {
   margin-inline: auto;
   width: 100%;
   max-width: calc(504 * var(--px-in-rem));
+}
+[data-entry-point=omnibar] {
+  max-width: calc(620 * var(--px-in-rem));
 }
 .vertical-space {
   padding-top: 1rem;
@@ -1458,212 +1463,293 @@ body:not([data-platform-name]) .Button_button:active {
   letter-spacing: normal;
 }
 
-/* pages/new-tab/app/omnibar/components/Omnibar.module.css */
-.Omnibar_root {
-  margin-bottom: var(--ntp-gap);
-  position: relative;
-}
-.Omnibar_logoWrap {
+/* pages/new-tab/app/omnibar/components/AiChatForm.module.css */
+.AiChatForm_form {
+  align-items: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  padding-bottom: calc(var(--sp-3) + var(--sp-7) + var(--sp-3));
 }
-.Omnibar_tabListWrap {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-}
-.Omnibar_formWrap {
-  height: 48px;
-  margin-top: 16px;
-  position: relative;
-  z-index: 1;
-}
-[data-mode=ai] .Omnibar_formWrap {
-  height: 96px;
-}
-.Omnibar_form {
-  border-radius: 16px;
-  background-color: #fff;
-  box-shadow: var(--ntp-surface-shadow);
-}
-.Omnibar_tabList {
-  display: flex;
-  background: var(--color-black-at-6);
-  padding: 4px;
-  border-radius: 999px;
-  gap: 4px;
-  width: auto;
-}
-.Omnibar_tab {
-  padding: 8px 16px;
+.AiChatForm_textarea {
+  align-self: stretch;
+  background: none;
   border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 99px;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  transition: background .2s;
+  box-sizing: content-box;
+  color: var(--ntp-text-normal);
+  font-weight: 500;
+  max-height: 10lh;
+  padding: 11px 15px 0;
+  resize: none;
 }
-.Omnibar_tab svg {
-  width: 16px;
-  height: 16px;
+.AiChatForm_textarea::placeholder {
+  color: var(--ntp-text-muted);
 }
-.Omnibar_tab:hover {
-  background: var(--color-black-at-9);
-}
-.Omnibar_tab[aria-selected=true] {
-  background: var(--color-white);
-  box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.08), 0px 2px 4px 0px rgba(0, 0, 0, 0.10);
-}
-.Omnibar_tab[aria-selected=true] .Omnibar_searchIcon {
-  color: blue;
-}
-.Omnibar_tab[aria-selected=true] .Omnibar_aiChatIcon {
-  color: var(--duckai-purple);
-}
-.Omnibar_inputRoot {
-  position: relative;
-  width: 100%;
-  margin: 0 auto;
-  padding: 8px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-::view-transition-new(omnibar-input-transition) {
-  animation: 0.25s Omnibar_grow-y;
-}
-.Omnibar_inputContainer {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 32px;
-}
-.Omnibar_input {
-  flex: 1;
-  height: 32px;
-  padding: 0;
-  padding: 0 8px;
-  border: none;
-  font-size: 16px;
+.AiChatForm_textarea:focus {
   outline: none;
-  color: #202124;
-  background-color: transparent;
 }
-.Omnibar_input::placeholder {
-  color: #9aa0a6;
+.AiChatForm_hasScroll .AiChatForm_textarea {
+  border-bottom: 1px solid var(--ntp-surface-border-color);
+  padding-bottom: 11px;
 }
-.Omnibar_inputActions {
-  display: flex;
-  align-items: center;
-}
-.Omnibar_inputAction {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 32px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  padding: 0;
-}
-.Omnibar_inputAction svg {
-  width: 16px;
-  height: 16px;
-}
-.Omnibar_inputAction .Omnibar_aiChatIcon {
-  color: var(--color-black-at-84);
-}
-.Omnibar_inputAction:hover {
-  background-color: rgba(60, 64, 67, 0.08);
-}
-.Omnibar_inputAction.Omnibar_active {
-  color: #1a73e8;
-}
-.Omnibar_separator {
-  height: 24px;
-  width: 1px;
-  background-color: #dadce0;
-  margin: 0 8px;
-}
-.Omnibar_squareButton {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  padding: 0;
-  border-radius: 8px;
-  position: relative;
-}
-.Omnibar_squareButton svg {
+.AiChatForm_buttons {
+  align-self: stretch;
+  bottom: 0;
+  justify-content: space-between;
+  left: 0;
+  padding: var(--sp-3);
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  right: 0;
 }
-.Omnibar_aiSubmitButton {
-  background-color: var(--duckai-purple);
-  color: #fff;
-  position: relative;
-  width: 32px;
-  height: 32px;
+.AiChatForm_submitButton {
+  align-items: center;
+  background: var(--color-blue-50);
+  border-radius: 100%;
+  border: none;
+  color: var(--color-white);
+  cursor: pointer;
+  display: flex;
+  height: var(--sp-7);
+  justify-content: center;
+  margin-left: auto;
+  padding: 0;
+  width: var(--sp-7);
 }
-.Omnibar_aiSubmitButton:hover {
-  background-color: var(--duckai-purple-hover);
+.AiChatForm_submitButton[disabled] {
+  background: none;
+  color: rgba(0, 0, 0, 0.3);
+  cursor: default;
 }
-.Omnibar_aiSubmitButton:active {
-  background-color: var(--duckai-purple-active);
+.AiChatForm_submitButton:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
-/* pages/new-tab/app/omnibar/components/SuggestionList.module.css */
-.SuggestionList_list {
-  top: 100%;
-  width: 100%;
-  background: white;
+/* pages/new-tab/app/omnibar/components/Container.module.css */
+.Container_outer {
+  align-self: stretch;
   z-index: 1;
-  border-bottom-right-radius: 16px;
-  border-bottom-left-radius: 16px;
-  border-top: 1px solid var(--color-black-at-6);
+}
+.Container_inner {
+  background: var(--ntp-surface-tertiary);
+  border-radius: 15px;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.1), 0px 4px 8px 0px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  position: relative;
+  transition: height 200ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .Container_inner {
+    transition: none;
+  }
+}
+.Container_inner:not(:has([role=listbox])).Container_focusRing,
+.Container_inner:not(:has([role=listbox])):focus-within:not(.Container_noFocusRing) {
+  box-shadow:
+    0 0 0 1px var(--ntp-surface-tertiary),
+    0 0 0 3px var(--ntp-color-primary),
+    0 0 0 5px rgba(57, 105, 239, 0.2);
+}
+.Container_inner:has([role=listbox]) {
+  box-shadow:
+    0 0 0 3px var(--ntp-surface-tertiary),
+    0px 4px 12px 3px rgba(0, 0, 0, 0.10),
+    0px 20px 40px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* pages/new-tab/app/omnibar/components/Omnibar.module.css */
+.Omnibar_root {
+  align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
+  padding-bottom: var(--sp-15);
 }
-.SuggestionList_list:not(:empty) {
-  padding: 8px;
+.Omnibar_logo {
+  margin-bottom: var(--sp-4);
+  width: 164px;
 }
-.SuggestionList_item {
-  display: flex;
+
+/* pages/new-tab/app/omnibar/components/SearchForm.module.css */
+.SearchForm_inputContainer {
   align-items: center;
-  text-decoration: none;
-  font-size: var(--title-3-em-font-size);
-  padding: 4px 8px;
+  display: flex;
+  padding: var(--sp-1) 7px;
+}
+.SearchForm_inputContainer svg {
+  flex: none;
+  margin: var(--sp-2);
+}
+.SearchForm_input {
+  background: none;
+  border: none;
   color: var(--ntp-text-normal);
-  background-color: transparent;
-  border: 0;
-  text-align: left;
-  cursor: pointer;
-  gap: 8px;
+  font-weight: 500;
+  height: var(--sp-8);
+  left: 7px;
+  padding-bottom: 0;
+  padding-left: calc(var(--sp-2) + var(--sp-4) + var(--sp-2));
+  padding-right: var(--suffix-text-width);
+  padding-top: 0;
+  position: absolute;
+  right: 7px;
 }
-.SuggestionList_item svg {
-  width: 16px;
-  height: 16px;
-  display: block;
+.SearchForm_input::placeholder {
+  color: var(--ntp-text-muted);
 }
-.SuggestionList_item svg path {
-  fill-opacity: 1 !important;
+.SearchForm_input:focus {
+  outline: none;
 }
-.SuggestionList_item[aria-selected=true] {
-  background: var(--ddg-color-primary);
-  color: white;
+.SearchForm_suffixSpacer {
+  font-weight: 500;
+  overflow: hidden;
+  visibility: hidden;
+  white-space: nowrap;
+}
+.SearchForm_suffix {
+  color: var(--ntp-color-primary);
+  flex: none;
+}
+
+/* pages/new-tab/app/omnibar/components/SuggestionsList.module.css */
+.SuggestionsList_list {
+  border-top: 1px solid var(--ntp-surface-border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 7px;
+}
+.SuggestionsList_item {
+  align-items: center;
+  background: none;
   border-radius: 4px;
+  border: none;
+  color: var(--ntp-text-normal);
+  cursor: pointer;
+  display: flex;
+  height: var(--sp-8);
+  justify-content: flex-start;
+  padding: 0 var(--sp-2) 0 0;
+}
+.SuggestionsList_item svg {
+  flex: none;
+  margin: var(--sp-2);
+}
+.SuggestionsList_item[aria-selected=true],
+.SuggestionsList_item:active {
+  color: var(--color-white);
+}
+:is(.SuggestionsList_item[aria-selected=true], .SuggestionsList_item:active) .SuggestionsList_suffix {
+  color: var(--color-white);
+}
+:is(.SuggestionsList_item[aria-selected=true], .SuggestionsList_item:active) .SuggestionsList_badge {
+  background: var(--color-white-at-30);
+}
+.SuggestionsList_item[aria-selected=true] {
+  background: var(--ddg-color-primary);
+}
+.SuggestionsList_item:active {
+  background: var(--color-blue-60);
+}
+.SuggestionsList_title {
+  flex: none;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.SuggestionsList_suffix {
+  color: var(--ntp-text-muted);
+  flex: initial;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.SuggestionsList_badge {
+  align-items: center;
+  background: var(--ntp-controls-raised-backdrop);
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  flex: none;
+  gap: 6px;
+  height: 22px;
+  margin-left: auto;
+  padding: 0px var(--sp-3);
+}
+.SuggestionsList_badge svg {
+  height: 9px;
+  margin: 0;
+  width: 9px;
+}
+
+/* pages/new-tab/app/omnibar/components/TabSwitcher.module.css */
+.TabSwitcher_tabSwitcher {
+  background: var(--ntp-controls-raised-backdrop);
+  border-radius: 99px;
+  box-shadow: 0px 1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(var(--tab-count), 1fr);
+  overflow: hidden;
+  padding: var(--sp-0_5);
+  position: relative;
+}
+[data-theme=dark] .TabSwitcher_tabSwitcher {
+  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.16) inset;
+}
+.TabSwitcher_tab {
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--ntp-text-normal);
+  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  height: var(--sp-8);
+  justify-content: center;
+  padding: 0 var(--sp-3);
+  position: relative;
+  transform: translateZ(0);
+  z-index: 1;
+}
+.TabSwitcher_tab:hover:not([aria-selected=true])::before {
+  background: var(--ntp-controls-raised-backdrop);
+  border-radius: 99px;
+  content: "";
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  position: absolute;
+}
+.TabSwitcher_tabLabel {
+  padding-top: 1px;
+}
+.TabSwitcher_blob {
+  background-color: var(--ntp-controls-raised-fill-primary);
+  border-radius: 18px;
+  box-shadow:
+    0 4px 4px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.48);
+  height: var(--sp-8);
+  left: 0;
+  position: absolute;
+  top: 2px;
+  transition: translate 200ms ease;
+  translate: calc(2px + var(--tab-index) * (100% + 2px));
+  width: calc((100% - 4px - (var(--tab-count) - 1) * 2px) / var(--tab-count));
+  will-change: translate;
+  z-index: 0;
+}
+[data-theme=dark] .TabSwitcher_blob {
+  box-shadow:
+    0 4px 4px rgba(0, 0, 0, 0.24),
+    0 1px 2px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+@media (prefers-reduced-motion: reduce) {
+  .TabSwitcher_blob {
+    transition: none;
+  }
 }
 
 /* pages/new-tab/app/protections/components/Protections.module.css */
@@ -2567,6 +2653,7 @@ body:not([data-platform-name]) .Button_button:active {
   align-items: center;
   text-decoration: none;
   color: var(--ntp-color-primary);
+  margin-bottom: var(--sp-3);
 }
 .CustomizerDrawerInner_settingsLink:focus {
   outline: none;

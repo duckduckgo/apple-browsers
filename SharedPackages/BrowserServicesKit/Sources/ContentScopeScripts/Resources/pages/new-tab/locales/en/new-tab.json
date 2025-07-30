@@ -129,12 +129,12 @@
     "title": "Search",
     "description": "Title of the omnibar widget in the customizer panel."
   },
-  "aiChatForm_placeholder": {
-    "title": "Chat privately with Duck.ai",
+  "omnibar_aiChatFormPlaceholder": {
+    "title": "Ask privately",
     "description": "Placeholder text for the AI chat input field."
   },
-  "aiChatForm_submitButtonLabel": {
-    "title": "Duck.ai chat",
+  "omnibar_aiChatFormSubmitButtonLabel": {
+    "title": "Send",
     "description": "Accesible label for the AI chat submit button."
   },
   "omnibar_logoAlt": {
@@ -153,17 +153,29 @@
     "title": "Duck.ai",
     "description": "Label for the AI chat tab."
   },
-  "searchForm_placeholder": {
-    "title": "Search or enter address",
+  "omnibar_searchFormPlaceholder": {
+    "title": "Search privately",
     "description": "Placeholder text for the search input field."
   },
-  "searchForm_searchButtonLabel": {
-    "title": "Web search",
-    "description": "Accessible label for the web search submit button."
+  "omnibar_hideDuckAi": {
+    "title": "Hide Duck.ai",
+    "description": "Label for the button to hide the Duck.ai chat interface."
   },
-  "searchForm_aiButtonLabel": {
-    "title": "Duck.ai",
-    "description": "Accessible label for the AI chat button in search form."
+  "omnibar_showDuckAi": {
+    "title": "Show Duck.ai",
+    "description": "Label for the button to show the Duck.ai chat interface."
+  },
+  "omnibar_searchDuckDuckGoSuffix": {
+    "title": "Search DuckDuckGo",
+    "description": "Text placed after suggestions that will search DuckDuckGo."
+  },
+  "omnibar_duckDuckGoSuffix": {
+    "title": "DuckDuckGo",
+    "description": "Text placed after suggestions that will open a DuckDuckGo page."
+  },
+  "omnibar_visitSuffix": {
+    "title": "Visit {url}",
+    "description": "Text placed after suggestions that will open a webpage."
   },
   "nextSteps_sectionTitle": {
     "title": "Next Steps",

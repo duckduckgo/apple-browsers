@@ -1603,6 +1603,7 @@
   var globalObj = typeof window === "undefined" ? globalThis : window;
   var Error3 = globalObj.Error;
   var messageSecret;
+  var isAppleSiliconCache = null;
   var OriginalCustomEvent = typeof CustomEvent === "undefined" ? null : CustomEvent;
   var originalWindowDispatchEvent = typeof window === "undefined" ? null : window.dispatchEvent.bind(window);
   function registerMessageSecret(secret) {
@@ -1710,9 +1711,14 @@
     });
   }
   function isAppleSilicon() {
+    if (isAppleSiliconCache !== null) {
+      return isAppleSiliconCache;
+    }
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl");
-    return gl.getSupportedExtensions().indexOf("WEBGL_compressed_texture_etc") !== -1;
+    const compressedTextureValue = gl?.getSupportedExtensions()?.indexOf("WEBGL_compressed_texture_etc");
+    isAppleSiliconCache = typeof compressedTextureValue === "number" && compressedTextureValue !== -1;
+    return isAppleSiliconCache;
   }
   function processAttrByCriteria(configSetting) {
     let bestOption;
@@ -2035,6 +2041,7 @@
       "breakageReporting",
       "autofillPasswordImport",
       "favicon",
+      "webTelemetry",
       "scriptlets"
     ]
   );
@@ -2055,6 +2062,7 @@
     windows: [
       "cookie",
       ...baseFeatures,
+      "webTelemetry",
       "windowsPermissionUsage",
       "duckPlayer",
       "brokerProtection",
@@ -3094,7 +3102,6 @@
     }
     /**
      * Send a 'fire-and-forget' message.
-     * @throws {MissingHandler}
      *
      * @example
      *
@@ -3112,11 +3119,18 @@
         method: name,
         params: data2
       });
-      this.transport.notify(message);
+      try {
+        this.transport.notify(message);
+      } catch (e) {
+        if (this.messagingContext.env === "development") {
+          console.error("[Messaging] Failed to send notification:", e);
+          console.error("[Messaging] Message details:", { name, data: data2 });
+        }
+      }
     }
     /**
-     * Send a request, and wait for a response
-     * @throws {MissingHandler}
+     * Send a request and wait for a response
+     * @throws {Error}
      *
      * @example
      * ```
@@ -11661,7 +11675,7 @@ ul.messages {
         response: { actions: action.actions }
       });
     }
-    return new SuccessResponse({ actionID: action.id, actionType: action.actionType, response: null });
+    return new SuccessResponse({ actionID: action.id, actionType: action.actionType, response: { actions: [] } });
   }
 
   // src/features/broker-protection/execute.js

@@ -1624,12 +1624,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         do {
             try await shutdown(dueTo: error)
         } catch {
-            // If the VPN can't be shut down cleanly, we remove the token so
-            // that even if the VPN is stuck trying to reconnect, we won't be
-            // hitting our backend or firing pixels.
-            //
+            // If we can't cleanly shut the tunneldown, we'll do our best to
+            // shut it down even if the process keeps running.
+
+            // We don't want to be firing monitoring pixels for failures from this point onward...
+            await stopMonitors()
+
+            // If the extension process restarts we don't want it to attempt to reconnect
             try? await self.tokenHandlerProvider().removeToken()
-            await cancelTunnel(with: error)
+
+            // We show some visual indication that something's off, so the user can chose to
+            // manually stop the VPN.
+            reasserting = true
         }
     }
 

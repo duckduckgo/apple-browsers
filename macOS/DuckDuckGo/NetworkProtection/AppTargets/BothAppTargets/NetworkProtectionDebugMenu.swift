@@ -557,8 +557,11 @@ final class NetworkProtectionDebugMenu: NSMenu {
     @objc func resetUpsellState(_ sender: Any?) {
         upsellVisibilityManager.makeNotEligible()
 
-        // Clear first launch date to simulate first launch of a new user
-        UserDefaults.standard.removeObject(forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+        // Clear all statistics to simulate first launch
+        Application.appDelegate.resetInstallStatistics()
+
+        // Set install date to today to simulate new user
+        Application.appDelegate.changeInstallDateToToday(nil)
 
         // Reset onboarding states using existing AppDelegate methods
         Application.appDelegate.resetOnboarding(nil)

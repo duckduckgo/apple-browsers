@@ -674,6 +674,16 @@ extension AppDelegate {
     @objc func resetConfigurationToDefault(_ sender: Any?) {
         setConfigurationUrl(nil)
     }
+
+    @objc func resetInstallStatistics() {
+        let pixelDataStore = LocalPixelDataStore(database: Application.appDelegate.database.db)
+        pixelDataStore.removeValue(forKey: "stats.atb.key")
+        pixelDataStore.removeValue(forKey: "stats.installdate.key")
+        pixelDataStore.removeValue(forKey: "stats.retentionatb.key")
+        pixelDataStore.removeValue(forKey: "stats.appretentionatb.key")
+        pixelDataStore.removeValue(forKey: "stats.appretentionatb.last.request.key")
+        pixelDataStore.removeValue(forKey: "stats.variant.key")
+    }
 }
 
 extension MainViewController {

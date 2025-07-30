@@ -206,7 +206,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
         return VPNUpsellVisibilityManager(
-            isFirstLaunch: AppDelegate.firstLaunchDate == nil,
+            isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
             subscriptionManager: subscriptionAuthV1toV2Bridge,
             defaultBrowserPublisher: DefaultBrowserPreferences.shared.$isDefault.eraseToAnyPublisher(),
@@ -237,19 +237,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var dockCustomization: DockCustomization?
 #endif
 
-    @UserDefaultsWrapper(key: .firstLaunchDate)
-    static var firstLaunchDate: Date?
+    @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
+    static var firstLaunchDate: Date
 
     @UserDefaultsWrapper
     private var didCrashDuringCrashHandlersSetUp: Bool
 
     static var isNewUser: Bool {
-        guard let firstLaunchDate else { return true }
         return firstLaunchDate >= Date.weekAgo
     }
 
     static var twoDaysPassedSinceFirstLaunch: Bool {
-        guard let firstLaunchDate else { return false }
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
@@ -859,9 +857,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = DownloadListCoordinator.shared
         _ = RecentlyClosedCoordinator.shared
 
-        if LocalStatisticsStore().atb == nil {
+        let isFirstLaunch = LocalStatisticsStore().atb == nil
+
+        if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
         }
+
+        vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch)
+
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here

@@ -25,6 +25,7 @@ import VPN
 
 extension VPNUpsellVisibilityManager {
     enum State: Equatable {
+        case uninitialized // Initial state, before setup is called
         case notEligible // User is not new, or already subscribed, or feature flag is off
         case dismissed // User has dismissed the upsell, or it has been auto-dismissed
         case waitingForConditions // 1st launch: waiting for the user to finish contextual onboarding and set default browser
@@ -37,7 +38,7 @@ extension VPNUpsellVisibilityManager {
 ///
 final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Output
-    @Published private(set) var state: State = .notEligible
+    @Published private(set) var state: State = .uninitialized
 
     // MARK: - Dependencies
     private let isFirstLaunch: Bool
@@ -72,6 +73,14 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.timerDuration = timerDuration
         self.autoDismissDays = autoDismissDays
         self.persistor = persistor
+    }
+
+    public func setup(isFirstLaunch: Bool) {
+        guard state == .uninitialized else {
+            return
+        }
+
+        updateState(.notEligible)
 
         guard isUserEligible, isFeatureOn else {
             return

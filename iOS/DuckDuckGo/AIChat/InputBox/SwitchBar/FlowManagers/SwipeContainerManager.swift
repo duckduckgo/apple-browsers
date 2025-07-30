@@ -56,9 +56,13 @@ final class SwipeContainerManager: NSObject {
         NSLayoutConstraint.activate([
             swipeContainerViewController.view.leadingAnchor.constraint(equalTo: parentController.view.leadingAnchor),
             swipeContainerViewController.view.trailingAnchor.constraint(equalTo: parentController.view.trailingAnchor),
-            swipeContainerViewController.view.topAnchor.constraint(equalTo: belowView.bottomAnchor, constant: 4),
+            // Allow scroll to flow under
+            swipeContainerViewController.view.topAnchor.constraint(equalTo: belowView.bottomAnchor, constant: -16),
             swipeContainerViewController.view.bottomAnchor.constraint(equalTo: parentController.view.bottomAnchor),
         ])
+
+        // Compensate for the underflow + margin
+        swipeContainerViewController.additionalSafeAreaInsets.top = 24
 
         swipeContainerViewController.didMove(toParent: parentController)
     }

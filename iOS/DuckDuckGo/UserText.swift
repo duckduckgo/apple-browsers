@@ -727,7 +727,7 @@ public struct UserText {
     static let vpnFeedbackFormSubmittedMessage = NSLocalizedString("vpn.feedback-form.submitted.message", value: "Thank You! Feedback submitted.", comment: "Toast message when the VPN feedback form is submitted successfully")
 
     static let vpnAccessRevokedAlertTitle = NSLocalizedString("vpn.access-revoked.alert.title", value: "VPN disconnected due to expired subscription", comment: "Alert title for the alert when the Privacy Pro subscription expires")
-    static let vpnAccessRevokedAlertMessage = NSLocalizedString("vpn.access-revoked.alert.message", value: "Subscribe to Privacy Pro to reconnect DuckDuckGo VPN.", comment: "Alert message for the alert when the Privacy Pro subscription expiress")
+    static let vpnAccessRevokedAlertMessage = NSLocalizedString("vpn.access-revoked.alert.message", value: "Subscribe to DuckDuckGo to reconnect the VPN.", comment: "Alert message for the alert when the Privacy Pro subscription expiress")
     static let vpnAccessRevokedAlertActionSubscribe = NSLocalizedString("vpn.access-revoked.alert.action.subscribe", value: "Subscribe", comment: "Primary action for the alert when the subscription expires")
     static let vpnAccessRevokedAlertActionCancel = NSLocalizedString("vpn.access-revoked.alert.action.cancel", value: "Dismiss", comment: "Cancel action for the alert when the subscription expires")
 
@@ -915,7 +915,30 @@ public struct UserText {
 
     public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
 
-    public static let aboutText = NSLocalizedString("settings.about.text.new", value: """
+    public static func aboutText(isSubscriptionRebrandingOn: Bool, isPaidAIChatOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            if isPaidAIChatOn {
+                return NSLocalizedString("settings.about.text.new", value: """
+    DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
+    
+    We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
+    
+    In addition, we also offer the [DuckDuckGo subscription](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrated into our browser. Subscribers get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, access to advanced AI models in our private AI chat service Duck.ai, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.
+    
+    Take back control of your personal information with the browser designed for data protection, not data collection.
+    """, comment: "about page")
+            }
+            return NSLocalizedString("settings.about.text.new.no.ai.chat", value: """
+DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
+
+We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
+
+In addition, we also offer the [DuckDuckGo subscription](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrated into our browser. Subscribers get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.
+
+Take back control of your personal information with the browser designed for data protection, not data collection.
+""", comment: "about page")
+        }
+        return NSLocalizedString("settings.about.text.new.deprecated", value: """
 DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
 
 We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
@@ -924,6 +947,7 @@ In addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckg
 
 Take back control of your personal information with the browser designed for data protection, not data collection.
 """, comment: "about page")
+    }
 
     public static let autofillEnableSettings = NSLocalizedString("autofill.logins.list.enable", value:"Save and autofill passwords", comment: "Title for a toggle that enables autofill")
     public static let autofillNeverSavedSettings = NSLocalizedString("autofill.logins.list.never.saved", value:"Reset Excluded Sites", comment: "Title for a button that allows a user to reset their list of never saved sites")
@@ -1204,7 +1228,7 @@ Take back control of your personal information with the browser designed for dat
     }
     static let networkProtectionConnectionInterruptedNotificationBody = NSLocalizedString("network.protection.interrupted.notification.body", value: "DuckDuckGo VPN was interrupted. Attempting to reconnect now...", comment: "The body of the notification shown when VPN connection is interrupted")
     static let networkProtectionConnectionFailureNotificationBody = NSLocalizedString("network.protection.failure.notification.body", value: "DuckDuckGo VPN failed to connect. Please try again later.", comment: "The body of the notification shown when VPN fails to reconnect")
-    static let networkProtectionEntitlementExpiredNotificationBody = NSLocalizedString("network.protection.entitlement.expired.notification.body", value: "VPN disconnected due to expired subscription. Subscribe to Privacy Pro to reconnect DuckDuckGo VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
+    static let networkProtectionEntitlementExpiredNotificationBody = NSLocalizedString("network.protection.entitlement.expired.notification.body", value: "VPN disconnected due to expired subscription. Subscribe to DuckDuckGo to reconnect the VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
 
     static func networkProtectionSnoozedNotificationBody(duration: String) -> String {
         let localized = NSLocalizedString(
@@ -1363,9 +1387,12 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsPProActivationPendingDescription = NSLocalizedString("settings.subscription.activation.pending.description", value: "This is taking longer than usual, please check back later.", comment: "Subscription activation pending description")
 
     // Expired Subscription
-    public static let settingsPProSubscriptionExpiredTitle = NSLocalizedString("settings.subscription.expired.title", value: "Your Privacy Pro subscription expired", comment: "Subscription expired tittle message")
-    public static let settingsPProSubscribeAgain = NSLocalizedString("settings.subscription.expired.comment", value: "Subscribe again to continue using Privacy Pro", comment: "Subscription expired description")
-
+    public static func settingsPProSubscriptionExpiredTitle(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
+            return NSLocalizedString("settings.duckduckgo.subscription.expired.title", value: "Your Privacy Pro subscription expired", comment: "Subscription expired tittle message")
+        }
+        return NSLocalizedString("settings.subscription.expired.title", value: "Your Privacy Pro subscription expired", comment: "Subscription expired tittle message")
+    }
     
     // Customize Section
     public static let settingsCustomizeSection = NSLocalizedString("settings.customize", value: "Customize", comment: "Settings title for the customize section")
@@ -1499,10 +1526,25 @@ Take back control of your personal information with the browser designed for dat
         return String(format: localized, expiryDate)
     }
 
-    public static let subscriptionDevicesSectionHeader = NSLocalizedString("subscription.add.to.devices.header", value: "Add Privacy Pro to Other Devices", comment: "Header for section for activating subscription on other devices")
+    public static func subscriptionDevicesSectionHeader(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
+            return NSLocalizedString("duckduckgo.subscription.add.to.devices.header", value: "Add your subscription to other devices", comment: "Header for section for activating subscription on other devices")
+        }
+        return NSLocalizedString("subscription.add.to.devices.header", value: "Add Privacy Pro to Other Devices", comment: "Header for section for activating subscription on other devices")
+    }
     public static let subscriptionRebrandingMessage = NSLocalizedString("subscription.rebranding.message", value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription")
-    public static let subscriptionDevicesSectionNoEmailFooter = NSLocalizedString("subscription.add.to.devices.no.email.footer", value: "Add Privacy Pro to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
-    public static let subscriptionDevicesSectionWithEmailFooter = NSLocalizedString("subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app. Go to Settings > Privacy Pro > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
+    public static func subscriptionDevicesSectionNoEmailFooter(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
+            return NSLocalizedString("duckduckgo.subscription.add.to.devices.no.email.footer", value: "Add your subscription to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
+        }
+        return NSLocalizedString("subscription.add.to.devices.no.email.footer", value: "Add Privacy Pro to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
+    }
+    public static func subscriptionDevicesSectionWithEmailFooter(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
+            return NSLocalizedString("subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app, go to Settings > DuckDuckGo Subscription > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
+        }
+        return NSLocalizedString("subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app. Go to Settings > Privacy Pro > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
+    }
     public static let subscriptionRemoveFromDevice = NSLocalizedString("subscription.remove.from.device.button", value: "Remove From This Device", comment: "Remove from this device button")
     public static let subscriptionManageTitle = NSLocalizedString("subscription.manage.title", value: "Subscription", comment: "Header for the subscription section")
     public static let subscriptionManagePlan = NSLocalizedString("subscription.manage.plan", value: "Manage Plan", comment: "Manage Plan header")
@@ -1510,11 +1552,21 @@ Take back control of your personal information with the browser designed for dat
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
     public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Send Feedback", comment: "Send Feedback Button")
-    public static let subscriptionFAQFooter = NSLocalizedString("subscription.faq.description", value: "Get answers to frequently asked questions or contact Privacy Pro support from our help pages.", comment: "FAQ Description")
+    public static func subscriptionFAQFooter(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
+            return NSLocalizedString("duckduckgo.subscription.faq.description", value: "Get answers to frequently asked questions or contact subscription support from our help pages.", comment: "FAQ Description")
+        }
+        return NSLocalizedString("subscription.faq.description", value: "Get answers to frequently asked questions or contact Privacy Pro support from our help pages.", comment: "FAQ Description")
+    }
     
     // Remove subscription confirmation
     public static let subscriptionRemoveFromDeviceConfirmTitle = NSLocalizedString("subscription.remove.from.device.title", value: "Remove from this device?", comment: "Remove from device confirmation dialog title")
-    public static let subscriptionRemoveFromDeviceConfirmText = NSLocalizedString("subscription.remove.from.device.text", value: "You will no longer be able to access your Privacy Pro subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.", comment: "Remove from device confirmation dialog text")
+    public static func subscriptionRemoveFromDeviceConfirmText(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
+            return NSLocalizedString("duckduckgo.subscription.remove.from.device.text", value: "You will no longer be able to access your DuckDuckGo subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.", comment: "Remove from device confirmation dialog text")
+        }
+        return NSLocalizedString("subscription.remove.from.device.text", value: "You will no longer be able to access your Privacy Pro subscription on this device. This will not cancel your subscription, and it will remain active on your other devices.", comment: "Remove from device confirmation dialog text")
+    }
     public static let subscriptionRemove = NSLocalizedString("subscription.remove.subscription", value: "Remove Subscription", comment: "Remove subscription button text")
     public static let subscriptionRemoveCancel = NSLocalizedString("subscription.remove.subscription.cancel", value: "Cancel", comment: "Remove subscription cancel button text")
     public static let subscriptionRemovalConfirmation = NSLocalizedString("subscription.cancel.message", value: "Your subscription has been removed from this device.", comment: "Subscription Removal confirmation message")
@@ -1524,7 +1576,12 @@ Take back control of your personal information with the browser designed for dat
     public static let subscriptionActivateHeaderTitle = NSLocalizedString("subscription.activate.header.title", value: "Add your Privacy Pro subscription to this device", comment: "Header title for the subscription activation view")
 
     public static let subscriptionActivateViaEmailTitle = NSLocalizedString("subscription.activate.via.email.title", value: "Add via email address", comment: "Title for adding subscription via email address")
-    public static let subscriptionActivateViaEmailDescription = NSLocalizedString("subscription.activate.via.email.description", value: "Use an email address to add Privacy Pro to this device.", comment: "Description for adding subscription via email address")
+    public static func subscriptionActivateViaEmailDescription(isSubscriptionOn: Bool) -> String {
+        if isSubscriptionOn {
+            return NSLocalizedString("duckduckgo.subscription.activate.via.email.description", value: "Use an email address to add your subscription to this device.", comment: "Description for adding subscription via email address")
+        }
+        return NSLocalizedString("subscription.activate.via.email.description", value: "Use an email address to add Privacy Pro to this device.", comment: "Description for adding subscription via email address")
+    }
     public static let subscriptionActivateViaEmailButton = NSLocalizedString("subscription.activate.via.email.button", value: "Get Started", comment: "Button title for starting the process of adding subscription via email address")
 
     public static let subscriptionActivateViaAppleAccountTitle = NSLocalizedString("subscription.activate.via.apple.account.title", value: "Add via Apple Account", comment: "Title for adding subscription via Apple Account")
@@ -1534,10 +1591,6 @@ Take back control of your personal information with the browser designed for dat
 
     public static let subscriptionEditEmailButton = NSLocalizedString("subscription.activate.edit.email.button", value: "Edit Email", comment: "Button for editing email address added to subscription")
     public static let subscriptionAddToDeviceButton = NSLocalizedString("subscription.activate.add.to.device.button", value: "Add to Device", comment: "Button for adding this subscription to another device")
-
-    // Add to other devices (AppleID / Email)
-    public static let subscriptionAvailableInApple = NSLocalizedString("subscription.available.apple", value: "Privacy Pro is available on any device signed in to the same Apple Account.", comment: "Subscription availability message on Apple devices")
-    public static let subscriptionManageEmailResendInstructions = NSLocalizedString("subscription.add.device.resend.instructions", value: "Resend Instructions", comment: "Resend activation instructions button")
     
     public static let subscriptionConfirmTitle = NSLocalizedString("subscription.confirm.title", value: "Are you sure?", comment: "Title for Confirm messages")
 
@@ -1578,7 +1631,12 @@ Take back control of your personal information with the browser designed for dat
     
     
     // PIR:
-    public static let subscriptionPIRHeroText = NSLocalizedString("subscription.pir.hero", value: "Activate Privacy Pro on desktop to set up Personal Information Removal", comment: "Hero Text for Personal information removal")
+    public static func subscriptionPIRHeroText(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
+            return NSLocalizedString("duckduckgo.subscription.pir.hero", value: "Activate the DuckDuckGo subscription on desktop to set up Personal Information Removal", comment: "Hero Text for Personal information removal")
+        }
+        return NSLocalizedString("subscription.pir.hero", value: "Activate Privacy Pro on desktop to set up Personal Information Removal", comment: "Hero Text for Personal information removal")
+    }
     public static let subscriptionPIRHeroDetail = NSLocalizedString("subscription.pir.heroText", value: "In the DuckDuckGo browser for desktop, go to %@ and click %@ to get started.", comment: "Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription>")
     public static let subscriptionPIRHeroDesktopMenuLocation = NSLocalizedString("subscription.pir.heroTextLocation", value: "Settings > Privacy Pro", comment: "Settings references a menu in the Desktop app, Privacy Pro, references our product name")
     public static let subscriptionPIRHeroDesktopMenuItem = NSLocalizedString("subscription.pir.heroTextMenyEntry", value: "I have a subscription", comment: "Menu item for enabling Personal Information Removal on Desktop")
@@ -1908,10 +1966,10 @@ Take back control of your personal information with the browser designed for dat
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")
             static func message() -> NSAttributedString {
                 
-                let vpnAndTwoMoreBold = NSLocalizedString(
+                let vpnBold = NSLocalizedString(
                     "onboarding.subscription.promo.message.vpn-two-more-bold",
-                    value: "VPN + 2 more premium protections",
-                    comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
+                    value: "VPN",
+                    comment: "Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
                 )
 
                 let optionalSubscriptionBold = NSLocalizedString(
@@ -1923,8 +1981,8 @@ Take back control of your personal information with the browser designed for dat
                 // Localized full message with numbered placeholders
                 let fullText = String(format: NSLocalizedString(
                     "onboarding.subscription.promo.message",
-                    value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."), vpnAndTwoMoreBold, optionalSubscriptionBold)
+                    value: "DuckDuckGo also has an %1$@, available with a %2$@.",
+                    comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold)."), optionalSubscriptionBold, vpnBold)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -1933,8 +1991,8 @@ Take back control of your personal information with the browser designed for dat
                 ]
 
                 // Apply bold formatting
-                if let vpnAndTwoMorRange = fullText.range(of: vpnAndTwoMoreBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(vpnAndTwoMorRange, in: fullText))
+                if let vpnRange = fullText.range(of: vpnBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(vpnRange, in: fullText))
                 }
 
                 // Apply bold formatting

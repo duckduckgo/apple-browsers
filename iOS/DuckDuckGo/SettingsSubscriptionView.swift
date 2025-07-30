@@ -185,7 +185,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
@@ -200,7 +200,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )

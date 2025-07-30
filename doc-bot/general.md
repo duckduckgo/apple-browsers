@@ -57,6 +57,7 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 1. ✅ Read `privacy-security.md` - Privacy is non-negotiable
 2. ✅ Check platform rules (`ios-architecture.md` or `macos-architecture.md`)
 3. ✅ Review `anti-patterns.md` - Avoid common mistakes
+4. ✅ REMEMBER: NEVER commit, push, or run tests without explicit user permission or unless explicitly asked to
 
 ### For UI Development:
 1. ✅ Use `swiftui-style.md` for SwiftUI components
@@ -69,6 +70,8 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 3. ✅ Write tests per `testing.md` requirements
 
 ## Critical Don'ts (from anti-patterns.md)
+- ❌ NEVER commit, push changes, create or delete branches on git or trigger github actions without EXPLICIT user permission
+- ❌ NEVER run tests without EXPLICIT user permission or if user explicitly asked to in their prompt
 - ❌ NEVER use singletons except for truly global state
 - ❌ NEVER hardcode colors/icons (use DesignResourcesKit)
 - ❌ NEVER update UI without @MainActor
@@ -120,5 +123,49 @@ Image(systemName: "bookmark")
 4. Anti-patterns avoided (`anti-patterns.md`)
 5. Tests written and passing (`testing.md`)
 6. Performance considered (`performance-optimization.md`)
+
+## Git & Testing Workflow Rules
+
+### 🚨 MANDATORY: Never Auto-Execute Commands
+**NEVER commit, push, or run tests without EXPLICIT user permission.**
+
+#### Git Workflow:
+1. Make file changes as requested
+2. **STOP** before any `git add`, `git commit`, or `git push` commands  
+3. **ASK** the user: "Should I commit/push these changes?"
+4. **WAIT** for explicit permission (e.g., "yes", "commit it", "push it", "go ahead")
+5. Only then execute git commands
+
+#### Testing Workflow:
+1. Write or modify code as requested
+2. **STOP** before running any tests (`swift test`, `npm test`, `xcodebuild test`, etc.)
+3. **ASK** the user: "Should I run the tests?"
+4. **WAIT** for explicit permission (e.g., "yes", "run tests", "test it")
+5. Only then execute test commands
+
+#### What NOT to Do:
+```bash
+# ❌ WRONG - Never do these automatically
+git add .
+git commit -m "Updated files"
+git push origin main
+swift test
+npm test
+xcodebuild test
+```
+
+#### What TO Do:
+```bash
+# ✅ CORRECT - Ask first
+echo "I've made the requested changes. Would you like me to:"
+echo "1. Commit these changes?"
+echo "2. Run the tests?" 
+echo "3. Push to remote?"
+# Wait for user response before any commands
+```
+
+**These rules have NO exceptions. Always ask before executing git or test commands.**
+
+---
 
 This overview ensures you understand the project context and know which specific rules to consult for your development task.

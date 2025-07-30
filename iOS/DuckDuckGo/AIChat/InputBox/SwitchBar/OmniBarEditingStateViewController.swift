@@ -28,7 +28,6 @@ import Core
 import Suggestions
 import SwiftUI
 import AIChat
-import UIComponents
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
@@ -44,11 +43,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     // MARK: - Properties
 
-    var logoView: UIView? { daxLogoManager.logoView }
     var actionBarView: UIView? { navigationActionBarManager?.view }
 
-    weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var suggestionTrayDependencies: SuggestionTrayDependencies?
+
+    weak var delegate: OmniBarEditingStateViewControllerDelegate?
     var automaticallySelectsTextOnAppear = false
 
     // MARK: - Core Components
@@ -88,7 +87,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         suggestionTrayManager?.showInitialSuggestions()
 
-        updateLogoPosition(progress: 0)
+        updateDaxVisibility()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -183,6 +182,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .sink { [weak self] currentText in
                 self?.delegate?.onQueryUpdated(currentText)
                 self?.suggestionTrayManager?.handleQueryUpdate(currentText)
+                self?.updateDaxVisibility()
             }
             .store(in: &cancellables)
 
@@ -229,6 +229,17 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func handleMicrophoneButtonTapped() {
         delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
     }
+
+    private func updateDaxVisibility() {
+
+        let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
+        let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay
+        let isAIDaxVisible = !shouldDisplaySuggestionTray
+
+        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+    }
 }
 
 // MARK: - SwipeContainerManagerDelegate
@@ -243,19 +254,7 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 
-        updateLogoPosition(progress: progress)
-    }
-
-    private func updateLogoPosition(progress: CGFloat) {
-        if let logoView {
-            if suggestionTrayManager?.isShowingSuggestionTray == true {
-                logoView.alpha = Easing.inOutCirc(progress)
-                logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
-            } else {
-                logoView.alpha = 1.0
-                logoView.transform = .identity
-            }
-        }
+        daxLogoManager.updateSwipeProgress(progress)
     }
 }
 

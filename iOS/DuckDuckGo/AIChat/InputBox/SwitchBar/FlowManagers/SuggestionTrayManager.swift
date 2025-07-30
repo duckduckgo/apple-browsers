@@ -61,6 +61,19 @@ final class SuggestionTrayManager: NSObject {
         suggestionTrayViewController?.view.isHidden == false
     }
 
+    var shouldDisplayFavoritesOverlay: Bool {
+        let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
+
+        return !shouldDisplaySuggestionTray && canDisplayFavorites
+    }
+
+    var shouldDisplaySuggestionTray: Bool {
+        let query = switchBarHandler.currentText
+        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
+
+        return !(query.isEmpty || !hasUserInteracted)
+    }
+
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies) {
@@ -163,9 +176,8 @@ final class SuggestionTrayManager: NSObject {
     
     private func updateSuggestionTrayForCurrentState() {
         let query = switchBarHandler.currentText
-        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
-        
-        if query.isEmpty || !hasUserInteracted {
+
+        if !shouldDisplaySuggestionTray {
             showSuggestionTray(.favorites)
         } else {
             showSuggestionTray(.autocomplete(query: query))

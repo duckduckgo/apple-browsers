@@ -96,6 +96,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         subscriptionManagerV2 = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
+        broker = nil
     }
 
     // MARK: - Free Trials

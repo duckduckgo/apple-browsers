@@ -160,7 +160,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .removeWWWInCanonicalizationInThreatProtection,
              .june2025TabManagerLayoutChanges,
-             .supportsAlternateStripePaymentFlow:
+             .supportsAlternateStripePaymentFlow,
+             .setAsDefaultBrowserPiPVideoTutorial:
             true
         default:
             false

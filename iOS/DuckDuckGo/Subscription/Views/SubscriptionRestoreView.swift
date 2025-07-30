@@ -172,7 +172,7 @@ struct SubscriptionRestoreView: View {
     private var headerView: some View {
         VStack(spacing: Constants.headerItemSpacing) {
             Image(Constants.heroImage)
-            Text(UserText.subscriptionActivateHeaderTitle)
+            Text(UserText.subscriptionActivateHeaderTitle(isRebrandingOn: viewModel.isRebrandingOn))
                 .daxTitle1()
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))

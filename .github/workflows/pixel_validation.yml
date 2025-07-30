@@ -39,6 +39,7 @@ jobs:
             
       - name: Install dependencies
         run: npm ci --verbose --include-workspace-root
+        working-directory: ${{ matrix.platform }}
       - name: Lint
         run: npm run pixel-lint
         working-directory: ${{ matrix.platform }}        

@@ -150,8 +150,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
         guard let domain = notification.userInfo?[UserInfoKeys.faviconDomain] as? String,
               !bookmarkExists(for: domain) else { return }
         Task { @MainActor in
-            let autofillLoginExists = await !autofillLoginExists(for: domain)
-            guard autofillLoginExists else { return }
+            let autofillLoginExists = await autofillLoginExists(for: domain)
+            guard !autofillLoginExists else { return }
             Favicons.shared.removeBookmarkFavicon(forDomain: domain)
         }
     }

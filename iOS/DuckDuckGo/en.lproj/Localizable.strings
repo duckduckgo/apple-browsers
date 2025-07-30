@@ -2278,6 +2278,15 @@ https://duckduckgo.com/mac";
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Search privately by default";
 
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo also has an %1$@, available with a %2$@ and advanced, private AI.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "optional paid subscription";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
+
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Easy to reach";
 
@@ -2359,14 +2368,14 @@ https://duckduckgo.com/mac";
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Try it for free!";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo also has an %1$@, available with a %2$@.";
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo also has a secure %1$@, available with an %2$@.";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.subscription.promo.message.optional-subscription-bold" = "optional paid subscription";
 
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN";
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 more premium protections";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Add Widget";
@@ -2909,7 +2918,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.subscription.subscribe.title.no.ai.chat" = "Secure your Wi-Fi, and protect identity";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Try DuckDuckGo Subscription Free";
+"settings.subscription.try.free.button" = "Try Free";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Try Privacy Pro Free";

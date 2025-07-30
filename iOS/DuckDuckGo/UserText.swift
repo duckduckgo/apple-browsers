@@ -1580,8 +1580,8 @@ public struct UserText {
     }
 
     public static let subscriptionActivateViaEmailTitle = NSLocalizedString("subscription.activate.via.email.title", value: "Add via email address", comment: "Title for adding subscription via email address")
-    public static func subscriptionActivateViaEmailDescription(isSubscriptionOn: Bool) -> String {
-        if isSubscriptionOn {
+    public static func subscriptionActivateViaEmailDescription(isRebrandingOn: Bool) -> String {
+        if isRebrandingOn {
             return NSLocalizedString("duckduckgo.subscription.activate.via.email.description", value: "Use an email address to add your subscription to this device.", comment: "Description for adding subscription via email address")
         }
         return NSLocalizedString("subscription.activate.via.email.description", value: "Use an email address to add Privacy Pro to this device.", comment: "Description for adding subscription via email address")

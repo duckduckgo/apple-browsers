@@ -136,7 +136,7 @@ struct SubscriptionRestoreView: View {
 
     private var addViaEmailView: some View {
         RoundedCardView(title: UserText.subscriptionActivateViaEmailTitle,
-                        description: UserText.subscriptionActivateViaEmailDescription(isSubscriptionOn: viewModel.isRebrandingOn),
+                        description: UserText.subscriptionActivateViaEmailDescription(isRebrandingOn: viewModel.isRebrandingOn),
                         image: Image(uiImage: DesignSystemImages.Glyphs.Size16.email),
                         buttonTitle: UserText.subscriptionActivateViaEmailButton,
                         buttonAction: {

@@ -86,7 +86,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installComponents()
         setupSubscriptions()
 
-        swipeContainerManager?.updateLayout(viewBounds: view.bounds)
         suggestionTrayManager?.showInitialSuggestions()
 
         updateLogoPosition(progress: 0)
@@ -114,14 +113,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
         if self.presentingViewController != nil {
             self.dismiss(animated: true, completion: completion)
-        }
-    }
-    
-    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-
-        coordinator.animate { _ in
-            self.swipeContainerManager?.updateLayout(viewBounds: CGRect(origin: .zero, size: size))
         }
     }
 
@@ -159,18 +150,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
+        manager.installInViewController(self, belowView: switchBarVC.view)
         manager.delegate = self
-        manager.installInView(view, belowView: switchBarVC.view)
         swipeContainerManager = manager
     }
 
     private func installSuggestionsTray() {
         guard let dependencies = suggestionTrayDependencies,
-              let searchContainer = swipeContainerManager?.searchPageContainer else { return }
-        
+              let swipeContainerViewController = swipeContainerManager?.swipeContainerViewController,
+              let searchContainer = swipeContainerViewController.searchPageContainer else { return }
+
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: self)
+        manager.installInContainerView(searchContainer, parentViewController: swipeContainerViewController)
         suggestionTrayManager = manager
     }
 
@@ -241,13 +233,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
 // MARK: - SwipeContainerManagerDelegate
 
-extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
+extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegate {
     
-    func swipeContainerManager(_ manager: SwipeContainerManager, didSwipeToMode mode: TextEntryMode) {
+    func swipeContainerViewController(_ controller: SwipeContainerViewController, didSwipeToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
     }
     
-    func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat) {
+    func swipeContainerViewController(_ controller: SwipeContainerViewController, didUpdateScrollProgress progress: CGFloat) {
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 

@@ -219,13 +219,20 @@ final class MainWindowController: NSWindowController {
             return
         }
         let tabBarViewController = mainViewController.tabBarViewController
-
         tabBarViewController.view.removeFromSuperview()
+
+        let toolbarView = newParentView.subviews.first(where: { $0.className == "NSToolbarView" })
         if toTitlebarView {
             // Prevent 1px line from appearing below Tab Bar when hiding and subsequently showing it in fullscreen mode
             // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209999815083499?focus=true
             newParentView.layer?.masksToBounds = true
             newParentView.addSubview(tabBarViewController.view)
+
+            // In macOS 26, the toolbar contains a glass view that intercepts context clicks on the tab bar
+            // Since that view is currently unused, we can hide it for now to allow clicks through
+            if #available(macOS 26.0, *), let glassView = toolbarView?.subviews.first(where: { $0.className == "NSGlassContainerView" }) {
+                glassView.isHidden = true
+            }
         } else {
             newParentView.addSubview(tabBarViewController.view, positioned: .below, relativeTo: mainViewController.fireViewController.view)
         }
@@ -233,7 +240,7 @@ final class MainWindowController: NSWindowController {
         // enable Tab Bar appear as an AX child of the Window
         // this won‘t work by-default since we‘re adding it to the NSToolbar view
         // providing its own a11y implementation: see TabBarViewController
-        if let toolbarView = newParentView.subviews.first(where: { $0.className == "NSToolbarView" }) {
+        if let toolbarView {
             toolbarView.setAccessibilityEnabled(false)
             toolbarView.setAccessibilityElement(false)
             tabBarViewController.view.setAccessibilityParent(window)

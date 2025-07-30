@@ -2,7 +2,7 @@
 {
     m_autoconsent_init_ios: {
         description: 'Fires when the autoconsent user-script was initialized in a document.',
-        owners: ['sammacbeth', 'samsymons'],
+        owners: ['sammacbeth'],
         triggers: ['page_load'],
         suffixes: ['form_factor', 'daily'],
         parameters: ['appVersion', 'pixelSource'],

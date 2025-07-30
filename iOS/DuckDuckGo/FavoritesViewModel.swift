@@ -50,6 +50,7 @@ class FavoritesViewModel: ObservableObject {
 
     @Published private(set) var allFavorites: [FavoriteItem] = []
     @Published private(set) var isCollapsed: Bool = true
+    @Published var canEditFavorites = true
 
     // In memory only so that when settings is dismissed we can show the prompt.
     //  Missing icons will trigger the prompt from elsewhere too so we don't need to persist this.

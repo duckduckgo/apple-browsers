@@ -135,6 +135,11 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         }
     }
 
+    func setFavoritesEditable(_ editable: Bool) {
+        newTabPageViewModel.canEditFavorites = editable
+        favoritesModel.canEditFavorites = editable
+    }
+
     func widthChanged() {
         updateBorderView()
     }

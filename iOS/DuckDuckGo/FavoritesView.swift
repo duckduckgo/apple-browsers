@@ -44,7 +44,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             let result = model.prefixedFavorites(for: columns)
 
             NewTabPageGridView(geometry: geometry, isUsingDynamicSpacing: model.isNewTabPageCustomizationEnabled) { _ in
-                ReorderableForEach(result.items) { item in
+                ReorderableForEach(result.items, id: \.id, isReorderingEnabled: model.canEditFavorites) { item in
                     viewFor(item)
                         .previewShape()
                         .transition(.opacity)
@@ -103,6 +103,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
                 FavoriteItemView(
                     favorite: favorite,
                     faviconLoading: model.faviconLoader,
+                    isEditable: model.canEditFavorites,
                     onMenuAction: { action in
                         switch action {
                         case .delete: model.deleteFavorite(favorite)

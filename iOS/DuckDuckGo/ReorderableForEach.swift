@@ -27,6 +27,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
 
     private let data: [Data]
     private let id: KeyPath<Data, ID>
+    private let isReorderingEnabled: Bool
 
     private let content: ContentBuilder
     private let preview: PreviewBuilder?
@@ -40,6 +41,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) where Preview == EmptyView {
         self.data = data
         self.id = id
+        self.isReorderingEnabled = true
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -53,6 +55,7 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) {
         self.data = data
         self.id = id
+        self.isReorderingEnabled = isReorderingEnabled
         self.content = content
         self.preview = preview
         self.onMove = onMove
@@ -137,6 +140,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) where Preview == EmptyView {
         self.data = data
         self.id = \Data.id
+        self.isReorderingEnabled = true
         self.content = content
         self.preview = nil
         self.onMove = onMove
@@ -148,6 +152,7 @@ extension ReorderableForEach where Data: Identifiable, ID == Data.ID {
          onMove: @escaping (_ from: IndexSet, _ to: Int) -> Void) {
         self.data = data
         self.id = \Data.id
+        self.isReorderingEnabled = true
         self.content = content
         self.preview = preview
         self.onMove = onMove

@@ -129,7 +129,7 @@ final class SuggestionTrayManager: NSObject {
         ])
 
         controller.autocompleteDelegate = self
-        controller.favoritesOverlayDelegate = self // DEPRECATED
+        controller.favoritesOverlayDelegate = self
         controller.newTabPageControllerDelegate = self
         controller.didMove(toParent: parentViewController)
 

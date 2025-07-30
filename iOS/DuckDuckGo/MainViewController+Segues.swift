@@ -327,23 +327,35 @@ extension MainViewController {
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
         Pixel.fire(pixel: .settingsPresented)
 
-        if let navigationController = self.presentedViewController as? UINavigationController,
-           let settingsHostingController = navigationController.viewControllers.first as? SettingsHostingController {
-            navigationController.popToRootViewController(animated: false)
-            completion?(settingsHostingController.viewModel)
-        } else {
-            let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
+        func doLaunch() {
+            if let navigationController = self.presentedViewController as? UINavigationController,
+               let settingsHostingController = navigationController.viewControllers.first as? SettingsHostingController {
+                navigationController.popToRootViewController(animated: false)
+                completion?(settingsHostingController.viewModel)
+            } else {
+                assert(self.presentedViewController == nil)
 
-            // We are still presenting legacy views, so use a Navcontroller
-            let navController = SettingsUINavigationController(rootViewController: settingsController)
-            settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+                let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
 
-            // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
-            configure?(settingsViewModel, settingsController)
+                // We are still presenting legacy views, so use a Navcontroller
+                let navController = SettingsUINavigationController(rootViewController: settingsController)
+                settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
 
-            present(navController, animated: true) {
-                completion?(settingsViewModel)
+                // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
+                configure?(settingsViewModel, settingsController)
+
+                present(navController, animated: true) {
+                    completion?(settingsViewModel)
+                }
             }
+        }
+
+        if let controller = self.presentedViewController as? OmniBarEditingStateViewController {
+            controller.dismissAnimated {
+                doLaunch()
+            }
+        } else {
+            doLaunch()
         }
     }
 

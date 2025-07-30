@@ -189,9 +189,9 @@ private extension CustomizableNewTabPageView {
     }
 
     private func favoritesSectionView(proxy: GeometryProxy) -> some View {
-                FavoritesView(model: favoritesViewModel,
-                              isAddingFavorite: $isAddingFavorite,
-                              geometry: proxy)
+        FavoritesView(model: favoritesViewModel,
+                      isAddingFavorite: $isAddingFavorite,
+                      geometry: proxy)
     }
 
     @ViewBuilder

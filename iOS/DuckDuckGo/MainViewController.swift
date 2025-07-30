@@ -897,6 +897,7 @@ class MainViewController: UIViewController {
     private func addLaunchTabNotificationObserver() {
         launchTabObserver = LaunchTabNotification.addObserver(handler: { [weak self] urlString in
             guard let self = self else { return }
+            viewCoordinator.omniBar.endEditing()
             if let url = URL(trimmedAddressBarString: urlString), url.isValid {
                 self.loadUrlInNewTab(url, inheritedAttribution: nil)
             } else {

@@ -286,11 +286,9 @@ class SuggestionTrayViewController: UIViewController {
             appSettings: dependencies.appSettings
         )
 
-        // TODO pass this in separately and delegate to it?!
         controller.delegate = newTabPageControllerDelegate
+        controller.setFavoritesEditable(false)
 
-//        controller.delegate = favoritesOverlayDelegate
-//        controller.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
         install(controller: controller,
                 animated: animated,
                 additionalInsets: additionalFavoritesOverlayInsets,

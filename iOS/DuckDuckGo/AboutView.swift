@@ -64,7 +64,7 @@ struct AboutViewText: View {
                 .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(LocalizedStringKey(UserText.aboutText(isSubscriptionRebrandingOn: viewModel.isSubscriptionRebrandingEnabled, isPaidAIChatOn: viewModel.isPaidAIChatEnabled)))
+            Text(LocalizedStringKey(UserText.aboutText(isSubscriptionRebrandingOn: viewModel.isSubscriptionRebrandingEnabled)))
                 .lineLimit(nil)
                 .multilineTextAlignment(.leading)
                 .foregroundColor(.primary)

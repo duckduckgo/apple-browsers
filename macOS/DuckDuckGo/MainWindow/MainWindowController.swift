@@ -30,6 +30,7 @@ final class MainWindowController: NSWindowController {
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
+    private let visualStyle: VisualStyleProviding
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -46,7 +47,8 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          popUp: Bool,
          fireWindowSession: FireWindowSession? = nil,
-         fireViewModel: FireViewModel) {
+         fireViewModel: FireViewModel,
+         visualStyle: VisualStyleProviding) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -63,6 +65,8 @@ final class MainWindowController: NSWindowController {
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession
         fireWindowSession?.addWindow(window)
+
+        self.visualStyle = visualStyle
 
         super.init(window: window)
 
@@ -111,6 +115,9 @@ final class MainWindowController: NSWindowController {
 
     private func setupWindow(_ window: NSWindow) {
         window.delegate = self
+
+        // Prevent a 2px white line from appearing above the tab bar on macOS 26
+        window.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
 
         if shouldShowOnboarding {
             mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.startOnboarding()

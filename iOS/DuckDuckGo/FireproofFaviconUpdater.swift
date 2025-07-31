@@ -126,7 +126,10 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     private func initSecureVault() async -> (any AutofillSecureVault)? {
         if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
             if secureVault == nil {
-                secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+                // Move heavy PBKDF2 crypto operations to background thread to avoid blocking main thread
+                secureVault = await Task.detached(priority: .userInitiated) {
+                    return try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+                }.value
             }
             return secureVault
         }

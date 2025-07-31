@@ -70,9 +70,8 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     @ViewBuilder
     private func contentForItem(item: Data) -> some View {
         switch item.trait {
-        case .stationary:
-            content(item)
-        case .movable(let metadata):
+
+        case .movable(let metadata) where isReorderingEnabled:
             if let preview {
                 droppableContent(for: item, metadata: metadata)
                     .onDrag {
@@ -88,6 +87,10 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
                         return metadata.itemProvider
                     }
             }
+
+        default:
+            content(item)
+
         }
     }
 

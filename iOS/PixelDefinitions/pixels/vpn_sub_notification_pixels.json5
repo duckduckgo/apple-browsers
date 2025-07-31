@@ -2,7 +2,7 @@
 {
     m_vpn_subs_notification_signed_in_ios: {
         description: 'The VPN learns from a subscription notification that the user has signed in',
-        owners: ['diego'],
+        owners: ['dreymendez'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -29,7 +29,7 @@
     },
     m_vpn_subs_notification_signed_out_ios: {
         description: 'The VPN learns from a subscription notification that the user has signed out',
-        owners: ['diego'],
+        owners: ['dreymendez'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -56,7 +56,7 @@
     },
     m_vpn_subs_notification_vpn_feature_enabled_ios: {
         description: 'The VPN learns from a subscription notification that the VPN feature is enabled',
-        owners: ['diego'],
+        owners: ['dreymendez'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -83,7 +83,7 @@
     },
     m_vpn_subs_notification_vpn_feature_disabled_ios: {
         description: 'The VPN learns from a subscription notification that the VPN feature is disabled',
-        owners: ['diego'],
+        owners: ['dreymendez'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [

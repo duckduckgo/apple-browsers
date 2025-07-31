@@ -1,7 +1,7 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
     'm_vpn_access_revoked_ios': {
-        description: 'the VPN has learnt access to PPro has been revoked for the account',
+        description: 'The VPN has learnt access to PPro has been revoked for the account',
         owners: ['diego'],
         triggers: ['other'],
         suffixes: ['form_factor', 'legacy_daily_count'],

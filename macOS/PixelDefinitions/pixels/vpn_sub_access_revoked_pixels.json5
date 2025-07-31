@@ -4,7 +4,7 @@
         description: 'The VPN has learnt access to PPro has been revoked for the account',
         owners: ['diegoreymendez'],
         triggers: ['other'],
-        suffixes: ['form_factor', 'legacy_daily_count'],
+        suffixes: ['legacy_daily_count'],
         parameters: [
             {
                 key: 'e',
@@ -33,7 +33,7 @@
         description: 'The subscription library has communicated to the VPN there has been a recoverable error when trying to retrieve the token.',
         owners: ['diegoreymendez'],
         triggers: ['other'],
-        suffixes: ['form_factor', 'legacy_daily_count'],
+        suffixes: [legacy_daily_count'],
         parameters: [
             {
                 key: 'e',

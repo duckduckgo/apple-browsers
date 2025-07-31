@@ -169,6 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
@@ -709,6 +710,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
+        vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter()
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(

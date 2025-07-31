@@ -328,6 +328,9 @@
         }
       }
     },
+    "+2 more premium protections" : {
+
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {
@@ -483,6 +486,9 @@
           }
         }
       }
+    },
+    "A VPN to secure your\nWi-Fi & personal info" : {
+
     },
     "about.app_name" : {
       "comment" : "Application name to be displayed in the About dialog",
@@ -44240,6 +44246,9 @@
         }
       }
     },
+    "No Thanks" : {
+
+    },
     "no.access.to.downloads.folder.header" : {
       "comment" : "Header of the alert dialog warning the user they need to give the browser permission to access the Downloads folder",
       "extractionState" : "extracted_with_value",
@@ -52801,6 +52810,9 @@
           }
         }
       }
+    },
+    "PLUS" : {
+
     },
     "pm.activate" : {
       "comment" : "Activate button",
@@ -74901,6 +74913,9 @@
           }
         }
       }
+    },
+    "Try For Free" : {
+
     },
     "uninstall" : {
       "comment" : "Uninstall button",

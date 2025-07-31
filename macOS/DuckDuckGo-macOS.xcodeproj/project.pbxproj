@@ -3250,8 +3250,12 @@
 		BB32C59B2DCD2CA600775E80 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5992DCD2CA300775E80 /* ColorPalette.swift */; };
 		BB32C59D2DCD417600775E80 /* ColorsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */; };
 		BB32C59E2DCD417600775E80 /* ColorsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */; };
+		BB3DA71D2E3B5E3F00808461 /* VPNPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3DA71C2E3B5E3F00808461 /* VPNPopoverPresenter.swift */; };
+		BB3DA71E2E3B5E3F00808461 /* VPNPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3DA71C2E3B5E3F00808461 /* VPNPopoverPresenter.swift */; };
 		BB349A4E2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB349A4D2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift */; };
 		BB349A4F2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB349A4D2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift */; };
+		BB3DA7202E3B5E5B00808461 /* VPNUpsellPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3DA71F2E3B5E5B00808461 /* VPNUpsellPopover.swift */; };
+		BB3DA7212E3B5E5B00808461 /* VPNUpsellPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3DA71F2E3B5E5B00808461 /* VPNUpsellPopover.swift */; };
 		BB4339DB2C7F9606005D7ED7 /* PinnedTabsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */; };
 		BB470EBB2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB470EBA2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift */; };
 		BB470EBC2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB470EBA2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift */; };
@@ -3302,6 +3306,10 @@
 		BBB891E62DAEC1C1001A42DF /* MoreOptionsMenuIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */; };
 		BBB891E72DAEC1C1001A42DF /* MoreOptionsMenuIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */; };
 		BBBB65402C77BB9400E69AC6 /* BookmarkSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB653F2C77BB9400E69AC6 /* BookmarkSearchTests.swift */; };
+		BBBED48B2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
+		BBBED48C2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
+		BBBED48D2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
+		BBBED48E2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */ = {isa = PBXBuildFile; fileRef = BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */; };
 		BBBEE1BF2C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBBEE1C02C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBC0001E2DF743DE0003E9F5 /* VisualStyleManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC0001D2DF743D20003E9F5 /* VisualStyleManagerTests.swift */; };
@@ -5501,7 +5509,9 @@
 		BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabRampView.swift; sourceTree = "<group>"; };
 		BB32C5992DCD2CA300775E80 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
 		BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorsProviding.swift; sourceTree = "<group>"; };
+		BB3DA71C2E3B5E3F00808461 /* VPNPopoverPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNPopoverPresenter.swift; sourceTree = "<group>"; };
 		BB349A4D2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserProvider.swift; sourceTree = "<group>"; };
+		BB3DA71F2E3B5E5B00808461 /* VPNUpsellPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellPopover.swift; sourceTree = "<group>"; };
 		BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsTests.swift; sourceTree = "<group>"; };
 		BB470EBA2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModel.swift; sourceTree = "<group>"; };
 		BB4EC6942D9B5C7800660600 /* VisualStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualStyleProviding.swift; sourceTree = "<group>"; };
@@ -5530,6 +5540,7 @@
 		BBB881872C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkListTreeControllerSearchDataSource.swift; sourceTree = "<group>"; };
 		BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuIconsProviding.swift; sourceTree = "<group>"; };
 		BBBB653F2C77BB9400E69AC6 /* BookmarkSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkSearchTests.swift; sourceTree = "<group>"; };
+		BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = privacypro_devices.json; sourceTree = "<group>"; };
 		BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModelTests.swift; sourceTree = "<group>"; };
 		BBC0001D2DF743D20003E9F5 /* VisualStyleManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualStyleManagerTests.swift; sourceTree = "<group>"; };
 		BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModelTests.swift; sourceTree = "<group>"; };
@@ -7380,6 +7391,8 @@
 			children = (
 				BBDE056B2E324A6D001914BF /* VPNUpsellUserDefaultsPersistor.swift */,
 				BBD31EA62E2FB3B20045551C /* VPNUpsellVisibilityManager.swift */,
+				BB3DA71C2E3B5E3F00808461 /* VPNPopoverPresenter.swift */,
+				BB3DA71F2E3B5E5B00808461 /* VPNUpsellPopover.swift */,
 				7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */,
 				7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */,
 				4B4D60722A0B29FA00BCD287 /* EventMapping+NetworkProtectionError.swift */,
@@ -10653,6 +10666,7 @@
 		BDE981DB2BBD110800645880 /* Assets */ = {
 			isa = PBXGroup;
 			children = (
+				BBBED48A2E3B60D2003A9AA6 /* privacypro_devices.json */,
 				BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */,
 				BD384AC72BBC821100EF3735 /* vpn-light-mode.json */,
 			);
@@ -11832,6 +11846,7 @@
 				561D66672B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				3706FCB4293F65D500E42796 /* CrashReports.storyboard in Resources */,
+				BBBED48B2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
 				3706FCB5293F65D500E42796 /* trackerData.json in Resources */,
 				BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */,
@@ -11946,6 +11961,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BDE981DA2BBD10D600645880 /* vpn-light-mode.json in Resources */,
+				BBBED48C2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
 				7BA7CC482AD11E5C0042E5CE /* Assets.xcassets in Resources */,
 				1EC711552D03421B0009EB5C /* Localizable.xcstrings in Resources */,
 				BDE981D92BBD10D600645880 /* vpn-dark-mode.json in Resources */,
@@ -11957,6 +11973,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BDADBDCD2BD2BC5700421B9B /* vpn-light-mode.json in Resources */,
+				BBBED48D2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
 				7BA7CC472AD11E5C0042E5CE /* Assets.xcassets in Resources */,
 				1EC711562D03421B0009EB5C /* Localizable.xcstrings in Resources */,
 				BDADBDCC2BD2BC4D00421B9B /* vpn-dark-mode.json in Resources */,
@@ -12048,6 +12065,7 @@
 				561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				AA693E5E2696E5B90007BB78 /* CrashReports.storyboard in Resources */,
+				BBBED48E2E3B60D2003A9AA6 /* privacypro_devices.json in Resources */,
 				9833913127AAA4B500DAF119 /* trackerData.json in Resources */,
 				BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				8511E18425F82B34002F516B /* 01_Fire_really_small.json in Resources */,
@@ -12501,6 +12519,7 @@
 			files = (
 				379026D22C650CCD00A089E8 /* UserBackgroundImagesManager.swift in Sources */,
 				4B41EDA82B1543C9001EEDF4 /* PreferencesVPNView.swift in Sources */,
+				BB3DA7212E3B5E5B00808461 /* VPNUpsellPopover.swift in Sources */,
 				F1DA518D2BF607D200CF29FA /* SubscriptionRedirectManager.swift in Sources */,
 				3706FA7B293F65D500E42796 /* FaviconUserScript.swift in Sources */,
 				84A72AA72DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */,
@@ -12804,6 +12823,7 @@
 				319FCFF22CC81D54004F9288 /* AIChatRemoteSettings.swift in Sources */,
 				845B43322DB699D300D46001 /* SwiftUIContextMenuRetainCycleFix.swift in Sources */,
 				3706FB22293F65D500E42796 /* NSTextViewExtension.swift in Sources */,
+				BB3DA71D2E3B5E3F00808461 /* VPNPopoverPresenter.swift in Sources */,
 				3706FB23293F65D500E42796 /* DownloadsCellView.swift in Sources */,
 				3706FB25293F65D500E42796 /* PublishedAfter.swift in Sources */,
 				37A0BA212D747A9300130447 /* WindowControllersManager+URLOpening.swift in Sources */,
@@ -14549,6 +14569,7 @@
 				7BDBAD1B2CBFF633000379B7 /* Logger+TipKit.swift in Sources */,
 				4BA1A6B3258B080A00F6F690 /* EncryptionKeyGeneration.swift in Sources */,
 				37B11B3928095E6600CBB621 /* TabLazyLoader.swift in Sources */,
+				BB3DA71E2E3B5E3F00808461 /* VPNPopoverPresenter.swift in Sources */,
 				BBC7BDAC2D5BB0890037A4AE /* BannerView.swift in Sources */,
 				4B9DB03B2A983B24000927DB /* InvitedToWaitlistView.swift in Sources */,
 				8589063C267BCDC000D23B0D /* SaveCredentialsViewController.swift in Sources */,
@@ -14962,6 +14983,7 @@
 				4B4D60C02A0C848D00BCD287 /* NetworkProtectionControllerErrorStore.swift in Sources */,
 				7BE146072A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift in Sources */,
 				B6085D092743AAB600A9C456 /* FireproofDomains.xcdatamodeld in Sources */,
+				BB3DA7202E3B5E5B00808461 /* VPNUpsellPopover.swift in Sources */,
 				56BA1E752BAAF70F001CF69F /* SpecialErrorPageTabExtension.swift in Sources */,
 				B6BF5D932947199A006742B1 /* SerpHeadersNavigationResponder.swift in Sources */,
 				569277C129DDCBB500B633EF /* HomePageContinueSetUpModel.swift in Sources */,

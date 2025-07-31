@@ -281,7 +281,7 @@ extension SuggestionTrayManager: NewTabPageControllerDelegate {
     }
     
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
-        assertionFailure("Unexpected")
+        // no-op this is handled by the main view controller on a real new tab page
     }
 
 }

@@ -45,7 +45,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private let pixelFiring: PixelFiring.Type
     private let messageNavigationDelegate: MessageNavigationDelegate
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
@@ -62,7 +61,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          newTabDialogTypeProvider: NewTabDialogSpecProvider,
          privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
          faviconLoader: FavoritesFaviconLoading,
-         pixelFiring: PixelFiring.Type = Pixel.self,
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
          appWidthObserver: AppWidthObserver = .shared) {
@@ -72,7 +70,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.newTabDialogFactory = newTabDialogFactory
         self.newTabDialogTypeProvider = newTabDialogTypeProvider
         self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
-        self.pixelFiring = pixelFiring
         self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
@@ -125,9 +122,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         associatedTab.viewed = true
 
         presentNextDaxDialog()
-
-        pixelFiring.fire(.homeScreenShown, withAdditionalParameters: [:])
-        sendDailyDisplayPixel()
 
         if !favoritesModel.isEmpty {
             borderView.insertSelf(into: view)
@@ -265,20 +259,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private func presentNextDaxDialog() {
         showNextDaxDialogNew(dialogProvider: newTabDialogTypeProvider, factory: newTabDialogFactory)
-    }
-
-    // MARK: - Private
-
-    private func sendDailyDisplayPixel() {
-
-        let favoritesCount = favoritesModel.allFavorites.count
-        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
-
-        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
-            "FavoriteCount": bucket.value,
-            "Shortcuts": sectionsSettingsModel.enabledItems.contains(.shortcuts) ? "1" : "0",
-            "Favorites": sectionsSettingsModel.enabledItems.contains(.favorites) ? "1" : "0"
-        ])
     }
 
     // MARK: -

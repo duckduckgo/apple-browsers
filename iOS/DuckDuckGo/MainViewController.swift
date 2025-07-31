@@ -977,12 +977,23 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
+        fireNewTabPixels()
+
         // Attaching HomeScreen means it's going to be displayed immediately.
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
         refreshControls()
 
         syncService.scheduler.requestSyncImmediately()
+    }
+
+    func fireNewTabPixels() {
+        Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
+        let favoritesCount = favoritesViewModel.favorites.count
+        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
+        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
+            "FavoriteCount": bucket.value,
+        ])
     }
 
     fileprivate func removeHomeScreen() {

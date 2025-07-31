@@ -41,12 +41,10 @@ final class VPNSubscriptionEventsHandler {
         self.tunnelController = tunnelController
         self.vpnUninstaller = vpnUninstaller
         self.userDefaults = userDefaults
-
-        checkEntitlements()
-        startMonitoring()
     }
 
-    private func startMonitoring() {
+    func startMonitoring() {
+        checkEntitlements()
         subscribeToWakeNotifications()
         subscribeToEntitlementChanges()
         registerForSubscriptionAccountManagerEvents()

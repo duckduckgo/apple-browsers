@@ -22,7 +22,7 @@
                 key: 'notificationObjectClass',
                 type: 'string',
                 description: 'The class of the object that sent the notification'
-            }
+            },
             'appVersion',
             'pixelSource',
         ],
@@ -49,7 +49,7 @@
                 key: 'notificationObjectClass',
                 type: 'string',
                 description: 'The class of the object that sent the notification'
-            }
+            },
             'appVersion',
             'pixelSource',
         ],
@@ -76,7 +76,7 @@
                 key: 'notificationObjectClass',
                 type: 'string',
                 description: 'The class of the object that sent the notification'
-            }
+            },
             'appVersion',
             'pixelSource',
         ],
@@ -103,7 +103,7 @@
                 key: 'notificationObjectClass',
                 type: 'string',
                 description: 'The class of the object that sent the notification'
-            }
+            },
             'appVersion',
             'pixelSource',
         ],

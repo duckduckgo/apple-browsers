@@ -48,7 +48,7 @@ class SwitchBarTextEntryView: UIView {
 
     private let handler: SwitchBarHandling
 
-    private let textView = UITextView()
+    private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
     private var buttonsHostingController: UIHostingController<SwitchBarButtonsView>?
     private var currentButtonState: SwitchBarButtonState = .noButtons
@@ -61,6 +61,12 @@ class SwitchBarTextEntryView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
+
+    var isTouched = false
+    var isURL: Bool {
+        // TODO some kind of text length check?
+        URL(string: textView.text) != nil
+    }
 
     var isExpandable: Bool = false {
         didSet {
@@ -119,9 +125,17 @@ class SwitchBarTextEntryView: UIView {
         updateButtonState()
         updateForCurrentMode()
         updateTextViewHeight()
+
+        textView.onTouchesBeganHandler = self.onTextViewTouchesBegan
     }
 
     // MARK: - Setup Methods
+
+    private func onTextViewTouchesBegan() {
+        textView.onTouchesBeganHandler = nil
+        isTouched = true
+        updateTextViewHeight()
+    }
 
     private func setupButtonsView() {
         let buttonsView = SwitchBarButtonsView(
@@ -237,7 +251,14 @@ class SwitchBarTextEntryView: UIView {
         let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
         let contentExceedsMaxHeight = size.height > Constants.maxHeight
 
-        if isExpandable {
+        if !isTouched && isURL {
+
+            heightConstraint?.constant = Constants.minHeight
+            textView.isScrollEnabled = false
+            textView.showsVerticalScrollIndicator = false
+            textView.textContainer.lineBreakMode = .byTruncatingTail
+
+        } else if isExpandable {
             let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
             heightConstraint?.constant = newHeight
@@ -323,3 +344,5 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         return true
     }
 }
+
+

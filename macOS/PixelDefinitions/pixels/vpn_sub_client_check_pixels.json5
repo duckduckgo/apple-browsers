@@ -1,6 +1,6 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    'm_mac_vpn_subs_client_check_signed_in': {
+    m_mac_vpn_subs_client_check_signed_in: {
         description: 'The VPN learns from checking the subscription state that the user has signed in',
         owners: ['diego'],
         triggers: ['other'],
@@ -16,13 +16,13 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',
         ],
     },
-    'm_mac_vpn_subs_client_check_signed_out': {
+    m_mac_vpn_subs_client_check_signed_out: {
         description: 'The VPN learns from checking the subscription state that the user has signed out',
         owners: ['diego'],
         triggers: ['other'],
@@ -38,13 +38,13 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',
         ],
     },
-    'm_mac_vpn_subs_client_check_vpn_feature_enabled': {
+    m_mac_vpn_subs_client_check_vpn_feature_enabled: {
         description: 'The VPN learns from checking the subscription state that the VPN feature is enabled',
         owners: ['diego'],
         triggers: ['other'],
@@ -60,13 +60,13 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',
         ],
     },
-    'm_mac_vpn_subs_client_check_vpn_feature_disabled': {
+    m_mac_vpn_subs_client_check_vpn_feature_disabled: {
         description: 'The VPN learns from checking the subscription state that the VPN feature is disabled',
         owners: ['diego'],
         triggers: ['other'],
@@ -82,13 +82,13 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',
         ],
     },
-    'm_mac_vpn_subs_client_check_failed': {
+    m_mac_vpn_subs_client_check_failed: {
         description: 'When doing a client-check on startup and getting a transient error that does not allow us to know the entitlements status',
         owners: ['diego'],
         triggers: ['other'],
@@ -104,13 +104,13 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',
         ],
     },
-    'm_mac_vpn_subs_client_check_on_wake_vpn_feature_enabled': {
+    m_mac_vpn_subs_client_check_on_wake_vpn_feature_enabled: {
         description: 'Fired when the device wakes, if PPro is enabled',
         owners: ['diego'],
         triggers: ['other'],
@@ -126,13 +126,13 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',
         ],
     },
-    'm_mac_vpn_subs_client_check_on_wake_vpn_feature_disabled': {
+    m_mac_vpn_subs_client_check_on_wake_vpn_feature_disabled: {
         description: 'Fired when the device wakes, if PPro is disabled',
         owners: ['diego'],
         triggers: ['other'],
@@ -148,13 +148,13 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',
         ],
     },
-    'm_mac_vpn_subs_client_check_on_foreground_failed': {
+    m_mac_vpn_subs_client_check_on_foreground_failed: {
         description: 'When doing a client-check on device wake',
         owners: ['diego'],
         triggers: ['other'],
@@ -170,7 +170,7 @@
                 key: 'isSubscriptionActive',
                 type: 'string',
                 description: 'Whether the subscription is active',
-                enum: ['true', 'false']
+                enum: ['true', 'false'],
             },
             'appVersion',
             'pixelSource',

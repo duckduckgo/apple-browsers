@@ -1,6 +1,6 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    'm_mac_vpn_access_revoked': {
+    m_mac_vpn_access_revoked: {
         description: 'The VPN has learnt access to PPro has been revoked for the account',
         owners: ['diego'],
         triggers: ['other'],
@@ -17,7 +17,7 @@
                 description: 'Error domain',
             },
             {
-            key: 'ueX',
+                key: 'ueX',
                 type: 'string',
                 description: 'Underlying error code (x is depth)',
             },
@@ -29,7 +29,7 @@
             'appVersion',
         ],
     },
-    'm_mac_vpn_access_unmanaged_error': {
+    m_mac_vpn_access_unmanaged_error: {
         description: 'The subscription library has communicated to the VPN there has been a recoverable error when trying to retrieve the token.',
         owners: ['diego'],
         triggers: ['other'],
@@ -46,7 +46,7 @@
                 description: 'Error domain',
             },
             {
-            key: 'ueX',
+                key: 'ueX',
                 type: 'string',
                 description: 'Underlying error code (x is depth)',
             },

@@ -50,8 +50,11 @@ class SwitchBarTextEntryView: UIView {
 
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
-    private var buttonsHostingController: UIHostingController<SwitchBarButtonsView>?
-    private var currentButtonState: SwitchBarButtonState = .noButtons
+    private var buttonsView = SwitchBarButtonsView()
+    private var currentButtonState: SwitchBarButtonState {
+        get { buttonsView.buttonState }
+        set { buttonsView.buttonState = newValue }
+    }
 
     private var currentMode: TextEntryMode {
         handler.currentToggleState
@@ -102,9 +105,11 @@ class SwitchBarTextEntryView: UIView {
 
         setupButtonsView()
 
+        addSubview(buttonsView)
         addSubview(textView)
         addSubview(placeholderLabel)
 
+        buttonsView.translatesAutoresizingMaskIntoConstraints = false
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -124,24 +129,12 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - Setup Methods
 
     private func setupButtonsView() {
-        let buttonsView = SwitchBarButtonsView(
-            buttonState: currentButtonState,
-            onClearTapped: { [weak self] in
-                self?.handler.clearText()
-            }
-        )
-
-        let hostingController = UIHostingController(rootView: buttonsView)
-        hostingController.view.backgroundColor = .clear
-        buttonsHostingController = hostingController
-
-        addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        buttonsView.onClearTapped = { [weak self] in
+            self?.handler.clearText()
+        }
     }
 
     private func setupConstraints() {
-        guard let buttonsView = buttonsHostingController?.view else { return }
-
         textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor, constant: Constants.textButtonSpacing)
 
         NSLayoutConstraint.activate([
@@ -155,8 +148,6 @@ class SwitchBarTextEntryView: UIView {
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonViewTrailingOffset),
-            buttonsView.heightAnchor.constraint(equalToConstant: 24),
-            buttonsView.widthAnchor.constraint(lessThanOrEqualToConstant: 24)
         ])
     }
 
@@ -202,23 +193,7 @@ class SwitchBarTextEntryView: UIView {
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
-            updateButtonsView()
             updateConstraintsForButtonVisibility()
-        }
-    }
-
-    private func updateButtonsView() {
-        let buttonsView = SwitchBarButtonsView(
-            buttonState: currentButtonState,
-            onClearTapped: { [weak self] in
-                self?.handler.clearText()
-            }
-        )
-
-        buttonsHostingController?.rootView = buttonsView
-
-        if let hostingView = buttonsHostingController?.view {
-            hostingView.invalidateIntrinsicContentSize()
         }
     }
 

@@ -37,9 +37,6 @@ class SwitchBarTextEntryView: UIView {
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
-
-        // Button view
-        static let textButtonSpacing: CGFloat = 10
     }
 
     private let handler: SwitchBarHandling
@@ -58,8 +55,6 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
 
     var isExpandable: Bool = false {
         didSet {
@@ -110,9 +105,6 @@ class SwitchBarTextEntryView: UIView {
         heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
 
-        // Create both trailing constraints for textView
-        textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
-
         setupConstraints()
 
         updateButtonState()
@@ -129,7 +121,6 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupConstraints() {
-        textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor, constant: -Constants.textButtonSpacing)
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -196,7 +187,7 @@ class SwitchBarTextEntryView: UIView {
         let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
 
         // Use default inset or the amount of how buttons interset with the view + required spacing
-        let rightInset = currentButtonState.showsClearButton ? Constants.textButtonSpacing + buttonsIntersectionWidth : Constants.textHorizontalInset
+        let rightInset = currentButtonState.showsClearButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
 
         textView.textContainerInset = UIEdgeInsets(
             top: Constants.textTopInset,

@@ -852,7 +852,6 @@
 		986CD53F2DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD53C2DE8FA0500AFA98A /* ConfigurationMocks.swift */; };
 		986CD5402DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD53C2DE8FA0500AFA98A /* ConfigurationMocks.swift */; };
 		986CD5422DE8FBCA00AFA98A /* PersistenceTestingUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5412DE8FBCA00AFA98A /* PersistenceTestingUtils */; };
-		986CD5472DE9134700AFA98A /* NewTabPageControllerPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD5462DE9134700AFA98A /* NewTabPageControllerPixelTests.swift */; };
 		986CD5482DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD5432DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift */; };
 		986CD5492DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD5452DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift */; };
 		986CD54A2DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986CD5442DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift */; };
@@ -3108,7 +3107,6 @@
 		986CD5432DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDaxDialogsFactoryTests.swift; sourceTree = "<group>"; };
 		986CD5442DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingNewTabDialogFactoryTests.swift; sourceTree = "<group>"; };
 		986CD5452DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageControllerDaxDialogTests.swift; sourceTree = "<group>"; };
-		986CD5462DE9134700AFA98A /* NewTabPageControllerPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageControllerPixelTests.swift; sourceTree = "<group>"; };
 		986CD54B2DE9139300AFA98A /* HomePageMessagesConfigurationMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageMessagesConfigurationMock.swift; sourceTree = "<group>"; };
 		986CD5502DE913EC00AFA98A /* MockFavoritesListInteracting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFavoritesListInteracting.swift; sourceTree = "<group>"; };
 		986DA94924884B18004A7E39 /* WebViewTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTransition.swift; sourceTree = "<group>"; };
@@ -6332,7 +6330,6 @@
 				986CD5432DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift */,
 				986CD5442DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift */,
 				986CD5452DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift */,
-				986CD5462DE9134700AFA98A /* NewTabPageControllerPixelTests.swift */,
 			);
 			path = SharedStateTests;
 			sourceTree = "<group>";
@@ -11162,7 +11159,6 @@
 				98E5645A2DE8DDDC00E6E75F /* MockPixelFiring.swift in Sources */,
 				98E5645B2DE8DDDC00E6E75F /* MockUsageSegmentation.swift in Sources */,
 				98E564A62DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
-				986CD5472DE9134700AFA98A /* NewTabPageControllerPixelTests.swift in Sources */,
 				986CD5482DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift in Sources */,
 				986CD5492DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift in Sources */,
 				986CD54A2DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift in Sources */,

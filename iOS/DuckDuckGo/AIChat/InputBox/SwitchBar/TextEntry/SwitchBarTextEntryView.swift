@@ -93,7 +93,9 @@ class SwitchBarTextEntryView: UIView {
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
         placeholderLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
-        placeholderLabel.numberOfLines = 0
+
+        // Truncate text in case it exceeds single line
+        placeholderLabel.numberOfLines = 1
 
         setupButtonsView()
 

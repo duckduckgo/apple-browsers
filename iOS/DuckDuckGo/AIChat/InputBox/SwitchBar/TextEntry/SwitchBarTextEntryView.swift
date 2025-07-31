@@ -97,7 +97,7 @@ class SwitchBarTextEntryView: UIView {
                                                    right: 0)
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
-        placeholderLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
+        placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
         placeholderLabel.numberOfLines = 0
 
         setupButtonsView()

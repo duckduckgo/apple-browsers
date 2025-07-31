@@ -69,7 +69,8 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     // MARK: - Upsell
 
-    private var shouldShowUpsell = false
+    @Published
+    private(set) var shouldShowUpsell = false
 
     // MARK: - Initialization
 

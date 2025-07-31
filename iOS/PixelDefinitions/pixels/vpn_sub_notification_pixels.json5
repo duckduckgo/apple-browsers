@@ -1,0 +1,111 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    m_vpn_subs_notification_signed_in_ios: {
+        description: 'The VPN learns from a subscription notification that the user has signed in',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'notificationObjectClass',
+                type: 'string',
+                description: 'The class of the object that sent the notification',
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_vpn_subs_notification_signed_out_ios: {
+        description: 'The VPN learns from a subscription notification that the user has signed out',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'notificationObjectClass',
+                type: 'string',
+                description: 'The class of the object that sent the notification',
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_vpn_subs_notification_vpn_feature_enabled_ios: {
+        description: 'The VPN learns from a subscription notification that the VPN feature is enabled',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'notificationObjectClass',
+                type: 'string',
+                description: 'The class of the object that sent the notification',
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+    m_vpn_subs_notification_vpn_feature_disabled_ios: {
+        description: 'The VPN learns from a subscription notification that the VPN feature is disabled',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['form_factor', 'first_daily_count'],
+        parameters: [
+            {
+                key: 'authVersion',
+                type: 'string',
+                description: 'Version of auth',
+                enum: ['v1', 'v2'],
+            },
+            {
+                key: 'isSubscriptionActive',
+                type: 'string',
+                description: 'Whether the subscription is active',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'notificationObjectClass',
+                type: 'string',
+                description: 'The class of the object that sent the notification',
+            },
+            'appVersion',
+            'pixelSource',
+        ],
+    },
+}

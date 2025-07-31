@@ -41,7 +41,7 @@
             {
                 key: 'duration',
                 description: 'The duration of the action execution in milliseconds',
-                type: 'string',
+                type: 'number',
             },
         ],
     },
@@ -87,7 +87,7 @@
             {
                 key: 'duration',
                 description: 'The duration of the action execution in milliseconds',
-                type: 'string',
+                type: 'number',
             },
         ],
     },

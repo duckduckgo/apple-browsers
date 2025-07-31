@@ -297,4 +297,16 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.duckAIIcon
         }
     }
+
+    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding, isSubscriptionRebrandingOn: Bool) -> NSImage {
+        switch self {
+        case .aiChat:
+            if isSubscriptionRebrandingOn {
+                return settingsIconProvider.aiGeneralIcon
+            }
+            return settingsIconProvider.duckAIIcon
+        default:
+            return preferenceIconName(for: settingsIconProvider)
+        }
+    }
 }

@@ -71,7 +71,9 @@ extension SubscriptionNavigationCoordinator: SubscriptionUserScriptNavigationDel
     /// Called when Duck.ai need to start a new subscription purchase.
     func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
         var url = subscriptionManager.url(for: .purchase)
-        url = url.appendingParameter(name: "featurePage", value: featurePage)
+        if let featurePage {
+            url = url.appendingParameter(name: "featurePage", value: featurePage)
+        }
         if let origin {
             url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
         }

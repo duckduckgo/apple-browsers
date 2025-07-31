@@ -125,12 +125,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutStart() {
         setStage(.start)
-        // This should never ever go to production and only exists for internal testing
-        #if os(iOS)
-        handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId, deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-        #else
         handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId))
-        #endif
     }
 
     func fireOptOutEmailGenerate() {
@@ -217,17 +212,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireOptOutSubmitSuccess(tries: Int) {
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-        handler.fire(.optOutSubmitSuccess(dataBroker: dataBroker,
-                                          attemptId: attemptId,
-                                          duration: durationSinceStartTime(),
-                                          tries: tries,
-                                          emailPattern: emailPattern,
-                                          vpnConnectionState: vpnConnectionState,
-                                          vpnBypassStatus: vpnBypassStatus,
-                                          deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#else
         handler.fire(.optOutSubmitSuccess(dataBroker: dataBroker,
                                           attemptId: attemptId,
                                           duration: durationSinceStartTime(),
@@ -235,24 +219,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))
-#endif
     }
 
     func fireOptOutFailure(tries: Int) {
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-        handler.fire(.optOutFailure(dataBroker: dataBroker,
-                                    dataBrokerVersion: dataBrokerVersion,
-                                    attemptId: attemptId,
-                                    duration: durationSinceStartTime(),
-                                    stage: stage.rawValue,
-                                    tries: tries,
-                                    emailPattern: emailPattern,
-                                    actionID: actionID,
-                                    vpnConnectionState: vpnConnectionState,
-                                    vpnBypassStatus: vpnBypassStatus,
-                                    deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#else
         handler.fire(.optOutFailure(dataBroker: dataBroker,
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
@@ -263,47 +232,20 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     actionID: actionID,
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus))
-#endif
     }
 
 #if os(iOS)
     func fireScanStarted() {
-    // This should never ever go to production and only exists for internal testing
-        handler.fire(.scanStarted(dataBroker: dataBroker,
-                                  deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+        handler.fire(.scanStarted(dataBroker: dataBroker))
     }
 #endif
 
     func fireScanSuccess(matchesFound: Int) {
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-        handler.fire(.scanSuccess(dataBroker: dataBroker,
-                                  matchesFound: matchesFound,
-                                  duration: durationSinceStartTime(),
-                                  tries: 1,
-                                  isImmediateOperation: isImmediateOperation,
-                                  vpnConnectionState: vpnConnectionState,
-                                  vpnBypassStatus: vpnBypassStatus,
-                                  deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#else
         handler.fire(.scanSuccess(dataBroker: dataBroker, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
-#endif
     }
 
     func fireScanFailed() {
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-        handler.fire(.scanFailed(dataBroker: dataBroker,
-                                 dataBrokerVersion: dataBrokerVersion,
-                                 duration: durationSinceStartTime(),
-                                 tries: 1,
-                                 isImmediateOperation: isImmediateOperation,
-                                 vpnConnectionState: vpnConnectionState,
-                                 vpnBypassStatus: vpnBypassStatus,
-                                 deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#else
         handler.fire(.scanFailed(dataBroker: dataBroker, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
-#endif
     }
 
     func fireScanError(error: Error) {
@@ -335,22 +277,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
             }
         }
 
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-        handler.fire(
-            .scanError(
-                dataBroker: dataBroker,
-                dataBrokerVersion: dataBrokerVersion,
-                duration: durationSinceStartTime(),
-                category: errorCategory.toString,
-                details: error.localizedDescription,
-                isImmediateOperation: isImmediateOperation,
-                vpnConnectionState: vpnConnectionState,
-                vpnBypassStatus: vpnBypassStatus,
-                deviceID: DataBrokerProtectionSettings.deviceIdentifier
-            )
-        )
-#else
         handler.fire(
             .scanError(
                 dataBroker: dataBroker,
@@ -363,7 +289,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 vpnBypassStatus: vpnBypassStatus
             )
         )
-#endif
     }
 
     // Helper methods to set the stage that is about to run. This help us

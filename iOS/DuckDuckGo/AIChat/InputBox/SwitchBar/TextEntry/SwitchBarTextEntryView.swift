@@ -39,11 +39,7 @@ class SwitchBarTextEntryView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Button view
-        static let buttonViewTrailingOffset: CGFloat = -12
-        static let textButtonSpacing: CGFloat = -10
-
-        // Animation
-        static let animationDuration: TimeInterval = 0.2
+        static let textButtonSpacing: CGFloat = 10
     }
 
     private let handler: SwitchBarHandling
@@ -135,7 +131,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupConstraints() {
-        textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor, constant: Constants.textButtonSpacing)
+        textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor, constant: -Constants.textButtonSpacing)
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -147,7 +143,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonViewTrailingOffset),
+            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
     }
 

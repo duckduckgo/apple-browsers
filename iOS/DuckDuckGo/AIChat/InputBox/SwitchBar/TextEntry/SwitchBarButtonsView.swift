@@ -53,7 +53,8 @@ class SwitchBarButtonsView: UIView {
     }
 
     init() {
-        super.init(frame: CGRect(origin: .zero, size: CGSize(width: 44, height: 44)))
+        super.init(frame: CGRect(origin: .zero,
+                                 size: CGSize(width: Constants.buttonSize, height: Constants.buttonSize)))
 
         setUpSubviews()
         setUpConsraints()

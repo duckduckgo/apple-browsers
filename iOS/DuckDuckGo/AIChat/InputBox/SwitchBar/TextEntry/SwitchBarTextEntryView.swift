@@ -90,10 +90,6 @@ class SwitchBarTextEntryView: UIView {
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
-        textView.textContainerInset = UIEdgeInsets(top: Constants.textTopInset,
-                                                   left: Constants.textHorizontalInset,
-                                                   bottom: Constants.textBottomInset,
-                                                   right: 0)
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
         placeholderLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
@@ -137,6 +133,7 @@ class SwitchBarTextEntryView: UIView {
             textView.topAnchor.constraint(equalTo: topAnchor),
             textView.leadingAnchor.constraint(equalTo: leadingAnchor),
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
@@ -189,18 +186,28 @@ class SwitchBarTextEntryView: UIView {
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
-            updateConstraintsForButtonVisibility()
+            adjustTextViewContentInset()
         }
     }
 
-    private func updateConstraintsForButtonVisibility() {
-        if currentButtonState.showsClearButton {
-            textViewTrailingConstraint?.isActive = false
-            textViewTrailingConstraintWithButtons?.isActive = true
-        } else {
-            textViewTrailingConstraintWithButtons?.isActive = false
-            textViewTrailingConstraint?.isActive = true
-        }
+    private func adjustTextViewContentInset() {
+        let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
+
+        // Use default inset or the amount of how buttons interset with the view + required spacing
+        let rightInset = currentButtonState.showsClearButton ? Constants.textButtonSpacing + buttonsIntersectionWidth : Constants.textHorizontalInset
+
+        textView.textContainerInset = UIEdgeInsets(
+            top: Constants.textTopInset,
+            left: Constants.textHorizontalInset,
+            bottom: Constants.textBottomInset,
+            right: rightInset
+        )
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        adjustTextViewContentInset()
     }
 
     private func updateTextViewHeight() {

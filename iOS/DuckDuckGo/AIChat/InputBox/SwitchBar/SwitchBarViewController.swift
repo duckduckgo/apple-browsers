@@ -35,7 +35,7 @@ class SwitchBarViewController: UIViewController {
 
     private var segmentedPickerHostingController: UIHostingController<PickerWrapper>?
     let textEntryViewController: SwitchBarTextEntryViewController
-    let backButton = BrowserChromeButton(.secondary)
+    let backButton = BrowserChromeButton()
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()

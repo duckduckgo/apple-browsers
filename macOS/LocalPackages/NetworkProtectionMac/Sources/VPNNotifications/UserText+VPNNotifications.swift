@@ -48,7 +48,7 @@ final class UserText {
     // MARK: - Entitlement Expired
 
     static let vpnEntitlementExpiredNotificationTitle = NSLocalizedString("vpn.entitlement.expired.notification.title", value: "VPN disconnected", comment: "The title of the notification when Privacy Pro subscription expired")
-    static let vpnEntitlementExpiredNotificationBody = NSLocalizedString("vpn.entitlement.expired.notification.body", value: "Subscribe to Privacy Pro to reconnect DuckDuckGo VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
+    static let vpnEntitlementExpiredNotificationBody = NSLocalizedString("vpn.entitlement.expired.notification.body", value: "Subscribe to DuckDuckGo to reconnect DuckDuckGo VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
 
     // MARK: - Connection Superseded
 

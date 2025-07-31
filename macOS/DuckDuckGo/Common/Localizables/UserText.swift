@@ -1557,7 +1557,13 @@ struct UserText {
 
     // Key: "preferences.subscription"
     // Comment: "Show subscription preferences"
-    static let subscription = "Privacy Pro"
+    static let subscriptionDeprecated = "Privacy Pro"
+    static func subscriptionName(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.general.name", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
+        }
+        return "Privacy Pro"
+    }
     static func purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: Bool) -> String {
         if isSubscriptionRebrandingOn {
             return NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")

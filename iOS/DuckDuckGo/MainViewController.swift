@@ -120,7 +120,7 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
-    @UserDefaultsWrapper(key: .hadVPNEntitlements, defaultValue: true)
+    @UserDefaultsWrapper(key: .hadVPNEntitlements, defaultValue: false)
     private var hadVPNEntitlements: Bool
 
     private var localUpdatesCancellable: AnyCancellable?

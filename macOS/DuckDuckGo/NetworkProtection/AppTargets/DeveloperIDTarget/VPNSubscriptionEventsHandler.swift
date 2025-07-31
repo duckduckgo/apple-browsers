@@ -52,13 +52,10 @@ final class VPNSubscriptionEventsHandler {
         registerForSubscriptionAccountManagerEvents()
     }
 
-    @MainActor
-    private var hadVPNEntitlements: Bool {
-        get {
-            !userDefaults.networkProtectionEntitlementsExpired
-        }
-        set {
-            userDefaults.networkProtectionEntitlementsExpired = !newValue
+    @UserDefaultsWrapper(key: .hadVPNEntitlements, defaultValue: false)
+    @MainActor private var hadVPNEntitlements: Bool {
+        didSet {
+            userDefaults.networkProtectionEntitlementsExpired = !hadVPNEntitlements
         }
     }
 
@@ -127,6 +124,8 @@ final class VPNSubscriptionEventsHandler {
 
     @MainActor
     private func handleEntitlementsChangeClientCheck(hasEntitlements: Bool, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
+
+        let hasEntitlements = false
 
         // Bail out early if there are no changes
         guard hadVPNEntitlements != hasEntitlements else {

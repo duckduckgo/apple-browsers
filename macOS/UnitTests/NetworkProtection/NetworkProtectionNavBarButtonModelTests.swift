@@ -211,6 +211,8 @@ extension NetworkProtectionNavBarButtonModelTests {
         featureEnabled: Bool = true
     ) -> VPNUpsellVisibilityManager {
         let mockFeatureFlagger = MockFeatureFlagger()
+        let mockDefaultBrowserProvider = MockDefaultBrowserProvider()
+        mockDefaultBrowserProvider.isDefault = true
 
         if featureEnabled && shouldShowUpsell {
             mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
@@ -220,7 +222,7 @@ extension NetworkProtectionNavBarButtonModelTests {
             isFirstLaunch: false,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
-            defaultBrowserPublisher: Just(true).eraseToAnyPublisher(),
+            defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
             featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,

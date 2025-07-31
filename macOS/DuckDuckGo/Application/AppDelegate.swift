@@ -209,7 +209,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
             subscriptionManager: subscriptionAuthV1toV2Bridge,
-            defaultBrowserPublisher: DefaultBrowserPreferences.shared.$isDefault.eraseToAnyPublisher(),
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
             featureFlagger: featureFlagger,
             persistor: vpnUpsellUserDefaultsPersistor,

@@ -30,6 +30,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     var sut: VPNUpsellVisibilityManager!
     var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
     var mockFeatureFlagger: MockFeatureFlagger!
+    var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
 
     var cancellables: Set<AnyCancellable>!
@@ -38,6 +39,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         super.setUp()
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         cancellables = Set<AnyCancellable>()
 
@@ -48,6 +50,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         sut = nil
         mockSubscriptionManager = nil
         mockFeatureFlagger = nil
+        mockDefaultBrowserProvider = nil
         mockPersistor = nil
         cancellables?.removeAll()
         cancellables = nil
@@ -206,7 +209,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     func testWhenUserIsEligible_ItWaitsForConditionsOnFirstLaunch() {
         // Given
         let onboardingSubject = PassthroughSubject<Bool, Never>()
-        let defaultBrowserSubject = PassthroughSubject<Bool, Never>()
 
         let expectation = XCTestExpectation(description: "State should be waitingForConditions")
 
@@ -215,7 +217,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
             isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
-            defaultBrowserPublisher: defaultBrowserSubject.eraseToAnyPublisher(),
+            defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
             featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
@@ -240,13 +242,13 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     func testWhenUserIsEligible_AndConditionsAreMetOnFirstLaunch_ItStartsTheTimer() {
         // Given
         let onboardingSubject = PassthroughSubject<Bool, Never>()
-        let defaultBrowserSubject = PassthroughSubject<Bool, Never>()
+        mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
             isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
-            defaultBrowserPublisher: defaultBrowserSubject.eraseToAnyPublisher(),
+            defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
             featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
@@ -267,23 +269,23 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         onboardingSubject.send(true)
-        defaultBrowserSubject.send(true)
+        NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(sut.state, .waitingForTimer)
     }
 
     func testWhenUserIsEligible_AndConditionsAreMetOnFirstLaunch_AndTimerCompletes_ItShowsTheUpsell() {
         // Given
         let onboardingSubject = PassthroughSubject<Bool, Never>()
-        let defaultBrowserSubject = PassthroughSubject<Bool, Never>()
+        mockDefaultBrowserProvider.isDefault = true
 
         sut = VPNUpsellVisibilityManager(
             isFirstLaunch: true,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
-            defaultBrowserPublisher: defaultBrowserSubject.eraseToAnyPublisher(),
+            defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
             featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
@@ -304,10 +306,10 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // When
         onboardingSubject.send(true)
-        defaultBrowserSubject.send(true)
+        NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(sut.state, .visible)
     }
 
@@ -345,7 +347,7 @@ extension VPNUpsellVisibilityManagerTests {
             isFirstLaunch: isFirstLaunch,
             isNewUser: isNewUser,
             subscriptionManager: mockSubscriptionManager,
-            defaultBrowserPublisher: Just(true).eraseToAnyPublisher(),
+            defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
             featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,

@@ -54,10 +54,10 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
 
     /// Navigates to the subscription purchase flow.
     /// Called when Duck.ai need to start a new subscription purchase.
-    func navigateToSubscriptionPurchase(origin: String?) {
+    func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
         let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(
             origin: origin,
-            featurePage: "duckai"
+            featurePage: featurePage
         )
         let settingsDeepLink = SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: components)
         NotificationCenter.default.post(

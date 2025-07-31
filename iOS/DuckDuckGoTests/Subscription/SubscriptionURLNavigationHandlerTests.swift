@@ -105,7 +105,7 @@ final class SubscriptionURLNavigationHandlerTests: XCTestCase {
         }
 
         // When
-        handler.navigateToSubscriptionPurchase(origin: nil)
+        handler.navigateToSubscriptionPurchase(origin: nil, featurePage: "duckai")
 
         // Then
         wait(for: [expectation], timeout: 1.0)
@@ -143,7 +143,7 @@ final class SubscriptionURLNavigationHandlerTests: XCTestCase {
         }
 
         // When
-        handler.navigateToSubscriptionPurchase(origin: testOrigin)
+        handler.navigateToSubscriptionPurchase(origin: testOrigin, featurePage: "duckai")
 
         // Then
         wait(for: [expectation], timeout: 1.0)

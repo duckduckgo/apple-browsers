@@ -30,7 +30,7 @@ final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
 
     init(appDependencies: DependencyProvider) {
-        guard DataBrokerProtectionIOSManager.isDBPStaticallyEnabled else {
+        guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
             return
@@ -87,16 +87,5 @@ final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
 
     init(appDependencies: DependencyProvider) {
         self.appDependencies = appDependencies
-    }
-}
-
-extension DataBrokerProtectionIOSManager {
-
-    public static var isDBPStaticallyEnabled: Bool {
-#if DEBUG || ALPHA
-        return true
-#else
-        return false
-#endif
     }
 }

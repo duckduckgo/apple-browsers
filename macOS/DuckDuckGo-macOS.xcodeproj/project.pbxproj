@@ -3599,6 +3599,8 @@
 		EE66418D2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66418B2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift */; };
 		EE66666F2B56EDE4001D898D /* VPNLocationsHostingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */; };
 		EE6666702B56EDE4001D898D /* VPNLocationsHostingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */; };
+		EE7E0FD72E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */; };
+		EE7E0FD82E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */; };
 		EE7F74912BB5D76600CD9456 /* BookmarksBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */; };
 		EE9D81C32BC57A3700338BE3 /* StateRestorationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D81C22BC57A3700338BE3 /* StateRestorationTests.swift */; };
 		EEA3EEB12B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA3EEB02B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift */; };
@@ -5710,6 +5712,7 @@
 		EE54F7B22BBFEA48006218DB /* BookmarksAndFavoritesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksAndFavoritesTests.swift; sourceTree = "<group>"; };
 		EE66418B2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift"; sourceTree = "<group>"; };
 		EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNLocationsHostingViewController.swift; sourceTree = "<group>"; };
+		EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogController.swift; sourceTree = "<group>"; };
 		EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarTests.swift; sourceTree = "<group>"; };
 		EE9D81C22BC57A3700338BE3 /* StateRestorationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StateRestorationTests.swift; sourceTree = "<group>"; };
 		EEA3EEB02B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNCountryLabelsModel.swift; sourceTree = "<group>"; };
@@ -6995,6 +6998,7 @@
 				4B41EDA22B1543B9001EEDF4 /* VPNPreferencesModel.swift */,
 				37A4CEB9282E992F00D75B89 /* StartupPreferences.swift */,
 				37CD54C327F2FDD100F1F7B9 /* DownloadsPreferences.swift */,
+				EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */,
 				3775912C29AAC72700E26367 /* SyncPreferences.swift */,
 				37CD54C727F2FDD100F1F7B9 /* AppearancePreferences.swift */,
 				37F09AD52DDE483100643A1B /* AppearancePreferencesMock.swift */,
@@ -12728,6 +12732,7 @@
 				3706FABF293F65D500E42796 /* CrashReportReader.swift in Sources */,
 				B6B4D1C62B0B3B5400C26286 /* DataImportReportModel.swift in Sources */,
 				3768D8452C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */,
+				EE7E0FD82E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */,
 				3772BEDD2D019CE90019B9EF /* DefaultsFavoritesActionHandler.swift in Sources */,
 				3706FAC0293F65D500E42796 /* DataTaskProviding.swift in Sources */,
 				3706FAC1293F65D500E42796 /* FeedbackViewController.swift in Sources */,
@@ -15403,6 +15408,7 @@
 				BB32C59A2DCD2CA600775E80 /* ColorPalette.swift in Sources */,
 				379858102D730EDA008773F6 /* HistoryViewDeleteDialogModel.swift in Sources */,
 				31C26A0B2CBE9D2700FFF462 /* PreferencesAIChat.swift in Sources */,
+				EE7E0FD72E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */,
 				AA7EB6DF27E7C57D00036718 /* MouseOverAnimationButton.swift in Sources */,
 				37A0BA1E2D7475BC00130447 /* HistoryViewTabOpening.swift in Sources */,
 				AA7412B724D1687000D22FE0 /* TabBarScrollView.swift in Sources */,

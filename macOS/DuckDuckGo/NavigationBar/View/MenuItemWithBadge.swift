@@ -37,7 +37,7 @@ struct MenuItemWithBadgeConstants {
     static let paddingRight: CGFloat = 7
 
     /// Bottom padding inside the badge
-    static let paddingBottom: CGFloat = 4
+    static let paddingBottom: CGFloat = 3
 
     /// Left padding inside the badge
     static let paddingLeft: CGFloat = 7

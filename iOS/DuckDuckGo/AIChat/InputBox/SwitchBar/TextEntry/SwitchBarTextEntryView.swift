@@ -101,9 +101,9 @@ class SwitchBarTextEntryView: UIView {
 
         setupButtonsView()
 
-        addSubview(buttonsView)
         addSubview(textView)
         addSubview(placeholderLabel)
+        addSubview(buttonsView)
 
         buttonsView.translatesAutoresizingMaskIntoConstraints = false
         textView.translatesAutoresizingMaskIntoConstraints = false

@@ -87,7 +87,7 @@ class SwitchBarTextEntryView: UIView {
         textView.showsVerticalScrollIndicator = false
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
-        placeholderLabel.textColor = UIColor(designSystemColor: .textPlaceholder)
+        placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
 
         // Truncate text in case it exceeds single line
         placeholderLabel.numberOfLines = 1

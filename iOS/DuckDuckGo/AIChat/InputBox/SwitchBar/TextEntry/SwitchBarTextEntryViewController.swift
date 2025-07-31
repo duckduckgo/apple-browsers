@@ -80,8 +80,8 @@ class SwitchBarTextEntryViewController: UIViewController {
 
         textEntryView.layer.cornerRadius = Metrics.containerCornerRadius
         textEntryView.layer.masksToBounds = true
-
-        containerView.backgroundColor = UIColor(designSystemColor: .surface)
+        
+        containerView.backgroundColor = UIColor(designSystemColor: .urlBar)
         containerView.applyActiveShadow()
     }
 

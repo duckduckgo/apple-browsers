@@ -46,6 +46,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
+    private var logMonitorWindowController: NSWindowController?
     private let customURLLabelMenuItem = NSMenuItem(title: "")
     private let customServiceRootLabelMenuItem = NSMenuItem(title: "")
 
@@ -183,6 +184,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             statusMenuIconMenu.targetting(self)
 
             NSMenuItem(title: "Show DB Browser", action: #selector(DataBrokerProtectionDebugMenu.showDatabaseBrowser))
+                .targetting(self)
+            NSMenuItem(title: "Log Monitor", action: #selector(DataBrokerProtectionDebugMenu.openLogMonitor))
                 .targetting(self)
             NSMenuItem(title: "Force Profile Removal", action: #selector(DataBrokerProtectionDebugMenu.showForceOptOutWindow))
                 .targetting(self)
@@ -342,6 +345,26 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         dataBrokerForceOptOutWindowController = NSWindowController(window: window)
         dataBrokerForceOptOutWindowController?.showWindow(nil)
         window.delegate = self
+    }
+
+    @objc private func openLogMonitor() {
+        if logMonitorWindowController == nil {
+            let viewController = DataBrokerLogMonitorViewController()
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 800),
+                                  styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                                  backing: .buffered,
+                                  defer: false)
+
+            window.contentViewController = viewController
+            window.title = "DataBrokerProtection Log Monitor"
+            window.minSize = NSSize(width: 1000, height: 600)
+            window.center()
+            logMonitorWindowController = NSWindowController(window: window)
+            window.delegate = self
+        }
+
+        logMonitorWindowController?.showWindow(self)
+        logMonitorWindowController?.window?.makeKeyAndOrderFront(self)
     }
 
     @objc private func runCustomJSON() {

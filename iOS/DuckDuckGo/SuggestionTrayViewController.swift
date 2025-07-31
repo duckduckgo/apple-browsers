@@ -188,6 +188,7 @@ class SuggestionTrayViewController: UIViewController {
     func didHide() {
         removeAutocomplete()
         removeFavorites()
+        removeNewTabPage()
     }
     
     @objc func keyboardMoveSelectionDown() {
@@ -336,20 +337,28 @@ class SuggestionTrayViewController: UIViewController {
 
     private func removeAutocomplete() {
         guard let controller = autocompleteController else { return }
-        controller.willMove(toParent: nil)
-        controller.view.removeFromSuperview()
-        controller.removeFromParent()
+        removeController(controller)
         autocompleteController = nil
     }
     
     private func removeFavorites() {
         guard let controller = favoritesOverlay else { return }
+        removeController(controller)
+        favoritesOverlay = nil
+    }
+
+    private func removeNewTabPage() {
+        guard let controller = newTabPage else { return }
+        removeController(controller)
+        newTabPage = nil
+    }
+
+    private func removeController(_ controller: UIViewController) {
         controller.willMove(toParent: nil)
         controller.view.removeFromSuperview()
         controller.removeFromParent()
-        favoritesOverlay = nil
     }
-    
+
     private func install(controller: UIViewController,
                          animated: Bool,
                          additionalInsets: UIEdgeInsets,

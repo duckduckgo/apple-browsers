@@ -92,7 +92,7 @@
         description: 'When doing a client-check on startup and getting a transient error that does not allow us to know the entitlements status',
         owners: ['diego'],
         triggers: ['other'],
-        suffixes: [daily'],
+        suffixes: ['daily'],
         parameters: [
             {
                 key: 'authVersion',

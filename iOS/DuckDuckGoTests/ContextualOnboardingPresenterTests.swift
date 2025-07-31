@@ -26,7 +26,7 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
 
     override func setUpWithError() throws {
         throw XCTSkip("Tests involving controllers. Sometimes they fail on CI. Disabling them for now")
-        contextualDaxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: DaxDialogs.shared, contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
+        contextualDaxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: MockContextualOnboardingLogic(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
         try super.setUpWithError()
     }
 
@@ -175,5 +175,35 @@ final class DaxContextualOnboardingControllerMock: UIViewController {
         didCallRemoveFromParent = true
         removeFromParentExpectation?.fulfill()
     }
+
+}
+
+final class MockContextualOnboardingLogic: ContextualOnboardingLogic {
+
+    var isShowingFireDialog: Bool = false
+
+    var shouldShowPrivacyButtonPulse: Bool = false
+
+    var isShowingSearchSuggestions: Bool = false
+
+    var isShowingSitesSuggestions: Bool = false
+
+    func setTryAnonymousSearchMessageSeen() {}
+
+    func setTryVisitSiteMessageSeen() {}
+
+    func setSearchMessageSeen() {}
+
+    func setFireEducationMessageSeen() {}
+
+    func clearedBrowserData() {}
+
+    func setFinalOnboardingDialogSeen() {}
+
+    func setPrivacyButtonPulseSeen() {}
+
+    func setDaxDialogDismiss() {}
+
+    func enableAddFavoriteFlow() {}
 
 }

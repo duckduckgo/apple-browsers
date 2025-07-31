@@ -3005,8 +3005,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Privacy Pro abonnieren"
+            "state" : "translated",
+            "value" : "DuckDuckGo abonnieren"
           }
         },
         "en" : {
@@ -3017,44 +3017,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Suscribirse a Privacy Pro"
+            "state" : "translated",
+            "value" : "Suscríbete a DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "S'abonner à Privacy Pro"
+            "state" : "translated",
+            "value" : "S'abonner à DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Iscriviti a Privacy Pro"
+            "state" : "translated",
+            "value" : "Abbonati a DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abonneren op Privacy Pro"
+            "state" : "translated",
+            "value" : "Abonneren op DuckDuckGo"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Subskrybuj Privacy Pro"
+            "state" : "translated",
+            "value" : "Subskrybuj DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Subscreve o Privacy Pro"
+            "state" : "translated",
+            "value" : "Subscrever o DuckDuckGo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Оформить подписку на Privacy Pro"
+            "state" : "translated",
+            "value" : "Подписаться на DuckDuckGo"
           }
         }
       }
@@ -3065,8 +3065,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abonniere Privacy Pro, um die Verbindung zum DuckDuckGo-VPN wiederherzustellen."
+            "state" : "translated",
+            "value" : "Abonniere DuckDuckGo, um die Verbindung zum VPN wiederherzustellen."
           }
         },
         "en" : {
@@ -3077,44 +3077,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Suscríbete a Privacy Pro para volver a conectar la VPN de DuckDuckGo."
+            "state" : "translated",
+            "value" : "Suscríbete a DuckDuckGo para volver a conectar la VPN."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abonnez-vous à Privacy Pro pour reconnecter le VPN DuckDuckGo."
+            "state" : "translated",
+            "value" : "Abonnez-vous à DuckDuckGo pour reconnecter le VPN."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Iscriviti a Privacy Pro per riconnettere la VPN di DuckDuckGo."
+            "state" : "translated",
+            "value" : "Abbonati a DuckDuckGo per riconnettere la VPN."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abonneer je op Privacy Pro om opnieuw verbinding te maken met DuckDuckGo VPN."
+            "state" : "translated",
+            "value" : "Abonneer je op DuckDuckGo om opnieuw verbinding te maken met de VPN."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Subskrybuj Privacy Pro, aby ponownie połączyć się z siecią DuckDuckGo VPN."
+            "state" : "translated",
+            "value" : "Subskrybuj DuckDuckGo, aby ponownie połączyć się z siecią VPN."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Subscreve o Privacy Pro para voltar a ligar a DuckDuckGo VPN."
+            "state" : "translated",
+            "value" : "Subscreve a DuckDuckGo para voltares a ativar a VPN."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Чтобы вновь подключиться к DuckDuckGo VPN, оформите подписку Privacy Pro."
+            "state" : "translated",
+            "value" : "Оформите подписку, чтобы подключиться снова."
           }
         }
       }

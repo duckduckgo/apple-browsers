@@ -96,7 +96,7 @@ final class LogEntryDetailViewController: UIViewController {
         // Level and timestamp section
         let levelTimestampView = createInfoSection(
             title: "Level & Time",
-            content: "\(logEntry.levelIndicator) \(logEntry.level.displayName) • \(formatFullTimestamp(logEntry.timestamp))"
+            content: "\(logEntry.level.displayName) • \(formatFullTimestamp(logEntry.timestamp))"
         )
         contentStackView.addArrangedSubview(levelTimestampView)
         

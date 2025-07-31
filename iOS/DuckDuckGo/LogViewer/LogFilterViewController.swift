@@ -145,9 +145,8 @@ extension LogFilterViewController: UITableViewDataSource {
     }
     
     enum CustomFilterRow: Int, CaseIterable {
-        case subsystem = 0
-        case category = 1
-        case searchText = 2
+        case subsystem
+        case category
         
         var title: String {
             switch self {
@@ -155,8 +154,6 @@ extension LogFilterViewController: UITableViewDataSource {
                 return "Subsystem Filter"
             case .category:
                 return "Category Filter"
-            case .searchText:
-                return "Search Text"
             }
         }
     }
@@ -221,8 +218,6 @@ extension LogFilterViewController: UITableViewDataSource {
             cell.detailTextLabel?.text = currentFilter.subsystemFilter ?? "None"
         case .category:
             cell.detailTextLabel?.text = currentFilter.categoryFilter ?? "None"
-        case .searchText:
-            cell.detailTextLabel?.text = currentFilter.searchText ?? "None"
         }
     }
     
@@ -274,13 +269,10 @@ extension LogFilterViewController: UITableViewDelegate {
             switch filterRow {
             case .subsystem:
                 textField.text = self.currentFilter.subsystemFilter
-                textField.placeholder = "e.g., com.duckduckgo"
+                textField.placeholder = "e.g., Subscription"
             case .category:
                 textField.text = self.currentFilter.categoryFilter
-                textField.placeholder = "e.g., networking"
-            case .searchText:
-                textField.text = self.currentFilter.searchText
-                textField.placeholder = "Search in log messages"
+                textField.placeholder = "e.g., Keychain"
             }
         }
         
@@ -303,13 +295,6 @@ extension LogFilterViewController: UITableViewDelegate {
                     categoryFilter: filterText,
                     levelFilter: self.currentFilter.levelFilter,
                     searchText: self.currentFilter.searchText
-                )
-            case .searchText:
-                self.currentFilter = LogFilter(
-                    subsystemFilter: self.currentFilter.subsystemFilter,
-                    categoryFilter: self.currentFilter.categoryFilter,
-                    levelFilter: self.currentFilter.levelFilter,
-                    searchText: filterText
                 )
             }
             

@@ -48,26 +48,6 @@ struct FormattedLogEntry {
         Self.timestampFormatter.string(from: timestamp)
     }
     
-    /// Level indicator for UI display (removed emojis for cleaner UI)
-    var levelIndicator: String {
-        switch level {
-        case .debug:
-            return "DEBUG"
-        case .info:
-            return "INFO"
-        case .notice:
-            return "NOTICE"
-        case .error:
-            return "ERROR"
-        case .fault:
-            return "FAULT"
-        case .undefined:
-            return "UNKNOWN"
-        @unknown default:
-            return "UNKNOWN"
-        }
-    }
-    
     var levelColor: UIColor {
         switch level {
         case .debug, .info, .notice:
@@ -81,17 +61,6 @@ struct FormattedLogEntry {
         }
     }
 
-    var displayText: String {
-        return "\(levelIndicator) \(formattedTimestamp) [\(subsystem)/\(category)] \(composedMessage)"
-    }
-    
-    /// Shortened display text for list view
-    var shortDisplayText: String {
-        let truncatedMessage = composedMessage.count > 100 ?
-            String(composedMessage.prefix(100)) + "..." : composedMessage
-        return "\(levelIndicator) \(formattedTimestamp) \(truncatedMessage)"
-    }
-    
     /// Formatted timestamp with subsystem and category for bottom display
     var timestampWithContext: String {
         let baseString = "\(formattedTimestamp) • \(subsystem)"

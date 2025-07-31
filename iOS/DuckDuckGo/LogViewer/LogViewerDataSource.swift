@@ -53,7 +53,7 @@ final class LogViewerDataSource {
     private var logStore: OSLogStore?
     private var lastFetchTime: Date?
     private let refreshInterval: TimeInterval = 1.0
-    private let maxLogEntries = 1000
+    private let maxLogEntries = 2000
     private let backgroundQueue = DispatchQueue(label: "LogViewerDataSource", qos: .utility)
     
     // MARK: - Initialization
@@ -73,12 +73,8 @@ final class LogViewerDataSource {
         guard !isRunning else { return }
         
         isRunning = true
-        lastFetchTime = Date().addingTimeInterval(-300) // Start with last 5 minutes of logs
-        
-        // Perform initial fetch immediately
         fetchLogs()
-        
-        // Schedule timer for reliable 1-second intervals
+
         refreshTimer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] timer in
             guard let self = self, self.isRunning else {
                 timer.invalidate()
@@ -93,7 +89,6 @@ final class LogViewerDataSource {
         }
     }
     
-    /// Stop real-time log fetching
     func stop() {
         guard isRunning else { return }
         
@@ -101,24 +96,20 @@ final class LogViewerDataSource {
         refreshTimer?.invalidate()
         refreshTimer = nil
     }
-    
-    /// Update the current filter and refresh logs
+
     func updateFilter(_ filter: LogFilter) {
         currentFilter = filter
         if isRunning {
             fetchLogs()
         }
     }
-    
-    /// Clear all current log entries
+
     func clearLogs() {
-        // Clear logs immediately on main thread to ensure UI updates
         DispatchQueue.main.async {
             self.logEntries = []
         }
     }
-    
-    /// Export current log entries as text
+
     func exportLogs() -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
@@ -126,7 +117,6 @@ final class LogViewerDataSource {
         let header = """
         DuckDuckGo iOS Log Export
         Generated: \(dateFormatter.string(from: Date()))
-        Filter: \(filterDescription)
         Total Entries: \(logEntries.count)
         
         ---
@@ -155,7 +145,6 @@ final class LogViewerDataSource {
     
     private func performLogFetch() {
         guard let logStore = logStore else {
-            // If log store is not available, notify delegate of error
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.logViewerDataSource(self, didEncounterError: LogViewerError.logStoreUnavailable)
@@ -166,7 +155,6 @@ final class LogViewerDataSource {
         do {
             try fetchLogs(from: logStore)
         } catch {
-            // Log the error and continue running to retry on next fetch
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.logViewerDataSource(self, didEncounterError: LogViewerError.fetchFailed(error))
@@ -176,7 +164,7 @@ final class LogViewerDataSource {
     
     private func fetchLogs(from logStore: OSLogStore) throws {
         let endDate = Date()
-        let startDate = lastFetchTime ?? endDate.addingTimeInterval(-300) // Last 5 minutes or since last fetch
+        let startDate = lastFetchTime ?? Date.distantPast
         let predicate = createPredicate()
         
         let position = logStore.position(date: startDate)
@@ -190,7 +178,6 @@ final class LogViewerDataSource {
         var newEntries: [FormattedLogEntry] = []
 
         for entry in entries {
-            // guard entry.date > startDate && entry.date <= endDate else { continue }
             guard entry.date > startDate else { continue }
 
             // Convert OSLogEntry to our FormattedLogEntry
@@ -203,12 +190,11 @@ final class LogViewerDataSource {
         }
 
         var updatedEntries = logEntries + newEntries
-        updatedEntries.sort { $0.timestamp < $1.timestamp }
 
         if updatedEntries.count > maxLogEntries {
             updatedEntries = Array(updatedEntries.prefix(maxLogEntries))
         }
-        
+
         logEntries = updatedEntries
         lastFetchTime = endDate
     }
@@ -217,28 +203,6 @@ final class LogViewerDataSource {
         // Use a minimal predicate to get all logs from current process
         // Let LogFilter.matches() handle the detailed filtering
         return nil // nil means no predicate - get all available logs
-    }
-    
-    private var filterDescription: String {
-        var components: [String] = []
-        
-        if let subsystem = currentFilter.subsystemFilter {
-            components.append("Subsystem: \(subsystem)")
-        }
-        
-        if let category = currentFilter.categoryFilter {
-            components.append("Category: \(category)")
-        }
-        
-        if let level = currentFilter.levelFilter {
-            components.append("Level: \(level.displayName)")
-        }
-        
-        if let search = currentFilter.searchText {
-            components.append("Search: \(search)")
-        }
-        
-        return components.isEmpty ? "No filters" : components.joined(separator: ", ")
     }
 }
 

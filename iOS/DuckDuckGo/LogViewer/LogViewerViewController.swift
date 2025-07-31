@@ -92,7 +92,11 @@ final class LogViewerViewController: UIViewController {
     // MARK: - Properties
     
     private let dataSource = LogViewerDataSource()
-    private var filteredEntries: [FormattedLogEntry] = []
+    private var filteredEntries: [FormattedLogEntry] = [] {
+        didSet {
+            // print("SAMDEBUG: did set filtered entries, count \(filteredEntries.count)")
+        }
+    }
     private var autoScrollEnabled = true
     
     private let dependencies: DebugScreen.Dependencies
@@ -112,8 +116,8 @@ final class LogViewerViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        dataSource.delegate = self
         setupUI()
-        setupDataSource()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -151,10 +155,6 @@ final class LogViewerViewController: UIViewController {
         ])
         
         updatePlayPauseButton()
-    }
-    
-    private func setupDataSource() {
-        dataSource.delegate = self
     }
     
     // MARK: - Actions

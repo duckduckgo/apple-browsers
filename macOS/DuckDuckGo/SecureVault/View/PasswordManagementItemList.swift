@@ -480,10 +480,11 @@ private struct PasswordManagementAddButton: View {
                     createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.creditCard),
                                    text: UserText.pmNewCard,
                                    category: .cards)
-               } label: {
+                } label: {
                     Text("")
                 }
                 .modifier(HideMenuIndicatorModifier())
+                .modifier(FlexibleButtonSizingModifier())
             }
             .padding(.vertical, -4)
         case .logins:
@@ -529,6 +530,19 @@ private struct HideMenuIndicatorModifier: ViewModifier {
         if #available(macOS 12, *) {
             content
                 .menuIndicator(.hidden)
+        } else {
+            content
+        }
+    }
+
+}
+
+private struct FlexibleButtonSizingModifier: ViewModifier {
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) {
+            content
+                .buttonSizing(.flexible)
         } else {
             content
         }

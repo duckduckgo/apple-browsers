@@ -73,7 +73,6 @@ class SuggestionTrayViewController: UIViewController {
     private let appSettings: AppSettings
 
     var coversFullScreen: Bool = false
-    var additionalFavoritesOverlayInsets: UIEdgeInsets = .zero
 
     var selectedSuggestion: Suggestion? {
         autocompleteController?.selectedSuggestion
@@ -289,10 +288,10 @@ class SuggestionTrayViewController: UIViewController {
 
         controller.delegate = newTabPageControllerDelegate
         controller.setFavoritesEditable(false)
+        controller.hideBorderView()
 
         install(controller: controller,
                 animated: animated,
-                additionalInsets: additionalFavoritesOverlayInsets,
                 completion: onInstall)
         newTabPage = controller
     }
@@ -303,7 +302,6 @@ class SuggestionTrayViewController: UIViewController {
         controller.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
         install(controller: controller,
                 animated: animated,
-                additionalInsets: additionalFavoritesOverlayInsets,
                 completion: onInstall)
         favoritesOverlay = controller
     }
@@ -329,7 +327,7 @@ class SuggestionTrayViewController: UIViewController {
                                                     appSettings: appSettings,
                                                     tabsModel: tabsModel,
                                                     featureFlagger: featureFlagger)
-        install(controller: controller, animated: animated, additionalInsets: .zero)
+        install(controller: controller, animated: animated)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
@@ -361,7 +359,7 @@ class SuggestionTrayViewController: UIViewController {
 
     private func install(controller: UIViewController,
                          animated: Bool,
-                         additionalInsets: UIEdgeInsets,
+                         additionalInsets: UIEdgeInsets = .zero,
                          completion: @escaping () -> Void = {}) {
         addChild(controller)
         controller.view.frame = containerView.bounds

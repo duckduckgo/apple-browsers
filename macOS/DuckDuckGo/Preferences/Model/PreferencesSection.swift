@@ -249,7 +249,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 
-    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding) -> NSImage {
+    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding, isSubscriptionRebrandingOn: Bool) -> NSImage {
         switch self {
         case .defaultBrowser:
             return settingsIconProvider.defaultBrowserIcon
@@ -294,19 +294,10 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .otherPlatforms:
             return settingsIconProvider.otherPlatformsIcon
         case .aiChat:
-            return settingsIconProvider.duckAIIcon
-        }
-    }
-
-    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding, isSubscriptionRebrandingOn: Bool) -> NSImage {
-        switch self {
-        case .aiChat:
             if isSubscriptionRebrandingOn {
                 return settingsIconProvider.aiGeneralIcon
             }
             return settingsIconProvider.duckAIIcon
-        default:
-            return preferenceIconName(for: settingsIconProvider)
         }
     }
 }

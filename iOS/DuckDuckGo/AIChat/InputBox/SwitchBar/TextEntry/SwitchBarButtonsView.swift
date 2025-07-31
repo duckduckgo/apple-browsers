@@ -54,10 +54,11 @@ class SwitchBarButtonsView: UIView {
 
     init() {
         super.init(frame: CGRect(origin: .zero,
-                                 size: CGSize(width: Constants.buttonSize, height: Constants.buttonSize)))
+                                 size: CGSize(width: Constants.buttonSize,
+                                              height: Constants.buttonSize)))
 
         setUpSubviews()
-        setUpConsraints()
+        setUpConstraints()
         setUpProperties()
 
         setUpAccessibility()
@@ -78,7 +79,7 @@ class SwitchBarButtonsView: UIView {
         stack.addArrangedSubview(clearButton)
     }
 
-    private func setUpConsraints() {
+    private func setUpConstraints() {
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor),

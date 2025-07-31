@@ -385,7 +385,7 @@ extension WKWebViewConfiguration {
 }
 extension WKWebView {
     static var swizzleInstallScreenTimeWebpageControllerIfNeededOnce: Void = {
-        let originalMethod = class_getInstanceMethod(WKWebView.self, NSSelectorFromString("_installScreenTimeWebpageControllerIfNeeded"))!
+        guard let originalMethod = class_getInstanceMethod(WKWebView.self, NSSelectorFromString("_installScreenTimeWebpageControllerIfNeeded")) else { return }
         let swizzledMethod = class_getInstanceMethod(WKWebView.self, #selector(swizzled_installScreenTimeWebpageControllerIfNeeded))!
 
         method_exchangeImplementations(originalMethod, swizzledMethod)

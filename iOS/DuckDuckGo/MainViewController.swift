@@ -977,14 +977,19 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
-        fireNewTabPixels()
-
         // Attaching HomeScreen means it's going to be displayed immediately.
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
         refreshControls()
 
         syncService.scheduler.requestSyncImmediately()
+
+        // It's possible for this to be called when in the background of the
+        //  switcher, and we only want to show the pixel when it's actually
+        // about to shown to the user.
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+        }
     }
 
     func fireNewTabPixels() {

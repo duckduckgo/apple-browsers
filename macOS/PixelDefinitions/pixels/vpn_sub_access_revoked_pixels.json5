@@ -33,7 +33,7 @@
         description: 'The subscription library has communicated to the VPN there has been a recoverable error when trying to retrieve the token.',
         owners: ['diegoreymendez'],
         triggers: ['other'],
-        suffixes: [legacy_daily_count'],
+        suffixes: ['legacy_daily_count'],
         parameters: [
             {
                 key: 'e',

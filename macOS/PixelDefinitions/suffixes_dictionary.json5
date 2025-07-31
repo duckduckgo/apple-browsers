@@ -12,4 +12,9 @@
         description: 'Pixel schedule type',
         enum: ['first', 'daily', 'count'],
     },
+    legacy_daily_count: {
+        type: 'string',
+        description: 'Pixel schedule type, legacy suffix',
+        enum: ['d', 'c'],
+    },
 }

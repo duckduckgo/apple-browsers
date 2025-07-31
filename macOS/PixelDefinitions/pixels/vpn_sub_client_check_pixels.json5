@@ -2,7 +2,7 @@
 {
     m_mac_vpn_subs_client_check_signed_in: {
         description: 'The VPN learns from checking the subscription state that the user has signed in',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: [
@@ -24,7 +24,7 @@
     },
     m_mac_vpn_subs_client_check_signed_out: {
         description: 'The VPN learns from checking the subscription state that the user has signed out',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: [
@@ -46,7 +46,7 @@
     },
     m_mac_vpn_subs_client_check_vpn_feature_enabled: {
         description: 'The VPN learns from checking the subscription state that the VPN feature is enabled',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: [
@@ -68,7 +68,7 @@
     },
     m_mac_vpn_subs_client_check_vpn_feature_disabled: {
         description: 'The VPN learns from checking the subscription state that the VPN feature is disabled',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: [
@@ -90,7 +90,7 @@
     },
     m_mac_vpn_subs_client_check_failed: {
         description: 'When doing a client-check on startup and getting a transient error that does not allow us to know the entitlements status',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['daily'],
         parameters: [
@@ -112,7 +112,7 @@
     },
     m_mac_vpn_subs_client_check_on_wake_vpn_feature_enabled: {
         description: 'Fired when the device wakes, if PPro is enabled',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: [
@@ -134,7 +134,7 @@
     },
     m_mac_vpn_subs_client_check_on_wake_vpn_feature_disabled: {
         description: 'Fired when the device wakes, if PPro is disabled',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: [
@@ -156,7 +156,7 @@
     },
     m_mac_vpn_subs_client_check_on_foreground_failed: {
         description: 'When doing a client-check on device wake',
-        owners: ['dreymendez'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['daily'],
         parameters: [

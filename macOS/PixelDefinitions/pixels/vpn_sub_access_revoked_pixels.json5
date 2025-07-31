@@ -2,7 +2,7 @@
 {
     m_mac_vpn_access_revoked: {
         description: 'The VPN has learnt access to PPro has been revoked for the account',
-        owners: ['dreymendez@duckduckgo.com'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['form_factor', 'legacy_daily_count'],
         parameters: [
@@ -31,7 +31,7 @@
     },
     m_mac_vpn_access_unmanaged_error: {
         description: 'The subscription library has communicated to the VPN there has been a recoverable error when trying to retrieve the token.',
-        owners: ['dreymendez@duckduckgo.com'],
+        owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['form_factor', 'legacy_daily_count'],
         parameters: [

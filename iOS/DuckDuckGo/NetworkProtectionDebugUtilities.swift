@@ -46,14 +46,14 @@ final class NetworkProtectionDebugUtilities {
         try? await activeSession.sendProviderMessage(.triggerTestNotification)
     }
 
-    // MARK: - Disable VPN
+    // MARK: - Simulate Subscription Expiration
 
-    func disableConnectOnDemandAndShutDown() async {
+    func simulateSubscriptionExpirationInTunnel() async {
         guard let activeSession = await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession() else {
             return
         }
 
-        try? await activeSession.sendProviderRequest(.command(.disableConnectOnDemandAndShutDown))
+        try? await activeSession.sendProviderRequest(.command(.simulateSubscriptionExpirationInTunnel))
     }
 
     // MARK: - Failure Simulation

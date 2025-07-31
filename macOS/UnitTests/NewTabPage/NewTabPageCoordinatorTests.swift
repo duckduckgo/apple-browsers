@@ -122,6 +122,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         firePixelCalls = []
         keyValueStore = nil
         notificationCenter = nil
+        tabsPreferences = nil
+        windowControllersManager = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

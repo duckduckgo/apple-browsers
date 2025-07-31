@@ -1,0 +1,119 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "empty_title" : {
+    "title" : "Non c'è niente da vedere qui!",
+    "note" : "Text shown where there are no remaining history entries"
+  },
+  "empty_text" : {
+    "title" : "Ancora nessuna cronologia di navigazione.",
+    "note" : "Placeholder text when there's no results to show"
+  },
+  "no_results_title" : {
+    "title" : "Nessun risultato trovato per {term}",
+    "note" : "The placeholder {term} will be dynamically replaced with the search term entered by the user. For example, if the user searches for 'cats', the title will become 'No results found for cats'."
+  },
+  "no_results_text" : {
+    "title" : "Prova a cercare un URL o parole chiave diverse.",
+    "note" : "Placeholder text when a search gave no results."
+  },
+  "delete_all" : {
+    "title" : "Elimina tutto",
+    "note" : "Text for a button that deletes all items or entries. An additional confirmation dialog will be presented."
+  },
+  "delete_some" : {
+    "title" : "Elimina",
+    "note" : "Text for a button that deletes currently selected items"
+  },
+  "delete_none" : {
+    "title" : "Nulla da eliminare",
+    "note" : "Title/tooltip text on a button that does nothing when there is no browsing history to delete. It's additional information shown on hover."
+  },
+  "page_title" : {
+    "title" : "Cronologia",
+    "note" : "The main page title"
+  },
+  "search" : {
+    "title" : "Ricerca",
+    "note" : "The placeholder text in a search input field."
+  },
+  "show_history_all" : {
+    "title" : "Mostra tutta la cronologia",
+    "note" : "Button text for an action that removes all filters and searches, and replaces the list with all history."
+  },
+  "show_history_older" : {
+    "title" : "Mostra cronologia precedente",
+    "note" : "Button that shows older history entries"
+  },
+  "show_history_for" : {
+    "title" : "Mostra la cronologia per {range}",
+    "note" : "The placeholder {range} in the title will be dynamically replaced with specific date ranges such as 'Today', 'Yesterday', or days of the week like 'Monday'. For example, if the range is set to 'Today', the title will become 'Show history for Today'."
+  },
+  "delete_history_all" : {
+    "title" : "Elimina tutta la cronologia",
+    "note" : "Button text for an action that removes all history entries."
+  },
+  "delete_history_older" : {
+    "title" : "Elimina la cronologia precedente",
+    "note" : "Button that deletes older history entries."
+  },
+  "delete_history_for" : {
+    "title" : "Eliminare la cronologia di {range}",
+    "note" : "The placeholder {range} in the title will be dynamically replaced with specific date ranges such as 'Today', 'Yesterday', or days of the week like 'Monday'. For example, if the range is set to 'Today', the title will become 'Delete history for Today'."
+  },
+  "search_your_history" : {
+    "title" : "Cerca nella tua cronologia",
+    "note" : "Label text for screen readers. It's shown next to the search input field"
+  },
+  "range_all" : {
+    "title" : "Tutto",
+    "note" : "Label on a button that shows all history entries"
+  },
+  "range_today" : {
+    "title" : "Oggi",
+    "note" : "Label on a button that shows history entries for today only"
+  },
+  "range_yesterday" : {
+    "title" : "Ieri",
+    "note" : "Label on a button that shows history entries for yesterday only"
+  },
+  "range_monday" : {
+    "title" : "Lunedì",
+    "note" : "Label on a button that shows history entries for monday only"
+  },
+  "range_tuesday" : {
+    "title" : "Martedì",
+    "note" : "Label on a button that shows history entries for tuesday only"
+  },
+  "range_wednesday" : {
+    "title" : "Mercoledì",
+    "note" : "Label on a button that shows history entries for wednesday only"
+  },
+  "range_thursday" : {
+    "title" : "Giovedì",
+    "note" : "Label on a button that shows history entries for thursday only"
+  },
+  "range_friday" : {
+    "title" : "Venerdì",
+    "note" : "Label on a button that shows history entries for friday only"
+  },
+  "range_saturday" : {
+    "title" : "Sabato",
+    "note" : "Label on a button that shows history entries for saturday only"
+  },
+  "range_sunday" : {
+    "title" : "Domenica",
+    "note" : "Label on a button that shows history entries for sunday only"
+  },
+  "range_older" : {
+    "title" : "Più vecchio",
+    "note" : "Label on a button that shows older history entries."
+  }
+}

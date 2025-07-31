@@ -136,7 +136,7 @@ jobs:
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     env:
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
@@ -376,7 +376,7 @@ jobs:
     if: github.actor != 'dependabot[bot]' && (github.event_name == 'push' || github.event_name == 'pull_request')
 
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       RUNS_ON: macos-15 # keep this in sync with runs-on above
 
@@ -416,7 +416,7 @@ jobs:
       run: |
         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
         if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
         else
           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
         fi
@@ -426,9 +426,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-test-release-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-test-release-${{ matrix.cache-key }}
+          ${{ runner.os }}-mac-release-build-
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
@@ -461,20 +461,30 @@ jobs:
         path: release-xcodebuild.log
         retention-days: 7
 
-  verify-autoconsent-bundle:
-    name: 'Verify autoconsent bundle'
+  verify-npm-bundles:
+    name: 'Verify npm bundles (iOS & macOS autoconsent, content-scope-scripts)'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'npm'
-          cache-dependency-path: macOS/package-lock.json
-      - name: Build bundle
-        run: |
-          npm ci
-          npm run rebuild-autoconsent
+          cache-dependency-path: |
+            package-lock.json
+            iOS/package-lock.json
+            macOS/package-lock.json
+      - name: Install dependencies 
+        run: npm ci
+      - name: Build content-scope-scripts bundle
+        run: npm run build-content-scope-scripts
+      - name: Build iOS autoconsent bundle
+        run: npm run rebuild-autoconsent --workspace=iOS
+      - name: Build macOS autoconsent bundle
+        run: npm run rebuild-autoconsent --workspace=macOS
       - name: Verify clean tree
         run: |
           git update-index --refresh
@@ -482,7 +492,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
@@ -503,7 +513,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 

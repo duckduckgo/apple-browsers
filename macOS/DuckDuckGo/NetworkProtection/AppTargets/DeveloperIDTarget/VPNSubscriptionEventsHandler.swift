@@ -125,8 +125,6 @@ final class VPNSubscriptionEventsHandler {
     @MainActor
     private func handleEntitlementsChangeClientCheck(hasEntitlements: Bool, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
 
-        let hasEntitlements = false
-
         // Bail out early if there are no changes
         guard hadVPNEntitlements != hasEntitlements else {
             return

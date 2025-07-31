@@ -53,7 +53,7 @@ final class VPNSubscriptionEventsHandler {
     }
 
     @MainActor
-    private var hadEntitlements: Bool {
+    private var hadVPNEntitlements: Bool {
         get {
             !userDefaults.networkProtectionEntitlementsExpired
         }
@@ -127,30 +127,32 @@ final class VPNSubscriptionEventsHandler {
 
     @MainActor
     private func handleEntitlementsChangeClientCheck(hasEntitlements: Bool, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
+
+        // Bail out early if there are no changes
+        guard hadVPNEntitlements != hasEntitlements else {
+            return
+        }
+
         let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
-        // For client checks we only fire pixels if there's an actual change, because they're not guaranteed
-        // to be executed only when there are changes - they'll run at every app launch.
-        if !hadEntitlements && hasEntitlements {
+        if hasEntitlements {
             PixelKit.fire(
                 VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     trigger: trigger),
                 frequency: .dailyAndCount)
-
-            hadEntitlements = hasEntitlements
-        } else if hadEntitlements && !hasEntitlements {
+        } else {
             PixelKit.fire(
                 VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     trigger: trigger),
                 frequency: .dailyAndCount)
-
-            hadEntitlements = hasEntitlements
         }
+
+        hadVPNEntitlements = hasEntitlements
     }
 
     @MainActor
@@ -176,7 +178,7 @@ final class VPNSubscriptionEventsHandler {
                 frequency: .dailyAndCount)
         }
 
-        hadEntitlements = hasEntitlements
+        hadVPNEntitlements = hasEntitlements
     }
 
     private func registerForSubscriptionAccountManagerEvents() {
@@ -229,7 +231,7 @@ final class VPNSubscriptionEventsHandler {
                 frequency: .dailyAndCount)
 
             try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)
-            hadEntitlements = false
+            hadVPNEntitlements = false
         }
     }
 

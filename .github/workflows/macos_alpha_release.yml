@@ -1,0 +1,198 @@
+name: macOS - Prepare Alpha Release
+
+defaults:
+  run:
+    working-directory: macOS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'macOS/**'
+      - 'SharedPackages/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+
+  calculate-alpha-build-number:
+    name: Calculate Alpha Build Number
+
+    runs-on: macos-15
+
+    outputs:
+      build-number: ${{ steps.update-build-number.outputs.build-number }}
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Assert main branch
+      run: |
+        if [ "${{ github.ref_name }}" != "main" ]; then
+          echo "👎 Not the main branch"
+          exit 1
+        fi
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
+
+    - name: Calculate Alpha Build Number
+      id: build-number
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      run: |
+        bundle exec fastlane run calculate_next_build_number \
+          platform:macos \
+          config:alpha \
+          bundle_id:com.duckduckgo.mobile.ios.alpha
+
+    - name: Update stored build number if needed
+      id: update-build-number
+      env:
+        GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+      run: |
+        stored_build_number="${{ vars.MACOS_ALPHA_BUILD_NUMBER }}"
+        current_build_number=$((${stored_build_number:-0} + 1)) # increment stored build number by 1
+        next_build_number="${{ steps.build-number.outputs.next_build_number }}"
+
+        if [[ "$next_build_number" -gt "$current_build_number" ]]; then
+          gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$next_build_number"
+          echo "Updated build number from $current_build_number to $next_build_number"
+        else
+          gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$current_build_number"
+          echo "Build number $next_build_number is not higher than current $current_build_number, skipping update"
+          next_build_number=$current_build_number
+        fi
+        echo "::notice::Using build number $next_build_number"
+        echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
+
+  dmg-release:
+    name: Prepare DMG Release
+
+    needs: calculate-alpha-build-number
+
+    uses: ./.github/workflows/macos_build_notarized.yml
+    with:
+      release-type: alpha
+      create-dmg: true
+      build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
+      skip-notify: true
+    secrets:
+      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
+      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+
+  appstore-release:
+    name: Prepare AppStore Release
+
+    needs: calculate-alpha-build-number
+
+    uses: ./.github/workflows/macos_build_appstore.yml
+    with:
+      destination: testflight_alpha
+      build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
+      skip-notify: true
+    secrets:
+      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  publish-alpha-dmg:
+    name: Publish Alpha DMG
+
+    needs: dmg-release
+
+    runs-on: macos-15
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Download DMG URL artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dmg_url
+
+      - name: Set DMG URL variable
+        id: set-dmg-url
+        run: echo "DMG_URL=$(<${{ github.workspace }}/dmg_url.txt)" >> $GITHUB_OUTPUT
+
+      - name: Set up Sparkle tools
+        env:
+          SPARKLE_URL: https://github.com/sparkle-project/Sparkle/releases/download/${{ vars.SPARKLE_VERSION }}/Sparkle-${{ vars.SPARKLE_VERSION }}.tar.xz
+        run: |
+          curl -fLSs $SPARKLE_URL | tar xJ bin
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+          mkdir -p sparkle
+
+      - name: Fetch DMG and current appcast
+        id: fetch-dmg
+        working-directory: sparkle
+        env:
+          APPCAST_URL: ${{ vars.DMG_URL_ROOT }}alpha/appcast-alpha.xml
+          DMG_URL: ${{ steps.set-dmg-url.outputs.DMG_URL }}
+        run: |
+          curl -fLSs -O "${{ env.APPCAST_URL }}"
+          curl -fLSs -O "${{ env.DMG_URL }}"
+          echo "dmg-name=$(basename "${{ env.DMG_URL }}")" >> $GITHUB_OUTPUT
+
+      - name: Add release notes
+        id: add-release-notes
+        working-directory: sparkle
+        env:
+          DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
+        run: |
+          echo "<h3>What's new</h3><ul><li>Alpha releases are built from the main branch after every commit.</li></ul>" > ${DMG_NAME/dmg/html}
+
+      - name: Generate appcast
+        id: appcast
+        working-directory: sparkle
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          echo "$SPARKLE_PRIVATE_KEY" | generate_appcast --ed-key-file - \
+            -o appcast-alpha.xml \
+            --embed-release-notes \
+            .
+
+      - name: Upload to S3
+        id: upload
+        if: always() && steps.appcast.conclusion == 'success'
+        working-directory: sparkle
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+          DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
+        run: |
+          s3_path="s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/alpha"
+          aws s3 cp appcast-alpha.xml "${s3_path}/appcast-alpha.xml" --acl public-read
+          aws s3 cp "$DMG_NAME" "${s3_path}/${DMG_NAME}" --acl public-read
+          aws s3 cp "$DMG_NAME" "${s3_path}/duckduckgo-alpha.dmg" --acl public-read

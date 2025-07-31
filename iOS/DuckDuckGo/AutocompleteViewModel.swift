@@ -48,16 +48,15 @@ class AutocompleteViewModel: ObservableObject {
     @Published var query: String?
     @Published var isMessageVisible = true
     @Published var emptySuggestion: [SuggestionModel]?
+    @Published var isPad: Bool = false
 
     weak var delegate: AutocompleteViewModelDelegate?
 
     let isAddressBarAtBottom: Bool
-    let isExperimentalThemingEnabled: Bool
 
-    init(isAddressBarAtBottom: Bool, showMessage: Bool, isExperimentalThemingEnabled: Bool) {
+    init(isAddressBarAtBottom: Bool, showMessage: Bool) {
         self.isAddressBarAtBottom = isAddressBarAtBottom
         self.isMessageVisible = showMessage
-        self.isExperimentalThemingEnabled = isExperimentalThemingEnabled
     }
 
     func updateSuggestions(_ suggestions: SuggestionResult) {

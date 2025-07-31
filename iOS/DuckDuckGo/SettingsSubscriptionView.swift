@@ -78,22 +78,24 @@ struct SettingsSubscriptionView: View {
     @ViewBuilder
     private var purchaseSubscriptionView: some View {
         Group {
-            let subtitleText = {
+            let isPaidAIChatEnabled = settingsViewModel.isPaidAIChatEnabled
+            let titleText: String = UserText.settingsSubscription(isPaidAIChatEnabled: isPaidAIChatEnabled)
+            let subtitleText: String = {
                 switch currentStorefrontRegion {
                 case .usa:
-                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionUSDescription : UserText.settingsPProUSDescription
+                    return UserText.settingsSubscriptionDescription(isPaidAIChatEnabled: isPaidAIChatEnabled, isUS: true)
                 case .restOfWorld:
-                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionROWDescription : UserText.settingsPProROWDescription
+                    return UserText.settingsSubscriptionDescription(isPaidAIChatEnabled: isPaidAIChatEnabled, isUS: false)
                 }
             }()
 
-            SettingsCellView(label: UserText.settingsPProSubscribe,
+            SettingsCellView(label: titleText,
                              subtitle: subtitleText,
                              image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro))
             .disabled(true)
 
             // Get privacy pro
-            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.settingsPProTryFree : UserText.settingsPProLearnMore
+            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.getSubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
             SettingsCustomCell(content: {
                 Text(getText)
                     .daxBodyRegular()
@@ -264,28 +266,29 @@ struct SettingsSubscriptionView: View {
 
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
+            let hasValidStoredProfile = settingsViewModel.dataBrokerProtectionIOSManager
+                .flatMap { try? $0.meetsProfileRunPrequisite } ?? false
+            var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
-            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-                NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)), isActive: $isShowingDBP) {
-                    SettingsCellView(
-                        label: UserText.settingsPProDBPTitle,
-                        image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                        statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
-                        isGreyedOut: !hasDBPEntitlement
-                    )
+            let destination: LazyView<AnyView> = {
+                if let dbpManager = settingsViewModel.dataBrokerProtectionIOSManager,
+                   DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)))
+                } else {
+                    statusIndicator = .on
+                    return LazyView(AnyView(SubscriptionPIRMoveToDesktopView()))
                 }
-                .disabled(!hasDBPEntitlement)
-            } else {
-                NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView()), isActive: $isShowingDBP) {
-                    SettingsCellView(
-                        label: UserText.settingsPProDBPTitle,
-                        image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                        statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
-                        isGreyedOut: !hasDBPEntitlement
-                    )
-                }
-                .disabled(!hasDBPEntitlement)
+            }()
+
+            NavigationLink(destination: destination, isActive: $isShowingDBP) {
+                SettingsCellView(
+                    label: UserText.settingsPProDBPTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                    statusIndicator: StatusIndicatorView(status: statusIndicator),
+                    isGreyedOut: !hasDBPEntitlement
+                )
             }
+            .disabled(!hasDBPEntitlement)
         }
 
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
@@ -347,7 +350,7 @@ struct SettingsSubscriptionView: View {
                                       destination: ViewConstants.privacyPolicyURL)
                     .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
 
-                Section(header: Text(UserText.settingsPProSection),
+                Section(header: Text(UserText.settingsSubscriptionSection(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
                         footer: !isSignedIn ? footerLink : nil
                 ) {
 

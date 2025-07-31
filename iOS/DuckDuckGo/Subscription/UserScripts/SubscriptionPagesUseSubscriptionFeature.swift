@@ -86,7 +86,8 @@ enum SubscriptionTransactionStatus: String {
 public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool
-    let useDuckAiPro: Bool
+    let usePaidDuckAi: Bool
+    let useAlternateStripePaymentFlow: Bool
 }
 
 public struct AccessTokenValue: Codable {
@@ -713,6 +714,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
+            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription retrieved")
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -727,7 +729,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: true, useDuckAiPro: subscriptionFeatureAvailability.isPaidAIChatEnabled)
+        return GetFeatureConfigurationResponse(
+            useSubscriptionsAuthV2: true,
+            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+        )
     }
 
     // Auth V1 unused methods
@@ -896,8 +902,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case .identityTheftRestorationGlobal:
             onFeatureSelected?(.identityTheftRestorationGlobal)
         case .paidAIChat:
-            // Follow up: Implement paidAIChat selection
-            break
+            onFeatureSelected?(.paidAIChat)
         case .unknown:
             break
         }

@@ -44,23 +44,35 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let debugSettings: AIChatDebugSettingsHandling
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
     private let userDefaults: UserDefaults
     private let notificationCenter: NotificationCenter
-
+    private let featureFlagger: FeatureFlagger
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userDefaults: UserDefaults = .standard,
-         notificationCenter: NotificationCenter = .default) {
+         notificationCenter: NotificationCenter = .default,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.debugSettings = debugSettings
         self.userDefaults = userDefaults
         self.notificationCenter = notificationCenter
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public
 
     var aiChatURL: URL {
+        // 1. First check for debug URL override
+        if let debugURL = debugSettings.customURL,
+           let url = URL(string: debugURL) {
+            return url
+        }
+        
+        // 2. Then check remote configuration
         guard let url = URL(string: getSettingsData(.aiChatURL)) else {
             return URL(string: SettingsValue.aiChatURL.defaultValue)!
         }
@@ -106,6 +118,10 @@ struct AIChatSettings: AIChatSettingsProvider {
         userDefaults.showAIChatVoiceSearch && isAIChatEnabled
     }
 
+    var isAIChatSearchInputUserSettingsEnabled: Bool {
+        userDefaults.showAIChatSearchInputInternal && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalSwitcherBarTransition)
+    }
+
     func enableAIChat(enable: Bool) {
         userDefaults.isAIChatEnabled = enable
         triggerSettingsChangedNotification()
@@ -136,6 +152,17 @@ struct AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOn)
         } else {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOff)
+        }
+    }
+
+    func enableAIChatSearchInputUserSettings(enable: Bool) {
+        userDefaults.showAIChatSearchInputInternal = enable
+        triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOn)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOff)
         }
     }
 
@@ -184,6 +211,8 @@ private extension UserDefaults {
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
         static let showAIChatTabSwitcher = "aichat.settings.showAIChatTabSwitcher"
 
+        /// We are using a specific flag for internal purposes because when we ship this to external users, the default value will be different, and we don't want to set the default before the feature is ready
+        static let showAIChatSearchInputInternal = "aichat.settings.showAIChatSearchInputInternal"
     }
 
     static let isAIChatEnabledDefaultValue = true
@@ -191,6 +220,7 @@ private extension UserDefaults {
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
+    static let showAIChatSearchInputDefaultValueInternal = false
 
     @objc dynamic var isAIChatEnabled: Bool {
         get {
@@ -233,6 +263,17 @@ private extension UserDefaults {
         set {
             guard newValue != showAIChatAddressBar else { return }
             set(newValue, forKey: Keys.showAIChatAddressBar)
+        }
+    }
+
+    @objc dynamic var showAIChatSearchInputInternal: Bool {
+        get {
+            value(forKey: Keys.showAIChatSearchInputInternal) as? Bool ?? Self.showAIChatSearchInputDefaultValueInternal
+        }
+
+        set {
+            guard newValue != showAIChatSearchInputInternal else { return }
+            set(newValue, forKey: Keys.showAIChatSearchInputInternal)
         }
     }
 

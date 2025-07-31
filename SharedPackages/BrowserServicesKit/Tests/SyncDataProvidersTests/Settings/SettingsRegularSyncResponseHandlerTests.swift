@@ -25,6 +25,31 @@ import Persistence
 @testable import SyncDataProviders
 
 final class SettingsRegularSyncResponseHandlerTests: SettingsProviderTestsBase {
+    private var syncedValueStream: AsyncStream<String?>!
+    private struct SyncedValueNotReceivedError: Error {}
+
+    /// Creates AsyncStream that emits updates to `testSettingSyncHandler.syncedValue`.
+    private func makeSyncedValueStream() throws {
+        syncedValueStream = AsyncStream { continuation in
+            let cancellable = testSettingSyncHandler.$syncedValue.dropFirst()
+                .sink { value in
+                    continuation.yield(value)
+                }
+
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+
+    /// Awaits first event emitted by the synced value AsyncStream.
+    private func getSyncedValue() async throws -> String? {
+        var iterator = syncedValueStream.makeAsyncIterator()
+        guard let syncedValue = await iterator.next() else {
+            throw SyncedValueNotReceivedError()
+        }
+        return syncedValue
+    }
 
     func testThatEmailProtectionEnabledStateIsApplied() async throws {
         let received: [Syncable] = [
@@ -77,16 +102,19 @@ final class SettingsRegularSyncResponseHandlerTests: SettingsProviderTestsBase {
     }
 
     func testThatSettingStateIsApplied() async throws {
+
         let received: [Syncable] = [
             .testSetting("remote")
         ]
 
+        try makeSyncedValueStream()
         try await handleSyncResponse(received: received)
+        let syncedValue = try await getSyncedValue()
 
         let context = metadataDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let settingsMetadata = fetchAllSettingsMetadata(in: context)
         XCTAssertTrue(settingsMetadata.isEmpty)
-        XCTAssertEqual(testSettingSyncHandler.syncedValue, "remote")
+        XCTAssertEqual(syncedValue, "remote")
     }
 
     func testThatSettingDeletedStateIsApplied() async throws {
@@ -96,13 +124,15 @@ final class SettingsRegularSyncResponseHandlerTests: SettingsProviderTestsBase {
             .testSettingDeleted()
         ]
 
+        try makeSyncedValueStream()
         try await handleSyncResponse(received: received)
+        let syncedValue = try await getSyncedValue()
 
         let context = metadataDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let settingsMetadata = fetchAllSettingsMetadata(in: context)
         let testSettingMetadata = try XCTUnwrap(settingsMetadata.first)
         XCTAssertNil(testSettingMetadata.lastModified)
-        XCTAssertNil(testSettingSyncHandler.syncedValue)
+        XCTAssertNil(syncedValue)
     }
 
     func testWhenSettingIsSetLocallyAndRemotelyThenRemoteStateIsApplied() async throws {
@@ -112,13 +142,15 @@ final class SettingsRegularSyncResponseHandlerTests: SettingsProviderTestsBase {
             .testSetting("remote")
         ]
 
+        try makeSyncedValueStream()
         try await handleSyncResponse(received: received)
+        let syncedValue = try await getSyncedValue()
 
         let context = metadataDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let settingsMetadata = fetchAllSettingsMetadata(in: context)
         let testSettingMetadata = try XCTUnwrap(settingsMetadata.first)
         XCTAssertNil(testSettingMetadata.lastModified)
-        XCTAssertEqual(testSettingSyncHandler.syncedValue, "remote")
+        XCTAssertEqual(syncedValue, "remote")
     }
 
     func testThatDecryptionFailureDoesntAffectSettingsOrCrash() async throws {

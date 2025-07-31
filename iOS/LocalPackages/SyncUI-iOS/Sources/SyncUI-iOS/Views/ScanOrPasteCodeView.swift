@@ -117,7 +117,7 @@ public struct ScanOrSeeCode: View {
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(designSystemColor: .container))
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
                     .preferredColorScheme(.dark)
             )
             .padding(.horizontal, 12)

@@ -23,10 +23,13 @@ protocol ColorsProviding {
     var baseBackgroundColor: NSColor { get }
     var textPrimaryColor: NSColor { get }
     var textSecondaryColor: NSColor { get }
+    var textTertiaryColor: NSColor { get }
     var accentPrimaryColor: NSColor { get }
     var addressBarOutlineShadow: NSColor { get }
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
+    var fillButtonBackgroundColor: NSColor { get }
+    var fillButtonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
     var settingsBackgroundColor: NSColor { get }
@@ -50,10 +53,13 @@ final class LegacyColorsProviding: ColorsProviding {
     var baseBackgroundColor: NSColor { .windowBackground }
     var textPrimaryColor: NSColor { .labelColor }
     var textSecondaryColor: NSColor { .secondaryLabelColor }
+    var textTertiaryColor: NSColor { .tertiaryLabelColor }
     var accentPrimaryColor: NSColor { .globalAccent.withAlphaComponent(0.8) }
     var addressBarOutlineShadow: NSColor { .globalAccent.withAlphaComponent(0.2) }
     var iconsColor: NSColor { .button }
     var buttonMouseOverColor: NSColor { .buttonMouseOver }
+    var fillButtonBackgroundColor: NSColor { .buttonMouseOver }
+    var fillButtonMouseOverColor: NSColor { .buttonMouseDownColorLight }
     var addressBarSuffixTextColor: NSColor { .addressBarSuffix }
     var addressBarTextFieldColor: NSColor { .suggestionText }
     var settingsBackgroundColor: NSColor { .preferencesBackground }
@@ -78,6 +84,7 @@ final class NewColorsProviding: ColorsProviding {
     var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
     var textPrimaryColor: NSColor { palette.textPrimary }
     var textSecondaryColor: NSColor { palette.textSecondary }
+    var textTertiaryColor: NSColor { palette.textTertiary }
     var accentPrimaryColor: NSColor { palette.accentPrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlow }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
@@ -85,6 +92,9 @@ final class NewColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
     var iconsColor: NSColor { palette.iconsPrimary }
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
+    var buttonMouseDownColor: NSColor { palette.controlsFillSecondary }
+    var fillButtonBackgroundColor: NSColor { palette.controlsFillPrimary }
+    var fillButtonMouseOverColor: NSColor { palette.controlsFillSecondary }
     var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
     var bookmarksPanelBackgroundColor: NSColor { palette.surfaceSecondary }
     var downloadsPanelBackgroundColor: NSColor { palette.surfaceSecondary }

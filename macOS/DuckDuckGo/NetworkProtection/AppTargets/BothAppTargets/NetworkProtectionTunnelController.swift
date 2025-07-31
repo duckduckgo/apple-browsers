@@ -509,6 +509,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case connectionAlreadyStarted
         case simulateControllerFailureError
         case startTunnelFailure(_ error: Error)
+        case failedToFetchAuthToken(_ error: Error)
 
         var errorDescription: String? {
             switch self {
@@ -531,7 +532,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 #endif
             case .simulateControllerFailureError:
                 return "Simulated a controller error as requested"
-            case .startTunnelFailure(let error):
+            case .startTunnelFailure(let error),
+                    .failedToFetchAuthToken(let error):
                 return error.localizedDescription
             }
         }
@@ -546,6 +548,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             case .simulateControllerFailureError: return 4
                 // MARK: Actual connection attempt issues
             case .startTunnelFailure: return 100
+                // MARK: Auth errors
+            case .failedToFetchAuthToken: return 201
             }
         }
 
@@ -557,7 +561,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                     .connectionAlreadyStarted,
                     .simulateControllerFailureError:
                 return [:]
-            case .startTunnelFailure(let error):
+            case .startTunnelFailure(let error),
+                    .failedToFetchAuthToken(let error):
                 return [NSUnderlyingErrorKey: error]
             }
         }
@@ -790,7 +795,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func restart() async {
-        await stop(disableOnDemand: false)
+        guard vpnAppState.isAuthV2Enabled,
+            let internalManager else {
+
+            // This is a temporary thing because we know this method works well
+            // in case we need to roll back auth v2
+            await stop(disableOnDemand: false)
+            return
+        }
+
+        await stop(disableOnDemand: true)
+        await start()
+        try? await enableOnDemand(tunnelManager: internalManager)
     }
 
     // MARK: - On Demand & Kill Switch
@@ -877,13 +893,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    private func fetchAuthToken() throws -> NSString {
-        if let accessToken = try? accessTokenStorage.getAccessToken() {
+    private func fetchAuthToken() throws -> NSString? {
+        do {
+            guard let accessToken = try accessTokenStorage.getAccessToken() else {
+                Logger.networkProtection.error("🔴 TunnelController found no token")
+                throw StartError.noAuthToken
+            }
+
             Logger.networkProtection.log("🟢 TunnelController found token")
             return Self.adaptAccessTokenForVPN(accessToken) as NSString
-        } else {
-            Logger.networkProtection.error("🔴 TunnelController found no token")
-            throw StartError.noAuthToken
+        } catch {
+            Logger.networkProtection.fault("🔴 TunnelController failed to fetch token: \(error.localizedDescription)")
+            throw StartError.failedToFetchAuthToken(error)
         }
     }
 
@@ -893,8 +914,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             Logger.networkProtection.log("🟢 TunnelController found token container")
             return tokenContainer
         } catch {
-            Logger.networkProtection.fault("🔴 TunnelController found no token container")
-            throw StartError.noAuthToken
+            switch error {
+            case SubscriptionManagerError.noTokenAvailable:
+                Logger.networkProtection.fault("🔴 TunnelController found no token container")
+                throw StartError.noAuthToken
+            default:
+                Logger.networkProtection.fault("🔴 TunnelController failed to fetch token container: \(error.localizedDescription)")
+                throw StartError.failedToFetchAuthToken(error)
+            }
         }
     }
 

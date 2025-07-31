@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 protocol FavoritesFaviconLoading {
     func loadFavicon(for favorite: Favorite, size: CGFloat) async -> Favicon?
@@ -31,24 +32,23 @@ struct FavoriteIconView: View {
 
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
-    let isExperimentalAppearanceEnabled: Bool
 
     var body: some View {
-        ZStack {
-            Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
-                .fill(Color(designSystemColor: .surface))
-                .if(!isExperimentalAppearanceEnabled) {
-                    $0.shadow(color: .shade(0.12), radius: 0.5, y: 1)
-                }
+        ZStack(alignment: .center) {
+            Self.itemShape()
+                .fill(bgFillColor())
                 .aspectRatio(1, contentMode: .fit)
+                .frame(width: Constant.faviconSize, height: Constant.faviconSize)
 
             Image(uiImage: favicon.image)
                 .resizable()
                 .aspectRatio(1.0, contentMode: .fit)
                 .if(favicon.isUsingBorder) {
                     $0.padding(Constant.borderSize)
+                        .frame(maxWidth: Constant.faviconSize, maxHeight: Constant.faviconSize)
+                        .fixedSize()
                 }
-                .clipShape(Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled))
+                .clipShape(Self.itemShape())
         }
         .task {
             if favicon.isFake, let favicon = await faviconLoading?.loadFavicon(for: favorite, size: Constant.faviconSize) {
@@ -57,27 +57,27 @@ struct FavoriteIconView: View {
         }
     }
 
-    static func itemShape(isExperimentalAppearanceEnabled: Bool) -> RoundedRectangle {
-        if isExperimentalAppearanceEnabled {
-            RoundedRectangle(cornerRadius: Constant.cornerRadiusExperimental, style: .continuous)
-        } else {
-            RoundedRectangle(cornerRadius: Constant.cornerRadius)
-        }
+    private func bgFillColor() -> Color {
+        favicon.isFake ? Color(UIColor.forDomain(favorite.domain)) :  Color(designSystemColor: .surface)
+    }
+
+    static func itemShape() -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: Constant.cornerRadius, style: .continuous)
     }
 }
 
 private struct Constant {
     static let faviconSize: CGFloat = 64
+    static let fakeFaviconSize: CGFloat = 40
     static let borderSize: CGFloat = 12
-    static let cornerRadiusExperimental: CGFloat = 12
-    static let cornerRadius: CGFloat = 8
+    static let cornerRadius: CGFloat = 12
 }
 
 #Preview {
     VStack(spacing: 8) {
-        FavoriteIconView(favorite: Favorite.mock("apple.com"), isExperimentalAppearanceEnabled: false, faviconLoading: nil)
-        FavoriteIconView(favorite: Favorite.mock("duckduckgo.com"), isExperimentalAppearanceEnabled: false, faviconLoading: nil)
-        FavoriteIconView(favorite: Favorite.mock("foobar.com"), isExperimentalAppearanceEnabled: false, faviconLoading: nil)
+        FavoriteIconView(favorite: Favorite.mock("apple.com"), faviconLoading: nil)
+        FavoriteIconView(favorite: Favorite.mock("duckduckgo.com"), faviconLoading: nil)
+        FavoriteIconView(favorite: Favorite.mock("foobar.com"), faviconLoading: nil)
     }
 }
 
@@ -88,10 +88,10 @@ private extension Favorite {
 }
 
 extension FavoriteIconView {
-    init(favorite: Favorite, isExperimentalAppearanceEnabled: Bool, faviconLoading: FavoritesFaviconLoading? = nil) {
+    init(favorite: Favorite, faviconLoading: FavoritesFaviconLoading? = nil) {
         let favicon = faviconLoading?.existingFavicon(for: favorite, size: Constant.faviconSize)
-        ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.faviconSize)
+        ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.fakeFaviconSize)
         ?? .empty
-        self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading, isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
+        self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading)
     }
 }

@@ -59,10 +59,7 @@
 "action.title.downloads" = "Téléchargements";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Chat IA";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Nouvel AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Modifier le signet";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Appuyez une fois et accédez à vos sites préférés.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Fonctionnalités de l'IA";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Les signets existants ne seront pas dupliqués.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Déverrouiller DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Voulez-vous vraiment supprimer tous les signets ? Cette action est irréversible.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Êtes-vous sûr de vouloir supprimer cette discussion ? Cette action ne peut pas être annulée.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Demandez ce que vous voulez...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Se connecter";
@@ -1078,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "CONTENU DE CELLULE PERSONNALISÉ";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "URL personnalisée : %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer un fichier de signets...";
 
@@ -1113,9 +1110,6 @@
 
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Sélectionnez **Exporter**, puis sur l'écran suivant, sélectionnez **Mots de passe** et **Enregistrer dans les téléchargements**.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importer le fichier de mots de passe...";
 
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Dans Chrome, allez dans **Gestionnaire de mots de passe Google** puis dans **Paramètres**.";
@@ -1210,9 +1204,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Déboguer";
 
-/* No comment provided by engineer. */
-"Delete All" = "Tout supprimer";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "appareil";
 
@@ -1297,8 +1288,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Les récents changements apportés à YouTube ont affecté la fonctionnalité de Duck Player. Nous nous efforçons de résoudre ces problèmes et vous remercions de votre compréhension.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai est une fonctionnalité optionnelle qui vous permet de discuter anonymement avec des modèles de chat IA tiers populaires. Vos discussions ne servent pas à entraîner l'IA.\n[En savoir plus](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "Les fonctionnalités de DuckDuckGo AI sont privées et facultatives. Vos données ne servent pas à entraîner l'IA.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Barre d'adresse";
@@ -1312,7 +1303,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Recherche vocale";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "En savoir plus";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1672,6 +1666,9 @@
 /* Title of the feedback form */
 "feedback.form.title" = "Aidez-nous à améliorer Privacy Pro";
 
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
+
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
 
@@ -1863,6 +1860,18 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Identifiant : %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importer les mots de passe";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Ne plus demander";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Transférez vos mots de passe rapidement et en toute sécurité à partir d'un autre navigateur.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importez vos mots de passe sur DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Vous devez activer le VPN à partir de l'application DuckDuckGo.";
@@ -2258,7 +2267,7 @@
 "new.tab.page.settings.title" = "Personnaliser la nouvelle page d'onglet";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Chat IA";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Signets";
@@ -2356,15 +2365,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Oh, avant que j'oublie...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo dispose également d’un %1$@ intégré !\n\nActivez-le grâce à un %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "abonnement Privacy Pro payant";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Commencer la navigation";
 
@@ -2409,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "L'application nécessaire pour ouvrir ce lien est introuvable";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Impossible d'accéder aux modèles Duck.ai réservés aux abonnés";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Je n'arrive pas à accéder à Duck.ai dans d'autres navigateurs avec mon abonnement";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "SÉLECTIONNER UNE CATÉGORIE";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Autres commentaires sur Duck.ai";
 
 /* Activate button */
 "pm.activate" = "Réactiver";
@@ -2626,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "SÉLECTIONNER UNE CATÉGORIE";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Définir une URL de chat IA personnalisée";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "À propos de DuckDuckGo";
 
@@ -2657,7 +2672,16 @@
 "settings.address.full.url" = "Afficher l'adresse complète du site";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Raccourcis";
+"settings.aichat.shortcuts" = "Raccourcis Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Saisie de recherche";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Effectuez une recherche sur le Web ou interrogez Duck.ai directement à partir de la barre d’adresse";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Paramètres de recherche Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Toujours activé";
@@ -2735,13 +2759,19 @@
 "settings.emailProtection.description" = "Bloquez les traqueurs d'e-mails et masquez votre adresse";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Activer Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Discutez en privé avec des modèles d'IA tiers populaires";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Activez Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Activez la recherche vocale";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Choisissez la fréquence à laquelle vous souhaitez que les réponses assistées par l'IA apparaissent dans vos recherches";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Partagez vos commentaires";
@@ -2839,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Cela prend plus de temps que la normale ; veuillez revenir plus tard.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Supprimez vos infos des sites qui les vendent";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Les abonnés bénéficient de notre VPN et d'Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Les abonnés bénéficient de notre VPN, de Personal Information Removal et d'Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Les abonnés bénéficient de notre VPN, de modèles d'IA avancés dans Duck.ai et d'Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Les abonnés bénéficient de notre VPN, de modèles d'IA avancés dans Duck.ai, de Personal Information Removal et d'Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "J'ai un abonnement";
@@ -2853,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Votre abonnement Privacy Pro a expiré";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "Abonnement DuckDuckGo";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Si votre identité a été usurpée, nous vous aiderons à la rétablir";
@@ -2866,17 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Paramètres d'abonnement";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Comprend notre VPN et Identity Theft Restoration.";
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "Abonnement DuckDuckGo";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "S'abonner à DuckDuckGo";
 
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Protégez votre connexion et votre identité avec Privacy Pro";
+"settings.subscription.subscribe.title" = "Sécurisez votre Wi-Fi et discutez en toute confidentialité grâce à des modèles d'IA avancés";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Sécurisez votre Wi-Fi et protégez votre identité";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Essayer l'abonnement DuckDuckGo gratuitement";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Essayer Privacy Pro gratuitement";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Comprend notre VPN, Personal Information Removal et Identity Theft Restoration.";
+"settings.subscription.try.free.no.ai.chat" = "Essayer Privacy Pro gratuitement";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +3000,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Quel site Web pose problème ?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Arrêter la génération...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nom d'hôte enregistré : %@";
@@ -3030,6 +3084,15 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Confirmez-vous ?";
+
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Discutez en privé avec des modèles d'IA réservés aux abonnés.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Ouvrir Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "L'abonnement associé à cet e-mail n'est plus actif.";
@@ -3144,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Tout est prêt !";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "Abonnement DuckDuckGo";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Abonné(e)";

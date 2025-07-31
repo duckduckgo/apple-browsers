@@ -1,0 +1,15 @@
+/* The tile of the CTA to set the browser as default. */
+"setDefaultBrowser.cta.primary.title" = "Varsayılan tarayıcı olarak ayarla";
+
+/* The title of the CTA to permanently dismiss the modal sheet. */
+"setDefaultBrowser.cta.secondary.title" = "Bir Daha Sorma";
+
+/* (No Comment) */
+"setDefaultBrowser.modal.cta.cancel" = "Kapat";
+
+/* Set Default Browser Modal Sheet Message. */
+"setDefaultBrowser.modal.message" = "Tüm site bağlantılarının DuckDuckGo'da açılması için bizi varsayılan tarayıcınız yapın.";
+
+/* Set Default Browser Modal Sheet Title. */
+"setDefaultBrowser.modal.title" = "DuckDuckGo'nun internette yaptıklarınızın daha fazlasını korumasına izin verin";
+

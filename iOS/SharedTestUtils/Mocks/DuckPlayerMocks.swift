@@ -54,6 +54,7 @@ class MockWebView: WKWebView {
     var reloadCalled = false
 
     var loadCompletionHandler: (() -> Void)?
+    var onDeinitHandler: (() -> Void)?
 
     /// The current URL of the web view.
     private var _url: URL?
@@ -124,6 +125,10 @@ class MockWebView: WKWebView {
         historyStack.removeAll()
         _url = nil
         loadCompletionHandler = nil
+    }
+
+    deinit {
+        onDeinitHandler?()
     }
 }
 
@@ -365,7 +370,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         lastPresentedVideoID = videoID
     }
 
-    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool, skipTransition: Bool = false) {
         dismissPillCalled = true
         lastDismissPillReset = reset
         lastDismissPillAnimated = animated
@@ -470,7 +475,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     }
 
     @MainActor
-    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {}
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool, skipTransition: Bool) {}
 
     @MainActor
     func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: any DuckDuckGo.DuckPlayerHosting, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {

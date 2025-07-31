@@ -439,21 +439,25 @@ struct UserText {
 
     // Misc
 
+    static let aiChatShowOnNewTabPageBarToggle = NSLocalizedString("duckai.show-on-new-tab-page.toggle", value: "Show on New Tab Page", comment: "A checkbox to control AI Chat shortcut visibility on the New Tab Page")
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
-
-    static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show “New Duck.ai Chat” in File and application menus", comment: "Show Duck.ai in application menus")
-
+    static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show Duck.ai shortcuts in menus", comment: "Show Duck.ai in application menus")
+    static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
     static let aiChatPreferencesCaption = NSLocalizedString("ai-features.preferences.caption", value: "DuckDuckGo AI features are private and optional. Your data is not used to train AI.", comment: "Ai Chat preferences explanation")
-
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
-
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")
 
-    static let aiChatAddressBarShortcutTooltip = NSLocalizedString("tooltip.aichat.address-bar-shortcut", value: "Duck.ai ⇧↵", comment: "Tooltip With Shortcut for the AI Chat address bar button")
+    static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
 
-    static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai", comment: "Tooltip for the AI Chat address bar button")
+    static let aiChatSummarize = NSLocalizedString("duckai.summarize.context-menu-action", value: "Summarize with Duck.ai", comment: "Context menu option that triggers Duck.ai-assisted summarization of selected text")
 
+    static let aiChatOpenNewTabButton = NSLocalizedString("aichat.address-bar.open-new-tab-button", value: "Open New Duck.ai Tab", comment: "Button to open Duck.ai in a new tab")
+    static let aiChatToggleSidebarButton = NSLocalizedString("aichat.address-bar.toggle-sidebar-button", value: "Toggle Duck.ai Sidebar", comment: "Button to toggle Duck.ai sidebar")
+    static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
+    static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
+    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open Duck.ai Settings", comment: "Button to open Duck.ai settings")
+    static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
     static let searchAssistSettingsDescription = NSLocalizedString("duckai.search-assist-settings.description", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "Description of the section in Settings")
@@ -461,6 +465,23 @@ struct UserText {
     static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
+
+    // Duck.ai Settings
+    static let aiChatTitle = NSLocalizedString("duckai.title", value: "Duck.ai", comment: "Title for Duck.ai feature")
+    static let aiChatDescription = NSLocalizedString("duckai.description", value: "Chat privately with popular 3rd-party AI models", comment: "Description of Duck.ai feature in settings")
+    static let aiChatEnableButton = NSLocalizedString("duckai.enable.button", value: "Enable Duck.ai", comment: "Button to enable Duck.ai feature")
+    static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai", comment: "Button to disable Duck.ai feature")
+    static let aiChatVisibilitySectionTitle = NSLocalizedString("duckai.visibility.section.title", value: "Visibility", comment: "Section title for Duck.ai visibility settings")
+    static let aiChatShowInBrowserMenusToggle = NSLocalizedString("duckai.show-in-browser-menus.toggle", value: "Show in browser menus", comment: "Toggle for showing Duck.ai in browser menus")
+    static let aiChatShowInAddressBarLabel = NSLocalizedString("duckai.show-in-address-bar.label", value: "Show in address bar", comment: "Label for showing Duck.ai in address bar")
+    static let aiChatOpenNewChatsSectionTitle = NSLocalizedString("duckai.open-new-chats.section.title", value: "Open New Chats", comment: "Section title for Duck.ai new chat location settings")
+    static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "In sidebar", comment: "Option to open Duck.ai chats in sidebar")
+    static let aiChatOpenInFullPageOption = NSLocalizedString("duckai.open-in-full-page.option", value: "Full page", comment: "Option to open Duck.ai chats in full page")
+
+    // Duck.ai Disable Dialog
+    static let aiChatDisableDialogTitle = NSLocalizedString("duckai.disable.dialog.title", value: "Disable Duck.ai?", comment: "Title for dialog asking to disable Duck.ai")
+    static let aiChatDisableDialogMessage = NSLocalizedString("duckai.disable.dialog.message", value: "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\n Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.You can re-enable it at any time.", comment: "Message explaining consequences of disabling Duck.ai")
+    static let aiChatDisableDialogConfirmButton = NSLocalizedString("duckai.disable.dialog.confirm", value: "Disable Duck.ai", comment: "Button to confirm disabling Duck.ai")
 
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")
@@ -578,6 +599,10 @@ struct UserText {
     static let importDataSourceTitle = NSLocalizedString("import.browser.data.source.title", value: "Where do you want to import from?", comment: "Import Browser Data title for option to choose source browser to import from")
     static let importDataSubtitle = NSLocalizedString("import.browser.data.source.subtitle", value: "Access and manage your passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Subtitle explaining where users can find imported passwords.")
     static let importDataSuccessTitle = NSLocalizedString("import.browser.data.success.title", value: "Import complete!", comment: "message about Passwords and or bookmarks Data Import completion")
+    static let importDataImportTypeTitleCollapsedAll = NSLocalizedString("import.browser.data.import-type.title.collapsed.all", value: "Import all available data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
+    static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
+    static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
+    static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
     static let exportBookmarks = NSLocalizedString("export.bookmarks.menu.item", value: "Export Bookmarks…", comment: "Export bookmarks menu item")
@@ -595,7 +620,12 @@ struct UserText {
     static let bookmarkImportedFromFolder = NSLocalizedString("bookmarks.imported.from.folder", value: "Imported from", comment: "Name of the folder the imported bookmarks are saved into")
 
     // MARK: Feedback
-    static let sendPProFeedback = NSLocalizedString("send.ppro.feedback", value: "Send Privacy Pro Feedback", comment: "Menu with feedback commands")
+    static func sendSubscriptionFeedback(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("send.subscription.feedback", value: "Send Subscription Feedback", comment: "Menu with feedback commands")
+        }
+        return NSLocalizedString("send.ppro.feedback", value: "Send Privacy Pro Feedback", comment: "Menu with feedback commands")
+    }
     static let reportBrokenSite = NSLocalizedString("report.broken.site", value: "Report Broken Site", comment: "Menu with feedback commands")
     static let browserFeedback = NSLocalizedString("send.browser.feedback", value: "Send Browser Feedback", comment: "Menu with feedback commands")
     static let browserFeedbackTitle = NSLocalizedString("send.browser.feedback.title", value: "Help Improve the DuckDuckGo Browser", comment: "Title of the interface to send feedback on the browser")
@@ -608,6 +638,8 @@ struct UserText {
 
     static let otherBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.other.folder.title", value: "Other bookmarks", comment: "Name of the \"Other bookmarks\" folder imported from other browser")
     static let mobileBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.mobile.folder.title", value: "Mobile bookmarks", comment: "Name of the \"Mobile bookmarks\" folder imported from other browser")
+    static let bookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.folder.title", value: "Bookmarks", comment: "Name of the \"Bookmarks\" folder for bookmarks imported from other browser")
+    static let bookmarksMenuImportedFolderTitle = NSLocalizedString("bookmarks.imported.menu.folder.title", value: "Bookmarks menu", comment: "Name of the \"Bookmarks menu\" folder imported from other browser")
 
     static let zoom = NSLocalizedString("zoom", value: "Zoom", comment: "Menu with Zooming commands")
     static let resetZoom = NSLocalizedString("reset-zoom", value: "Reset", comment: "Button that allows the user to reset the zoom level of the browser page")
@@ -719,6 +751,12 @@ struct UserText {
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
 
     static let privacyProtections = NSLocalizedString("preferences.privacy-protections", value: "Privacy Protections", comment: "The section header in Preferences representing browser features related to privacy protection")
+    static func subscriptionSettingsHeader(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("preferences.subscription.header", value: "DuckDuckGo Subscription", comment: "The section header in Preferences representing subscription features")
+        }
+        return "Privacy Pro"
+    }
     static let mainSettings = NSLocalizedString("preferences.main-settings", value: "Main Settings", comment: "Section header in Preferences for main settings")
     static let duckduckgoOnOtherPlatforms = NSLocalizedString("preferences.duckduckgo-on-other-platforms", value: "DuckDuckGo on Other Platforms", comment: "Button presented to users to navigate them to our product page which presents all other products for other platforms")
     static let defaultBrowser = NSLocalizedString("preferences.default-browser", value: "Default Browser", comment: "Title of the option to show the Default Browser Preferences")
@@ -894,7 +932,7 @@ struct UserText {
     }
 
     static let importLoginsPasswords = NSLocalizedString("import.logins.passwords", value: "Passwords", comment: "Title text for the Passwords import option")
-    static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer", value: "Passwords are encrypted. Viewing them or filling out forms requires Touch ID or a password. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
+    static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer2", value: "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
     static let importLoginsPasswordsExplainerAutolockOff = NSLocalizedString("import.logins.passwords.explainer.autolock.off", value: "Passwords are encrypted. We recommend setting up Auto-lock to keep your passwords even more secure. Set it up in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage when autolock is disabled")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
@@ -1192,6 +1230,7 @@ struct UserText {
     static let stopLoadingTooltip = NSLocalizedString("tooltip.navigation.stop", value: "Stop loading this page", comment: "Tooltip for the Stop Navigation button")
     static let applicationMenuTooltip = NSLocalizedString("tooltip.application-menu.show", value: "Open application menu", comment: "Tooltip for the Application Menu button")
 
+    static let privacyDashboardButton = NSLocalizedString("title.privacy-dashboard.button", value: "Privacy Dashboard", comment: "Title for the Privacy Dashboard button")
     static let privacyDashboardTooltip = NSLocalizedString("tooltip.privacy-dashboard.show", value: "Show the Privacy Dashboard and manage site settings", comment: "Tooltip for the Privacy Dashboard button")
     static let addBookmarkTooltip = NSLocalizedString("tooltip.bookmark.add", value: "Bookmark this page", comment: "Tooltip for the Add Bookmark button")
     static let editBookmarkTooltip = NSLocalizedString("tooltip.bookmark.edit", value: "Edit bookmark", comment: "Tooltip for the Edit Bookmark button")
@@ -1281,6 +1320,7 @@ struct UserText {
 
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")
+    static let newTabOmnibarSectionTitle = NSLocalizedString("newTab.favorites.section.omnibar", value: "Search", comment: "Title of the Search section in the home page")
 
     // Set Up
     static let newTabSetUpDefaultBrowserCardTitle = NSLocalizedString("newTab.setup.default.browser.title", value: "Default to Privacy", comment: "Title of the Default Browser card of the Set Up section in the home page")
@@ -1354,16 +1394,18 @@ struct UserText {
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
-    static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically clear tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
-    static let warnBeforeQuit = NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be cleared when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
+    static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
+    static let warnBeforeQuit = NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Disable auto-clear on quit to turn on session restore.",
+                                                                          value: "Your session won't be restored if data is deleted when exiting.",
                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Open Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
+    static let fireAnimationSectionHeader = NSLocalizedString("fire.animation.section.setting", value: "Animation", comment: "Section header in Data Clearing related to the Fire Animation.")
+    static let showFireAnimationToggleText = NSLocalizedString("fire.animation.toggle.value", value: "Show inferno animation when deleting data", comment: "Checkbox to toggle the fire animation to be on or off")
 
     // MARK: Crash Report
     static let crashReportTitle = NSLocalizedString("crash-report.title", value: "DuckDuckGo Privacy Browser quit unexpectedly.", comment: "Title of the dialog where the user can send a crash report")
@@ -1506,7 +1548,12 @@ struct UserText {
 
     // Key: "subscription.menu.item"
     // Comment: "Title for Subscription item in the options menu"
-    static let subscriptionOptionsMenuItem = "Privacy Pro"
+    static func subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.options.menu.item", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
+        }
+        return "Privacy Pro"
+    }
     static let subscriptionOptionsMenuItemFreeTrialBadge = NSLocalizedString("subscription.free-trial.settings.menu.item", value: "TRY FOR FREE", comment: "Title for Subscription Free Trial promotion item in the options menu")
 
     static let identityTheftRestorationOptionsMenuItem = "Identity Theft Restoration"
@@ -1516,6 +1563,12 @@ struct UserText {
     // Key: "preferences.subscription"
     // Comment: "Show subscription preferences"
     static let subscription = "Privacy Pro"
+    static func purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")
+        }
+        return "Privacy Pro"
+    }
 
     static let purchasingSubscriptionTitle = NSLocalizedString("subscription.progress.view.purchasing.subscription", value: "Purchase in progress...", comment: "Progress view title when starting the purchase")
     static let restoringSubscriptionTitle = NSLocalizedString("subscription.progress.view.restoring.subscription", value: "Restoring subscription...", comment: "Progress view title when restoring past subscription purchase")
@@ -1531,57 +1584,31 @@ struct UserText {
     static let syncPromoSidePanelTitle = NSLocalizedString("sync.promo.passwords.side.panel.title", value: "Setup", comment: "Title for the Sync Promotion in passwords side panel")
     static let syncPromoSidePanelSubtitle = NSLocalizedString("sync.promo.passwords.side.panel.subtitle", value: "Sync & Backup", comment: "Subtitle for the Sync Promotion in passwords side panel")
 
-    // Key: "freemium.pir.menu.item"
-    // Comment: "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu"
-    static let freemiumDBPOptionsMenuItem = "Free Personal Information Scan"
+    static let freemiumDBPOptionsMenuItem = NSLocalizedString("freemium.dbp.menu.item", value: "Free Personal Information Scan", comment: "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu")
 
-    // Key: "home.page.promotion.freemium.dbp.title"
-    // Comment: "Title for the Freemium DBP Home Page Promotion"
-    static let homePagePromotionFreemiumDBPTitle = "Personal Information Removal"
+    static let homePagePromotionFreemiumDBPTitle = NSLocalizedString("home.page.promotion.freemium.dbp.title", value: "Personal Information Removal", comment: "Title for the Freemium DBP Home Page Promotion")
 
-    // Key: "home.page.promotion.freemium.dbp.description.markdown"
-    // Comment: "Markdown Description for the Freemium DBP Home Page Promotion"
-    static let homePagePromotionFreemiumDBPDescriptionMarkdown = "Find out which sites are selling **your info.**"
+    static let homePagePromotionFreemiumDBPDescriptionMarkdown = NSLocalizedString("home.page.promotion.freemium.dbp.description.markdown", value: "Find out which sites are selling **your info.**", comment: "Markdown Description for the Freemium DBP Home Page Promotion. Please make sure to keep **STRING** intact.")
 
-    // Key: "home.page.promotion.freemium.dbp.description"
-    // Comment: "Description for the Freemium DBP Home Page Promotion"
-    static let homePagePromotionFreemiumDBPDescription = "Find out which sites are selling your info."
+    static let homePagePromotionFreemiumDBPDescription = NSLocalizedString("home.page.promotion.freemium.dbp.description", value: "Find out which sites are selling your info.", comment: "Description for the Freemium DBP Home Page Promotion")
 
-    // Key: "home.page.promotion.freemium.dbp.button.title"
-    // Comment: "Title for the Freemium DBP Home Page Promotion Button"
-    static let homePagePromotionFreemiumDBPButtonTitle = "Free Scan"
+    static let homePagePromotionFreemiumDBPButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.button.title", value: "Free Scan", comment: "Title for the Freemium DBP Home Page Promotion Button")
 
-    // Key: "home.page.promotion.freemium.dbp.post.scan.engagement.result.single.match.description"
-    // Comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found"
-    static let homePagePromotionFreemiumDBPPostScanEngagementResultSingleMatchDescription = "Your free personal info scan found 1 record about you on 1 site."
+    static let homePagePromotionFreemiumDBPPostScanEngagementResultSingleMatchDescription = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.result.single.match.description", value: "Your free personal info scan found 1 record about you on 1 site.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found")
 
-    /// Generates Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site.
-    /// Key: "home.page.promotion.freemium.dbp.post.scan.engagement.result.single.broker.description"
-    ///
-    /// - Parameter resultCount: The number of records found.
-    /// - Returns: A formatted string indicating the number of records found on 1 site.
     static func homePagePromotionFreemiumDBPPostScanEngagementResultSingleBrokerDescription(resultCount: Int) -> String {
-        String(format: "Your free personal info scan found %d records about you on 1 site.", resultCount)
+        let localized = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.result.single.broker.description", value: "Your free personal info scan found %d records about you on 1 site.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site")
+        return String(format: localized, resultCount)
     }
 
-    /// Generates Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites.
-    /// Key: "home.page.promotion.freemium.dbp.post.scan.engagement.result.plural.description"
-    ///
-    /// - Parameters:
-    ///   - resultCount: The number of records found.
-    ///   - brokerCount: The number of broker sites where records were found.
-    /// - Returns: A formatted string indicating the number of records found on multiple sites.
     static func homePagePromotionFreemiumDBPPostScanEngagementResultPluralDescription(resultCount: Int, brokerCount: Int) -> String {
-        String(format: "Your free personal info scan found %d records about you on %d different sites.", resultCount, brokerCount)
+        let localized = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.result.plural.description", value: "Your free personal info scan found %d records about you on %d different sites.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites")
+        return String(format: localized, resultCount, brokerCount)
     }
 
-    // Key: "home.page.promotion.freemium.dbp.post.scan.engagement.no.results.description"
-    // Comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results"
-    static let homePagePromotionFreemiumDBPPostScanEngagementNoResultsDescription = "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically."
+    static let homePagePromotionFreemiumDBPPostScanEngagementNoResultsDescription = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.no.results.description", value: "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results")
 
-    // Key: "home.page.promotion.freemium.dbp.post.scan.engagement.button.title"
-    // Comment: "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button"
-    static let homePagePromotionFreemiumDBPPostScanEngagementButtonTitle = "View Results"
+    static let homePagePromotionFreemiumDBPPostScanEngagementButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.button.title", value: "View Results", comment: "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button")
 
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 

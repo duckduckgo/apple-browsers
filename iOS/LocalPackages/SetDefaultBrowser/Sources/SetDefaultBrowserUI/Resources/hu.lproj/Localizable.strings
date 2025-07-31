@@ -1,0 +1,15 @@
+/* The tile of the CTA to set the browser as default. */
+"setDefaultBrowser.cta.primary.title" = "Beállítás alapértelmezett böngészőként";
+
+/* The title of the CTA to permanently dismiss the modal sheet. */
+"setDefaultBrowser.cta.secondary.title" = "Ne kérdezzen rá újra";
+
+/* (No Comment) */
+"setDefaultBrowser.modal.cta.cancel" = "Bezárás";
+
+/* Set Default Browser Modal Sheet Message. */
+"setDefaultBrowser.modal.message" = "Legyen a DuckDuckGo az alapértelmezett böngésződ, hogy minden weboldal linkje a DuckDuckGóban nyíljon meg.";
+
+/* Set Default Browser Modal Sheet Title. */
+"setDefaultBrowser.modal.title" = "Hagyd, hogy a DuckDuckGo jobban megvédje, amit online csinálsz";
+

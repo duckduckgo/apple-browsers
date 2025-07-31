@@ -29,6 +29,11 @@ on:
         required: false
         default: false
         type: boolean
+      skip-asana:
+        description: "Skip Asana task creation on tests failure"
+        required: false
+        type: boolean
+        default: true
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -44,6 +49,10 @@ on:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   shellcheck:
@@ -68,6 +77,8 @@ jobs:
       with:
         format: gcc
         scandir: iOS/scripts
+      env:
+        SHELLCHECK_OPTS: -x -P iOS/scripts
 
   unit-tests:
 
@@ -82,6 +93,7 @@ jobs:
 
     outputs:
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+      pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
 
@@ -173,7 +185,7 @@ jobs:
         yq < unittests.xml -p xml -o json -r \
           $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
           | sort -u -k 1,2 \
-          | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
+          | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
 
     - name: Report job duration
       if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
@@ -191,15 +203,12 @@ jobs:
       with:
         pixel-name: m_ci_apple_status_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
 
-    - name: Fetch latest commit author
-      if: always() && github.ref_name == 'main'
+    - name: Fetch latest commit author and PR reviewers
+      if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
       id: fetch_commit_author
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        head_commit=$(git rev-parse HEAD)
-        author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
-        echo "commit_author=${author}" >> $GITHUB_OUTPUT
+      uses: ./.github/actions/fetch-commit-info
+      with:
+        github-token: ${{ github.token }}
 
   release-build:
 
@@ -295,7 +304,7 @@ jobs:
     name: Create Asana Task
     needs: [unit-tests, shellcheck, release-build]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 
@@ -309,13 +318,14 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
     needs: [unit-tests, shellcheck, release-build]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 

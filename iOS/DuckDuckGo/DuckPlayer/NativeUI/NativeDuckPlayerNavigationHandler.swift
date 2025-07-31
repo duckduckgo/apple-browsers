@@ -132,7 +132,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
     private func setReferrer(webView: WKWebView) {
 
-        guard let url = webView.url else { return }
+        guard let url = webView.url, !url.absoluteString.isEmpty else { return }
 
         // SERP as a referrer
         if url.isDuckDuckGoSearch {
@@ -251,6 +251,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///   - videoID: The ID of the video to load
     ///   - timestamp: The timestamp of the video
     private func presentDuckPlayerPill(for videoID: String, timestamp: TimeInterval?) {
+        // Prevent multiple pending presentations for the same video
+        guard !isDuckPlayerPillPresented else { return }
+        
         isDuckPlayerPillPresented = true
         delayHandler.delay(seconds: Constants.pillPresentationDelay)
             .sink { [weak self] _ in
@@ -284,7 +287,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     private func dismissDuckPlayerPill(reset: Bool, animated: Bool, programatic: Bool) {
         isDuckPlayerPillPresented = false
         Task { @MainActor in
-            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic)
+            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic, skipTransition: true)
         }
     }
 }
@@ -302,7 +305,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         let (videoID, _) = navigationAction.request.url?.youtubeVideoParams ?? ("", nil)
         let youtubeURL = URL.youtube(videoID)
         webView.load(URLRequest(url: youtubeURL))
-        _ = handleURLChange(webView: webView, previousURL: nil, newURL: youtubeURL)
+        _ = handleURLChange(webView: webView, previousURL: nil, newURL: youtubeURL, isNavigationError: false)
         return
     }
 
@@ -312,9 +315,18 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` whose URL has changed.
     /// - Returns: A result indicating whether the URL change was handled.
     @MainActor
-    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
+    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?, isNavigationError: Bool) -> DuckPlayerNavigationHandlerURLChangeResult {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
+
+        // Don't trigger DuckPlayer if there was a navigation error
+        if isNavigationError {
+            toggleMediaPlayback(webView, pause: true)
+            return .notHandled(.invalidURL)
+        }
+
+        // Notify user script of URL change for all URLs
+        notifyUserScriptOfURLChange(webView: webView, newURL: newURL)
 
         // Skip if the new URL is a YouTube watch page with a hashtag
         // This is a special case where YouTube navigates to/from intenal UI (Search, setttings, etc)
@@ -344,8 +356,14 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Dismiss the DuckPlayer Pill
         dismissDuckPlayerPill(reset: true, animated: true, programatic: true)
 
+        // Never present DuckPlayer pill on DuckDuckGo search pages (SERP)
+        guard let url = newURL, !url.isDuckDuckGoSearch else {
+            lastHandledVideoID = nil
+            return .notHandled(.invalidURL)
+        }
+
         // Never present DuckPlayer for non-YouTube URLs
-        guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
+        guard let (videoID, _) = url.youtubeVideoParams else {
             lastHandledVideoID = nil
             return .notHandled(.invalidURL)
         }
@@ -376,7 +394,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Present Duck Player Pill (Native entry point)
         if duckPlayer.settings.nativeUIYoutubeMode == .ask {
             lastHandledVideoID = videoID
-            notifyUserScriptOfURLChange(webView: webView, newURL: newURL)
             presentDuckPlayerPill(for: videoID, timestamp: nil)
             return .handled(.duckPlayerEnabled)
         }
@@ -384,7 +401,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Present Duck Player
         if duckPlayer.settings.nativeUIYoutubeMode == .auto {
             lastHandledVideoID = videoID
-            notifyUserScriptOfURLChange(webView: webView, newURL: newURL)
             Task { @MainActor in await pauseVideoStart(webView: webView) }
             presentDuckPlayerPill(for: videoID, timestamp: nil)
             presentDuckPlayer(for: videoID, timestamp: nil)
@@ -423,8 +439,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         lastHandledVideoID = nil
-        duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
-        _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
+        duckPlayer.dismissPill(reset: true, animated: false, programatic: true, skipTransition: true)
+        _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url, isNavigationError: false)
 
     }
 
@@ -553,7 +569,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
-        duckPlayer.dismissPill(reset: false, animated: false, programatic: true)
+        duckPlayer.dismissPill(reset: false, animated: false, programatic: true, skipTransition: true)
     }
 
 }

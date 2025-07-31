@@ -39,10 +39,11 @@ let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("InfoPlist.xcstrings", .resource),
     .init("DeveloperID.xcstrings", .resource),
     .init("BWManager.swift", .source),
+    .init("UpdateCheckActor.swift", .source),
+    .init("UpdateCheckState.swift", .source),
     .init("UpdateController.swift", .source),
     .init("UpdateUserDriver.swift", .source),
     .init("DuckDuckGo VPN.app", .unknown),
-    .init("DuckDuckGo Notifications.app", .unknown),
     .init("DuckDuckGo Personal Information Removal.app", .unknown),
 ] + extensionsInputFiles)
 
@@ -70,6 +71,7 @@ let extraInputFiles: [TargetName: Set<InputFile>] = [
 
     "Unit Tests": [
         .init("BWEncryptionTests.swift", .source),
+        .init("UpdateCheckStateTests.swift", .source),
         .init("WKWebViewPrivateMethodsAvailabilityTests.swift", .source),
         .init("WebExtensionManagerTests.swift", .source),
         .init("WebExtensionPathsCacheMock.swift", .source),

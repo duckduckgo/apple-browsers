@@ -19,6 +19,7 @@
 import Foundation
 import Common
 @testable import Subscription
+import Combine
 
 public final class SubscriptionManagerMock: SubscriptionManager {
     public var email: String?
@@ -120,22 +121,18 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         accountManager.isUserAuthenticated
     }
 
-    public func isFeatureEnabledForUser(feature: Subscription.Entitlement.ProductName) async -> Bool {
-        guard let hasEntitlement = try? await isFeatureAvailableAndEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad) else {
-            return false
-        }
-        return hasEntitlement
-    }
-
-    public func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
-
-        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
+        let result = await accountManager.hasEntitlement(forProductName: feature)
         switch result {
         case .success(let hasEntitlements):
             return hasEntitlements
         case .failure(let error):
             throw error
         }
+    }
+
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
+        await currentSubscriptionFeatures().contains(feature)
     }
 
     public func signOut(notifyUI: Bool) async {
@@ -161,5 +158,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
+    }
+
+    public let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> {
+        canPurchaseSubject.eraseToAnyPublisher()
     }
 }

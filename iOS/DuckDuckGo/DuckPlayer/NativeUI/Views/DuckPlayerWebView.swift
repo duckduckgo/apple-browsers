@@ -102,9 +102,6 @@ struct DuckPlayerWebView: UIViewRepresentable {
        // Prevent automatic window opening
        configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
 
-       // Create a custom process pool to ensure isolation
-       configuration.processPool = WKProcessPool()
-
        // Add the scripts directly to the WKUserContentController
        contentScopeUserScripts.registerSubfeature(delegate: duckPlayerUserScript)
        contentController.addHandler(contentScopeUserScripts)
@@ -144,7 +141,12 @@ struct DuckPlayerWebView: UIViewRepresentable {
        Logger.duckplayer.debug("Loading video with URL: \(url)")
        var request = URLRequest(url: url)
        request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
-        webView.load(request)
+       
+       // Optimize for slow connections       
+       request.timeoutInterval = 30.0
+       request.networkServiceType = .video
+       
+       webView.load(request)
    }
 
    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
@@ -171,10 +173,6 @@ struct DuckPlayerWebView: UIViewRepresentable {
            contentScopeUserScripts = nil
        }
 
-       private func handleYouTubeWatchURL(_ url: URL) {
-           Logger.duckplayer.debug("Detected YouTube watch URL: \(url.absoluteString)")
-           viewModel?.handleYouTubeNavigation(url)
-       }
 
        @MainActor
       func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -191,11 +189,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
               return
           }
 
-          // Handle YouTube navigation attempts (from logo, links, etc)
-          if url.isYoutubeWatch {
-              handleYouTubeWatchURL(url)
-          } else if url.isYoutubeWatch == true {
-              Logger.duckplayer.log("[DuckPlayer] Blocked navigation to YouTube domain: \(url.absoluteString)")
+          // Handle navigation attempts to external URLs
+          if !url.isDuckPlayer && !url.absoluteString.contains("about:blank") {
+              viewModel?.handleYouTubeNavigation(url)
           }
 
           // Cancel all navigation outside of youtube-nocookie.com
@@ -205,13 +201,37 @@ struct DuckPlayerWebView: UIViewRepresentable {
        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
            // Prevent automatic opening of URLs in browser
            if let url = navigationAction.request.url {
-               if url.isYoutubeWatch {
-                   handleYouTubeWatchURL(url)
+               if !url.isDuckPlayer {
+                   viewModel?.handleYouTubeNavigation(url)
                } else {
                    Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.absoluteString)")
                }
            }
            return nil
+       }
+       
+       func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+           // Loading has started
+           viewModel?.isLoading = true
+           Logger.duckplayer.debug("[DuckPlayer] Loading started")
+       }
+       
+       func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+           // Loading has finished
+           viewModel?.isLoading = false
+           Logger.duckplayer.debug("[DuckPlayer] Loading finished")
+       }
+       
+       func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+           // Loading failed
+           viewModel?.isLoading = false
+           Logger.duckplayer.error("[DuckPlayer] Loading failed with error: \(error)")
+       }
+       
+       func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+           // Loading failed during provisional navigation
+           viewModel?.isLoading = false
+           Logger.duckplayer.error("[DuckPlayer] Provisional loading failed with error: \(error)")
        }
        
    }

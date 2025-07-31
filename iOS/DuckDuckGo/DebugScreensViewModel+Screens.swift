@@ -93,6 +93,9 @@ extension DebugScreensViewModel {
             .view(title: "Remote Messaging", { _ in
                 RemoteMessagingDebugRootView()
             }),
+            .view(title: "Settings Cells Demo", { _ in
+                SettingsCellDemoDebugView()
+            }),
             .view(title: "Vanilla Web View", { d in
                 let configuration = WKWebViewConfiguration()
                 configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
@@ -113,6 +116,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
+            }),
+            .view(title: "Default Browser Prompt", { d in
+                DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
             }),
 
             // MARK: Controllers
@@ -169,11 +175,13 @@ extension DebugScreensViewModel {
                     KeychainItemsDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "Autofill", { _ in
+            .controller(title: "Autofill", { d in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
+                let autofillDebugViewController = storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
                     AutofillDebugViewController(coder: coder)
                 }
+                autofillDebugViewController.keyValueStore = d.keyValueStore
+                return autofillDebugViewController
             }),
             .controller(title: "Subscription", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
@@ -187,7 +195,7 @@ extension DebugScreensViewModel {
                     ConfigurationURLDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "Onboarding", { _ in
+            .controller(title: "Onboarding", { d in
                 class OnboardingDebugViewController: UIHostingController<OnboardingDebugView>, OnboardingDelegate {
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
@@ -197,7 +205,7 @@ extension DebugScreensViewModel {
                 weak var capturedController: OnboardingDebugViewController?
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter())
+                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager)
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)

@@ -34,18 +34,12 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
-        )
-        let dataClearingPreferences = DataClearingPreferences(
-            persistor: MockFireButtonPreferencesPersistor(),
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
-            dataClearingPreferences: dataClearingPreferences
         )
 
         userScript = AutoconsentUserScript(
@@ -62,6 +56,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                                appearancePreferences: appearancePreferences,
                                                startupPreferences: startupPreferences,
+                                               windowControllersManager: WindowControllersManagerMock(),
                                                bookmarkManager: MockBookmarkManager(),
                                                historyCoordinator: CapturingHistoryDataSource(),
                                                fireproofDomains: MockFireproofDomains(domains: []),
@@ -71,6 +66,10 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         )
 
         CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
+    }
+
+    override func tearDown() {
+        userScript = nil
     }
 
     func replyToJson(msg: Any) -> String {

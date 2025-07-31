@@ -220,6 +220,9 @@
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.qr.instructions.body" = "Ανοίξτε το DuckDuckGo στην άλλη συσκευή σας και σαρώστε αυτόν τον κωδικό για συγχρονισμό.";
 
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Ή πραγματοποιήστε σάρωση με το DuckDuckGo στη συσκευή σας";
+
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Κοινοποίηση κωδικού κειμένου";
 

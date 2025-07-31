@@ -33,6 +33,7 @@ let package = Package(
         .library(name: "VPNAppLauncher", targets: ["VPNAppLauncher"]),
         .library(name: "VPNAppState", targets: ["VPNAppState"]),
         .library(name: "VPNExtensionManagement", targets: ["VPNExtensionManagement"]),
+        .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.1"),
@@ -99,6 +100,18 @@ let package = Package(
                 .product(name: "AppLauncher", package: "AppLauncher"),
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+
+        .target(
+            name: "VPNNotifications",
+            dependencies: [
+                "VPNAppLauncher",
+                .product(name: "AppLauncher", package: "AppLauncher"),
+                .product(name: "VPN", package: "VPN"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

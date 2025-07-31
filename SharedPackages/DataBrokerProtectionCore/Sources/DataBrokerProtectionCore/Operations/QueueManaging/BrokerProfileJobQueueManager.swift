@@ -91,6 +91,7 @@ public protocol BrokerProfileJobQueueManaging {
                                                  jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
+    func stop()
 
     func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand)
     var debugRunningStatusString: String { get }
@@ -177,11 +178,17 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                           let errorHandler,
                                           let completion) = command else { return }
 
+        cancelCurrentModeAndResetIfNeeded()
+        mode = .immediate(errorHandler: nil, completion: nil)
         addJobs(for: .optOut,
                       showWebView: showWebView,
                       jobDependencies: operationDependencies,
                       errorHandler: errorHandler,
                       completion: completion)
+    }
+
+    public func stop() {
+        cancelCurrentModeAndResetIfNeeded()
     }
 }
 
@@ -225,6 +232,7 @@ private extension BrokerProfileJobQueueManager {
 
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode
+
         addJobs(for: type,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,
@@ -266,10 +274,10 @@ private extension BrokerProfileJobQueueManager {
         let jobs: [BrokerProfileJob]
         do {
             jobs = try jobProvider.createJobs(with: jobType,
-                                                    withPriorityDate: priorityDate,
-                                                    showWebView: showWebView,
-                                                    errorDelegate: self,
-                                                    jobDependencies: jobDependencies)
+                                              withPriorityDate: priorityDate,
+                                              showWebView: showWebView,
+                                              errorDelegate: self,
+                                              jobDependencies: jobDependencies)
 
             for job in jobs {
                 jobQueue.addOperation(job)

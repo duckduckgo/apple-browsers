@@ -18,24 +18,23 @@
 
 import XCTest
 
-class FireWindowTests: XCTestCase {
+class FireWindowTests: UITestCase {
     private var app: XCUIApplication!
     private var settingsGeneralButton: XCUIElement!
     private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
 
     override class func setUp() {
+        super.setUp()
         UITests.firstRun()
     }
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
 
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
 
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
     }
 
@@ -112,7 +111,18 @@ class FireWindowTests: XCTestCase {
         openFireWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
         openLoginSite()
-        signInUsingAutoFill()
+                signInUsingAutoFill()
+    }
+
+    func testDevelopMenuIsDisabledInNewFireWindow() {
+        openFireWindow()
+        assertDeveloperToolsEnabled(false)
+    }
+
+    func testDevelopMenuIsEnabledInFireWindowAfterNavigation() {
+        openFireWindow()
+        openSite(pageTitle: "Some site")
+        assertDeveloperToolsEnabled(true)
     }
 
     // MARK: - Utilities
@@ -254,7 +264,7 @@ class FireWindowTests: XCTestCase {
     private func dragFirstTabOutsideOfFireWindow() {
         let toolbar = app.toolbars.firstMatch
         let toolbarCoordinate = toolbar.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        let startPoint = toolbarCoordinate.withOffset(CGVector(dx: 120, dy: 15))
+        let startPoint = toolbarCoordinate.withOffset(CGVector(dx: 120, dy: -15))
         let endPoint = toolbarCoordinate.withOffset(CGVector(dx: -100, dy: -100))
         startPoint.press(forDuration: 0.5, thenDragTo: endPoint)
     }
@@ -344,5 +354,15 @@ class FireWindowTests: XCTestCase {
 
     private func areTestsRunningOnMacos13() -> Bool {
         return ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 13
+    }
+
+    private func assertDeveloperToolsEnabled(_ shouldBeEnabled: Bool) {
+        let developerTools = app.menuItems["toggleDeveloperTools:"]
+
+        if shouldBeEnabled {
+            XCTAssertTrue(developerTools.isEnabled)
+        } else {
+            XCTAssertFalse(developerTools.isEnabled)
+        }
     }
 }

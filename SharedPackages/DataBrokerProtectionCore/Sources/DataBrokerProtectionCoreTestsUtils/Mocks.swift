@@ -160,6 +160,10 @@ public extension HistoryEvent {
     static func mockScanEvent(with date: Date) -> HistoryEvent {
         HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: date)
     }
+
+    static func mock(type: EventType, date: Date = Date()) -> HistoryEvent {
+        HistoryEvent(brokerId: 1, profileQueryId: 1, type: type, date: date)
+    }
 }
 
 public extension DataBrokerScheduleConfig {
@@ -199,8 +203,10 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
     public var trackerAllowlist = BrowserServicesKit.PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
+    public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
+
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
-        false
+        return isSubfeatureEnabledCheck?(subfeature) ?? false
     }
 
     public func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
@@ -268,6 +274,19 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 }
 
+public final class VPNBypassServiceProviderMock: VPNBypassServiceProvider {
+    public var isSupported: Bool = false
+    public var isEnabled: Bool = false
+    public var bypassStatus: VPNBypassStatus = .off
+    public var isOnboardingShown: Bool = false
+
+    public init() {}
+
+    public func applyVPNBypass(_ bypass: Bool) {
+        // Mock implementation - no-op
+    }
+}
+
 public extension ContentScopeProperties {
     static var mock: ContentScopeProperties {
         ContentScopeProperties(
@@ -295,7 +314,8 @@ public extension ContentScopeFeatureToggles {
             unknownUsernameCategorization: false,
             partialFormSaves: false,
             passwordVariantCategorization: false,
-            inputFocusApi: false
+            inputFocusApi: false,
+            autocompleteAttributeSupport: false
         )
     }
 }
@@ -740,6 +760,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
     }
+
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        return nil
+    }
 }
 
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
@@ -762,7 +786,6 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 }
 
 public final class MockDatabase: DataBrokerProtectionRepository {
-
     public enum MockError: Error {
         case saveFailed
     }
@@ -997,6 +1020,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         nil
     }
 
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        return nil
+    }
+
+    public func saveProfileQuery(profileQuery: DataBrokerProtectionCore.ProfileQuery, profileId: Int64) throws -> Int64 {
+        1
+    }
+
+    public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
+    }
+
+    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+        1
+    }
+
     public func clear() {
         wasSaveProfileCalled = false
         wasFetchProfileCalled = false
@@ -1112,9 +1150,11 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     }
 
     public func resetTries() {
+        self.tries = 1
     }
 
     public func incrementTries() {
+        self.tries += 1
     }
 
     func clear() {
@@ -1205,13 +1245,25 @@ public extension ScanJobData {
             historyEvents: [HistoryEvent]()
         )
     }
+
+    static func mock(historyEvents: [HistoryEvent], preferredRunDate: Date?) -> ScanJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            preferredRunDate: preferredRunDate,
+            historyEvents: historyEvents
+        )
+    }
 }
 
 public extension OptOutJobData {
     static func mock(with extractedProfile: ExtractedProfile,
+                     brokerId: Int64 = 1,
+                     profileQueryId: Int64 = 1,
+                     createdDate: Date = Date(),
                      preferredRunDate: Date? = nil,
                      historyEvents: [HistoryEvent] = [HistoryEvent]()) -> OptOutJobData {
-        .init(brokerId: 1, profileQueryId: 1, createdDate: Date(), preferredRunDate: preferredRunDate, historyEvents: historyEvents, attemptCount: 0, extractedProfile: extractedProfile)
+        .init(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: createdDate, preferredRunDate: preferredRunDate, historyEvents: historyEvents, attemptCount: 0, extractedProfile: extractedProfile)
     }
 
     static func mock(with createdDate: Date) -> OptOutJobData {
@@ -1286,6 +1338,9 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
     }
 
     public func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand) {
+    }
+
+    public func stop() {
     }
 }
 
@@ -1467,6 +1522,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var emailService: any EmailServiceProtocol
     public var captchaService: any CaptchaServiceProtocol
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
+    public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
 
     public var mockScanRunner = MockScanSubJobWebRunner()
     public var mockOptOutRunner = MockOptOutSubJobWebRunner()
@@ -1533,20 +1589,17 @@ public final class MockMismatchCalculator: MismatchCalculator {
 }
 
 public final class MockBrokerJSONService: BrokerJSONServiceProvider {
-    public var vault: (any DataBrokerProtectionCore.DataBrokerProtectionSecureVault)?
-    public var vaultMaker: () -> (any DataBrokerProtectionCore.DataBrokerProtectionSecureVault)?
+    public var vault: any DataBrokerProtectionCore.DataBrokerProtectionSecureVault
 
     public private(set) var didCallUpdateBrokers = false
     public private(set) var didCallCheckForUpdates = false
 
     public init() {
-        self.vaultMaker = {
-            try? DataBrokerProtectionSecureVaultMock(providers:
-                                                        SecureStorageProviders(
-                                                            crypto: EmptySecureStorageCryptoProviderMock(),
-                                                            database: SecureStorageDatabaseProviderMock(),
-                                                            keystore: EmptySecureStorageKeyStoreProviderMock()))
-        }
+        self.vault = try! DataBrokerProtectionSecureVaultMock(providers:
+                                                                SecureStorageProviders(
+                                                                    crypto: EmptySecureStorageCryptoProviderMock(),
+                                                                    database: SecureStorageDatabaseProviderMock(),
+                                                                    keystore: EmptySecureStorageKeyStoreProviderMock()))
     }
 
     public func checkForUpdates(skipsLimiter: Bool) async throws {
@@ -1605,6 +1658,7 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public init() { }
 
     public var isUserAuthenticatedValue = false
+    public var isUserEligibleForFreeTrialValue = false
     public var accessTokenValue: String? = "fake token"
     public var shouldAskForInviteCodeValue = false
     public var redeemCodeCalled = false
@@ -1613,6 +1667,8 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public var shouldThrowEntitlementError = false
 
     public var isUserAuthenticated: Bool { isUserAuthenticatedValue }
+
+    public var isUserEligibleForFreeTrial: Bool { isUserEligibleForFreeTrialValue }
 
     public func accessToken() async -> String? { accessTokenValue }
 
@@ -2042,6 +2098,18 @@ public extension OptOutJobData {
 
     static func mock(with extractedProfile: ExtractedProfile) -> OptOutJobData {
         .init(brokerId: 1, profileQueryId: 1, createdDate: Date(), historyEvents: [HistoryEvent](), attemptCount: 0, extractedProfile: extractedProfile)
+    }
+
+    static func mock(attemptCount: Int64, preferredRunDate: Date? = nil) -> OptOutJobData {
+        .init(
+            brokerId: 1,
+            profileQueryId: 1,
+            createdDate: Date(),
+            preferredRunDate: preferredRunDate,
+            historyEvents: [],
+            attemptCount: attemptCount,
+            extractedProfile: .mockWithoutRemovedDate
+        )
     }
 }
 

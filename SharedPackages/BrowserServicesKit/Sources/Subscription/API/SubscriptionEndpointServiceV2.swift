@@ -58,17 +58,12 @@ public enum SubscriptionCachePolicy {
     /// Returns the cached subscription if it exists; otherwise, attempts to fetch from the remote source.
     case cacheFirst
 
-    /// Returns only the cached subscription. No remote fetch is attempted.
-    case cacheOnly
-
     public var apiCachePolicy: APICachePolicy {
         switch self {
         case .remoteFirst:
             return .reloadIgnoringLocalCacheData
         case .cacheFirst:
             return .returnCacheDataElseLoad
-        case .cacheOnly:
-            return .returnCacheDataDontLoad
         }
     }
 }
@@ -170,7 +165,7 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
-            // In DEBUG the subscription duration is just a a couple of minutes, we want to avoid the cache to be immediately invalidated
+            // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated
             let isInTheFuture = false
 #else
             let isInTheFuture = expiryDate.isInTheFuture()
@@ -182,14 +177,9 @@ New: \(subscription.debugDescription, privacy: .public)
                 Logger.subscriptionEndpointService.debug("Subscription cache set with default expiration date")
                 subscriptionCache.set(subscription)
             }
-            Logger.subscriptionEndpointService.debug("Notifying subscription changed")
             Task { @MainActor in
+                Logger.subscriptionEndpointService.debug("Notifying subscription changed")
                 NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
-                // TMP: Convert to Entitlement (authV1)
-                if let features = subscription.features {
-                    let entitlements = features.map { $0.entitlement }
-                    NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
-                }
             }
         }
     }
@@ -216,7 +206,11 @@ New: \(subscription.debugDescription, privacy: .public)
             } catch SubscriptionEndpointServiceError.noData {
                 throw SubscriptionEndpointServiceError.noData
             } catch {
-                return try await getSubscription(accessToken: accessToken, cachePolicy: .cacheOnly)
+                if let cachedSubscription = getCachedSubscription() {
+                    return cachedSubscription
+                } else {
+                    throw SubscriptionEndpointServiceError.noData
+                }
             }
 
         case .cacheFirst:
@@ -224,13 +218,6 @@ New: \(subscription.debugDescription, privacy: .public)
                 return cachedSubscription
             } else {
                 return try await getRemoteSubscription(accessToken: accessToken)
-            }
-
-        case .cacheOnly:
-            if let cachedSubscription = getCachedSubscription() {
-                return cachedSubscription
-            } else {
-                throw SubscriptionEndpointServiceError.noData
             }
         }
     }
@@ -247,7 +234,6 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             subscriptionCache.reset()
         }
-// TBD check if needed: NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
     }
 
     // MARK: -

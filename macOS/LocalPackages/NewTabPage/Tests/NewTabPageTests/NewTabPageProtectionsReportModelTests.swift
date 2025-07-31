@@ -33,7 +33,10 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
 
         privacyStats = CapturingPrivacyStats()
         settingsPersistor = MockNewTabPageProtectionsReportSettingsPersistor()
-        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats, settingsPersistor: settingsPersistor)
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+                                                 showBurnAnimation: true)
     }
 
     // MARK: - Initialization Tests
@@ -48,7 +51,10 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         settingsPersistor.isViewExpanded = false
         settingsPersistor.activeFeed = .activity
 
-        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats, settingsPersistor: settingsPersistor)
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+                                                 showBurnAnimation: true)
 
         XCTAssertFalse(model.isViewExpanded)
         XCTAssertEqual(model.activeFeed, .activity)
@@ -148,5 +154,117 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         model.isViewExpanded = false
         model.activeFeed = .activity
         XCTAssertFalse(model.isRecentActivityVisible)
+    }
+
+    // MARK: - Burn Animation Tests
+
+    func testWhenInitializedWithShowBurnAnimationTrueThenShouldShowBurnAnimationIsTrue() {
+        XCTAssertTrue(model.shouldShowBurnAnimation)
+    }
+
+    func testWhenInitializedWithShowBurnAnimationFalseThenShouldShowBurnAnimationIsFalse() {
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
+                                                 showBurnAnimation: false)
+        XCTAssertFalse(model.shouldShowBurnAnimation)
+    }
+
+    @MainActor
+    func testWhenBurnAnimationSettingChangesToTrueThenShouldShowBurnAnimationIsTrue() async throws {
+        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+            showBurnAnimation: false
+        )
+
+        try makeShouldShowBurnAnimationStream()
+        burnAnimationSubject.send(true)
+        let shouldShowBurnAnimation = try await getShouldShowBurnAnimationValue()
+        XCTAssertTrue(shouldShowBurnAnimation)
+    }
+
+    @MainActor
+    func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async throws {
+        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+                                                 showBurnAnimation: true)
+
+        XCTAssertTrue(model.shouldShowBurnAnimation)
+
+        try makeShouldShowBurnAnimationStream()
+        burnAnimationSubject.send(false)
+        let shouldShowBurnAnimation = try await getShouldShowBurnAnimationValue()
+        XCTAssertFalse(shouldShowBurnAnimation)
+    }
+
+    @MainActor
+    func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async throws {
+        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+                                                 showBurnAnimation: true)
+
+        try makeShouldShowBurnAnimationStream()
+
+        burnAnimationSubject.send(false)
+        burnAnimationSubject.send(true)
+        burnAnimationSubject.send(false)
+
+        let shouldShowBurnAnimationValues = try await getShouldShowBurnAnimationValues(3)
+        XCTAssertEqual(shouldShowBurnAnimationValues, [false, true, false])
+        XCTAssertFalse(model.shouldShowBurnAnimation)
+    }
+
+    // MARK: - Helpers
+
+    @MainActor
+    private var shouldShowBurnAnimationStream: AsyncStream<Bool>!
+    private struct ShouldShowBurnAnimationNotReceivedError: Error {}
+
+    /// Creates AsyncStream that emits updates to `model.shouldShowBurnAnimation`.
+    @MainActor
+    private func makeShouldShowBurnAnimationStream() throws {
+        shouldShowBurnAnimationStream = AsyncStream { continuation in
+            let cancellable = model.$shouldShowBurnAnimation.dropFirst()
+                .sink { value in
+                    continuation.yield(value)
+                }
+
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+
+    /// Awaits first event emitted by the shouldShowBurnAnimation AsyncStream.
+    @MainActor
+    private func getShouldShowBurnAnimationValue() async throws -> Bool {
+        let values = try await getShouldShowBurnAnimationValues(1)
+        guard let value = values.first else {
+            throw ShouldShowBurnAnimationNotReceivedError()
+        }
+        return value
+    }
+
+    /// Awaits first `count` events emitted by the shouldShowBurnAnimation AsyncStream.
+    @MainActor
+    private func getShouldShowBurnAnimationValues(_ count: Int) async throws -> [Bool] {
+        var iterator = shouldShowBurnAnimationStream.makeAsyncIterator()
+        var values: [Bool] = []
+
+        for _ in 0..<count {
+            guard let value = await iterator.next() else {
+                throw ShouldShowBurnAnimationNotReceivedError()
+            }
+            values.append(value)
+        }
+
+        return values
     }
 }

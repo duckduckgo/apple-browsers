@@ -29,9 +29,12 @@ final class NewTabPageProtectionsReportSettingsMigratorTests: XCTestCase {
     typealias LegacyKey = NewTabPageProtectionsReportSettingsMigrator.LegacyKey
 
     override func setUp() {
-        super.setUp()
         keyValueStore = MockKeyValueStore()
         migrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: keyValueStore)
+    }
+
+    override func tearDown() {
+        keyValueStore = nil
     }
 
     // MARK: - isViewExpanded

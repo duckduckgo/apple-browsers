@@ -19,6 +19,7 @@
 
 import UIKit
 import BrowserServicesKit
+import Core
 import SwiftUI
 
 class CreditCardPromptViewController: UIViewController {
@@ -56,7 +57,16 @@ class CreditCardPromptViewController: UIViewController {
         
         let controller = UIHostingController(rootView: CreditCardPromptView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
+        presentationController?.delegate = self
         installChildViewController(controller)
+    }
+}
+
+extension CreditCardPromptViewController: UISheetPresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        Pixel.fire(pixel: .autofillCardsFillCardManualInlineDismissed)
+
+        self.completion?(nil)
     }
 }
 

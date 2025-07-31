@@ -141,7 +141,7 @@ final class DownloadsViewController: NSViewController {
         separator.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(separator)
 
-        let swiftUIView = DownloadsErrorBannerView(dismiss: { self.dismiss() },
+        let swiftUIView = DownloadsErrorBannerView(dismiss: { [weak self] in self?.dismiss() },
                                                    errorType: NSApp.isSandboxed ? .openHelpURL : .openSystemSettings)
         let hostingView = NSHostingView(rootView: swiftUIView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
@@ -326,7 +326,7 @@ final class DownloadsViewController: NSViewController {
                 if let url = $0.localURL, FileManager.default.fileExists(atPath: url.path) { true } else { false }
             }),
                let lastDownloadedURL = lastDownloaded.localURL,
-               !viewModel.items.contains(where: { $0.localURL?.deletingLastPathComponent().path == url?.path  }) || url == nil {
+               !viewModel.items.contains(where: { $0.localURL?.deletingLastPathComponent().path == url?.path }) || url == nil {
 
                 url = lastDownloadedURL.deletingLastPathComponent()
                 // select last downloaded item

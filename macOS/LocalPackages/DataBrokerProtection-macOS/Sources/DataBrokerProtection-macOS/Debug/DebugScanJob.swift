@@ -60,6 +60,7 @@ final class DebugScanJob: SubJobWebRunning {
     let emailService: EmailServiceProtocol
     let captchaService: CaptchaServiceProtocol
     let stageCalculator: StageDurationCalculator
+    let executionConfig: BrokerJobExecutionConfig
     var webViewHandler: WebViewHandler?
     var actionsHandler: ActionsHandler?
     var continuation: CheckedContinuation<DebugScanReturnValue, Error>?
@@ -81,6 +82,7 @@ final class DebugScanJob: SubJobWebRunning {
          query: BrokerProfileQueryData,
          emailService: EmailServiceProtocol,
          captchaService: CaptchaServiceProtocol,
+         executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
          operationAwaitTime: TimeInterval = 3,
          clickAwaitTime: TimeInterval = 0,
          shouldRunNextStep: @escaping () -> Bool
@@ -90,6 +92,7 @@ final class DebugScanJob: SubJobWebRunning {
         self.query = query
         self.emailService = emailService
         self.captchaService = captchaService
+        self.executionConfig = executionConfig
         self.operationAwaitTime = operationAwaitTime
         self.shouldRunNextStep = shouldRunNextStep
         self.clickAwaitTime = clickAwaitTime
@@ -134,7 +137,7 @@ final class DebugScanJob: SubJobWebRunning {
     }
 
     public func runNextAction(_ action: Action) async {
-        if action as? ExtractAction != nil {
+        if action is ExtractAction {
             do {
                 if let path = self.debugScanContentPath {
                     let fileName = "\(query.profileQuery.id ?? 0)_\(query.dataBroker.name)"
@@ -175,7 +178,7 @@ final class DebugScanJob: SubJobWebRunning {
     }
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        if action.actionType == .expectation {
+        if action.actionType == .expectation, !stageCalculator.isRetrying {
             retriesCountOnError = 1
         }
 

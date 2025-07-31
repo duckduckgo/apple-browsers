@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Common
@@ -124,14 +125,46 @@ extension AppDelegate {
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
-        DispatchQueue.main.async {
-            guard let window = WindowsManager.openNewWindow(with: Tab(content: .newtab)),
-                  let windowController = window.windowController as? MainWindowController else {
+        Task { @MainActor in
+            let window: NSWindow? = windowControllersManager.lastKeyMainWindowController?.window ?? WindowsManager.openNewWindow(with: Tab(content: .newtab))
+            guard let window else {
                 assertionFailure("No reference to main window controller")
                 return
             }
 
-            windowController.mainViewController.clearAllHistory(sender)
+            if featureFlagger.isFeatureOn(.historyView) {
+                let historyViewDataProvider = HistoryViewDataProvider(
+                    historyDataSource: historyCoordinator,
+                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
+                )
+                await historyViewDataProvider.refreshData()
+                let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
+
+                let presenter = DefaultHistoryViewDialogPresenter()
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: window) {
+                case .burn:
+                    fireCoordinator.fireViewModel.fire.burnAll()
+                case .delete:
+                    historyCoordinator.burnAll {
+                        // History View doesn't currently support having new data pushed to it
+                        // so we need to instruct all open history tabs to reload themselves.
+                        let historyTabs = self.windowControllersManager.mainWindowControllers
+                            .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                            .filter { $0.content == .history }
+                        historyTabs.forEach { $0.reload() }
+                    }
+                default:
+                    break
+                }
+            } else {
+                let alert = NSAlert.clearAllHistoryAndDataAlert()
+                alert.beginSheetModal(for: window, completionHandler: { response in
+                    guard case .alertFirstButtonReturn = response else {
+                        return
+                    }
+                    self.fireCoordinator.fireViewModel.fire.burnAll()
+                })
+            }
         }
     }
 
@@ -223,6 +256,14 @@ extension AppDelegate {
         }
     }
 
+    @objc func openReportABrowserProblem(_ sender: Any?) {
+
+    }
+
+    @objc func openRequestANewFeature(_ sender: Any?) {
+
+    }
+
     @MainActor
     @objc func openPProFeedback(_ sender: Any?) {
         Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: .settings)
@@ -230,7 +271,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func copyVersion(_ sender: Any?) {
-        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+        NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
     }
 
 #endif
@@ -247,7 +288,7 @@ extension AppDelegate {
             return
         }
         DispatchQueue.main.async {
-            let tab = Tab(content: .url(url, source: .bookmark), shouldLoadInBackground: true)
+            let tab = Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)), shouldLoadInBackground: true)
             WindowsManager.openNewWindow(with: tab)
         }
     }
@@ -274,9 +315,21 @@ extension AppDelegate {
         AboutPanelController.show(internalUserDecider: internalUserDecider)
     }
 
+    @objc func openImportBookmarksWindow(_ sender: Any?) {
+        DispatchQueue.main.async {
+            DataImportView(isDataTypePickerExpanded: true).show()
+        }
+    }
+
+    @objc func openImportPasswordsWindow(_ sender: Any?) {
+        DispatchQueue.main.async {
+            DataImportView(isDataTypePickerExpanded: true).show()
+        }
+    }
+
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView().show()
+            DataImportView(isDataTypePickerExpanded: false).show()
         }
     }
 
@@ -467,7 +520,7 @@ extension AppDelegate {
         autofillPixelReporter.resetStoreDefaults()
         let loginImportState = AutofillLoginImportState()
         loginImportState.hasImportedLogins = false
-        loginImportState.isCredentialsImportPromptPermanantlyDismissed = false
+        loginImportState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
     }
 
     @objc func resetBookmarks(_ sender: Any?) {
@@ -740,6 +793,28 @@ extension MainViewController {
         getActiveTabAndIndex()?.tab.webView.resetZoomLevel()
     }
 
+    @objc func summarize(_ sender: Any) {
+        Logger.aiChat.debug("Summarize action to be implemented")
+
+        Task {
+            do {
+                let selectedText = try await getActiveTabAndIndex()?.tab.webView.evaluateJavaScript("window.getSelection().toString()") as? String
+                guard let selectedText, !selectedText.isEmpty else {
+                    return
+                }
+                let request = AIChatTextSummarizationRequest(
+                    text: selectedText,
+                    websiteURL: browserTabViewController.webView?.url,
+                    websiteTitle: browserTabViewController.webView?.title,
+                    source: .keyboardShortcut
+                )
+                aiChatSummarizer.summarize(request)
+            } catch {
+                Logger.aiChat.error("Failed to get selected text from the webView")
+            }
+        }
+    }
+
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
         if view.window?.isPopUpWindow == true {
@@ -822,41 +897,6 @@ extension MainViewController {
         Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
     }
 
-    @objc func clearAllHistory(_ sender: NSMenuItem) {
-        if featureFlagger.isFeatureOn(.historyView) {
-            Task {
-                let historyViewDataProvider = HistoryViewDataProvider(
-                    historyDataSource: historyCoordinator,
-                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
-                )
-                await historyViewDataProvider.refreshData()
-                let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
-
-                let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
-                case .burn:
-                    self.fireCoordinator.fireViewModel.fire.burnAll()
-                case .delete:
-                    historyCoordinator.burnAll {}
-                default:
-                    break
-                }
-            }
-        } else {
-            guard let window = view.window else {
-                assertionFailure("No window")
-                return
-            }
-            let alert = NSAlert.clearAllHistoryAndDataAlert()
-            alert.beginSheetModal(for: window, completionHandler: { response in
-                guard case .alertFirstButtonReturn = response else {
-                    return
-                }
-                self.fireCoordinator.fireViewModel.fire.burnAll()
-            })
-        }
-    }
-
     @objc func clearThisHistory(_ sender: ClearThisHistoryMenuItem) {
         let isToday = sender.isToday
         let visits = sender.getVisits(featureFlagger: featureFlagger)
@@ -937,6 +977,9 @@ extension MainViewController {
         }
 
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
+
+        PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .menu, isFavorite: bookmark.isFavorite))
+
         makeKeyIfNeeded()
 
         Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
@@ -952,10 +995,15 @@ extension MainViewController {
             return
         }
 
-        let tabs = models.compactMap { ($0.entity as? Bookmark)?.urlObject }.map {
-            Tab(content: .url($0, source: .bookmark),
-                shouldLoadInBackground: true,
-                burnerMode: tabCollectionViewModel.burnerMode)
+        let tabs = models.compactMap { model -> Tab? in
+            guard let bookmark = model.entity as? Bookmark,
+                  let url = bookmark.urlObject else {
+                return nil
+            }
+
+            return Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)),
+                       shouldLoadInBackground: true,
+                       burnerMode: tabCollectionViewModel.burnerMode)
         }
         tabCollectionViewModel.append(tabs: tabs, andSelect: true)
     }
@@ -1114,6 +1162,22 @@ extension MainViewController {
     @objc func crashOnException(_ sender: Any?) {
         DispatchQueue.main.async {
             self.navigationBarViewController.addressBarViewController?.addressBarTextField.suggestionViewController.tableView.view(atColumn: 1, row: .max, makeIfNecessary: false)
+        }
+    }
+
+    @objc func toggleWatchdog(_ sender: Any?) {
+        if Self.watchdog.isRunning {
+            Self.watchdog.stop()
+        } else {
+            Self.watchdog.start()
+        }
+    }
+
+    @objc func simulate15SecondHang() {
+        DispatchQueue.main.async {
+            print("Simulating main thread hang...")
+            sleep(15)
+            print("Main thread is unblocked")
         }
     }
 
@@ -1293,7 +1357,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageSource(_:)),
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
-            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab
+            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab && !isBurner
             let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
             return canReload || isHTMLNewTabPage || isHistoryView
 
@@ -1302,6 +1366,9 @@ extension MainViewController: NSMenuItemValidation {
             menuItem.title = isDownloadsPopoverShown ? UserText.closeDownloads : UserText.openDownloads
 
             return true
+
+        case #selector(MainViewController.summarize(_:)):
+            return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
 
         default:
             return true

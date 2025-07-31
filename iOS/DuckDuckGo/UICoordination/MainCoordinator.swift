@@ -23,6 +23,8 @@ import BrowserServicesKit
 import Subscription
 import Persistence
 import DDGSync
+import SetDefaultBrowserUI
+import SystemSettingsPiPTutorial
 
 @MainActor
 protocol URLHandling {
@@ -43,8 +45,13 @@ protocol ShortcutItemHandling {
 final class MainCoordinator {
 
     let controller: MainViewController
+
+    private(set) var tabManager: TabManager
+    private(set) var interactionStateSource: TabInteractionStateSource?
+
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
+    private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -61,9 +68,14 @@ final class MainCoordinator {
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          didFinishLaunchingStartTime: CFAbsoluteTime,
-         keyValueStore: ThrowingKeyValueStoring) throws {
+         keyValueStore: ThrowingKeyValueStoring,
+         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+    ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.defaultBrowserPromptPresenter = defaultBrowserPromptPresenter
+
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
@@ -75,6 +87,30 @@ final class MainCoordinator {
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
+        let textZoomCoordinator = Self.makeTextZoomCoordinator()
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
+        interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
+        tabManager = TabManager(model: tabsModel,
+                                persistence: tabsPersistence,
+                                previewsSource: previewsSource,
+                                interactionStateSource: interactionStateSource,
+                                bookmarksDatabase: bookmarksDatabase,
+                                historyManager: historyManager,
+                                syncService: syncService.sync,
+                                privacyProDataReporter: reportingService.privacyProDataReporter,
+                                contextualOnboardingPresenter: contextualOnboardingPresenter,
+                                contextualOnboardingLogic: daxDialogs,
+                                onboardingPixelReporter: reportingService.onboardingPixelReporter,
+                                featureFlagger: featureFlagger,
+                                contentScopeExperimentManager: contentScopeExperimentManager,
+                                appSettings: AppDependencyProvider.shared.appSettings,
+                                textZoomCoordinator: textZoomCoordinator,
+                                websiteDataManager: websiteDataManager,
+                                fireproofing: fireproofing,
+                                maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
+                                maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
+                                featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
+                                keyValueStore: keyValueStore)
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
@@ -83,12 +119,10 @@ final class MainCoordinator {
                                         syncDataProviders: syncService.syncDataProviders,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
-                                        tabsModel: tabsModel,
-                                        tabsPersistence: tabsPersistence,
+                                        tabManager: tabManager,
                                         syncPausedStateManager: syncService.syncErrorHandler,
                                         privacyProDataReporter: reportingService.privacyProDataReporter,
                                         variantManager: variantManager,
-                                        contextualOnboardingPresenter: contextualOnboardingPresenter,
                                         contextualOnboardingLogic: daxDialogs,
                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter,
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
@@ -96,15 +130,15 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
-                                        subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
-                                        textZoomCoordinator: Self.makeTextZoomCoordinator(),
-                                        websiteDataManager: Self.makeWebsiteDataManager(fireproofing: fireproofing),
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
-                                        maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
                                         themeManager: ThemeManager.shared,
-                                        keyValueStore: keyValueStore)
+                                        keyValueStore: keyValueStore,
+                                        systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager
+        )
     }
 
     func start() {
@@ -170,8 +204,8 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-               hasEntitlement {
+            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+               canShowVPNInUI {
                 controller.segueToVPN()
             } else {
                 controller.segueToPrivacyPro()
@@ -184,6 +218,9 @@ final class MainCoordinator {
     func onForeground() {
         controller.showBars()
         controller.onForeground()
+
+        // Present Default Browser Prompt if user is eligible.
+        defaultBrowserPromptPresenter.tryPresentDefaultModalPrompt(from: controller)
     }
 
     func onBackground() {
@@ -317,6 +354,29 @@ extension MainCoordinator: ShortcutItemHandling {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+    }
+
+}
+
+// MARK: - SystemSettingsPiPTutorialPresenting
+
+extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
+
+    func attachPlayerView(_ view: UIView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.opacity = 0.001
+        controller.view.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: 1),
+            view.heightAnchor.constraint(equalToConstant: 1),
+            view.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor),
+            view.topAnchor.constraint(equalTo: controller.view.topAnchor),
+        ])
+        controller.view.sendSubviewToBack(view)
+    }
+
+    func detachPlayerView(_ view: UIView) {
+        view.removeFromSuperview()
     }
 
 }

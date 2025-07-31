@@ -1,0 +1,15 @@
+/* The tile of the CTA to set the browser as default. */
+"setDefaultBrowser.cta.primary.title" = "Nastavite za privzeti brskalnik";
+
+/* The title of the CTA to permanently dismiss the modal sheet. */
+"setDefaultBrowser.cta.secondary.title" = "Ne sprašuj več";
+
+/* (No Comment) */
+"setDefaultBrowser.modal.cta.cancel" = "Zapri";
+
+/* Set Default Browser Modal Sheet Message. */
+"setDefaultBrowser.modal.message" = "Nastavite nas kot privzeti brskalnik, da se vse povezave do spletnih mest odprejo v DuckDuckGo.";
+
+/* Set Default Browser Modal Sheet Title. */
+"setDefaultBrowser.modal.title" = "Naj DuckDuckGo zaščiti več vaše dejavnosti na spletu.";
+

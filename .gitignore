@@ -47,6 +47,7 @@ vendor/
 
 # Release
 node_modules/
+build/
 .build/
 .swiftpm/
 release/
@@ -57,6 +58,10 @@ xcodebuild.log
 tmp
 
 #VSCode
-.windsurf/
-/buildServer.json
+buildServer.json
+.vscode/launch.json
 default.profraw
+
+# Claude
+.claude/settings.local.json
+

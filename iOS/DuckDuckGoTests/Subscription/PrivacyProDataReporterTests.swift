@@ -48,7 +48,7 @@ final class PrivacyProDataReporterTests: XCTestCase {
                                                          fetchedData: nil,
                                                          embeddedDataProvider: MockEmbeddedDataProvider(data: testConfig, etag: "etag"),
                                                          localProtection: MockDomainsProtectionStore(),
-                                                         internalUserDecider: DefaultInternalUserDecider())
+                                                         internalUserDecider: MockInternalUserDecider())
 
     let testSuiteName = "PrivacyProDataReporterTests"
     var testDefaults: UserDefaults!

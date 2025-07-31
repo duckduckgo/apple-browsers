@@ -1,0 +1,15 @@
+/* The tile of the CTA to set the browser as default. */
+"setDefaultBrowser.cta.primary.title" = "Сделать браузером по умолчанию";
+
+/* The title of the CTA to permanently dismiss the modal sheet. */
+"setDefaultBrowser.cta.secondary.title" = "Больше не спрашивать";
+
+/* (No Comment) */
+"setDefaultBrowser.modal.cta.cancel" = "Закрыть";
+
+/* Set Default Browser Modal Sheet Message. */
+"setDefaultBrowser.modal.message" = "Сделайте его браузером по умолчанию, чтобы все ссылки на сайты открывались в DuckDuckGo.";
+
+/* Set Default Browser Modal Sheet Title. */
+"setDefaultBrowser.modal.title" = "Оставайтесь под защитой DuckDuckGo большую часть времени, проводимого в Интернете";
+

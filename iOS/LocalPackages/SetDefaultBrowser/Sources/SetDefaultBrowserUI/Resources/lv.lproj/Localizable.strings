@@ -1,0 +1,15 @@
+/* The tile of the CTA to set the browser as default. */
+"setDefaultBrowser.cta.primary.title" = "Iestatīt kā noklusējuma pārlūku";
+
+/* The title of the CTA to permanently dismiss the modal sheet. */
+"setDefaultBrowser.cta.secondary.title" = "Vairs nejautāt";
+
+/* (No Comment) */
+"setDefaultBrowser.modal.cta.cancel" = "Aizvērt";
+
+/* Set Default Browser Modal Sheet Message. */
+"setDefaultBrowser.modal.message" = "Iestati mūs kā savu noklusējuma pārlūku, lai visas vietņu saites atvērtos DuckDuckGo.";
+
+/* Set Default Browser Modal Sheet Title. */
+"setDefaultBrowser.modal.title" = "Ļauj DuckDuckGo vairāk aizsargāt to, ko dari tiešsaistē";
+

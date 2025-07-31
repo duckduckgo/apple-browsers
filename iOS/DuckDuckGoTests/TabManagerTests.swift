@@ -21,6 +21,10 @@ import XCTest
 import Core
 @testable import DuckDuckGo
 import SubscriptionTestingUtilities
+import BrowserServicesKit
+import PersistenceTestingUtils
+
+// swiftlint:disable force_try
 
 @MainActor
 final class TabManagerTests: XCTestCase {
@@ -91,14 +95,16 @@ final class TabManagerTests: XCTestCase {
                           onboardingPixelReporter: OnboardingPixelReporterMock(),
                           featureFlagger: MockFeatureFlagger(),
                           contentScopeExperimentManager: MockContentScopeExperimentManager(),
-                          subscriptionCookieManager: SubscriptionCookieManagerMock(),
                           appSettings: AppSettingsMock(),
                           textZoomCoordinator: MockTextZoomCoordinator(),
                           websiteDataManager: MockWebsiteDataManager(),
                           fireproofing: MockFireproofing(),
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-                          featureDiscovery: MockFeatureDiscovery())
+                          featureDiscovery: MockFeatureDiscovery(),
+                          keyValueStore: try! MockKeyValueFileStore())
     }
 
 }
+
+// swiftlint:enable force_try

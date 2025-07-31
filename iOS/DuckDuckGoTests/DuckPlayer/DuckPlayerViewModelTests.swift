@@ -119,7 +119,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testGetVideoURL_IncludesCorrectParametersAndTimestamp() {
+    func testGetVideoURL_IncludesCorrectParametersAndTimestamp_WhenTimestampIsAboveThreshold() {
         // Given
         let expectedBaseURL = DuckPlayerViewModel.Constants.baseURL
         let expectedVideoID = "testVideoID"
@@ -146,6 +146,65 @@ final class DuckPlayerViewModelTests: XCTestCase {
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.startParameter], String(Int(expectedTimestamp)), "start parameter should match the timestamp")
     }
 
+    @MainActor
+    func testGetVideoURL_ExcludesStartParameter_WhenTimestampIsBelowThreshold() {
+        // Given
+        let expectedVideoID = "testVideoID"
+        let expectedTimestamp: TimeInterval = 4.9
+        viewModel.timestamp = expectedTimestamp
+        mockSettings.autoplay = false
+
+        // When
+        let url = viewModel.getVideoURL()
+
+        // Then
+        XCTAssertNotNil(url, "Generated URL should not be nil")
+        
+        let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems?.reduce(into: [String: String]()) { $0[$1.name] = $1.value } ?? [:]
+
+        XCTAssertNil(queryItems[DuckPlayerViewModel.Constants.startParameter], "start parameter should not be included for timestamps below 5 seconds")
+        XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.relParameter], DuckPlayerViewModel.Constants.disabled, "rel parameter should be disabled")
+        XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.playsInlineParameter], DuckPlayerViewModel.Constants.enabled, "playsinline parameter should be enabled")
+    }
+
+    @MainActor
+    func testGetVideoURL_IncludesStartParameter_WhenTimestampIsExactlyFive() {
+        // Given
+        let expectedVideoID = "testVideoID"
+        let expectedTimestamp: TimeInterval = 5.0
+        viewModel.timestamp = expectedTimestamp
+
+        // When
+        let url = viewModel.getVideoURL()
+
+        // Then
+        XCTAssertNotNil(url, "Generated URL should not be nil")
+        
+        let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems?.reduce(into: [String: String]()) { $0[$1.name] = $1.value } ?? [:]
+
+        XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.startParameter], "5", "start parameter should be included for timestamp exactly at 5 seconds")
+    }
+
+    @MainActor
+    func testGetVideoURL_ExcludesStartParameter_WhenTimestampIsZero() {
+        // Given
+        let expectedVideoID = "testVideoID"
+        viewModel.timestamp = 0
+
+        // When
+        let url = viewModel.getVideoURL()
+
+        // Then
+        XCTAssertNotNil(url, "Generated URL should not be nil")
+        
+        let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems?.reduce(into: [String: String]()) { $0[$1.name] = $1.value } ?? [:]
+
+        XCTAssertNil(queryItems[DuckPlayerViewModel.Constants.startParameter], "start parameter should not be included for timestamp of 0")
+    }
+
 
     // MARK: - Publisher Tests
 
@@ -155,11 +214,11 @@ final class DuckPlayerViewModelTests: XCTestCase {
         let expectedVideoID = "navigatedVideoID"
         let testURL = URL(string: "https://www.youtube.com/watch?v=\(expectedVideoID)")!
         let expectation = XCTestExpectation(description: "YouTube navigation request publisher emitted")
-        var receivedVideoID: String?
+        var receivedURL: URL?
 
         viewModel.youtubeNavigationRequestPublisher
-            .sink { videoID in
-                receivedVideoID = videoID
+            .sink { url in
+                receivedURL = url
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -169,18 +228,18 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedVideoID, expectedVideoID, "Publisher should emit the correct video ID from the URL")
+        XCTAssertEqual(receivedURL, testURL, "Publisher should emit the URL that was passed in")
     }
 
     @MainActor
     func testYoutubeNavigationRequestPublisher_OnOpenInYouTube() {
         // Given
         let expectation = XCTestExpectation(description: "YouTube navigation request publisher emitted")
-        var receivedVideoID: String?
+        var receivedURL: URL?
 
         viewModel.youtubeNavigationRequestPublisher
-            .sink { videoID in
-                receivedVideoID = videoID
+            .sink { url in
+                receivedURL = url
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -190,7 +249,86 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedVideoID, viewModel.videoID, "Publisher should emit the viewModel's video ID")
+        let expectedURL = URL.youtube(viewModel.videoID)
+        XCTAssertEqual(receivedURL, expectedURL, "Publisher should emit the YouTube URL for the viewModel's video ID")
+    }
+
+    @MainActor
+    func testYoutubeNavigationRequestPublisher_OnHandleNonYouTubeNavigation() {
+        // Given
+        let testURL = URL(string: "https://duckduckgo.com/privacy")!
+        let expectation = XCTestExpectation(description: "Navigation request publisher emitted for non-YouTube URL")
+        var receivedURL: URL?
+
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { url in
+                receivedURL = url
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.handleYouTubeNavigation(testURL)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedURL, testURL, "Publisher should emit any URL that was passed in, not just YouTube URLs")
+    }
+
+    @MainActor
+    func testHandleYouTubeNavigation_SameVideo_NoPublisherEvents() {
+        // Given
+        let sameVideoURL = URL(string: "https://www.youtube.com/watch?v=\(viewModel.videoID)")!
+        var dismissPublisherFired = false
+        var navigationPublisherFired = false
+
+        // Subscribe to both publishers to ensure neither fires
+        viewModel.dismissPublisher
+            .sink { _ in
+                dismissPublisherFired = true
+            }
+            .store(in: &cancellables)
+            
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { _ in
+                navigationPublisherFired = true
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.handleYouTubeNavigation(sameVideoURL)
+
+        // Then - Wait a brief moment to ensure no publishers fire
+        let expectation = XCTestExpectation(description: "Brief wait")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 0.2)
+        
+        XCTAssertFalse(dismissPublisherFired, "Dismiss publisher should not fire for same video")
+        XCTAssertFalse(navigationPublisherFired, "Navigation publisher should not fire for same video")
+    }
+
+    @MainActor
+    func testHandleYouTubeNavigation_DifferentVideo_SendsNavigationRequest() {
+        // Given
+        let differentVideoURL = URL(string: "https://www.youtube.com/watch?v=differentVideoID")!
+        let expectation = XCTestExpectation(description: "Navigation request publisher emitted for different video")
+        var receivedURL: URL?
+
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { url in
+                receivedURL = url
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.handleYouTubeNavigation(differentVideoURL)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedURL, differentVideoURL, "Should send navigation request for different video")
     }
 
     @MainActor

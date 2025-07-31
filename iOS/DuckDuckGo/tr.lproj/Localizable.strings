@@ -59,10 +59,7 @@
 "action.title.downloads" = "İndirilenler";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Yapay Zeka Sohbeti";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Yeni Yapay Zeka Sohbeti";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Yer İşaretini Düzenle";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Favori sitelerinize tek dokunuşla erişin.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI Özellikleri";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Mevcut yer imleri çoğaltılmayacaktır.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "DuckDuckGo'nun kilidini açın.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Tüm yer işaretlerinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Bu sohbeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Herhangi bir şey sorun...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Oturum Aç";
@@ -1078,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "ÖZEL HÜCRE İÇERIĞI";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Özel URL: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
 
@@ -1113,9 +1110,6 @@
 
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "**Dışa Aktar**'ı seçin ve sonraki ekranda **Şifreler** ve **İndirilenler'e Kaydet**'i seçin.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Şifre Dosyasını İçe Aktar...";
 
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Chrome'da **Google Şifre Yöneticisi**'ne ve ardından **Ayarlar**'a gidin.";
@@ -1210,9 +1204,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Hata Ayıklama";
 
-/* No comment provided by engineer. */
-"Delete All" = "Tümünü Sil";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "cihaz";
 
@@ -1297,8 +1288,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player'ın işlevselliği YouTube'da yapılan son değişikliklerden etkilendi. Bu sorunları çözmeye çalışıyoruz. Anlayışınız için teşekkür ederiz.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai, popüler 3. taraf Al sohbet modelleriyle anonim olarak sohbet etmenizi sağlayan isteğe bağlı bir özelliktir. Sohbetleriniz yapay zekayı eğitmek için kullanılmaz.\n[Daha Fazla Bilgi](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo AI özellikleri gizli ve isteğe bağlıdır. Verileriniz yapay zekayı eğitmek için kullanılmaz.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adres Çubuğu";
@@ -1312,7 +1303,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Sesli Arama";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Daha Fazla Bilgi";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1672,6 +1666,9 @@
 /* Title of the feedback form */
 "feedback.form.title" = "Privacy Pro'nun İyileştirilmesine Yardımcı Olun";
 
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
+
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
 
@@ -1863,6 +1860,18 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Şifreleri İçe Aktar";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Bir Daha Sorma";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Şifrelerinizi başka bir tarayıcıdan hızlı ve güvenli bir şekilde aktarın.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Şifrelerinizi DuckDuckGo'ya aktarın";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "VPN'i DuckDuckGo Uygulamasından etkinleştirmeniz gerekir.";
@@ -2258,7 +2267,7 @@
 "new.tab.page.settings.title" = "Yeni Sekme Sayfasını Özelleştir";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Yapay Zeka Sohbeti";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Yer İmleri";
@@ -2356,15 +2365,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Ah, unutmadan...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo'nun ayrıca yerleşik bir %1$@! özelliği var.\n\nBunu %2$@ ile etkinleştirebilirsiniz.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "ücretli Privacy Pro aboneliği";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Gezinmeye Başla";
 
@@ -2409,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Bu bağlantıyı açmak için gereken uygulama bulunamıyor";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Abonelere özel Duck.ai modellerine erişilemiyor.";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Aboneliğimle diğer tarayıcılarda Duck.ai'a erişemiyorum.";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "BİR KATEGORİ SEÇİN";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Diğer Duck.ai geri bildirimleri";
 
 /* Activate button */
 "pm.activate" = "Yeniden etkinleştir";
@@ -2626,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "BİR KATEGORİ SEÇİN";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Özel Yapay Zeka Sohbet URL'si Ayarla";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "DuckDuckGo Hakkında";
 
@@ -2657,7 +2672,16 @@
 "settings.address.full.url" = "Tam Site Adresini Göster";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Kısayollar";
+"settings.aichat.shortcuts" = "Duck.ai Kısayolları";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Arama Girdisi";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Web'de arama yapın veya doğrudan Adres Çubuğundan Duck.ai'a sorun";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Search Assist Ayarları";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
@@ -2735,13 +2759,19 @@
 "settings.emailProtection.description" = "E-posta izleyicileri engelleyin ve adresinizi gizleyin";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Duck.ai'ı etkinleştir";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Popüler 3. taraf AI modelleriyle gizli sohbet et";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Email Protection'ı Etkinleştir";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Sesli Arama'yı Etkinleştir";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Yapay zeka destekli yanıtların aramalarınızda ne sıklıkta görünmesini istediğinizi seçin";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Geri Bildirim Paylaş";
@@ -2839,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Bu işlem normalden daha uzun sürüyor. Lütfen daha sonra tekrar kontrol edin.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Bilgilerinizi, bunları satan sitelerden kaldırın";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Aboneler VPN ve Identity Theft Restoration hizmetlerimizden yararlanır.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Aboneler VPN, Personal Information Removal ve Identity Theft Restoration hizmetlerimizden yararlanır.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Aboneler VPN, Duck.ai'daki gelişmiş yapay zeka modelleri ve Identity Theft Restoration hizmetlerimizden yararlanır.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Aboneler VPN ve Duck.ai'dski gelişmiş yapay zeka modellerinden yararlanır. Personal Information Removal ve Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Aboneliğim Var";
@@ -2853,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Privacy Pro aboneliğiniz sona erdi";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "DuckDuckGo Aboneliği";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Kimliğiniz çalınırsa kurtarmanıza yardımcı olacağız";
@@ -2866,17 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonelik Ayarları";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "VPN ve Identity Theft Restoration hizmetlerimizi içerir.";
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "DuckDuckGo Aboneliği";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "DuckDuckGo'ya abone olun";
 
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Privacy Pro ile bağlantınızı ve kimliğinizi koruyun";
+"settings.subscription.subscribe.title" = "Wi-Fi bağlantınızı güvence altına alın ve gelişmiş yapay zeka modelleriyle gizlice sohbet edin";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Wi-Fi bağlantınızı güvence altına alın ve kimliğinizi koruyun";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "DuckDuckGo Aboneliğini Ücretsiz Deneyin";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Privacy Pro'yu Ücretsiz Deneyin";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "VPN, Personal Information Removal ve Identity Theft Restoration'ı içerir.";
+"settings.subscription.try.free.no.ai.chat" = "Privacy Pro'yu Ücretsiz Deneyin";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +3000,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hangi web sitesi hatalı?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Oluşturmayı durdur...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
@@ -3030,6 +3084,15 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Emin misiniz?";
+
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Abonelere özel yapay zeka modelleriyle gizlice sohbet edin.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Duck.ai'ı aç";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Bu e-postayla ilişkili abonelik artık aktif değil.";
@@ -3144,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Artık hazırsınız.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "DuckDuckGo Aboneliği";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Abone olundu";

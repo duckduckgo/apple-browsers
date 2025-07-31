@@ -51,7 +51,7 @@ protocol BookmarkManager: AnyObject {
     func canMoveObjectWithUUID(objectUUID uuid: String, to parent: BookmarkFolder) -> Bool
     func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void)
     func moveFavorites(with objectUUIDs: [String], toIndex: Int?, completion: @escaping (Error?) -> Void)
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool, maxFavoritesCount: Int?) -> BookmarksImportSummary
     func handleFavoritesAfterDisablingSync()
 
     /// Searches for bookmarks and folders by title. If query is blank empty list is returned
@@ -453,8 +453,8 @@ final class LocalBookmarkManager: BookmarkManager {
 
     // MARK: - Import
 
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary {
-        let results = bookmarkStore.importBookmarks(bookmarks, source: source)
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool, maxFavoritesCount: Int?) -> BookmarksImportSummary {
+        let results = bookmarkStore.importBookmarks(bookmarks, source: source, markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: maxFavoritesCount)
         loadBookmarks()
         requestSync()
 

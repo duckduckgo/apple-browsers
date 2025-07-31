@@ -18,5 +18,7 @@
 
 public protocol AutofillLoginImportStateStoring {
     var hasImportedLogins: Bool { get set }
-    var isCredentialsImportPromptPermanantlyDismissed: Bool { get set }
+    var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool { get set }
+    var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool { get set }
+    var credentialsImportPromptPresentationCount: Int { get set }
 }

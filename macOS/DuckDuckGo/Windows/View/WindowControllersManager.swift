@@ -56,6 +56,8 @@ protocol WindowControllersManagerProtocol {
                        isMiniaturized: Bool,
                        isMaximized: Bool,
                        isFullscreen: Bool) -> MainWindow?
+
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
     func showTab(with content: Tab.TabContent)
 
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)
@@ -100,7 +102,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
      */
     @Published private(set) var isInInitialState: Bool = true
     @Published private(set) var mainWindowControllers = [MainWindowController]()
-    private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding
+    var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
@@ -234,7 +236,7 @@ extension WindowControllersManager {
         guard let url = bookmark.urlObject else { return }
 
         // Call updated openBookmark
-        open(url, source: .bookmark, target: nil, event: event)
+        open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: nil, event: event)
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
@@ -358,7 +360,7 @@ extension WindowControllersManager {
             windowController.window?.makeKeyAndOrderFront(self)
             tabCollectionViewModel.select(at: index)
             if let tab = tabCollectionViewModel.tabViewModel(at: index)?.tab,
-               tab.content.urlForWebView != url {
+               tab.content.urlForWebView != url && url != URL.empty {
                 // navigate to another settings pane
                 tab.setContent(.contentFromURL(url, source: .switchToOpenTab))
             }
@@ -566,7 +568,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportView(title: UserText.importDataTitleOnboarding).show()
+        DataImportView(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false).show()
     }
 
     @MainActor

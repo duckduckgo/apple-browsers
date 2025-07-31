@@ -61,7 +61,6 @@ extension Pixel {
         
         case privacyDashboardReportBrokenSite
         
-        case tabSwitcherNewLayoutSeen
         case tabSwitcherListEnabled
         case tabSwitcherGridEnabled
         case tabSwitcherNewTab
@@ -480,6 +479,12 @@ extension Pixel {
         case secureVaultV4Migration
         case secureVaultV4MigrationSkipped
 
+        case importCredentialsFlowStarted
+        case importCredentialsFlowCancelled
+        case importCredentialsFlowHadCredentials
+        case importCredentialsFlowEnded
+        case importCredentialsPromptNeverAgainClicked
+
         // MARK: Data Import pixels
 
         case autofillImportPasswordsImportButtonTapped
@@ -501,6 +506,7 @@ extension Pixel {
         case importResultDisplayed
         case importResultPasswordsSuccess
         case importResultBookmarksSuccess
+        case importResultCreditCardsSuccess
         case importResultSyncButtonShown
         case importResultSyncButtonTapped
         case importResultPasswordsParsing
@@ -604,7 +610,9 @@ extension Pixel {
         case networkProtectionDisconnected
         
         case networkProtectionNoAccessTokenFoundError
-        
+        case networkProtectionVPNAccessRevoked
+        case networkProtectionUnmanagedSubscriptionError
+
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
         
@@ -689,8 +697,8 @@ extension Pixel {
         case remoteMessageSheet
         
         // MARK: debug pixels
-        case dbCrashDetected
-        case dbCrashDetectedDaily
+        case dbCrashDetected(appIdentifier: String?)
+        case dbCrashDetectedDaily(appIdentifier: String?)
         case crashOnCrashHandlersSetUp
 
         case crashReportCRCIDMissing
@@ -784,10 +792,7 @@ extension Pixel {
 
         case debugBreakageExperiment
 
-        case debugWebViewNotInVisibleTabHierarchy
         case debugWebViewInVisibleTabHidden
-        case debugWebViewNotAttachedToWindow
-        case debugWebViewHasZeroFrameSize
 
         // Return user measurement
         case debugReturnUserAddATB
@@ -924,6 +929,8 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        // MARK: - Default Browser
+
         // Set As Default Browser Debug Pixels
         // Privacy Triage: https://app.asana.com/0/1206329551987282/1209505775591500
 
@@ -939,6 +946,39 @@ extension Pixel {
 
         /// Fired when a generic error is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
         case debugSetAsDefaultBrowserUnknownFailure
+
+        // Default Browser Prompt Pixels
+        // Privacy Triage: https://app.asana.com/1/137249556945/project/69071770703008/task/1210702713778212
+
+        /// Fired when it is not possible to retrieve from the persistence store the number of active days for a user.
+        case debugDefaultBrowserPromptFailedToRetrieveCurrentActivity
+        /// Fired when it is not possible to save in the persistence store the number of active days of users.
+        case debugDefaultBrowserPromptFailedToSaveCurrentActivity
+        /// Fired when it is not possible to retrieve from the persistence store the date when last modal was shown.
+        case debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate
+        /// Fired when it is not possible to save  in the persistence store the date when last modal was shown.
+        case debugDefaultBrowserPromptFailedToSaveLastModalShownDate
+        /// Fired when it is not possible to retrieve from the persistence store the number of modal shown.
+        case debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences
+        /// Fired when it is not possible to save in the persistence store the number of modal shown.
+        case debugDefaultBrowserPromptFailedToSaveModalShownOccurrences
+        /// Fired when it is not possible to retrieve from the persistence store the flag indicating whether the modal was permanently dismissed.
+        case debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt
+        /// Fired when it is not possible to save in the persistence store the flag indicating whether the modal was permanently dismissed.
+        case debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt
+        /// Fired when it is not possible to retrieve from the persistence store the type of user.
+        case debugDefaultBrowserPromptFailedToRetrieveUserType
+        /// Fired when it is not possible to save from the persistence store the type of user.
+        case debugDefaultBrowserPromptFailedToSaveUserType
+
+        /// Fired when the SAD modal sheet appears on screen.
+        case defaultBrowserPromptModalShown
+        /// Fired when the “Close” button of the SAD modal sheet is tapped.
+        case defaultBrowserPromptModalClosedButtonTapped
+        /// Fired when the “Set As Default Browser" button of the SAD modal sheet is tapped.
+        case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
+        /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
+        case defaultBrowserPromptModalDoNotAskAgainButtonTapped
 
         // MARK: History
         case historyStoreLoadFailed
@@ -983,11 +1023,6 @@ extension Pixel {
         case privacyProSubscriptionManagementRemoval
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
-        case privacyProSubscriptionCookieMissingTokenOnSignIn
-        case privacyProSubscriptionCookieMissingCookieOnSignOut
-        case privacyProSubscriptionCookieRefreshedWithAccessToken
-        case privacyProSubscriptionCookieRefreshedWithEmptyValue
-        case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
         // AUth V2
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
@@ -1069,6 +1104,9 @@ extension Pixel {
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
+        case settingsOpenAssistSettings
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
         case settingsPresentedFromMenu
@@ -1155,6 +1193,14 @@ extension Pixel {
         case duckPlayerYouTubeAgeRestrictedErrorDaily
         case duckPlayerYouTubeNoEmbedErrorDaily
         case duckPlayerYouTubeUnknownErrorDaily
+        case duckPlayerNativeYouTubeSignInErrorImpression
+        case duckPlayerNativeYouTubeAgeRestrictedErrorImpression
+        case duckPlayerNativeYouTubeNoEmbedErrorImpression
+        case duckPlayerNativeYouTubeUnknownErrorImpression
+        case duckPlayerNativeYouTubeSignInErrorDaily
+        case duckPlayerNativeYouTubeAgeRestrictedErrorDaily
+        case duckPlayerNativeYouTubeNoEmbedErrorDaily
+        case duckPlayerNativeYouTubeUnknownErrorDaily
 
         // MARK: enhanced statistics
         case usageSegments
@@ -1200,6 +1246,8 @@ extension Pixel {
         case aiChatSettingsVoiceTurnedOn
         case aiChatSettingsAddressBarTurnedOff
         case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsSearchInputTurnedOff
+        case aiChatSettingsSearchInputTurnedOn
         case aiChatSettingsBrowserMenuTurnedOff
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
@@ -1214,6 +1262,7 @@ extension Pixel {
         case aiChatMetricOpenHistory
         case aiChatMetricOpenMostRecentHistoryChat
         case aiChatMetricSentPromptOngoingChat
+        case aiChatInternalSwitchBarDisplayed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1268,6 +1317,9 @@ extension Pixel {
         case duckPlayerNativePrimingModalCTA
         /// Settings gear icon is tapped from Duck Player UI
         case duckPlayerNativeDuckPlayerSettingsOpened
+
+        // MARK: - System Settings Picture-in-Picture Video Tutorial
+        case systemSettingsPiPTutorialFailedToLoadVideo
     }
 
 }
@@ -1311,7 +1363,6 @@ extension Pixel.Event {
         case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
         case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
 
-        case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
         case .tabSwitcherNewTab: return "m_tab_manager_new_tab_click"
@@ -1348,6 +1399,7 @@ extension Pixel.Event {
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
+        case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1685,6 +1737,12 @@ extension Pixel.Event {
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
         case .secureVaultV4MigrationSkipped: return "m_secure-vault_v4-migration-skipped"
 
+        case .importCredentialsFlowStarted: return "autofill_import_credentials_flow_started"
+        case .importCredentialsFlowCancelled: return "autofill_import_credentials_flow_cancelled"
+        case .importCredentialsFlowHadCredentials: return "autofill_import_credentials_flow_had_credentials"
+        case .importCredentialsFlowEnded: return "autofill_import_credentials_flow_ended"
+        case .importCredentialsPromptNeverAgainClicked: return "autofill_import_credentials_prompt_never_again_clicked"
+
         // MARK: Data Import pixels
 
         case .autofillImportPasswordsImportButtonTapped: return "autofill_import_passwords_import_button_tapped"
@@ -1706,6 +1764,7 @@ extension Pixel.Event {
         case .importResultDisplayed: return "import_result_displayed"
         case .importResultPasswordsSuccess: return "import_result_passwords_success"
         case .importResultBookmarksSuccess: return "import_result_bookmarks_success"
+        case .importResultCreditCardsSuccess: return "import_result_creditcards_success"
         case .importResultSyncButtonShown: return "import_result_sync_button_shown"
         case .importResultSyncButtonTapped: return "import_result_sync_button_tapped"
         case .importResultPasswordsParsing: return "import_result_passwords_parsing"
@@ -1788,6 +1847,8 @@ extension Pixel.Event {
         case .networkProtectionActivationRequestFailed: return "m_netp_network_extension_error_activation_request_failed"
         case .networkProtectionDisconnected: return "m_netp_vpn_disconnect"
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
+        case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
+        case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"
@@ -1845,8 +1906,18 @@ extension Pixel.Event {
 
             // MARK: debug pixels
 
-        case .dbCrashDetected: return "m_d_crash"
-        case .dbCrashDetectedDaily: return "m_d_crash_daily"
+        case .dbCrashDetected(let appIdentifier):
+            if let appIdentifier {
+                return "m_d_crash_\(appIdentifier)"
+            } else {
+                return "m_d_crash"
+            }
+        case .dbCrashDetectedDaily(let appIdentifier):
+            if let appIdentifier {
+                return "m_d_crash_\(appIdentifier)_daily"
+            } else {
+                return "m_d_crash_daily"
+            }
         case .crashReportCRCIDMissing: return "m_crashreporting_crcid-missing"
         case .crashReportingSubmissionFailed: return "m_crashreporting_submission-failed"
         case .crashOnCrashHandlersSetUp: return "m_d_crash_on_handlers_setup"
@@ -1943,15 +2014,34 @@ extension Pixel.Event {
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
+            // MARK: Default Browser Pixels
+
         case .debugSetAsDefaultBrowserSuccessfulResult: return "m_debug_set-default-browser_successful-result"
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
         case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
 
+        case .debugDefaultBrowserPromptFailedToRetrieveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-retrieve-current-activity"
+        case .debugDefaultBrowserPromptFailedToSaveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-save-current-activity"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-retrieve-last-modal-shown-date"
+        case .debugDefaultBrowserPromptFailedToSaveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-save-last-modal-shown-date"
+        case .debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences: return "m_debug_set-as-default-prompt_failed-to-retrieve-modal-shown-occurrences"
+        case .debugDefaultBrowserPromptFailedToSaveModalShownOccurrences: return "m_debug_set-as-default-prompt_failed-to-save-modal-shown-occurrences"
+        case .debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt: return "m_debug_set-as-default-prompt_failed-to-retrieve-permanently-dismissed-prompt"
+        case .debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt: return "m_debug_set-as-default-prompt_failed-to-save-permanently-dismissed-prompt"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveUserType: return "m_debug_set-as-default-prompt_failed-to-retrieve-user-type"
+        case .debugDefaultBrowserPromptFailedToSaveUserType: return "m_debug_set-as-default-prompt_failed-to-save-user-type"
+
+        case .defaultBrowserPromptModalShown: return "m_set-as-default-prompt_modal-shown"
+        case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
+        case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
+        case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
+
+            // MARK: Debug Web View
+
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
-        case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"
-        case .debugWebViewNotAttachedToWindow: return "m_debug_webview_not_attached_to_window"
-        case .debugWebViewHasZeroFrameSize: return "m_debug_webview_has_zero_frame_size"
 
             // MARK: Ad Attribution
 
@@ -2149,11 +2239,6 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-        case .privacyProSubscriptionCookieMissingTokenOnSignIn: return "m_privacy-pro_subscription-cookie-missing_token_on_sign_in"
-        case .privacyProSubscriptionCookieMissingCookieOnSignOut: return "m_privacy-pro_subscription-cookie-missing_cookie_on_sign_out"
-        case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
-        case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
-        case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
         // AUth V2
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
@@ -2314,6 +2399,14 @@ extension Pixel.Event {
         case .duckPlayerYouTubeAgeRestrictedErrorDaily: return "duckplayer_youtube-age-restricted-error_daily-unique"
         case .duckPlayerYouTubeNoEmbedErrorDaily: return "duckplayer_youtube-no-embed-error_daily-unique"
         case .duckPlayerYouTubeUnknownErrorDaily: return "duckplayer_youtube-unknown-error_daily-unique"
+        case .duckPlayerNativeYouTubeSignInErrorImpression: return "duckplayer_native_youtube-signin-error_impression"
+        case .duckPlayerNativeYouTubeAgeRestrictedErrorImpression: return "duckplayer_native_youtube-age-restricted-error_impression"
+        case .duckPlayerNativeYouTubeNoEmbedErrorImpression: return "duckplayer_native_youtube-no-embed-error_impression"
+        case .duckPlayerNativeYouTubeUnknownErrorImpression: return "duckplayer_native_youtube-unknown-error_impression"
+        case .duckPlayerNativeYouTubeSignInErrorDaily: return "duckplayer_native_youtube-signin-error_daily-unique"
+        case .duckPlayerNativeYouTubeAgeRestrictedErrorDaily: return "duckplayer_native_youtube-age-restricted-error_daily-unique"
+        case .duckPlayerNativeYouTubeNoEmbedErrorDaily: return "duckplayer_native_youtube-no-embed-error_daily-unique"
+        case .duckPlayerNativeYouTubeUnknownErrorDaily: return "duckplayer_native_youtube-unknown-error_daily-unique"
 
         // MARK: Enhanced statistics
         case .usageSegments: return "m_retention_segments"
@@ -2372,6 +2465,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+        case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
+        case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"
@@ -2379,6 +2474,7 @@ extension Pixel.Event {
         case .aiChatMetricOpenHistory: return "m_aichat_open_history"
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
+        case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2482,6 +2578,9 @@ extension Pixel.Event {
         /// Settings gear icon is tapped from Duck Player UI
         case .duckPlayerNativeDuckPlayerSettingsOpened:
             return "duckplayer_native_duckplayer_settings_opened"
+
+        // MARK: System Settings PiP Video Tutorial
+        case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
         }
     }
 }

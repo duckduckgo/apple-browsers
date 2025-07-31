@@ -67,11 +67,11 @@ class AccountManagingMock: AccountManaging {
 
     var loginStub: LoginResult?
     var loginError: Error?
-    var loginSpy: (recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String)?
-    @Published var loginCalled: Bool = false
+    var loginSpy: (SyncCode.RecoveryKey, String, String) -> Void = { _, _, _ in }
+    var loginCalled: Bool = false
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult {
         loginCalled = true
-        loginSpy = (recoveryKey, deviceName, deviceType)
+        loginSpy(recoveryKey, deviceName, deviceType)
         if let error = loginError {
             throw error
         }
@@ -149,10 +149,6 @@ class MockErrorHandler: EventMapping<SyncError> {
     }
 }
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
-
 extension DefaultInternalUserDecider {
     convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
         self.init(store: mockedStore)
@@ -164,7 +160,7 @@ class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
     var updatesSubject = PassthroughSubject<Void, Never>()
     let updatesPublisher: AnyPublisher<Void, Never>
     var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    let internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
+    let internalUserDecider: InternalUserDecider = MockInternalUserDecider()
     func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         .downloaded
     }

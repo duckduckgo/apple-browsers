@@ -60,11 +60,9 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .webUILoadingStarted,
                     .webUILoadingSuccess,
                     .invalidPayload:
+
                 PixelKit.fire(event)
-            case .mainAppSetUpSecureVaultInitSucceeded,
-                    .backgroundAgentSetUpSecureVaultInitSucceeded,
-                    .backgroundAgentStopped:
-                PixelKit.fire(event, frequency: .dailyAndCount)
+
             case .homeViewShowNoPermissionError,
                     .homeViewShowWebUI,
                     .homeViewShowBadPathError,

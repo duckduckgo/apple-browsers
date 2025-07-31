@@ -81,7 +81,7 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <button translatesAutoresizingMaskIntoConstraints="NO" id="l2o-no-SFP" userLabel="Burn Button">
-                                <rect key="frame" x="681" y="443" width="28" height="28"/>
+                                <rect key="frame" x="681" y="446" width="28" height="28"/>
                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Burn" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="gej-cp-HsL">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
@@ -102,7 +102,7 @@
                             <constraint firstAttribute="trailing" secondItem="cmz-06-1Ay" secondAttribute="trailing" id="0K9-Ki-pRH"/>
                             <constraint firstAttribute="bottom" secondItem="cmz-06-1Ay" secondAttribute="bottom" id="B02-aa-Nm3"/>
                             <constraint firstItem="cmz-06-1Ay" firstAttribute="leading" secondItem="tOy-S4-hL0" secondAttribute="leading" id="IPL-C4-zho"/>
-                            <constraint firstItem="l2o-no-SFP" firstAttribute="top" secondItem="tOy-S4-hL0" secondAttribute="top" constant="8" id="VhL-VV-TZc"/>
+                            <constraint firstItem="l2o-no-SFP" firstAttribute="top" secondItem="tOy-S4-hL0" secondAttribute="top" constant="5" id="VhL-VV-TZc"/>
                             <constraint firstItem="uFV-kr-0rY" firstAttribute="centerY" secondItem="tOy-S4-hL0" secondAttribute="centerY" id="aFg-Dk-hZE"/>
                             <constraint firstItem="uFV-kr-0rY" firstAttribute="centerX" secondItem="tOy-S4-hL0" secondAttribute="centerX" id="hHN-Ge-Wm8"/>
                             <constraint firstAttribute="trailing" secondItem="l2o-no-SFP" secondAttribute="trailing" constant="12" id="ouM-95-c85"/>
@@ -112,6 +112,8 @@
                     <connections>
                         <outlet property="deletingDataLabel" destination="1tt-F5-h1d" id="ehh-fM-TjA"/>
                         <outlet property="fakeFireButton" destination="l2o-no-SFP" id="xqv-ch-iAF"/>
+                        <outlet property="fakeFireButtonHeightConstraint" destination="kob-t8-nJR" id="Fam-l5-xne"/>
+                        <outlet property="fakeFireButtonWidthConstraint" destination="xnz-xJ-NB2" id="VsF-eq-BDR"/>
                         <outlet property="progressIndicator" destination="Nf3-CP-318" id="nq9-vZ-Fzk"/>
                         <outlet property="progressIndicatorWrapper" destination="uFV-kr-0rY" id="RTJ-f8-iuU"/>
                         <outlet property="progressIndicatorWrapperBG" destination="Yly-fF-tnL" id="zNP-2N-cC6"/>
@@ -571,6 +573,7 @@ Gw
                         <outlet property="contentHeightConstraint" destination="hbg-4i-hjT" id="mC2-Ot-onY"/>
                         <outlet property="detailsWrapperView" destination="6vZ-d2-qnR" id="TKb-Ux-TIk"/>
                         <outlet property="detailsWrapperViewHeightContraint" destination="sJt-dl-rlH" id="7pa-Kc-9xB"/>
+                        <outlet property="fireGraphic" destination="acV-lE-jVh" id="ohy-AE-nhl"/>
                         <outlet property="fireWindowDescriptionLabel" destination="Oiy-AY-h7p" id="hTv-fB-980"/>
                         <outlet property="headerWrapperView" destination="3Jn-h4-fXL" id="P5R-o0-Fdg"/>
                         <outlet property="infoLabel" destination="YMk-Hq-WfZ" id="JHL-r4-1VT"/>
@@ -704,6 +707,7 @@ DQ
                     </view>
                     <connections>
                         <outlet property="descriptionLabel" destination="AsC-eN-HNp" id="Vt8-1Y-TYi"/>
+                        <outlet property="fireGraphic" destination="wWB-fA-JGV" id="HNM-1d-ZwS"/>
                         <outlet property="gotItButton" destination="vOP-zm-6FL" id="G4K-3X-MyR"/>
                         <outlet property="titleLabel" destination="cPr-2R-bkx" id="eu8-df-l3z"/>
                     </connections>

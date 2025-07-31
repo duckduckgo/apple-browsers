@@ -40,6 +40,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private var activeContinuation: CheckedContinuation<Void, Error>?
 
     private let isFakeBroker: Bool
+    private let executionConfig: BrokerJobExecutionConfig
     private var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
@@ -53,14 +54,15 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
     private var timer: Timer?
 
-    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, isFakeBroker: Bool = false) {
+    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, isFakeBroker: Bool = false, executionConfig: BrokerJobExecutionConfig, shouldContinueActionHandler: @escaping () -> Bool) {
+        self.isFakeBroker = isFakeBroker
+        self.executionConfig = executionConfig
         let configuration = WKWebViewConfiguration()
-        configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig, prefs: prefs, delegate: delegate)
+        configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig, prefs: prefs, delegate: delegate, executionConfig: executionConfig, shouldContinueActionHandler: shouldContinueActionHandler)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
 
         self.webViewConfiguration = configuration
-        self.isFakeBroker = isFakeBroker
 
         let userContentController = configuration.userContentController as? DataBrokerUserContentController
         assert(userContentController != nil)
@@ -85,13 +87,16 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             window?.contentView = self.webView
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
-            window = UIWindow(frame: UIScreen.main.bounds)
+            cleanupExistingPIRDebugWindow()
+
             let viewController = UIViewController.init()
             viewController.view = webView
-            window?.rootViewController = viewController
+            let navigationController = UINavigationController(rootViewController: viewController)
+            viewController.title = "PIR Debug Mode"
 
+            window = UIWindow(frame: UIScreen.main.bounds)
+            window?.rootViewController = navigationController
             window?.windowLevel = UIWindow.Level.alert
-            window?.makeKeyAndVisible()
 #endif
 
         }
@@ -145,8 +150,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.pushAction(
             method: .onActionReceived,
             webView: self.webView!,
-            params: Params(state: ActionRequest(action: action, data: data)),
-            canTimeOut: action.canTimeOut(while: stepType)
+            params: Params(state: ActionRequest(action: action, data: data))
         )
     }
 
@@ -239,6 +243,24 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         timer = nil
     }
 
+#if os(iOS)
+    private func cleanupExistingPIRDebugWindow() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+
+        for existingWindow in windowScene.windows {
+            if let navController = existingWindow.rootViewController as? UINavigationController,
+               let title = navController.topViewController?.title,
+               title.hasPrefix("PIR Debug Mode") {
+                existingWindow.isHidden = true
+                existingWindow.rootViewController = nil
+                break
+            }
+        }
+    }
+#endif
+
 }
 
 extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
@@ -271,7 +293,10 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
             return .allow
         }
 
-        if statusCode >= 400 {
+        if statusCode == 403 {
+            Logger.action.log("WebViewHandler failed with status code: \(String(describing: statusCode), privacy: .public)")
+            Logger.action.log("WebViewHandler continuing despite error")
+        } else if statusCode >= 400 {
             Logger.action.log("WebViewHandler failed with status code: \(String(describing: statusCode), privacy: .public)")
             self.activeContinuation?.resume(throwing: DataBrokerProtectionError.httpError(code: statusCode))
             self.activeContinuation = nil

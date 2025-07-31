@@ -34,6 +34,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var cookieHandler: CookieHandler { get }
     var stageCalculator: StageDurationCalculator { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
+    var executionConfig: BrokerJobExecutionConfig { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -102,7 +103,7 @@ public extension SubJobWebRunning {
             return
         }
 
-        if action as? SolveCaptchaAction != nil, let captchaTransactionId = actionsHandler?.captchaTransactionId {
+        if action is SolveCaptchaAction, let captchaTransactionId = actionsHandler?.captchaTransactionId {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
@@ -146,7 +147,7 @@ public extension SubJobWebRunning {
             stageCalculator.setStage(.emailReceive)
             let url =  try await emailService.getConfirmationLink(
                 from: email,
-                numberOfRetries: 100, // Move to constant
+                numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep
@@ -184,7 +185,7 @@ public extension SubJobWebRunning {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            self.webViewHandler = await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker)
+            self.webViewHandler = await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

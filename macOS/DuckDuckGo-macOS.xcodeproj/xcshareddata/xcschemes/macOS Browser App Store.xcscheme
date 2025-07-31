@@ -166,24 +166,6 @@
             </BuildableReference>
             <SkippedTests>
                <Test
-                  Identifier = "AddressBarTests/test_WhenSiteCertificateInvalid_ThenAddressBarShowsDottedShieldIcon()">
-               </Test>
-               <Test
-                  Identifier = "AddressBarTests/test_WhenSiteCertificateNil_ThenAddressBarShowsStandardShieldIcon()">
-               </Test>
-               <Test
-                  Identifier = "AddressBarTests/test_WhenSiteCertificateValid_ThenAddressBarShowsStandardShieldIcon()">
-               </Test>
-               <Test
-                  Identifier = "AutoconsentIntegrationTests/testFilterlistRule_whenFakeCookieBannerIsDisplayed_bannerIsHidden()">
-               </Test>
-               <Test
-                  Identifier = "AutoconsentIntegrationTests/testWhenAutoconsentDisabled_promptIsDisplayed()">
-               </Test>
-               <Test
-                  Identifier = "BrowserTabViewControllerOnboardingTests/testWhenDialogIsDismissedViewHighlightsAreDismissed()">
-               </Test>
-               <Test
                   Identifier = "ConfigurationManagerIntegrationTests/testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment()">
                </Test>
                <Test
@@ -193,16 +175,7 @@
                   Identifier = "EncryptionKeyStoreTests">
                </Test>
                <Test
-                  Identifier = "HTTPSUpgradeIntegrationTests">
-               </Test>
-               <Test
-                  Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
-               </Test>
-               <Test
-                  Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
-               </Test>
-               <Test
-                  Identifier = "TabContentTests">
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
                </Test>
             </SkippedTests>
          </TestableReference>
@@ -264,6 +237,16 @@
                BuildableName = "DataBrokerProtection-macOSTests"
                BlueprintName = "DataBrokerProtection-macOSTests"
                ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "VPNTests"
+               BuildableName = "VPNTests"
+               BlueprintName = "VPNTests"
+               ReferencedContainer = "container:../SharedPackages/VPN">
             </BuildableReference>
          </TestableReference>
       </Testables>

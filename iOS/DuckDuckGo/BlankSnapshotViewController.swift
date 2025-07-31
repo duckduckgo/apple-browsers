@@ -45,6 +45,7 @@ class BlankSnapshotViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettings
     let voiceSearchHelper: VoiceSearchHelperProtocol
+    let appSettings: AppSettings
 
     var viewCoordinator: MainViewCoordinator!
 
@@ -53,11 +54,13 @@ class BlankSnapshotViewController: UIViewController {
     init(addressBarPosition: AddressBarPosition,
          aiChatSettings: AIChatSettings,
          voiceSearchHelper: VoiceSearchHelperProtocol,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         appSettings: AppSettings) {
         self.addressBarPosition = addressBarPosition
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.appSettings = appSettings
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -68,12 +71,13 @@ class BlankSnapshotViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = ThemeManager.shared.properties.isExperimentalThemingEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
-                                                              featureFlagger: featureFlagger)
+                                                              featureFlagger: featureFlagger,
+                                                              appSettings: appSettings)
         if addressBarPosition.isBottom {
             viewCoordinator.moveAddressBarToPosition(.bottom)
             viewCoordinator.hideToolbarSeparator()
@@ -121,7 +125,7 @@ class BlankSnapshotViewController: UIViewController {
     }
 
     private func configureTabBar() {
-        let controller = TabsBarViewController.createFromXib(themingProperties: ThemeManager.shared.properties)
+        let controller = TabsBarViewController.createFromXib()
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(controller.view)

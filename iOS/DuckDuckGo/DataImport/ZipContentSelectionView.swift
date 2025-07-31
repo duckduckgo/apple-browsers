@@ -139,9 +139,16 @@ private struct DataTypeRow: View {
                         viewModel.toggleSelection(importPreview.type)
                     }
                 } label: {
-                    Image(uiImage: isSelected ? DesignSystemImages.Glyphs.Size24.checkRecolorable : DesignSystemImages.Glyphs.Size24.shapeCircle)
-                        .resizable()
-                        .frame(width: 24, height: 24)
+                    if isSelected {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.checkRecolorable)
+                            .renderingMode(.template)
+                            .resizable()
+                            .frame(width: 22, height: 22)
+                            .foregroundStyle(Color(designSystemColor: .alertGreen))
+                    } else {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
+                            .frame(width: 24, height: 24)
+                    }
                 }
                 .animation(.none, value: isSelected)
                 .frame(width: 44, height: 44)
@@ -190,7 +197,7 @@ private struct ContinueButton: View {
         .buttonStyle(PrimaryButtonStyle(disabled: viewModel.selectedTypes.isEmpty))
         .frame(maxWidth: 360)
         .padding(.top, 44)
-        .padding(.bottom, 8)
+        .padding(.bottom, viewModel.importPreview.count == 2 ? 8 : 16)
         .disabled(viewModel.selectedTypes.isEmpty)
     }
 }

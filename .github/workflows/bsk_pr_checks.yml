@@ -15,7 +15,11 @@ on:
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/**'
   schedule:
-    - cron: '10,35,50 4,5,6 * * *'
+    - cron: '10,30,50 4,5,6 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
 
@@ -32,6 +36,7 @@ jobs:
 
       outputs:
         commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+        pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
       steps:
 
@@ -82,7 +87,7 @@ jobs:
 
       - name: Start log stream in background
         run: |
-          log stream --predicate 'process == "xctest"' --style syslog > xctest.log 2>&1 &
+          log stream --debug --info --predicate 'process == "xctest" OR process == "swiftpm-xctest-helper"' --style syslog > xctest.log 2>&1 &
           echo $! > log_stream.pid
 
       - name: Run tests
@@ -149,7 +154,7 @@ jobs:
           yq < package-tests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
-            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
+            | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
         uses: actions/upload-artifact@v4
@@ -158,15 +163,28 @@ jobs:
           name: build-log.txt
           path: SharedPackages/BrowserServicesKit/build-log.txt
 
-      - name: Fetch latest commit author
-        if: always() && github.ref_name == 'main'
-        id: fetch_commit_author
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Wait for crash reports to be generated
+        if: failure()
         run: |
-          head_commit=$(git rev-parse HEAD)
-          author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
-          echo "commit_author=${author}" >> $GITHUB_OUTPUT
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-macOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Fetch latest commit author and PR reviewers
+        if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+        id: fetch_commit_author
+        uses: ./.github/actions/fetch-commit-info
+        with:
+          github-token: ${{ github.token }}
 
   unit-tests-ios:
 
@@ -273,6 +291,7 @@ jobs:
           check_name: BSK Test Report (iOS)
           report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
+          check_retries: true
 
       - name: Update Asana with failed unit tests
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'
@@ -284,7 +303,7 @@ jobs:
           yq < bsk-ios-unittests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
-            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
+            | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
         uses: actions/upload-artifact@v4
@@ -292,6 +311,22 @@ jobs:
         with:
           name: ios-build-log.txt
           path: SharedPackages/BrowserServicesKit/ios-build-log.txt
+
+      - name: Wait for crash reports to be generated
+        if: failure()
+        run: |
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-iOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
 
   create-asana-task:
     name: Create Asana Task
@@ -311,6 +346,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:

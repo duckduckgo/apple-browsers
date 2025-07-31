@@ -20,10 +20,11 @@ import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
 import StoreKit
+import Combine
 
 final class StorePurchaseManagerV2Tests: XCTestCase {
 
-    private var sut: StorePurchaseManagerV2!
+    private var sut: DefaultStorePurchaseManagerV2!
     private var mockCache: SubscriptionFeatureMappingCacheMockV2!
     private var mockProductFetcher: MockProductFetcher!
     private var mockFeatureFlagger: MockFeatureFlagger!
@@ -294,7 +295,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Then
-        let products = (sut as? DefaultStorePurchaseManagerV2)?.availableProducts ?? []
+        let products = sut.availableProducts
         XCTAssertEqual(products.count, 2)
         XCTAssertTrue(products.contains(where: { $0.id == monthlyProduct.id }))
         XCTAssertTrue(products.contains(where: { $0.id == yearlyProduct.id }))
@@ -308,7 +309,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Then
-        let products = (sut as? DefaultStorePurchaseManagerV2)?.availableProducts ?? []
+        let products = sut.availableProducts
         XCTAssertTrue(products.isEmpty)
     }
 
@@ -342,15 +343,15 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         // Set USA products initially
         mockProductFetcher.mockProducts = [usaMonthlyProduct, usaYearlyProduct]
-        mockFeatureFlagger.enabledFeatures = [] // No ROW features enabled - defaults to USA
+        mockFeatureFlagger.enabledFeatures = [.usePrivacyProUSARegionOverride] // No ROW features enabled - defaults to USA
 
         // When - Update for USA region
         await sut.updateAvailableProducts()
 
         // Then - Verify USA products
-        let usaProducts = (sut as? DefaultStorePurchaseManagerV2)?.availableProducts ?? []
+        let usaProducts = sut.availableProducts
         XCTAssertEqual(usaProducts.count, 2)
-        XCTAssertEqual((sut as? DefaultStorePurchaseManagerV2)?.currentStorefrontRegion, .usa)
+        XCTAssertEqual(sut.currentStorefrontRegion, .usa)
         XCTAssertTrue(usaProducts.contains(where: { $0.id == "com.test.usa.monthly" }))
         XCTAssertTrue(usaProducts.contains(where: { $0.id == "com.test.usa.yearly" }))
 
@@ -360,9 +361,9 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Then - Verify ROW products
-        let rowProducts = (sut as? DefaultStorePurchaseManagerV2)?.availableProducts ?? []
+        let rowProducts = sut.availableProducts
         XCTAssertEqual(rowProducts.count, 2)
-        XCTAssertEqual((sut as? DefaultStorePurchaseManagerV2)?.currentStorefrontRegion, .restOfWorld)
+        XCTAssertEqual(sut.currentStorefrontRegion, .restOfWorld)
         XCTAssertTrue(rowProducts.contains(where: { $0.id == "com.test.row.monthly" }))
         XCTAssertTrue(rowProducts.contains(where: { $0.id == "com.test.row.yearly" }))
 
@@ -446,23 +447,98 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         mockProductFetcher.mockProducts = [product1, product2]
         await sut.updateAvailableProducts()
 
-        let concreteSut = sut as! DefaultStorePurchaseManagerV2
-        XCTAssertEqual(concreteSut.availableProducts.count, 2)
+        XCTAssertEqual(sut.availableProducts.count, 2)
 
         // Verify initial eligibility state
-        XCTAssertTrue(concreteSut.availableProducts[0].isEligibleForFreeTrial)
-        XCTAssertTrue(concreteSut.availableProducts[1].isEligibleForFreeTrial)
+        XCTAssertTrue(sut.availableProducts[0].isEligibleForFreeTrial)
+        XCTAssertTrue(sut.availableProducts[1].isEligibleForFreeTrial)
 
         // Configure products to change eligibility when refreshed
         product1.eligibilityAfterRefresh = false
         product2.eligibilityAfterRefresh = false
 
         // When
-        await concreteSut.updateAvailableProductsTrialEligibility()
+        await sut.updateAvailableProductsTrialEligibility()
 
         // Then
-        XCTAssertFalse(concreteSut.availableProducts[0].isEligibleForFreeTrial)
-        XCTAssertFalse(concreteSut.availableProducts[1].isEligibleForFreeTrial)
+        XCTAssertFalse(sut.availableProducts[0].isEligibleForFreeTrial)
+        XCTAssertFalse(sut.availableProducts[1].isEligibleForFreeTrial)
+    }
+
+    // MARK: - Publisher Tests
+
+    func testAreProductsAvailablePublisherEmitsTrueWhenProductsBecomeAvailable() async {
+        // Given
+        let expectation = expectation(description: "Publisher should emit true")
+        var receivedValue: Bool?
+        let cancellable = sut.areProductsAvailablePublisher
+            .dropFirst() // Drop initial `false` value
+            .sink { value in
+                receivedValue = value
+                expectation.fulfill()
+            }
+
+        // When
+        mockProductFetcher.mockProducts = [createMonthlyProduct()]
+        await sut.updateAvailableProducts()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(receivedValue, true)
+        cancellable.cancel()
+    }
+
+    func testAreProductsAvailablePublisherEmitsFalseWhenProductsBecomeUnavailable() async {
+        // Given
+        // Set initial state to have products
+        mockProductFetcher.mockProducts = [createMonthlyProduct()]
+        await sut.updateAvailableProducts()
+
+        let expectation = expectation(description: "Publisher should emit false")
+        var receivedValue: Bool?
+        let cancellable = sut.areProductsAvailablePublisher
+            .dropFirst() // Drop initial `true` value
+            .sink { value in
+                receivedValue = value
+                expectation.fulfill()
+            }
+
+        // When
+        mockProductFetcher.mockProducts = []
+        await sut.updateAvailableProducts()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(receivedValue, false)
+        cancellable.cancel()
+    }
+
+    func testAreProductsAvailablePublisherEmitsCorrectSequenceOnChanges() async {
+        // Given
+        var receivedValues: [Bool] = []
+        let expectation = expectation(description: "Publisher should emit two values")
+        expectation.expectedFulfillmentCount = 2
+
+        let cancellable = sut.areProductsAvailablePublisher
+            .dropFirst() // Drop initial `false` value
+            .sink { value in
+                receivedValues.append(value)
+                expectation.fulfill()
+            }
+
+        // When
+        // 1. Products become available
+        mockProductFetcher.mockProducts = [createMonthlyProduct()]
+        await sut.updateAvailableProducts()
+
+        // 2. Products become unavailable
+        mockProductFetcher.mockProducts = []
+        await sut.updateAvailableProducts()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(receivedValues, [true, false])
+        cancellable.cancel()
     }
 }
 
@@ -582,7 +658,7 @@ private class MockFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags
 
     init(enabledFeatures: Set<SubscriptionFeatureFlags> = []) {
         self.enabledFeatures = enabledFeatures
-        super.init(mapping: {_ in true})
+        super.init(mapping: { _ in true })
     }
 
     override func isFeatureOn(_ feature: SubscriptionFeatureFlags) -> Bool {

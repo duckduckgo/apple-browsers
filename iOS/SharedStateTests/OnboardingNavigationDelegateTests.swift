@@ -59,7 +59,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
             appSettings: AppSettingsMock(),
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             configurationStore: MockConfigurationStoring(),
             database: db,
             errorEvents: nil,
@@ -92,7 +92,6 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: MockFireproofing(),
-            subscriptionCookieManager: SubscriptionCookieManagerMock(),
             textZoomCoordinator: MockTextZoomCoordinator(),
             websiteDataManager: MockWebsiteDataManager(),
             appDidFinishLaunchingStartTime: nil,

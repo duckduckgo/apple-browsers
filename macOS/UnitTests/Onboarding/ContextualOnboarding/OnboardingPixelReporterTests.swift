@@ -45,6 +45,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         eventSent = nil
         frequency = nil
         userDefaults?.removePersistentDomain(forName: "OnboardingPixelReporterTests")
+        userDefaults = nil
     }
 
     func test_WhenMeasureAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {
@@ -181,6 +182,9 @@ class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Contextua
     var lastDialog: ContextualDialogType?
 
     var state: ContextualOnboardingState = .onboardingCompleted
+
+    @Published var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
     func updateStateFor(tab: Tab) {
     }

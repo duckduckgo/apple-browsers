@@ -74,15 +74,14 @@ private extension NewTabPageView {
     private var sectionsView: some View {
         GeometryReader { proxy in
             ScrollView {
-                VStack(spacing: Metrics.sectionSpacing) {
+                LazyVStack(spacing: Metrics.sectionSpacing) {
                     
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
-                        .if(viewModel.isExperimentalAppearanceEnabled) {
-                            $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                        }
+                        .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
 
                     favoritesSectionView(proxy: proxy)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(sectionsViewPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
@@ -103,9 +102,7 @@ private extension NewTabPageView {
             VStack(spacing: Metrics.sectionSpacing) {
                 messagesSectionView
                     .padding(.top, Metrics.nonGridSectionTopPadding)
-                    .if(viewModel.isExperimentalAppearanceEnabled) {
-                        $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
-                    }
+                    .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

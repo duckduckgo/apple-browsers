@@ -53,15 +53,10 @@ final class UserDefaultsNewTabPageFavoritesSettingsPersistor: NewTabPageFavorite
 public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObject where FavoriteType: NewTabPageFavorite,
                                                                                          ActionHandler: FavoritesActionsHandling,
                                                                                          ActionHandler.FavoriteType == FavoriteType {
-
-    private let actionsHandler: ActionHandler
-    private let contextMenuPresenterProvider: NewTabPageContextMenuPresenterProvider
-    private let settingsPersistor: NewTabPageFavoritesSettingsPersistor
-    private var cancellables: Set<AnyCancellable> = []
-
     public convenience init(
         actionsHandler: ActionHandler,
         favoritesPublisher: AnyPublisher<[FavoriteType], Never>,
+        faviconsDidLoadPublisher: AnyPublisher<Void, Never>,
         contextMenuPresenterProvider: @escaping NewTabPageContextMenuPresenterProvider = DefaultNewTabPageContextMenuPresenterProvider(),
         keyValueStore: KeyValueStoring = UserDefaults.standard,
         getLegacyIsViewExpandedSetting: @autoclosure () -> Bool?
@@ -69,6 +64,7 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
         self.init(
             actionsHandler: actionsHandler,
             favoritesPublisher: favoritesPublisher,
+            faviconsDidLoadPublisher: faviconsDidLoadPublisher,
             contextMenuPresenterProvider: contextMenuPresenterProvider,
             settingsPersistor: UserDefaultsNewTabPageFavoritesSettingsPersistor(keyValueStore, getLegacySetting: getLegacyIsViewExpandedSetting())
         )
@@ -77,10 +73,12 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
     init(
         actionsHandler: ActionHandler,
         favoritesPublisher: AnyPublisher<[FavoriteType], Never>,
+        faviconsDidLoadPublisher: AnyPublisher<Void, Never>,
         contextMenuPresenterProvider: @escaping NewTabPageContextMenuPresenterProvider = DefaultNewTabPageContextMenuPresenterProvider(),
         settingsPersistor: NewTabPageFavoritesSettingsPersistor
     ) {
         self.actionsHandler = actionsHandler
+        self.faviconsDidLoadPublisher = faviconsDidLoadPublisher
         self.contextMenuPresenterProvider = contextMenuPresenterProvider
         self.settingsPersistor = settingsPersistor
 
@@ -96,6 +94,8 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
             .store(in: &cancellables)
     }
 
+    let faviconsDidLoadPublisher: AnyPublisher<Void, Never>
+
     @Published var isViewExpanded: Bool {
         didSet {
             settingsPersistor.isViewExpanded = self.isViewExpanded
@@ -104,10 +104,15 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
 
     @Published var favorites: [FavoriteType] = []
 
+    private let actionsHandler: ActionHandler
+    private let contextMenuPresenterProvider: NewTabPageContextMenuPresenterProvider
+    private let settingsPersistor: NewTabPageFavoritesSettingsPersistor
+    private var cancellables: Set<AnyCancellable> = []
+
     // MARK: - Actions
 
     @MainActor
-    func openFavorite(withURL url: String, target: NewTabPageDataModel.ActivityOpenAction.OpenTarget, sourceWindow: NSWindow?) {
+    func openFavorite(withURL url: String, target: NewTabPageDataModel.OpenTarget, sourceWindow: NSWindow?) {
         guard let url = URL(string: url), url.isValid else { return }
         // frontend sends `.newWindow` always when activating a link with Shift key pressed,
         // so let the receiver decide what to open based on current modifier flags using `LinkOpenBehavior`
@@ -135,7 +140,7 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
          * optimizing it because it's fast enough and we shouldn't have too big arrays
          * of favorites, and indexing favorites by UUID on each refresh could be too much.
          */
-        guard let favorite = favorites.first(where: { $0.id == bookmarkID}) else { return }
+        guard let favorite = favorites.first(where: { $0.id == bookmarkID }) else { return }
 
         let menu = NSMenu {
             if let url = favorite.urlObject {

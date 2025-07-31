@@ -19,6 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 import PixelKit
+import PreferencesUI_macOS
 
 struct SyncPromoView: View {
 

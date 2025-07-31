@@ -28,9 +28,13 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     @State private var showingRemoveConfirmationDialog = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
+    private var isSubscriptionRebrandingOn: () -> Bool
+    private var isPaidAIChatOn: () -> Bool
 
-    public init(model: PreferencesSubscriptionSettingsModelV2) {
+    public init(model: PreferencesSubscriptionSettingsModelV2, isSubscriptionRebrandingOn: @escaping (() -> Bool), isPaidAIChatOn: @escaping (() -> Bool)) {
         self.model = model
+        self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
+        self.isPaidAIChatOn = isPaidAIChatOn
     }
 
     public var body: some View {
@@ -51,6 +55,11 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 }
             }
             .padding(.bottom, 16)
+
+            // Rebranding message
+            if model.showRebrandingMessage {
+                rebrandingMessage
+            }
 
             // Sections
             switch model.settingsState {
@@ -105,7 +114,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(.subscriptionExpiredIcon)
-                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader)
+                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: isPaidAIChatOn()))
             }
             HStack {
                 Button(UserText.viewPlansExpiredButtonTitle) { model.purchaseAction() }
@@ -251,5 +260,24 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
         })
         .frame(width: 360)
+    }
+
+    private var rebrandingMessage: some View {
+        SubfeatureGroup {
+            HStack(spacing: 8) {
+                Image(.privacyProColor24)
+                Text(UserText.preferencesSubscriptionRebrandingMessage)
+                    .font(
+                        Font.custom("SF Pro", size: 13).weight(.bold)
+                    )
+                Spacer()
+                CloseButton(
+                    icon: NSImage(resource: .close16),
+                    size: 20,
+                    action: { model.dismissRebrandingMessage() }
+                )
+            }
+            .padding(2)
+        }
     }
 }

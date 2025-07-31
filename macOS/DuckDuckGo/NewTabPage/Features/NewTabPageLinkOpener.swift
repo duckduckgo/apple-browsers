@@ -19,11 +19,22 @@
 import AppKit
 import Foundation
 import NewTabPage
+import PixelKit
 
 struct NewTabPageLinkOpener: NewTabPageLinkOpening {
 
     @MainActor
     static func open(_ url: URL, source: Tab.Content.URLSource, setBurner: Bool? = nil, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
+
+        switch source {
+        case .bookmark(let isFavorite):
+            PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .newTabPage, isFavorite: isFavorite))
+        case .historyEntry:
+            PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .newTabPage))
+        default:
+            break
+        }
+
         var tabCollectionViewModel: TabCollectionViewModel? {
             Application.appDelegate.windowControllersManager.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
         }

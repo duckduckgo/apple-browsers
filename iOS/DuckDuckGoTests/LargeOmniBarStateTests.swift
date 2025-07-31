@@ -44,20 +44,25 @@ class LargeOmniBarStateTests: XCTestCase {
         mockFeatureFlagger = nil
         super.tearDown()
     }
+    
+    func testWhenBrowsingStateThenIsBrowsingIsTrue() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
 
-    func testWhenLargeEditingAndVisualUpdatesThenDontShowSearchLoupe() {
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.visualUpdates])
+        XCTAssertTrue(LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertTrue(LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertTrue(LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(LargeOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(SmallOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
 
-        let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
-        XCTAssertFalse(testee.showSearchLoupe)
     }
 
-    func testWhenLargeEditingAndNotVisualUpdatesThenShowSearchLoupe() {
+    func testWhenLargeEditingThenShowSearchLoupe() {
         let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertFalse(testee.showSearchLoupe)
 
         let testee2 = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
-        XCTAssertTrue(testee2.showSearchLoupe)
+        XCTAssertFalse(testee2.showSearchLoupe)
     }
 
     func testWhenInHomeEmptyEditingStateWithoutVoiceSearchThenCorrectButtonsAreShown() {
@@ -448,7 +453,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showMenu)
         XCTAssertFalse(testee.showSettings)
         XCTAssertFalse(testee.showCancel)
-        XCTAssertTrue(testee.showSearchLoupe)
+        XCTAssertFalse(testee.showSearchLoupe)
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)

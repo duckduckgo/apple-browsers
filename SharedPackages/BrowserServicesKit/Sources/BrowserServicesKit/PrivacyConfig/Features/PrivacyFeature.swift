@@ -46,6 +46,7 @@ public enum PrivacyFeature: String {
     case sync
     case privacyDashboard
     case history
+    case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
     case sslCertificates
@@ -79,6 +80,7 @@ public enum PrivacyFeature: String {
     case intentionallyLocalOnlyFeatureForTests
     case tabCrashRecovery
     case delayedWebviewPresentation
+    case disableFireAnimation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -97,6 +99,15 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
+
+    // Import Chrome's new tab shortcuts when bookmarks are imported
+    case importChromeShortcuts
+
+    // Import Safari's bookmarks and favorites to better match Safari's behavior
+    case updateSafariBookmarksImport
+
+    // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
+    case updateFirefoxBookmarksImport
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -106,6 +117,13 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
+
+    // This is fairly temporary and will likely be removed in a release or two one way or another
+    case june2025TabManagerLayoutChanges
+
+    // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
+    case defaultBrowserTutorial
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -134,6 +152,10 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
     case passwordVariantCategorization
+    case autocompleteAttributeSupport
+    case inputFocusApi
+    case canPromoteImportPasswordsInPasswordManagement
+    case canPromoteImportPasswordsInBrowser
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -163,6 +185,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Keep AI Chat session after the user closes it
     case keepSession
+
+    /// Adds context menu action for summarizing text selected on a website.
+    case textSummarization
+
+    // Adds capability to load AI Chat in a sidebar
+    case sidebar
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -226,12 +254,14 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
+    case subscriptionRebranding
+    case vpnToolbarUpsell
+    case supportsAlternateStripePaymentFlow
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -274,6 +304,36 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
     case tdsNextExperimentOct25
     case tdsNextExperimentNov25
     case tdsNextExperimentDec25
+    case tdsNextExperiment001
+    case tdsNextExperiment002
+    case tdsNextExperiment003
+    case tdsNextExperiment004
+    case tdsNextExperiment005
+    case tdsNextExperiment006
+    case tdsNextExperiment007
+    case tdsNextExperiment008
+    case tdsNextExperiment009
+    case tdsNextExperiment010
+    case tdsNextExperiment011
+    case tdsNextExperiment012
+    case tdsNextExperiment013
+    case tdsNextExperiment014
+    case tdsNextExperiment015
+    case tdsNextExperiment016
+    case tdsNextExperiment017
+    case tdsNextExperiment018
+    case tdsNextExperiment019
+    case tdsNextExperiment020
+    case tdsNextExperiment021
+    case tdsNextExperiment022
+    case tdsNextExperiment023
+    case tdsNextExperiment024
+    case tdsNextExperiment025
+    case tdsNextExperiment026
+    case tdsNextExperiment027
+    case tdsNextExperiment028
+    case tdsNextExperiment029
+    case tdsNextExperiment030
 }
 
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
@@ -287,15 +347,16 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
 
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
-    case scheduledDefaultBrowserAndDockPrompts
+    case scheduledDefaultBrowserAndDockPrompts // macOS
+
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
+    case scheduledDefaultBrowserPrompts // iOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
     case showSettingsCompleteSetupSection
-    /// https://app.asana.com/1/137249556945/project/1108686900785972/task/1210454186090900?focus=true
-    case setAsDefaultBrowserPiPVideoExperiment
 }
 
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {

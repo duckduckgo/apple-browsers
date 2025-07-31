@@ -40,7 +40,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private var featureFlagger: FeatureFlagger {
         AppDependencyProvider.shared.featureFlagger
     }
-    private let isAuthV2Enabled: Bool = AppDependencyProvider.shared.isAuthV2Enabled
+    private let isAuthV2Enabled: Bool = AppDependencyProvider.shared.isUsingAuthV2
     var currentEnvironment: SubscriptionEnvironment {
         AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.currentEnvironment
     }

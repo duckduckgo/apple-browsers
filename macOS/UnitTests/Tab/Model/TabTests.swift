@@ -19,6 +19,7 @@
 import Combine
 import Navigation
 import XCTest
+import BrowserServicesKit
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -96,7 +97,7 @@ final class TabTests: XCTestCase {
     // MARK: - "Crash Tab" functionality
 
     @MainActor func testWhenUserIsNotInternalThenTabCannotBeCrashed() {
-        let internalUserDecider = InternalUserDeciderMock()
+        let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = false
 
         let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
@@ -106,7 +107,7 @@ final class TabTests: XCTestCase {
     }
 
     @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsDisabledThenTabCannotBeCrashed() {
-        let internalUserDecider = InternalUserDeciderMock()
+        let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
         let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
@@ -116,7 +117,7 @@ final class TabTests: XCTestCase {
     }
 
     @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsEnabledThenTabCanBeCrashed() {
-        let internalUserDecider = InternalUserDeciderMock()
+        let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
         let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugging])
@@ -234,8 +235,8 @@ final class TabTests: XCTestCase {
         let extensionsBuilder = TestTabExtensionsBuilder(load: []) { [urls, unowned self] builder in { _, _ in
             builder.add {
                 TestsClosureNavigationResponderTabExtension(.init { [unowned self] navigationAction, _ in
-                    if navigationAction.url == urls.url2 {
-                        return .redirectInvalidatingBackItemIfNeeded(navigationAction) { navigator in
+                    if navigationAction.url == urls.url2, let mainFrameTarget = navigationAction.mainFrameTarget {
+                        return .redirect(mainFrameTarget) { navigator in
                             eDidRedirect.fulfill()
                             didFinishExpectations[urls.url3.absoluteString] = self.expectation(description: "didFinish \(urls.url3.absoluteString)")
                             navigator.load(URLRequest(url: urls.url3))
@@ -262,7 +263,7 @@ final class TabTests: XCTestCase {
             return .ok(.html(""))
         }]
 
-        // initial page
+        // initial page: http://testhost.com/
         didFinishExpectations[urls.url.absoluteString] = expectation(description: "didFinish \(urls.url.absoluteString)")
         tab.setContent(.url(urls.url, source: .link))
         waitForExpectations(timeout: 5)
@@ -290,6 +291,7 @@ final class TabTests: XCTestCase {
 
         eDidRedirect = expectation(description: "did redirect")
 
+        // navigate to https://localhost/1
         tab.setContent(.url(urls.url1, source: .link))
         waitForExpectations(timeout: 5)
         // "didFinish \(urls.url3.absoluteString)" expectation is set in redirect handler above
@@ -298,6 +300,7 @@ final class TabTests: XCTestCase {
         XCTAssertTrue(tab.canGoBack)
         XCTAssertFalse(tab.canGoForward)
         XCTAssertEqual(tab.webView.url, urls.url3)
+        XCTAssertEqual(tab.webView.backForwardList.currentItem?.url, urls.url3)
         XCTAssertEqual(tab.backHistoryItems.map(\.url), [urls.url])
         XCTAssertEqual(tab.forwardHistoryItems, [])
 
@@ -311,8 +314,8 @@ final class TabTests: XCTestCase {
         let extensionsBuilder = TestTabExtensionsBuilder(load: []) { [urls] builder in { _, _ in
             builder.add {
                 TestsClosureNavigationResponderTabExtension(.init { navigationAction, _ in
-                    if navigationAction.url == urls.url2 {
-                        return .redirectInvalidatingBackItemIfNeeded(navigationAction) { navigator in
+                    if navigationAction.url == urls.url2, let mainFrameTarget = navigationAction.mainFrameTarget {
+                        return .redirect(mainFrameTarget) { navigator in
                             eDidRedirect.fulfill()
                             navigator.load(URLRequest(url: urls.url3))
                         }
@@ -353,15 +356,11 @@ final class TabTests: XCTestCase {
         eDidFinish = expectation(description: "didFinish 2")
 
         // back/forward buttons state shouldn‘t change during the redirect
-        let eCanGoBack = expectation(description: "initial canGoBack: true")
         let c1 = tab.$canGoBack.sink { canGoBack in
             XCTAssertTrue(canGoBack)
-            eCanGoBack.fulfill()
         }
-        let eCanGoForward = expectation(description: "initial canGoForward")
         let c2 = tab.$canGoForward.sink { canGoForward in
             XCTAssertFalse(canGoForward)
-            eCanGoForward.fulfill()
         }
 
         eDidRedirect = expectation(description: "did redirect")

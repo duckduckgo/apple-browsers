@@ -25,6 +25,9 @@
       <FileRef
          location = "group:VPN">
       </FileRef>
+      <FileRef
+         location = "group:DesignResourcesKit">
+      </FileRef>
    </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

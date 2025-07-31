@@ -24,21 +24,24 @@ import Configuration
 
 enum GeneralPixel: PixelKitEventV2 {
 
-    case crash
-    case crashDaily
+    case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
-    case launch(isDefault: Bool, isAddedToDock: Bool?)
+    case launch
+    case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
 
+    case navigation
     case serp
     case serpInitial
 
     case dailyOsVersionCounter
 
-    case dataImportFailed(source: DataImport.Source, sourceVersion: String?, error: any DataImportError)
-    case dataImportSucceeded(action: DataImportAction, source: DataImport.Source, sourceVersion: String?)
+    case dataImportFailed(source: String, sourceVersion: String?, error: any DataImportError)
+    case dataImportSucceeded(action: DataImportAction, source: String, sourceVersion: String?)
+    case favoritesImportFailed(source: String, sourceVersion: String?, error: Error)
+    case favoritesImportSucceeded(source: String, sourceVersion: String?, favoritesBucket: FavoritesImportBucket)
 
     case formAutofilled(kind: FormAutofillKind)
     case autofillItemSaved(kind: FormAutofillKind)
@@ -108,6 +111,7 @@ enum GeneralPixel: PixelKitEventV2 {
     // Fire Button
     case fireButtonFirstBurn
     case fireButton(option: FireButtonOption)
+    case fireAnimationSetting(enabled: Bool)
 
     /**
      * Event Trigger: User opens the fire popover (fire button details view).
@@ -257,12 +261,13 @@ enum GeneralPixel: PixelKitEventV2 {
     case passwordImportKeychainPromptDenied
 
     // Autocomplete
-    case autocompleteClickPhrase
-    case autocompleteClickWebsite
-    case autocompleteClickBookmark
-    case autocompleteClickFavorite
-    case autocompleteClickHistory
-    case autocompleteClickOpenTab
+    // See macOS/PixelDefinitions/pixels/suggestion_pixels.json5
+    case autocompleteClickPhrase(from: AutocompleteSource)
+    case autocompleteClickWebsite(from: AutocompleteSource)
+    case autocompleteClickBookmark(from: AutocompleteSource)
+    case autocompleteClickFavorite(from: AutocompleteSource)
+    case autocompleteClickHistory(from: AutocompleteSource)
+    case autocompleteClickOpenTab(from: AutocompleteSource)
     case autocompleteToggledOff
     case autocompleteToggledOn
 
@@ -421,7 +426,6 @@ enum GeneralPixel: PixelKitEventV2 {
 
     case updaterAborted
     case updaterDidFindUpdate
-    case updaterDidNotFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
 
@@ -517,11 +521,12 @@ enum GeneralPixel: PixelKitEventV2 {
 
     var name: String {
         switch self {
-        case .crash:
-            return "m_mac_crash"
-
-        case .crashDaily:
-            return "m_mac_crash_daily"
+        case .crash(let appIdentifier):
+            if let appIdentifier {
+                return "m_mac_crash_\(appIdentifier.rawValue)"
+            } else {
+                return "m_mac_crash"
+            }
 
         case .crashOnCrashHandlersSetUp:
             return "m_mac_crash_on_handlers_setup"
@@ -536,7 +541,13 @@ enum GeneralPixel: PixelKitEventV2 {
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
 
         case .launch:
+            return "ml_mac_app-launch"
+
+        case .dailyActiveUser:
             return  "m_mac_daily_active_user"
+
+        case .navigation:
+            return "m_mac_navigation"
 
         case .serp:
             return "m_mac_navigation_search"
@@ -551,6 +562,11 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .dataImportSucceeded(action: let action, source: let source, sourceVersion: _):
             return "m_mac_data-import-succeeded_\(action)_\(source)"
+
+        case .favoritesImportFailed(source: let source, sourceVersion: _, error: _):
+            return "m_mac_data-import-failed_favorites_\(source)"
+        case .favoritesImportSucceeded(source: let source, sourceVersion: _, favoritesBucket: _):
+            return "m_mac_data-import-succeeded_favorites_\(source)"
 
         case .formAutofilled(kind: let kind):
             return "m_mac_autofill_\(kind)"
@@ -678,6 +694,8 @@ enum GeneralPixel: PixelKitEventV2 {
             return "m_mac_fire_button_first_burn"
         case .fireButton(option: let option):
             return "m_mac_fire_button_\(option)"
+        case .fireAnimationSetting(let enabled):
+            return "m_mac_fire_animation_\(enabled ? "on" : "off")"
         case .fireButtonDetailsViewed:
             return "m_mac_fire_button_details_viewed"
 
@@ -1105,8 +1123,6 @@ enum GeneralPixel: PixelKitEventV2 {
             return "updater_aborted"
         case .updaterDidFindUpdate:
             return "updater_did_find_update"
-        case .updaterDidNotFindUpdate:
-            return "updater_did_not_find_update"
         case .updaterDidDownloadUpdate:
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
@@ -1237,7 +1253,7 @@ enum GeneralPixel: PixelKitEventV2 {
         case .loginItemUpdateError(let loginItemBundleID, let action, let buildType, let osVersion):
             return ["loginItemBundleID": loginItemBundleID, "action": action, "buildType": buildType, "macosVersion": osVersion]
 
-        case .launch(let isDefault, let isAddedToDock):
+        case .dailyActiveUser(let isDefault, let isAddedToDock):
             var params = [String: String]()
             params["default_browser"] = isDefault ? "1" : "0"
 
@@ -1256,6 +1272,22 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .dataImportSucceeded(action: _, source: _, sourceVersion: let version):
             var params = [String: String]()
+
+            if let version {
+                params[PixelKit.Parameters.sourceBrowserVersion] = version
+            }
+            return params
+
+        case .favoritesImportFailed(source: _, sourceVersion: let version, error: let error):
+            var params = error.pixelParameters
+
+            if let version {
+                params[PixelKit.Parameters.sourceBrowserVersion] = version
+            }
+            return params
+
+        case .favoritesImportSucceeded(source: _, sourceVersion: let version, favoritesBucket: let bucket):
+            var params = [PixelKit.Parameters.importedFavorites: bucket.description]
 
             if let version {
                 params[PixelKit.Parameters.sourceBrowserVersion] = version
@@ -1363,6 +1395,15 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .fileDownloadCreatePresentersFailed(let osVersion):
             return ["osVersion": osVersion]
+
+        case .autocompleteClickPhrase(from: let source),
+                .autocompleteClickHistory(from: let source),
+                .autocompleteClickWebsite(from: let source),
+                .autocompleteClickBookmark(from: let source),
+                .autocompleteClickFavorite(from: let source),
+                .autocompleteClickOpenTab(from: let source):
+            return ["source": source.rawValue]
+
         default: return nil
         }
     }
@@ -1512,4 +1553,33 @@ enum GeneralPixel: PixelKitEventV2 {
             }
         }
     }
+
+    public enum FavoritesImportBucket: String, CustomStringConvertible {
+
+        public var description: String { rawValue }
+
+        case none
+        case few
+        case some
+        case many
+
+        public init(count: Int) {
+            switch count {
+            case 0:
+                self = .none
+            case ..<6:
+                self = .few
+            case ..<12:
+                self = .some
+            default:
+                self = .many
+            }
+        }
+    }
+
+    enum AutocompleteSource: String {
+        case ntpSearchBox = "ntp_search_box"
+        case addressBar = "address_bar"
+    }
+
 }

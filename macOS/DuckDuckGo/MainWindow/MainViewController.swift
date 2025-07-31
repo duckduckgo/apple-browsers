@@ -16,24 +16,29 @@
 //  limitations under the License.
 //
 
+import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
 import History
-import VPN
 import NetworkProtectionIPC
 import os.log
-import BrokenSitePrompt
+import PixelKit
+import VPN
 
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))
 
+    static let watchdog = Watchdog()
+
     let tabBarViewController: TabBarViewController
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
+    let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     let aiChatSidebarPresenter: AIChatSidebarPresenting
+    let aiChatSummarizer: AIChatSummarizer
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -55,7 +60,6 @@ final class MainViewController: NSViewController {
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
-    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
 
@@ -87,14 +91,16 @@ final class MainViewController: NSViewController {
          permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
-         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
          aiChatSidebarProvider: AIChatSidebarProviding,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
-         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator
+         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -164,7 +170,14 @@ final class MainViewController: NSViewController {
             sidebarProvider: aiChatSidebarProvider,
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring
+        )
+        aiChatSummarizer = AIChatSummarizer(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatTabOpener: aiChatTabOpener,
+            pixelFiring: pixelFiring
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
@@ -178,10 +191,11 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
+                                                                         aiChatMenuConfig: aiChatMenuConfig,
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         findInPageViewController = FindInPageViewController.create()
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
@@ -669,7 +683,7 @@ extension MainViewController {
         if event.keyCode == kVK_Return,
            navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
             if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
+                navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
             } else {
                 navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
             }

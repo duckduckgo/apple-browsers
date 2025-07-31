@@ -59,10 +59,7 @@
 "action.title.downloads" = "Λήψεις";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Συνομιλία με ΤΝ";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Νέο AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Επεξεργασία σελιδοδείκτη";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Ένα μόνο πάτημα προς τους αγαπημένους ιστότοπούς σας.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Λειτουργίες τεχνητής νοημοσύνης";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Οι υπάρχοντες σελιδοδείκτες δεν θα αναπαραχθούν.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Ξεκλείδωμα DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Θέλετε σίγουρα να διαγράψετε όλους τους σελιδοδείκτες; Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Θέλετε σίγουρα να διαγράψετε αυτήν τη συνομιλία; Αυτό δεν μπορεί να αναιρεθεί.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Ρωτήστε οτιδήποτε...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Είσοδος";
@@ -1078,6 +1069,12 @@
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "ΠΡΟΣΑΡΜΟΣΜΕΝΟ ΠΕΡΙΕΧΟΜΕΝΟ ΚΕΛΙΟΥ";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Προσαρμοσμένη διεύθυνση URL: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Εισαγωγή αρχείου σελιδοδεικτών...";
 
@@ -1113,9 +1110,6 @@
 
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Επίλεξε **Εξαγωγή** και στην επόμενη οθόνη επίλεξε **Κωδικοί πρόσβασης** και **Αποθήκευση στις λήψεις**.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Εισαγωγή αρχείου κωδικών πρόσβασης...";
 
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "Στον Chrome, μεταβείτε στο **Διαχειριστής κωδικών πρόσβασης Google** και μετά στις **Ρυθμίσεις**.";
@@ -1210,9 +1204,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
 
-/* No comment provided by engineer. */
-"Delete All" = "Διαγραφή όλων";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "συσκευή";
 
@@ -1297,8 +1288,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Η λειτουργία του Duck Player έχει επηρεαστεί από τις πρόσφατες αλλαγές στο YouTube. Προσπαθούμε να διορθώσουμε αυτά τα προβλήματα και εκτιμούμε την κατανόησή σας.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Το Duck.ai αποτελεί προαιρετική λειτουργία που σας επιτρέπει να συνομιλείτε ανώνυμα με δημοφιλή μοντέλα τρίτων για συνομιλία μέσω τεχνητής νοημοσύνης. Οι συνομιλίες σας δεν χρησιμοποιούνται για την εκπαίδευση τεχνητής νοημοσύνης.\n[Μάθετε περισσότερα](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Γραμμή διευθύνσεων";
@@ -1312,7 +1303,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Φωνητική αναζήτηση";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Μάθετε περισσότερα";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1672,6 +1666,9 @@
 /* Title of the feedback form */
 "feedback.form.title" = "Βοηθήστε να βελτιώσουμε το Privacy Pro";
 
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
+
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
 
@@ -1863,6 +1860,18 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Αναγνωριστικό: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Εισαγωγή κωδικών πρόσβασης";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Μη ρωτήσετε ξανά";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Μεταφέρετε γρήγορα και με ασφάλεια τους κωδικούς πρόσβασής σας από άλλο πρόγραμμα περιήγησης.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Πρέπει να ενεργοποιήσετε το VPN από την εφαρμογή DuckDuckGo.";
@@ -2258,7 +2267,7 @@
 "new.tab.page.settings.title" = "Προσαρμογή σελίδας νέας καρτέλας";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Συνομιλία με ΤΝ";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Σελιδοδείκτες";
@@ -2356,15 +2365,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Πριν το ξεχάσω...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "Το DuckDuckGo έχει επίσης ενσωματωμένο %1$@!\n\nΕνεργοποίησέ το με μια %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "επί πληρωμή συνδρομή Privacy Pro";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Έναρξη περιήγησης";
 
@@ -2409,6 +2409,18 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Δεν είναι δυνατή η εύρεση της εφαρμογής που απαιτείται για άνοιγμα αυτού του συνδέσμου";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Δεν είναι δυνατή η πρόσβαση στα μοντέλα Duck.ai μόνο για συνδρομητές";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Δεν μπορώ να αποκτήσω πρόσβαση στο Duck.ai με τη συνδρομή μου σε άλλα προγράμματα περιήγησης";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "ΕΠΙΛΕΞΤΕ ΚΑΤΗΓΟΡΙΑ";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Άλλα σχόλια για το Duck.ai";
 
 /* Activate button */
 "pm.activate" = "Ενεργοποίηση";
@@ -2626,6 +2638,9 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "ΕΠΙΛΕΞΤΕ ΚΑΤΗΓΟΡΙΑ";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Ρύθμιση προσαρμοσμένης διεύθυνσης URL για το AI Chat";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "Σχετικά με το DuckDuckGo";
 
@@ -2657,7 +2672,16 @@
 "settings.address.full.url" = "Εμφάνιση πλήρους διεύθυνσης ιστότοπου";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Συντομευσεις";
+"settings.aichat.shortcuts" = "Συντομεύσεις Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Εισαγωγή αναζήτησης";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Κάντε αναζήτηση στο διαδίκτυο ή ρωτήστε το Duck.ai απευθείας από τη Γραμμή διευθύνσεων";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
@@ -2735,13 +2759,19 @@
 "settings.emailProtection.description" = "Αποκλείστε εφαρμογές παρακολούθησης email και αποκρύψτε τη διεύθυνσή σας";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Ενεργοποίηση του Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Συνομίλησε ιδιωτικά με δημοφιλή μοντέλα τεχνητής νοημοσύνης τρίτων";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Ενεργοποίηση Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Ενεργοποίηση φωνητικής αναζήτησης";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Επιλέξτε πόσο συχνά θέλετε να εμφανίζονται οι απαντήσεις που υποστηρίζονται από τεχνητή νοημοσύνη στις αναζητήσεις σας";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Κοινοποίηση σχολίου";
@@ -2839,11 +2869,26 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Αυτό παίρνει περισσότερο χρόνο από το συνηθισμένο. Ελέγξτε πάλι αργότερα.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Αφαιρέστε τις πληροφορίες σας από ιστότοπους που τις πωλούν";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Οι συνδρομητές λαμβάνουν το VPN μας και τo Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Οι συνδρομητές αποκτούν το VPN, το Personal Information Removal και το Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Οι συνδρομητές αποκτούν το VPN μας, προηγμένα μοντέλα τεχνητής νοημοσύνης στο Duck.ai και το Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Οι συνδρομητές αποκτούν το VPN μας, προηγμένα μοντέλα τεχνητής νοημοσύνης στο Duck.ai, το Personal Information Removal και το Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Έχω συνδρομή";
@@ -2853,6 +2898,12 @@
 
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Η συνδρομή σας στο Privacy Pro έληξε";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "Συνδρομή DuckDuckGo";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Αν κλαπεί η ταυτότητά σας, θα σας βοηθήσουμε να την αποκαταστήσετε";
@@ -2866,17 +2917,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Ρυθμίσεις συνδρομής";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Περιλαμβάνει το VPN μας και τo Identity Theft Restoration.";
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "Συνδρομή DuckDuckGo";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Εγγραφείτε στο DuckDuckGo";
 
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Προστατέψτε τη σύνδεση και την ταυτότητά σας με το Privacy Pro";
+"settings.subscription.subscribe.title" = "Ασφαλίστε το Wi-Fi σας και συνομιλήστε ιδιωτικά με προηγμένα μοντέλα τεχνητής νοημοσύνης";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Ασφαλίστε το Wi-Fi σας και προστατέψτε την ταυτότητά σας";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Δοκιμάστε τη συνδρομή DuckDuckGo δωρεάν";
 
 /* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free" = "Δοκιμάστε το Privacy Pro δωρεάν";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Περιλαμβάνει το VPN μας και τα Personal Information Removal και Identity Theft Restoration.";
+"settings.subscription.try.free.no.ai.chat" = "Δοκιμάστε το Privacy Pro δωρεάν";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +3000,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ποιος ιστότοπος είναι κατεστραμμένος;";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Διακοπή δημιουργίας...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
@@ -3030,6 +3084,15 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Είστε σίγουροι;";
+
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Συνομίλησε ιδιωτικά με μοντέλα τεχνητής νοημοσύνης αποκλειστικά για συνδρομητές.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Άνοιξε το Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Η συνδρομή που συνδέεται με αυτό το email δεν είναι πλέον ενεργή.";
@@ -3144,6 +3207,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Είστε πανέτοιμοι.";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "Συνδρομή DuckDuckGo";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Έχει γίνει εγγραφή";

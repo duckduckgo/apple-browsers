@@ -35,21 +35,21 @@ class OnboardingManagerTests: XCTestCase {
     var importProvider: CapturingDataImportProvider!
 
     @MainActor override func setUp() {
-        super.setUp()
         navigationDelegate = CapturingOnboardingNavigation()
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager())
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
         startupPersistor = StartupPreferencesUserDefaultsPersistor()
         fireButtonPreferencesPersistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(
             persistor: fireButtonPreferencesPersistor,
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
         )
-        startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
+        startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
         manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider)
     }
@@ -61,7 +61,10 @@ class OnboardingManagerTests: XCTestCase {
         defaultBrowserProvider = nil
         appearancePreferences = nil
         startupPreferences = nil
-        super.tearDown()
+        appearancePersistor = nil
+        dataClearingPreferences = nil
+        fireButtonPreferencesPersistor = nil
+        importProvider = nil
     }
 
     func testReturnsExpectedOnboardingConfig() {

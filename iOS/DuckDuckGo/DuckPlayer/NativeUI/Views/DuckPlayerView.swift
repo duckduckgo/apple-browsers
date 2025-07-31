@@ -38,7 +38,6 @@ struct DuckPlayerView: View {
         static let duckPlayerImage: String = "DuckPlayer"
         static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
         static let duckPlayerYoutubeImage: String = "OpenInYoutube"
-        static let dragGestureThreshold: CGFloat = 100
         static let uiElementsBackground: Color = Color.gray.opacity(0.2)
         static let uiElementRadius: CGFloat = 8
         static let chevronUpIcon: String = "chevron.up"
@@ -100,6 +99,19 @@ struct DuckPlayerView: View {
                 GeometryReader { geometry in
                     ZStack {
                         webView
+
+                        // Loading Indicator
+                        if viewModel.isLoading {
+                            ZStack {
+                                Color.black.opacity(0.5)
+                                SwiftUI.ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                                    .tint(.white)
+                                    .scaleEffect(1.5)
+                            }
+                            .edgesIgnoringSafeArea(.all)
+                            .transition(.opacity)
+                        }
                     }
                     .frame(
                         width: geometry.size.width,
@@ -111,6 +123,7 @@ struct DuckPlayerView: View {
                     )
                 }
                 .layoutPriority(1)
+                .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
 
                 Spacer(minLength: LayoutConstants.controlsSpacing)
 
@@ -151,20 +164,12 @@ struct DuckPlayerView: View {
                                 .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
                                 .rotationEffect(Angle(degrees: viewModel.controlsVisible ? 180 : 0))
                         }
+                        .accessibilityIdentifier("chevron.up")
                     }
                     .padding(.bottom, LayoutConstants.controlButtonBottomPadding)
                 }
             }
         }
-        .gesture(
-            DragGesture()
-                .onEnded { gesture in
-                    // Check if the drag was predominantly downward and had enough velocity
-                    if gesture.translation.height > Constants.dragGestureThreshold && gesture.predictedEndTranslation.height > 0 {
-                        dismiss()
-                    }
-                }
-        )
         .onFirstAppear {
             viewModel.onFirstAppear()
             autoOpenOnYoutube = viewModel.autoOpenOnYoutube
@@ -194,6 +199,7 @@ struct DuckPlayerView: View {
                         .onChange(of: autoOpenOnYoutube) { newValue in
                             viewModel.autoOpenOnYoutube = newValue
                         }
+                        .accessibilityIdentifier("Open YouTube videos here")
                 }
                 .padding(.horizontal, LayoutConstants.horizontalPadding)
             }
@@ -226,6 +232,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(.horizontal, LayoutConstants.horizontalPadding)
                 }
+                .accessibilityIdentifier("Watch on YouTube")
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
@@ -252,6 +259,7 @@ struct DuckPlayerView: View {
                         .frame(width: LayoutConstants.settingsButtonSize, height: LayoutConstants.settingsButtonSize)
                 }
             }
+            .accessibilityIdentifier("DuckPlayerOpenSettings")
 
             Spacer()
 
@@ -264,6 +272,7 @@ struct DuckPlayerView: View {
                 Text(UserText.duckPlayerFeatureName)
                     .foregroundColor(.white)
                     .font(.headline)
+                    .accessibilityIdentifier("Duck Player")
             }
 
             Spacer()
@@ -277,6 +286,7 @@ struct DuckPlayerView: View {
                         .font(.system(size: 20, weight: .semibold))
                         .frame(width: LayoutConstants.closeButtonSize, height: LayoutConstants.closeButtonSize)
                 })
+                .accessibilityIdentifier("xmark")
         }
         .padding(.horizontal, LayoutConstants.horizontalPadding)
     }
@@ -366,6 +376,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(8)
                 }
+                .accessibilityIdentifier("duckPlayerWelcomeCloseButton")
                 .offset(x: 2, y: 4 + LayoutConstants.duckPlayerLogoSize)
                 .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 0)
             }

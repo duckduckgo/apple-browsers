@@ -1,0 +1,76 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - duckplayer.native
+
+---
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+# Turn DuckPlayer to Auto
+- tapOn:
+    id: chevron.up.chevron.down
+- tapOn: ${output.letMeChooseLabel}
+
+# Close Settings
+- runFlow: 
+    file: shared/close_settings.yaml
+
+# Navigate to a video
+# Load Site
+- runFlow: 
+    file: shared/load_youtube_url.yaml
+
+  # Assert Youtube Search Page opens and open the video
+- assertVisible: ${output.videoTitle}
+- tapOn: ${output.videoTitle}
+
+# Validate YouTube opens
+- assertVisible: ${output.youtubeMobileDomain}
+
+# Assert Duck Player Welcome Pill is present
+- assertVisible:
+    id: duckPlayerWelcomePill
+
+- tapOn:
+    id: duckPlayerWelcomeButton
+
+# Validate Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+- assertVisible:
+    id: ${output.openVideosHereLabel}
+
+- assertVisible:
+    id: ${output.chevronUpId}
+
+- tapOn:
+    id: ${output.chevronUpId}
+
+- assertNotVisible:
+    id: ${output.openVideosHereLabel}
+
+- tapOn:
+    id: ${output.chevronUpId}
+
+- tapOn: ${output.watchInYoutubeOption}
+
+# Close Duck Player
+- runFlow: 
+    file: shared/close_player.yaml
+
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+- assertVisible: ${output.openAutomaticallyLabel}

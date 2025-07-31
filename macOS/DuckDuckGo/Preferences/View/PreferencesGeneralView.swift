@@ -106,10 +106,9 @@ extension Preferences {
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})
                         .pickerStyle(.radioGroup)
-                        .disabled(dataClearingModel.isAutoClearEnabled)
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
-                        if dataClearingModel.isAutoClearEnabled {
+                        if dataClearingModel.isAutoClearEnabled && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
@@ -157,7 +156,7 @@ extension Preferences {
                                 ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
                                     Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
                                 }
-                            }
+                            }.accessibilityIdentifier("PreferencesGeneralView.pinnedTabsModePicker")
                         }
                         .alert(isPresented: $showWarningAlert) {
                             Alert(

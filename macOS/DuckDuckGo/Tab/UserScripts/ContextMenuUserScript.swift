@@ -19,6 +19,7 @@
 import WebKit
 import UserScript
 
+@MainActor
 protocol ContextMenuUserScriptDelegate: AnyObject {
     func willShowContextMenu(withSelectedText selectedText: String?, linkURL: String?)
 }

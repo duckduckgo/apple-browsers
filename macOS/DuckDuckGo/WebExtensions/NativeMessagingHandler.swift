@@ -31,11 +31,11 @@ final class NativeMessagingHandler {
     }
 
     private func connection(for communicator: NativeMessagingCommunicator) -> NativeMessagingConnection? {
-        return nativeMessagingConnections.first(where: {communicator === $0.communicator})
+        return nativeMessagingConnections.first(where: { communicator === $0.communicator })
     }
 
     private func cancelConnection(_ connection: NativeMessagingConnection) {
-        nativeMessagingConnections.removeAll {$0 === connection}
+        nativeMessagingConnections.removeAll { $0 === connection }
     }
 
     private func cancelConnection(with port: WKWebExtension.MessagePort) {
@@ -43,7 +43,7 @@ final class NativeMessagingHandler {
     }
 
     private func cancelConnection(with communicator: NativeMessagingCommunicator) {
-        nativeMessagingConnections.removeAll {$0.communicator === communicator}
+        nativeMessagingConnections.removeAll { $0.communicator === communicator }
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {

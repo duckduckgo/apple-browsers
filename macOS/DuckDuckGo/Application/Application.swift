@@ -23,7 +23,7 @@ import Foundation
 @objc(Application)
 final class Application: NSApplication {
 
-    public static var appDelegate: AppDelegate!
+    public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
 
     override init() {
         super.init()
@@ -50,7 +50,7 @@ final class Application: NSApplication {
             bookmarkManager: delegate.bookmarkManager,
             historyCoordinator: delegate.historyCoordinator,
             faviconManager: delegate.faviconManager,
-            aiChatMenuConfig: AIChatMenuConfiguration(),
+            aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             internalUserDecider: delegate.internalUserDecider,
             appearancePreferences: delegate.appearancePreferences,
             privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager
@@ -72,4 +72,32 @@ final class Application: NSApplication {
         NSGetUncaughtExceptionHandler()?(exception)
     }
 
+#if DEBUG
+    var testIgnoredEvents: [NSEvent.EventType] = {
+        var testIgnoredEvents: [NSEvent.EventType] = [
+            .mouseMoved, .mouseExited, .mouseExited, .mouseEntered,
+            .leftMouseUp, .leftMouseUp, .leftMouseDown, .leftMouseDragged,
+            .rightMouseUp, .rightMouseUp, .rightMouseDown, .rightMouseDragged,
+            .otherMouseUp, .otherMouseUp, .otherMouseDown, .otherMouseDragged,
+            .keyDown, .keyUp, .flagsChanged,
+            .scrollWheel, .magnify, .rotate, .swipe,
+            .directTouch, .gesture, .beginGesture,
+            .tabletPoint, .tabletProximity,
+            .pressure,
+        ]
+        if #available(macOS 26.0, *) {
+            testIgnoredEvents.append(.init(rawValue: 40)! /* .mouseCancelled */)
+        }
+        return testIgnoredEvents
+    }()
+    override func sendEvent(_ event: NSEvent) {
+        // Ignore user events when running Tests
+        if [.unitTests, .integrationTests].contains(AppVersion.runType),
+           testIgnoredEvents.contains(event.type),
+           (NSClassFromString("TestRunHelper") as? NSObject.Type)!.value(forKey: "allowAppSendUserEvents") as? Bool != true {
+            return
+        }
+        super.sendEvent(event)
+    }
+#endif
 }

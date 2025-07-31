@@ -82,7 +82,8 @@ extension AIChatMessageHandler {
                                             supportsOpeningSettings: true,
                                             supportsNativePrompt: true,
                                             supportsNativeChatInput: false,
-                                            supportsURLChatIDRestoration: true)
+                                            supportsURLChatIDRestoration: true,
+                                            supportsFullChatRestoration: true)
         } else {
             return AIChatNativeConfigValues.defaultValues
         }
@@ -111,7 +112,7 @@ extension AIChatMessageHandler {
     }
 
     private func getAIChatRestorationData() -> Encodable? {
-        chatRestorationDataHandler.getData()
+        chatRestorationDataHandler.consumeData()
     }
 
     private func setAIChatRestorationData(_ data: AIChatRestorationData?) {

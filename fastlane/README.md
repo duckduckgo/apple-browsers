@@ -122,6 +122,22 @@ Makes App Store release build and uploads it to TestFlight
 
 Makes Alpha release build and uploads it to TestFlight
 
+### ios build_alpha
+
+```sh
+[bundle exec] fastlane ios build_alpha
+```
+
+Makes Alpha release build only (without uploading)
+
+### ios upload_alpha
+
+```sh
+[bundle exec] fastlane ios upload_alpha
+```
+
+Uploads pre-built Alpha app to TestFlight
+
 ### ios increment_build_number_for_version
 
 ```sh
@@ -150,6 +166,14 @@ Fetches and updates certificates and provisioning profiles for App Store distrib
 ```
 
 Fetches and updates certificates and provisioning profiles for DMG distribution
+
+### mac sync_signing_dmg_alpha
+
+```sh
+[bundle exec] fastlane mac sync_signing_dmg_alpha
+```
+
+Fetches and updates certificates and provisioning profiles for DMG Alpha builds
 
 ### mac sync_signing_dmg_review
 
@@ -181,7 +205,15 @@ Makes App Store release build and uploads it to TestFlight
 [bundle exec] fastlane mac release_testflight_review
 ```
 
-Makes App Store release build and uploads it to TestFlight
+Makes App Store Review build and uploads it to TestFlight
+
+### mac release_testflight_alpha
+
+```sh
+[bundle exec] fastlane mac release_testflight_alpha
+```
+
+Makes App Store Alpha build and uploads it to TestFlight
 
 ### mac promote_latest_testflight_to_appstore
 

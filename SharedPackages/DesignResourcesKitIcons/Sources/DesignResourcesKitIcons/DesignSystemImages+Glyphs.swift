@@ -86,6 +86,7 @@ public extension DesignSystemImages {
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
+            public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
             public static var alert: DesignSystemImage { .init(resource: .alert16) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable16) }
             public static var arrowCircleRight: DesignSystemImage { .init(resource: .arrowCircleRight16) }
@@ -151,6 +152,7 @@ public extension DesignSystemImages {
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
+            public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }
             public static var fire: DesignSystemImage { .init(resource: .fire16) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid16) }
             public static var fireTab: DesignSystemImage { .init(resource: .fireTab16) }
@@ -312,14 +314,17 @@ public extension DesignSystemImages {
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
+            public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown24) }
             public static var arrowDownLeft: DesignSystemImage { .init(resource: .arrowDownLeft24) }
             public static var arrowDownRight: DesignSystemImage { .init(resource: .arrowDownRight24) }
             public static var arrowDownLeftSmall: DesignSystemImage { .init(resource: .arrowDownLeft24Small) }
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft24) }
             public static var arrowLeftSmall: DesignSystemImage { .init(resource: .arrowLeftSmall24) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight24) }
+            public static var arrowRightSmall: DesignSystemImage { .init(resource: .arrowRightSmall24) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp24) }
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight24) }
+            public static var assist: DesignSystemImage { .init(resource: .assist24) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt24) }
             public static var bell: DesignSystemImage { .init(resource: .bell24) }
             public static var bookmark: DesignSystemImage { .init(resource: .bookmark24) }
@@ -425,12 +430,13 @@ public extension DesignSystemImages {
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
+            public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
             public static var subItemRecolorable: DesignSystemImage { .init(resource: .subItemRecolorable24) }
             public static var subtraction: DesignSystemImage { .init(resource: .subtraction24) }
             public static var support: DesignSystemImage { .init(resource: .support24) }
             public static var syncCloud: DesignSystemImage { .init(resource: .syncCloud24) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile24) }
-            public static var tabMobileAlertRecolorable: DesignSystemImage { .init(resource: .tabMobileAlertRecolorable24) }
+            public static var tabMobileAlert: DesignSystemImage { .init(resource: .tabMobileAlert24) }
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }
             public static var tag: DesignSystemImage { .init(resource: .tag24) }

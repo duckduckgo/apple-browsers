@@ -21,6 +21,7 @@ import Cocoa
 import CommonObjCExtensions
 import WebKit
 
+@MainActor
 protocol WebViewContextMenuDelegate: AnyObject {
     func webView(_ webView: WebView, willOpenContextMenu menu: NSMenu, with event: NSEvent)
     func webView(_ webView: WebView, didCloseContextMenu menu: NSMenu, with event: NSEvent?)
@@ -47,7 +48,7 @@ final class WebView: WKWebView {
     weak var interactionEventsDelegate: WebViewInteractionEventsDelegate?
     weak var zoomLevelDelegate: WebViewZoomLevelDelegate?
 
-    private var isLoadingObserver: Any?
+    var isLoadingObserver: Any?
 
     private var shouldShowWebInspector: Bool {
         // When a new tab is open, we don't want the web inspector to be active on screen and gain focus.

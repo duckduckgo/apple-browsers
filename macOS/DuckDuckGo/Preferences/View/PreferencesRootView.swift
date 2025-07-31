@@ -25,6 +25,7 @@ import BrowserServicesKit
 import PixelKit
 import Subscription
 import SubscriptionUI
+import AIChat
 
 enum Preferences {
 
@@ -285,12 +286,16 @@ enum Preferences {
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
         let visualStyle: VisualStyleProviding
+        let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
+        let aiChatURLSettings: AIChatRemoteSettingsProvider
 
         init(
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling,
+            featureFlagger: FeatureFlagger,
+            aiChatURLSettings: AIChatRemoteSettingsProvider,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
         ) {
@@ -298,7 +303,9 @@ enum Preferences {
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.showTab = showTab
+            self.featureFlagger = featureFlagger
             self.visualStyle = visualStyle
+            self.aiChatURLSettings = aiChatURLSettings
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -367,7 +374,7 @@ enum Preferences {
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!)
+                    SubscriptionUI.PreferencesSubscriptionSettingsViewV2(model: subscriptionSettingsModel!, isSubscriptionRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) }, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
@@ -421,7 +428,7 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                        featureFlagger: featureFlagger,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -451,7 +458,7 @@ enum Preferences {
                      switch event {
                      case .openAIC:
                          PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
-                         let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+                         let aiChatURL = aiChatURLSettings.aiChatURL
                          showTab(.url(aiChatURL, source: .ui))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
@@ -513,7 +520,9 @@ enum Preferences {
 
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
-                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
+                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
+                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                          isRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

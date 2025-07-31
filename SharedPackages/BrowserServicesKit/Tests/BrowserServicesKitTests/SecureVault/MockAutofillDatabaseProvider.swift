@@ -176,7 +176,11 @@ internal class MockAutofillDatabaseProvider: AutofillDatabaseProvider {
             _creditCards[cardID] = creditCard
             return cardID
         } else {
-            return -1
+            var creditCardToStore = creditCard
+            let id = Int64(_creditCards.count + 1)
+            creditCardToStore.id = id
+            _creditCards[id] = creditCardToStore
+            return id
         }
     }
 

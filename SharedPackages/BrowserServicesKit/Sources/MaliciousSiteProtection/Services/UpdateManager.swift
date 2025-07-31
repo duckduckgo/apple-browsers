@@ -117,6 +117,9 @@ public struct UpdateManager: InternalUpdateManaging {
         Task.detached {
             // run update jobs in background for every data type
             try await withThrowingTaskGroup(of: Never.self) { group in
+                defer {
+                    Logger.updateManager.info("Periodic updates cancelled")
+                }
                 let supportedThreats = supportedThreatsProvider()
                 let filteredDataTypes = DataManager.StoredDataType.allCases.filter { supportedThreats.contains($0.threatKind) }
                 for dataType in filteredDataTypes {
@@ -146,7 +149,7 @@ public struct UpdateManager: InternalUpdateManaging {
 
     #if os(iOS)
     public func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Never> {
-        Task.detached {
+        Task {
             // run update jobs in background for every data type
             let supportedThreats = supportedThreatsProvider()
 

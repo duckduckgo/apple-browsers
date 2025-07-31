@@ -55,11 +55,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
 
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
-    private let freemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging
     private let notificationCenter: NotificationCenter
 
-    /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
-    private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
+    /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
+    private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
     private let featureFlagger: FeatureFlagger
 
@@ -69,9 +68,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
-                freemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging,
                 notificationCenter: NotificationCenter = .default,
-                freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
+                dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
@@ -79,9 +77,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.uiHandler = uiHandler
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
-        self.freemiumDBPPixelExperimentManager = freemiumDBPPixelExperimentManager
         self.notificationCenter = notificationCenter
-        self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
+        self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.featureFlagger = featureFlagger
     }
 
@@ -511,10 +508,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     ///
     /// - Note: This method is asynchronous when extracting the origin from the webview URL.
     private func setPixelOrigin(from message: WKScriptMessage) async {
-        // If the user has performed a Freemium scan, set a Freemium origin and return
-        guard !setFreemiumOriginIfScanPerformed() else { return }
-
-        // Else, Extract the origin from the webview URL to use for attribution pixel.
+        // Extract the origin from the webview URL to use for attribution pixel.
         subscriptionSuccessPixelHandler.origin = await originFrom(originalMessage: message)
     }
 }
@@ -569,7 +563,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     /// If the feature is activated (`didActivate` returns `true`), it fires a unique subscription-related pixel event using `PixelKit`.
     func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
         if freemiumDBPUserStateManager.didActivate {
-            freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.subscription, parameters: freemiumDBPPixelExperimentManager.pixelParameters)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
         }
     }
 
@@ -582,23 +576,6 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         if freemiumDBPUserStateManager.didActivate && freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp == nil {
             freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp = Date()
         }
-    }
-
-    /// Sets the origin for attribution if the user has started their first Freemium PIR scan
-    ///
-    /// This method checks whether the user has started their first Freemium PIR scan.
-    /// If they have, the method sets the subscription success tracking origin to `"funnel_freescan_macos"` and returns `true`.
-    ///
-    /// - Returns:
-    ///   - `true` if the origin is set because the user has started their first Freemim PIR scan.
-    ///   - `false` if a first scan has not been started and the origin is not set.
-    func setFreemiumOriginIfScanPerformed() -> Bool {
-        let origin = SubscriptionFunnelOrigin.freeScan.rawValue
-        if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
-            subscriptionSuccessPixelHandler.origin = origin
-            return true
-        }
-        return false
     }
 
     /// Retrieves free trial subscription options for App Store.

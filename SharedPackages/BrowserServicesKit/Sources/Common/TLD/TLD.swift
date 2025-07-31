@@ -30,9 +30,9 @@ public class TLD {
 
     public init() {
         guard let url = Bundle.module.url(forResource: "tlds", withExtension: "json") else { return }
-        guard let data = try? Data(contentsOf: url) else { return }
+        guard let data = try? Data(contentsOf: url),
+              let asString = data.utf8String() else { return }
 
-        let asString = String(decoding: data, as: UTF8.self)
         let asStringWithoutComments = asString.replacingOccurrences(of: "(?m)^//.*",
                                                                     with: "",
                                                                     options: .regularExpression)
@@ -96,5 +96,13 @@ public class TLD {
 
         let subdomain = host.replacingOccurrences(of: eTLDPlus1, with: "").dropping(suffix: ".")
         return subdomain.isEmpty ? nil : subdomain
+    }
+
+    public func extractSecondLevelDomain(fromStringURL stringURL: String) -> String? {
+        guard let eTLDPlus1 = eTLDplus1(forStringURL: stringURL) else {
+            return nil
+        }
+
+        return eTLDPlus1.components(separatedBy: ".").first
     }
 }

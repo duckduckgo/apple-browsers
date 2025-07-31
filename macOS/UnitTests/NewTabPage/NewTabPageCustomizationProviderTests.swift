@@ -33,7 +33,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
 
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager())
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0
@@ -55,6 +55,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: storageLocation)
+        appearancePreferences = nil
+        customizationModel = nil
+        provider = nil
+        userBackgroundImagesManager = nil
     }
 
     func testThatCustomizerOpenerReturnsSettingsModelCustomizerOpener() {

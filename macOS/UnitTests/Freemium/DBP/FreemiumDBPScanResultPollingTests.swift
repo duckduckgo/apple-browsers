@@ -37,6 +37,12 @@ final class FreemiumDBPScanResultPollingTests: XCTestCase {
         mockDataManager = MockDataBrokerProtectionDataManager()
     }
 
+    override func tearDown() {
+        mockDataManager = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockNotificationCenter = nil
+    }
+
     func testWhenResultsAlreadyPosted_thenNoPollingOrObserving() {
         // Given
         mockFreemiumDBPUserStateManager.didPostResultsNotification = true

@@ -49,11 +49,21 @@ final class BrowserTabViewController: NSViewController {
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: NewTabPageActionsManager
-    private(set) lazy var newTabPageWebViewModel: NewTabPageWebViewModel = NewTabPageWebViewModel(
-        featureFlagger: featureFlagger,
-        actionsManager: newTabPageActionsManager,
-        activeRemoteMessageModel: activeRemoteMessageModel
-    )
+
+    private var _newTabPageWebViewModel: NewTabPageWebViewModel?
+    var newTabPageWebViewModel: NewTabPageWebViewModel {
+        if let newTabPageWebViewModel = _newTabPageWebViewModel {
+            return newTabPageWebViewModel
+        }
+
+        let newTabPageWebViewModel = NewTabPageWebViewModel(
+            featureFlagger: featureFlagger,
+            actionsManager: newTabPageActionsManager,
+            activeRemoteMessageModel: activeRemoteMessageModel
+        )
+        _newTabPageWebViewModel = newTabPageWebViewModel
+        return newTabPageWebViewModel
+    }
 
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -217,7 +227,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         self.removeWebViewFromHierarchy()
-        self.newTabPageWebViewModel.removeUserScripts()
+        _newTabPageWebViewModel?.removeUserScripts()
     }
 
     @objc
@@ -680,7 +690,7 @@ final class BrowserTabViewController: NSViewController {
                             .filter { $0 == true }
                             .asVoid(),
                         tabViewModel.tab.navigationStatePublisher.compactMap { $0 }
-                            .filter{ $0 >= .started }
+                            .filter { $0 >= .started }
                             .asVoid()
                     )
                     // take the first such event and move forward.
@@ -717,14 +727,25 @@ final class BrowserTabViewController: NSViewController {
             let dialog: Tab.UserDialog?
             let isDisplayingSnapshot: Bool
         }
-        Publishers.CombineLatest3(
+        // AI Chat sidebar user interaction dialog
+        let aiChatSidebarUserDialog = NotificationCenter.default.publisher(for: .aiChatSidebarUserInteractionDialogChanged)
+            .map { notification in
+                notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
+            }
+            .prepend(nil)
+
+        Publishers.CombineLatest4(
             tabViewModel.tab.$userInteractionDialog,
             tabViewModel.tab.downloads?.savePanelDialogPublisher ?? Just(nil).eraseToAnyPublisher(),
             // when switching to a window containing a pinned tab snapshot re-display an already-presented dialog in this window
-            $webViewSnapshot.map { $0 != nil }
+            $webViewSnapshot.map { $0 != nil },
+            aiChatSidebarUserDialog
         )
-        .map { userDialog, saveDialog, isDisplayingSnapshot in
-            return CombinedArg(dialog: saveDialog ?? userDialog, isDisplayingSnapshot: isDisplayingSnapshot)
+        .map { userDialog, saveDialog, isDisplayingSnapshot, aiChatSidebarUserDialog in
+            return CombinedArg(
+                dialog: saveDialog ?? userDialog ?? aiChatSidebarUserDialog,
+                isDisplayingSnapshot: isDisplayingSnapshot
+            )
         }
         .removeDuplicates()
         .sink { [weak self] arg in
@@ -897,6 +918,10 @@ final class BrowserTabViewController: NSViewController {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
         }
 
+        if let tabID = tabViewModel?.tab.uuid {
+            aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
+        }
+
         switch tabViewModel?.tab.content {
         case .bookmarks:
             removeAllTabContent()
@@ -955,10 +980,6 @@ final class BrowserTabViewController: NSViewController {
         if shouldReplaceWebView(for: tabViewModel) {
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
-
-            if let tabID = tabViewModel?.tab.uuid {
-                aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
-            }
         }
     }
 

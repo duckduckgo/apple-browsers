@@ -254,7 +254,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
-        guard defaultBrowserPollingCount <= Constants.defaultBrowserPollingCount else {
+        guard defaultBrowserPollingCount < Constants.defaultBrowserPollingCount else {
             resetDefaultBrowserPolling()
             return
         }

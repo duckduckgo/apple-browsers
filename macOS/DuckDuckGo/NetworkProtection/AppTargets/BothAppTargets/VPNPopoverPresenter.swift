@@ -19,6 +19,8 @@
 import AppKit
 import SwiftUI
 import Foundation
+import BrowserServicesKit
+import Subscription
 
 protocol VPNUpsellPopoverPresenter {
     func toggle(below view: NSView, onConfirm: @escaping () -> Void, onDismiss: @escaping () -> Void)
@@ -27,6 +29,13 @@ protocol VPNUpsellPopoverPresenter {
 final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, PopoverPresenter {
 
     private var popover: VPNUpsellPopover?
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let featureFlagger: FeatureFlagger
+
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, featureFlagger: FeatureFlagger) {
+        self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
+    }
 
     var isShown: Bool {
         popover?.isShown ?? false
@@ -44,6 +53,8 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
         dismiss()
 
         let viewModel = VPNUpsellPopoverViewModel(
+            subscriptionManager: subscriptionManager,
+            featureFlagger: featureFlagger,
             primaryButtonAction: { [weak self] in
                 onConfirm()
                 self?.dismiss()

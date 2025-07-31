@@ -710,7 +710,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
-        vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter()
+        vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
+            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            featureFlagger: featureFlagger
+        )
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(

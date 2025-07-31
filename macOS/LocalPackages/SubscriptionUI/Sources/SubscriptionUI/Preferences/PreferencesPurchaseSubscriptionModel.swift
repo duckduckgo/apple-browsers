@@ -33,7 +33,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     lazy var sheetModel = SubscriptionAccessViewModel(actionHandlers: sheetActionHandler,
                                                       purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
-                                                      isRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding))
+                                                      isRebrandingOn: { [weak self] in self?.featureFlagger.isFeatureOn(.subscriptionRebranding) ?? false })
 
     var shouldDirectlyLaunchActivationFlow: Bool {
         subscriptionManager.currentEnvironment.purchasePlatform == .stripe

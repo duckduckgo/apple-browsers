@@ -23,15 +23,15 @@ public final class SubscriptionAccessViewModel {
 
     private var actionHandlers: SubscriptionAccessActionHandlers
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
-    private var isRebrandingOn: Bool
+    private var isRebrandingOn: () -> Bool
 
     public var title: String {
-        UserText.addSubscriptionModalTitle(isRebrandingOn: isRebrandingOn)
+        UserText.addSubscriptionModalTitle(isRebrandingOn: isRebrandingOn())
     }
 
     public var emailLabel = UserText.addViaEmailTitle
     public var emailDescription: String {
-        UserText.addViaEmailDescription(isRebrandingOn: isRebrandingOn)
+        UserText.addViaEmailDescription(isRebrandingOn: isRebrandingOn())
     }
     public var emailButtonTitle = UserText.addViaEmailButtonTitle
 
@@ -43,7 +43,7 @@ public final class SubscriptionAccessViewModel {
 
     public init(actionHandlers: SubscriptionAccessActionHandlers,
                 purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
-                isRebrandingOn: Bool
+                isRebrandingOn: @escaping () -> Bool
     ) {
         self.actionHandlers = actionHandlers
         self.purchasePlatform = purchasePlatform

@@ -201,12 +201,9 @@ final class TabSnapshotExtension {
 
     private func isAllowedURL(_ url: URL) -> Bool {
         // If duck url allow exception only if it's DuckPlayer or Onboarding or History.
-        switch url {
-        case let url where url.navigationalScheme == .duck:
-            url.host == URL.duckPlayerHost || url == .onboarding || url.isHistory
-        default:
-            true
-        }
+        guard url.navigationalScheme == .duck else { return true }
+
+        return url.host == URL.duckPlayerHost || url == .onboarding || url.isHistory
     }
 
     private func snapshotDelay(forURL url: URL) -> TimeInterval {

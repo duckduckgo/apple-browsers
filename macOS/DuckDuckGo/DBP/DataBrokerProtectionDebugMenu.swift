@@ -514,5 +514,6 @@ extension DataBrokerProtectionDebugMenu: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         databaseBrowserWindowController = nil
         dataBrokerForceOptOutWindowController = nil
+        logMonitorWindowController = nil
     }
 }

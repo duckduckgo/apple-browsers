@@ -157,7 +157,6 @@ class SwitchBarTextEntryView: UIView {
             textView.spellCheckingType = .default
         }
 
-        textView.reloadInputViews()
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
@@ -281,6 +280,8 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
+
+        textView.reloadInputViews()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

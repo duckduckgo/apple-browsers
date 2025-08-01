@@ -62,7 +62,7 @@ class SwitchBarTextEntryView: UIView {
     private var textViewTrailingConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
 
-    var isTouched = false
+    var hasBeenTouched = false
     var isURL: Bool {
         // TODO some kind of text length check?
         URL(string: textView.text)?.navigationalScheme != nil
@@ -133,7 +133,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func onTextViewTouchesBegan() {
         textView.onTouchesBeganHandler = nil
-        isTouched = true
+        hasBeenTouched = true
         updateTextViewHeight()
     }
 
@@ -254,7 +254,7 @@ class SwitchBarTextEntryView: UIView {
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
 
-        if !isTouched && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+        if !hasBeenTouched && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
             heightConstraint?.constant = Constants.minHeight
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
@@ -300,7 +300,6 @@ class SwitchBarTextEntryView: UIView {
                 guard let self = self else { return }
 
                 if self.textView.text != text {
-                    isTouched = false
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
                     self.updateButtonState()

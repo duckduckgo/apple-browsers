@@ -328,9 +328,6 @@
         }
       }
     },
-    "+2 more premium protections" : {
-
-    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {
@@ -486,9 +483,6 @@
           }
         }
       }
-    },
-    "A VPN to secure your\nWi-Fi & personal info" : {
-
     },
     "about.app_name" : {
       "comment" : "Application name to be displayed in the About dialog",
@@ -37290,6 +37284,9 @@
         }
       }
     },
+    "Learn More" : {
+
+    },
     "learnmore.link" : {
       "comment" : "Learn More link",
       "extractionState" : "extracted_with_value",
@@ -52810,9 +52807,6 @@
           }
         }
       }
-    },
-    "PLUS" : {
-
     },
     "pm.activate" : {
       "comment" : "Activate button",

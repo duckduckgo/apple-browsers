@@ -81,7 +81,15 @@ final class VPNUpsellPopoverViewModel {
     @MainActor
     func showSubscriptionLandingPage() {
         onDismiss()
-        let url = subscriptionManager.url(for: .purchase)
+
+        guard let components = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.vpnUpsell.rawValue),
+              let url = components.url else {
+            // Fallback to original URL
+            let url = subscriptionManager.url(for: .purchase)
+            urlOpener(url)
+            return
+        }
+
         urlOpener(url)
     }
 

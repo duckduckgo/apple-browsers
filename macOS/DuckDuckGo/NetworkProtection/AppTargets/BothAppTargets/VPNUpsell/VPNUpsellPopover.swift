@@ -96,13 +96,13 @@ struct VPNUpsellPopoverView: View {
     }
     var titleAndSubtitle: some View {
         VStack(spacing: Constants.titleAndSubtitleVerticalSpacing) {
-            Text("A VPN to secure your\nWi-Fi & personal info")
+            Text(verbatim: "A VPN to secure your\nWi-Fi & personal info")
                 .font(.title3.weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
 
-            Text(plusFeaturesSubtitle)
+            Text(verbatim: plusFeaturesSubtitle)
                 .font(.subheadline)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
@@ -128,7 +128,7 @@ struct VPNUpsellPopoverView: View {
         VStack(spacing: Constants.featuresVerticalSpacing) {
             HStack(spacing: Constants.plusRowHorizontalSpacing) {
                 horizontalLine
-                Text("PLUS")
+                Text(verbatim: "PLUS")
                     .font(.caption.weight(.semibold))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                 horizontalLine
@@ -203,13 +203,13 @@ private struct FeatureRow: View {
                 .padding(.top, Constants.featureRowImageTopPadding)
 
             VStack(alignment: .leading, spacing: Constants.featureRowSubtitleVerticalSpacing) {
-                Text(text)
+                Text(verbatim: text)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let subtitle = subtitle {
-                    Text(subtitle)
+                    Text(verbatim: subtitle)
                         .font(.caption)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .fixedSize(horizontal: false, vertical: true)

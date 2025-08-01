@@ -1,0 +1,10 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    m_mac_release_notes_empty: {
+        description: 'Fires when the release notes page is accessed but no update is available, resulting in empty release notes. Used to measure how often users encounter this anomaly case.',
+        owners: ['diegoreymendez'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

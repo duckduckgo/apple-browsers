@@ -20,6 +20,7 @@ import Combine
 import Common
 import Foundation
 import Navigation
+import PixelKit
 import WebKit
 
 #if SPARKLE
@@ -151,6 +152,9 @@ extension ReleaseNotesValues {
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
         guard let latestUpdate = updateController.latestUpdate else {
+            // Fire both daily and count pixels to track this anomaly
+            PixelKit.fire(GeneralPixel.releaseNotesEmpty, frequency: .dailyAndCount)
+
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,

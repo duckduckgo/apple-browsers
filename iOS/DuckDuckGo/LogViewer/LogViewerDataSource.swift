@@ -110,6 +110,9 @@ final class LogViewerDataSource {
 
     func updateFilter(_ filter: LogFilter) {
         currentFilter = filter
+
+        logEntries = []
+        lastFetchTime = nil
         if isRunning {
             fetchLogs()
         }
@@ -238,14 +241,29 @@ final class LogViewerDataSource {
     }
     
     private func createPredicate() -> NSPredicate? {
-        // Filter out logs with no subsystem or Apple subsystems at the OSLogStore level
-        // This is more efficient than fetching all logs and filtering them afterward
+        var predicates: [NSPredicate] = []
         
-        // Handle both nil and empty string cases for subsystem
+        // Always filter out logs with no subsystem or Apple subsystems
         let hasSubsystem = NSPredicate(format: "subsystem != nil AND subsystem != ''")
         let noAppleSubsystem = NSPredicate(format: "NOT subsystem BEGINSWITH 'com.apple'")
+        predicates.append(contentsOf: [hasSubsystem, noAppleSubsystem])
+
+        if let subsystemFilter = currentFilter.subsystemFilter, !subsystemFilter.isEmpty {
+            let subsystemPredicate = NSPredicate(format: "subsystem CONTAINS[cd] %@", subsystemFilter)
+            predicates.append(subsystemPredicate)
+        }
+
+        if let categoryFilter = currentFilter.categoryFilter, !categoryFilter.isEmpty {
+            let categoryPredicate = NSPredicate(format: "category CONTAINS[cd] %@", categoryFilter)
+            predicates.append(categoryPredicate)
+        }
+
+        if let levelFilter = currentFilter.levelFilter {
+            let levelPredicate = NSPredicate(format: "level >= %d", levelFilter.rawValue)
+            predicates.append(levelPredicate)
+        }
         
-        return NSCompoundPredicate(andPredicateWithSubpredicates: [hasSubsystem, noAppleSubsystem])
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 }
 

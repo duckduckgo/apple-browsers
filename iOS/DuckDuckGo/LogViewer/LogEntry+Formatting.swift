@@ -98,26 +98,8 @@ struct LogFilter {
     let searchText: String?
 
     func matches(_ entry: FormattedLogEntry) -> Bool {
-        // Subsystem filter
-        if let subsystemFilter = subsystemFilter, !subsystemFilter.isEmpty {
-            if !entry.subsystem.localizedCaseInsensitiveContains(subsystemFilter) {
-                return false
-            }
-        }
-        
-        // Category filter
-        if let categoryFilter = categoryFilter, !categoryFilter.isEmpty {
-            if !entry.category.localizedCaseInsensitiveContains(categoryFilter) {
-                return false
-            }
-        }
-        
-        // Level filter (show this level and above)
-        if let levelFilter = levelFilter {
-            if entry.level.rawValue < levelFilter.rawValue {
-                return false
-            }
-        }
+        // Note: Subsystem, category, and level filtering are now handled at the OSLogStore predicate level
+        // Only search text filtering is done here since it's more complex to do in predicates
         
         // Search text filter
         if let searchText = searchText, !searchText.isEmpty {

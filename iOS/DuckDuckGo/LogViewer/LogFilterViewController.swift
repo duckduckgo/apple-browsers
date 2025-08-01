@@ -105,14 +105,11 @@ final class LogFilterViewController: UIViewController {
 extension LogFilterViewController: UITableViewDataSource {
     
     enum Section: Int, CaseIterable {
-        case presets = 0
-        case customFilters = 1
-        case logLevel = 2
+        case customFilters = 0
+        case logLevel = 1
         
         var title: String {
             switch self {
-            case .presets:
-                return "Presets"
             case .customFilters:
                 return "Custom Filters"
             case .logLevel:
@@ -121,28 +118,6 @@ extension LogFilterViewController: UITableViewDataSource {
         }
     }
     
-    enum PresetRow: Int, CaseIterable {
-        case duckDuckGo = 0
-        case allLogs = 1
-        
-        var title: String {
-            switch self {
-            case .duckDuckGo:
-                return "DuckDuckGo Only"
-            case .allLogs:
-                return "All System Logs"
-            }
-        }
-        
-        var filter: LogFilter {
-            switch self {
-            case .duckDuckGo:
-                return LogFilter.allLogsFilter
-            case .allLogs:
-                return LogFilter.allLogsFilter
-            }
-        }
-    }
     
     enum CustomFilterRow: Int, CaseIterable {
         case subsystem
@@ -166,8 +141,6 @@ extension LogFilterViewController: UITableViewDataSource {
         guard let sectionType = Section(rawValue: section) else { return 0 }
         
         switch sectionType {
-        case .presets:
-            return PresetRow.allCases.count
         case .customFilters:
             return CustomFilterRow.allCases.count
         case .logLevel:
@@ -188,8 +161,6 @@ extension LogFilterViewController: UITableViewDataSource {
         guard let sectionType = Section(rawValue: indexPath.section) else { return cell }
         
         switch sectionType {
-        case .presets:
-            configurePresetCell(cell, at: indexPath)
         case .customFilters:
             configureCustomFilterCell(cell, at: indexPath)
         case .logLevel:
@@ -199,13 +170,6 @@ extension LogFilterViewController: UITableViewDataSource {
         return cell
     }
     
-    private func configurePresetCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
-        guard let presetRow = PresetRow(rawValue: indexPath.row) else { return }
-        
-        cell.textLabel?.text = presetRow.title
-        cell.accessoryType = .none
-        cell.selectionStyle = .blue
-    }
     
     private func configureCustomFilterCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
         guard let filterRow = CustomFilterRow(rawValue: indexPath.row) else { return }
@@ -245,8 +209,6 @@ extension LogFilterViewController: UITableViewDelegate {
         guard let sectionType = Section(rawValue: indexPath.section) else { return }
         
         switch sectionType {
-        case .presets:
-            handlePresetSelection(at: indexPath)
         case .customFilters:
             handleCustomFilterSelection(at: indexPath)
         case .logLevel:
@@ -254,11 +216,6 @@ extension LogFilterViewController: UITableViewDelegate {
         }
     }
     
-    private func handlePresetSelection(at indexPath: IndexPath) {
-        guard let presetRow = PresetRow(rawValue: indexPath.row) else { return }
-        currentFilter = presetRow.filter
-        tableView.reloadData()
-    }
     
     private func handleCustomFilterSelection(at indexPath: IndexPath) {
         guard let filterRow = CustomFilterRow(rawValue: indexPath.row) else { return }

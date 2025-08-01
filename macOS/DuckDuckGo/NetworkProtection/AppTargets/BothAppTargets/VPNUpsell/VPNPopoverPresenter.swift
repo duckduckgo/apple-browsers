@@ -23,7 +23,7 @@ import BrowserServicesKit
 import Subscription
 
 protocol VPNUpsellPopoverPresenter {
-    func toggle(below view: NSView, onConfirm: @escaping () -> Void, onDismiss: @escaping () -> Void)
+    func toggle(below view: NSView)
 }
 
 final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, PopoverPresenter {
@@ -31,39 +31,34 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
     private var popover: VPNUpsellPopover?
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
-    private let primaryCTAHandler: () -> Void
+    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, featureFlagger: FeatureFlagger, primaryCTAHandler: @escaping () -> Void) {
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, featureFlagger: FeatureFlagger, vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.primaryCTAHandler = primaryCTAHandler
+        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
     }
 
     var isShown: Bool {
         popover?.isShown ?? false
     }
 
-    func toggle(below view: NSView, onConfirm: @escaping () -> Void, onDismiss: @escaping () -> Void) {
+    func toggle(below view: NSView) {
         if isShown {
             dismiss()
         } else {
-            show(below: view, onConfirm: onConfirm, onDismiss: onDismiss)
+            show(below: view)
         }
     }
 
-    func show(below view: NSView, onConfirm: @escaping () -> Void, onDismiss: @escaping () -> Void) {
+    func show(below view: NSView) {
         dismiss()
 
         let viewModel = VPNUpsellPopoverViewModel(
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
-            primaryButtonAction: { [weak self] in
-                self?.primaryCTAHandler()
-                onConfirm()
-                self?.dismiss()
-            },
-            secondaryButtonAction: { [weak self] in
-                onDismiss()
+            vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
+            onDismiss: { [weak self] in
                 self?.dismiss()
             }
         )

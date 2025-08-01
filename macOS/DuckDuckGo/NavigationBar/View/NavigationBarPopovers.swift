@@ -188,11 +188,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     func toggleVPNUpsellPopover(from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate) {
-        vpnUpsellPopoverPresenter.toggle(below: button, onConfirm: {
-            // TODO: Implement
-        }, onDismiss: {
-            // TODO: Implement
-        })
+        vpnUpsellPopoverPresenter.toggle(below: button)
     }
 
     @MainActor

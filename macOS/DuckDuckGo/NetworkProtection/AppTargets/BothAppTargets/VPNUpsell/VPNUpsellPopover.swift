@@ -151,7 +151,7 @@ struct VPNUpsellPopoverView: View {
     var actionButtons: some View {
         HStack(spacing: Constants.actionButtonHorizontalSpacing) {
             Button {
-                viewModel.secondaryButtonAction()
+                viewModel.dismiss()
             } label: {
                 Text("No Thanks")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -159,7 +159,7 @@ struct VPNUpsellPopoverView: View {
             .buttonStyle(StandardButtonStyle())
 
             Button {
-                viewModel.primaryButtonAction()
+                viewModel.showSubscriptionLandingPage()
             } label: {
                 Text(viewModel.featureEligibility.isEligibleForFreeTrial ? "Try For Free" : "Learn More")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -215,7 +215,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         updateState(.notEligible)
     }
 
-    private func dismissUpsell() {
+    func dismissUpsell() {
         guard state == .visible else {
             return
         }

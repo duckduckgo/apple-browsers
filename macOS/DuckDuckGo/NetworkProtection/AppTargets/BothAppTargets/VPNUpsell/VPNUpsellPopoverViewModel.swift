@@ -40,25 +40,27 @@ extension VPNUpsellPopoverViewModel {
 }
 
 final class VPNUpsellPopoverViewModel {
-    let primaryButtonAction: () -> Void
-    let secondaryButtonAction: () -> Void
-
     @Published private(set) var featureEligibility: FeatureStatus = .default
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
+    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    private let urlOpener: @MainActor (URL) -> Void
+    private let onDismiss: () -> Void
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          featureFlagger: FeatureFlagger,
-         primaryButtonAction: @escaping () -> Void,
-         secondaryButtonAction: @escaping () -> Void)
+         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+         urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
+            Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+         },
+         onDismiss: @escaping () -> Void)
     {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-
-        self.primaryButtonAction = primaryButtonAction
-        self.secondaryButtonAction = secondaryButtonAction
-
+        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
+        self.urlOpener = urlOpener
+        self.onDismiss = onDismiss
         checkFeatureEligibility()
     }
 
@@ -74,5 +76,17 @@ final class VPNUpsellPopoverViewModel {
                 hasAIChatFeature: hasAIChatFeature
             )
         }
+    }
+
+    @MainActor
+    func showSubscriptionLandingPage() {
+        onDismiss()
+        let url = subscriptionManager.url(for: .purchase)
+        urlOpener(url)
+    }
+
+    func dismiss() {
+        vpnUpsellVisibilityManager.dismissUpsell()
+        onDismiss()
     }
 }

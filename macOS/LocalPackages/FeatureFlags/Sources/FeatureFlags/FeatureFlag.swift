@@ -152,6 +152,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
+
+    /// WiFi hotspot detection and captive portal handling
+    case hotspotDetection
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -221,7 +224,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPageOmnibar,
                 .newFeedbackForm,
                 .vpnToolbarUpsell,
-                .supportsAlternateStripePaymentFlow:
+                .supportsAlternateStripePaymentFlow,
+                .hotspotDetection:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -340,6 +344,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+        case .hotspotDetection:
+            return .internalOnly()
         }
     }
 }

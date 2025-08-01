@@ -106,8 +106,6 @@ extension Tab: NavigationResponder {
             // Internal Feedback Form
             .weak(nullable: self.internalFeedbackForm),
 
-            .weak(nullable: self.wifiHotspotDetection),
-
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
             // !! don‘t add Tab Extensions here !!

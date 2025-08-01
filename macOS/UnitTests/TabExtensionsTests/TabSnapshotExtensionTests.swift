@@ -275,6 +275,39 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssertNil(tabSnapshotExtension.snapshot)
     }
 
+    @MainActor
+    func testWhenURLIsDuckPlayerURL_ThenWait1SecondToRenderSnapshot() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://player/12345"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        XCTAssertNil(mockWebViewSnapshotRenderer.lastDelay)
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 1.0)
+    }
+
+    @MainActor
+    func testWhenURLIsNotDuckPlayerURL_ThenWait1SecondToRenderSnapshot() async throws {
+        // GIVEN
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
+        mockContentPublisher.send(content)
+        XCTAssertNil(mockWebViewSnapshotRenderer.lastDelay)
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
+    }
+
 }
 
 fileprivate extension URL {

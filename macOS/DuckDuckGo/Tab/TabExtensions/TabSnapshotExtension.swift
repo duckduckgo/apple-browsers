@@ -173,7 +173,7 @@ final class TabSnapshotExtension {
             return
         }
 
-        guard let snapshot = await webViewSnapshotRenderer.renderSnapshot(webView: webView) else {
+        guard let snapshot = await webViewSnapshotRenderer.renderSnapshot(webView: webView, delay: snapshotDelay(forURL: url)) else {
             return
         }
 
@@ -207,6 +207,12 @@ final class TabSnapshotExtension {
         default:
             true
         }
+    }
+
+    private func snapshotDelay(forURL url: URL) -> TimeInterval {
+        // If DuckPlayer URL delay screenshot rendering to give time to load the video
+        // Otherwise wait a bit to allow super-fast loading pages (e.g. localhost and special pages) get rendered in the webView
+        url.navigationalScheme == .duck && url.host == URL.duckPlayerHost ? 1.0 : 0.1
     }
 }
 

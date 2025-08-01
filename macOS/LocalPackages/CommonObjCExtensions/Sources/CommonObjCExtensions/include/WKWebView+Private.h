@@ -56,9 +56,6 @@ typedef NS_OPTIONS(NSUInteger, _WKFindOptions) {
 
 @interface WKWebView (Private)
 
-- (void)_restoreFromSessionStateData:(NSData *)data;
-- (NSData * _Nullable)_sessionStateData;
-
 @property (nonatomic, readonly) _WKMediaCaptureStateDeprecated _mediaCaptureState API_AVAILABLE(macos(10.15), ios(13.0));
 
 - (void)_stopMediaCapture API_AVAILABLE(macos(10.15.4), ios(13.4));

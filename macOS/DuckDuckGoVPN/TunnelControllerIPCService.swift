@@ -248,8 +248,8 @@ extension TunnelControllerIPCService: XPCServerInterface {
             break
         case .uninstallVPN(let showNotification):
             try await uninstall(.all, showNotification: showNotification)
-        case .disableConnectOnDemandAndShutDown:
-            // Not implemented on macOS yet
+        case .simulateSubscriptionExpirationInTunnel:
+            // This is handled by the network extension
             break
         case .quitAgent:
             quitAgent()

@@ -211,21 +211,27 @@ extension NetworkProtectionNavBarButtonModelTests {
         featureEnabled: Bool = true
     ) -> VPNUpsellVisibilityManager {
         let mockFeatureFlagger = MockFeatureFlagger()
+        let mockDefaultBrowserProvider = MockDefaultBrowserProvider()
+        mockDefaultBrowserProvider.isDefault = true
 
         if featureEnabled && shouldShowUpsell {
             mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
         }
 
-        return VPNUpsellVisibilityManager(
+        let manager = VPNUpsellVisibilityManager(
             isFirstLaunch: false,
             isNewUser: true,
             subscriptionManager: mockSubscriptionManager,
-            defaultBrowserPublisher: Just(true).eraseToAnyPublisher(),
+            defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
             featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
             timerDuration: 0.01
         )
+
+        manager.setup(isFirstLaunch: false)
+
+        return manager
     }
 
     private func createButtonModel(with upsellManager: VPNUpsellVisibilityManager) -> NetworkProtectionNavBarButtonModel {
@@ -249,32 +255,4 @@ extension NetworkProtectionNavBarButtonModelTests {
             vpnUpsellVisibilityManager: upsellManager
         )
     }
-}
-
-// MARK: - Mocks
-
-private final class TestPinningManager: PinningManager {
-    func togglePinning(for view: PinnableView) {}
-    func isPinned(_ view: PinnableView) -> Bool { false }
-    func wasManuallyToggled(_ view: PinnableView) -> Bool { false }
-    func pin(_ view: PinnableView) {}
-    func unpin(_ view: PinnableView) {}
-    func shortcutTitle(for view: PinnableView) -> String { "" }
-}
-
-private final class TestNetworkProtectionStatusReporter: NetworkProtectionStatusReporter {
-    private let ipcClient = IPCClientMock()
-
-    var statusObserver: ConnectionStatusObserver { ipcClient.ipcStatusObserver }
-    var serverInfoObserver: ConnectionServerInfoObserver { ipcClient.ipcServerInfoObserver }
-    var connectionErrorObserver: ConnectionErrorObserver { ipcClient.ipcConnectionErrorObserver }
-    var connectivityIssuesObserver: ConnectivityIssueObserver { ipcClient.ipcConnectivityIssuesObserver }
-    var controllerErrorMessageObserver: ControllerErrorMesssageObserver { ipcClient.ipcControllerErrorMessageObserver }
-    var dataVolumeObserver: DataVolumeObserver { ipcClient.ipcDataVolumeObserver }
-    var knownFailureObserver: KnownFailureObserver { ipcClient.ipcKnownFailureObserver }
-}
-
-private final class MockVPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
-    var vpnUpsellDismissed: Bool = false
-    var vpnUpsellFirstPinnedDate: Date?
 }

@@ -1,0 +1,99 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "browserReleaseNotes" : {
+    "title" : "Notas de lançamento",
+    "note" : "Page title for the Browser Release Notes page showing what's new in the current release"
+  },
+  "versionNumber" : {
+    "title" : "Versão {version}",
+    "note" : "Text that contains the version number for the current release"
+  },
+  "lastChecked" : {
+    "title" : "Última verificação: {date}",
+    "note" : "Text that contains the date and time of the last check for version updates"
+  },
+  "todayAt" : {
+    "title" : "Hoje à(s) {time}",
+    "note" : "Text that marks an event as having happened today at a set time (ex: Today at 7:34pm)"
+  },
+  "yesterdayAt" : {
+    "title" : "Ontem à(s) {time}",
+    "note" : "Text that marks an event as having happened yesterday at a set time (ex: Yesterday at 7:34pm)"
+  },
+  "browserUpToDate" : {
+    "title" : "O DuckDuckGo está atualizado",
+    "note" : "Status text for when the browser is already up to date"
+  },
+  "newVersionAvailable" : {
+    "title" : "Está disponível uma versão mais recente do navegador",
+    "note" : "Status text for when a new browser version is available"
+  },
+  "criticallyOutOfDate" : {
+    "title" : "Atualização crítica necessária",
+    "note" : "Status text for when a new browser version is available and the current version is very out of date"
+  },
+  "checkingForUpdate" : {
+    "title" : "A verificar atualizações…",
+    "note" : "Status text for when the browser is checking for a newer version"
+  },
+  "updateError" : {
+    "title" : "A atualização falhou",
+    "note" : "Status text for when an error has occurred during the update process"
+  },
+  "updateDownloading" : {
+    "title" : "A transferir a atualização {progress}%",
+    "note" : "Status text for when the browser is downloading a new update. {progress} is a placeholder for a number from 0 to 100 - the word {progress} should not be translated, but it should be placed in the appropriate position within the text. The percentage sign should also be placed correctly according to the locale (example: Downloading Update 74%)"
+  },
+  "updatePreparing" : {
+    "title" : "A preparar a atualização",
+    "note" : "Status text for when the browser has finished downloading the update but is still installing it"
+  },
+  "restartToUpdate" : {
+    "title" : "Reiniciar para atualizar",
+    "note" : "Label for a button that triggers a browser restart after a version update"
+  },
+  "updateBrowser" : {
+    "title" : "Atualizar o DuckDuckGo",
+    "note" : "Label for a button that triggers a manual browser update"
+  },
+  "retryUpdate" : {
+    "title" : "Repetir atualização",
+    "note" : "Label for a button that retries applying the failed update"
+  },
+  "forPrivacyProSubscribers" : {
+    "title" : "Para subscritores do Privacy Pro",
+    "note" : "Heading label for release notes specific to Privacy Pro Subscribers (do not translate Privacy Pro)"
+  },
+  "new" : {
+    "title" : "Novo",
+    "note" : "Text for tag that appears next to version number to indicate it is newly released"
+  },
+  "somethingWentWrong" : {
+    "title" : "Ocorreu um erro",
+    "note" : "A message shown when the application experienced a crash"
+  },
+  "retryGettingReleaseNotes" : {
+    "title" : "Recarregar resumo",
+    "note" : "A button label that allows the user to retry getting the release notes after a loading error"
+  },
+  "loadingError" : {
+    "title" : "Erro ao carregar o resumo da atualização",
+    "note" : "A message shown when the application experienced a loading error"
+  },
+  "thankyou" : {
+    "title" : "Agradecemos-te por escolheres o DuckDuckGo!",
+    "note" : "Subheader text for tag that appears above page header expressing gratitude for choosing DuckDuckGo"
+  },
+  "whatsNewAtDuckDuckGoLink" : {
+    "title" : "Vê em que mais temos trabalhado",
+    "note" : "Text for a link that opens the DuckDuckGo blog to show the latest news and updates"
+  }
+}

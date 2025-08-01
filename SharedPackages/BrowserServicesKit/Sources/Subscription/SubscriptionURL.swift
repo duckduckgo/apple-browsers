@@ -115,6 +115,31 @@ extension SubscriptionURL {
             .appendingParameter(name: AttributionParameter.origin, value: origin)
         return URLComponents(url: url, resolvingAgainstBaseURL: false)
     }
+
+    /**
+     * Creates URL components for a subscription purchase URL with the specified origin and featurePage parameters.
+     *
+     * - Parameters:
+     *   - origin: A string identifying where the subscription request originated from (optional)
+     *   - featurePage: The feature page to highlight (optional)
+     *   - environment: The subscription environment to use (defaults to production)
+     *
+     * - Returns: URLComponents containing the subscription URL with the origin and featurePage parameters, or nil if the URL could not be parsed
+     */
+    public static func purchaseURLComponentsWithOriginAndFeaturePage(
+        origin: String?,
+        featurePage: String?,
+        environment: SubscriptionEnvironment.ServiceEnvironment = .production
+    ) -> URLComponents? {
+        var url = SubscriptionURL.purchase.subscriptionURL(environment: environment)
+        if let origin = origin {
+            url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
+        }
+        if let featurePage = featurePage {
+            url = url.appendingParameter(name: "featurePage", value: featurePage)
+        }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)
+    }
 }
 
 fileprivate extension URL {

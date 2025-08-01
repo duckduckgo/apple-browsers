@@ -153,7 +153,7 @@ struct VPNUpsellPopoverView: View {
             Button {
                 viewModel.dismiss()
             } label: {
-                Text("No Thanks")
+                Text(verbatim: "No Thanks")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(StandardButtonStyle())
@@ -161,7 +161,7 @@ struct VPNUpsellPopoverView: View {
             Button {
                 viewModel.showSubscriptionLandingPage()
             } label: {
-                Text(viewModel.featureEligibility.isEligibleForFreeTrial ? "Try For Free" : "Learn More")
+                Text(verbatim: viewModel.featureEligibility.isEligibleForFreeTrial ? "Try For Free" : "Learn More")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))

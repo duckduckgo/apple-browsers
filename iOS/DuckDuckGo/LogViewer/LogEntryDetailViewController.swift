@@ -93,40 +93,29 @@ final class LogEntryDetailViewController: UIViewController {
     }
     
     private func populateContent() {
-        // Level and timestamp section
         let levelTimestampView = createInfoSection(
             title: "Level & Time",
             content: "\(logEntry.level.displayName) • \(formatFullTimestamp(logEntry.timestamp))"
         )
         contentStackView.addArrangedSubview(levelTimestampView)
-        
-        // Subsystem section
-        let subsystemView = createInfoSection(
-            title: "Subsystem",
-            content: logEntry.subsystem
-        )
+
+        let subsystemView = createInfoSection(title: "Subsystem", content: logEntry.subsystem)
         contentStackView.addArrangedSubview(subsystemView)
-        
-        // Category section
-        let categoryView = createInfoSection(
-            title: "Category",
-            content: logEntry.category
-        )
-        contentStackView.addArrangedSubview(categoryView)
-        
-        // Process section
-        let processView = createInfoSection(
-            title: "Process",
-            content: logEntry.process
-        )
+
+        if !logEntry.category.isEmpty {
+            let categoryView = createInfoSection(title: "Category", content: logEntry.category)
+            contentStackView.addArrangedSubview(categoryView)
+        }
+
+        let processView = createInfoSection(title: "Process", content: logEntry.process)
         contentStackView.addArrangedSubview(processView)
-        
-        // Message section
+
         let messageView = createInfoSection(
             title: "Message",
             content: logEntry.message,
             isExpandable: true
         )
+
         contentStackView.addArrangedSubview(messageView)
     }
     

@@ -72,6 +72,7 @@ struct FormattedLogEntry {
     private static let timestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.timeStyle = .medium
+        formatter.dateStyle = .none
         return formatter
     }()
 }
@@ -92,6 +93,8 @@ struct LogFilter {
     let categoryFilter: String?
     let levelFilter: OSLogEntryLog.Level?
     let searchText: String?
+    let filterEmptySubsystems: Bool
+    let filterAppleLogs: Bool
 
     func matches(_ entry: FormattedLogEntry) -> Bool {
         // Note: Subsystem and category filtering are handled at the OSLogStore predicate level
@@ -119,7 +122,9 @@ struct LogFilter {
         subsystemFilter: nil,
         categoryFilter: nil,
         levelFilter: nil,
-        searchText: nil
+        searchText: nil,
+        filterEmptySubsystems: true,
+        filterAppleLogs: true
     )
 }
 

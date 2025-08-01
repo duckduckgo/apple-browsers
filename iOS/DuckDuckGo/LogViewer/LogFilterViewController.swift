@@ -97,6 +97,31 @@ final class LogFilterViewController: UIViewController {
     @objc private func doneTapped() {
         delegate?.logFilterViewController(self, didUpdateFilter: currentFilter)
     }
+    
+    @objc private func toggleSwitchChanged(_ sender: UISwitch) {
+        guard let toggleRow = ToggleFilterRow(rawValue: sender.tag) else { return }
+        
+        switch toggleRow {
+        case .filterEmptySubsystems:
+            currentFilter = LogFilter(
+                subsystemFilter: currentFilter.subsystemFilter,
+                categoryFilter: currentFilter.categoryFilter,
+                levelFilter: currentFilter.levelFilter,
+                searchText: currentFilter.searchText,
+                filterEmptySubsystems: sender.isOn,
+                filterAppleLogs: currentFilter.filterAppleLogs
+            )
+        case .filterAppleLogs:
+            currentFilter = LogFilter(
+                subsystemFilter: currentFilter.subsystemFilter,
+                categoryFilter: currentFilter.categoryFilter,
+                levelFilter: currentFilter.levelFilter,
+                searchText: currentFilter.searchText,
+                filterEmptySubsystems: currentFilter.filterEmptySubsystems,
+                filterAppleLogs: sender.isOn
+            )
+        }
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -105,11 +130,14 @@ final class LogFilterViewController: UIViewController {
 extension LogFilterViewController: UITableViewDataSource {
     
     enum Section: Int, CaseIterable {
-        case customFilters = 0
-        case logLevel = 1
+        case toggleFilters = 0
+        case customFilters = 1
+        case logLevel = 2
         
         var title: String {
             switch self {
+            case .toggleFilters:
+                return "Filter Options"
             case .customFilters:
                 return "Custom Filters"
             case .logLevel:
@@ -118,6 +146,19 @@ extension LogFilterViewController: UITableViewDataSource {
         }
     }
     
+    enum ToggleFilterRow: Int, CaseIterable {
+        case filterEmptySubsystems = 0
+        case filterAppleLogs = 1
+        
+        var title: String {
+            switch self {
+            case .filterEmptySubsystems:
+                return "Filter Empty Subsystems"
+            case .filterAppleLogs:
+                return "Filter Apple Logs"
+            }
+        }
+    }
     
     enum CustomFilterRow: Int, CaseIterable {
         case subsystem
@@ -141,6 +182,8 @@ extension LogFilterViewController: UITableViewDataSource {
         guard let sectionType = Section(rawValue: section) else { return 0 }
         
         switch sectionType {
+        case .toggleFilters:
+            return ToggleFilterRow.allCases.count
         case .customFilters:
             return CustomFilterRow.allCases.count
         case .logLevel:
@@ -161,6 +204,8 @@ extension LogFilterViewController: UITableViewDataSource {
         guard let sectionType = Section(rawValue: indexPath.section) else { return cell }
         
         switch sectionType {
+        case .toggleFilters:
+            configureToggleFilterCell(cell, at: indexPath)
         case .customFilters:
             configureCustomFilterCell(cell, at: indexPath)
         case .logLevel:
@@ -170,6 +215,24 @@ extension LogFilterViewController: UITableViewDataSource {
         return cell
     }
     
+    private func configureToggleFilterCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
+        guard let toggleRow = ToggleFilterRow(rawValue: indexPath.row) else { return }
+        
+        cell.textLabel?.text = toggleRow.title
+        cell.selectionStyle = .none
+
+        let toggleSwitch = UISwitch()        
+        switch toggleRow {
+        case .filterEmptySubsystems:
+            toggleSwitch.isOn = currentFilter.filterEmptySubsystems
+        case .filterAppleLogs:
+            toggleSwitch.isOn = currentFilter.filterAppleLogs
+        }
+        
+        toggleSwitch.addTarget(self, action: #selector(toggleSwitchChanged(_:)), for: .valueChanged)
+        toggleSwitch.tag = indexPath.row
+        cell.accessoryView = toggleSwitch
+    }
     
     private func configureCustomFilterCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
         guard let filterRow = CustomFilterRow(rawValue: indexPath.row) else { return }
@@ -209,6 +272,9 @@ extension LogFilterViewController: UITableViewDelegate {
         guard let sectionType = Section(rawValue: indexPath.section) else { return }
         
         switch sectionType {
+        case .toggleFilters:
+            // Toggle switches handle their own actions, no selection needed
+            break
         case .customFilters:
             handleCustomFilterSelection(at: indexPath)
         case .logLevel:
@@ -244,14 +310,18 @@ extension LogFilterViewController: UITableViewDelegate {
                     subsystemFilter: filterText,
                     categoryFilter: self.currentFilter.categoryFilter,
                     levelFilter: self.currentFilter.levelFilter,
-                    searchText: self.currentFilter.searchText
+                    searchText: self.currentFilter.searchText,
+                    filterEmptySubsystems: self.currentFilter.filterEmptySubsystems,
+                    filterAppleLogs: self.currentFilter.filterAppleLogs
                 )
             case .category:
                 self.currentFilter = LogFilter(
                     subsystemFilter: self.currentFilter.subsystemFilter,
                     categoryFilter: filterText,
                     levelFilter: self.currentFilter.levelFilter,
-                    searchText: self.currentFilter.searchText
+                    searchText: self.currentFilter.searchText,
+                    filterEmptySubsystems: self.currentFilter.filterEmptySubsystems,
+                    filterAppleLogs: self.currentFilter.filterAppleLogs
                 )
             }
             
@@ -269,7 +339,9 @@ extension LogFilterViewController: UITableViewDelegate {
             subsystemFilter: currentFilter.subsystemFilter,
             categoryFilter: currentFilter.categoryFilter,
             levelFilter: selectedLevel,
-            searchText: currentFilter.searchText
+            searchText: currentFilter.searchText,
+            filterEmptySubsystems: currentFilter.filterEmptySubsystems,
+            filterAppleLogs: currentFilter.filterAppleLogs
         )
         
         tableView.reloadSections(IndexSet(integer: Section.logLevel.rawValue), with: .none)

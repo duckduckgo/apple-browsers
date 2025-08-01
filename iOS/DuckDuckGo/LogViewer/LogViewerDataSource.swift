@@ -164,10 +164,17 @@ final class LogViewerDataSource {
     private func createPredicate() -> NSPredicate {
         var predicates: [NSPredicate] = []
         
-        // Always filter out logs with no subsystem or Apple subsystems
-        let hasSubsystem = NSPredicate(format: "subsystem != nil AND subsystem != ''")
-        let noAppleSubsystem = NSPredicate(format: "NOT subsystem BEGINSWITH 'com.apple'")
-        predicates.append(contentsOf: [hasSubsystem, noAppleSubsystem])
+        // Conditionally filter out logs with no subsystem based on toggle
+        if currentFilter.filterEmptySubsystems {
+            let hasSubsystem = NSPredicate(format: "subsystem != nil AND subsystem != ''")
+            predicates.append(hasSubsystem)
+        }
+        
+        // Conditionally filter out Apple subsystems based on toggle
+        if currentFilter.filterAppleLogs {
+            let noAppleSubsystem = NSPredicate(format: "NOT subsystem BEGINSWITH 'com.apple'")
+            predicates.append(noAppleSubsystem)
+        }
 
         if let subsystemFilter = currentFilter.subsystemFilter, !subsystemFilter.isEmpty {
             let subsystemPredicate = NSPredicate(format: "subsystem CONTAINS[cd] %@", subsystemFilter)

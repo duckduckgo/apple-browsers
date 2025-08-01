@@ -181,7 +181,9 @@ final class LogViewerViewController: UIViewController {
                 subsystemFilter: dataSource.currentFilter.subsystemFilter,
                 categoryFilter: dataSource.currentFilter.categoryFilter,
                 levelFilter: dataSource.currentFilter.levelFilter,
-                searchText: searchText
+                searchText: searchText,
+                filterEmptySubsystems: dataSource.currentFilter.filterEmptySubsystems,
+                filterAppleLogs: dataSource.currentFilter.filterAppleLogs
             )
             
             filteredEntries = dataSource.logEntries.filter { searchFilter.matches($0) }

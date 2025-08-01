@@ -157,8 +157,9 @@ final class WindowsManager {
     private static let defaultPopUpHeight: CGFloat = 752
 
     @discardableResult
-    class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?) -> NSWindow? {
-        if let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
+    class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?, forcePopup: Bool = false) -> NSWindow? {
+        if !forcePopup,
+           let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
            mainWindowController.window?.styleMask.contains(.fullScreen) == true,
            mainWindowController.window?.isPopUpWindow == false {
 

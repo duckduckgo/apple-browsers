@@ -55,7 +55,8 @@ final class CaptivePortalPopupManager: CaptivePortalHandler {
         let contentSize = NSSize(width: min(screenFrame.width, 1024), height: min(screenFrame.height, 768))
 
         // Create popup window and store reference
-        if let window = WindowsManager.openPopUpWindow(with: tab, origin: nil, contentSize: contentSize) {
+        // Force popup creation even in fullscreen mode for captive portal
+        if let window = WindowsManager.openPopUpWindow(with: tab, origin: nil, contentSize: contentSize, forcePopup: true) {
             activePopupWindows[url] = window
 
             // Set up cleanup when window closes

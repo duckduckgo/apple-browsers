@@ -61,7 +61,6 @@ final class SyncDialogController: ManagementDialogModelDelegate {
 
     // Add device access delegation
     var devicesProvider: (() -> [SyncDevice])?
-    var isCreatingAccountUpdater: ((Bool) -> Void)?
 
     init(
         syncService: DDGSyncing,
@@ -295,9 +294,6 @@ final class SyncDialogController: ManagementDialogModelDelegate {
     func turnOnSync() {
         Task { @MainActor in
             managementDialogModel.endFlow()
-            defer {
-                isCreatingAccountUpdater?(false)
-            }
             do {
                 let device = Self.deviceInfo()
                 presentDialog(for: .prepareToSync)

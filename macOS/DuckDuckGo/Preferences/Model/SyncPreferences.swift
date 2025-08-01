@@ -119,8 +119,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var shouldShowErrorMessage: Bool = false
     @Published private(set) var syncErrorMessage: SyncErrorMessage?
 
-    @Published var isCreatingAccount: Bool = false
-
     @Published var isFaviconsFetchingEnabled: Bool {
         didSet {
             syncBookmarksAdapter.isFaviconsFetchingEnabled = isFaviconsFetchingEnabled
@@ -206,17 +204,12 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             featureFlagger: featureFlagger
         )
 
-                diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
+        diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 
         Task { @MainActor in
             // Set up devices provider for dialog controller
             self.syncDialogController.devicesProvider = { [weak self] in
                 return self?.devices ?? []
-            }
-
-            // Set up isCreatingAccount state updater
-            self.syncDialogController.isCreatingAccountUpdater = { [weak self] isCreating in
-                self?.isCreatingAccount = isCreating
             }
         }
 
@@ -397,7 +390,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     @MainActor
     func turnOnSync() {
-        isCreatingAccount = true
         syncDialogController.turnOnSync()
     }
 

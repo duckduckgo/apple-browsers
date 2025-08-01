@@ -27,7 +27,6 @@ public protocol ManagementViewModel: ObservableObject {
     var isAppVersionNotSupported: Bool { get }
 
     var isSyncEnabled: Bool { get }
-    var isCreatingAccount: Bool { get }
     var shouldShowErrorMessage: Bool { get set }
     var syncErrorMessage: SyncErrorMessage? { get }
     var isSyncPaused: Bool { get }

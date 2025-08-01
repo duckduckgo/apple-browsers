@@ -569,4 +569,297 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
         XCTAssertFalse(webViewHandler.wasSetCookiesCalled)
     }
+
+    // MARK: - ConditionAction Tests
+
+    func testWhenConditionActionSucceedsInOptOutStep_thenFireOptOutConditionFoundIsCalled() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let step = Step(type: .optOut, actions: [conditionAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: mockStageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // Simulate condition success
+        await sut.conditionSuccess(actions: [])
+
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
+
+    func testWhenConditionActionFailsInOptOutStep_thenFireOptOutConditionNotFoundIsCalled() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let step = Step(type: .optOut, actions: [conditionAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: mockStageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // Execute the condition action to set it as current action
+        _ = sut.actionsHandler?.nextAction()
+
+        // Simulate condition failure
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "Condition failed"))
+
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
+
+    func testWhenConditionActionSucceedsInScanStep_thenFireOptOutConditionFoundIsNotCalled() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let step = Step(type: .scan, actions: [conditionAction])
+        let sut = BrokerProfileScanSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: .mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            stageDurationCalculator: mockStageCalculator,
+            pixelHandler: MockPixelHandler(),
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // Simulate condition success in scan step
+        await sut.conditionSuccess(actions: [])
+
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
+
+    func testWhenNonConditionActionFailsInOptOutStep_thenFireOptOutConditionNotFoundIsNotCalled() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let expectationAction = ExpectationAction(id: "1", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
+        let step = Step(type: .optOut, actions: [expectationAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: mockStageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // Execute the expectation action to set it as current action
+        _ = sut.actionsHandler?.nextAction()
+
+        // Simulate error with non-condition action
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "Action failed"))
+
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
+
+    // MARK: - ConditionAction Edge Cases
+
+    func testWhenConditionActionSucceedsWithFollowUpActions_thenFireOptOutConditionFoundIsCalledAndActionsAreInserted() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let followUpAction = ExpectationAction(id: "followup", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
+        let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [followUpAction])
+        let step = Step(type: .optOut, actions: [conditionAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: mockStageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // Simulate condition success with follow-up actions
+        await sut.conditionSuccess(actions: [followUpAction])
+
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+
+        // Verify follow-up action was inserted
+        let nextAction = sut.actionsHandler?.nextAction()
+        XCTAssertEqual(nextAction?.id, "followup")
+    }
+
+    func testWhenMultipleConditionActionsInSequence_thenEachConditionIsTrackedSeparately() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let firstCondition = ConditionAction(id: "condition1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let secondCondition = ConditionAction(id: "condition2", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let step = Step(type: .optOut, actions: [firstCondition, secondCondition])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: mockStageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // First condition succeeds
+        await sut.conditionSuccess(actions: [])
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+
+        // Clear flags to test second condition
+        mockStageCalculator.clear()
+
+        // Execute second condition and make it fail
+        _ = sut.actionsHandler?.nextAction() // Execute first condition
+        _ = sut.actionsHandler?.nextAction() // Execute second condition
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "condition2", message: "Second condition failed"))
+
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
+
+    func testWhenConditionActionFailsWithSpecificErrorTypes_thenFireOptOutConditionNotFoundIsCalledForEach() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let step = Step(type: .optOut, actions: [conditionAction])
+
+        let errorTypes: [Error] = [
+            DataBrokerProtectionError.httpError(code: 404),
+            DataBrokerProtectionError.httpError(code: 500),
+            DataBrokerProtectionError.actionFailed(actionID: "1", message: "Failed"),
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        ]
+
+        for (index, error) in errorTypes.enumerated() {
+            let sut = BrokerProfileOptOutSubJobWebRunner(
+                privacyConfig: PrivacyConfigurationManagingMock(),
+                prefs: ContentScopeProperties.mock,
+                query: BrokerProfileQueryData.mock(with: [step]),
+                emailService: emailService,
+                captchaService: captchaService,
+                operationAwaitTime: 0,
+                stageCalculator: mockStageCalculator,
+                pixelHandler: pixelHandler,
+                executionConfig: BrokerJobExecutionConfig(),
+                shouldRunNextStep: { true }
+            )
+            sut.webViewHandler = webViewHandler
+            sut.actionsHandler = ActionsHandler(step: step)
+            mockStageCalculator.clear()
+
+            // Execute the condition action to set it as current action
+            _ = sut.actionsHandler?.nextAction()
+
+            // Simulate condition failure with specific error type
+            await sut.onError(error: error)
+
+            XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled, "fireOptOutConditionFound should not be called for error type \(index)")
+            XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled, "fireOptOutConditionNotFound should be called for error type \(index)")
+        }
+    }
+
+    func testWhenBothConditionMethodsAreCalledInSameTest_thenBothFlagsAreSet() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let step = Step(type: .optOut, actions: [conditionAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: mockStageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // First call success
+        await sut.conditionSuccess(actions: [])
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+
+        // Then call failure (simulating a different scenario in the same test)
+        _ = sut.actionsHandler?.nextAction() // Execute condition action
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "Condition failed"))
+
+        // Both flags should now be true
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
+
+    func testWhenConditionActionIsExecutedMultipleTimes_thenFlagsAccumulateCorrectly() async {
+        let mockStageCalculator = MockStageDurationCalculator()
+        let conditionAction = ConditionAction(id: "1", actionType: .condition, expectations: [Item](), dataSource: nil, actions: [])
+        let step = Step(type: .optOut, actions: [conditionAction])
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(with: [step]),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: mockStageCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: BrokerJobExecutionConfig(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
+
+        // Execute multiple condition successes
+        await sut.conditionSuccess(actions: [])
+        await sut.conditionSuccess(actions: [])
+        await sut.conditionSuccess(actions: [])
+
+        // Flag should remain true after multiple calls
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+
+        // Clear and test multiple failures
+        mockStageCalculator.clear()
+
+        // Set up for multiple failure calls
+        _ = sut.actionsHandler?.nextAction()
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "First failure"))
+        await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "Second failure"))
+
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+    }
 }

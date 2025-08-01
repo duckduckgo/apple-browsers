@@ -535,6 +535,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 }
 
 final class FakeStageDurationCalculator: StageDurationCalculator {
+
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
     var tries = 1
@@ -599,6 +600,12 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     }
 
     func setLastActionId(_ actionID: String) {
+    }
+
+    func fireOptOutConditionFound() {
+    }
+
+    func fireOptOutConditionNotFound() {
     }
 
     func resetTries() {

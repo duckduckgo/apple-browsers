@@ -35,6 +35,7 @@ struct SuggestionTrayDependencies {
     let tabsModel: TabsModel
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
+    let newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies
 }
 
 /// Protocol for handling suggestion tray events
@@ -99,7 +100,8 @@ final class SuggestionTrayManager: NSObject {
                 historyManager: self.dependencies.historyManager,
                 tabsModel: self.dependencies.tabsModel,
                 featureFlagger: self.dependencies.featureFlagger,
-                appSettings: self.dependencies.appSettings
+                appSettings: self.dependencies.appSettings,
+                newTabPageDependencies: self.dependencies.newTabPageDependencies
             )
         }) else {
             assertionFailure("Failed to instantiate SuggestionTrayViewController")
@@ -108,7 +110,6 @@ final class SuggestionTrayManager: NSObject {
 
         controller.coversFullScreen = true
         controller.isUsingSearchInputCustomStyling = true
-        controller.additionalFavoritesOverlayInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 6)
 
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
@@ -128,6 +129,7 @@ final class SuggestionTrayManager: NSObject {
 
         controller.autocompleteDelegate = self
         controller.favoritesOverlayDelegate = self
+        controller.newTabPageControllerDelegate = self
         controller.didMove(toParent: parentViewController)
 
         showInitialSuggestions()
@@ -259,4 +261,26 @@ extension SuggestionTrayManager: FavoritesOverlayDelegate {
     func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
         delegate?.suggestionTrayManager(self, didSelectFavorite: favorite)
     }
+}
+
+// MARK: - NewTabPageControllerDelegate
+
+extension SuggestionTrayManager: NewTabPageControllerDelegate {
+
+    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        delegate?.suggestionTrayManager(self, didSelectFavorite: favorite)
+    }
+    
+    func newTabPageDidDeleteFavorite(_ controller: NewTabPageViewController, favorite: Bookmarks.BookmarkEntity) {
+        assertionFailure("Unexpected")
+    }
+    
+    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: Bookmarks.BookmarkEntity) {
+        assertionFailure("Unexpected")
+    }
+    
+    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
+        // no-op this is handled by the main view controller on a real new tab page
+    }
+
 }

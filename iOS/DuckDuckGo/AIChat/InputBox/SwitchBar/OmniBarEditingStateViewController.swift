@@ -273,6 +273,7 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
         switchBarHandler.updateCurrentText(text)
     }
+    
 }
 
 // MARK: - NavigationActionBarManagerDelegate

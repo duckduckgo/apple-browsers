@@ -48,7 +48,7 @@ final class AdClickExternalOpenDetector {
 
     private let operationTimeout: TimeInterval
     private var navigationFailedDate: Date?
-    private var tabID: String
+    private let tabID: String
     private var cancellables = Set<AnyCancellable>()
     public typealias AdClickExternalOpenDetectorCompletionBlock = () -> Void
     public var mitigationHandler: AdClickExternalOpenDetectorCompletionBlock?
@@ -70,7 +70,7 @@ final class AdClickExternalOpenDetector {
         case finishNavigation
     }
 
-    init(tabID: String, operationTimeout: TimeInterval = .seconds(4)) {
+    init(tabID: String = UUID().uuidString, operationTimeout: TimeInterval = .seconds(4)) {
         self.tabID = tabID
         self.operationTimeout = operationTimeout
 

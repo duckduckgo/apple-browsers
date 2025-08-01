@@ -76,14 +76,15 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         let expectation = self.expectation(description: "Mitigation should NOT be triggered")
         expectation.isInverted = true
 
+        // Use a very short timeout for this test
+        detector = AdClickExternalOpenDetector(tabID: testTabID, operationTimeout: .milliseconds(10))
         detector.mitigationHandler = {
             expectation.fulfill()
         }
-
         detector.startNavigation()
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
-        // Artificially simulate timeout
-        sleep(2) // Exceeds operation timeout
+        // Allow timeout to elapse
+        RunLoop.current.run(until: Date().addingTimeInterval(0.05))
         detector.appDidEnterBackground()
 
         wait(for: [expectation], timeout: 1.0)
@@ -292,7 +293,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         
         // Test timeout during startNavigation state
         shortTimeout.startNavigation()
-        Thread.sleep(forTimeInterval: 0.2) // Exceed timeout
+        RunLoop.current.run(until: Date().addingTimeInterval(0.2)) // Exceed timeout
         shortTimeout.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         

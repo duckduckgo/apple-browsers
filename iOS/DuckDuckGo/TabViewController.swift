@@ -465,7 +465,8 @@ class TabViewController: UIViewController {
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
-                   keyValueStore: ThrowingKeyValueStoring) {
+                   keyValueStore: ThrowingKeyValueStoring,
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
 
         self.tabModel = tabModel
         self.appSettings = appSettings
@@ -488,12 +489,10 @@ class TabViewController: UIViewController {
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
-
+        self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
-
-        self.adClickExternalOpenDetector = AdClickExternalOpenDetector(tabID: tabModel.uid)
 
         super.init(coder: aDecoder)
         
@@ -918,8 +917,6 @@ class TabViewController: UIViewController {
     }
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
-        Logger.general.debug("WebView URL did change from \(previousURL?.host ?? "nil") to \(newURL?.host ?? "nil"), current URL: \(self.webView.url?.host ?? "nil")")
-
         // Handle DuckPlayer Navigation URL changes
         if let currentURL = newURL ?? webView.url {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)

@@ -104,8 +104,8 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
                 XCTAssertTrue(authQuery.permissions.contains(.wifiHotspot))
                 XCTAssertEqual(authQuery.domain, "detectportal.firefox.com")
                 XCTAssertEqual(authQuery.url?.absoluteString, "http://detectportal.firefox.com/success.txt")
-            expectation.fulfill()
-        }
+                expectation.fulfill()
+            }
 
         // Trigger navigation failure
         let navigation = Navigation(identity: .init(nil), responders: .init(), state: .started, redirectHistory: [], isCurrent: true, isCommitted: false)
@@ -130,7 +130,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             .first()
             .sink { _ in
                 expectation.fulfill()
-        }
+            }
 
         // Trigger navigation failure
         let navigation = Navigation(identity: .init(nil), responders: .init(), state: .started, redirectHistory: [], isCurrent: true, isCommitted: false)
@@ -166,7 +166,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
                 XCTAssertTrue(authQuery.permissions.contains(.wifiHotspot))
                 XCTAssertEqual(authQuery.domain, "detectportal.firefox.com")
                 hotspotExpectation.fulfill()
-        }
+            }
 
         // Trigger navigation failure
         let navigation = Navigation(identity: .init(nil), responders: .init(), state: .started, redirectHistory: [], isCurrent: true, isCommitted: false)
@@ -187,8 +187,8 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             .filter { $0 == .connected }
             .first()
             .sink { _ in
-            resolvedExpectation.fulfill()
-        }
+                resolvedExpectation.fulfill()
+            }
 
         // Advance clock to trigger service's periodic checks (every 5 seconds)
         // Need at least 3 total requests: 1st and 2nd = captive portal, 3rd = success
@@ -206,7 +206,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
         XCTAssertNil(permissionModel.authorizationQuery, "Authorization query should be cleared when connectivity is restored")
     }
 
-        func testMultipleTabExtensionsWithSameService() async throws {
+    func testMultipleTabExtensionsWithSameService() async throws {
         var serviceRequestCount = 0
 
         // Stub captive portal response BEFORE creating any extensions
@@ -241,7 +241,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             .sink { authQuery in
                 XCTAssertTrue(authQuery.permissions.contains(.wifiHotspot))
                 XCTAssertEqual(authQuery.domain, "detectportal.firefox.com")
-            expectation1.fulfill()
+                expectation1.fulfill()
             }
 
         let cancellable2 = permissionModel2.$authorizationQuery
@@ -250,8 +250,8 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             .sink { authQuery in
                 XCTAssertTrue(authQuery.permissions.contains(.wifiHotspot))
                 XCTAssertEqual(authQuery.domain, "detectportal.firefox.com")
-            expectation2.fulfill()
-        }
+                expectation2.fulfill()
+            }
 
         // Trigger navigation failures on both tabs
         let navigation1 = Navigation(identity: .init(nil), responders: .init(), state: .started, redirectHistory: [], isCurrent: true, isCommitted: false)
@@ -373,8 +373,8 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
                 return HTTPStubsResponse(data: "<html>Captive Portal</html>".data(using: .utf8)!, statusCode: 200, headers: nil)
             } else {
                 // Second request shows success to trigger unsubscription
-            return HTTPStubsResponse(data: "success".data(using: .utf8)!, statusCode: 200, headers: nil)
-        }
+                return HTTPStubsResponse(data: "success".data(using: .utf8)!, statusCode: 200, headers: nil)
+            }
         }
 
         // Set up expectation BEFORE triggering navigation failure
@@ -384,7 +384,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             .first()
             .sink { _ in
                 serviceStartedExpectation.fulfill()
-        }
+            }
 
         // Start monitoring with tab extension
         let navigation = Navigation(identity: .init(nil), responders: .init(), state: .started, redirectHistory: [], isCurrent: true, isCommitted: false)
@@ -467,7 +467,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
                 XCTAssertTrue(authQuery.permissions.contains(.wifiHotspot))
                 XCTAssertEqual(authQuery.domain, "detectportal.firefox.com")
                 firstRequestExpectation.fulfill()
-        }
+            }
 
         // Trigger navigation failure
         let navigation = Navigation(identity: .init(nil), responders: .init(), state: .started, redirectHistory: [], isCurrent: true, isCommitted: false)
@@ -602,7 +602,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             .compactMap { $0 }
             .first()
             .sink { authQuery in
-            expectation.fulfill()
+                expectation.fulfill()
             }
 
         // Trigger navigation failure
@@ -653,7 +653,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             .compactMap { $0 }
             .first()
             .sink { authQuery in
-            authExpectation.fulfill()
+                authExpectation.fulfill()
             }
 
         // Trigger navigation failure
@@ -670,7 +670,7 @@ final class WiFiHotspotDetectionIntegrationTests: XCTestCase {
             return
         }
 
-                // User approves with remember option
+        // User approves with remember option
         authQuery.handleDecision(grant: true, remember: true)
 
         // Wait for setPermission to be called using predicate expectation

@@ -99,7 +99,7 @@ final class WiFiHotspotDetectionTabExtensionTests: XCTestCase {
         // When: Navigation fails
         tabExtension.navigation(navigation, didFailWith: error)
 
-        // Then: Extension should be subscribed to service (we can't directly test this, 
+        // Then: Extension should be subscribed to service (we can't directly test this,
         // but we can test the behavior when state changes)
         mockHotspotService.updateState(.connected)
 

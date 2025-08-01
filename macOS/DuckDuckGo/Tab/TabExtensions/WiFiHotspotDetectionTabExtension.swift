@@ -239,8 +239,8 @@ extension WiFiHotspotDetectionTabExtension: NavigationResponder {
         }()
 
         permissionModel.permissions([.wifiHotspot],
-                                   requestedForDomain: captivePortalURL.host ?? "captive.portal",
-                                   url: captivePortalURL) { [weak self] granted in
+                                    requestedForDomain: captivePortalURL.host ?? "captive.portal",
+                                    url: captivePortalURL) { [weak self] granted in
             if granted {
                 // Open the captive portal page in a popup window
                 Task { @MainActor in

@@ -80,8 +80,8 @@ protocol TabExtensionDependencies {
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
-    var hotspotDetectionService: HotspotDetectionServiceProtocol? { get }
-    var captivePortalPopupManager: CaptivePortalPopupManager? { get }
+    var hotspotDetectionService: HotspotDetectionServiceProtocol { get }
+    var captivePortalPopupManager: CaptivePortalPopupManager { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -203,22 +203,14 @@ extension TabExtensionsBuilder {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
         }
 
-        if let hotspotDetectionService = dependencies.hotspotDetectionService {
-            add {
-                let captivePortalHandler: CaptivePortalHandler
-                if let popupManager = dependencies.captivePortalPopupManager {
-                    captivePortalHandler = DefaultCaptivePortalHandler(popupManager: popupManager)
-                } else {
-                    // Fallback for tests or edge cases where no shared manager is available
-                    captivePortalHandler = DefaultCaptivePortalHandler(popupManager: CaptivePortalPopupManager())
-                }
+        add {
+            let captivePortalHandler = DefaultCaptivePortalHandler(popupManager: dependencies.captivePortalPopupManager)
 
-                return WiFiHotspotDetectionTabExtension(permissionModel: args.permissionModel,
-                                                       hotspotDetectionService: hotspotDetectionService,
-                                                       featureFlagger: dependencies.featureFlagger,
-                                                       captivePortalHandler: captivePortalHandler,
-                                                       webViewPublisher: args.webViewFuture)
-            }
+            return WiFiHotspotDetectionTabExtension(permissionModel: args.permissionModel,
+                                                    hotspotDetectionService: dependencies.hotspotDetectionService,
+                                                    featureFlagger: dependencies.featureFlagger,
+                                                    captivePortalHandler: captivePortalHandler,
+                                                    webViewPublisher: args.webViewFuture)
         }
 
         let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar

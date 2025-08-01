@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import UIKit
 import DesignResourcesKitIcons
 
@@ -35,26 +34,75 @@ enum SwitchBarButtonState {
     }
 }
 
-struct SwitchBarButtonsView: View {
-    let buttonState: SwitchBarButtonState
-    let onClearTapped: () -> Void
-
-    private enum Constants {
-        static let buttonSize: CGFloat = 24
+class SwitchBarButtonsView: UIView {
+    var buttonState: SwitchBarButtonState = .noButtons {
+        didSet {
+            updateButtonsVisibility()
+        }
     }
 
-    var body: some View {
-        HStack {
-            if buttonState.showsClearButton {
-                Button(action: onClearTapped) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.clear)
-                        .foregroundColor(Color(.systemGray))
-                        .frame(width: Constants.buttonSize, height: Constants.buttonSize)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-        }
-        .frame(height: Constants.buttonSize)
-        .opacity(buttonState.showsClearButton ? 1 : 0)
+    var onClearTapped: (() -> Void)?
+
+    private let stack = UIStackView()
+    private let clearButton = BrowserChromeButton(.secondary)
+
+    private enum Constants {
+        static let buttonSize: CGFloat = 44
+
+        static let accessibilityPrefix = "Browser.OmniBar"
+    }
+
+    init() {
+        super.init(frame: CGRect(origin: .zero,
+                                 size: CGSize(width: Constants.buttonSize,
+                                              height: Constants.buttonSize)))
+
+        setUpSubviews()
+        setUpConstraints()
+        setUpProperties()
+
+        setUpAccessibility()
+
+        updateButtonsVisibility()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setUpSubviews() {
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(stack)
+
+        stack.addArrangedSubview(clearButton)
+    }
+
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stack.topAnchor.constraint(equalTo: topAnchor),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            clearButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            clearButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
+        ])
+    }
+
+    private func setUpProperties() {
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
+        clearButton.addAction(UIAction { [weak self] _ in self?.onClearTapped?() }, for: .touchUpInside)
+    }
+
+    private func setUpAccessibility() {
+        clearButton.accessibilityLabel = "Clear text"
+        clearButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.ClearText"
+        clearButton.accessibilityTraits = .button
+    }
+
+    private func updateButtonsVisibility() {
+        clearButton.isHidden = !buttonState.showsClearButton
     }
 }

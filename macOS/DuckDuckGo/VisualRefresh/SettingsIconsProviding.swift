@@ -38,11 +38,13 @@ protocol SettingsIconsProviding {
     var dataClearingIcon: NSImage { get }
     var duckPlayerIcon: NSImage { get }
     var duckAIIcon: NSImage { get }
+    var aiGeneralIcon: NSImage { get }
     var aboutIcon: NSImage { get }
     var otherPlatformsIcon: NSImage { get }
 }
 
 final class LegacySettingsIconProvider: SettingsIconsProviding {
+    var aiGeneralIcon: NSImage = .aiGeneralColor16
     var defaultBrowserIcon: NSImage = .defaultBrowser
     var privateSearchIcon: NSImage = .privateSearchIcon
     var webTrackingProtectionIcon: NSImage = .webTrackingProtectionIcon
@@ -66,6 +68,7 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
 }
 
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
+    var aiGeneralIcon: NSImage = DesignSystemImages.Color.Size16.aiGeneral
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser
     var privateSearchIcon: NSImage = DesignSystemImages.Color.Size16.findSearch
     var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shieldCheck

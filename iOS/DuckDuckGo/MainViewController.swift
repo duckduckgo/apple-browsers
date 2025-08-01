@@ -120,9 +120,8 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
-    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
-    @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: true)
-    private var lastKnownEntitlementsExpired: Bool
+    @UserDefaultsWrapper(key: .hadVPNEntitlements, defaultValue: false)
+    private var hadVPNEntitlements: Bool
 
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
@@ -331,13 +330,25 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+
+        let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
+                                                                                         homePageMessagesConfiguration: homePageConfiguration,
+                                                                                         privacyProDataReporting: privacyProDataReporter,
+                                                                                         variantManager: variantManager,
+                                                                                         newTabDialogFactory: newTabDaxDialogFactory,
+                                                                                         newTabDaxDialogProvider: DaxDialogs.shared,
+                                                                                         faviconLoader: faviconLoader,
+                                                                                         messageNavigationDelegate: self,
+                                                                                         appSettings: appSettings)
+
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
                                                                     historyManager: historyManager,
                                                                     tabsModel: tabManager.model,
                                                                     featureFlagger: featureFlagger,
-                                                                    appSettings: appSettings)
-
+                                                                    appSettings: appSettings,
+                                                                    newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -885,6 +896,7 @@ class MainViewController: UIViewController {
     private func addLaunchTabNotificationObserver() {
         launchTabObserver = LaunchTabNotification.addObserver(handler: { [weak self] urlString in
             guard let self = self else { return }
+            viewCoordinator.omniBar.endEditing()
             if let url = URL(trimmedAddressBarString: urlString), url.isValid {
                 self.loadUrlInNewTab(url, inheritedAttribution: nil)
             } else {
@@ -970,6 +982,22 @@ class MainViewController: UIViewController {
         refreshControls()
 
         syncService.scheduler.requestSyncImmediately()
+
+        // It's possible for this to be called when in the background of the
+        //  switcher, and we only want to show the pixel when it's actually
+        // about to shown to the user.
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+        }
+    }
+
+    func fireNewTabPixels() {
+        Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
+        let favoritesCount = favoritesViewModel.favorites.count
+        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
+        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
+            "FavoriteCount": bucket.value,
+        ])
     }
 
     fileprivate func removeHomeScreen() {
@@ -1915,7 +1943,7 @@ class MainViewController: UIViewController {
                 let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
                 let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
 
-                if hasEntitlement && lastKnownEntitlementsExpired {
+                if !hadVPNEntitlements && hasEntitlement {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
                             isSubscriptionActive: isSubscriptionActive,
@@ -1923,8 +1951,8 @@ class MainViewController: UIViewController {
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
-                    lastKnownEntitlementsExpired = false
-                } else if !hasEntitlement && !lastKnownEntitlementsExpired {
+                    hadVPNEntitlements = hasEntitlement
+                } else if hadVPNEntitlements && !hasEntitlement {
                     PixelKit.fire(
                         VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
                             isSubscriptionActive: isSubscriptionActive,
@@ -1932,7 +1960,7 @@ class MainViewController: UIViewController {
                             trigger: trigger),
                         frequency: .dailyAndCount)
                     
-                    lastKnownEntitlementsExpired = true
+                    hadVPNEntitlements = hasEntitlement
                 }
             } catch {
                 await handleClientCheckFailure(error: error, trigger: trigger)
@@ -1966,23 +1994,17 @@ class MainViewController: UIViewController {
                 Logger.subscription.fault("Missing entitlements payload")
                 return
             }
-            let hasEntitlements = payload.entitlements.contains(.networkProtection)
+            let hasVPNEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
-            if hasEntitlements {
+            if hasVPNEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
-
-                if lastKnownEntitlementsExpired {
-                    lastKnownEntitlementsExpired = false
-                }
-
-                return
             } else {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
@@ -1991,17 +2013,15 @@ class MainViewController: UIViewController {
                         sourceObject: notification.object),
                     frequency: .dailyAndCount)
 
-                if !lastKnownEntitlementsExpired {
-                    lastKnownEntitlementsExpired = true
+                if await networkProtectionTunnelController.isInstalled {
+                    tunnelDefaults.enableEntitlementMessaging()
                 }
+
+                await networkProtectionTunnelController.stop()
+                await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
             }
 
-            if await networkProtectionTunnelController.isInstalled {
-                tunnelDefaults.enableEntitlementMessaging()
-            }
-
-            await networkProtectionTunnelController.stop()
-            await networkProtectionTunnelController.removeVPN(reason: .entitlementCheck)
+            hadVPNEntitlements = hasVPNEntitlements
         }
     }
 
@@ -2697,7 +2717,9 @@ extension MainViewController {
 }
 
 extension MainViewController: NewTabPageControllerDelegate {
-    func newTabPageDidOpenFavoriteURL(_ controller: NewTabPageViewController, url: URL) {
+
+    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
         handleRequestedURL(url)
     }
 

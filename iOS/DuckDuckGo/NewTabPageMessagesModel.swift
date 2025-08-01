@@ -68,7 +68,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     // MARK: - Private
 
-    private func refresh() {
+    func refresh() {
         homePageMessagesConfiguration.refresh()
         updateHomeMessageViewModel()
     }

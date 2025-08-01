@@ -59,15 +59,6 @@ final class LogViewerViewController: UIViewController {
         return button
     }()
     
-    private lazy var clearButton: UIBarButtonItem = {
-        let button = UIBarButtonItem(
-            image: UIImage(systemName: "trash"),
-            style: .plain,
-            target: self,
-            action: #selector(clearButtonTapped)
-        )
-        return button
-    }()
     
     private lazy var exportButton: UIBarButtonItem = {
         let button = UIBarButtonItem(
@@ -131,7 +122,7 @@ final class LogViewerViewController: UIViewController {
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
-        navigationItem.rightBarButtonItems = [exportButton, filterButton, clearButton, refreshButton]
+        navigationItem.rightBarButtonItems = [exportButton, filterButton, refreshButton]
 
         view.addSubview(tableView)
         view.addSubview(loadingSpinner)
@@ -157,20 +148,6 @@ final class LogViewerViewController: UIViewController {
         dataSource.refresh()
     }
     
-    @objc private func clearButtonTapped() {
-        let alert = UIAlertController(
-            title: "Clear Log Entries",
-            message: "This will clear all current log entries. This action cannot be undone.",
-            preferredStyle: .alert
-        )
-        
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Clear", style: .destructive) { _ in
-            self.dataSource.clearLogs()
-        })
-        
-        present(alert, animated: true)
-    }
     
     @objc private func exportButtonTapped() {
         let exportText = dataSource.exportLogs()

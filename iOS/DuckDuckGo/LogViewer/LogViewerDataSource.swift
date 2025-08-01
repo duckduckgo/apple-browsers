@@ -50,7 +50,6 @@ final class LogViewerDataSource {
     // MARK: - Private Properties
     
     private var logStore: OSLogStore?
-    private let maxLogEntries = 2000
     private let backgroundQueue = DispatchQueue(label: "LogViewerDataSource", qos: .utility)
     
     // MARK: - Initialization
@@ -86,11 +85,6 @@ final class LogViewerDataSource {
         refresh()
     }
 
-    func clearLogs() {
-        DispatchQueue.main.async {
-            self.logEntries = []
-        }
-    }
 
     func exportLogs() -> String {
         let dateFormatter = DateFormatter()
@@ -149,45 +143,25 @@ final class LogViewerDataSource {
     }
     
     private func fetchLogs(from logStore: OSLogStore) throws {
-        let predicate = createPredicate()
-        
-        // Get all entries from the log store
-        let entries: AnySequence<OSLogEntry>
-        if let predicate = predicate {
-            entries = try logStore.getEntries(matching: predicate)
-        } else {
-            entries = try logStore.getEntries()
-        }
-        
-        var newEntries: [FormattedLogEntry] = []
-
-        for entry in entries {
-            // Convert OSLogEntry to our FormattedLogEntry
+        let entries = try logStore.getEntries(matching: createPredicate())
+        logEntries = entries.compactMap { entry in
             if let logEntry = entry as? OSLogEntryLog {
                 let formattedEntry = FormattedLogEntry(from: logEntry)
                 if currentFilter.matches(formattedEntry) {
-                    newEntries.append(formattedEntry)
+                    return formattedEntry
                 }
             }
+
+            return nil
         }
 
-        // Sort by timestamp (oldest first) and limit entries
-        newEntries.sort { $0.timestamp < $1.timestamp }
-        if newEntries.count > maxLogEntries {
-            // Take the most recent entries if we exceed the limit
-            newEntries = Array(newEntries.suffix(maxLogEntries))
-        }
-
-        logEntries = newEntries
-        
-        // Signal loading completion after successful fetch
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
         }
     }
     
-    private func createPredicate() -> NSPredicate? {
+    private func createPredicate() -> NSPredicate {
         var predicates: [NSPredicate] = []
         
         // Always filter out logs with no subsystem or Apple subsystems

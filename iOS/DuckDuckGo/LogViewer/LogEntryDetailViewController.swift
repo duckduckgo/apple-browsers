@@ -124,7 +124,7 @@ final class LogEntryDetailViewController: UIViewController {
         // Message section
         let messageView = createInfoSection(
             title: "Message",
-            content: logEntry.composedMessage,
+            content: logEntry.message,
             isExpandable: true
         )
         contentStackView.addArrangedSubview(messageView)
@@ -210,7 +210,7 @@ final class LogEntryDetailViewController: UIViewController {
         Process: \(logEntry.process)
         
         Message:
-        \(logEntry.composedMessage)
+        \(logEntry.message)
         """
     }
 }

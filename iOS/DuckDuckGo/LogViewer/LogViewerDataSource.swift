@@ -36,9 +36,7 @@ final class LogViewerDataSource {
     
     weak var delegate: LogViewerDataSourceDelegate?
     
-    private(set) var isRunning = false
     private(set) var currentFilter = LogFilter.allLogsFilter
-    private(set) var isInitialLoad = true
     
     private(set) var logEntries: [FormattedLogEntry] = [] {
         didSet {
@@ -51,10 +49,7 @@ final class LogViewerDataSource {
     
     // MARK: - Private Properties
     
-    private var refreshTimer: Timer?
     private var logStore: OSLogStore?
-    private var lastFetchTime: Date?
-    private let refreshInterval: TimeInterval = 1.0
     private let maxLogEntries = 2000
     private let backgroundQueue = DispatchQueue(label: "LogViewerDataSource", qos: .utility)
     
@@ -65,57 +60,30 @@ final class LogViewerDataSource {
     }
     
     deinit {
-        stop()
+        // No longer need to stop anything since there's no timer
     }
     
     // MARK: - Public Methods
     
-    /// Start real-time log fetching
-    func start() {
-        guard !isRunning else { return }
+    /// Refresh the entire log store
+    func refresh() {
+        // Clear existing logs immediately
+        logEntries = []
         
-        isRunning = true
-        
-        // Signal loading state for initial fetch
-        if isInitialLoad {
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.logViewerDataSource(self, didUpdateLoadingState: true)
-            }
+        // Signal loading state
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.logViewerDataSource(self, didUpdateLoadingState: true)
         }
         
         fetchLogs()
-
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] timer in
-            guard let self = self, self.isRunning else {
-                timer.invalidate()
-                return
-            }
-            self.fetchLogs()
-        }
-        
-        // Add timer to run loop for better reliability
-        if let timer = refreshTimer {
-            RunLoop.current.add(timer, forMode: .common)
-        }
-    }
-    
-    func stop() {
-        guard isRunning else { return }
-        
-        isRunning = false
-        refreshTimer?.invalidate()
-        refreshTimer = nil
     }
 
     func updateFilter(_ filter: LogFilter) {
         currentFilter = filter
-
+        // Clear existing logs and refresh with new filter
         logEntries = []
-        lastFetchTime = nil
-        if isRunning {
-            fetchLogs()
-        }
+        refresh()
     }
 
     func clearLogs() {
@@ -139,7 +107,7 @@ final class LogViewerDataSource {
         
         let logText = logEntries.map { entry in
             let timestamp = dateFormatter.string(from: entry.timestamp)
-            return "[\(timestamp)] [\(entry.level.displayName)] [\(entry.subsystem)/\(entry.category)] \(entry.composedMessage)"
+            return "[\(timestamp)] [\(entry.level.displayName)] [\(entry.subsystem)/\(entry.category)] \(entry.message)"
         }.joined(separator: "\n")
         
         return "\(header)\(logText)"
@@ -159,17 +127,10 @@ final class LogViewerDataSource {
     
     private func performLogFetch() {
         guard let logStore = logStore else {
-            // Signal loading completion on error for initial load
-            if isInitialLoad {
-                isInitialLoad = false
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
-                }
-            }
-            
+            // Signal loading completion on error
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
+                self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
                 self.delegate?.logViewerDataSource(self, didEncounterError: LogViewerError.logStoreUnavailable)
             }
             return
@@ -178,40 +139,29 @@ final class LogViewerDataSource {
         do {
             try fetchLogs(from: logStore)
         } catch {
-            // Signal loading completion on error for initial load
-            if isInitialLoad {
-                isInitialLoad = false
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
-                }
-            }
-            
+            // Signal loading completion on error
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
+                self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
                 self.delegate?.logViewerDataSource(self, didEncounterError: LogViewerError.fetchFailed(error))
             }
         }
     }
     
     private func fetchLogs(from logStore: OSLogStore) throws {
-        let endDate = Date()
-        let startDate = lastFetchTime ?? Date.distantPast
         let predicate = createPredicate()
         
-        let position = logStore.position(date: startDate)
+        // Get all entries from the log store
         let entries: AnySequence<OSLogEntry>
         if let predicate = predicate {
-            entries = try logStore.getEntries(at: position, matching: predicate)
+            entries = try logStore.getEntries(matching: predicate)
         } else {
-            entries = try logStore.getEntries(at: position)
+            entries = try logStore.getEntries()
         }
         
         var newEntries: [FormattedLogEntry] = []
 
         for entry in entries {
-            guard entry.date > startDate else { continue }
-
             // Convert OSLogEntry to our FormattedLogEntry
             if let logEntry = entry as? OSLogEntryLog {
                 let formattedEntry = FormattedLogEntry(from: logEntry)
@@ -221,22 +171,19 @@ final class LogViewerDataSource {
             }
         }
 
-        var updatedEntries = logEntries + newEntries
-
-        if updatedEntries.count > maxLogEntries {
-            updatedEntries = Array(updatedEntries.prefix(maxLogEntries))
+        // Sort by timestamp (oldest first) and limit entries
+        newEntries.sort { $0.timestamp < $1.timestamp }
+        if newEntries.count > maxLogEntries {
+            // Take the most recent entries if we exceed the limit
+            newEntries = Array(newEntries.suffix(maxLogEntries))
         }
 
-        logEntries = updatedEntries
-        lastFetchTime = endDate
+        logEntries = newEntries
         
-        // Signal loading completion after first successful fetch
-        if isInitialLoad {
-            isInitialLoad = false
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
-            }
+        // Signal loading completion after successful fetch
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
         }
     }
     
@@ -258,11 +205,9 @@ final class LogViewerDataSource {
             predicates.append(categoryPredicate)
         }
 
-        if let levelFilter = currentFilter.levelFilter {
-            let levelPredicate = NSPredicate(format: "level >= %d", levelFilter.rawValue)
-            predicates.append(levelPredicate)
-        }
-        
+        // Note: Log level filtering must be done client-side as OSLogStore predicates
+        // don't support the 'level' field
+
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 }

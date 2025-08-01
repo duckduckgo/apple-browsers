@@ -49,12 +49,12 @@ final class LogViewerViewController: UIViewController {
         return searchController
     }()
     
-    private lazy var playPauseButton: UIBarButtonItem = {
+    private lazy var refreshButton: UIBarButtonItem = {
         let button = UIBarButtonItem(
-            image: UIImage(systemName: "pause.circle"),
+            image: UIImage(systemName: "arrow.clockwise"),
             style: .plain,
             target: self,
-            action: #selector(playPauseButtonTapped)
+            action: #selector(refreshButtonTapped)
         )
         return button
     }()
@@ -101,7 +101,7 @@ final class LogViewerViewController: UIViewController {
     
     private let dataSource = LogViewerDataSource()
     private var filteredEntries: [FormattedLogEntry] = []
-    private var autoScrollEnabled = true
+    private var isLoading = false
     private let dependencies: DebugScreen.Dependencies
     
     // MARK: - Initialization
@@ -123,18 +123,6 @@ final class LogViewerViewController: UIViewController {
         setupUI()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        dataSource.start()
-        updatePlayPauseButton()
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        dataSource.stop()
-        updatePlayPauseButton()
-    }
-    
     // MARK: - Setup
     
     private func setupUI() {
@@ -143,7 +131,7 @@ final class LogViewerViewController: UIViewController {
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
-        navigationItem.rightBarButtonItems = [exportButton, filterButton, clearButton, playPauseButton]
+        navigationItem.rightBarButtonItems = [exportButton, filterButton, clearButton, refreshButton]
 
         view.addSubview(tableView)
         view.addSubview(loadingSpinner)
@@ -158,18 +146,15 @@ final class LogViewerViewController: UIViewController {
             loadingSpinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
         
-        updatePlayPauseButton()
+        // Initial refresh to load logs
+        dataSource.refresh()
     }
     
     // MARK: - Actions
     
-    @objc private func playPauseButtonTapped() {
-        if dataSource.isRunning {
-            dataSource.stop()
-        } else {
-            dataSource.start()
-        }
-        updatePlayPauseButton()
+    @objc private func refreshButtonTapped() {
+        guard !isLoading else { return }
+        dataSource.refresh()
     }
     
     @objc private func clearButtonTapped() {
@@ -211,11 +196,6 @@ final class LogViewerViewController: UIViewController {
     
     // MARK: - Private Methods
     
-    private func updatePlayPauseButton() {
-        let imageName = dataSource.isRunning ? "pause.circle" : "play.circle"
-        playPauseButton.image = UIImage(systemName: imageName)
-    }
-    
     private func applySearchFilter() {
         let searchText = searchController.searchBar.text
         
@@ -233,11 +213,11 @@ final class LogViewerViewController: UIViewController {
         }
         
         tableView.reloadData()
-        scrollToBottomIfNeeded()
+        scrollToBottom()
     }
     
-    private func scrollToBottomIfNeeded() {
-        guard autoScrollEnabled && !filteredEntries.isEmpty else { return }
+    private func scrollToBottom() {
+        guard !filteredEntries.isEmpty else { return }
         
         DispatchQueue.main.async {
             let indexPath = IndexPath(row: self.filteredEntries.count - 1, section: 0)
@@ -270,12 +250,18 @@ extension LogViewerViewController: LogViewerDataSourceDelegate {
     
     func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateLoadingState isLoading: Bool) {
         DispatchQueue.main.async {
+            self.isLoading = isLoading
+            
             if isLoading {
                 self.loadingSpinner.startAnimating()
                 self.tableView.isHidden = true
+                self.refreshButton.isEnabled = false
             } else {
                 self.loadingSpinner.stopAnimating()
                 self.tableView.isHidden = false
+                self.refreshButton.isEnabled = true
+                // Scroll to bottom after loading completes
+                self.scrollToBottom()
             }
         }
     }
@@ -311,20 +297,7 @@ extension LogViewerViewController: UITableViewDelegate {
         navigationController?.pushViewController(detailViewController, animated: true)
     }
     
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        // Disable auto-scroll when user starts scrolling
-        autoScrollEnabled = false
-    }
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        // Re-enable auto-scroll if user scrolled to bottom
-        let bottomEdge = scrollView.contentOffset.y + scrollView.frame.height
-        let contentHeight = scrollView.contentSize.height
-        
-        if bottomEdge >= contentHeight - 50 { // 50pt tolerance
-            autoScrollEnabled = true
-        }
-    }
+    // Auto-scroll functionality removed
 }
 
 // MARK: - UISearchResultsUpdating
@@ -368,7 +341,8 @@ private class LogEntryTableViewCell: UITableViewCell {
 
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.font = UIFont.daxBodyRegular()
-        messageLabel.numberOfLines = 0
+        messageLabel.numberOfLines = 3
+        messageLabel.lineBreakMode = .byTruncatingTail
         contentView.addSubview(messageLabel)
 
         timestampContextLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -389,7 +363,7 @@ private class LogEntryTableViewCell: UITableViewCell {
     }
     
     func configure(with entry: FormattedLogEntry) {
-        messageLabel.text = entry.composedMessage
+        messageLabel.text = entry.message
 
         switch entry.level {
         case .error, .fault: messageLabel.textColor = UIColor.systemRed

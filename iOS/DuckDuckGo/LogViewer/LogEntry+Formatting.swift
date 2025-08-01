@@ -30,17 +30,15 @@ struct FormattedLogEntry {
     let category: String
     let process: String
     let message: String
-    let composedMessage: String
     
     /// Initialize with all parameters
-    init(timestamp: Date, level: OSLogEntryLog.Level, subsystem: String, category: String, process: String, message: String, composedMessage: String) {
+    init(timestamp: Date, level: OSLogEntryLog.Level, subsystem: String, category: String, process: String, message: String) {
         self.timestamp = timestamp
         self.level = level
         self.subsystem = subsystem
         self.category = category
         self.process = process
         self.message = message
-        self.composedMessage = composedMessage
     }
     
     /// Human-readable timestamp format
@@ -74,7 +72,6 @@ struct FormattedLogEntry {
     private static let timestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.timeStyle = .medium
-        // formatter.dateFormat = "HH:mm:ss"
         return formatter
     }()
 }
@@ -87,7 +84,6 @@ extension FormattedLogEntry {
         self.category = osLogEntry.category
         self.process = osLogEntry.process
         self.message = osLogEntry.composedMessage
-        self.composedMessage = osLogEntry.composedMessage
     }
 }
 
@@ -98,13 +94,20 @@ struct LogFilter {
     let searchText: String?
 
     func matches(_ entry: FormattedLogEntry) -> Bool {
-        // Note: Subsystem, category, and level filtering are now handled at the OSLogStore predicate level
-        // Only search text filtering is done here since it's more complex to do in predicates
+        // Note: Subsystem and category filtering are handled at the OSLogStore predicate level
+        // Level filtering and search text filtering are done here
+        
+        // Level filter (show this level and above)
+        if let levelFilter = levelFilter {
+            if entry.level.rawValue < levelFilter.rawValue {
+                return false
+            }
+        }
         
         // Search text filter
         if let searchText = searchText, !searchText.isEmpty {
             let searchString = searchText.lowercased()
-            return entry.composedMessage.lowercased().contains(searchString) ||
+            return entry.message.lowercased().contains(searchString) ||
                    entry.subsystem.lowercased().contains(searchString) ||
                    entry.category.lowercased().contains(searchString)
         }

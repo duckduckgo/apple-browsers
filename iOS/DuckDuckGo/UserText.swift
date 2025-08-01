@@ -1691,7 +1691,7 @@ Take back control of your personal information with the browser designed for dat
 
     public static let settingsAiChatSearchInputFooter = NSLocalizedString("settings.aichat.shortcuts.input.footer", value: "Search the web or ask Duck.ai directly from the Address Bar", comment: "Settings screen footer text for showing AI Chat in the input box")
 
-    public static let settingsAiChatSearchInput = NSLocalizedString("settings.aichat.shortcuts.input", value: "Search Input", comment: "Settings screen text for showing AI Chat in the input box")
+    public static let settingsAiChatSearchInput = NSLocalizedString("settings.aichat.shortcuts.input", value: "Experimental Address Bar", comment: "Settings screen text for showing AI Chat in the input box")
 
 
     public static let voiceSearchToggleSearch = NSLocalizedString("voice-search-toggle-serp-option", value: "Search", comment: "Voice search toggle option for searching on the web")

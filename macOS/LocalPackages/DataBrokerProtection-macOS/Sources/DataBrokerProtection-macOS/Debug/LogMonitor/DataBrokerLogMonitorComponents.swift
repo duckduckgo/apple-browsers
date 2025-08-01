@@ -159,16 +159,27 @@ struct LogListView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            List {
-                ForEach(logs) { log in
-                    LogEntryRowView(log: log)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(logs) { log in
+                        LogEntryRowView(log: log)
+                            .id(log.id)
+                            .padding(.horizontal, 8)
+                    }
+
+                    if !logs.isEmpty {
+                        Color.clear
+                            .frame(height: 1)
+                            .id("bottom")
+                    }
                 }
             }
-            .listStyle(PlainListStyle())
             .onChange(of: logs.count) { _ in
                 if autoScroll && !logs.isEmpty {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        proxy.scrollTo(logs.last?.id, anchor: .bottom)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            proxy.scrollTo("bottom", anchor: .bottom)
+                        }
                     }
                 }
             }

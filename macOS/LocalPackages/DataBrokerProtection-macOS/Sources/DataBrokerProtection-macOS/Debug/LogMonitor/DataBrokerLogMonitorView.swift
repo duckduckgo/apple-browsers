@@ -32,28 +32,33 @@ struct DataBrokerLogMonitorView: View {
                 onClear: viewModel.clearLogs,
                 retentionLimit: $viewModel.retentionLimitText
             )
+            .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
             LogFilterControlsView(
                 filterSettings: $viewModel.filterSettings
             )
+            .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
             if viewModel.filteredLogs.isEmpty {
                 LogEmptyStateView(isMonitoring: viewModel.isMonitoring)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 LogListView(
                     logs: viewModel.filteredLogs,
                     autoScroll: viewModel.filterSettings.autoScroll
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             if let errorMessage = viewModel.errorMessage {
                 ErrorBannerView(message: errorMessage) {
                     viewModel.errorMessage = nil
                 }
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(minWidth: 1000, minHeight: 600)

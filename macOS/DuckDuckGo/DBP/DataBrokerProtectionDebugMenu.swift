@@ -350,17 +350,19 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     @objc private func openLogMonitor() {
         if logMonitorWindowController == nil {
             let viewController = DataBrokerLogMonitorViewController()
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 800),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 900),
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable],
                                   backing: .buffered,
                                   defer: false)
 
             window.contentViewController = viewController
             window.title = "DataBrokerProtection Log Monitor"
-            window.minSize = NSSize(width: 1000, height: 600)
-            window.center()
+            window.minSize = NSSize(width: 1000, height: 650)
             logMonitorWindowController = NSWindowController(window: window)
             window.delegate = self
+
+            // Center after setting up the controller to ensure proper sizing
+            window.center()
         }
 
         logMonitorWindowController?.showWindow(self)

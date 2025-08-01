@@ -2849,7 +2849,7 @@
 "settings.import.passwords" = "Импорт паролей";
 
 /* Copy for budge on settings item to show an item is new */
-"settings.item.badge.new" = "Новая вкладка";
+"settings.item.badge.new" = "новый";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";

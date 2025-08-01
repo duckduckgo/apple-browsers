@@ -118,7 +118,7 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         case .purchasePrivacyPro:
             return nil
         case .privacyPro:
-            return UserText.subscription
+            return UserText.subscriptionDeprecated
         case .regularPreferencePanes:
             return UserText.mainSettings
         case .about:
@@ -212,7 +212,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .dataClearing:
             return UserText.dataClearing
         case .privacyPro:
-            return UserText.subscription
+            return UserText.subscriptionDeprecated
         case .vpn:
             return UserText.vpn
         case .personalInformationRemoval:
@@ -249,7 +249,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 
-    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding) -> NSImage {
+    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding, isSubscriptionRebrandingOn: Bool) -> NSImage {
         switch self {
         case .defaultBrowser:
             return settingsIconProvider.defaultBrowserIcon
@@ -294,6 +294,9 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .otherPlatforms:
             return settingsIconProvider.otherPlatformsIcon
         case .aiChat:
+            if isSubscriptionRebrandingOn {
+                return settingsIconProvider.aiGeneralIcon
+            }
             return settingsIconProvider.duckAIIcon
         }
     }

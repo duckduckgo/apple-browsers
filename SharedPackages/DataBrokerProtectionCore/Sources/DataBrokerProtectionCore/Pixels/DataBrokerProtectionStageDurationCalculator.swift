@@ -34,6 +34,8 @@ public enum Stage: String {
     case validate
     case other
     case fillForm = "fill-form"
+    case conditionFound = "condition-found"
+    case conditionNotFound = "condition-not-found"
 }
 
 public protocol StageDurationCalculator {
@@ -55,6 +57,8 @@ public protocol StageDurationCalculator {
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
     func fireOptOutFailure(tries: Int)
+    func fireOptOutConditionFound()
+    func fireOptOutConditionNotFound()
 #if os(iOS)
     func fireScanStarted()
 #endif
@@ -264,6 +268,24 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus))
 #endif
+    }
+
+    func fireOptOutConditionFound() {
+        handler.fire(.optOutConditionFound(dataBroker: dataBroker,
+                                           attemptId: attemptId,
+                                           duration: durationSinceLastStage(),
+                                           dataBrokerVersion: dataBrokerVersion,
+                                           tries: tries,
+                                           actionId: actionID ?? ""))
+    }
+
+    func fireOptOutConditionNotFound() {
+        handler.fire(.optOutConditionNotFound(dataBroker: dataBroker,
+                                              attemptId: attemptId,
+                                              duration: durationSinceLastStage(),
+                                              dataBrokerVersion: dataBrokerVersion,
+                                              tries: tries,
+                                              actionId: actionID ?? ""))
     }
 
 #if os(iOS)

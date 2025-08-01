@@ -254,7 +254,7 @@ class SwitchBarTextEntryView: UIView {
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
 
-        if !isTouched && isURL {
+        if !isTouched && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
             heightConstraint?.constant = Constants.minHeight
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false

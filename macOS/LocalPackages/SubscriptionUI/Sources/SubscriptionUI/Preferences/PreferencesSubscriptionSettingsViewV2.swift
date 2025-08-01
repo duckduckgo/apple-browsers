@@ -129,9 +129,9 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     @ViewBuilder
     private var activateSection: some View {
         PreferencePaneSection {
-            TextMenuItemHeader(UserText.activateSectionTitle, bottomPadding: 0)
+            TextMenuItemHeader(UserText.activateSectionTitle(isRebrandingOn: isSubscriptionRebrandingOn()), bottomPadding: 0)
 
-            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))
+            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform, isRebrandingOn: isSubscriptionRebrandingOn()))
                 .foregroundColor(Color(.textSecondary))
 
             TextButton(UserText.activateSectionLearnMoreButton) {
@@ -224,7 +224,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     private var removeConfirmationDialog: some View {
         SubscriptionDialog(imageName: "Privacy-Pro-128",
                            title: UserText.removeSubscriptionDialogTitle,
-                           description: UserText.removeSubscriptionDialogDescription,
+                           description: UserText.removeSubscriptionDialogDescription(isRebrandingOn: isSubscriptionRebrandingOn()),
                            buttons: {
             Button(UserText.removeSubscriptionDialogCancel) { showingRemoveConfirmationDialog = false }
             Button(action: {

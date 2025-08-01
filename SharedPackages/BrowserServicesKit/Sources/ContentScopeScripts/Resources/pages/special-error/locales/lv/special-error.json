@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Detalizēti",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Detalizēti...",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Pamest šo vietni",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Pieņemt risku un apmeklēt vietni",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Brīdinājums: Drošības risks",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Brīdinājums: šī vietne var būt{newline}risks tavai drošībai",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "DuckDuckGo Scam Blocker bloķēja šo lapu, jo tajā, iespējams, tiek izplatīta ļaunprātīga programmatūra, kas paredzēta, lai apdraudētu tavu ierīci vai nozagtu tavu personisko informāciju.{newline}<a>Uzzini vairāk</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Ja uzskati, ka šī vietne ir droša, vari <a>ziņot par kļūdu</a>. Tu joprojām vari apmeklēt šo vietni, apzinoties savu risku.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Brīdinājums: šī vietne iespējama ar {newline}drošības risku",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "DuckDuckGo Scam Blocker bloķēja šo lapu, jo tā var uzdoties par likumīgu vietni, lai tevi maldinātu un izvilinātu personisko informāciju, piemēram, paroles vai kredītkaršu numurus.{newline}<a>Uzzini vairāk</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Ja uzskati, ka šī vietne ir droša, vari <a>ziņot par kļūdu</a>. Tu joprojām vari apmeklēt šo vietni, apzinoties savu risku.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Brīdinājums: šī vietne iespējama ar {newline}drošības risku",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "DuckDuckGo Scam Blocker bloķēja šo lapu, jo tā, iespējams, mēģina tevi maldināt vai manipulēt, lai tu pārskaitītu naudu, iegādātos viltotas preces vai ar viltu instalētu ļaunprātīgu programmatūru.{newline}<a>Uzzini vairāk</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Ja uzskati, ka šī vietne ir droša, vari <a>ziņot par kļūdu</a>. Tu joprojām vari apmeklēt šo vietni, apzinoties savu risku.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Brīdinājums: šī vietne var būt nedroša",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "Šīs vietnes sertifikāts ir nederīgs. Tu, iespējams, izveido savienojumu ar serveri, kas izliekas par <b>{domain}</b> un var pakļaut riskam tavu konfidenciālo informāciju.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "DuckDuckGo brīdina tevi, ja vietnei ir nederīgs sertifikāts.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> drošības sertifikāta derīguma termiņš ir beidzies. Iespējams, ka vietne ir nepareizi konfigurēta, ka tavu savienojumu ir apdraudējis kāds uzbrucējs vai ka tavas sistēmas pulkstenis ir nepareizs.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "Tavas ierīces operētājsistēma neuzticas <b>{domain}</b> drošības sertifikātam. Iespējams, ka vietne ir nepareizi konfigurēta vai ka tavu savienojumu ir apdraudējis kāds uzbrucējs.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "Tavas ierīces operētājsistēma neuzticas <b>{domain}</b> drošības sertifikātam. Iespējams, ka vietne ir nepareizi konfigurēta vai ka tavu savienojumu ir apdraudējis kāds uzbrucējs.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> drošības sertifikāts neatbilst <b>*.{eTldPlus1}</b>. Iespējams, ka vietne ir nepareizi konfigurēta vai ka tavu savienojumu ir apdraudējis kāds uzbrucējs.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

@@ -29,6 +29,7 @@ public protocol CCFCommunicationDelegate: AnyObject {
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async
     func solveCaptcha(with response: SolveCaptchaResponse) async
     func success(actionId: String, actionType: ActionType) async
+    func conditionSuccess(actions: [Action]) async
     func onError(error: Error) async
 }
 
@@ -126,7 +127,10 @@ public class DataBrokerProtectionFeature: Subfeature {
             await delegate?.solveCaptcha(with: response)
         case .fillForm, .click, .expectation:
             await delegate?.success(actionId: success.actionID, actionType: success.actionType)
-        default: return
+        case .conditionSuccess(let response):
+            await delegate?.conditionSuccess(actions: response.actions)
+        case .none:
+            break
         }
     }
 
@@ -157,7 +161,7 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         installTaskCancellationTimer()
 
-        Logger.action.log("Pushing into WebView: \(method.rawValue) params \(String(describing: params))")
+        Logger.action.log("Pushing into WebView: \(method.rawValue) params \(String(describing: params), privacy: .public)")
 
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
 

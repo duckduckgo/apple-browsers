@@ -1,0 +1,99 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "browserReleaseNotes" : {
+    "title" : "Versionshinweise",
+    "note" : "Page title for the Browser Release Notes page showing what's new in the current release"
+  },
+  "versionNumber" : {
+    "title" : "Version {version}",
+    "note" : "Text that contains the version number for the current release"
+  },
+  "lastChecked" : {
+    "title" : "Zuletzt überprüft: {date}",
+    "note" : "Text that contains the date and time of the last check for version updates"
+  },
+  "todayAt" : {
+    "title" : "Heute um {time}",
+    "note" : "Text that marks an event as having happened today at a set time (ex: Today at 7:34pm)"
+  },
+  "yesterdayAt" : {
+    "title" : "Gestern um {time}",
+    "note" : "Text that marks an event as having happened yesterday at a set time (ex: Yesterday at 7:34pm)"
+  },
+  "browserUpToDate" : {
+    "title" : "DuckDuckGo ist auf dem neuesten Stand",
+    "note" : "Status text for when the browser is already up to date"
+  },
+  "newVersionAvailable" : {
+    "title" : "Eine neuere Version des Browsers ist verfügbar",
+    "note" : "Status text for when a new browser version is available"
+  },
+  "criticallyOutOfDate" : {
+    "title" : "Kritisches Update erforderlich",
+    "note" : "Status text for when a new browser version is available and the current version is very out of date"
+  },
+  "checkingForUpdate" : {
+    "title" : "Nach Update suchen",
+    "note" : "Status text for when the browser is checking for a newer version"
+  },
+  "updateError" : {
+    "title" : "Update fehlgeschlagen",
+    "note" : "Status text for when an error has occurred during the update process"
+  },
+  "updateDownloading" : {
+    "title" : "Update wird heruntergeladen {progress}%",
+    "note" : "Status text for when the browser is downloading a new update. {progress} is a placeholder for a number from 0 to 100 - the word {progress} should not be translated, but it should be placed in the appropriate position within the text. The percentage sign should also be placed correctly according to the locale (example: Downloading Update 74%)"
+  },
+  "updatePreparing" : {
+    "title" : "Update vorbereiten",
+    "note" : "Status text for when the browser has finished downloading the update but is still installing it"
+  },
+  "restartToUpdate" : {
+    "title" : "Zum Aktualisieren neu starten",
+    "note" : "Label for a button that triggers a browser restart after a version update"
+  },
+  "updateBrowser" : {
+    "title" : "DuckDuckGo aktualisieren",
+    "note" : "Label for a button that triggers a manual browser update"
+  },
+  "retryUpdate" : {
+    "title" : "Update nochmal versuchen",
+    "note" : "Label for a button that retries applying the failed update"
+  },
+  "forPrivacyProSubscribers" : {
+    "title" : "Für Privacy Pro-Abonnenten",
+    "note" : "Heading label for release notes specific to Privacy Pro Subscribers (do not translate Privacy Pro)"
+  },
+  "new" : {
+    "title" : "Neu",
+    "note" : "Text for tag that appears next to version number to indicate it is newly released"
+  },
+  "somethingWentWrong" : {
+    "title" : "Etwas ist schiefgelaufen",
+    "note" : "A message shown when the application experienced a crash"
+  },
+  "retryGettingReleaseNotes" : {
+    "title" : "Zusammenfassung neu laden",
+    "note" : "A button label that allows the user to retry getting the release notes after a loading error"
+  },
+  "loadingError" : {
+    "title" : "Fehler beim Laden der Update-Zusammenfassung",
+    "note" : "A message shown when the application experienced a loading error"
+  },
+  "thankyou" : {
+    "title" : "Vielen Dank, dass du dich für DuckDuckGo entschieden hast!",
+    "note" : "Subheader text for tag that appears above page header expressing gratitude for choosing DuckDuckGo"
+  },
+  "whatsNewAtDuckDuckGoLink" : {
+    "title" : "Sieh, woran wir sonst noch gearbeitet haben",
+    "note" : "Text for a link that opens the DuckDuckGo blog to show the latest news and updates"
+  }
+}

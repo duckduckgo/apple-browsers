@@ -20,7 +20,6 @@ import Combine
 import Common
 import Foundation
 import os.log
-import Clocks
 
 /// Represents the current state of hotspot connectivity
 public enum HotspotConnectivityState: String, Equatable {

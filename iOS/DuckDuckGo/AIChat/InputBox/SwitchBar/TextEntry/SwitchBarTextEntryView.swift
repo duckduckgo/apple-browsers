@@ -65,7 +65,7 @@ class SwitchBarTextEntryView: UIView {
     var isTouched = false
     var isURL: Bool {
         // TODO some kind of text length check?
-        URL(string: textView.text) != nil
+        URL(string: textView.text)?.navigationalScheme != nil
     }
 
     var isExpandable: Bool = false {
@@ -251,13 +251,14 @@ class SwitchBarTextEntryView: UIView {
         let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
         let contentExceedsMaxHeight = size.height > Constants.maxHeight
 
-        if !isTouched && isURL {
+        // Reset defaults
+        textView.textContainer.lineBreakMode = .byWordWrapping
 
+        if !isTouched && isURL {
             heightConstraint?.constant = Constants.minHeight
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
-
         } else if isExpandable {
             let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
@@ -344,5 +345,3 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         return true
     }
 }
-
-

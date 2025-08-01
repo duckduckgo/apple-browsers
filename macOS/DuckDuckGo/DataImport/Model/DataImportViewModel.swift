@@ -408,6 +408,9 @@ struct DataImportViewModel {
         sendReport(reportModel)
     }
 
+    func startSync() {
+        // TODO: Start sync from here
+    }
 }
 
 @MainActor

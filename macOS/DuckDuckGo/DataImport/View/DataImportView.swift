@@ -245,9 +245,13 @@ struct DataImportView: ModalView {
                 }
             }
         }
-        if dataType == .passwords {
-            passwordsExplainerView().padding(.top, 20)
-        }
+
+        Text("Or Sync from DuckDuckGo on another device")
+            .fontWeight(.semibold)
+            .foregroundColor(Color(.linkBlue))
+            .onTapGesture {
+                model.startSync()
+            }
     }
 
     private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {

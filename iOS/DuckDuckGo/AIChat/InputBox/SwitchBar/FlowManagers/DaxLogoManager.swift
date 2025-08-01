@@ -83,8 +83,7 @@ final class DaxLogoManager {
             aiDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
         ])
 
-        viewController.view.sendSubviewToBack(aiDaxLogoView)
-        viewController.view.sendSubviewToBack(homeDaxLogoView)
+        viewController.view.bringSubviewToFront(logoContainerView)
     }
 
     func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {

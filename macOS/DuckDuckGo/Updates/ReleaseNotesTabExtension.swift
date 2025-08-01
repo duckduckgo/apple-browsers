@@ -147,13 +147,13 @@ extension ReleaseNotesValues {
         self.automaticUpdate = automaticUpdate
     }
 
-    init(from updateController: UpdateController) {
+    init(from updateController: UpdateController, pixelKit: PixelKit? = PixelKit.shared) {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
         guard let latestUpdate = updateController.latestUpdate else {
             // Fire both daily and count pixels to track this anomaly
-            PixelKit.fire(GeneralPixel.releaseNotesEmpty, frequency: .dailyAndCount)
+            pixelKit?.fire(GeneralPixel.releaseNotesEmpty, frequency: .dailyAndCount)
 
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,

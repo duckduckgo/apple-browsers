@@ -368,8 +368,6 @@ public class SyncConnectionController: SyncConnectionControlling {
         return true
     }
 
-
-
     private func handleRecoveryCodeLoginError(recoveryKey: SyncCode.RecoveryKey, error: Error, setupRole: SyncSetupRole) async {
         if syncService.account != nil {
             await delegate?.controllerDidFindTwoAccountsDuringRecovery(recoveryKey, setupRole: setupRole)

@@ -2636,7 +2636,7 @@
 "privacy.icon.shield" = "Icona privacy";
 
 /* No comment provided by engineer. */
-"Profile Information" = "Profile Information";
+"Profile Information" = "Informazioni sul profilo";
 
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Annulla";
@@ -2651,7 +2651,7 @@
 "prompt.custom.url.scheme.title" = "Aprire in un'altra app?";
 
 /* No comment provided by engineer. */
-"Relatives: %@" = "Relatives: %@";
+"Relatives: %@" = "Parenti: %@";
 
 /* No comment provided by engineer. */
 "Reset" = "Ripristina";
@@ -3224,7 +3224,7 @@
 "subscription.progress.view.restoring.subscription" = "Stiamo ripristinando l'abbonamento...";
 
 /* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro is now just called the DuckDuckGo subscription";
+"subscription.rebranding.message" = "Privacy Pro ora si chiama semplicemente abbonamento DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Rimuovi da questo dispositivo";

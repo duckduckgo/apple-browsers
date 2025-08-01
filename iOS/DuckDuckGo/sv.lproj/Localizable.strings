@@ -947,10 +947,10 @@
 "Broker JSON:" = "Mäklare för JSON:";
 
 /* No comment provided by engineer. */
-"Broker: %@" = "Broker: %@";
+"Broker: %@" = "Mäklare: %@";
 
 /* No comment provided by engineer. */
-"Brokers" = "Brokers";
+"Brokers" = "Mäklare";
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Det är inte tillåtet att avbryta mer än en gång";
@@ -2636,7 +2636,7 @@
 "privacy.icon.shield" = "Integritetsikon";
 
 /* No comment provided by engineer. */
-"Profile Information" = "Profile Information";
+"Profile Information" = "Profilinformation";
 
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Avbryt";
@@ -2651,7 +2651,7 @@
 "prompt.custom.url.scheme.title" = "Öppna i annan app?";
 
 /* No comment provided by engineer. */
-"Relatives: %@" = "Relatives: %@";
+"Relatives: %@" = "Släktingar: %@";
 
 /* No comment provided by engineer. */
 "Reset" = "Återställ";
@@ -3224,7 +3224,7 @@
 "subscription.progress.view.restoring.subscription" = "Återställer abonnemang ...";
 
 /* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
-"subscription.rebranding.message" = "Privacy Pro is now just called the DuckDuckGo subscription";
+"subscription.rebranding.message" = "Privacy Pro kallas nu bara DuckDuckGo-abonnemanget";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Ta bort från den här enheten";

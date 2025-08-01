@@ -947,10 +947,10 @@
 "Broker JSON:" = "Broker JSON :";
 
 /* No comment provided by engineer. */
-"Broker: %@" = "Broker: %@";
+"Broker: %@" = "Courtier : %@";
 
 /* No comment provided by engineer. */
-"Brokers" = "Brokers";
+"Brokers" = "Courtiers";
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "L'annulation ne peut pas être effectuée plus d'une fois";
@@ -2651,7 +2651,7 @@
 "prompt.custom.url.scheme.title" = "Ouvrir dans une autre application ?";
 
 /* No comment provided by engineer. */
-"Relatives: %@" = "Relatives: %@";
+"Relatives: %@" = "Proches : %@";
 
 /* No comment provided by engineer. */
 "Reset" = "Réinitialiser";

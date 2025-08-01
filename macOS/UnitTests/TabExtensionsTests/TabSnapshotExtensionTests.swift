@@ -203,6 +203,78 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssert(mockTabSnapshotStore.persistedSnapshotIDs.count == 0)
     }
 
+    @MainActor
+    func testWhenURLIsDuckPlayerURL_ThenSnapshotIsRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://player/12345"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(tabSnapshotExtension.snapshot, snapshot)
+    }
+
+    @MainActor
+    func testWhenURLIsOnboardingURL_ThenSnapshotIsRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://onboarding"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(tabSnapshotExtension.snapshot, snapshot)
+    }
+
+    @MainActor
+    func testWhenURLIsHistoryURL_ThenSnapshotIsRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://history"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(tabSnapshotExtension.snapshot, snapshot)
+    }
+
+    @MainActor
+    func testWhenURLHasDuckScheme_AndIsNotDuckPlayerOrHistoryOrOnboardingURL_ThenSnapshotIsNotRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://\(#function)"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertNil(tabSnapshotExtension.snapshot)
+    }
+
 }
 
 fileprivate extension URL {

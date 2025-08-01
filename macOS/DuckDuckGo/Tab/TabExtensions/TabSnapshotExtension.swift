@@ -154,7 +154,7 @@ final class TabSnapshotExtension {
     func renderWebViewSnapshot() async {
         guard let webView, let tabContent,
               let url = tabContent.userEditableUrl,
-              url.navigationalScheme != .duck || url == .onboarding || url.isHistory else {
+              isAllowedURL(url) else {
             // Previews of native views are rendered in renderNativePreview()
             return
         }
@@ -199,6 +199,15 @@ final class TabSnapshotExtension {
         Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
+    private func isAllowedURL(_ url: URL) -> Bool {
+        // If duck url allow exception only if it's DuckPlayer or Onboarding or History.
+        switch url {
+        case let url where url.navigationalScheme == .duck:
+            url.host == URL.duckPlayerHost || url == .onboarding || url.isHistory
+        default:
+            true
+        }
+    }
 }
 
 extension TabSnapshotExtension: WebViewInteractionEventsDelegate {

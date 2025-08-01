@@ -330,13 +330,25 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+
+        let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
+                                                                                         homePageMessagesConfiguration: homePageConfiguration,
+                                                                                         privacyProDataReporting: privacyProDataReporter,
+                                                                                         variantManager: variantManager,
+                                                                                         newTabDialogFactory: newTabDaxDialogFactory,
+                                                                                         newTabDaxDialogProvider: DaxDialogs.shared,
+                                                                                         faviconLoader: faviconLoader,
+                                                                                         messageNavigationDelegate: self,
+                                                                                         appSettings: appSettings)
+
         let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
                                                                     bookmarksDatabase: bookmarksDatabase,
                                                                     historyManager: historyManager,
                                                                     tabsModel: tabManager.model,
                                                                     featureFlagger: featureFlagger,
-                                                                    appSettings: appSettings)
-
+                                                                    appSettings: appSettings,
+                                                                    newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -884,6 +896,7 @@ class MainViewController: UIViewController {
     private func addLaunchTabNotificationObserver() {
         launchTabObserver = LaunchTabNotification.addObserver(handler: { [weak self] urlString in
             guard let self = self else { return }
+            viewCoordinator.omniBar.endEditing()
             if let url = URL(trimmedAddressBarString: urlString), url.isValid {
                 self.loadUrlInNewTab(url, inheritedAttribution: nil)
             } else {
@@ -969,6 +982,22 @@ class MainViewController: UIViewController {
         refreshControls()
 
         syncService.scheduler.requestSyncImmediately()
+
+        // It's possible for this to be called when in the background of the
+        //  switcher, and we only want to show the pixel when it's actually
+        // about to shown to the user.
+        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
+            fireNewTabPixels()
+        }
+    }
+
+    func fireNewTabPixels() {
+        Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
+        let favoritesCount = favoritesViewModel.favorites.count
+        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
+        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
+            "FavoriteCount": bucket.value,
+        ])
     }
 
     fileprivate func removeHomeScreen() {
@@ -2688,7 +2717,9 @@ extension MainViewController {
 }
 
 extension MainViewController: NewTabPageControllerDelegate {
-    func newTabPageDidOpenFavoriteURL(_ controller: NewTabPageViewController, url: URL) {
+
+    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
         handleRequestedURL(url)
     }
 

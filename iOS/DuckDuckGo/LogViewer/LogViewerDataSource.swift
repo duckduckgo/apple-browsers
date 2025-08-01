@@ -25,6 +25,7 @@ import os.log
 protocol LogViewerDataSourceDelegate: AnyObject {
     func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateEntries entries: [FormattedLogEntry])
     func logViewerDataSource(_ dataSource: LogViewerDataSource, didEncounterError error: Error)
+    func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateLoadingState isLoading: Bool)
 }
 
 /// Manages OSLogStore access and real-time log fetching
@@ -37,6 +38,7 @@ final class LogViewerDataSource {
     
     private(set) var isRunning = false
     private(set) var currentFilter = LogFilter.allLogsFilter
+    private(set) var isInitialLoad = true
     
     private(set) var logEntries: [FormattedLogEntry] = [] {
         didSet {
@@ -73,6 +75,15 @@ final class LogViewerDataSource {
         guard !isRunning else { return }
         
         isRunning = true
+        
+        // Signal loading state for initial fetch
+        if isInitialLoad {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.logViewerDataSource(self, didUpdateLoadingState: true)
+            }
+        }
+        
         fetchLogs()
 
         refreshTimer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] timer in
@@ -145,6 +156,15 @@ final class LogViewerDataSource {
     
     private func performLogFetch() {
         guard let logStore = logStore else {
+            // Signal loading completion on error for initial load
+            if isInitialLoad {
+                isInitialLoad = false
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
+                }
+            }
+            
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.logViewerDataSource(self, didEncounterError: LogViewerError.logStoreUnavailable)
@@ -155,6 +175,15 @@ final class LogViewerDataSource {
         do {
             try fetchLogs(from: logStore)
         } catch {
+            // Signal loading completion on error for initial load
+            if isInitialLoad {
+                isInitialLoad = false
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
+                }
+            }
+            
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.logViewerDataSource(self, didEncounterError: LogViewerError.fetchFailed(error))
@@ -197,6 +226,15 @@ final class LogViewerDataSource {
 
         logEntries = updatedEntries
         lastFetchTime = endDate
+        
+        // Signal loading completion after first successful fetch
+        if isInitialLoad {
+            isInitialLoad = false
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
+            }
+        }
     }
     
     private func createPredicate() -> NSPredicate? {

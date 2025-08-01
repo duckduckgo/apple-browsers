@@ -89,6 +89,14 @@ final class LogViewerViewController: UIViewController {
         return button
     }()
     
+    private lazy var loadingSpinner: UIActivityIndicatorView = {
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.color = UIColor(designSystemColor: .textSecondary)
+        spinner.hidesWhenStopped = true
+        return spinner
+    }()
+    
     // MARK: - Properties
     
     private let dataSource = LogViewerDataSource()
@@ -138,11 +146,16 @@ final class LogViewerViewController: UIViewController {
         navigationItem.rightBarButtonItems = [exportButton, filterButton, clearButton, playPauseButton]
 
         view.addSubview(tableView)
+        view.addSubview(loadingSpinner)
+        
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            loadingSpinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingSpinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
         
         updatePlayPauseButton()
@@ -252,6 +265,18 @@ extension LogViewerViewController: LogViewerDataSourceDelegate {
             )
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             self.present(alert, animated: true)
+        }
+    }
+    
+    func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateLoadingState isLoading: Bool) {
+        DispatchQueue.main.async {
+            if isLoading {
+                self.loadingSpinner.startAnimating()
+                self.tableView.isHidden = true
+            } else {
+                self.loadingSpinner.stopAnimating()
+                self.tableView.isHidden = false
+            }
         }
     }
 }

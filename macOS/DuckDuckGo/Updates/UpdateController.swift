@@ -250,7 +250,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             await updateCheckState.canStartBackgroundCheck(updater: updater)
         
         guard canStart else {
-            let message = skipRollout ? "User-initiated update check skipped - another update check is in progress" : "Update check skipped - not allowed by Sparkle or rate limited"
+            let message = skipRollout ? "User-initiated update check skipped - another update check is in progress" : "Background update check skipped - rate limited or another update check is in progress"
             Logger.updates.debug("\(message)")
             return
         }

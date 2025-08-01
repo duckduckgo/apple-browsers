@@ -132,7 +132,7 @@ final class UpdateCheckStateTests: XCTestCase {
     func testRateLimitingIntervalsAreConfigurable() async {
         await updateCheckState.recordCheckTime()
 
-        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0.1)
+        let canStart = await updateCheckState.canStartCheck(updater: mockUpdater, minimumInterval: 0.1)
         XCTAssertFalse(canStart, "Should respect custom minimum interval")
     }
 
@@ -225,13 +225,13 @@ final class UpdateCheckStateTests: XCTestCase {
         await updateCheckState.recordCheckTime()
 
         // Check immediately after recording - should be rate limited
-        let canStartImmediately = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0.01)
+        let canStartImmediately = await updateCheckState.canStartCheck(updater: mockUpdater, minimumInterval: 0.01)
         XCTAssertFalse(canStartImmediately, "Should be rate limited immediately after recording")
 
         // Wait for rate limit to expire
         try? await Task.sleep(nanoseconds: 20_000_000) // 20ms
 
-        let canStartAfterWait = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0.01)
+        let canStartAfterWait = await updateCheckState.canStartCheck(updater: mockUpdater, minimumInterval: 0.01)
         XCTAssertTrue(canStartAfterWait, "Should be able to start check after rate limit expires")
     }
 

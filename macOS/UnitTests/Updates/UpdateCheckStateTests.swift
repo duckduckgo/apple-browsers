@@ -104,28 +104,28 @@ final class UpdateCheckStateTests: XCTestCase {
         try await super.tearDown()
     }
 
-    // MARK: - canStartNewCheck Tests
+    // MARK: - Background Check Tests
 
-    /// Tests that update checks are allowed when the system is in its initial state.
-    func testAllowsUpdateChecksInInitialState() async {
-        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertTrue(canStart, "Should be able to start check in initial state")
+    /// Tests that background update checks are allowed when the system is in its initial state.
+    func testAllowsBackgroundChecksInInitialState() async {
+        let canStart = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertTrue(canStart, "Should be able to start background check in initial state")
     }
 
-    /// Tests that update checks are rate limited to prevent excessive requests.
-    func testRateLimitingPreventsExcessiveRequests() async {
+    /// Tests that background update checks are rate limited to prevent excessive requests.
+    func testBackgroundRateLimitingPreventsExcessiveRequests() async {
         await updateCheckState.recordCheckTime()
 
-        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertFalse(canStart, "Should be rate limited when checking too soon")
+        let canStart = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertFalse(canStart, "Background checks should be rate limited when checking too soon")
     }
 
-    /// Tests that rate limiting can be bypassed when needed (e.g., user-initiated checks).
-    func testRateLimitingCanBeBypassed() async {
+    /// Tests that user-initiated checks can bypass rate limiting.
+    func testUserInitiatedChecksCanBypassRateLimiting() async {
         await updateCheckState.recordCheckTime()
 
-        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
-        XCTAssertTrue(canStart, "Should be able to start check when rate limit is disabled")
+        let canStart = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertTrue(canStart, "User-initiated checks should bypass rate limiting")
     }
 
     /// Tests that rate limiting intervals are configurable for different scenarios.
@@ -136,47 +136,88 @@ final class UpdateCheckStateTests: XCTestCase {
         XCTAssertFalse(canStart, "Should respect custom minimum interval")
     }
 
-    /// Tests that checks are blocked when Sparkle doesn't allow updates.
-    func testChecksAreBlockedWhenSparkleDoesntAllow() async {
+    /// Tests that background checks are blocked when Sparkle doesn't allow updates.
+    func testBackgroundChecksAreBlockedWhenSparkleDoesntAllow() async {
         mockUpdater.mockCanCheckForUpdates = false
 
-        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertFalse(canStart, "Should not be able to start check when Sparkle doesn't allow it")
+        let canStart = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertFalse(canStart, "Background checks should not be allowed when Sparkle doesn't allow it")
     }
 
-    /// Tests that checks are allowed when Sparkle allows updates.
-    func testChecksAreAllowedWhenSparkleAllows() async {
+    /// Tests that user-initiated checks are also blocked when Sparkle doesn't allow updates.
+    func testUserInitiatedChecksAreBlockedWhenSparkleDoesntAllow() async {
+        mockUpdater.mockCanCheckForUpdates = false
+
+        let canStart = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertFalse(canStart, "User-initiated checks should not be allowed when Sparkle doesn't allow it")
+    }
+
+    /// Tests that background checks are allowed when Sparkle allows updates.
+    func testBackgroundChecksAreAllowedWhenSparkleAllows() async {
         mockUpdater.mockCanCheckForUpdates = true
 
-        let canStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertTrue(canStart, "Should be able to start check when Sparkle allows it")
+        let canStart = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertTrue(canStart, "Background checks should be allowed when Sparkle allows it")
     }
 
-    /// Tests that nil updater allows update checks (doesn't block them).
-    func testNilUpdaterAllowsChecks() async {
-        let canStart = await updateCheckState.canStartNewCheck(updater: nil)
-        XCTAssertTrue(canStart, "Should be able to start check with nil updater")
+    /// Tests that user-initiated checks are allowed when Sparkle allows updates.
+    func testUserInitiatedChecksAreAllowedWhenSparkleAllows() async {
+        mockUpdater.mockCanCheckForUpdates = true
+
+        let canStart = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertTrue(canStart, "User-initiated checks should be allowed when Sparkle allows it")
     }
 
-    /// Tests that nil updater still respects rate limiting.
-    func testNilUpdaterRespectsRateLimiting() async {
+    /// Tests that nil updater allows background checks (doesn't block them).
+    func testNilUpdaterAllowsBackgroundChecks() async {
+        let canStart = await updateCheckState.canStartBackgroundCheck(updater: nil)
+        XCTAssertTrue(canStart, "Should be able to start background check with nil updater")
+    }
+
+    /// Tests that nil updater allows user-initiated checks (doesn't block them).
+    func testNilUpdaterAllowsUserInitiatedChecks() async {
+        let canStart = await updateCheckState.canStartUserInitiatedCheck(updater: nil)
+        XCTAssertTrue(canStart, "Should be able to start user-initiated check with nil updater")
+    }
+
+    /// Tests that nil updater still respects rate limiting for background checks.
+    func testNilUpdaterRespectsBackgroundRateLimiting() async {
         await updateCheckState.recordCheckTime()
 
-        let canStart = await updateCheckState.canStartNewCheck(updater: nil)
-        XCTAssertFalse(canStart, "Should still be rate limited with nil updater")
+        let canStart = await updateCheckState.canStartBackgroundCheck(updater: nil)
+        XCTAssertFalse(canStart, "Background checks should still be rate limited with nil updater")
+    }
+
+    /// Tests that nil updater bypasses rate limiting for user-initiated checks.
+    func testNilUpdaterBypassesRateLimitingForUserInitiated() async {
+        await updateCheckState.recordCheckTime()
+
+        let canStart = await updateCheckState.canStartUserInitiatedCheck(updater: nil)
+        XCTAssertTrue(canStart, "User-initiated checks should bypass rate limiting even with nil updater")
     }
 
     // MARK: - recordCheckTime Tests
 
-    /// Tests that recording check timestamps enables rate limiting behavior.
-    func testRecordingTimestampsEnablesRateLimiting() async {
-        let initialCanStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertTrue(initialCanStart, "Should initially be able to start check")
+    /// Tests that recording check timestamps enables rate limiting behavior for background checks.
+    func testRecordingTimestampsEnablesBackgroundRateLimiting() async {
+        let initialCanStart = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertTrue(initialCanStart, "Should initially be able to start background check")
 
         await updateCheckState.recordCheckTime()
 
-        let canStartAfterRecord = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertFalse(canStartAfterRecord, "Should be rate limited after recording check time")
+        let canStartAfterRecord = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertFalse(canStartAfterRecord, "Background checks should be rate limited after recording check time")
+    }
+
+    /// Tests that recording check timestamps doesn't affect user-initiated checks.
+    func testRecordingTimestampsDoesntAffectUserInitiatedChecks() async {
+        let initialCanStart = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertTrue(initialCanStart, "Should initially be able to start user-initiated check")
+
+        await updateCheckState.recordCheckTime()
+
+        let canStartAfterRecord = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertTrue(canStartAfterRecord, "User-initiated checks should not be affected by rate limiting")
     }
 
     /// Tests that rate limiting expires after sufficient time passes.
@@ -196,20 +237,23 @@ final class UpdateCheckStateTests: XCTestCase {
 
     // MARK: - Integration Tests
 
-    /// Tests the basic rate limiting workflow.
+    /// Tests the basic rate limiting workflow for both background and user-initiated checks.
     func testBasicRateLimitingWorkflow() async {
-        // Initial state - should allow checks
-        let initialCanStart = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertTrue(initialCanStart, "Should initially be able to start check")
+        // Initial state - should allow all checks
+        let initialBackgroundStart = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertTrue(initialBackgroundStart, "Should initially be able to start background check")
+        
+        let initialUserStart = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertTrue(initialUserStart, "Should initially be able to start user-initiated check")
 
-        // Record check time - should now be rate limited
+        // Record check time - background should now be rate limited, user-initiated should not
         await updateCheckState.recordCheckTime()
-        let canStartAfterRecord = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertFalse(canStartAfterRecord, "Should be rate limited after recording check time")
+        let backgroundAfterRecord = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertFalse(backgroundAfterRecord, "Background checks should be rate limited after recording check time")
 
         // User-initiated check can bypass rate limit
-        let canStartUserInitiated = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
-        XCTAssertTrue(canStartUserInitiated, "User-initiated check should bypass rate limit")
+        let userAfterRecord = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertTrue(userAfterRecord, "User-initiated check should bypass rate limit")
     }
 
     /// Tests behavior with different Sparkle states and rate limiting.
@@ -217,19 +261,19 @@ final class UpdateCheckStateTests: XCTestCase {
         // Record a check time to enable rate limiting
         await updateCheckState.recordCheckTime()
 
-        // Even if rate limited, Sparkle state should still be respected
+        // Even if rate limited, Sparkle state should still be respected for user-initiated checks
         mockUpdater.mockCanCheckForUpdates = false
-        let canStartWithBlockedSparkle = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
-        XCTAssertFalse(canStartWithBlockedSparkle, "Should not be able to start even when bypassing rate limit if Sparkle blocks")
+        let userWithBlockedSparkle = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertFalse(userWithBlockedSparkle, "User-initiated checks should not be allowed if Sparkle blocks")
 
-        // When Sparkle allows but we're rate limited
+        // When Sparkle allows but we're rate limited (background)
         mockUpdater.mockCanCheckForUpdates = true
-        let canStartWithAllowedSparkle = await updateCheckState.canStartNewCheck(updater: mockUpdater)
-        XCTAssertFalse(canStartWithAllowedSparkle, "Should still be rate limited even when Sparkle allows")
+        let backgroundWithAllowedSparkle = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
+        XCTAssertFalse(backgroundWithAllowedSparkle, "Background checks should still be rate limited even when Sparkle allows")
 
-        // When both Sparkle allows and rate limit is bypassed
-        let canStartBothAllowed = await updateCheckState.canStartNewCheck(updater: mockUpdater, minimumInterval: 0)
-        XCTAssertTrue(canStartBothAllowed, "Should be able to start when both conditions are met")
+        // When both Sparkle allows and it's user-initiated
+        let userWithAllowedSparkle = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
+        XCTAssertTrue(userWithAllowedSparkle, "User-initiated checks should be allowed when Sparkle allows")
     }
 
     // MARK: - Constants Tests

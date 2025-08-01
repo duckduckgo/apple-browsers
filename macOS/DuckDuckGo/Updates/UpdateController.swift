@@ -238,16 +238,27 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // This is the default behavior
     func checkForUpdateRespectingRollout() {
         Task { @UpdateCheckActor in
-            await performUpdateCheck()
+            await performUpdateCheck(skipRollout: false)
         }
     }
 
     @UpdateCheckActor
-    private func performUpdateCheck() async {
-        // Check if we can start a new check (Sparkle availability + rate limiting)
-        guard await updateCheckState.canStartNewCheck(updater: updater) else {
-            Logger.updates.debug("Update check skipped - not allowed by Sparkle or rate limited")
+    private func performUpdateCheck(skipRollout: Bool = false) async {
+        // Check if we can start a new check
+        let canStart = skipRollout ? 
+            await updateCheckState.canStartUserInitiatedCheck(updater: updater) :
+            await updateCheckState.canStartBackgroundCheck(updater: updater)
+        
+        guard canStart else {
+            let message = skipRollout ? "User-initiated update check skipped - another update check is in progress" : "Update check skipped - not allowed by Sparkle or rate limited"
+            Logger.updates.debug("\(message)")
             return
+        }
+
+        if skipRollout {
+            Logger.updates.debug("User-initiated update check starting")
+        } else {
+            Logger.updates.debug("Background update check starting")
         }
 
         if case .updaterError = userDriver?.updateProgress {
@@ -257,14 +268,20 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         // Create the actual update task
         Task { @MainActor in
             // Handle expired builds first (critical path)
-            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: skipRollout) else {
                 return
             }
 
             guard let updater, !updater.sessionInProgress else { return }
 
-            Logger.updates.log("Checking for updates respecting rollout")
-            updater.checkForUpdatesInBackground()
+            let logMessage = skipRollout ? "Checking for updates skipping rollout" : "Checking for updates respecting rollout"
+            Logger.updates.log("\(logMessage)")
+
+            if skipRollout {
+                updater.checkForUpdates()
+            } else {
+                updater.checkForUpdatesInBackground()
+            }
         }
     }
 
@@ -302,35 +319,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
         Task { @UpdateCheckActor in
-            await performUpdateCheckSkippingRollout()
-        }
-    }
-
-    @UpdateCheckActor
-    private func performUpdateCheckSkippingRollout() async {
-        // User-initiated checks skip rate limiting but still respect Sparkle availability
-        guard await updateCheckState.canStartNewCheck(updater: updater, minimumInterval: 0) else {
-            Logger.updates.debug("User-initiated update check skipped - not allowed by Sparkle")
-            return
-        }
-
-        Logger.updates.debug("User-initiated update check starting")
-
-        if case .updaterError = userDriver?.updateProgress {
-            userDriver?.cancelAndDismissCurrentUpdate()
-        }
-
-        // Create the actual update task
-        Task { @MainActor in
-            // Handle expired builds first (critical path)
-            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
-                return
-            }
-
-            guard let updater, !updater.sessionInProgress else { return }
-
-            Logger.updates.log("Checking for updates skipping rollout")
-            updater.checkForUpdates()
+            await performUpdateCheck(skipRollout: true)
         }
     }
 

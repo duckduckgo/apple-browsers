@@ -31,15 +31,14 @@ actor UpdateCheckState {
 
     private var lastUpdateCheckTime: Date?
 
-    /// Determines whether a new update check can be started.
+    /// Core logic for determining if an update check can start.
     ///
     /// - Parameters:
     ///   - updater: The SPUUpdater instance to check for availability
-    ///   - minimumInterval: Minimum time interval that must pass between checks.
-    ///     Defaults to `UpdateCheckState.defaultMinimumCheckInterval`.
+    ///   - minimumInterval: Minimum time interval that must pass between checks
     /// - Returns: `true` if Sparkle allows checks and enough time has passed since the last check, `false` otherwise.
     ///
-    func canStartNewCheck(updater: SPUUpdater?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
+    private func canStartCheck(updater: SPUUpdater?, minimumInterval: TimeInterval) -> Bool {
         // Check if Sparkle allows checking for updates
         if let updater = updater, !updater.canCheckForUpdates {
             return false
@@ -52,6 +51,41 @@ actor UpdateCheckState {
         }
 
         return true
+    }
+
+    /// Determines whether a new user-initiated update check can be started.
+    ///
+    /// User-initiated checks bypass rate limiting since they are explicitly requested by the user.
+    ///
+    /// - Parameter updater: The SPUUpdater instance to check for availability
+    /// - Returns: `true` if Sparkle allows checks, `false` if another update session is in progress.
+    ///
+    func canStartUserInitiatedCheck(updater: SPUUpdater?) -> Bool {
+        return canStartCheck(updater: updater, minimumInterval: 0)
+    }
+
+    /// Determines whether a new background update check can be started.
+    ///
+    /// Background checks respect rate limiting to prevent excessive requests.
+    ///
+    /// - Parameter updater: The SPUUpdater instance to check for availability
+    /// - Returns: `true` if Sparkle allows checks and enough time has passed since the last check, `false` otherwise.
+    ///
+    func canStartBackgroundCheck(updater: SPUUpdater?) -> Bool {
+        return canStartCheck(updater: updater, minimumInterval: UpdateCheckState.defaultMinimumCheckInterval)
+    }
+
+    /// Determines whether a new update check can be started with a custom minimum interval.
+    ///
+    /// This method is primarily for testing purposes to verify rate limiting behavior with custom intervals.
+    ///
+    /// - Parameters:
+    ///   - updater: The SPUUpdater instance to check for availability
+    ///   - minimumInterval: Custom minimum time interval that must pass between checks
+    /// - Returns: `true` if Sparkle allows checks and enough time has passed since the last check, `false` otherwise.
+    ///
+    func canStartNewCheck(updater: SPUUpdater?, minimumInterval: TimeInterval) -> Bool {
+        return canStartCheck(updater: updater, minimumInterval: minimumInterval)
     }
 
     /// Records the current time as the last update check time.

@@ -31,10 +31,12 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
     private var popover: VPNUpsellPopover?
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
+    private let primaryCTAHandler: () -> Void
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, featureFlagger: FeatureFlagger) {
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, featureFlagger: FeatureFlagger, primaryCTAHandler: @escaping () -> Void) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.primaryCTAHandler = primaryCTAHandler
     }
 
     var isShown: Bool {
@@ -56,6 +58,7 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
             primaryButtonAction: { [weak self] in
+                self?.primaryCTAHandler()
                 onConfirm()
                 self?.dismiss()
             },

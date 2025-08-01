@@ -712,7 +712,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
         vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
             subscriptionManager: subscriptionAuthV1toV2Bridge,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            primaryCTAHandler: {}
         )
 
         if AppVersion.runType.requiresEnvironment {
@@ -1367,6 +1368,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                    queue: nil) { [weak self] _ in
             self?.autofillPixelReporter?.updateAutofillEnabledStatus(AutofillPreferences().askToSaveUsernamesAndPasswords)
         }
+    }
+
+    @MainActor
+    private func openSubscriptionPurchaseFlow(origin: SubscriptionFunnelOrigin) {
+        let url = subscriptionAuthV1toV2Bridge.url(for: .purchase)
+            .appendingParameter(name: AttributionParameter.origin, value: origin.rawValue)
+
+        windowControllersManager.showTab(with: .subscription(url))
     }
 }
 

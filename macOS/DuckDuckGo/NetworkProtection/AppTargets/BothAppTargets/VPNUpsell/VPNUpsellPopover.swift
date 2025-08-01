@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Carbon.HIToolbox
 import DesignResourcesKit
 import Lottie
@@ -25,153 +24,132 @@ import Subscription
 import SwiftUI
 import SwiftUIExtensions
 
-// MARK: - ViewModel
+// MARK: - Constants
 
-extension VPNUpsellPopoverViewModel {
-    struct FeatureStatus {
-        let isEligibleForFreeTrial: Bool
-        let isPIRFeatureEnabled: Bool
-        let hasAIChatFeature: Bool
-        
-        static var `default`: Self {
-            Self(isEligibleForFreeTrial: false, isPIRFeatureEnabled: false, hasAIChatFeature: false)
-        }
-        
-        var plusFeatureCount: Int {
-            var count = 1
-            if hasAIChatFeature { count += 1 }
-            if isPIRFeatureEnabled { count += 1 }
-            return count
-        }
+private enum Constants {
+        static let outerVerticalSpacing: CGFloat = 16
+        static let innerVerticalSpacing: CGFloat = 28
+        static let headerHorizontalPadding: CGFloat = 48
+        static let titleAndSubtitleHorizontalPadding: CGFloat = 36
+        static let titleAndSubtitleVerticalSpacing: CGFloat = 8
+        static let featuresHorizontalPadding: CGFloat = 48
+        static let featuresVerticalSpacing: CGFloat = 12
+        static let actionButtonsTopPadding: CGFloat = 12
+        static let topPadding: CGFloat = 28
+        static let horizontalPadding: CGFloat = 16
+        static let bottomPadding: CGFloat = 24
+        static let sparkleSize: CGSize = CGSize(width: 250, height: 100)
+        static let privacyProSize: CGSize = CGSize(width: 256, height: 96)
+        static let plusRowHorizontalSpacing: CGFloat = 12
+        static let plusRowVerticalSpacing: CGFloat = 4
+        static let actionButtonHorizontalSpacing: CGFloat = 8
+        static let actionButtonHeight: CGFloat = 28
+        static let horizontalLineHeight: CGFloat = 1
+        static let horizontalLineCornerRadius: CGFloat = 2
+        static let featureRowImageSize: CGSize = CGSize(width: 16, height: 16)
+        static let featureRowImageTopPadding: CGFloat = 2
+        static let featureRowSubtitleVerticalSpacing: CGFloat = 2
+        static let featureRowHorizontalSpacing: CGFloat = 8
+        static let featureRowImageFontSize: CGFloat = 12
     }
-}
 
-final class VPNUpsellPopoverViewModel {
-    let primaryButtonAction: () -> Void
-    let secondaryButtonAction: () -> Void
-    
-    @Published private(set) var featureEligibility: FeatureStatus = .default
-    
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    private let featureFlagger: FeatureFlagger
-    
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         featureFlagger: FeatureFlagger,
-         primaryButtonAction: @escaping () -> Void,
-         secondaryButtonAction: @escaping () -> Void)
-    {
-        self.subscriptionManager = subscriptionManager
-        self.featureFlagger = featureFlagger
-        
-        self.primaryButtonAction = primaryButtonAction
-        self.secondaryButtonAction = secondaryButtonAction
-        
-        checkFeatureEligibility()
-    }
-    
-    private func checkFeatureEligibility() {
-        Task { @MainActor in
-            let isPIRFeatureEnabled = try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)
-            let isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
-            let hasAIChatFeature = featureFlagger.isFeatureOn(.paidAIChat)
-            
-            self.featureEligibility = FeatureStatus(
-                isEligibleForFreeTrial: isEligibleForFreeTrial,
-                isPIRFeatureEnabled: isPIRFeatureEnabled ?? false,
-                hasAIChatFeature: hasAIChatFeature
-            )
-        }
-    }
-}
-
-// MARK: - SwiftUI View
+// MARK: - View
 
 struct VPNUpsellPopoverView: View {
     private let viewModel: VPNUpsellPopoverViewModel
-    
+
     init(viewModel: VPNUpsellPopoverViewModel) {
         self.viewModel = viewModel
     }
-    
+
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Constants.outerVerticalSpacing) {
+            animatedHeader
+                .padding(.horizontal, Constants.headerHorizontalPadding)
+
+            VStack(spacing: Constants.innerVerticalSpacing) {
+                titleAndSubtitle
+                    .padding(.horizontal, Constants.titleAndSubtitleHorizontalPadding)
+                features
+                    .padding(.horizontal, Constants.featuresHorizontalPadding)
+            }
+
+            actionButtons
+                .padding(.top, Constants.actionButtonsTopPadding)
+        }
+        .padding(.top, Constants.topPadding)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.bottom, Constants.bottomPadding)
+    }
+
+    var animatedHeader: some View {
+        ZStack {
+            LottieView(animation: .named("sparkleloop_wide"))
+                .playing(loopMode: .loop)
+                .frame(width: Constants.sparkleSize.width, height: Constants.sparkleSize.height)
+                .clipped()
             LottieView(animation: .named("privacypro_devices"))
                 .playing(loopMode: .playOnce)
-                .frame(width: 256, height: 96)
+                .frame(width: Constants.privacyProSize.width, height: Constants.privacyProSize.height)
                 .clipped()
-                .padding(.horizontal, 48)
-            
-            VStack(spacing: 28) {
-                titleAndSubtitle
-                    .padding(.horizontal, 36)
-                features
-                    .padding(.horizontal, 48)
             }
-            
-            actionButtons
-                .padding(.top, 12)
-        }
-        .padding(.top, 28)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 24)
     }
-    
     var titleAndSubtitle: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Constants.titleAndSubtitleVerticalSpacing) {
             Text("A VPN to secure your\nWi-Fi & personal info")
                 .font(.title3.weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
-            
+
             Text(plusFeaturesSubtitle)
                 .font(.subheadline)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
         }
     }
-    
+
     var features: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Constants.featuresVerticalSpacing) {
             coreFeatures
             plusFeatures
         }
     }
-    
+
     var coreFeatures: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Constants.featuresVerticalSpacing) {
             FeatureRow(text: "Hide your IP address from sites")
             FeatureRow(text: "Shield your online activity from others")
             FeatureRow(text: "Block harmful sites & online scams")
         }
     }
-    
+
     var plusFeatures: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
+        VStack(spacing: Constants.featuresVerticalSpacing) {
+            HStack(spacing: Constants.plusRowHorizontalSpacing) {
                 horizontalLine
                 Text("PLUS")
                     .font(.caption.weight(.semibold))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                 horizontalLine
             }
-            .padding(.vertical, 4)
-            
+            .padding(.vertical, Constants.plusRowVerticalSpacing)
+
             if viewModel.featureEligibility.hasAIChatFeature {
                 FeatureRow(text: "Chat privately with advanced AI models")
             }
-            
+
             FeatureRow(text: "Restore your identity if it's stolen")
-            
+
             if viewModel.featureEligibility.isPIRFeatureEnabled {
                 FeatureRow(text: "Remove info from sites that sell it",
                            subtitle: "(currently available on Mac & Windows)")
             }
         }
     }
-    
+
     var actionButtons: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Constants.actionButtonHorizontalSpacing) {
             Button {
                 viewModel.secondaryButtonAction()
             } label: {
@@ -179,7 +157,7 @@ struct VPNUpsellPopoverView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(StandardButtonStyle())
-            
+
             Button {
                 viewModel.primaryButtonAction()
             } label: {
@@ -188,17 +166,17 @@ struct VPNUpsellPopoverView: View {
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
         }
-        .frame(height: 28)
+        .frame(height: Constants.actionButtonHeight)
     }
-    
+
     var horizontalLine: some View {
         Rectangle()
             .foregroundColor(.clear)
-            .frame(maxWidth: .infinity, minHeight: 1, maxHeight: 1)
+            .frame(maxWidth: .infinity, minHeight: Constants.horizontalLineHeight, maxHeight: Constants.horizontalLineHeight)
             .background(Color(designSystemColor: .controlsFillPrimary))
-            .cornerRadius(2)
+            .cornerRadius(Constants.horizontalLineCornerRadius)
     }
-    
+
     private var plusFeaturesSubtitle: String {
         let plusCount = viewModel.featureEligibility.plusFeatureCount
         return plusCount > 1 ? "+ \(plusCount) more premium protections" : "+ more premium protections"
@@ -210,26 +188,26 @@ struct VPNUpsellPopoverView: View {
 private struct FeatureRow: View {
     let text: String
     let subtitle: String?
-    
+
     init(text: String, subtitle: String? = nil) {
         self.text = text
         self.subtitle = subtitle
     }
-    
+
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: Constants.featureRowHorizontalSpacing) {
             Image(systemName: "checkmark")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: Constants.featureRowImageFontSize, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .accent))
-                .frame(width: 16, height: 16)
-                .padding(.top, 2)
-            
-            VStack(alignment: .leading, spacing: 2) {
+                .frame(width: Constants.featureRowImageSize.width, height: Constants.featureRowImageSize.height)
+                .padding(.top, Constants.featureRowImageTopPadding)
+
+            VStack(alignment: .leading, spacing: Constants.featureRowSubtitleVerticalSpacing) {
                 Text(text)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
-                
+
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(.caption)
@@ -245,20 +223,18 @@ private struct FeatureRow: View {
 // MARK: - NSPopover
 
 final class VPNUpsellPopover: NSPopover {
-    private static let topInset: CGFloat = 22
-    
     init(viewController: NSHostingController<some View>) {
         super.init()
-        
+
         behavior = .semitransient
         contentViewController = viewController
     }
-    
+
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("VPNUpsellPopover: Bad initializer")
     }
-    
+
     override func keyDown(with event: NSEvent) {
         if Int(event.keyCode) == kVK_Escape {
             performClose(nil)

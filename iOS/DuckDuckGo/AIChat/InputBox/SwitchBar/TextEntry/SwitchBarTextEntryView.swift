@@ -300,6 +300,7 @@ class SwitchBarTextEntryView: UIView {
                 guard let self = self else { return }
 
                 if self.textView.text != text {
+                    isTouched = false
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
                     self.updateButtonState()

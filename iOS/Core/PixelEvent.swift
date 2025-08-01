@@ -506,6 +506,7 @@ extension Pixel {
         case importResultDisplayed
         case importResultPasswordsSuccess
         case importResultBookmarksSuccess
+        case importResultCreditCardsSuccess
         case importResultSyncButtonShown
         case importResultSyncButtonTapped
         case importResultPasswordsParsing
@@ -791,10 +792,7 @@ extension Pixel {
 
         case debugBreakageExperiment
 
-        case debugWebViewNotInVisibleTabHierarchy
         case debugWebViewInVisibleTabHidden
-        case debugWebViewNotAttachedToWindow
-        case debugWebViewHasZeroFrameSize
 
         // Return user measurement
         case debugReturnUserAddATB
@@ -1025,11 +1023,6 @@ extension Pixel {
         case privacyProSubscriptionManagementRemoval
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
-        case privacyProSubscriptionCookieMissingTokenOnSignIn
-        case privacyProSubscriptionCookieMissingCookieOnSignOut
-        case privacyProSubscriptionCookieRefreshedWithAccessToken
-        case privacyProSubscriptionCookieRefreshedWithEmptyValue
-        case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
         // AUth V2
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
@@ -1324,6 +1317,9 @@ extension Pixel {
         case duckPlayerNativePrimingModalCTA
         /// Settings gear icon is tapped from Duck Player UI
         case duckPlayerNativeDuckPlayerSettingsOpened
+
+        // MARK: - System Settings Picture-in-Picture Video Tutorial
+        case systemSettingsPiPTutorialFailedToLoadVideo
     }
 
 }
@@ -1768,6 +1764,7 @@ extension Pixel.Event {
         case .importResultDisplayed: return "import_result_displayed"
         case .importResultPasswordsSuccess: return "import_result_passwords_success"
         case .importResultBookmarksSuccess: return "import_result_bookmarks_success"
+        case .importResultCreditCardsSuccess: return "import_result_creditcards_success"
         case .importResultSyncButtonShown: return "import_result_sync_button_shown"
         case .importResultSyncButtonTapped: return "import_result_sync_button_tapped"
         case .importResultPasswordsParsing: return "import_result_passwords_parsing"
@@ -2045,9 +2042,6 @@ extension Pixel.Event {
             // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
-        case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"
-        case .debugWebViewNotAttachedToWindow: return "m_debug_webview_not_attached_to_window"
-        case .debugWebViewHasZeroFrameSize: return "m_debug_webview_has_zero_frame_size"
 
             // MARK: Ad Attribution
 
@@ -2245,11 +2239,6 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-        case .privacyProSubscriptionCookieMissingTokenOnSignIn: return "m_privacy-pro_subscription-cookie-missing_token_on_sign_in"
-        case .privacyProSubscriptionCookieMissingCookieOnSignOut: return "m_privacy-pro_subscription-cookie-missing_cookie_on_sign_out"
-        case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
-        case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
-        case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
         // AUth V2
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
@@ -2589,6 +2578,9 @@ extension Pixel.Event {
         /// Settings gear icon is tapped from Duck Player UI
         case .duckPlayerNativeDuckPlayerSettingsOpened:
             return "duckplayer_native_duckplayer_settings_opened"
+
+        // MARK: System Settings PiP Video Tutorial
+        case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
         }
     }
 }

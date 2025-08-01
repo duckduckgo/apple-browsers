@@ -105,7 +105,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
 
-    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210702047347360?focus=true
+    case aiChatGlobalSwitch
+
+    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210012482760771?focus=true
     case aiChatSidebar
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
@@ -145,6 +148,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
     case vpnToolbarUpsell
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
+    /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
+    case supportsAlternateStripePaymentFlow
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -156,7 +163,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualUpdatesInternalOnly,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
-                .updateFirefoxBookmarksImport:
+                .updateFirefoxBookmarksImport,
+                .supportsAlternateStripePaymentFlow:
             true
         default:
             false
@@ -201,6 +209,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
+                .aiChatGlobalSwitch,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
@@ -211,7 +220,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .disableFireAnimation,
                 .newTabPageOmnibar,
                 .newFeedbackForm,
-                .vpnToolbarUpsell:
+                .vpnToolbarUpsell,
+                .supportsAlternateStripePaymentFlow:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -298,6 +308,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
+        case .aiChatGlobalSwitch:
+            return .internalOnly()
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
@@ -319,13 +331,15 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
-            return .disabled
+            return .internalOnly()
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
             return .disabled
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
+        case .supportsAlternateStripePaymentFlow:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         }
     }
 }

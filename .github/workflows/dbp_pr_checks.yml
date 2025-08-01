@@ -17,6 +17,10 @@ on:
   schedule:
     - cron: '10,40 4,5,6 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   unit-tests:
@@ -139,10 +143,10 @@ jobs:
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          yq < tests.xml -p xml -o json -r \
+          yq < package-tests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
-            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
+            | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_DBP_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
         uses: actions/upload-artifact@v4
@@ -263,6 +267,7 @@ jobs:
           check_name: DBP Test Report (iOS)
           report_paths: SharedPackages/DataBrokerProtectionCore/dbp-ios-unittests.xml
           require_tests: true
+          check_retries: true
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -278,10 +283,10 @@ jobs:
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          yq < ios-unittests.xml -p xml -o json -r \
+          yq < dbp-ios-unittests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
-            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_FAILED_TESTS_SECTION_ID }}
+            | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_DBP_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
         uses: actions/upload-artifact@v4

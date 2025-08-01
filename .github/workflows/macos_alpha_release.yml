@@ -33,6 +33,13 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Assert main branch
+      run: |
+        if [ "${{ github.ref_name }}" != "main" ]; then
+          echo "👎 Not the main branch"
+          exit 1
+        fi
+
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
       with:

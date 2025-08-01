@@ -61,6 +61,7 @@ protocol NewWindowPolicyDecisionMaker {
         var faviconManagement: FaviconManagement?
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
+        var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -134,7 +135,8 @@ protocol NewWindowPolicyDecisionMaker {
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
                      tabsPreferences: TabsPreferences = TabsPreferences.shared,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
-                     pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
+                     pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
+                     aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -190,7 +192,8 @@ protocol NewWindowPolicyDecisionMaker {
                   maliciousSiteDetector: maliciousSiteDetector,
                   tabsPreferences: tabsPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
-                  pageRefreshMonitor: pageRefreshMonitor)
+                  pageRefreshMonitor: pageRefreshMonitor,
+                  aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration)
     }
 
     @MainActor
@@ -232,7 +235,8 @@ protocol NewWindowPolicyDecisionMaker {
          maliciousSiteDetector: MaliciousSiteDetecting,
          tabsPreferences: TabsPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
-         pageRefreshMonitor: PageRefreshMonitoring
+         pageRefreshMonitor: PageRefreshMonitoring,
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -315,7 +319,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        maliciousSiteDetector: maliciousSiteDetector,
                                                        faviconManagement: faviconManagement,
                                                        featureFlagger: featureFlagger,
-                                                       contentScopeExperimentsManager: contentScopeExperimentsManager))
+                                                       contentScopeExperimentsManager: contentScopeExperimentsManager,
+                                                       aiChatMenuConfiguration: aiChatMenuConfiguration))
 
         super.init()
         tabGetter = { [weak self] in self }
@@ -697,7 +702,7 @@ protocol NewWindowPolicyDecisionMaker {
         if #available(macOS 12.0, *) {
             self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
         } else {
-            self.interactionState = (try? webView.sessionStateData()).map { .webViewProvided($0) } ?? .none
+            self.interactionState = webView.sessionStateData().map { .webViewProvided($0) } ?? .none
         }
 
         return self.interactionState.data
@@ -1058,7 +1063,7 @@ protocol NewWindowPolicyDecisionMaker {
 
     private func restoreInteractionState(with interactionStateData: Data) {
         guard #available(macOS 12.0, *) else {
-            try? webView.restoreSessionState(from: interactionStateData)
+            webView.restoreSessionState(from: interactionStateData)
             return
         }
         webView.interactionState = interactionStateData

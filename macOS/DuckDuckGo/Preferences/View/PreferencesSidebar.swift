@@ -68,7 +68,7 @@ extension Preferences {
         var body: some View {
             Button(action: action) {
                 HStack(spacing: 6) {
-                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider))
+                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider, isSubscriptionRebrandingOn: isSubscriptionRebrandingOn))
                         .frame(width: 16, height: 16)
                         .if(!isEnabled) {
                             $0.grayscale(1.0).opacity(0.5)

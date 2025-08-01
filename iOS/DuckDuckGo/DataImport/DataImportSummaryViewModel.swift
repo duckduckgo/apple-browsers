@@ -107,7 +107,13 @@ final class DataImportSummaryViewModel: ObservableObject {
             Pixel.fire(pixel: .importResultBookmarksSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
                                                                                         PixelParameters.bookmarkCount: "\(bookmarks.successful)"])
         }
-
+        if let creditCards = creditCardsSummary {
+            let successBucket = AutofillPixelReporter.creditCardsBucketNameFrom(count: creditCards.successful)
+            let skippedBucket = AutofillPixelReporter.creditCardsBucketNameFrom(count: creditCards.duplicate + creditCards.failed)
+            Pixel.fire(pixel: .importResultCreditCardsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                                                                                          PixelParameters.savedCreditCards: successBucket,
+                                                                                          PixelParameters.skippedCreditCards: skippedBucket])
+        }
     }
 
     func dismiss() {

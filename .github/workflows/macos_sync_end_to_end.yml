@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: '0 5 * * *' # run at 5 AM UTC
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   create-notarized-app:
     name: Build Notarized Review app
@@ -140,7 +144,7 @@ jobs:
     - name: Extract and Copy app to /DerivedData
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
-        
+
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
         if [[ -n "${extracted_app}" ]]; then
@@ -150,7 +154,7 @@ jobs:
             mv "${extracted_app}" "DuckDuckGo Review.app"
           fi
         fi
-        
+
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests

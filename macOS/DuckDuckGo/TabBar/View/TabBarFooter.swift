@@ -61,6 +61,10 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
         addButton.imageScaling = .scaleNone
         addButton.registerForDraggedTypes([.string])
         addButton.cornerRadius = visualStyle.toolbarButtonsCornerRadius
+        addButton.toolTip = UserText.newTabTooltip
+        addButton.setAccessibilityIdentifier("NewTabButton")
+        addButton.setAccessibilityTitle(UserText.newTabTooltip)
+
         toolTip = UserText.newTabTooltip
 
         addSubview(addButton)
@@ -76,6 +80,12 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
         let buttonSize = visualStyle.tabBarButtonSize
 
         addButton.frame = NSRect(x: ((bounds.width - buttonSize) * 0.5).rounded(), y: ((bounds.height - buttonSize) * 0.5).rounded(), width: buttonSize, height: buttonSize)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        addButton.cell?.setAccessibilityParent(addButton.superview?.superview) // make the AddButton a direct child of the TabBarCollectionView
     }
 
 }

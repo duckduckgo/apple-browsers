@@ -1,0 +1,119 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "empty_title" : {
+    "title" : "Здесь ничего нет!",
+    "note" : "Text shown where there are no remaining history entries"
+  },
+  "empty_text" : {
+    "title" : "Истории посещений пока нет.",
+    "note" : "Placeholder text when there's no results to show"
+  },
+  "no_results_title" : {
+    "title" : "По запросу «{term}» ничего не найдено.",
+    "note" : "The placeholder {term} will be dynamically replaced with the search term entered by the user. For example, if the user searches for 'cats', the title will become 'No results found for cats'."
+  },
+  "no_results_text" : {
+    "title" : "Попробуйте ввести другой адрес или ключевые слова.",
+    "note" : "Placeholder text when a search gave no results."
+  },
+  "delete_all" : {
+    "title" : "Удалить все",
+    "note" : "Text for a button that deletes all items or entries. An additional confirmation dialog will be presented."
+  },
+  "delete_some" : {
+    "title" : "Удалить",
+    "note" : "Text for a button that deletes currently selected items"
+  },
+  "delete_none" : {
+    "title" : "Нечего удалять",
+    "note" : "Title/tooltip text on a button that does nothing when there is no browsing history to delete. It's additional information shown on hover."
+  },
+  "page_title" : {
+    "title" : "История",
+    "note" : "The main page title"
+  },
+  "search" : {
+    "title" : "Поиск",
+    "note" : "The placeholder text in a search input field."
+  },
+  "show_history_all" : {
+    "title" : "Отобразить всю историю",
+    "note" : "Button text for an action that removes all filters and searches, and replaces the list with all history."
+  },
+  "show_history_older" : {
+    "title" : "Показать более раннюю историю",
+    "note" : "Button that shows older history entries"
+  },
+  "show_history_for" : {
+    "title" : "Показать историю за {range}",
+    "note" : "The placeholder {range} in the title will be dynamically replaced with specific date ranges such as 'Today', 'Yesterday', or days of the week like 'Monday'. For example, if the range is set to 'Today', the title will become 'Show history for Today'."
+  },
+  "delete_history_all" : {
+    "title" : "Удалить всю историю",
+    "note" : "Button text for an action that removes all history entries."
+  },
+  "delete_history_older" : {
+    "title" : "Удалить старую историю",
+    "note" : "Button that deletes older history entries."
+  },
+  "delete_history_for" : {
+    "title" : "Удалить историю за {range}",
+    "note" : "The placeholder {range} in the title will be dynamically replaced with specific date ranges such as 'Today', 'Yesterday', or days of the week like 'Monday'. For example, if the range is set to 'Today', the title will become 'Delete history for Today'."
+  },
+  "search_your_history" : {
+    "title" : "Поиск по истории",
+    "note" : "Label text for screen readers. It's shown next to the search input field"
+  },
+  "range_all" : {
+    "title" : "Всё",
+    "note" : "Label on a button that shows all history entries"
+  },
+  "range_today" : {
+    "title" : "Сегодня",
+    "note" : "Label on a button that shows history entries for today only"
+  },
+  "range_yesterday" : {
+    "title" : "Вчера",
+    "note" : "Label on a button that shows history entries for yesterday only"
+  },
+  "range_monday" : {
+    "title" : "понедельник",
+    "note" : "Label on a button that shows history entries for monday only"
+  },
+  "range_tuesday" : {
+    "title" : "вторник",
+    "note" : "Label on a button that shows history entries for tuesday only"
+  },
+  "range_wednesday" : {
+    "title" : "среду",
+    "note" : "Label on a button that shows history entries for wednesday only"
+  },
+  "range_thursday" : {
+    "title" : "Четверг",
+    "note" : "Label on a button that shows history entries for thursday only"
+  },
+  "range_friday" : {
+    "title" : "пятницу",
+    "note" : "Label on a button that shows history entries for friday only"
+  },
+  "range_saturday" : {
+    "title" : "субботу",
+    "note" : "Label on a button that shows history entries for saturday only"
+  },
+  "range_sunday" : {
+    "title" : "Воскресенье",
+    "note" : "Label on a button that shows history entries for sunday only"
+  },
+  "range_older" : {
+    "title" : "Более старые записи",
+    "note" : "Label on a button that shows older history entries."
+  }
+}

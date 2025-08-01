@@ -45,7 +45,7 @@ final class PasswordManagementListSectionTests: XCTestCase {
     ]
 
     override var allowedNonNilVariables: Set<String> {
-        ["currentLocaleFormatter", "enFormatter", "nonASCIIAccounts", "accounts", "$__lazy_storage_$_nonASCIIAccounts"]
+        ["currentLocaleFormatter", "enFormatter", "nonASCIIAccounts", "$__lazy_storage_$_accounts", "$__lazy_storage_$_nonASCIIAccounts"]
     }
 
     func testWhenSortingEmptyArray_ThenNoSectionsAreReturned() {

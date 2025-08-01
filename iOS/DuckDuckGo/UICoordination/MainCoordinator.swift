@@ -24,6 +24,7 @@ import Subscription
 import Persistence
 import DDGSync
 import SetDefaultBrowserUI
+import SystemSettingsPiPTutorial
 
 @MainActor
 protocol URLHandling {
@@ -68,7 +69,8 @@ final class MainCoordinator {
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          didFinishLaunchingStartTime: CFAbsoluteTime,
          keyValueStore: ThrowingKeyValueStoring,
-         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -101,7 +103,6 @@ final class MainCoordinator {
                                 onboardingPixelReporter: reportingService.onboardingPixelReporter,
                                 featureFlagger: featureFlagger,
                                 contentScopeExperimentManager: contentScopeExperimentManager,
-                                subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
                                 appSettings: AppDependencyProvider.shared.appSettings,
                                 textZoomCoordinator: textZoomCoordinator,
                                 websiteDataManager: websiteDataManager,
@@ -129,14 +130,15 @@ final class MainCoordinator {
                                         featureFlagger: featureFlagger,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
-                                        subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
                                         textZoomCoordinator: textZoomCoordinator,
                                         websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
                                         themeManager: ThemeManager.shared,
-                                        keyValueStore: keyValueStore)
+                                        keyValueStore: keyValueStore,
+                                        systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager
+        )
     }
 
     func start() {
@@ -352,6 +354,29 @@ extension MainCoordinator: ShortcutItemHandling {
             self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
         }
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
+    }
+
+}
+
+// MARK: - SystemSettingsPiPTutorialPresenting
+
+extension MainCoordinator: SystemSettingsPiPTutorialPresenting {
+
+    func attachPlayerView(_ view: UIView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.opacity = 0.001
+        controller.view.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: 1),
+            view.heightAnchor.constraint(equalToConstant: 1),
+            view.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor),
+            view.topAnchor.constraint(equalTo: controller.view.topAnchor),
+        ])
+        controller.view.sendSubviewToBack(view)
+    }
+
+    func detachPlayerView(_ view: UIView) {
+        view.removeFromSuperview()
     }
 
 }

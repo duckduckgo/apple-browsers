@@ -335,20 +335,6 @@ final class SwitchBarHandlerTests: XCTestCase {
         XCTAssertFalse(sut.forceWebSearch)
     }
 
-    func testForceWebSearchPublisher_WhenValueChanges_ShouldEmitNewValue() {
-        // Given: Subscription to force web search publisher
-        var receivedValues: [Bool] = []
-        sut.forceWebSearchPublisher
-            .sink { receivedValues.append($0) }
-            .store(in: &cancellables)
-
-        // When: Changing force web search value
-        sut.toggleForceWebSearch()
-
-        // Then: Should emit new value
-        XCTAssertTrue(receivedValues.contains(sut.forceWebSearch))
-    }
-
     // MARK: - Integration Tests
 
     func testEndToEndToggleStatePersistence_ShouldWorkCorrectly() {

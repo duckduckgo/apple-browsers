@@ -96,12 +96,15 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     static func save(subscriptionEnvironment: SubscriptionEnvironment, userDefaults: UserDefaults)
     var currentEnvironment: SubscriptionEnvironment { get }
 
-    /// Tries to get an authentication token and request the subscription
+    /// Tries to get an authentication token and the subscription
     func loadInitialData() async
 
-    // Subscription
+    /// Retrieve the purchased subscription
+    /// - Parameter cachePolicy: The cache policy, `remoteFirst` or `cacheFirst`
+    /// - Returns: A `PrivacyProSubscription` if available, throws `SubscriptionEndpointServiceError.noData` if the subscription is not available or any other errors if the process failed at any point.
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
 
+    /// - Returns: true is a subscription (expired or not) is present, false otherwise.
     func isSubscriptionPresent() -> Bool
 
     /// Tries to activate a subscription using a platform signature
@@ -110,7 +113,9 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Throws: An error if the access token is not available or something goes wrong in the api requests
     func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription?
 
+    /// If the user can purchase a subscription or not
     var canPurchase: Bool { get }
+
     /// Publisher that emits a boolean value indicating whether the user can purchase.
     var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
     func getProducts() async throws -> [GetProductsItem]
@@ -126,12 +131,13 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 
     func getCustomerPortalURL() async throws -> URL
 
-    // User
+    /// The user email
     var userEmail: String? { get }
 
-    /// Sign out the user and clear all the tokens and subscription cache
+    /// Sign out the user, clear and invalidate the access token and clear the subscription cache
     func signOut(notifyUI: Bool) async
 
+    /// Removes the subscription cache, this will trigger a remote fetch the next time `getSubscription(...)` is called
     func clearSubscriptionCache()
 
     /// Confirm a purchase with a platform signature
@@ -163,8 +169,10 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Returns: An auth v2 TokenContainer
     func exchange(tokenV1: String) async throws -> TokenContainer
 
+    /// Adopt a token provided by the FE during a Subscription purchase
     func adopt(accessToken: String, refreshToken: String) async throws
 
+    /// Adopt a token provided by an external entity, typically the main app when this is used by the VPN
     func adopt(tokenContainer: TokenContainer) async throws
 
     /// Remove the stored token container and the legacy token

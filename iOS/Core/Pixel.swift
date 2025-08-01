@@ -155,6 +155,8 @@ public struct PixelParameters {
     // Data Import
     public static let savedCredentials = "saved_credentials"
     public static let skippedCredentials = "skipped_credentials"
+    public static let savedCreditCards = "saved_creditcards"
+    public static let skippedCreditCards = "skipped_creditcards"
 
     // Privacy Dashboard
     public static let daysSinceInstall = "daysSinceInstall"

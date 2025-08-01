@@ -21,6 +21,7 @@ import UIKit
 
 enum AppIcon: String, CaseIterable {
     case red = "AppIcon-red"
+    case pink = "AppIcon-pink"
     case yellow = "AppIcon-yellow"
     case green = "AppIcon-green"
     case blue = "AppIcon-blue"
@@ -30,6 +31,7 @@ enum AppIcon: String, CaseIterable {
     var accessibilityName: String {
         switch self {
         case .red: "red"
+        case .pink: "pink"
         case .yellow: "yellow"
         case .green: "green"
         case .blue: "blue"
@@ -47,6 +49,8 @@ enum AppIcon: String, CaseIterable {
         switch self {
         case .red:
             return UIImage(resource: .appIconRedSmall)
+        case .pink:
+            return UIImage(resource: .appIconPinkSmall)
         case .yellow:
             return UIImage(resource: .appIconYellowSmall)
         case .green:
@@ -65,6 +69,8 @@ enum AppIcon: String, CaseIterable {
         switch self {
         case .red:
             return UIImage(resource: .appIconRedMedium)
+        case .pink:
+            return UIImage(resource: .appIconPinkMedium)
         case .yellow:
             return UIImage(resource: .appIconYellowMedium)
         case .green:

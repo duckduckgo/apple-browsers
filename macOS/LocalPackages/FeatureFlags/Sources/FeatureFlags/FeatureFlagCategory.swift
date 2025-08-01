@@ -45,7 +45,8 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
-        case .aiChatSidebar,
+        case .aiChatGlobalSwitch,
+                .aiChatSidebar,
                 .aiChatTextSummarization:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
@@ -61,7 +62,8 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .networkProtectionRiskyDomainsProtection:
+                .networkProtectionRiskyDomainsProtection,
+                .vpnToolbarUpsell:
             return .vpn
         default:
             return .other

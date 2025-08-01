@@ -9,6 +9,10 @@ on:
     - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-end-to-end-tests:
     name: Build End to End Tests

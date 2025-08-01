@@ -127,7 +127,7 @@ struct LogFilterControlsView: View {
                          OSLogEntryLog.Level.error,
                          OSLogEntryLog.Level.fault], id: \.self) { level in
 
-                    Toggle(String(describing: level), isOn: Binding(
+                    Toggle(level.description, isOn: Binding(
                         get: { filterSettings.logLevels.contains(level) },
                         set: { isOn in
                             if isOn {
@@ -150,6 +150,27 @@ struct LogFilterControlsView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color(NSColor.controlBackgroundColor))
+    }
+}
+
+fileprivate extension OSLogEntryLog.Level {
+    var description: String {
+        switch self {
+        case .debug:
+            return "DEBUG"
+        case .info:
+            return "INFO"
+        case .error:
+            return "ERROR"
+        case .fault:
+            return "FAULT"
+        case .notice:
+            return "NOTICE"
+        case .undefined:
+            return "UNDEFINED"
+        @unknown default:
+            fatalError("New log level introduced, but not yet implemented")
+        }
     }
 }
 

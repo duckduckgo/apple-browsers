@@ -217,7 +217,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         if updateProgress.isDone, shouldCheckNewApplicationVersion {
             /// Proceed only if no newer update is available for the user
             if case .updateCycleDone(.finishedWithNoUpdateFound) = updateProgress {
-               checkNewApplicationVersion()
+                checkNewApplicationVersion()
             }
             shouldCheckNewApplicationVersion = false
         }
@@ -245,10 +245,10 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     @UpdateCheckActor
     private func performUpdateCheck(skipRollout: Bool = false) async {
         // Check if we can start a new check
-        let canStart = skipRollout ? 
+        let canStart = skipRollout ?
             await updateCheckState.canStartUserInitiatedCheck(updater: updater) :
             await updateCheckState.canStartBackgroundCheck(updater: updater)
-        
+
         guard canStart else {
             let message = skipRollout ? "User-initiated update check skipped - another update check is in progress" : "Background update check skipped - rate limited or another update check is in progress"
             Logger.updates.debug("\(message)")

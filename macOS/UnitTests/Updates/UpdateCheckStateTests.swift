@@ -242,7 +242,7 @@ final class UpdateCheckStateTests: XCTestCase {
         // Initial state - should allow all checks
         let initialBackgroundStart = await updateCheckState.canStartBackgroundCheck(updater: mockUpdater)
         XCTAssertTrue(initialBackgroundStart, "Should initially be able to start background check")
-        
+
         let initialUserStart = await updateCheckState.canStartUserInitiatedCheck(updater: mockUpdater)
         XCTAssertTrue(initialUserStart, "Should initially be able to start user-initiated check")
 

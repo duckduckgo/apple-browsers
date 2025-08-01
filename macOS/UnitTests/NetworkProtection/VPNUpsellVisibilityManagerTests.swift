@@ -97,6 +97,28 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
     }
 
+    func testWhenSubscriptionPurchaseIsNotAvailable_ItDoesNotShowTheUpsell() {
+        // Given
+        mockSubscriptionManager.canPurchase = false
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+    }
+
+    func testWhenSubscriptionPurchaseIsNotAvailableOnFirstLaunch_ItDoesNotShowTheUpsell() {
+        // Given
+        mockSubscriptionManager.canPurchase = false
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: true, isNewUser: true)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+    }
+
     // MARK: - Manual Unpinning Tests
 
     func testWhenUserManuallyUnpinsButton_ItDismissesTheUpsell() {
@@ -329,6 +351,17 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     func testWhenUserIsNotNew_ItDoesNotShowTheUpsell() {
         // When
         sut = createUpsellManager(isFirstLaunch: true, isNewUser: false)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+    }
+
+    func testWhenUserIsNewAndNotAuthenticatedButCannotPurchase_ItDoesNotShowTheUpsell() {
+        // Given
+        mockSubscriptionManager.canPurchase = false
+
+        // When
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)

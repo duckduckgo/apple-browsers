@@ -422,6 +422,15 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
+    func isPaneNew(pane: PreferencePaneIdentifier) -> Bool {
+        switch pane {
+        case .paidAIChat:
+            true
+        default:
+            false
+        }
+    }
+
     private let loadSections: (PreferencesSidebarSubscriptionState) -> [PreferencesSection]
     private var cancellables = Set<AnyCancellable>()
 }

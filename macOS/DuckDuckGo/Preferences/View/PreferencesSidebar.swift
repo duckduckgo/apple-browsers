@@ -83,11 +83,7 @@ extension Preferences {
                         }
 
                     if isNew {
-                        Image(nsImage: pane.preferenceIconName(for: settingsIconProvider))
-                            .frame(width: 16, height: 16)
-                            .if(!isEnabled) {
-                                $0.grayscale(1.0).opacity(0.5)
-                            }
+                        BadgeView(text: UserText.newBadge)
                     }
 
                     Spacer()
@@ -171,7 +167,7 @@ extension Preferences {
                                 status: model.protectionStatus(for: pane),
                                 settingsIconProvider: settingsIconProvider,
                                 isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled,
-                                isNew: isPaneNew(pane: pane),
+                                isNew: model.isPaneNew(pane: pane),
                                 action: {
                                     model.selectPane(pane)
                                 })
@@ -180,12 +176,6 @@ extension Preferences {
                 Color(NSColor.separatorColor)
                     .frame(height: 1)
                     .padding(8)
-            }
-        }
-
-        func isPaneNew(pane: PreferencePaneIdentifier) -> Bool {
-            switch pane {
-
             }
         }
     }

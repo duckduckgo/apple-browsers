@@ -98,11 +98,6 @@ struct LogFilter {
     let searchText: String?
 
     func matches(_ entry: FormattedLogEntry) -> Bool {
-        // Implicitly filter out Apple system logs and empty subsystems
-        if entry.subsystem.hasPrefix("com.apple") || entry.subsystem.isEmpty {
-            return false
-        }
-        
         // Subsystem filter
         if let subsystemFilter = subsystemFilter, !subsystemFilter.isEmpty {
             if !entry.subsystem.localizedCaseInsensitiveContains(subsystemFilter) {

@@ -200,9 +200,14 @@ final class LogViewerDataSource {
     }
     
     private func createPredicate() -> NSPredicate? {
-        // Use a minimal predicate to get all logs from current process
-        // Let LogFilter.matches() handle the detailed filtering
-        return nil // nil means no predicate - get all available logs
+        // Filter out logs with no subsystem or Apple subsystems at the OSLogStore level
+        // This is more efficient than fetching all logs and filtering them afterward
+        
+        // Handle both nil and empty string cases for subsystem
+        let hasSubsystem = NSPredicate(format: "subsystem != nil AND subsystem != ''")
+        let noAppleSubsystem = NSPredicate(format: "NOT subsystem BEGINSWITH 'com.apple'")
+        
+        return NSCompoundPredicate(andPredicateWithSubpredicates: [hasSubsystem, noAppleSubsystem])
     }
 }
 

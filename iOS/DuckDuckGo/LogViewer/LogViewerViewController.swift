@@ -92,13 +92,8 @@ final class LogViewerViewController: UIViewController {
     // MARK: - Properties
     
     private let dataSource = LogViewerDataSource()
-    private var filteredEntries: [FormattedLogEntry] = [] {
-        didSet {
-            // print("SAMDEBUG: did set filtered entries, count \(filteredEntries.count)")
-        }
-    }
+    private var filteredEntries: [FormattedLogEntry] = []
     private var autoScrollEnabled = true
-    
     private let dependencies: DebugScreen.Dependencies
     
     // MARK: - Initialization
@@ -137,15 +132,11 @@ final class LogViewerViewController: UIViewController {
     private func setupUI() {
         title = "Log Viewer"
         view.backgroundColor = UIColor(designSystemColor: .background)
-        
-        // Setup navigation items
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
-        
         navigationItem.rightBarButtonItems = [exportButton, filterButton, clearButton, playPauseButton]
-        
-        // Setup table view
+
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),

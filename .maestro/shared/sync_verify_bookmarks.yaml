@@ -3,13 +3,15 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: Settings
 - tapOn: Done
-- tapOn: Bookmarks
-- runFlow: 
-    when: 
+- runFlow:
+    file: delay.yaml
+- runFlow:
+    when:
       visible:
         text: Download Missing Icons?
     commands:
       - tapOn: Not Now
+- tapOn: Bookmarks
 
 - assertVisible: Spread Privacy
 - assertVisible: Stack Overflow - Where Developers Learn, Share, & Build Careers

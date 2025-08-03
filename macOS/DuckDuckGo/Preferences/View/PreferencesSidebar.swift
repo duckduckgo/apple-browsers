@@ -83,7 +83,7 @@ extension Preferences {
                         }
 
                     if isNew {
-                        BadgeView(text: UserText.newBadge)
+                        BadgeView(text: UserText.newBadge.uppercased())
                     }
 
                     Spacer()

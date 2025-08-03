@@ -193,7 +193,7 @@ struct SettingsCellView: View, Identifiable {
     struct BadgeView: View {
         let text: String
         var body: some View {
-            Text(text)
+            Text(text.uppercased())
                 .font(.caption2)
                 .bold()
                 .padding(.horizontal, 6)

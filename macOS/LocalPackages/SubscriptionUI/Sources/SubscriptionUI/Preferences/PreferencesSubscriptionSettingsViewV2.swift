@@ -268,7 +268,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 Image(.privacyProColor24)
                 Text(UserText.preferencesSubscriptionRebrandingMessage)
                     .font(
-                        Font.custom("SF Pro", size: 13).weight(.bold)
+                        Font.custom("SF Pro", size: 13).weight(.semibold)
                     )
                 Spacer()
                 CloseButton(

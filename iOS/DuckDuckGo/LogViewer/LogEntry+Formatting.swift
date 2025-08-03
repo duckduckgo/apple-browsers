@@ -21,17 +21,23 @@ import Foundation
 import OSLog
 import UIKit
 
-/// Formatted log entry for display in the Log Viewer
 struct FormattedLogEntry {
-    let id: UUID = UUID()
     let timestamp: Date
     let level: OSLogEntryLog.Level
     let subsystem: String
     let category: String
     let process: String
     let message: String
-    
-    /// Initialize with all parameters
+
+    init(from osLogEntry: OSLogEntryLog) {
+        self.timestamp = osLogEntry.date
+        self.level = osLogEntry.level
+        self.subsystem = osLogEntry.subsystem
+        self.category = osLogEntry.category
+        self.process = osLogEntry.process
+        self.message = osLogEntry.composedMessage
+    }
+
     init(timestamp: Date, level: OSLogEntryLog.Level, subsystem: String, category: String, process: String, message: String) {
         self.timestamp = timestamp
         self.level = level
@@ -40,26 +46,20 @@ struct FormattedLogEntry {
         self.process = process
         self.message = message
     }
-    
-    /// Human-readable timestamp format
+
     var formattedTimestamp: String {
         Self.timestampFormatter.string(from: timestamp)
     }
     
     var levelColor: UIColor {
         switch level {
-        case .debug, .info, .notice:
-            return UIColor(designSystemColor: .textPrimary)
-        case .error, .fault:
-            return UIColor.systemRed
-        case .undefined:
-            return UIColor(designSystemColor: .textPrimary)
-        @unknown default:
-            return UIColor(designSystemColor: .textPrimary)
+        case .debug, .info, .notice: return UIColor(designSystemColor: .textPrimary)
+        case .error, .fault: return UIColor.systemRed
+        case .undefined: return UIColor(designSystemColor: .textPrimary)
+        @unknown default: return UIColor(designSystemColor: .textPrimary)
         }
     }
 
-    /// Formatted timestamp with subsystem and category for bottom display
     var timestampWithContext: String {
         let baseString = "\(formattedTimestamp) • \(subsystem)"
         if category.isEmpty {
@@ -77,17 +77,6 @@ struct FormattedLogEntry {
     }()
 }
 
-extension FormattedLogEntry {
-    init(from osLogEntry: OSLogEntryLog) {
-        self.timestamp = osLogEntry.date
-        self.level = osLogEntry.level
-        self.subsystem = osLogEntry.subsystem
-        self.category = osLogEntry.category
-        self.process = osLogEntry.process
-        self.message = osLogEntry.composedMessage
-    }
-}
-
 struct LogFilter {
     let subsystemFilter: String?
     let categoryFilter: String?
@@ -97,17 +86,12 @@ struct LogFilter {
     let filterAppleLogs: Bool
 
     func matches(_ entry: FormattedLogEntry) -> Bool {
-        // Note: Subsystem and category filtering are handled at the OSLogStore predicate level
-        // Level filtering and search text filtering are done here
-        
-        // Level filter (show this level and above)
         if let levelFilter = levelFilter {
             if entry.level.rawValue < levelFilter.rawValue {
                 return false
             }
         }
-        
-        // Search text filter
+
         if let searchText = searchText, !searchText.isEmpty {
             let searchString = searchText.lowercased()
             return entry.message.lowercased().contains(searchString) ||
@@ -126,12 +110,6 @@ struct LogFilter {
         filterEmptySubsystems: true,
         filterAppleLogs: true
     )
-}
-
-extension OSLogEntryLog.Level: @retroactive Comparable {
-    public static func < (lhs: OSLogEntryLog.Level, rhs: OSLogEntryLog.Level) -> Bool {
-        return lhs.rawValue < rhs.rawValue
-    }
 }
 
 extension OSLogEntryLog.Level {

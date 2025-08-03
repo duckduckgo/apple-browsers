@@ -26,14 +26,10 @@ protocol LogFilterViewControllerDelegate: AnyObject {
 
 @available(iOS 15.0, *)
 final class LogFilterViewController: UIViewController {
-    
-    // MARK: - Properties
-    
+
     weak var delegate: LogFilterViewControllerDelegate?
+
     private var currentFilter: LogFilter
-    
-    // MARK: - UI Components
-    
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -42,8 +38,6 @@ final class LogFilterViewController: UIViewController {
         tableView.backgroundColor = UIColor(designSystemColor: .background)
         return tableView
     }()
-    
-    // MARK: - Initialization
     
     init(currentFilter: LogFilter) {
         self.currentFilter = currentFilter
@@ -54,14 +48,10 @@ final class LogFilterViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - Lifecycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
     }
-    
-    // MARK: - Setup
     
     private func setupUI() {
         title = "Log Filters"
@@ -87,8 +77,6 @@ final class LogFilterViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-    
-    // MARK: - Actions
     
     @objc private func cancelTapped() {
         dismiss(animated: true)
@@ -123,8 +111,6 @@ final class LogFilterViewController: UIViewController {
         }
     }
 }
-
-// MARK: - UITableViewDataSource
 
 @available(iOS 15.0, *)
 extension LogFilterViewController: UITableViewDataSource {
@@ -262,8 +248,6 @@ extension LogFilterViewController: UITableViewDataSource {
     }
 }
 
-// MARK: - UITableViewDelegate
-
 @available(iOS 15.0, *)
 extension LogFilterViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -281,7 +265,6 @@ extension LogFilterViewController: UITableViewDelegate {
             handleLogLevelSelection(at: indexPath)
         }
     }
-    
     
     private func handleCustomFilterSelection(at indexPath: IndexPath) {
         guard let filterRow = CustomFilterRow(rawValue: indexPath.row) else { return }
@@ -346,4 +329,5 @@ extension LogFilterViewController: UITableViewDelegate {
         
         tableView.reloadSections(IndexSet(integer: Section.logLevel.rawValue), with: .none)
     }
+
 }

@@ -28,16 +28,14 @@ protocol LogViewerDataSourceDelegate: AnyObject {
     func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateLoadingState isLoading: Bool)
 }
 
-/// Manages OSLogStore access and real-time log fetching
 @available(iOS 15.0, *)
 final class LogViewerDataSource {
-    
-    // MARK: - Public Properties
-    
+
     weak var delegate: LogViewerDataSourceDelegate?
-    
+
+    private var logStore: OSLogStore?
     private(set) var currentFilter = LogFilter.allLogsFilter
-    
+    private let fetchQueue = DispatchQueue(label: "LogViewerDataSource", qos: .utility)
     private(set) var logEntries: [FormattedLogEntry] = [] {
         didSet {
             DispatchQueue.main.async { [weak self] in
@@ -47,29 +45,17 @@ final class LogViewerDataSource {
         }
     }
     
-    // MARK: - Private Properties
-    
-    private var logStore: OSLogStore?
-    private let backgroundQueue = DispatchQueue(label: "LogViewerDataSource", qos: .utility)
-    
     // MARK: - Initialization
     
     init() {
         setupLogStore()
     }
     
-    deinit {
-        // No longer need to stop anything since there's no timer
-    }
-    
     // MARK: - Public Methods
-    
-    /// Refresh the entire log store
+
     func refresh() {
-        // Clear existing logs immediately
         logEntries = []
-        
-        // Signal loading state
+
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.delegate?.logViewerDataSource(self, didUpdateLoadingState: true)
@@ -80,7 +66,6 @@ final class LogViewerDataSource {
 
     func updateFilter(_ filter: LogFilter) {
         currentFilter = filter
-        // Clear existing logs and refresh with new filter
         logEntries = []
         refresh()
     }
@@ -114,14 +99,13 @@ final class LogViewerDataSource {
     }
     
     private func fetchLogs() {
-        backgroundQueue.async {
+        fetchQueue.async {
             self.performLogFetch()
         }
     }
     
     private func performLogFetch() {
         guard let logStore = logStore else {
-            // Signal loading completion on error
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
@@ -133,7 +117,6 @@ final class LogViewerDataSource {
         do {
             try fetchLogs(from: logStore)
         } catch {
-            // Signal loading completion on error
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.logViewerDataSource(self, didUpdateLoadingState: false)
@@ -185,9 +168,6 @@ final class LogViewerDataSource {
             let categoryPredicate = NSPredicate(format: "category CONTAINS[cd] %@", categoryFilter)
             predicates.append(categoryPredicate)
         }
-
-        // Note: Log level filtering must be done client-side as OSLogStore predicates
-        // don't support the 'level' field
 
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }

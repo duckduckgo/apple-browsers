@@ -21,13 +21,9 @@ import UIKit
 
 @available(iOS 15.0, *)
 final class LogEntryDetailViewController: UIViewController {
-    
-    // MARK: - Properties
-    
+
     private let logEntry: FormattedLogEntry
-    
-    // MARK: - UI Components
-    
+
     private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -44,8 +40,6 @@ final class LogEntryDetailViewController: UIViewController {
         return stackView
     }()
     
-    // MARK: - Initialization
-    
     init(entry: FormattedLogEntry) {
         self.logEntry = entry
         super.init(nibName: nil, bundle: nil)
@@ -55,15 +49,11 @@ final class LogEntryDetailViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - Lifecycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         populateContent()
     }
-    
-    // MARK: - Setup
     
     private func setupUI() {
         title = "Log Entry Details"
@@ -169,8 +159,6 @@ final class LogEntryDetailViewController: UIViewController {
         return formatter.string(from: date)
     }
     
-    // MARK: - Actions
-    
     @objc private func shareButtonTapped() {
         let shareText = formatEntryForSharing()
         let activityViewController = UIActivityViewController(
@@ -196,7 +184,6 @@ final class LogEntryDetailViewController: UIViewController {
         Level: \(logEntry.level.displayName)
         Subsystem: \(logEntry.subsystem)
         Category: \(logEntry.category)
-        Process: \(logEntry.process)
         
         Message:
         \(logEntry.message)

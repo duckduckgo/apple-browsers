@@ -23,9 +23,7 @@ import Core
 
 @available(iOS 15.0, *)
 final class LogViewerViewController: UIViewController {
-    
-    // MARK: - UI Components
-    
+
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -88,14 +86,10 @@ final class LogViewerViewController: UIViewController {
         return spinner
     }()
     
-    // MARK: - Properties
-    
     private let dataSource = LogViewerDataSource()
     private var filteredEntries: [FormattedLogEntry] = []
     private var isLoading = false
     private let dependencies: DebugScreen.Dependencies
-    
-    // MARK: - Initialization
     
     init(dependencies: DebugScreen.Dependencies) {
         self.dependencies = dependencies
@@ -106,15 +100,11 @@ final class LogViewerViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // MARK: - Lifecycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         dataSource.delegate = self
         setupUI()
     }
-    
-    // MARK: - Setup
     
     private func setupUI() {
         title = "Log Viewer"
@@ -136,12 +126,9 @@ final class LogViewerViewController: UIViewController {
             loadingSpinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingSpinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
-        
-        // Initial refresh to load logs
+
         dataSource.refresh()
     }
-    
-    // MARK: - Actions
     
     @objc private func refreshButtonTapped() {
         guard !isLoading else { return }
@@ -170,8 +157,6 @@ final class LogViewerViewController: UIViewController {
         let navigationController = UINavigationController(rootViewController: filterViewController)
         present(navigationController, animated: true)
     }
-    
-    // MARK: - Private Methods
     
     private func applySearchFilter() {
         let searchText = searchController.searchBar.text
@@ -204,8 +189,6 @@ final class LogViewerViewController: UIViewController {
         }
     }
 }
-
-// MARK: - LogViewerDataSourceDelegate
 
 @available(iOS 15.0, *)
 extension LogViewerViewController: LogViewerDataSourceDelegate {
@@ -246,8 +229,6 @@ extension LogViewerViewController: LogViewerDataSourceDelegate {
     }
 }
 
-// MARK: - UITableViewDataSource
-
 @available(iOS 15.0, *)
 extension LogViewerViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -264,8 +245,6 @@ extension LogViewerViewController: UITableViewDataSource {
     }
 }
 
-// MARK: - UITableViewDelegate
-
 @available(iOS 15.0, *)
 extension LogViewerViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -275,11 +254,7 @@ extension LogViewerViewController: UITableViewDelegate {
         let detailViewController = LogEntryDetailViewController(entry: entry)
         navigationController?.pushViewController(detailViewController, animated: true)
     }
-    
-    // Auto-scroll functionality removed
 }
-
-// MARK: - UISearchResultsUpdating
 
 @available(iOS 15.0, *)
 extension LogViewerViewController: UISearchResultsUpdating {
@@ -288,8 +263,6 @@ extension LogViewerViewController: UISearchResultsUpdating {
     }
 }
 
-// MARK: - LogFilterViewControllerDelegate
-
 @available(iOS 15.0, *)
 extension LogViewerViewController: LogFilterViewControllerDelegate {
     func logFilterViewController(_ controller: LogFilterViewController, didUpdateFilter filter: LogFilter) {
@@ -297,8 +270,6 @@ extension LogViewerViewController: LogFilterViewControllerDelegate {
         controller.dismiss(animated: true)
     }
 }
-
-// MARK: - LogEntryTableViewCell
 
 private class LogEntryTableViewCell: UITableViewCell {
     static let identifier = "LogEntryTableViewCell"

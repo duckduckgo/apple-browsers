@@ -73,6 +73,7 @@ struct SettingsCellView: View, Identifiable {
     ///   - disclosureIndicator: Forces Adds a disclosure indicator on the right (chevron)
     ///   - webLinkIndicator: Adds a link indicator on the right
     ///   - isButton: Disables the tap actions on the cell if true
+    ///   - isNew: Displays "New" badges next to the item for feature discovery
     init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, isNew: Bool = false) {
         self.label = label
         self.subtitle = subtitle

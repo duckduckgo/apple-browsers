@@ -207,7 +207,7 @@ extension LogFilterViewController: UITableViewDataSource {
         cell.textLabel?.text = toggleRow.title
         cell.selectionStyle = .none
 
-        let toggleSwitch = UISwitch()        
+        let toggleSwitch = UISwitch()
         switch toggleRow {
         case .filterEmptySubsystems:
             toggleSwitch.isOn = currentFilter.filterEmptySubsystems

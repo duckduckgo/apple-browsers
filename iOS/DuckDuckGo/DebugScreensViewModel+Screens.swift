@@ -53,7 +53,7 @@ extension DebugScreensViewModel {
                     func dataGatheringStarted() {
                         ActionMessageView.present(message: "Data Gathering Started... please wait")
                     }
-                    
+
                     func dataGatheringComplete() {
                         ActionMessageView.present(message: "Data Gathering Complete")
                     }
@@ -139,21 +139,15 @@ extension DebugScreensViewModel {
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
-            .controller(title: "Log Viewer", { d in
+            {
                 if #available(iOS 15.0, *) {
-                    return LogViewerViewController(dependencies: d)
+                    return DebugScreen.controller(title: "Log Viewer", { d in
+                        return LogViewerViewController(dependencies: d)
+                    })
                 } else {
-                    let alert = UIAlertController(
-                        title: "Log Viewer Unavailable",
-                        message: "Log Viewer requires iOS 15.0 or later",
-                        preferredStyle: .alert
-                    )
-                    alert.addAction(UIAlertAction(title: "OK", style: .default))
-                    let vc = UIViewController()
-                    vc.present(alert, animated: true)
-                    return vc
+                    return nil
                 }
-            }),
+            }(),
             .controller(title: "Configuration Refresh Info", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "ConfigurationDebugViewController") { coder in
@@ -228,7 +222,7 @@ extension DebugScreensViewModel {
                 capturedController = onboardingController
                 return onboardingController
             }),
-        ]
+        ].compactMap { $0 }
     }
 
 }

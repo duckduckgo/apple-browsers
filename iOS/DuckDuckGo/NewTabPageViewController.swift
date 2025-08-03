@@ -45,7 +45,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private let pixelFiring: PixelFiring.Type
     private let messageNavigationDelegate: MessageNavigationDelegate
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
@@ -62,7 +61,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          newTabDialogTypeProvider: NewTabDialogSpecProvider,
          privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
          faviconLoader: FavoritesFaviconLoading,
-         pixelFiring: PixelFiring.Type = Pixel.self,
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
          appWidthObserver: AppWidthObserver = .shared) {
@@ -72,7 +70,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.newTabDialogFactory = newTabDialogFactory
         self.newTabDialogTypeProvider = newTabDialogTypeProvider
         self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
-        self.pixelFiring = pixelFiring
         self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
@@ -126,13 +123,19 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
         presentNextDaxDialog()
 
-        pixelFiring.fire(.homeScreenShown, withAdditionalParameters: [:])
-        sendDailyDisplayPixel()
-
         if !favoritesModel.isEmpty {
             borderView.insertSelf(into: view)
             updateBorderView()
         }
+    }
+
+    func setFavoritesEditable(_ editable: Bool) {
+        newTabPageViewModel.canEditFavorites = editable
+        favoritesModel.canEditFavorites = editable
+    }
+
+    func hideBorderView() {
+        borderView.isHidden = true
     }
 
     func widthChanged() {
@@ -175,10 +178,10 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
             delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(self)
         }
 
-        favoritesModel.onFavoriteURLSelected = { [weak self] url in
+        favoritesModel.onFavoriteURLSelected = { [weak self] favorite in
             guard let self else { return }
 
-            delegate?.newTabPageDidOpenFavoriteURL(self, url: url)
+            delegate?.newTabPageDidSelectFavorite(self, favorite: favorite)
         }
 
         favoritesModel.onFavoriteEdit = { [weak self] favorite in
@@ -260,20 +263,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private func presentNextDaxDialog() {
         showNextDaxDialogNew(dialogProvider: newTabDialogTypeProvider, factory: newTabDialogFactory)
-    }
-
-    // MARK: - Private
-
-    private func sendDailyDisplayPixel() {
-
-        let favoritesCount = favoritesModel.allFavorites.count
-        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
-
-        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
-            "FavoriteCount": bucket.value,
-            "Shortcuts": sectionsSettingsModel.enabledItems.contains(.shortcuts) ? "1" : "0",
-            "Favorites": sectionsSettingsModel.enabledItems.contains(.favorites) ? "1" : "0"
-        ])
     }
 
     // MARK: -

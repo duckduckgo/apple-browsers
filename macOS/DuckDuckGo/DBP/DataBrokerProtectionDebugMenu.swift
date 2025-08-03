@@ -286,17 +286,18 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func showDatabaseBrowser() {
         let viewController = DataBrokerDatabaseBrowserViewController(localBrokerService: brokerUpdater)
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1300, height: 800),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
                               defer: false)
 
         window.contentViewController = viewController
-        window.minSize = NSSize(width: 500, height: 400)
-        window.center()
+        window.minSize = NSSize(width: 1300, height: 800)
         databaseBrowserWindowController = NSWindowController(window: window)
         databaseBrowserWindowController?.showWindow(nil)
+
         window.delegate = self
+        window.center()
     }
 
     @objc private func showAgentIPAddress() {

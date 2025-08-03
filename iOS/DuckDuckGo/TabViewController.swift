@@ -600,7 +600,7 @@ class TabViewController: UIViewController {
         // Update DuckPlayer when WebView appears
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
-        fireWebViewDebugPixels()
+        checkWebViewVisibilityConsistency()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -642,18 +642,13 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
-    private func fireWebViewDebugPixels() {
-        if !webView.isDescendant(of: view) {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotInVisibleTabHierarchy)
-        }
-        if webView.window == nil {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
-        }
-        if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
+    private func checkWebViewVisibilityConsistency() {
+        if webView.isHidden && error.isHidden {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
-        }
-        if webView.frame == .zero {
-            DailyPixel.fireDailyAndCount(pixel: .debugWebViewHasZeroFrameSize)
+            
+            // Fix inconsistent state - if webView is hidden but no error shown, show webView
+            // https://app.asana.com/1/137249556945/project/414709148257752/task/1210155968610460?focus=true
+            hideErrorMessage()
         }
     }
 

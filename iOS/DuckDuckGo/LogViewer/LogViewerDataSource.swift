@@ -20,7 +20,6 @@
 import Foundation
 import OSLog
 import Combine
-import os.log
 
 protocol LogViewerDataSourceDelegate: AnyObject {
     func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateEntries entries: [FormattedLogEntry])
@@ -69,27 +68,31 @@ final class LogViewerDataSource {
         logEntries = []
         refresh()
     }
-
-
-    func exportLogs() -> String {
+    
+    func exportLogsToFile() -> URL? {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = dateFormatter.string(from: Date())
+        let filename = "DuckDuckGo_iOS_Logs_\(timestamp).txt"
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(filename)
+
+        let consoleFormatter = DateFormatter()
+        consoleFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
+        consoleFormatter.timeZone = TimeZone.current
         
-        let header = """
-        DuckDuckGo iOS Log Export
-        Generated: \(dateFormatter.string(from: Date()))
-        Total Entries: \(logEntries.count)
-        
-        ---
-        
-        """
-        
-        let logText = logEntries.map { entry in
-            let timestamp = dateFormatter.string(from: entry.timestamp)
-            return "[\(timestamp)] [\(entry.level.displayName)] [\(entry.subsystem)/\(entry.category)] \(entry.message)"
+        let logContent: String = logEntries.map { entry in
+            let timestamp = consoleFormatter.string(from: entry.timestamp)
+            let processName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "DuckDuckGo"
+            return "\(timestamp) \(processName)\(entry.level.displayName): (\(entry.subsystem)) [\(entry.category)] \(entry.message)"
         }.joined(separator: "\n")
         
-        return "\(header)\(logText)"
+        do {
+            try logContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            return fileURL
+        } catch {
+            return nil
+        }
     }
     
     // MARK: - Private Methods

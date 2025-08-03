@@ -137,14 +137,30 @@ final class LogViewerViewController: UIViewController {
     
     
     @objc private func exportButtonTapped() {
-        let exportText = dataSource.exportLogs()
+        guard let logFileURL = dataSource.exportLogsToFile() else {
+            let alert = UIAlertController(
+                title: "Export Failed",
+                message: "Failed to create log file for export.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        
         let activityViewController = UIActivityViewController(
-            activityItems: [exportText],
+            activityItems: [logFileURL],
             applicationActivities: nil
         )
         
         if let popover = activityViewController.popoverPresentationController {
             popover.barButtonItem = exportButton
+        }
+
+        activityViewController.completionWithItemsHandler = { [weak self] _, _, _, _ in
+            DispatchQueue.global(qos: .utility).async {
+                try? FileManager.default.removeItem(at: logFileURL)
+            }
         }
         
         present(activityViewController, animated: true)
@@ -188,6 +204,7 @@ final class LogViewerViewController: UIViewController {
             self.tableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
         }
     }
+
 }
 
 @available(iOS 15.0, *)

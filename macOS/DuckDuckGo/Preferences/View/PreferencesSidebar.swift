@@ -47,6 +47,7 @@ extension Preferences {
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
         let isSubscriptionRebrandingOn: Bool
+        let isNew: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
         init(pane: PreferencePaneIdentifier,
@@ -55,6 +56,7 @@ extension Preferences {
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
              isSubscriptionRebrandingOn: Bool,
+             isNew: Bool = false,
              action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
@@ -63,6 +65,7 @@ extension Preferences {
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
             self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
+            self.isNew = isNew
         }
 
         var body: some View {
@@ -78,6 +81,10 @@ extension Preferences {
                         .if(!isEnabled) {
                             $0.opacity(0.5)
                         }
+
+                    if isNew {
+                        BadgeView(text: UserText.newBadge.uppercased())
+                    }
 
                     Spacer()
 
@@ -160,6 +167,7 @@ extension Preferences {
                                 status: model.protectionStatus(for: pane),
                                 settingsIconProvider: settingsIconProvider,
                                 isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled,
+                                isNew: model.isPaneNew(pane: pane),
                                 action: {
                                     model.selectPane(pane)
                                 })

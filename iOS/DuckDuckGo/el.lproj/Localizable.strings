@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Η αναφορά σας βοηθάει ώστε να γίνει το DuckDuckGo καλύτερο για όλους!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "Διαμεσολαβητής JSON:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Διαμεσολαβητής: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Διαμεσολαβητές";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Δεν μπορείτε να ακυρώσετε περισσότερες από μία φορές";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Πώς να εξαγάγετε κωδικούς πρόσβασης από το Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Επιλογή αρχείυο...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Επίλεξε το αρχείο που περιέχει κωδικούς πρόσβασης που εξάγονται από το Safari ή το Chrome. Αυτό είναι συνήθως ένα αρχείο ZIP ή CSV.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Η εισαγωγή ολοκληρώθηκε!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Πιστωτικές κάρτες";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Παραλείφθηκαν διπλότυπα";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
+
+/* No comment provided by engineer. */
+"Delete" = "Διαγραφή";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "συσκευή";
@@ -1948,6 +1966,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Προβολή όλων των καρτελών";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Φόρτωση διαμεσολαβητών...";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "Το DuckDuckGo για Mac έχει την ταχύτητα που χρειάζεστε, τις λειτουργίες περιήγησης που αναμένετε και περιλαμβάνει τις καλύτερες δυνατότητες απορρήτου στην κατηγορία μας.";
 
@@ -2284,6 +2305,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Σε οποιονδήποτε ιστότοπο, ανοίξτε το μενού ••• και επιλέξτε **Προσθήκη αγαπημένου** για προσθήκη στη σελίδα νέας καρτέλας σας.";
 
+/* No comment provided by engineer. */
+"No results found" = "Δεν βρέθηκαν αποτελέσματα";
+
+/* No comment provided by engineer. */
+"OK" = "Εντάξει";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Διαχειριζόμενα cookies";
 
@@ -2377,6 +2404,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Το κατάλαβα! Θα παραλείψω τις άλλες συμβουλές.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Δοκιμάστε το δωρεάν!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "Το DuckDuckGo έχει επίσης ένα ασφαλές %1$@, διαθέσιμο με μια %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "προαιρετική επί πληρωμή συνδρομή";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 επιπλέον προστασίες premium";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Προσθήκη γραφικού στοιχείου";
 
@@ -2409,6 +2448,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Δεν είναι δυνατή η εύρεση της εφαρμογής που απαιτείται για άνοιγμα αυτού του συνδέσμου";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Εξαίρεση...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Δεν είναι δυνατή η πρόσβαση στα μοντέλα Duck.ai μόνο για συνδρομητές";
@@ -2593,6 +2635,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Εικονίδιο απορρήτου";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Πληροφορίες προφίλ";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Ακύρωση";
 
@@ -2606,6 +2651,9 @@
 "prompt.custom.url.scheme.title" = "Άνοιγμα σε άλλη εφαρμογή;";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Συγγενείς: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Επαναφορά";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2661,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Αποτελέσματα";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
@@ -2796,6 +2847,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Εισαγωγή κωδικών πρόσβασης";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Νέο";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Πληκτρολόγιο";
@@ -3168,6 +3222,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Το Privacy Pro ονομάζεται πλέον απλά Συνδρομή DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Αφαίρεση από αυτήν τη συσκευή";
@@ -3663,6 +3720,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Συνέχεια";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Πιστωτικές κάρτες";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Κωδικός πρόσβασης";

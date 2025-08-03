@@ -107,6 +107,7 @@ final class TestRunHelper: NSObject {
 
         // swizzle WKWebViewConfiguration.init to use a shared process pool
         _=WKWebViewConfiguration.swizzleInitOnce
+        _=WKWebView.swizzleInstallScreenTimeWebpageControllerIfNeededOnce
 
         // swizzle NSView.init to track loaded views
         _=NSView.swizzleInitWithFrameOnce
@@ -381,4 +382,16 @@ extension WKWebViewConfiguration {
         self.init()
     }
 
+}
+extension WKWebView {
+    static var swizzleInstallScreenTimeWebpageControllerIfNeededOnce: Void = {
+        guard let originalMethod = class_getInstanceMethod(WKWebView.self, NSSelectorFromString("_installScreenTimeWebpageControllerIfNeeded")) else { return }
+        let swizzledMethod = class_getInstanceMethod(WKWebView.self, #selector(swizzled_installScreenTimeWebpageControllerIfNeeded))!
+
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+
+    // skip STWebRemoteViewController initialization
+    @objc dynamic func swizzled_installScreenTimeWebpageControllerIfNeeded() {
+    }
 }

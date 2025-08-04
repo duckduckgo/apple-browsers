@@ -201,7 +201,7 @@ struct SettingsRootView: View {
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
         case .dbp:
-            if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.personalInformationRemoval),
+            if viewModel.isPIREnabled,
                let dbpManager = DataBrokerProtectionIOSManager.shared {
                 DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)
             } else {

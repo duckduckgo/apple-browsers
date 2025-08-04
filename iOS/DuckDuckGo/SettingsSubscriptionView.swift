@@ -271,7 +271,7 @@ struct SettingsSubscriptionView: View {
             var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
             let destination: LazyView<AnyView> = {
-                if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.personalInformationRemoval),
+                if settingsViewModel.isPIREnabled,
                    let dbpManager = settingsViewModel.dataBrokerProtectionIOSManager {
                     return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)))
                 } else {

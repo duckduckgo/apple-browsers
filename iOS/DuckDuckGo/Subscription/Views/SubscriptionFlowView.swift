@@ -60,7 +60,7 @@ struct SubscriptionFlowView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.personalInformationRemoval),
+        if viewModel.isPIREnabled,
            let dbpManager = DataBrokerProtectionIOSManager.shared {
             NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager).navigationViewStyle(.stack)),
                            isActive: $isShowingDBP,

@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import Networking
+import VPN
 
 enum SubscriptionSettingsViewConfiguration {
     case subscribed

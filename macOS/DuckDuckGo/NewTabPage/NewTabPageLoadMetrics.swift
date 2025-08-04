@@ -18,6 +18,7 @@
 
 import AppKit
 import PixelKit
+import os.log
 
 final class NewTabPageLoadMetrics {
 
@@ -44,7 +45,7 @@ final class NewTabPageLoadMetrics {
     /// Called when the New Tab Page has become visible to the user
     func onNTPDidPresent() {
         guard state == .loading else {
-            assertionFailure("NTP presentation not initiated")
+            Logger.newTabPageMetrics.error("NTP presentation not initiated")
             return
         }
         ntpShownTime = Date()

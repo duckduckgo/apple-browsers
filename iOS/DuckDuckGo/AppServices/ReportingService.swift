@@ -77,12 +77,13 @@ final class ReportingService {
             WidgetCenter.shared.getCurrentConfigurations { result in
                 switch result {
                 case .success(let widgetInfo):
-                    var report = [String: String]()
-                    widgetInfo.forEach {
-                        report[$0.id.kind] = "1"
-                    }
-                    if report.count > 0 {
-                        DailyPixel.fireDaily(.widgetReport, withAdditionalParameters: report)
+                    if widgetInfo.count > 0 {
+                        let enabledWidgets = widgetInfo.map {
+                            "\($0.id.kind)-\($0.family.debugDescription)"
+                        }.joined(separator: ",")
+                        DailyPixel.fireDaily(.widgetReport, withAdditionalParameters: [
+                            "enabled_widgets": enabledWidgets
+                        ])
                     }
 
                 case .failure(let error):

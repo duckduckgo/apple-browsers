@@ -108,6 +108,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
     case updateFirefoxBookmarksImport
+
+    // WiFi hotspot detection and captive portal handling
+    case hotspotDetection
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

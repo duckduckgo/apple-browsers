@@ -33,7 +33,7 @@ protocol AddressBarTextFieldFocusDelegate: AnyObject {
 
 final class AddressBarTextField: NSTextField {
 
-    var tabCollectionViewModel: TabCollectionViewModel! {
+    weak var tabCollectionViewModel: TabCollectionViewModel? {
         didSet {
             subscribeToSelectedTabViewModel()
         }
@@ -49,11 +49,11 @@ final class AddressBarTextField: NSTextField {
     }
 
     private var isHomePage: Bool {
-        tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+        tabCollectionViewModel?.selectedTabViewModel?.tab.content == .newtab
     }
 
     private var isBurner: Bool {
-        tabCollectionViewModel.isBurner
+        tabCollectionViewModel?.isBurner ?? false
     }
 
     var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
@@ -115,7 +115,7 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func subscribeToSelectedTabViewModel() {
-        selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel
+        selectedTabViewModelCancellable = tabCollectionViewModel?.$selectedTabViewModel
             .compactMap { $0 }
             .sink { [weak self] selectedTabViewModel in
                 guard let self else { return }
@@ -226,7 +226,7 @@ final class AddressBarTextField: NSTextField {
 
     private func restoreValueIfPossible(newSelectedTabViewModel: TabViewModel) {
         // save current (possibly modified) value into the old TabViewModel when selecting another Tab
-        if let oldSelectedTabViewModel = tabCollectionViewModel.selectedTabViewModel {
+        if let oldSelectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel {
             guard oldSelectedTabViewModel !== newSelectedTabViewModel else {
                 updateValue(selectedTabViewModel: newSelectedTabViewModel, addressBarString: nil)
                 return
@@ -284,7 +284,7 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func updateValue(selectedTabViewModel: TabViewModel?, addressBarString: String?) {
-        guard let selectedTabViewModel = selectedTabViewModel ?? tabCollectionViewModel.selectedTabViewModel else { return }
+        guard let selectedTabViewModel = selectedTabViewModel ?? tabCollectionViewModel?.selectedTabViewModel else { return }
 
         let addressBarString = addressBarString ?? selectedTabViewModel.addressBarString
         let isSearch = selectedTabViewModel.tab.content.userEditableUrl?.isDuckDuckGoSearch ?? false
@@ -385,7 +385,7 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func updateTabUrlWithUrl(_ providedUrl: URL, userEnteredValue: String, downloadRequested: Bool, suggestion: Suggestion?) {
-        guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else {
+        guard let selectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel else {
             Logger.general.error("AddressBarTextField: Selected tab view model is nil")
             return
         }
@@ -431,7 +431,7 @@ final class AddressBarTextField: NSTextField {
             guard let url else { return }
 
             if isUpgraded {
-                self?.updateTab(self?.tabCollectionViewModel.selectedTabViewModel?.tab, upgradedTo: url)
+                self?.updateTab(self?.tabCollectionViewModel?.selectedTabViewModel?.tab, upgradedTo: url)
             }
             self?.updateTabUrlWithUrl(url, userEnteredValue: userEnteredValue, downloadRequested: downloadRequested, suggestion: suggestion)
         })
@@ -446,7 +446,7 @@ final class AddressBarTextField: NSTextField {
     private func openNew(_ tabOrWindow: TabOrWindow, selected: Bool, suggestion: Suggestion?) {
         URL.makeUrl(suggestion: suggestion,
                 stringValueWithoutSuffix: stringValueWithoutSuffix) { [weak self] url, userEnteredValue, isUpgraded in
-            guard let self, let url else {
+            guard let self, let tabCollectionViewModel, let url else {
                 Logger.general.error("AddressBarTextField: Making url from address bar string failed")
                 return
             }
@@ -642,7 +642,7 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-        tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(pasteboardString))
+        tabCollectionViewModel?.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(pasteboardString))
     }
 
     @objc func pasteAndSearch(_ menuItem: NSMenuItem) {
@@ -652,7 +652,7 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-        tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(searchURL, source: .userEntered(pasteboardString))
+        tabCollectionViewModel?.selectedTabViewModel?.tab.setUrl(searchURL, source: .userEntered(pasteboardString))
     }
 
     @objc func toggleAutocomplete(_ menuItem: NSMenuItem) {
@@ -723,7 +723,7 @@ extension AddressBarTextField {
 
             return false
         }
-        tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
+        tabCollectionViewModel?.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
 
         return true
     }

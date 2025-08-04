@@ -41,7 +41,7 @@ class SwitchBarTextEntryView: UIView {
 
     private let handler: SwitchBarHandling
 
-    private let textView = UITextView()
+    private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
     private var buttonsView = SwitchBarButtonsView()
     private var currentButtonState: SwitchBarButtonState {
@@ -55,6 +55,12 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
+
+    var hasBeenTouched = false
+    var isURL: Bool {
+        // TODO some kind of text length check?
+        URL(string: textView.text)?.navigationalScheme != nil
+    }
 
     var isExpandable: Bool = false {
         didSet {
@@ -110,9 +116,17 @@ class SwitchBarTextEntryView: UIView {
         updateButtonState()
         updateForCurrentMode()
         updateTextViewHeight()
+
+        textView.onTouchesBeganHandler = self.onTextViewTouchesBegan
     }
 
     // MARK: - Setup Methods
+
+    private func onTextViewTouchesBegan() {
+        textView.onTouchesBeganHandler = nil
+        hasBeenTouched = true
+        updateTextViewHeight()
+    }
 
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
@@ -157,7 +171,6 @@ class SwitchBarTextEntryView: UIView {
             textView.spellCheckingType = .default
         }
 
-        textView.reloadInputViews()
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
@@ -208,7 +221,15 @@ class SwitchBarTextEntryView: UIView {
         let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
         let contentExceedsMaxHeight = size.height > Constants.maxHeight
 
-        if isExpandable {
+        // Reset defaults
+        textView.textContainer.lineBreakMode = .byWordWrapping
+
+        if !hasBeenTouched && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+            heightConstraint?.constant = Constants.minHeight
+            textView.isScrollEnabled = false
+            textView.showsVerticalScrollIndicator = false
+            textView.textContainer.lineBreakMode = .byTruncatingTail
+        } else if isExpandable {
             let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
             heightConstraint?.constant = newHeight
@@ -281,6 +302,8 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
+
+        textView.reloadInputViews()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

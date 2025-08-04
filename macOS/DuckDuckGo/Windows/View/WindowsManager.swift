@@ -66,7 +66,7 @@ final class WindowsManager {
                              lazyLoadTabs: Bool = false,
                              isMiniaturized: Bool = false,
                              isMaximized: Bool = false,
-                             isFullscreen: Bool = false) -> MainWindow? {
+                             isFullscreen: Bool = false) -> NSWindow? {
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
                                                  popUp: popUp,
                                                  burnerMode: burnerMode,
@@ -111,11 +111,11 @@ final class WindowsManager {
             mainWindowController.mainViewController.tabCollectionViewModel.setUpLazyLoadingIfNeeded()
         }
 
-        return mainWindowController.window as? MainWindow
+        return mainWindowController.window
     }
 
     @discardableResult
-    class func openNewWindow(with tab: Tab, droppingPoint: NSPoint? = nil, contentSize: NSSize? = nil, showWindow: Bool = true, popUp: Bool = false) -> MainWindow? {
+    class func openNewWindow(with tab: Tab, droppingPoint: NSPoint? = nil, contentSize: NSSize? = nil, showWindow: Bool = true, popUp: Bool = false) -> NSWindow? {
         let tabCollection = TabCollection()
         tabCollection.append(tab: tab)
 
@@ -135,7 +135,7 @@ final class WindowsManager {
     }
 
     @discardableResult
-    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> MainWindow? {
+    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> NSWindow? {
         openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint, showWindow: showWindow)
     }
 
@@ -156,12 +156,15 @@ final class WindowsManager {
     private static let defaultPopUpWidth: CGFloat = 1024
     private static let defaultPopUpHeight: CGFloat = 752
 
-    class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?) {
-        if let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
+    @discardableResult
+    class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?, forcePopup: Bool = false) -> NSWindow? {
+        if !forcePopup,
+           let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
            mainWindowController.window?.styleMask.contains(.fullScreen) == true,
            mainWindowController.window?.isPopUpWindow == false {
 
             mainWindowController.mainViewController.tabCollectionViewModel.insert(tab, selected: true)
+            return mainWindowController.window
 
         } else {
             let screenFrame = (self.findPositioningSourceWindow(for: tab)?.screen ?? .main)?.visibleFrame ?? NSScreen.fallbackHeadlessScreenFrame
@@ -182,7 +185,7 @@ final class WindowsManager {
                 NSPoint(x: origin.x + contentSize.width / 2, y: origin.y)
             }
 
-            self.openNewWindow(with: tab, droppingPoint: droppingPoint, contentSize: contentSize, popUp: true)
+            return self.openNewWindow(with: tab, droppingPoint: droppingPoint, contentSize: contentSize, popUp: true)
         }
     }
 

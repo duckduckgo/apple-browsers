@@ -749,6 +749,11 @@ final class MainMenu: NSMenu {
                     .submenu(NetworkProtectionDebugMenu())
             }
 
+#if DEBUG && !APPSTORE
+            NSMenuItem(title: "WiFi Hotspot Detection")
+                .submenu(HotspotDetectionDebugMenu())
+#endif
+
             if #available(macOS 13.5, *) {
                 NSMenuItem(title: "Autofill") {
                     NSMenuItem(title: "View all Credentials", action: #selector(MainViewController.showAllCredentials)).withAccessibilityIdentifier("MainMenu.showAllCredentials")

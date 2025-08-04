@@ -81,6 +81,7 @@ public enum PrivacyFeature: String {
     case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
+    case appReporting
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -124,6 +125,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
     case defaultBrowserTutorial
+
+    case widgetReporting
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

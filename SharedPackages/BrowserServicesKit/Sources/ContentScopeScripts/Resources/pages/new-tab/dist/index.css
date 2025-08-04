@@ -263,9 +263,22 @@ body {
   --focus-ring: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--ntp-focus-outline-color);
   --focus-ring-thin: 0px 0px 0px 1px var(--ntp-focus-outline-color), 0px 0px 0px 1px var(--color-white);
   --focus-ring-primary: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--ntp-color-primary);
-  --ntp-surface-tertiary: var(--color-white);
-  --ntp-controls-raised-backdrop: var(--color-black-at-9);
-  --ntp-controls-raised-fill-primary: var(--color-white);
+  --ntp-selection-color: var(--color-white);
+  --ntp-selection-background-color: #3A69EF;
+  --ntp-surface-tertiary: #FFFFFF;
+  --ntp-text-primary: #1F1F1F;
+  --ntp-text-tertiary: rgba(31, 31, 31, 0.4);
+  --ntp-icons-primary: rgba(31, 31, 31, 0.84);
+  --ntp-accent-primary: var(--color-blue-50);
+  --ntp-accent-secondary: var(--color-blue-60);
+  --ntp-accent-glow: rgba(57, 105, 239, 0.2);
+  --ntp-accent-content-primary: #FFFFFF;
+  --ntp-controls-fill-primary: rgba(31, 31, 31, 0.09);
+  --ntp-controls-raised-backdrop: rgba(0, 0, 0, 0.09);
+  --ntp-controls-raised-fill-primary: #FFFFFF;
+  --ntp-decoration-tertiary: rgba(0, 0, 0, 0.09);
+  --ntp-shadow-primary: rgba(0, 0, 0, 0.05);
+  --ntp-shadow-secondary: rgba(0, 0, 0, 0.08);
 }
 [data-theme=dark] {
   --ntp-surface-background-color: var(--color-black-at-18);
@@ -279,9 +292,22 @@ body {
   --focus-ring: 0px 0px 0px 1px var(--ntp-focus-outline-color), 0px 0px 0px 3px var(--color-white);
   --focus-ring-thin: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 1px var(--ntp-focus-outline-color);
   --focus-ring-primary: 0px 0px 0px 1px var(--default-dark-background-color), 0px 0px 0px 3px var(--ntp-color-primary);
+  --ntp-selection-color: var(--color-white);
+  --ntp-selection-background-color: var(--color-blue-30);
   --ntp-surface-tertiary: rgba(71, 71, 71, 0.66);
-  --ntp-controls-raised-backdrop: var(--color-black-at-60);
-  --ntp-controls-raised-fill-primary: var(--color-white-at-18);
+  --ntp-text-primary: rgba(255, 255, 255, 0.9);
+  --ntp-text-tertiary: rgba(255, 255, 255, 0.4);
+  --ntp-icons-primary: rgba(255, 255, 255, 0.78);
+  --ntp-accent-primary: var(--color-blue-20);
+  --ntp-accent-secondary: var(--color-blue-30);
+  --ntp-accent-glow: rgba(114, 149, 246, 0.2);
+  --ntp-accent-content-primary: var(--color-blue-80);
+  --ntp-controls-fill-primary: rgba(249, 249, 249, 0.12);
+  --ntp-controls-raised-backdrop: rgba(0, 0, 0, 0.6);
+  --ntp-controls-raised-fill-primary: rgba(255, 255, 255, 0.18);
+  --ntp-decoration-tertiary: rgba(255, 255, 255, 0.12);
+  --ntp-shadow-primary: rgba(0, 0, 0, 0.16);
+  --ntp-shadow-secondary: rgba(0, 0, 0, 0.24);
 }
 :root:has(body[data-platform-name=windows]) {
   --body-font-size: 14px;
@@ -1475,20 +1501,26 @@ body:not([data-platform-name]) .Button_button:active {
   background: none;
   border: none;
   box-sizing: content-box;
-  color: var(--ntp-text-normal);
-  font-weight: 500;
+  color: var(--ntp-text-primary);
   max-height: 10lh;
   padding: 11px 15px 0;
   resize: none;
 }
+[data-platform=macos] .AiChatForm_textarea {
+  font-weight: 500;
+}
 .AiChatForm_textarea::placeholder {
-  color: var(--ntp-text-muted);
+  color: var(--ntp-text-tertiary);
+}
+[data-platform=windows] .AiChatForm_textarea::selection {
+  background: var(--ntp-selection-background-color);
+  color: var(--ntp-selection-color);
 }
 .AiChatForm_textarea:focus {
   outline: none;
 }
 .AiChatForm_hasScroll .AiChatForm_textarea {
-  border-bottom: 1px solid var(--ntp-surface-border-color);
+  border-bottom: 1px solid var(--ntp-decoration-tertiary);
   padding-bottom: 11px;
 }
 .AiChatForm_buttons {
@@ -1502,10 +1534,10 @@ body:not([data-platform-name]) .Button_button:active {
 }
 .AiChatForm_submitButton {
   align-items: center;
-  background: var(--color-blue-50);
+  background: var(--ntp-accent-primary);
   border-radius: 100%;
   border: none;
-  color: var(--color-white);
+  color: var(--ntp-accent-content-primary);
   cursor: pointer;
   display: flex;
   height: var(--sp-7);
@@ -1516,43 +1548,12 @@ body:not([data-platform-name]) .Button_button:active {
 }
 .AiChatForm_submitButton[disabled] {
   background: none;
-  color: rgba(0, 0, 0, 0.3);
+  color: var(--ntp-icons-primary);
   cursor: default;
+  opacity: 0.3;
 }
 .AiChatForm_submitButton:focus-visible {
   box-shadow: var(--focus-ring);
-}
-
-/* pages/new-tab/app/omnibar/components/Container.module.css */
-.Container_outer {
-  align-self: stretch;
-  z-index: 1;
-}
-.Container_inner {
-  background: var(--ntp-surface-tertiary);
-  border-radius: 15px;
-  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.1), 0px 4px 8px 0px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  position: relative;
-  transition: height 200ms ease;
-}
-@media (prefers-reduced-motion: reduce) {
-  .Container_inner {
-    transition: none;
-  }
-}
-.Container_inner:not(:has([role=listbox])).Container_focusRing,
-.Container_inner:not(:has([role=listbox])):focus-within:not(.Container_noFocusRing) {
-  box-shadow:
-    0 0 0 1px var(--ntp-surface-tertiary),
-    0 0 0 3px var(--ntp-color-primary),
-    0 0 0 5px rgba(57, 105, 239, 0.2);
-}
-.Container_inner:has([role=listbox]) {
-  box-shadow:
-    0 0 0 3px var(--ntp-surface-tertiary),
-    0px 4px 12px 3px rgba(0, 0, 0, 0.10),
-    0px 20px 40px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* pages/new-tab/app/omnibar/components/Omnibar.module.css */
@@ -1567,22 +1568,74 @@ body:not([data-platform-name]) .Button_button:active {
   margin-bottom: var(--sp-4);
   width: 164px;
 }
+.Omnibar_spacer {
+  --box-shadow-rest: 0px 1px 4px 0px rgba(0, 0, 0, 0.1), 0px 4px 8px 0px rgba(0, 0, 0, 0.08);
+  --box-shadow-focused:
+    0 0 0 1px var(--ntp-surface-tertiary),
+    0 0 0 3px var(--ntp-accent-primary),
+    0 0 0 5px var(--ntp-accent-glow);
+  --box-shadow-suggestions:
+    0 0 0 3px var(--ntp-surface-tertiary),
+    0px 4px 12px 3px rgba(0, 0, 0, 0.10),
+    0px 20px 40px 3px rgba(0, 0, 0, 0.08);
+  align-self: stretch;
+  transition: height 200ms ease;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .Omnibar_spacer {
+    transition: none;
+  }
+}
+[data-mode=search] .Omnibar_spacer {
+  height: var(--sp-10);
+}
+[data-mode=ai] .Omnibar_spacer {
+  height: var(--sp-20);
+}
+.Omnibar_field {
+  overflow: hidden;
+  position: relative;
+  transition: height 200ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .Omnibar_field {
+    transition: none;
+  }
+}
+.Omnibar_root:has([role=listbox]) .Omnibar_popup,
+.Omnibar_root:not(:has([role=listbox])) .Omnibar_field {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
+  background: var(--ntp-surface-tertiary);
+  border-radius: var(--border-radius-lg);
+}
+.Omnibar_root:not(:has([role=listbox])) .Omnibar_field {
+  box-shadow: var(--box-shadow-rest);
+}
+.Omnibar_root:not(:has([role=listbox])) .Omnibar_field[data-focus-ring=true],
+.Omnibar_root:not(:has([role=listbox])) .Omnibar_field:focus-within:not([data-focus-ring=false]) {
+  box-shadow: var(--box-shadow-focused);
+}
+.Omnibar_root:has([role=listbox]) .Omnibar_popup {
+  box-shadow: var(--box-shadow-suggestions);
+}
 
 /* pages/new-tab/app/omnibar/components/SearchForm.module.css */
-.SearchForm_inputContainer {
+.SearchForm_form {
   align-items: center;
   display: flex;
   padding: var(--sp-1) 7px;
 }
-.SearchForm_inputContainer svg {
+.SearchForm_form svg {
   flex: none;
   margin: var(--sp-2);
 }
 .SearchForm_input {
   background: none;
   border: none;
-  color: var(--ntp-text-normal);
-  font-weight: 500;
+  color: var(--ntp-text-primary);
+  font: var(--input-font);
   height: var(--sp-8);
   left: 7px;
   padding-bottom: 0;
@@ -1593,20 +1646,25 @@ body:not([data-platform-name]) .Button_button:active {
   right: 7px;
 }
 .SearchForm_input::placeholder {
-  color: var(--ntp-text-muted);
+  color: var(--ntp-text-tertiary);
+}
+[data-platform=windows] .SearchForm_input::selection {
+  background: var(--ntp-selection-background-color);
+  color: var(--ntp-selection-color);
 }
 .SearchForm_input:focus {
   outline: none;
 }
 .SearchForm_suffixSpacer {
-  font-weight: 500;
+  font: var(--input-font);
   overflow: hidden;
   visibility: hidden;
   white-space: nowrap;
 }
 .SearchForm_suffix {
-  color: var(--ntp-color-primary);
+  color: var(--ntp-accent-primary);
   flex: none;
+  font: var(--input-font);
 }
 
 /* pages/new-tab/app/omnibar/components/SuggestionsList.module.css */
@@ -1621,7 +1679,7 @@ body:not([data-platform-name]) .Button_button:active {
   background: none;
   border-radius: 4px;
   border: none;
-  color: var(--ntp-text-normal);
+  color: var(--ntp-text-primary);
   cursor: pointer;
   display: flex;
   height: var(--sp-8);
@@ -1634,19 +1692,19 @@ body:not([data-platform-name]) .Button_button:active {
 }
 .SuggestionsList_item[aria-selected=true],
 .SuggestionsList_item:active {
-  color: var(--color-white);
+  color: var(--ntp-accent-content-primary);
 }
 :is(.SuggestionsList_item[aria-selected=true], .SuggestionsList_item:active) .SuggestionsList_suffix {
-  color: var(--color-white);
+  color: var(--ntp-accent-content-primary);
 }
 :is(.SuggestionsList_item[aria-selected=true], .SuggestionsList_item:active) .SuggestionsList_badge {
   background: var(--color-white-at-30);
 }
 .SuggestionsList_item[aria-selected=true] {
-  background: var(--ddg-color-primary);
+  background: var(--ntp-accent-primary);
 }
 .SuggestionsList_item:active {
-  background: var(--color-blue-60);
+  background: var(--ntp-accent-secondary);
 }
 .SuggestionsList_title {
   flex: none;
@@ -1656,7 +1714,7 @@ body:not([data-platform-name]) .Button_button:active {
   white-space: nowrap;
 }
 .SuggestionsList_suffix {
-  color: var(--ntp-text-muted);
+  color: var(--ntp-text-tertiary);
   flex: initial;
   font-size: 12px;
   overflow: hidden;
@@ -1682,24 +1740,23 @@ body:not([data-platform-name]) .Button_button:active {
 
 /* pages/new-tab/app/omnibar/components/TabSwitcher.module.css */
 .TabSwitcher_tabSwitcher {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
   background: var(--ntp-controls-raised-backdrop);
   border-radius: 99px;
-  box-shadow: 0px 1px 0px 0px rgba(0, 0, 0, 0.05) inset;
+  box-shadow: 0px 1px 0px 0px var(--ntp-shadow-primary) inset;
   display: grid;
-  gap: 2px;
+  gap: var(--sp-0_5);
   grid-template-columns: repeat(var(--tab-count), 1fr);
   overflow: hidden;
   padding: var(--sp-0_5);
   position: relative;
 }
-[data-theme=dark] .TabSwitcher_tabSwitcher {
-  box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.16) inset;
-}
 .TabSwitcher_tab {
   align-items: center;
   background: none;
   border: none;
-  color: var(--ntp-text-normal);
+  color: var(--ntp-text-primary);
   cursor: pointer;
   display: flex;
   gap: 6px;
@@ -1711,7 +1768,7 @@ body:not([data-platform-name]) .Button_button:active {
   z-index: 1;
 }
 .TabSwitcher_tab:hover:not([aria-selected=true])::before {
-  background: var(--ntp-controls-raised-backdrop);
+  background: var(--ntp-controls-fill-primary);
   border-radius: 99px;
   content: "";
   top: 0;
@@ -1727,8 +1784,8 @@ body:not([data-platform-name]) .Button_button:active {
   background-color: var(--ntp-controls-raised-fill-primary);
   border-radius: 18px;
   box-shadow:
-    0 4px 4px rgba(0, 0, 0, 0.08),
-    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 4px 4px var(--ntp-shadow-secondary),
+    0 1px 2px var(--ntp-shadow-secondary),
     inset 0 1px 0 rgba(255, 255, 255, 0.48);
   height: var(--sp-8);
   left: 0;
@@ -1742,8 +1799,8 @@ body:not([data-platform-name]) .Button_button:active {
 }
 [data-theme=dark] .TabSwitcher_blob {
   box-shadow:
-    0 4px 4px rgba(0, 0, 0, 0.24),
-    0 1px 2px rgba(0, 0, 0, 0.24),
+    0 4px 4px var(--ntp-shadow-secondary),
+    0 1px 2px var(--ntp-shadow-secondary),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 @media (prefers-reduced-motion: reduce) {

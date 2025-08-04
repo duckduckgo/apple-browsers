@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN je prekinjen zaradi potekle naročnine. Naročite se na Privacy Pro, da znova povežete DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "VPN je prekinjen zaradi potekle naročnine. Naročite se na DuckDuckGo, da znova povežete VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN se ni mogel povezati. Poskusite znova pozneje.";

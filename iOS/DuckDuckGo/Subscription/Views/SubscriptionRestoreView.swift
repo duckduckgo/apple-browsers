@@ -136,7 +136,7 @@ struct SubscriptionRestoreView: View {
 
     private var addViaEmailView: some View {
         RoundedCardView(title: UserText.subscriptionActivateViaEmailTitle,
-                        description: UserText.subscriptionActivateViaEmailDescription,
+                        description: UserText.subscriptionActivateViaEmailDescription(isRebrandingOn: viewModel.isRebrandingOn),
                         image: Image(uiImage: DesignSystemImages.Glyphs.Size16.email),
                         buttonTitle: UserText.subscriptionActivateViaEmailButton,
                         buttonAction: {
@@ -172,7 +172,7 @@ struct SubscriptionRestoreView: View {
     private var headerView: some View {
         VStack(spacing: Constants.headerItemSpacing) {
             Image(Constants.heroImage)
-            Text(UserText.subscriptionActivateHeaderTitle)
+            Text(UserText.subscriptionActivateHeaderTitle(isRebrandingOn: viewModel.isRebrandingOn))
                 .daxTitle1()
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))

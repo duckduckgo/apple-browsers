@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Търсене";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Преглеждайте и управлявайте своята VPN връзка. Изисква абонамент за Privacy Pro.";
+"widget.gallery.vpn.description" = "Преглеждайте и управлявайте своята VPN връзка. Изисква абонамент за DuckDuckGo.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

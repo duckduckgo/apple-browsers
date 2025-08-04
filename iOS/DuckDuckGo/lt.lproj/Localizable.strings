@@ -1330,6 +1330,30 @@
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "„iOS“ skirta „DuckDuckGo“";
 
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Pridėkite savo „DuckDuckGo“ prenumeratą prie šio įrenginio";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Norėdami pridėti prenumeratą prie šio įrenginio, naudokite el. pašto adresą.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Pridėkite savo prenumeratą prie kitų įrenginių";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Pridėkite prenumeratą prie kitų įrenginių per „Apple ID“ arba susiedami el. pašto adresą. **[Sužinokite daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Naudokite šį el. paštą, kad pridėtumėte prenumeratą kituose įrenginiuose „DuckDuckGo“ programėlėje, eikite į „Settings“ (Nustatymai) > „DuckDuckGo Subscription“ (DuckDuckGo prenumerata) > „I Have a Subscription“ (Turiu prenumeratą). **[Sužinokite daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Gauk atsakymus į dažniausiai užduodamus klausimus arba susisiek su prenumeratos palaikymo tarnyba mūsų pagalbos puslapiuose.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Aktyvuokite „DuckDuckGo“ prenumeratą darbalaukyje, kad nustatytumėte asmeninės informacijos pašalinimą";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Šiame įrenginyje nebegalėsite pasiekti savo „DuckDuckGo“ prenumeratos. Tai neatšauks jūsų prenumeratos ir ji liks aktyvi kituose įrenginiuose.";
+
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Visada";
 
@@ -2057,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Pridėti VPN valdiklį";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN atjungtas dėl pasibaigusios prenumeratos. „DuckDuckGo“ VPN galima naudoti nemokamai, kol veikia beta versija.";
+"network.protection.entitlement.expired.notification.body" = "VPN atjungtas dėl pasibaigusios prenumeratos. Prenumeruokite „DuckDuckGo“, kad iš naujo prisijungtumėte prie VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "„DuckDuckGo“ VPN nepavyko prisijungti. Bandykite dar kartą vėliau.";
@@ -2325,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Vykdykite paiešką privačiai pagal numatytąjį nustatymą";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "„DuckDuckGo“ taip pat turi %1$@, prieinamą su %2$@ ir pažangiu, privačiu DI.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "pasirenkama mokama prenumerata";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Lengvai pasiekiama";
@@ -2698,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Apie";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Be to, mes taip pat siūlome [„Privacy Pro“](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), trijų viename prenumeratos paslaugą, integruotą į mūsų naršyklę. „Privacy Pro“ prenumeratoriai gauna dar daugiau privatumo apsaugos su greitu ir paprastu naudoti [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kuris padeda apsaugoti naršymą internete, paslaugą, kuri randa ir pašalina asmeninę informaciją iš žmonių paieškos svetainių, ir paslaugą, kuri atkuria tapatybę, jei ji būtų pavogta.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Be to, mes taip pat siūlome [„DuckDuckGo“ prenumeratą](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), integruotą į mūsų naršyklę. Prenumeratoriai gauna dar daugiau privatumo apsaugos su greitu ir paprastu naudoti [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kuris padeda apsaugoti jūsų veiklą internete, prieigą prie pažangių dirbtinio intelekto modelių mūsų privačioje DI pokalbių paslaugoje „Duck.ai“, paslaugą, kuri randa ir pašalina jūsų asmeninę informaciją iš žmonių paieškos svetainių, ir paslaugą, kuri atkuria jūsų tapatybę, jei ji būtų pavogta.";
+
 /* about tagline */
 "settings.about.tagline" = "Apsauga. Privatumas. Ramybės jausmas.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "„DuckDuckGo“ yra nepriklausoma interneto apsaugos bendrovė, skirta visiems, norintiems susigrąžinti savo asmeninės informacijos kontrolę.Manome, kad geriausias būdas apsaugoti asmeninę informaciją nuo įsilaužėlių, sukčių ir į privatumą pasikėsinančių įmonių – visiškai sustabdyti jos rinkimą. Štai kodėl milijonai žmonių [pasirenka „DuckDuckGo“, o ne „Chrome“ ir kitas naršykles](ddgQuickLink://duckduckgo.com/compare-privacy) ieškoti ir naršyti internete. Mūsų integruota paieškos sistema yra kaip „Google“, bet niekada nestebi jūsų paieškų. O mūsų naršymo apsaugos priemonės, tokios kaip skelbimų sekimo ir slapukų blokavimas, padeda neleisti kitoms įmonėms rinkti jūsų duomenų. Beje, mūsų naršyklė yra nemokama – mes uždirbame iš [privatumą gerbiančių paieškos skelbimų](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ne išnaudodami jūsų duomenis. \n\n%@ \n\nSusigrąžinkite savo asmeninės informacijos kontrolę naudodami naršyklę, sukurtą duomenų apsaugai, o ne jų rinkimui.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pritaikymas neįgaliems";
@@ -2724,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "„Duck.ai“ spartieji klavišai";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Paieškos įvestis";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Ieškok internete arba klausk „Duck.ai“ tiesiai iš adreso juostos";
@@ -2800,6 +2836,9 @@
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "„DuckDuckGo“ kitose platformose";
 
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Jūsų „Privacy Pro“ prenumerata baigėsi";
+
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Užblokuokite el. pašto adresų stebėjimo priemones ir paslėpkite savo adresą nekeisdami el. pašto paslaugų teikėjo.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
 
@@ -2847,9 +2886,6 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importuoti slaptažodžius";
-
-/* Copy for budge on settings item to show an item is new */
-"settings.item.badge.new" = "Naujas";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
@@ -2947,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Turiu prenumeratą";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Vėl užsiprenumeruokite, kad galėtumėte toliau naudoti „Privacy Pro“";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Jūsų „Privacy Pro“ prenumerata baigėsi";
 
@@ -2984,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Apsaugok savo Wi-Fi ir tapatybę";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Išbandyk „DuckDuckGo“ prenumeratą nemokamai";
+"settings.subscription.try.free.button" = "Išbandyk nemokamai";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Išbandyk „Privacy Pro“ nemokamai";
@@ -3100,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Turiu prenumeratą";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Pakartotinai siųsti instrukcijas";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Pridėk el. pašto adresą, kad aktyvintum prenumeratą kituose įrenginiuose. Šį adresą naudosime tik tam, kad patikrintume tavo prenumeratą.";
 
@@ -3117,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Naudok šį el. laišką, norėdami įtraukti prenumeratą į kitus įrenginius „DuckDuckGo“ programėlėje. Eik į „Settings“ (Nustatymai) > „Privacy Pro“ > „I have a Subscription“ (Turiu prenumeratą). **[Sužinok daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "„Privacy Pro“ galima naudoti bet kuriame įrenginyje, prisijungusiame prie tos pačios „Apple“ paskyros.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Jūsų prenumerata buvo įsigyta per „Google Play“ parduotuvę. Norėdami atnaujinti prenumeratą, atidarykite „Google Play“ parduotuvės prenumeratos nustatymus įrenginyje, prisijungusiame prie tos pačios „Google“ paskyros, kuri buvo naudojama iš pradžių prenumeratai įsigyti.";
@@ -3479,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Prenumeruoti";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "„DuckDuckGo“ VPN galima naudoti nemokamai, kol veikia beta versija.";
+"vpn.access-revoked.alert.message" = "Prenumeruokite „DuckDuckGo“, kad iš naujo prisijungtumėte prie VPN.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "VPN atjungtas dėl pasibaigusios prenumeratos.";

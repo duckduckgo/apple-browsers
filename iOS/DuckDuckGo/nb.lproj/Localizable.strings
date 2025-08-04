@@ -1330,6 +1330,30 @@
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo for iOS";
 
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Legg til DuckDuckGo-abonnementet ditt på denne enheten";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Bruk en e-postadresse til å legge til abonnementet ditt på denne enheten.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Legg til abonnementet ditt på andre enheter";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Legg til abonnementet på de andre enhetene dine via Apple ID eller ved å koble til en e-postadresse. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Bruk denne e-postadressen til å legge til abonnementet ditt på dine andre enheter i DuckDuckGo-appen, gå til Innstillinger > DuckDuckGo-abonnement > Jeg har et abonnement. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Få svar på ofte stilte spørsmål eller kontakt abonnementsstøtte via hjelpesidene våre.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Aktiver DuckDuckGo-abonnementet på datamaskin for å konfigurere Personal Information Removal";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Du får ikke lenger tilgang til DuckDuckGo-abonnementet på denne enheten. Dette avslutter ikke abonnementet, det er fortsatt aktivt på de andre enhetene.";
+
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Alltid";
 
@@ -2057,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Legg til VPN-widget";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN ble frakoblet på grunn av et utløpt abonnement. Abonner på Privacy Pro for å koble til DuckDuckGo-VPN igjen.";
+"network.protection.entitlement.expired.notification.body" = "VPN ble frakoblet på grunn av et utløpt abonnement. Abonner på DuckDuckGo for å koble til VPN-en igjen.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN mislyktes i å koble til. Prøv igjen senere.";
@@ -2325,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Søk privat som standard";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo har også et %1$@, tilgjengelig med en %2$@ og avansert, privat AI.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valgfritt betalt abonnement";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Lett å nå";
@@ -2698,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Om";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "I tillegg tilbyr vi [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), en tre-i-ett abonnementstjeneste, integrert i nettleseren vår. Som abonnent på Privacy Pro får du enda mer personvernbeskyttelse med en rask og enkel [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), som bidrar til å sikre nettaktiviteten din; en tjeneste som finner og fjerner personopplysningene dine fra personsøknettsteder; og en tjeneste som gjenoppretter identiteten din hvis den skulle bli stjålet.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "I tillegg tilbyr vi [DuckDuckGo-abonnementet](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrert i nettleseren vår. Som abonnent får du enda mer personvernbeskyttelse med en rask og enkel [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), som bidrar til å sikre nettaktiviteten din; tilgang til avanserte AI-modeller i vår private AI-chattjeneste Duck.ai; en tjeneste som finner og fjerner personopplysninger fra personsøkernettsteder; og en tjeneste som gjenoppretter identiteten din hvis den skulle bli stjålet.";
+
 /* about tagline */
 "settings.about.tagline" = "Beskyttelse. Personvern. Ro i sjelen.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo er et uavhengig selskap som gir bedre personvern til alle som ønsker å ta tilbake kontrollen over personopplysninger på nettet.\n\nVi mener at den beste måten å beskytte personopplysninger mot hackere, svindlere og selskaper som krenker personvernet på, er å hindre at de samles inn i det hele tatt. Det er derfor millioner av mennesker [velger DuckDuckGo over Chrome og andre nettlesere](ddgQuickLink://duckduckgo.com/compare-privacy) til å søke og surfe på nettet. Vår innebygde søkemotor er som Google, men sporer aldri søkene dine. Og surfebeskyttelsene våre, som blokkering av annonsesporing og informasjonskapsler, hindrer andre selskaper i å samle inn opplysningene dine. Og – ikke minst – nettleseren vår er gratis. Vi tjener penger på [søkeannonser som respekterer personvernet](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ikke ved å utnytte dataene dine. \n\n%@ \n\nTa tilbake kontrollen over personopplysningene dine med en nettleser som er utviklet for databeskyttelse, ikke datainnsamling.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Tilgjengelighet";
@@ -2724,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-snarveier";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Søkefelt";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Søk på nettet eller spør Duck.ai direkte fra adressefeltet";
@@ -2800,6 +2836,9 @@
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo på andre plattformer";
 
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Abonnementet ditt på Privacy Pro har utløpt";
+
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokker e-postsporere og skjul adressen din uten å bytte e-postleverandør.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
 
@@ -2847,9 +2886,6 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importer passord";
-
-/* Copy for budge on settings item to show an item is new */
-"settings.item.badge.new" = "Ny";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
@@ -2947,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Jeg har et abonnement";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Abonner igjen for å fortsette å bruke Privacy Pro";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Abonnementet ditt på Privacy Pro har utløpt";
 
@@ -2984,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Sikre wifien og beskytt identiteten din";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Prøv et DuckDuckGo-abonnement gratis";
+"settings.subscription.try.free.button" = "Prøv gratis";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Prøv Privacy Pro gratis";
@@ -3100,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Jeg har et abonnement";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Send instruksjonene på nytt";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Legg til en e-postadresse for å aktivere abonnementet på andre enheter du eier. Vi bruker denne adressen bare til å verifisere abonnementet.";
 
@@ -3117,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Bruk denne e-postadressen til å legge til abonnementet ditt på andre enheter i DuckDuckGo-appen. Gå til Innstillinger > Privacy Pro > Jeg har et abonnement. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Privacy Pro er tilgjengelig på alle enheter som er logget inn på samme Apple-konto.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Abonnementet ditt ble kjøpt gjennom Google Play Store. Hvis du vil fornye abonnementet, må du åpne abonnementsinnstillingene for Google Play Store på en enhet som er logget på den samme Google-kontoen som du brukte til å kjøpe abonnementet.";
@@ -3479,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Abonner";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Abonner på Privacy Pro for å koble til DuckDuckGo-VPN igjen.";
+"vpn.access-revoked.alert.message" = "Abonner på DuckDuckGo for å koble til VPN-en igjen.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "VPN ble frakoblet på grunn av et utløpt abonnement";

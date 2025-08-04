@@ -42,9 +42,12 @@ struct DefaultBrowserPromptInactiveUserView: View {
         .background(background.ignoresSafeArea())
     }
 
+    @ViewBuilder
     private var content: some View {
+        let innerSectionsVerticalSpacing: CGFloat = Metrics.Content.innerSectionsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)
+
         VStack(alignment: .leading, spacing: Metrics.Content.sectionsSpacing) {
-            VStack(alignment: .leading, spacing: Metrics.Content.topSectionVerticalSpacing) {
+            VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
                 Text(UserText.InactiveUserModal.title)
                     .titleStyle(alignment: .leading)
 
@@ -54,12 +57,9 @@ struct DefaultBrowserPromptInactiveUserView: View {
                 }
                 .frame(maxHeight: Metrics.Chart.maxHeight)
             }
-
-            VStack(alignment: .leading, spacing: Metrics.Content.bottomSectionVerticalSpacing) {
-                Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
-                    .font(.system(size: Metrics.Content.moreProtectionsFontSize))
-                    .underline(true)
-                    .foregroundStyle(Color(designSystemColor: .accent))
+            VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
+                PlusMoreButton()
+                    .frame(height: Metrics.PlusMoreButton.height)
 
                 Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
             }
@@ -72,6 +72,19 @@ struct DefaultBrowserPromptInactiveUserView: View {
         .padding(.bottom, Metrics.Content.bottomPadding)
         .padding(.top, Metrics.Content.topPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
     }
+}
+
+struct PlusMoreButton: View {
+
+    var body: some View {
+        Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
+            .font(.system(size: Metrics.Content.moreProtectionsFontSize))
+            .underline(true)
+            .multilineTextAlignment(.leading)
+            .lineLimit(2)
+            .foregroundColor(Color(designSystemColor: .accent))
+    }
+
 }
 
 struct Footer: View {
@@ -105,14 +118,18 @@ private enum Metrics {
         static let bottomPadding: CGFloat = 12
         static let innerPadding: CGFloat = 24
         static let cornerRadius: CGFloat = 24
-        static let sectionsSpacing: CGFloat = 14
-        static let topSectionVerticalSpacing: CGFloat = 24
-        static let bottomSectionVerticalSpacing: CGFloat = 40
+        static let sectionsSpacing: CGFloat = 0
+        static let innerSectionsVerticalSpacing = MetricBuilder(default: 24.0).iPhoneSmallScreen(16.0)
         static let moreProtectionsFontSize: CGFloat = 15
     }
 
     enum Chart {
         static let maxHeight: CGFloat = 260.0
+    }
+
+    enum PlusMoreButton {
+        static let height: CGFloat = 48.0
+        static let padding: CGFloat = 8.0
     }
 
     enum Footer {

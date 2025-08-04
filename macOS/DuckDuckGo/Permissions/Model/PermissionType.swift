@@ -82,7 +82,7 @@ extension PermissionType {
         case .popups:
             return true
         case .wifiHotspot:
-            return false // One-shot permission as requested
+            return false // One-shot permission
         }
     }
     var canPersistDeniedDecision: Bool {
@@ -92,7 +92,7 @@ extension PermissionType {
         case .popups, .externalScheme:
             return false
         case .wifiHotspot:
-            return false // One-shot permission as requested
+            return false // One-shot permission
         }
     }
 

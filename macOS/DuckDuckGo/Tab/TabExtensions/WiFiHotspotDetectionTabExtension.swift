@@ -157,7 +157,7 @@ extension WiFiHotspotDetectionTabExtension: NavigationResponder {
         // Subscribe to hotspot detection service on navigation failure if not already subscribed
         if cancellable == nil {
             subscribeToHotspotService(originalURL: navigation.url)
-        } else if hotspotAuthQuery == nil {
+        } else if hasDetectedHotspot {
             // hotspot already detected but auth query dismissed
             showWiFiHotspotPermission(originalURL: navigation.url)
         }

@@ -536,6 +536,7 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionButtons.setCornerRadius(cornerRadius)
         zoomButton.setCornerRadius(cornerRadius)
         privacyDashboardButton.setCornerRadius(cornerRadius)
+        wifiHotspotButton.setCornerRadius(cornerRadius)
     }
 
     private func setupButtonsSize() {

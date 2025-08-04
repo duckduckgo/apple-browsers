@@ -90,22 +90,6 @@ struct ReportProblemFormFlowView: View {
                     },
                     onClose: onClose
                 )
-                .onAppear {
-                    let calculatedHeight = calculateManualHeight()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            onResize(ReportProblemFormViewController.Constants.width, calculatedHeight)
-                        }
-                    }
-                }
-                .onChange(of: viewModel.selectedOptions) { _ in
-                    let calculatedHeight = calculateManualHeight()
-                    DispatchQueue.main.async {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            onResize(ReportProblemFormViewController.Constants.width, calculatedHeight)
-                        }
-                    }
-                }
             } else if viewModel.isShowingCategorySelection {
                 ProblemCategoriesView(
                     viewModel: viewModel,
@@ -121,33 +105,6 @@ struct ReportProblemFormFlowView: View {
                 }
             }
         }
-    }
-
-    private func calculateManualHeight() -> CGFloat {
-        let headerHeight: CGFloat = 64  // Back button + title + padding
-        let footerHeight: CGFloat = 140 // Disclaimer + buttons + padding
-        let baseHeight = headerHeight + footerHeight
-
-        // Calculate pills height
-        let availableWidth: CGFloat = 400 // 448 - 48px horizontal padding
-        let estimatedPillWidth: CGFloat = 100
-        let pillSpacing: CGFloat = 8
-        let pillHeight: CGFloat = 32
-        let verticalSpacing: CGFloat = 8
-        let pillsPadding: CGFloat = 48 // Top + bottom padding
-
-        let optionsCount = viewModel.availableOptions.count
-        let pillsPerRow = max(1, Int(availableWidth / (estimatedPillWidth + pillSpacing)))
-        let numberOfRows = max(1, Int(ceil(Double(optionsCount) / Double(pillsPerRow))))
-        let pillsHeight = CGFloat(numberOfRows) * pillHeight + CGFloat(max(0, numberOfRows - 1)) * verticalSpacing + pillsPadding
-
-        // Add text input height if options are selected
-        let textInputHeight: CGFloat = viewModel.selectedOptions.isEmpty ? 0 : 140
-
-        let totalHeight = baseHeight + pillsHeight + textInputHeight
-        print("📏 Manual calculation: header(\(headerHeight)) + pills(\(pillsHeight)) + textInput(\(textInputHeight)) + footer(\(footerHeight)) = \(totalHeight)")
-
-        return totalHeight
     }
 }
 
@@ -334,14 +291,11 @@ struct ProblemDetailFormView: View {
         VStack(alignment: .leading, spacing: 0) {
             header()
             optionsPills()
-
-            if !viewModel.selectedOptions.isEmpty {
-                userTextInput()
-            }
+            userTextInput()
 
             footer()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func header() -> some View {

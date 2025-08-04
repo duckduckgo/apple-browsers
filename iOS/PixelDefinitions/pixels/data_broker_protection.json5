@@ -112,9 +112,9 @@
                 description: 'JSON object mapping broker names to total scan counts',
                 type: 'object',
                 patternProperties: {
-                    "^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$": {
-                        "type": "integer"
-                    }
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
                 },
             },
             {
@@ -122,9 +122,9 @@
                 description: 'JSON object mapping broker names to stalled scan counts',
                 type: 'object',
                 patternProperties: {
-                    "^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$": {
-                        "type": "integer"
-                    }
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
                 },
             },
         ],
@@ -150,9 +150,9 @@
                 description: 'JSON object mapping broker names to total opt-out counts',
                 type: 'object',
                 patternProperties: {
-                    "^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$": {
-                        "type": "integer"
-                    }
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
                 },
             },
             {
@@ -160,9 +160,9 @@
                 description: 'JSON object mapping broker names to stalled opt-out counts',
                 type: 'object',
                 patternProperties: {
-                    "^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$": {
-                        "type": "integer"
-                    }
+                    '^[a-zA-Z0-9\\s\\-\\.]+(-[0-9]+\\.[0-9]+\\.[0-9]+)$': {
+                        type: 'integer',
+                    },
                 },
             },
         ],

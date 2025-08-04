@@ -2270,6 +2270,22 @@
 		843D73BC2C786E5400E4F9DC /* BookmarkListPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DA2C774CA900716446 /* BookmarkListPopover.swift */; };
 		8443DC6D2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */; };
 		8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */; };
+		8448015A2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */; };
+		8448015B2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */; };
+		8448015E2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */; };
+		8448015F2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */; };
+		844801612E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */; };
+		844801622E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */; };
+		844801642E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */; };
+		844801652E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */; };
+		844801662E3B907200E8A2C1 /* GeolocationServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB226A7F4AA0013B453 /* GeolocationServiceMock.swift */; };
+		844801672E3B907200E8A2C1 /* GeolocationServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB226A7F4AA0013B453 /* GeolocationServiceMock.swift */; };
+		8448016A2E3BA41A00E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 844801692E3BA41A00E8A2C1 /* Clocks */; };
+		8448016C2E3BA41F00E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 8448016B2E3BA41F00E8A2C1 /* Clocks */; };
+		8448016E2E3BA42400E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 8448016D2E3BA42400E8A2C1 /* Clocks */; };
+		844801702E3BA42800E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 8448016F2E3BA42800E8A2C1 /* Clocks */; };
+		844801752E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */; };
+		844801762E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */; };
 		84494D212E18211200C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84494D202E18211200C9E5E8 /* NoARCObjCTestsExtensions */; };
 		84494D232E18211500C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84494D222E18211500C9E5E8 /* NoARCObjCTestsExtensions */; };
 		84494D252E18211900C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84494D242E18211900C9E5E8 /* NoARCObjCTestsExtensions */; };
@@ -2366,6 +2382,8 @@
 		84D0B9802E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
 		84D0B9812E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
 		84D0B9822E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
+		84D0B9842E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */; };
+		84D0B9852E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */; };
 		84D6780C2D842DBE0030BC82 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84D6780B2D842DBE0030BC82 /* InlineSnapshotTesting */; };
 		84DBC84E2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */; };
 		84DBC84F2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */; };
@@ -3797,6 +3815,13 @@
 			remoteGlobalIDString = 4B2537592A11BE7300610219;
 			remoteInfo = NetworkProtectionSystemExtension;
 		};
+		844801712E3CA18C00E8A2C1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA585D76248FD31100E9A3E2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B6EC37E729B5DA2A001ACE79;
+			remoteInfo = "tests-server";
+		};
 		9D84E3FC2CD4E66F0046CD8B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA585D76248FD31100E9A3E2 /* Project object */;
@@ -4830,6 +4855,11 @@
 		843965142C737022004C8899 /* NSPasteboardExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPasteboardExtension.swift; sourceTree = "<group>"; };
 		843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMLNodeExtension.swift; sourceTree = "<group>"; };
 		8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+OnboardingNavigationDelegate.swift"; sourceTree = "<group>"; };
+		844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotspotDetectionService.swift; sourceTree = "<group>"; };
+		8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotspotDetectionServiceTests.swift; sourceTree = "<group>"; };
+		844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiHotspotDetectionTabExtensionTests.swift; sourceTree = "<group>"; };
+		844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiHotspotDetectionIntegrationTests.swift; sourceTree = "<group>"; };
+		844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotspotDetectionDebugMenu.swift; sourceTree = "<group>"; };
 		84494D1F2E18207600C9E5E8 /* ObjCTestsExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = ObjCTestsExtensions; sourceTree = "<group>"; };
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
 		844DAACA2E1E823300879517 /* XCTestCaseExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestCaseExtension.swift; sourceTree = "<group>"; };
@@ -4855,6 +4885,7 @@
 		84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareHashPrefixes.json; sourceTree = "<group>"; };
 		84CE00152DAE41EA00852AA2 /* ResizablePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizablePreviewView.swift; sourceTree = "<group>"; };
 		84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureFlagger.swift; sourceTree = "<group>"; };
+		84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiHotspotDetectionTabExtension.swift; sourceTree = "<group>"; };
 		84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehaviorTests.swift; sourceTree = "<group>"; };
 		84DC71582C1C1E8A00033B8C /* UserDefaultsWrapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsWrapperTests.swift; sourceTree = "<group>"; };
 		84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKVisitedLinkStoreWrapper.swift; sourceTree = "<group>"; };
@@ -5760,6 +5791,7 @@
 				9DC5FACD2C6B8E620011F068 /* AppKitExtensions in Frameworks */,
 				84494D252E18211900C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
 				4B9EE3722D76CB5F00DDC75C /* SubscriptionTestingUtilities in Frameworks */,
+				8448016E2E3BA42400E8A2C1 /* Clocks in Frameworks */,
 				84D6780C2D842DBE0030BC82 /* InlineSnapshotTesting in Frameworks */,
 				374EFDF12D01C70A00B30939 /* Utilities in Frameworks */,
 				4B9EE3702D76CB5600DDC75C /* PixelKitTestingUtilities in Frameworks */,
@@ -5773,6 +5805,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				844801702E3BA42800E8A2C1 /* Clocks in Frameworks */,
 				B65CD8D12B316E0C00A595BB /* SnapshotTesting in Frameworks */,
 				F124E0ED2D6E123A0035C7BA /* PersistenceTestingUtils in Frameworks */,
 				9DC5FACF2C6BA23C0011F068 /* AppKitExtensions in Frameworks */,
@@ -5797,6 +5830,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8448016C2E3BA41F00E8A2C1 /* Clocks in Frameworks */,
 				B65CD8CD2B316DFC00A595BB /* SnapshotTesting in Frameworks */,
 				F124E0E52D6E12260035C7BA /* SubscriptionTestingUtilities in Frameworks */,
 				F124E0E32D6E12260035C7BA /* PersistenceTestingUtils in Frameworks */,
@@ -6071,6 +6105,7 @@
 				4B9EE36A2D76CB2300DDC75C /* PixelKitTestingUtilities in Frameworks */,
 				84494D212E18211200C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
 				9DC5FACB2C6B8E050011F068 /* AppKitExtensions in Frameworks */,
+				8448016A2E3BA41A00E8A2C1 /* Clocks in Frameworks */,
 				84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */,
 				4B9EE3682D76CB1600DDC75C /* SubscriptionTestingUtilities in Frameworks */,
 				374EFDEF2D01C70300B30939 /* Utilities in Frameworks */,
@@ -8283,6 +8318,23 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		844801592E3B881200E8A2C1 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */,
+				844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		8448015D2E3B8AE100E8A2C1 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
 		84524C052D79E6A100F723D6 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
@@ -9010,6 +9062,7 @@
 				4BFD356E283ADE8B00CE9234 /* BookmarksBar */,
 				AA86491324D831B9001BABEE /* Common */,
 				85D33F1025C82E93002B91A6 /* Configuration */,
+				844801592E3B881200E8A2C1 /* Connectivity */,
 				4B6160D125B14E5E007DE5B2 /* ContentBlocker */,
 				AAC30A24268DF93500D2D9CD /* CrashReports */,
 				4B723DF826B0002B00E14D75 /* DataExport */,
@@ -9100,6 +9153,7 @@
 				AA652CAB25DD820D009059CC /* Bookmarks */,
 				85F69B3A25EDE7F800978E59 /* Common */,
 				85AC3B1525D9BBFA00C7D2AA /* Configuration */,
+				8448015D2E3B8AE100E8A2C1 /* Connectivity */,
 				4B82E9B725B6A04B00656FE7 /* ContentBlocker */,
 				4B70BFFD27B0793D000386ED /* CrashReports */,
 				4B723E0226B0003E00E14D75 /* DataExport */,
@@ -10118,6 +10172,7 @@
 				B693766D2B6B5F26005BD9D4 /* ErrorPageTests.swift */,
 				56A054322C205814007D8FAB /* OnboardingPageTests.swift */,
 				B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */,
+				844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */,
 			);
 			path = Tab;
 			sourceTree = "<group>";
@@ -10125,7 +10180,6 @@
 		B647EFB32922539400BA628D /* TabExtensions */ = {
 			isa = PBXGroup;
 			children = (
-				372042D32DF9B0A400CE099A /* InternalFeedbackFormTabExtension.swift */,
 				B647EFBA2922584B00BA628D /* AdClickAttributionTabExtension.swift */,
 				3148727D2CC68F6200EEF89B /* AIChatTabExtension.swift */,
 				B6C00ECA292F839D009C73A6 /* AutofillTabExtension.swift */,
@@ -10140,6 +10194,7 @@
 				B66260DF29AC6EBD00E9E3EE /* HistoryTabExtension.swift */,
 				B6C00ED4292FB21E009C73A6 /* HoveredLinkTabExtension.swift */,
 				B6BF5D8829470BC4006742B1 /* HTTPSUpgradeTabExtension.swift */,
+				372042D32DF9B0A400CE099A /* InternalFeedbackFormTabExtension.swift */,
 				B66260E529ACAE4B00E9E3EE /* NavigationHotkeyHandler.swift */,
 				B66260DC29AC5D4300E9E3EE /* NavigationProtectionTabExtension.swift */,
 				37B904732E2A531C00E5DAF7 /* NavigationPixelNavigationResponder.swift */,
@@ -10151,6 +10206,7 @@
 				B6BDDA002942389000F68088 /* TabExtensions.swift */,
 				1D9A4E592B43213B00F449E2 /* TabSnapshotExtension.swift */,
 				B626A76C29928B1600053070 /* TestsClosureNavigationResponder.swift */,
+				84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */,
 				56F0CB2E2E20FBD2000FF58B /* SubscriptionTabExtension.swift */,
 			);
 			path = TabExtensions;
@@ -10412,14 +10468,15 @@
 		B6CA4822298CDC0B0067ECCE /* TabExtensionsTests */ = {
 			isa = PBXGroup;
 			children = (
-				37657FC32DB8D55F003D749E /* TabCrashRecoveryExtensionTests.swift */,
-				6590DB542DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift */,
 				B6CA4823298CDC2E0067ECCE /* AdClickAttributionTabExtensionTests.swift */,
-				B626A7632992506A00053070 /* SerpHeadersNavigationResponderTests.swift */,
-				1D1C36E529FB019C001FA40C /* HistoryTabExtensionTests.swift */,
-				1D8C2FE42B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift */,
+				6590DB542DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift */,
 				56BA1E7C2BAB290E001CF69F /* ErrorPageTabExtensionTest.swift */,
+				1D1C36E529FB019C001FA40C /* HistoryTabExtensionTests.swift */,
+				B626A7632992506A00053070 /* SerpHeadersNavigationResponderTests.swift */,
 				567A23CC2C80CE060010F66C /* SpecialErrorPageUserScriptTests.swift */,
+				37657FC32DB8D55F003D749E /* TabCrashRecoveryExtensionTests.swift */,
+				1D8C2FE42B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift */,
+				844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */,
 			);
 			path = TabExtensionsTests;
 			sourceTree = "<group>";
@@ -11063,6 +11120,7 @@
 				4B9EE3712D76CB5F00DDC75C /* SubscriptionTestingUtilities */,
 				84D6780B2D842DBE0030BC82 /* InlineSnapshotTesting */,
 				84494D242E18211900C9E5E8 /* NoARCObjCTestsExtensions */,
+				8448016D2E3BA42400E8A2C1 /* Clocks */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 3706FE99293F661700E42796 /* Unit Tests App Store.xctest */;
@@ -11094,6 +11152,7 @@
 				F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */,
 				4B9EE3732D76CB6D00DDC75C /* Common */,
 				84494D262E18211D00C9E5E8 /* NoARCObjCTestsExtensions */,
+				8448016F2E3BA42800E8A2C1 /* Clocks */,
 			);
 			productName = "Integration Tests";
 			productReference = 3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */;
@@ -11143,6 +11202,7 @@
 				4B9EE36B2D76CB3800DDC75C /* PixelKitTestingUtilities */,
 				4B9EE36D2D76CB4000DDC75C /* Common */,
 				84494D222E18211500C9E5E8 /* NoARCObjCTestsExtensions */,
+				8448016B2E3BA41F00E8A2C1 /* Clocks */,
 			);
 			productName = "Integration Tests";
 			productReference = 4B1AD89D25FC27E200261379 /* Integration Tests.xctest */;
@@ -11476,10 +11536,12 @@
 				AA585D7C248FD31100E9A3E2 /* Resources */,
 				B6F2C8722A7A4C7D000498CF /* Make /Applications symlink, remove app on Clean build */,
 				4B2D065D2A11D2AE00DE1F49 /* Embed Login Items */,
+				844801732E3CA1AD00E8A2C1 /* Embed tests-server in DEBUG */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				844801722E3CA18C00E8A2C1 /* PBXTargetDependency */,
 				84F0B5C32E1409000026F17F /* PBXTargetDependency */,
 				8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */,
 				7BC3E42F2D6DF1F6009787CD /* PBXTargetDependency */,
@@ -11576,6 +11638,7 @@
 				4B9EE3692D76CB2300DDC75C /* PixelKitTestingUtilities */,
 				84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */,
 				84494D202E18211200C9E5E8 /* NoARCObjCTestsExtensions */,
+				844801692E3BA41A00E8A2C1 /* Clocks */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = AA585D90248FD31400E9A3E2 /* Unit Tests.xctest */;
@@ -11723,6 +11786,7 @@
 				84C176372DF02556001DEEC7 /* XCLocalSwiftPackageReference "LocalPackages/CommonObjCExtensions" */,
 				84C1764C2DF044D5001DEEC7 /* XCLocalSwiftPackageReference "LocalPackages/LetsMove" */,
 				84494D1E2E18204400C9E5E8 /* XCLocalSwiftPackageReference "LocalPackages/ObjCTestsExtensions" */,
+				844801682E3BA41000E8A2C1 /* XCRemoteSwiftPackageReference "swift-clocks" */,
 			);
 			productRefGroup = AA585D7F248FD31100E9A3E2 /* Products */;
 			projectDirPath = "";
@@ -12314,6 +12378,25 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ \"${CONFIGURATION}\" != \"Debug\" ]]; then\n    # run only for Debug builds\n    exit 0\nfi\n\n# if Xcode created real Applications directory inside BUILT_PRODUCTS_DIR \nif [[ ! -L ${BUILT_PRODUCTS_DIR}/Applications ]]; then\n    # we only get here on clean build, remove an existing app in /Applications/DEBUG on clean build\n    echo \"rm -rf /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    rm -rf \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # create /Applications/DEBUG dir\n    echo \"mkdir -p /${INSTALL_PATH}\"\n    mkdir -p \"/${INSTALL_PATH}\"\n\n    # move the app bundle to /Applications/DEBUG\n    echo \"mv ${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    mv \"${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app\" \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # rm ${BUILT_PRODUCTS_DIR}/Applications directory created by Xcode\n    echo \"rm -rf ${BUILT_PRODUCTS_DIR}/Applications\" \n    rm -rf \"${BUILT_PRODUCTS_DIR}/Applications\"\n    # create ${BUILT_PRODUCTS_DIR}/Applications symlink to /Applications\n    echo \"ln -s /Applications ${BUILT_PRODUCTS_DIR}/Applications\"\n    ln -s /Applications \"${BUILT_PRODUCTS_DIR}/Applications\"\nelse\n    echo \"/Applications symlink 👌\"\nfi\n";
 		};
+		844801732E3CA1AD00E8A2C1 /* Embed tests-server in DEBUG */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed tests-server in DEBUG";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$CONFIGURATION\" != \"Debug\" ] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then exit 0; fi\n\necho \"ditto ${BUILT_PRODUCTS_DIR}/tests-server ${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Resources/tests-server\"\nditto \"${BUILT_PRODUCTS_DIR}/tests-server\" \"${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Resources/tests-server\" || exit 1\n";
+		};
 		B6AEB5532BA3029B00781A09 /* Cleanup entitlements */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -12568,6 +12651,7 @@
 				BB0DA4E32DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */,
 				1DDC84FC2B8356CE00670238 /* PreferencesDefaultBrowserView.swift in Sources */,
 				3706FAC8293F65D500E42796 /* AppTrackerDataSetProvider.swift in Sources */,
+				84D0B9852E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */,
 				3706FAC9293F65D500E42796 /* EncryptionKeyGeneration.swift in Sources */,
 				C1CE846A2C887CF60068913B /* FreemiumDBPScanResultPolling.swift in Sources */,
 				3706FACA293F65D500E42796 /* TabLazyLoader.swift in Sources */,
@@ -12850,6 +12934,7 @@
 				3706FB6C293F65D500E42796 /* FaviconStore.swift in Sources */,
 				3706FB6D293F65D500E42796 /* SuggestionListCharacteristics.swift in Sources */,
 				84DDB90B2C92B66E008C997B /* WKVisitedLinkStoreWrapper.swift in Sources */,
+				844801752E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */,
 				84B9BDBF2E2A94830068927C /* TabBarView.swift in Sources */,
 				F1C70D7A2BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift in Sources */,
 				377D801F2AB48191002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */,
@@ -13172,6 +13257,7 @@
 				3706FC0A293F65D500E42796 /* BookmarkManagedObject.swift in Sources */,
 				37DF37092CF38CD7005ED34B /* PrivacyStatsDatabase.swift in Sources */,
 				B6ABC5972B4861D4008343B9 /* FocusableTextField.swift in Sources */,
+				8448015A2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */,
 				3706FC0B293F65D500E42796 /* CSVLoginExporter.swift in Sources */,
 				37197EAC294244D600394917 /* FutureExtension.swift in Sources */,
 				4B9DB0452A983B24000927DB /* WaitlistModalViewController.swift in Sources */,
@@ -13468,6 +13554,7 @@
 				CD3301312C89B602009AA127 /* ErrorPageHTMLFactoryTests.swift in Sources */,
 				560C6ED12CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */,
 				3706FDDD293F661700E42796 /* StatisticsLoaderTests.swift in Sources */,
+				8448015F2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */,
 				3706FDDE293F661700E42796 /* SuggestionViewModelTests.swift in Sources */,
 				3706FDDF293F661700E42796 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				3706FDE0293F661700E42796 /* TabIndexTests.swift in Sources */,
@@ -13588,6 +13675,7 @@
 				56B234C02A84EFD800F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */,
 				3706FE19293F661700E42796 /* DeviceAuthenticatorTests.swift in Sources */,
 				3706FE1A293F661700E42796 /* BrowserProfileTests.swift in Sources */,
+				844801622E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */,
 				560C6ED72CCA5CE100D411E2 /* FindInView.swift in Sources */,
 				1D7694002BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */,
 				3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */,
@@ -13907,6 +13995,7 @@
 				560C6ED92CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8B29B1CAC0007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
 				3706FEA4293F662100E42796 /* CoreDataTestUtilities.swift in Sources */,
+				844801642E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */,
 				847873DF2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */,
 				8434E6BD2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
 				84524C092D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
@@ -13933,6 +14022,7 @@
 				B693766F2B6B5F27005BD9D4 /* ErrorPageTests.swift in Sources */,
 				8434E6B82DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054362C205820007D8FAB /* OnboardingPageTests.swift in Sources */,
+				844801672E3B907200E8A2C1 /* GeolocationServiceMock.swift in Sources */,
 				8434E6AD2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
 				84524C042D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */,
 			);
@@ -13977,6 +14067,7 @@
 				845063512DB76F9E00A60B56 /* WindowManagerStateRestorationTests.swift in Sources */,
 				560C6ED82CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8A29B1CABF007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
+				844801652E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */,
 				847873DE2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */,
 				8434E6BC2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
 				84524C082D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
@@ -14003,6 +14094,7 @@
 				B693766E2B6B5F27005BD9D4 /* ErrorPageTests.swift in Sources */,
 				8434E6B72DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054352C20581F007D8FAB /* OnboardingPageTests.swift in Sources */,
+				844801662E3B907200E8A2C1 /* GeolocationServiceMock.swift in Sources */,
 				8434E6AC2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
 				84524C032D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */,
 			);
@@ -14730,6 +14822,7 @@
 				4B9292D42667123700AD2C21 /* BookmarkListViewController.swift in Sources */,
 				BD88A83E2C4F3E4300460A26 /* FeedbackCategoryProviding.swift in Sources */,
 				BBFD526E2E12FB930043B00C /* VisualizeFireAnimationDecider.swift in Sources */,
+				8448015B2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */,
 				9F56CFB12B843F6C00BB7F11 /* BookmarksDialogViewFactory.swift in Sources */,
 				F1FD5B672C2B0AAA0040FA0D /* SubscriptionPagesUseSubscriptionFeature.swift in Sources */,
 				372042D42DF9B0AD00CE099A /* InternalFeedbackFormTabExtension.swift in Sources */,
@@ -15012,6 +15105,7 @@
 				B6C0B23426E71BCD0031CB7F /* Downloads.xcdatamodeld in Sources */,
 				37EE55E92D5F197300D53C7C /* BadgeAnimationView.swift in Sources */,
 				37EE55EA2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */,
+				844801762E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */,
 				37EE55EB2D5F197300D53C7C /* CookieManagedNotificationContainerView.swift in Sources */,
 				37EE55EC2D5F197300D53C7C /* CookieManagedNotificationView.swift in Sources */,
 				37EE55ED2D5F197300D53C7C /* CookieNotificationAnimationModel.swift in Sources */,
@@ -15153,6 +15247,7 @@
 				B693955226F04BEB0015B914 /* LongPressButton.swift in Sources */,
 				B6085D062743905F00A9C456 /* CoreDataStore.swift in Sources */,
 				B6DB3AF6278EA0130024C5C4 /* BundleExtension.swift in Sources */,
+				84D0B9842E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */,
 				4B0511E1262CAA8600F6079C /* NSOpenPanelExtensions.swift in Sources */,
 				AAE99B8927088A19008B6BD9 /* FirePopover.swift in Sources */,
 				8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */,
@@ -15584,6 +15679,7 @@
 				56504F102E0D9A8C00333A1E /* MockSubscriptionTabsShowing.swift in Sources */,
 				37AA017F2E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
 				AAE39D1B24F44885008EF28B /* TabCollectionViewModelDelegateMock.swift in Sources */,
+				844801612E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */,
 				9F0A2CF82B96A58600C5B8C0 /* BaseBookmarkEntityTests.swift in Sources */,
 				373A1AAA283ED86C00586521 /* BookmarksHTMLReaderTests.swift in Sources */,
 				317295D42AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */,
@@ -15654,6 +15750,7 @@
 				4BBF0925283083EC00EE1418 /* FileSystemDSLTests.swift in Sources */,
 				4B11060A25903EAC0039B979 /* CoreDataEncryptionTests.swift in Sources */,
 				3767319E2C7F416000EB097B /* CustomBackgroundTests.swift in Sources */,
+				8448015E2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */,
 				B603971029B9D67E00902A34 /* PublishersExtensions.swift in Sources */,
 				9F26060E2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */,
 				37DB56F22C3B36B80093D4DC /* RemoteMessagingClientTests.swift in Sources */,
@@ -15879,6 +15976,11 @@
 		8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 8417B7CE2D958D5E00C0A379 /* InputFilesChecker */;
+		};
+		844801722E3CA18C00E8A2C1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B6EC37E729B5DA2A001ACE79 /* tests-server */;
+			targetProxy = 844801712E3CA18C00E8A2C1 /* PBXContainerItemProxy */;
 		};
 		84F0B5C32E1409000026F17F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -17039,6 +17141,14 @@
 				version = 1.1.3;
 			};
 		};
+		844801682E3BA41000E8A2C1 /* XCRemoteSwiftPackageReference "swift-clocks" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-clocks.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.6;
+			};
+		};
 		9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/airbnb/lottie-spm.git";
@@ -17852,6 +17962,26 @@
 		8417B7CE2D958D5E00C0A379 /* InputFilesChecker */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = "plugin:InputFilesChecker";
+		};
+		844801692E3BA41A00E8A2C1 /* Clocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 844801682E3BA41000E8A2C1 /* XCRemoteSwiftPackageReference "swift-clocks" */;
+			productName = Clocks;
+		};
+		8448016B2E3BA41F00E8A2C1 /* Clocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 844801682E3BA41000E8A2C1 /* XCRemoteSwiftPackageReference "swift-clocks" */;
+			productName = Clocks;
+		};
+		8448016D2E3BA42400E8A2C1 /* Clocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 844801682E3BA41000E8A2C1 /* XCRemoteSwiftPackageReference "swift-clocks" */;
+			productName = Clocks;
+		};
+		8448016F2E3BA42800E8A2C1 /* Clocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 844801682E3BA41000E8A2C1 /* XCRemoteSwiftPackageReference "swift-clocks" */;
+			productName = Clocks;
 		};
 		84494D202E18211200C9E5E8 /* NoARCObjCTestsExtensions */ = {
 			isa = XCSwiftPackageProductDependency;

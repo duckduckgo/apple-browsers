@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN deconectat din cauza expirării abonamentului. Abonează-te la Privacy Pro pentru a reconecta DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "VPN deconectat din cauza expirării abonamentului. Abonează-te la DuckDuckGo pentru a reconecta VPN-ul.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN nu a reușit să se conecteze. Încearcă din nou mai târziu.";

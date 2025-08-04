@@ -51,6 +51,12 @@ public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtec
 
 public final class DataBrokerProtectionEventPixels {
 
+    enum Consts {
+        static let orphanedSessionThreshold: TimeInterval = .hours(1)
+        static let minimumValidDurationMs: Double = 0
+        static let maximumValidDurationMs: Double = TimeInterval.day * 1000.0
+    }
+
     private let database: DataBrokerProtectionRepository
     private let repository: DataBrokerProtectionEventPixelsRepository
     private let handler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -68,6 +74,10 @@ public final class DataBrokerProtectionEventPixels {
         if shouldWeFireWeeklyPixel() {
             fireWeeklyReportPixels()
             repository.markWeeklyPixelSent()
+
+            #if os(iOS)
+            cleanupOldBackgroundTaskSessions()
+            #endif
         }
     }
 
@@ -87,7 +97,7 @@ public final class DataBrokerProtectionEventPixels {
         return didWeekPassedBetweenDates(start: lastPixelFiredDate, end: Date())
     }
 
-    private func fireWeeklyReportPixels() {
+    public func fireWeeklyReportPixels() {
         let data: [BrokerProfileQueryData]
 
         do {
@@ -132,7 +142,65 @@ public final class DataBrokerProtectionEventPixels {
         handler.fire(.weeklyReportRemovals(removals: removalsInTheLastWeek))
 
         fireWeeklyChildBrokerOrphanedOptOutsPixels(for: data)
+
+        #if os(iOS)
+        fireBackgroundTaskSessionMetrics()
+        #endif
     }
+
+    #if os(iOS)
+    private func fireBackgroundTaskSessionMetrics() {
+        do {
+            let events = try database.fetchBackgroundTaskEvents(since: .daysAgo(7))
+
+            // Group events by sessionId to calculate metrics
+            let sessionGroups = Dictionary(grouping: events, by: \.sessionId)
+
+            var startedCount = 0
+            var orphanedCount = 0
+            var completedCount = 0
+            var terminatedCount = 0
+            var durations: [Double] = []
+
+            for (_, sessionEvents) in sessionGroups where sessionEvents[.started] != nil {
+                startedCount += 1
+
+                if let endEvent = sessionEvents[.completed] ?? sessionEvents[.terminated] {
+                    if endEvent.eventType == .completed {
+                        completedCount += 1
+                    } else {
+                        terminatedCount += 1
+                    }
+
+                    // Exclude invalid durations (negative) & outliers (session lasting more than a day)
+                    if let durationMs = endEvent.metadata?.duration, durationMs > Consts.minimumValidDurationMs, durationMs < Consts.maximumValidDurationMs {
+                        durations.append(durationMs)
+                    }
+                } else if let startEvent = sessionEvents[.started],
+                          Date().timeIntervalSince(startEvent.timestamp) > Consts.orphanedSessionThreshold {
+                    // Consider orphaned if the session started more than the threshold
+                    orphanedCount += 1
+                }
+            }
+
+            let durationMinMs = durations.min() ?? 0
+            let durationMaxMs = durations.max() ?? 0
+            let durationMedianMs = durations.median()
+
+            handler.fire(.weeklyReportBackgroundTaskSession(
+                started: startedCount,
+                orphaned: orphanedCount,
+                completed: completedCount,
+                terminated: terminatedCount,
+                durationMinMs: Double(durationMinMs),
+                durationMaxMs: Double(durationMaxMs),
+                durationMedianMs: durationMedianMs
+            ))
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to fetch background task events: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+    #endif
 
     private func hadScanThisWeek(_ brokerProfileQuery: BrokerProfileQueryData) -> Bool {
         return brokerProfileQuery.scanJobData.historyEvents.contains { historyEvent in
@@ -149,6 +217,17 @@ public final class DataBrokerProtectionEventPixels {
             return false
         }
     }
+
+    #if os(iOS)
+    private func cleanupOldBackgroundTaskSessions() {
+        do {
+            try database.deleteBackgroundTaskEvents(olderThan: .daysAgo(7))
+            Logger.dataBrokerProtection.log("Cleaned up background task events older than 7 days")
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to clean up old background task events: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+    #endif
 }
 
 // MARK: - Orphaned profiles stuff
@@ -234,6 +313,21 @@ private extension Int {
             return "75-100"
         } else {
             return "error"
+        }
+    }
+}
+
+private extension Array where Element == Double {
+    func median() -> Double {
+        guard !isEmpty else { return 0 }
+
+        let sorted = self.sorted()
+        let count = sorted.count
+
+        if count % 2 == 0 {
+            return Double((sorted[count / 2 - 1] + sorted[count / 2]) / 2)
+        } else {
+            return Double(sorted[count / 2])
         }
     }
 }

@@ -37,21 +37,17 @@ class SwitchBarTextEntryView: UIView {
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
-
-        // Button view
-        static let buttonViewTrailingOffset: CGFloat = -12
-        static let textButtonSpacing: CGFloat = -10
-
-        // Animation
-        static let animationDuration: TimeInterval = 0.2
     }
 
     private let handler: SwitchBarHandling
 
-    private let textView = UITextView()
+    private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
-    private var buttonsHostingController: UIHostingController<SwitchBarButtonsView>?
-    private var currentButtonState: SwitchBarButtonState = .noButtons
+    private var buttonsView = SwitchBarButtonsView()
+    private var currentButtonState: SwitchBarButtonState {
+        get { buttonsView.buttonState }
+        set { buttonsView.buttonState = newValue }
+    }
 
     private var currentMode: TextEntryMode {
         handler.currentToggleState
@@ -59,8 +55,18 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
+
+    var hasBeenTouched = false
+    var isURL: Bool {
+        // TODO some kind of text length check?
+        URL(string: textView.text)?.navigationalScheme != nil
+    }
+
+    var isExpandable: Bool = false {
+        didSet {
+            updateTextViewHeight()
+        }
+    }
 
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
@@ -78,77 +84,70 @@ class SwitchBarTextEntryView: UIView {
     private func setupView() {
         textView.font = UIFont.systemFont(ofSize: Constants.fontSize)
         textView.backgroundColor = UIColor.clear
+        textView.tintColor = UIColor(designSystemColor: .accent)
+        textView.textColor = UIColor(designSystemColor: .textPrimary)
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
-        textView.textContainerInset = UIEdgeInsets(top: Constants.textTopInset,
-                                                   left: Constants.textHorizontalInset,
-                                                   bottom: Constants.textBottomInset,
-                                                   right: 0)
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
-        placeholderLabel.textColor = UIColor.placeholderText
-        placeholderLabel.numberOfLines = 0
+        placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
+
+        // Truncate text in case it exceeds single line
+        placeholderLabel.numberOfLines = 1
 
         setupButtonsView()
 
         addSubview(textView)
         addSubview(placeholderLabel)
+        addSubview(buttonsView)
 
+        buttonsView.translatesAutoresizingMaskIntoConstraints = false
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
         heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
 
-        // Create both trailing constraints for textView
-        textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
-
         setupConstraints()
 
         updateButtonState()
         updateForCurrentMode()
         updateTextViewHeight()
+
+        textView.onTouchesBeganHandler = self.onTextViewTouchesBegan
     }
 
     // MARK: - Setup Methods
 
+    private func onTextViewTouchesBegan() {
+        textView.onTouchesBeganHandler = nil
+        hasBeenTouched = true
+        updateTextViewHeight()
+    }
+
     private func setupButtonsView() {
-        let buttonsView = SwitchBarButtonsView(
-            buttonState: currentButtonState,
-            onClearTapped: { [weak self] in
-                self?.handler.clearText()
-            }
-        )
-
-        let hostingController = UIHostingController(rootView: buttonsView)
-        hostingController.view.backgroundColor = .clear
-        buttonsHostingController = hostingController
-
-        addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        buttonsView.onClearTapped = { [weak self] in
+            self?.handler.clearText()
+        }
     }
 
     private func setupConstraints() {
-        guard let buttonsView = buttonsHostingController?.view else { return }
-
-        textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor, constant: Constants.textButtonSpacing)
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
             textView.leadingAnchor.constraint(equalTo: leadingAnchor),
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonViewTrailingOffset),
-            buttonsView.heightAnchor.constraint(equalToConstant: 24),
-            buttonsView.widthAnchor.constraint(lessThanOrEqualToConstant: 24)
+            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
     }
 
@@ -157,14 +156,14 @@ class SwitchBarTextEntryView: UIView {
     private func updateForCurrentMode() {
         switch currentMode {
         case .search:
-            placeholderLabel.text = "Search..."
+            placeholderLabel.text = UserText.searchInputFieldPlaceholderSearchWeb
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none
             textView.autocorrectionType = .no
             textView.spellCheckingType = .no
         case .aiChat:
-            placeholderLabel.text = "Ask..."
+            placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.keyboardType = .default
             textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences
@@ -172,7 +171,6 @@ class SwitchBarTextEntryView: UIView {
             textView.spellCheckingType = .default
         }
 
-        textView.reloadInputViews()
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
@@ -194,55 +192,72 @@ class SwitchBarTextEntryView: UIView {
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
-            updateButtonsView()
-            updateConstraintsForButtonVisibility()
+            adjustTextViewContentInset()
         }
     }
 
-    private func updateButtonsView() {
-        let buttonsView = SwitchBarButtonsView(
-            buttonState: currentButtonState,
-            onClearTapped: { [weak self] in
-                self?.handler.clearText()
-            }
+    private func adjustTextViewContentInset() {
+        let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
+
+        // Use default inset or the amount of how buttons interset with the view + required spacing
+        let rightInset = currentButtonState.showsClearButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+
+        textView.textContainerInset = UIEdgeInsets(
+            top: Constants.textTopInset,
+            left: Constants.textHorizontalInset,
+            bottom: Constants.textBottomInset,
+            right: rightInset
         )
-
-        buttonsHostingController?.rootView = buttonsView
-
-        if let hostingView = buttonsHostingController?.view {
-            hostingView.invalidateIntrinsicContentSize()
-        }
     }
 
-    private func updateConstraintsForButtonVisibility() {
-        if currentButtonState.showsClearButton {
-            textViewTrailingConstraint?.isActive = false
-            textViewTrailingConstraintWithButtons?.isActive = true
-        } else {
-            textViewTrailingConstraintWithButtons?.isActive = false
-            textViewTrailingConstraint?.isActive = true
-        }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        adjustTextViewContentInset()
     }
 
     private func updateTextViewHeight() {
-        let size = textView.sizeThatFits(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
-        let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
-        heightConstraint?.constant = newHeight
-
+        let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
         let contentExceedsMaxHeight = size.height > Constants.maxHeight
-        textView.isScrollEnabled = contentExceedsMaxHeight
-        textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
+
+        // Reset defaults
+        textView.textContainer.lineBreakMode = .byWordWrapping
+
+        if !hasBeenTouched && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+            heightConstraint?.constant = Constants.minHeight
+            textView.isScrollEnabled = false
+            textView.showsVerticalScrollIndicator = false
+            textView.textContainer.lineBreakMode = .byTruncatingTail
+        } else if isExpandable {
+            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
+
+            heightConstraint?.constant = newHeight
+
+            textView.isScrollEnabled = contentExceedsMaxHeight
+            textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
+        } else {
+            heightConstraint?.constant = Constants.minHeight
+            textView.isScrollEnabled = true
+            textView.showsVerticalScrollIndicator = true
+            return
+        }
 
         if contentExceedsMaxHeight {
-            let bottom = NSRange(location: textView.text.count, length: 0)
-            textView.scrollRangeToVisible(bottom)
+            let range: NSRange
+            if textView.selectedRange.length > 0 && isExpandable {
+                range = NSRange(location: textView.text.count, length: 0)
+            } else {
+                range = NSRange(location: 0, length: 0)
+            }
+            textView.scrollRangeToVisible(range)
         }
     }
 
     private func setupSubscriptions() {
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateForCurrentMode()
             }
@@ -250,6 +265,7 @@ class SwitchBarTextEntryView: UIView {
 
         handler.currentTextPublisher
             .receive(on: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] text in
                 guard let self = self else { return }
 
@@ -286,6 +302,8 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
+
+        textView.reloadInputViews()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

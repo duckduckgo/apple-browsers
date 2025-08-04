@@ -17,10 +17,11 @@
 //
 
 import Foundation
+import Sparkle
 
-/// Actor responsible for managing update check state and task coordination.
+/// Actor responsible for managing update check state and rate limiting.
 ///
-/// Handles rate limiting, task lifecycle management, and prevents concurrent update checks.
+/// Handles rate limiting to prevent concurrent update checks.
 /// Each UpdateController instance has its own UpdateCheckState for isolated state management.
 /// 
 actor UpdateCheckState {
@@ -28,18 +29,19 @@ actor UpdateCheckState {
     /// Default minimum interval between update checks
     static let defaultMinimumCheckInterval: TimeInterval = .minutes(5)
 
-    private var activeUpdateTask: Task<Void, Never>?
     private var lastUpdateCheckTime: Date?
 
     /// Determines whether a new update check can be started.
     ///
-    /// - Parameter minimumInterval: Minimum time interval that must pass between checks.
-    ///   Defaults to `UpdateCheckState.defaultMinimumCheckInterval`.
-    /// - Returns: `true` if no task is active and enough time has passed since the last check, `false` otherwise.
+    /// - Parameters:
+    ///   - updater: The SPUUpdater instance to check for availability
+    ///   - minimumInterval: Minimum time interval that must pass between checks.
+    ///     Defaults to `UpdateCheckState.defaultMinimumCheckInterval`.
+    /// - Returns: `true` if Sparkle allows checks and enough time has passed since the last check, `false` otherwise.
     ///
-    func canStartNewCheck(minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
-        // Check if there's an active task
-        if let task = activeUpdateTask, !task.isCancelled {
+    func canStartNewCheck(updater: SPUUpdater?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
+        // Check if Sparkle allows checking for updates
+        if let updater = updater, !updater.canCheckForUpdates {
             return false
         }
 
@@ -50,24 +52,6 @@ actor UpdateCheckState {
         }
 
         return true
-    }
-
-    /// Cancels any currently active update task.
-    ///
-    /// This method immediately cancels the active task and clears the task reference.
-    /// Used when user-initiated update checks need to take priority over automatic checks.
-    ///
-    internal func cancelActiveTask() {
-        activeUpdateTask?.cancel()
-        activeUpdateTask = nil
-    }
-
-    /// Sets or clears the currently active update task.
-    ///
-    /// - Parameter task: The task to track as active, or `nil` to clear the active task.
-    ///
-    internal func setActiveTask(_ task: Task<Void, Never>?) {
-        activeUpdateTask = task
     }
 
     /// Records the current time as the last update check time.

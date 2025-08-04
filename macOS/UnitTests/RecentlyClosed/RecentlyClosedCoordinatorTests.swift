@@ -105,6 +105,18 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
     func register(_ windowController: MainWindowController) {}
     func unregister(_ windowController: MainWindowController) {}
 
+    var customAllTabCollectionViewModels: [TabCollectionViewModel]?
+    var allTabCollectionViewModels: [TabCollectionViewModel] {
+        if let customAllTabCollectionViewModels {
+            return customAllTabCollectionViewModels
+        } else {
+            // The default implementation
+            return mainWindowControllers.map {
+                $0.mainViewController.tabCollectionViewModel
+            }
+        }
+    }
+
     var lastKeyMainWindowController: MainWindowController?
 
     struct ShowArgs: Equatable {
@@ -125,7 +137,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
     }
     var openNewWindowCalled: OpenNewWindowArgs?
     @discardableResult
-    func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> DuckDuckGo_Privacy_Browser.MainWindow? {
+    func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
         openNewWindowCalled = .init(contents: tabCollectionViewModel?.tabs.map(\.content), burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: isMiniaturized, isMaximized: isMaximized, isFullscreen: isFullscreen)
         return nil
     }

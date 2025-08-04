@@ -30,11 +30,12 @@ import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
+import SystemSettingsPiPTutorialTestSupport
 
 // swiftlint:disable force_try
 
-@MainActor
-final class OnboardingDaxFavouritesTests: XCTestCase {
+ @MainActor
+ final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
     private var tutorialSettingsMock: MockTutorialSettings!
     private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
@@ -76,7 +77,6 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         let fireproofing = MockFireproofing()
         let textZoomCoordinator = MockTextZoomCoordinator()
-        let subscriptionCookieManager = SubscriptionCookieManagerMock()
         let privacyProDataReporter = MockPrivacyProDataReporter()
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
@@ -98,7 +98,6 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
                                     onboardingPixelReporter: onboardingPixelReporter,
                                     featureFlagger: featureFlagger,
                                     contentScopeExperimentManager: MockContentScopeExperimentManager(),
-                                    subscriptionCookieManager: subscriptionCookieManager,
                                     appSettings: AppDependencyProvider.shared.appSettings,
                                     textZoomCoordinator: textZoomCoordinator,
                                     websiteDataManager: mockWebsiteDataManager,
@@ -128,14 +127,14 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             featureFlagger: featureFlagger,
             contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: fireproofing,
-            subscriptionCookieManager: subscriptionCookieManager,
             textZoomCoordinator: textZoomCoordinator,
             websiteDataManager: mockWebsiteDataManager,
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             themeManager: MockThemeManager(),
-            keyValueStore: keyValueStore
+            keyValueStore: keyValueStore,
+            systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -148,12 +147,12 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testWhenMakeOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
+    func testWhenMarkOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
         // GIVEN
         XCTAssertFalse(tutorialSettingsMock.hasSeenOnboarding)
 
         // WHEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        sut.markOnboardingSeen()
 
         // THEN
         XCTAssertTrue(tutorialSettingsMock.hasSeenOnboarding)

@@ -39,6 +39,20 @@ class ContextualDialogsManagerTests {
         XCTAssertEqual(manager.state, .onboardingCompleted)
     }
 
+    @Test("Contextual onboarding completion is published")
+    func testContextualOnboardingCompletedPublisher() {
+        // Given
+        XCTAssertTrue(manager.isContextualOnboardingCompleted)
+
+        // When
+        manager.state = .ongoing
+        XCTAssertFalse(manager.isContextualOnboardingCompleted)
+        manager.state = .onboardingCompleted
+
+        // Then
+        XCTAssertTrue(manager.isContextualOnboardingCompleted)
+    }
+
     // MARK: - NewTab
 
     @Test("The first time New Tab is shown will show tryASearch dialog")

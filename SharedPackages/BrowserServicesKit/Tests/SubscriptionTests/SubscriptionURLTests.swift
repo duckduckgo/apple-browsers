@@ -212,4 +212,84 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertNotNil(components)
         XCTAssertEqual(components?.url, expectedURL)
     }
+
+    func testPurchaseURLComponentsWithOriginAndFeaturePageForProduction() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let featurePage = "duckai"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios&featurePage=duckai")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin, featurePage: featurePage, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithOriginAndFeaturePageForStaging() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let featurePage = "duckai"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging&origin=funnel_appsettings_ios&featurePage=duckai")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin, featurePage: featurePage, environment: .staging)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithNilOriginAndFeaturePage() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil, featurePage: nil, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithOnlyFeaturePage() throws {
+        // Given
+        let featurePage = "duckai"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?featurePage=duckai")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: nil, featurePage: featurePage, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithOnlyOrigin() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin, featurePage: nil, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithEmptyOriginAndFeaturePage() throws {
+        // Given
+        let origin = ""
+        let featurePage = ""
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=&featurePage=")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin, featurePage: featurePage, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
 }

@@ -17,6 +17,7 @@
 //
 
 import WebKit
+import Combine
 import Common
 
 public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
@@ -26,21 +27,34 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case setConfig = "omnibar_setConfig"
         case getSuggestions = "omnibar_getSuggestions"
         case submitSearch = "omnibar_submitSearch"
+        case onConfigUpdate = "omnibar_onConfigUpdate"
         case openSuggestion = "omnibar_openSuggestion"
         case submitChat = "omnibar_submitChat"
     }
 
-    private let modeProvider: NewTabPageOmnibarModeProviding
+    private let configProvider: NewTabPageOmnibarConfigProviding
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
     private let actionHandler: NewTabPageOmnibarActionsHandling
+    private var cancellables = Set<AnyCancellable>()
 
-    public init(modeProvider: NewTabPageOmnibarModeProviding,
+    public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 actionHandler: NewTabPageOmnibarActionsHandling) {
-        self.modeProvider = modeProvider
+        self.configProvider = configProvider
         self.suggestionsProvider = suggestionsProvider
         self.actionHandler = actionHandler
         super.init()
+
+        Publishers.Merge(
+            configProvider.isAIChatShortcutEnabledPublisher,
+            configProvider.isAIChatSettingVisiblePublisher
+        )
+        .sink { [weak self] _ in
+            Task { @MainActor in
+                self?.notifyAIChatShortcutUpdated()
+            }
+        }
+        .store(in: &cancellables)
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -54,9 +68,13 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         ])
     }
 
+    @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let mode = await modeProvider.mode
-        return NewTabPageDataModel.OmnibarConfig(mode: mode)
+        NewTabPageDataModel.OmnibarConfig(
+            mode: configProvider.mode,
+            enableAi: configProvider.isAIChatShortcutEnabled,
+            showAiSetting: configProvider.isAIChatSettingVisible
+        )
     }
 
     @MainActor
@@ -64,8 +82,19 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let config: NewTabPageDataModel.OmnibarConfig = DecodableHelper.decode(from: params) else {
             return nil
         }
-        modeProvider.mode = config.mode
+        configProvider.mode = config.mode
+        configProvider.isAIChatShortcutEnabled = config.enableAi
         return nil
+    }
+
+    @MainActor
+    private func notifyAIChatShortcutUpdated() {
+        let config = NewTabPageDataModel.OmnibarConfig(
+            mode: configProvider.mode,
+            enableAi: configProvider.isAIChatShortcutEnabled,
+            showAiSetting: configProvider.isAIChatSettingVisible
+        )
+        pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
 
     private func getSuggestions(params: Any, original: WKScriptMessage) async throws -> Encodable? {

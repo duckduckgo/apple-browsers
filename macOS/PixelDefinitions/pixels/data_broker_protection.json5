@@ -1,0 +1,110 @@
+{
+    m_mac_dbp_secure_vault_database_recreated: {
+        description: 'Fired when the DBP secure vault database has been recreated in response to SQLITE_NOTADB or SQLITE_CORRUPT errors',
+        owners: ['quanganhdo'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+        ],
+    },
+    'm_mac_dbp_optout_stage_condition-found': {
+        description: 'Fired when DBP runs a condition action and its expectation is met',
+        owners: ['samsymons', 'quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'tries',
+                description: 'The number of tries it took for the action to complete',
+                type: 'integer',
+            },
+            {
+                key: 'data_broker',
+                description: 'The name of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'duration',
+                description: 'The duration of the action execution in milliseconds',
+                type: 'number',
+            },
+        ],
+    },
+    'm_mac_dbp_optout_stage_condition-not-found': {
+        description: 'Fired when DBP runs a condition action and its expectation is not met',
+        owners: ['samsymons', 'quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'isInternalUser',
+                description: 'Whether the user is internal',
+                type: 'string',
+                enum: ['true', 'false'],
+            },
+            {
+                key: 'tries',
+                description: 'The number of tries it took for the action to complete',
+                type: 'integer',
+            },
+            {
+                key: 'data_broker',
+                description: 'The name of the data broker that this action was operating on',
+                type: 'string',
+            },
+            {
+                key: 'broker_version',
+                description: 'The version of the broker JSON file',
+                type: 'string',
+            },
+            {
+                key: 'attempt_id',
+                description: 'The ID of the opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'action_id',
+                description: 'The ID of the action, to disambiguate between multiple actions in the same opt out attempt',
+                type: 'string',
+            },
+            {
+                key: 'duration',
+                description: 'The duration of the action execution in milliseconds',
+                type: 'number',
+            },
+        ],
+    },
+}

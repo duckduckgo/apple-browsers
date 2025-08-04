@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Paieška";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Peržiūrėkite ir valdykite savo VPN ryšį. Reikalinga „Privacy Pro“ prenumerata.";
+"widget.gallery.vpn.description" = "Peržiūrėkite ir valdykite savo VPN ryšį. Reikalinga „DuckDuckGo“ prenumerata.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

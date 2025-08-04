@@ -57,4 +57,18 @@ extension XCTestCase {
         }
     }
 
+    func reportIssue(_ message: String, file: StaticString = #filePath, line: UInt = #line) {
+        guard let testRun else {
+            fatalError("testCase.testRun is nil")
+        }
+        // We're using private `_recordIssue:` to allow reporting issues after test run has finished
+        let recordIssueSelector = NSSelectorFromString("_recordIssue:")
+        let issue = XCTIssue(type: .assertionFailure, compactDescription: message, sourceCodeContext: XCTSourceCodeContext(location: XCTSourceCodeLocation(filePath: file, lineNumber: line)))
+        guard testRun.responds(to: recordIssueSelector) else {
+            record(issue)
+            return
+        }
+        testRun.perform(recordIssueSelector, with: issue)
+    }
+
 }

@@ -60,6 +60,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Füge dein Abonnement zu diesem Gerät hinzu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add your subscription to this device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento a questo dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan dit apparaat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do tego urządzenia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição a este dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте подписку на это устройство"
+          }
+        }
+      }
+    },
+    "subscription.add.subscription.modal.title.deprecated" : {
+      "comment" : "Title of a view for adding subscription to the device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Dein Privacy Pro Abonnement zu diesem Gerät hinzufügen"
           }
         },
@@ -354,6 +414,66 @@
       }
     },
     "subscription.add.via.email.description" : {
+      "comment" : "Description of option for adding subscription using email address",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verknüpfe eine E-Mail-Adresse mit deinem Abonnement, um es zu diesem Gerät hinzuzufügen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Link an email address to your subscription to add it to this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincula una dirección de correo electrónico a tu suscripción para añadirla a este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Associez une adresse e-mail à votre abonnement pour l'ajouter à cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega un indirizzo e-mail al tuo abbonamento per aggiungerlo a questo dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppel een e-mailadres aan je abonnement om het aan dit apparaat toe te voegen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz adres e-mail z subskrypcją, aby dodać ją na tym urządzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Associa um endereço de e-mail à tua subscrição para a adicionares a este dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы добавить подписку на это устройство, привяжите к ней адрес электронной почты."
+          }
+        }
+      }
+    },
+    "subscription.add.via.email.description.deprecated" : {
       "comment" : "Description of option for adding subscription using email address",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1680,6 +1800,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Dies hat zur Folge, dass du mit diesem Gerät nicht mehr auf dein DuckDuckGo-Abo zugreifen kannst. Dein Abonnement wird dadurch nicht gekündigt; es bleibt auf deinen anderen Geräten aktiv."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You will no longer be able to access your DuckDuckGo subscription on this device. This will not cancel your subscription, and it will remain active on your other devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya no podrás acceder a tu suscripción a DuckDuckGo en este dispositivo. Esto no cancelará tu suscripción, que seguirá activa en tus otros dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne pourrez plus accéder à votre abonnement DuckDuckGo sur cet appareil. Cela n'annulera pas votre abonnement et il restera actif sur vos autres appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non potrai più accedere al tuo abbonamento DuckDuckGo su questo dispositivo. Questo non annulla il tuo abbonamento, che rimane attivo sugli altri tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt niet langer toegang tot je DuckDuckGo-abonnement op dit apparaat. Je abonnement wordt niet opgezegd en het blijft actief op je andere apparaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie będziesz już mieć dostępu do subskrypcji DuckDuckGo na tym urządzeniu. Nie spowoduje to anulowania Twojej subskrypcji, która pozostanie aktywna na pozostałych urządzeniach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perderás acesso à tua subscrição da DuckDuckGo neste dispositivo. Isto não irá cancelar a tua subscrição, e ela permanecerá ativa nos teus outros dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы утратите доступ к преимуществам подписки DuckDuckGo на этом устройстве. Сама же подписка не отменяется и по-прежнему будет работать на других устройствах."
+          }
+        }
+      }
+    },
+    "subscription.dialog.remove.description.deprecated" : {
+      "comment" : "Remove subscription from device dialog subtitle description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Dies hat zur Folge, dass du mit diesem Gerät nicht mehr auf dein Privacy-Pro-Abonnement zugreifen kannst. Dein Abonnement wird dadurch nicht gekündigt; es bleibt auf deinen anderen Geräten aktiv."
           }
         },
@@ -2035,7 +2215,7 @@
     },
     "subscription.preferences.feedback.caption" : {
       "comment" : "Caption for the subscription feedback section",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2664,7 +2844,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Iscriviti a DuckDuckGo"
+            "value" : "Abbonati a DuckDuckGo"
           }
         },
         "nl" : {
@@ -3786,6 +3966,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Verwende diese E-Mail-Adresse, um dein Abonnement auf andere Geräte zu übertragen. Rufe im DuckDuckGo-Browser die Einstellungen > DuckDuckGo-Abo > Ich habe ein Abonnement auf."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use this email to add your subscription to other devices. In the DuckDuckGo browser, go to Settings > DuckDuckGo Subscription > I Have a Subscription."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa este correo electrónico para añadir tu suscripción a otros dispositivos. En el navegador DuckDuckGo, dirígete a Ajustes > Subscripción a DuckDuckGo > Tengo una suscripción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servez-vous de cet e-mail pour ajouter votre abonnement à d'autres appareils. Dans le navigateur DuckDuckGo, accédez à Réglages > Abonnement DuckDuckGo > J'ai un abonnement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa questa email per aggiungere l'abbonamento ad altri dispositivi. Nel browser DuckDuckGo, vai su Impostazioni > Abbonamento DuckDuckGo > Ho un abbonamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik dit e-mailadres om je abonnement toe te voegen aan andere apparaten. Ga in de DuckDuckGo-browser naar Instellingen > DuckDuckGo-abonnement > Ik heb een abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj tego adresu e-mail, aby dodać subskrypcję do innych urządzeń. W przeglądarce DuckDuckGo wybierz kolejno Ustawienia > Subskrypcja DuckDuckGo > Mam subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliza este e-mail para adicionar a tua subscrição a outros dispositivos. No navegador DuckDuckGo, acede a Definições > Subscrição da DuckDuckGo > Tenho uma subscrição."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Используйте этот адрес электронной почты, чтобы добавить подписку на другие устройства. Для этого в браузере DuckDuckGo откройте раздел «Настройки > Подписка DuckDuckGo > У меня уже есть подписка»."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.activate.with.email.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences activate section when email is added to subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Verwende diese E-Mail-Adresse, um dein Abonnement auf andere Geräte zu übertragen. Gehe im DuckDuckGo-Browser zu Einstellungen > Privacy Pro > Ich habe ein Abonnement."
           }
         },
@@ -4446,6 +4686,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Füge dein Abonnement über dein Apple-Konto oder durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add your subscription to your other devices via Apple Account or by linking an email."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a tus otros dispositivos mediante la cuenta de Apple o vinculando un correo electrónico."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à vos autres appareils via un compte Apple ou en associant une adresse e-mail."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento ai tuoi altri dispositivi tramite l'account Apple o collegando un'email."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan je andere apparaten via een Apple-account of door een e-mailadres te koppelen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do innych urządzeń za pośrednictwem konta Apple lub poprzez połączenie adresu e-mail."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição aos teus outros dispositivos através da Conta Apple ou associando um e-mail."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписку можно добавить на другие устройства с помощью аккаунта Apple или путем привязки адреса электронной почты."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.add.to.device.no.email.app.store.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Füge Privacy Pro über dein Apple-Konto oder durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu."
           }
         },
@@ -4500,6 +4800,66 @@
       }
     },
     "subscription.preferences.subscription.add.to.device.no.email.stripe.caption" : {
+      "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge dein Abonnement durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add your subscription to your other devices by linking an email."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a tus otros dispositivos vinculando un correo electrónico."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à vos autres appareils en associant une adresse e-mail."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento agli altri dispositivi collegando un indirizzo e-mail."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan je andere apparaten door een e-mailadres te koppelen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do innych urządzeń poprzez połączenie adresu e-mail."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição aos teus outros dispositivos associando um e-mail."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте подписку на другие устройства, привязав к ней адрес электронной почты."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.add.to.device.no.email.stripe.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4566,6 +4926,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Füge dein Abonnement zu anderen Geräten hinzu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Your Subscription to Other Devices"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a otros dispositivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à d'autres appareils"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento ad altri dispositivi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan andere apparaten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do innych urządzeń"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição a outros dispositivos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавление подписки на другие устройства"
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.add.to.device.title.deprecated" : {
+      "comment" : "Title for the subscription preferences section for adding subscription to other devices",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Privacy Pro zu anderen Geräten hinzufügen"
           }
         },
@@ -4620,6 +5040,66 @@
       }
     },
     "subscription.preferences.subscription.expired.caption" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein DuckDuckGo-Abo ist am %@ abgelaufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your DuckDuckGo subscription expired on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu suscripción a DuckDuckGo caducó el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre abonnement DuckDuckGo a expiré le %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo abbonamento DuckDuckGo è scaduto il %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je DuckDuckGo-abonnement is verlopen op %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja subskrypcja DuckDuckGo wygasła w dniu %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua subscrição da DuckDuckGo expirou a %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Срок действия вашей подписки DuckDuckGo истек %@."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.expired.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -5395,6 +5875,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Этот процесс занимает больше времени, чем обычно. Загляните сюда позже."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.rebranding.message" : {
+      "comment" : "Message informing users that Privacy Pro is now called the DuckDuckGo subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro heißt jetzt einfach DuckDuckGo-Abo."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Privacy Pro is now just called the DuckDuckGo subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro ahora se llama simplemente suscripción a DuckDuckGo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro s'appelle désormais simplement l'abonnement DuckDuckGo."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro ora si chiama semplicemente abbonamento DuckDuckGo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usługa Privacy Pro jest teraz nazywana subskrypcją DuckDuckGo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Privacy Pro agora é apenas a subscrição da DuckDuckGo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo."
           }
         }
       }

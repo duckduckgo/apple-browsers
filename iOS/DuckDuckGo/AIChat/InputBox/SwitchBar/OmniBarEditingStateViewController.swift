@@ -28,7 +28,6 @@ import Core
 import Suggestions
 import SwiftUI
 import AIChat
-import UIComponents
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
@@ -37,33 +36,25 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
-
-    func onAppear()
-    func onDismiss()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
-final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitionDelegate {
+final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitioning {
 
     // MARK: - Properties
-    
-    var textAreaView: UIView {
-        switchBarVC.textEntryViewController.textEntryView
-    }
 
-    var rootView: UIView { view }
-    var logoView: UIView? { daxLogoManager.logoView }
+    var actionBarView: UIView? { navigationActionBarManager?.view }
+
+    var suggestionTrayDependencies: SuggestionTrayDependencies?
 
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
-    var expectedStartFrame: CGRect?
-    var suggestionTrayDependencies: SuggestionTrayDependencies?
-    
+    var automaticallySelectsTextOnAppear = false
+
     // MARK: - Core Components
     
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
-    private let transitionAnimator = OmniBarEditingStateAnimator()
-    
+
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
     
@@ -85,10 +76,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -97,14 +84,21 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         setupView()
         installComponents()
         setupSubscriptions()
-        setupTransitionAnimator()
+
+        suggestionTrayManager?.showInitialSuggestions()
+
+        updateDaxVisibility()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         switchBarVC.focusTextField()
-        transitionAnimator.animateAppearance()
+        if automaticallySelectsTextOnAppear {
+            DispatchQueue.main.async {
+                self.switchBarVC.textEntryViewController.selectAllText()
+            }
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -116,35 +110,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Public Methods
     
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
-        transitionAnimator.animateDismissal {
-            DispatchQueue.main.async {
-                if self.presentingViewController != nil {
-                    self.dismiss(animated: false)
-                }
-                completion?()
-            }
-        }
-    }
-    
-    func setUpForInitialSelectedState() {
-        switchBarVC.textEntryViewController.selectAllText()
-        suggestionTrayManager?.showInitialSuggestions()
-        swipeContainerManager?.updateLayout(viewBounds: view.bounds)
-    }
-
-    func adjustForAppearance() {
-        delegate?.onAppear()
-    }
-
-    func adjustForDismissal() {
-        delegate?.onDismiss()
-    }
-
-    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-
-        coordinator.animate { _ in
-            self.swipeContainerManager?.updateLayout(viewBounds: CGRect(origin: .zero, size: size))
+        if self.presentingViewController != nil {
+            self.dismiss(animated: true, completion: completion)
         }
     }
 
@@ -163,19 +130,17 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         view.bringSubviewToFront(switchBarVC.view)
     }
-    
-    private func setupTransitionAnimator() {
-        transitionAnimator.transitionDelegate = self
-    }
 
     private func installSwitchBarVC() {
         addChild(switchBarVC)
         view.addSubview(switchBarVC.view)
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
+        switchBarVC.view.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         NSLayoutConstraint.activate([
+            switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             switchBarVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            switchBarVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         ])
 
         switchBarVC.didMove(toParent: self)
@@ -184,18 +149,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
+        manager.installInViewController(self, belowView: switchBarVC.view)
         manager.delegate = self
-        manager.installInView(view, belowView: switchBarVC.view)
         swipeContainerManager = manager
     }
 
     private func installSuggestionsTray() {
         guard let dependencies = suggestionTrayDependencies,
-              let searchContainer = swipeContainerManager?.searchPageContainer else { return }
-        
+              let swipeContainerViewController = swipeContainerManager?.swipeContainerViewController,
+              let searchContainer = swipeContainerViewController.searchPageContainer else { return }
+
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: self)
+        manager.installInContainerView(searchContainer, parentViewController: swipeContainerViewController)
         suggestionTrayManager = manager
     }
 
@@ -206,7 +172,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
-        manager.installInViewController(self, safeAreaGuide: view.safeAreaLayoutGuide)
+        manager.installInViewController(self)
         navigationActionBarManager = manager
     }
 
@@ -216,6 +182,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .sink { [weak self] currentText in
                 self?.delegate?.onQueryUpdated(currentText)
                 self?.suggestionTrayManager?.handleQueryUpdate(currentText)
+                self?.updateDaxVisibility()
             }
             .store(in: &cancellables)
 
@@ -237,8 +204,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                     self.delegate?.onQuerySubmitted(text)
 
                 case .aiChat:
-                    let tools: [AIChatRAGTool]? = self.switchBarHandler.forceWebSearch ? [.webSearch] : nil
-                    self.delegate?.onPromptSubmitted(text, tools: tools)
+                    // If we (re)add the web rag button, then we need to add it to the array of tools Duck.ai should use
+                    //  for this submission.
+                    self.delegate?.onPromptSubmitted(text, tools: nil)
                 }
             }
             .store(in: &cancellables)
@@ -261,29 +229,32 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func handleMicrophoneButtonTapped() {
         delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
     }
+
+    private func updateDaxVisibility() {
+
+        let shouldDisplaySuggestionTray = suggestionTrayManager?.shouldDisplaySuggestionTray == true
+        let shouldDisplayFavoritesOverlay = suggestionTrayManager?.shouldDisplayFavoritesOverlay == true
+
+        let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay
+        let isAIDaxVisible = !shouldDisplaySuggestionTray
+
+        daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
+    }
 }
 
 // MARK: - SwipeContainerManagerDelegate
 
-extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
+extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegate {
     
-    func swipeContainerManager(_ manager: SwipeContainerManager, didSwipeToMode mode: TextEntryMode) {
+    func swipeContainerViewController(_ controller: SwipeContainerViewController, didSwipeToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
     }
     
-    func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat) {
+    func swipeContainerViewController(_ controller: SwipeContainerViewController, didUpdateScrollProgress progress: CGFloat) {
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 
-        if let logoView {
-            if suggestionTrayManager?.isShowingSuggestionTray == true {
-                logoView.alpha = Easing.inOutCirc(progress)
-                logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
-            } else {
-                logoView.alpha = 1.0
-                logoView.transform = .identity
-            }
-        }
+        daxLogoManager.updateSwipeProgress(progress)
     }
 }
 
@@ -302,6 +273,7 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
         switchBarHandler.updateCurrentText(text)
     }
+    
 }
 
 // MARK: - NavigationActionBarManagerDelegate

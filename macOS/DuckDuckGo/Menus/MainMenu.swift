@@ -348,6 +348,7 @@ final class MainMenu: NSMenu {
             .withAccessibilityIdentifier("MainMenu.bookmarks")
             .submenu(bookmarksMenu.buildItems {
                 NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(MainViewController.bookmarkThisPage), keyEquivalent: "d")
+                    .withAccessibilityIdentifier("MainMenu.addBookmark")
                 NSMenuItem(title: UserText.bookmarkAllTabs, action: #selector(MainViewController.bookmarkAllOpenTabs), keyEquivalent: [.command, .shift, "d"])
                 manageBookmarksMenuItem
                 bookmarksMenuToggleBookmarksBarMenuItem
@@ -747,6 +748,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "VPN")
                     .submenu(NetworkProtectionDebugMenu())
             }
+
+#if DEBUG && !APPSTORE
+            NSMenuItem(title: "WiFi Hotspot Detection")
+                .submenu(HotspotDetectionDebugMenu())
+#endif
 
             if #available(macOS 13.5, *) {
                 NSMenuItem(title: "Autofill") {

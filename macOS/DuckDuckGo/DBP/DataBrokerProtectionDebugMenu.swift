@@ -55,6 +55,29 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
 
+    private lazy var eventPixels: DataBrokerProtectionEventPixels = {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: DatabaseConstants.directoryName,
+            fileName: DatabaseConstants.fileName,
+            appGroupIdentifier: Bundle.main.appGroupName
+        )
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(
+            appGroupName: Bundle.main.appGroupName,
+            databaseFileURL: databaseURL
+        )
+        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
+            fatalError("Failed to make secure storage vault for event pixels")
+        }
+        let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+        let database = DataBrokerProtectionDatabase(
+            fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+            pixelHandler: pixelHandler,
+            vault: vault,
+            localBrokerService: brokerUpdater
+        )
+        return DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
+    }()
+
     private lazy var brokerUpdater: BrokerJSONServiceProvider = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
@@ -165,6 +188,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem(title: "Force broker JSON files update", action: #selector(DataBrokerProtectionDebugMenu.forceBrokerJSONFilesUpdate))
                 .targetting(self)
+            NSMenuItem(title: "Test Firing Weekly Pixels", action: #selector(DataBrokerProtectionDebugMenu.testFireWeeklyPixels))
+                .targetting(self)
             NSMenuItem(title: "Run Personal Information Removal Debug Mode", action: #selector(DataBrokerProtectionDebugMenu.runCustomJSON))
                 .targetting(self)
             NSMenuItem(title: "Reset All State and Delete All Data", action: #selector(DataBrokerProtectionDebugMenu.deleteAllDataAndStopAgent))
@@ -222,7 +247,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
             if removeBrokers {
                 let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
-                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler)
+                let privacyConfigManager = DBPPrivacyConfigurationManager()
+                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler, privacyConfigManager: privacyConfigManager)
                 let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
                 let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
                 let vault = try! vaultFactory.makeVault(reporter: reporter)
@@ -285,17 +311,18 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func showDatabaseBrowser() {
         let viewController = DataBrokerDatabaseBrowserViewController(localBrokerService: brokerUpdater)
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1300, height: 800),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
                               defer: false)
 
         window.contentViewController = viewController
-        window.minSize = NSSize(width: 500, height: 400)
-        window.center()
+        window.minSize = NSSize(width: 1300, height: 800)
         databaseBrowserWindowController = NSWindowController(window: window)
         databaseBrowserWindowController?.showWindow(nil)
+
         window.delegate = self
+        window.center()
     }
 
     @objc private func showAgentIPAddress() {
@@ -337,6 +364,12 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         Task {
             settings.resetBrokerDeliveryData()
             try await brokerUpdater.checkForUpdates(skipsLimiter: true)
+        }
+    }
+
+    @objc private func testFireWeeklyPixels() {
+        Task { @MainActor in
+            eventPixels.fireWeeklyReportPixels()
         }
     }
 

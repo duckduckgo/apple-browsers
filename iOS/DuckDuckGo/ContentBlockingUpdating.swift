@@ -104,4 +104,9 @@ public final class ContentBlockingUpdating {
 
     }
 
+    func stopUpdates() {
+        cancellable?.cancel()
+        cancellable = nil
+    }
+
 }

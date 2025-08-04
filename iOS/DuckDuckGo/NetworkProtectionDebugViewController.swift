@@ -80,7 +80,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     enum ExtensionDebugCommandRows: Int, CaseIterable {
         case triggerTestNotification
-        case shutDown
+        case simulateSubscriptionExpirationInTunnel
         case showEntitlementMessaging
         case resetEntitlementMessaging
         case startSnooze
@@ -372,8 +372,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         switch ExtensionDebugCommandRows(rawValue: row) {
         case .triggerTestNotification:
             cell.textLabel?.text = "Test Notification"
-        case .shutDown:
-            cell.textLabel?.text = "Disable VPN From Extension"
+        case .simulateSubscriptionExpirationInTunnel:
+            cell.textLabel?.text = "Simulate Subscription Expiration In Tunnel"
         case .showEntitlementMessaging:
             cell.textLabel?.text = "Show Entitlement Messaging"
         case .resetEntitlementMessaging:
@@ -391,9 +391,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             Task {
                 try await NetworkProtectionDebugUtilities().sendTestNotificationRequest()
             }
-        case .shutDown:
+        case .simulateSubscriptionExpirationInTunnel:
             Task {
-                await NetworkProtectionDebugUtilities().disableConnectOnDemandAndShutDown()
+                await NetworkProtectionDebugUtilities().simulateSubscriptionExpirationInTunnel()
             }
         case .showEntitlementMessaging:
             UserDefaults.networkProtectionGroupDefaults.enableEntitlementMessaging()

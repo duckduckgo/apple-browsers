@@ -55,7 +55,7 @@ protocol WindowControllersManagerProtocol {
                        lazyLoadTabs: Bool,
                        isMiniaturized: Bool,
                        isMaximized: Bool,
-                       isFullscreen: Bool) -> MainWindow?
+                       isFullscreen: Bool) -> NSWindow?
 
     func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
     func showTab(with content: Tab.TabContent)
@@ -72,7 +72,7 @@ extension WindowControllersManagerProtocol {
                        contentSize: NSSize? = nil,
                        showWindow: Bool = true,
                        popUp: Bool = false,
-                       lazyLoadTabs: Bool = false) -> MainWindow? {
+                       lazyLoadTabs: Bool = false) -> NSWindow? {
         openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: false, isMaximized: false, isFullscreen: false)
     }
     func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {
@@ -487,7 +487,7 @@ extension WindowControllersManager {
                        lazyLoadTabs: Bool = false,
                        isMiniaturized: Bool = false,
                        isMaximized: Bool = false,
-                       isFullscreen: Bool = false) -> MainWindow? {
+                       isFullscreen: Bool = false) -> NSWindow? {
         return WindowsManager.openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: isMiniaturized, isMaximized: isMaximized, isFullscreen: isFullscreen)
     }
 

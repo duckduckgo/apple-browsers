@@ -38,7 +38,7 @@ jobs:
           repository: duckduckgo/internal-github-asana-utils
             
       - name: Install dependencies
-        run: npm ci --verbose
+        run: npm ci --verbose --include-workspace-root
         working-directory: ${{ matrix.platform }}
       - name: Lint
         run: npm run pixel-lint

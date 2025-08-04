@@ -71,9 +71,10 @@ struct SettingsMainSettingsView: View {
     struct SettingsViewBuilder {
 
         @ViewBuilder func buildAIFeatures(viewModel: SettingsViewModel) -> AnyView {
+            let aiSettingsImage = viewModel.isSubscriptionRebrandingEnabled ? DesignSystemImages.Color.Size24.aiGeneral : DesignSystemImages.Color.Size24.aiChat
             AnyView(NavigationLink(destination: SettingsAIFeaturesView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAiFeatures,
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat))
+                                 image: Image(uiImage: aiSettingsImage))
             })
         }
 

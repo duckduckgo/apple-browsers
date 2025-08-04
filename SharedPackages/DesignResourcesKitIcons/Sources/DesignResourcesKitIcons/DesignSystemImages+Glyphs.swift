@@ -321,6 +321,7 @@ public extension DesignSystemImages {
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft24) }
             public static var arrowLeftSmall: DesignSystemImage { .init(resource: .arrowLeftSmall24) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight24) }
+            public static var arrowRightSmall: DesignSystemImage { .init(resource: .arrowRightSmall24) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp24) }
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight24) }
             public static var assist: DesignSystemImage { .init(resource: .assist24) }

@@ -792,10 +792,7 @@ extension Pixel {
 
         case debugBreakageExperiment
 
-        case debugWebViewNotInVisibleTabHierarchy
         case debugWebViewInVisibleTabHidden
-        case debugWebViewNotAttachedToWindow
-        case debugWebViewHasZeroFrameSize
 
         // Return user measurement
         case debugReturnUserAddATB
@@ -2045,9 +2042,6 @@ extension Pixel.Event {
             // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
-        case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"
-        case .debugWebViewNotAttachedToWindow: return "m_debug_webview_not_attached_to_window"
-        case .debugWebViewHasZeroFrameSize: return "m_debug_webview_has_zero_frame_size"
 
             // MARK: Ad Attribution
 

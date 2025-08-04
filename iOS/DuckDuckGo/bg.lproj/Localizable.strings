@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Вашето докладване ни помага да направим DuckDuckGo по-добър за всички!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "JSON на брокер:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Брокер: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Брокери";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Отменянето не е позволено повече от веднъж";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Как се експортират пароли от Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Избиране на файл...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Изберете файла с паролите, експортирани от Safari или Chrome. Обикновено това е файл с формат ZIP или CSV.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Импортирането е завършено!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Кредитни карти";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Пропуснати дубликати";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Отстраняване на грешки";
+
+/* No comment provided by engineer. */
+"Delete" = "Изтриване";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "устройство";
@@ -1948,6 +1966,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Показване на всички раздели";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Зареждане на брокери...";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "DuckDuckGo за Mac притежава необходимата скорост, както и очакваните от Вас функции за сърфиране, и предлага най-добрите в този клас елементи за защита.";
 
@@ -2284,6 +2305,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "В който и да е сайт отворете менюто ••• и изберете **Добавяне към предпочитани**, за да го добавите към страницата с нов раздел.";
 
+/* No comment provided by engineer. */
+"No results found" = "Няма намерени резултати";
+
+/* No comment provided by engineer. */
+"OK" = "ОК";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Бисквитките са настроени";
 
@@ -2377,6 +2404,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Разбрах! Ще пропусна другите съвети.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Пробвайте безплатно!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo също има защитени %1$@, достъпни с %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "незадължителен платен абонамент";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + още 2 първокласни защити";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Добави приспособлението";
 
@@ -2409,6 +2448,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Не е намерено приложението, необходимо за отваряне на тази връзка";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Отписване...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Няма достъп до моделите на Duck.ai, достъпни само за абонати";
@@ -2593,6 +2635,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Икона за поверителност";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Информация за профила";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Отмени";
 
@@ -2606,6 +2651,9 @@
 "prompt.custom.url.scheme.title" = "Отваряне в друго приложение?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Роднини: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Нулиране";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2661,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Резултати";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Търсене или въвеждане на адрес";
@@ -2796,6 +2847,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Импортиране на пароли";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Нов";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
@@ -3168,6 +3222,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Възстановяване на абонамента...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Pro вече се нарича просто абонамент за DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Премахване от това устройство";
@@ -3663,6 +3720,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Продължи";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Кредитни карти";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Пароли";

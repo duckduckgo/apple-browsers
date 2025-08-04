@@ -28,7 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
-import SwiftUICore
+import SwiftUI
 
 public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
 

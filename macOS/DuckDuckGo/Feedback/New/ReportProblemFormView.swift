@@ -135,12 +135,44 @@ struct ProblemCategoriesView: View {
         .padding([.leading, .trailing, .bottom], 24)
     }
 
+    @State private var hoveredCategoryId: String?
+
+    private func shouldShowDivider(for category: ProblemCategory) -> Bool {
+        let isLastItem = category.id == viewModel.availableCategories.last?.id
+
+        if isLastItem {
+            return false
+        } else if hoveredCategoryId == category.id {
+            return false
+        } else if let previousHoveredItem = getHoveredPreviousItem {
+            return previousHoveredItem.id != category.id
+        } else {
+            return true
+        }
+    }
+
+    private var getHoveredPreviousItem: ProblemCategory? {
+        guard let hoveredCategoryId = hoveredCategoryId else {
+            return nil
+        }
+
+        let categories = Array(viewModel.availableCategories)
+
+        if let selectedIndex = categories.firstIndex(where: { $0.id == hoveredCategoryId }),
+           selectedIndex > 0 {
+            let previousItem = categories[selectedIndex - 1]
+            return previousItem
+        } else {
+            return nil
+        }
+    }
+
     private func categoriesList() -> some View {
         VStack(spacing: 0) {
-            ForEach(viewModel.availableCategories, id: \.id) { category in
+            ForEach(Array(viewModel.availableCategories.enumerated()), id: \.element.id) { _, category in
                 ProblemCategoryView(
                     category: category,
-                    shouldShowDivider: category.id != viewModel.availableCategories.last?.id,
+                    shouldShowDivider: shouldShowDivider(for: category),
                     isTopCategory: category.id == viewModel.availableCategories.first?.id,
                     isLastCategory: category.id == viewModel.availableCategories.last?.id,
                     onCategorySelected: { selectedCategory in
@@ -148,6 +180,9 @@ struct ProblemCategoriesView: View {
                         if selectedCategory.id == "brokenWebsite" {
                             onClose()
                         }
+                    },
+                    onHoverChanged: { categoryId, isHovered in
+                        hoveredCategoryId = isHovered ? categoryId : nil
                     }
                 )
             }
@@ -192,6 +227,7 @@ struct ProblemCategoryView: View {
     let isTopCategory: Bool
     let isLastCategory: Bool
     var onCategorySelected: (ProblemCategory) -> Void
+    var onHoverChanged: (String, Bool) -> Void
 
     @State private var isHovered: Bool = false
 
@@ -220,13 +256,12 @@ struct ProblemCategoryView: View {
         }
         .onHover { hovering in
             isHovered = hovering
+            onHoverChanged(category.id, hovering)
         }
 
-        if shouldShowDivider {
-            Divider()
-                .background(isHovered ? Color.clear : Color.toneShade)
-                .padding(.horizontal, 8)
-        }
+        Divider()
+            .background(shouldShowDivider ? Color.toneShade : Color.clear)
+            .padding(.horizontal, 8)
     }
 }
 

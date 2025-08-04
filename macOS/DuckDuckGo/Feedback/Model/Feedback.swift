@@ -35,5 +35,17 @@ struct Feedback {
     let comment: String
     let appVersion: String
     let osVersion: String
+    let subcategory: String
 
+    init(category: Category,
+         comment: String,
+         appVersion: String,
+         osVersion: String,
+         subcategory: String = "") {
+        self.category = category
+        self.comment = comment
+        self.appVersion = appVersion
+        self.osVersion = osVersion
+        self.subcategory = subcategory
+    }
 }

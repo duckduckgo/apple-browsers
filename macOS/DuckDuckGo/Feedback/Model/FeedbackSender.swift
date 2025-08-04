@@ -32,13 +32,17 @@ final class FeedbackSender {
 #else
         let appVersion = feedback.appVersion
 #endif
-        let parameters = [
+        var parameters = [
             "type": "app-feedback",
             "comment": feedback.comment,
             "category": feedback.category.asanaId,
             "osversion": feedback.osVersion,
-            "appversion": appVersion
+            "appversion": appVersion,
         ]
+
+        if !feedback.subcategory.isBlank {
+            parameters["subcategory"] = feedback.subcategory
+        }
 
         let configuration = APIRequest.Configuration(url: Self.feedbackURL, method: .post, queryParameters: parameters)
         let request = APIRequest(configuration: configuration, urlSession: URLSession.session())

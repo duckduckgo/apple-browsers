@@ -18,10 +18,11 @@
 
 import Combine
 import SwiftUI
+import Common
 
 final class ReportProblemFormViewModel: ObservableObject {
 
-        // MARK: - Published Properties
+    // MARK: - Published Properties
 
     @Published var showThankYou = false
     @Published var selectedProblemCategory: ProblemCategory?
@@ -30,6 +31,7 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     // MARK: - Properties
 
+    private let feedbackSender = FeedbackSender()
     let canReportBrokenSite: Bool
     private let onReportBrokenSite: (() -> Void)?
     private(set) var availableOptions: [String] = []
@@ -96,19 +98,16 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     func submitFeedback() {
         guard let category = selectedProblemCategory else { return }
+        let selectedOptionsString = selectedOptions.map { $0.toTag }.joined(separator: ",")
+        let subcategory = "\(category.name.toTag),\(selectedOptionsString)"
+        let description = customText.isEmpty ? category.name : customText
+        let feedback = Feedback(category: .bug,
+                                comment: description,
+                                appVersion: "\(AppVersion.shared.versionNumber)",
+                                osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)",
+                                subcategory: subcategory)
 
-        // Here you have access to all the feedback data:
-        // - category: ProblemCategory
-        // - selectedOptions: Set<String>
-        // - customText: String
-
-        print("Submitting feedback:")
-        print("Category: \(category.name)")
-        print("Selected options: \(selectedOptions)")
-        print("Custom text: \(customText)")
-
-        // TODO: Implement actual feedback submission logic here
-        // For example: FeedbackSubmissionService.submit(category, selectedOptions, customText)
+//         feedbackSender.sendFeedback(feedback)
 
         // Reset form state and show thank you
         selectedProblemCategory = nil
@@ -216,4 +215,13 @@ struct ProblemCategory: Identifiable, Hashable {
             ]
         )
     ]
+}
+
+extension String {
+    var toTag: String {
+        self
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
+    }
 }

@@ -27,7 +27,6 @@ protocol LogViewerDataSourceDelegate: AnyObject {
     func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateLoadingState isLoading: Bool)
 }
 
-@available(iOS 15.0, *)
 final class LogViewerDataSource {
 
     weak var delegate: LogViewerDataSourceDelegate?

@@ -21,7 +21,6 @@ import UIKit
 import OSLog
 import Core
 
-@available(iOS 15.0, *)
 final class LogViewerViewController: UIViewController {
 
     private lazy var tableView: UITableView = {

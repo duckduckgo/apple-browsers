@@ -146,7 +146,7 @@ enum NewTabPagePixel: PixelKitEventV2 {
     case omnibarShown
 
     // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
-    case newTabPageLoadingTime(duration: TimeInterval)
+    case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int, device: String)
 
     // MARK: -
 
@@ -188,9 +188,13 @@ enum NewTabPagePixel: PixelKitEventV2 {
             return [
                 "mode": mode.rawValue
             ]
-        case .newTabPageLoadingTime(let duration):
+        case .newTabPageLoadingTime(let duration, let osMajorVersion, let device):
             // "loadingTime" is reported in **milliseconds**
-            return ["loadingTime": String(Int(duration * 1000))]
+            return [
+                "loadingTime": String(Int(duration * 1000)),
+                "osMajorVersion": "\(osMajorVersion)",
+                "device": device
+            ]
         case .favoriteSectionHidden,
                 .protectionsSectionHidden,
                 .blockedTrackingAttemptsShowLess,

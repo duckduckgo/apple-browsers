@@ -348,7 +348,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .personalInformationRemoval:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.dbp))
         }
     }
 }

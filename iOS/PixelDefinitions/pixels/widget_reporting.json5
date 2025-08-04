@@ -3,7 +3,7 @@
     'm_widget-report': {
         description: 'Fires daily to report configured widgets on the device, including widget kinds and families. This pixel can be enabled and disabled using the iOSBrowserConfig.widgetReporting feature flag which is off by default.',
         owners: ['brindy'],
-        triggers: ['app_foreground'],
+        triggers: ['startup'],
         suffixes: ['form_factor'],
         parameters: [
             'appVersion',
@@ -23,7 +23,7 @@
     'm_widget-report-failure': {
         description: 'Fires when widget configuration reporting fails due to an error retrieving current widget configurations. This pixel can be enabled and disabled using the iOSBrowserConfig.widgetReporting feature flag which is off by default.',
         owners: ['brindy'],
-        triggers: ['app_foreground'],
+        triggers: ['startup'],
         suffixes: ['form_factor'],
         parameters: [
             'appVersion',

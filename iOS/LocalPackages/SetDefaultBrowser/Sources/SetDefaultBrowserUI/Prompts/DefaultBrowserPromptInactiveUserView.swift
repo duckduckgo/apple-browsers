@@ -72,6 +72,11 @@ struct DefaultBrowserPromptInactiveUserView: View {
         .frame(maxWidth: Metrics.Content.maxWidth, alignment: .bottom)
         .cornerRadius(Metrics.Content.cornerRadius)
         .padding(.horizontal, Metrics.Content.outerHorizontalPadding)
+        .overlay(alignment: .topTrailing) {
+            DismissButton(action: closeAction)
+                .alignmentGuide(.trailing) { $0.width }
+                .alignmentGuide(.top) { $0.height / 2 - Metrics.PlusMoreButton.padding }
+        }
         .padding(.bottom, Metrics.Content.bottomPadding)
         .padding(.top, Metrics.Content.topPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
     }
@@ -88,6 +93,38 @@ struct PlusMoreButton: View {
             .foregroundColor(Color(designSystemColor: .accent))
     }
 
+}
+
+struct DismissButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
+                .foregroundColor(.primary)
+                .padding(Metrics.PlusMoreButton.padding)
+                .background(Color(designSystemColor: .surface))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
+        .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
+        .shadow(color: Color(red: 0.1, green: 0.16, blue: 0.3).opacity(0.08), radius: 1, x: 0, y: 1)
+        .frame(width: 44, height: 44)
+    }
+
+    private var backgroundColor: Color {
+        switch colorScheme {
+        case .light:
+            Color(red: 0.98, green: 0.98, blue: 0.98)
+        case .dark:
+            Color(red: 0.27, green: 0.27, blue: 0.27)
+        @unknown default:
+            Color(red: 0.98, green: 0.98, blue: 0.98)
+        }
+    }
 }
 
 struct Footer: View {

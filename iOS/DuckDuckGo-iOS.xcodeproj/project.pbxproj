@@ -263,6 +263,11 @@
 		4B60ACA1252EC0B100E8D219 /* FullScreenVideoUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B60ACA0252EC0B100E8D219 /* FullScreenVideoUserScript.swift */; };
 		4B62C4BA25B930DD008912C6 /* AppConfigurationFetchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B62C4B925B930DD008912C6 /* AppConfigurationFetchTests.swift */; };
 		4B6484F327FD1E350050A7A1 /* MenuControllerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6484E927FD1E340050A7A1 /* MenuControllerView.swift */; };
+		4B67012B2E3BE3660066176A /* LogViewerDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701282E3BE3660066176A /* LogViewerDataSource.swift */; };
+		4B67012C2E3BE3660066176A /* LogFilterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701272E3BE3660066176A /* LogFilterViewController.swift */; };
+		4B67012D2E3BE3660066176A /* LogEntryDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701262E3BE3660066176A /* LogEntryDetailViewController.swift */; };
+		4B67012E2E3BE3660066176A /* LogEntry+Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701252E3BE3660066176A /* LogEntry+Formatting.swift */; };
+		4B67012F2E3BE3660066176A /* LogViewerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6701292E3BE3660066176A /* LogViewerViewController.swift */; };
 		4B6ED9452B992FE4007F5CAA /* vpn-dark-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = 4B6ED9442B992FE4007F5CAA /* vpn-dark-mode.json */; };
 		4B75EA9226A266CB00018634 /* PrintingUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B75EA9126A266CB00018634 /* PrintingUserScript.swift */; };
 		4B821FAC2E21CD3900685484 /* RunDBPDebugModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */; };
@@ -2207,6 +2212,11 @@
 		4B60ACA0252EC0B100E8D219 /* FullScreenVideoUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenVideoUserScript.swift; sourceTree = "<group>"; };
 		4B62C4B925B930DD008912C6 /* AppConfigurationFetchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigurationFetchTests.swift; sourceTree = "<group>"; };
 		4B6484E927FD1E340050A7A1 /* MenuControllerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuControllerView.swift; sourceTree = "<group>"; };
+		4B6701252E3BE3660066176A /* LogEntry+Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry+Formatting.swift"; sourceTree = "<group>"; };
+		4B6701262E3BE3660066176A /* LogEntryDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntryDetailViewController.swift; sourceTree = "<group>"; };
+		4B6701272E3BE3660066176A /* LogFilterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogFilterViewController.swift; sourceTree = "<group>"; };
+		4B6701282E3BE3660066176A /* LogViewerDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerDataSource.swift; sourceTree = "<group>"; };
+		4B6701292E3BE3660066176A /* LogViewerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogViewerViewController.swift; sourceTree = "<group>"; };
 		4B6ED9442B992FE4007F5CAA /* vpn-dark-mode.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vpn-dark-mode.json"; sourceTree = "<group>"; };
 		4B75EA9126A266CB00018634 /* PrintingUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintingUserScript.swift; sourceTree = "<group>"; };
 		4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunDBPDebugModeViewController.swift; sourceTree = "<group>"; };
@@ -4960,6 +4970,18 @@
 			name = Waitlist;
 			sourceTree = "<group>";
 		};
+		4B67012A2E3BE3660066176A /* LogViewer */ = {
+			isa = PBXGroup;
+			children = (
+				4B6701252E3BE3660066176A /* LogEntry+Formatting.swift */,
+				4B6701262E3BE3660066176A /* LogEntryDetailViewController.swift */,
+				4B6701272E3BE3660066176A /* LogFilterViewController.swift */,
+				4B6701282E3BE3660066176A /* LogViewerDataSource.swift */,
+				4B6701292E3BE3660066176A /* LogViewerViewController.swift */,
+			);
+			path = LogViewer;
+			sourceTree = "<group>";
+		};
 		4B821FAA2E21CD2200685484 /* DBP */ = {
 			isa = PBXGroup;
 			children = (
@@ -5880,6 +5902,7 @@
 		858566F1252E55AE007501B8 /* Debug */ = {
 			isa = PBXGroup;
 			children = (
+				4B67012A2E3BE3660066176A /* LogViewer */,
 				31206F6F2D3804E800A95D76 /* AIChatDebugView.swift */,
 				853807912D6E638000CE1455 /* AlertPlaygroundView.swift */,
 				C1047CA32CA59BDC00B916FD /* Autofill */,
@@ -9788,6 +9811,11 @@
 				C12726F02A5FF89900215B02 /* EmailSignupPromptViewModel.swift in Sources */,
 				31669B9A28020A460071CC18 /* SaveLoginViewModel.swift in Sources */,
 				EE4FB1882A28D11900E5CBA7 /* NetworkProtectionStatusViewModel.swift in Sources */,
+				4B67012B2E3BE3660066176A /* LogViewerDataSource.swift in Sources */,
+				4B67012C2E3BE3660066176A /* LogFilterViewController.swift in Sources */,
+				4B67012D2E3BE3660066176A /* LogEntryDetailViewController.swift in Sources */,
+				4B67012E2E3BE3660066176A /* LogEntry+Formatting.swift in Sources */,
+				4B67012F2E3BE3660066176A /* LogViewerViewController.swift in Sources */,
 				6F23316B2DD4E2C4004D102D /* TabSwitcherAnimatedButton.swift in Sources */,
 				6F23316C2DD4E2C4004D102D /* TabSwitcherButton.swift in Sources */,
 				6FB1FE9E2C24D41D0075B68B /* NewTabPageSectionsDebugView.swift in Sources */,

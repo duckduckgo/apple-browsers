@@ -56,6 +56,9 @@ struct DefaultBrowserPromptInactiveUserView: View {
                         .frame(height: Metrics.Chart.maxHeight)
                 }
                 .frame(maxHeight: Metrics.Chart.maxHeight)
+                .overlay(alignment: .bottom) {
+                    Divider()
+                }
             }
             VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
                 PlusMoreButton()

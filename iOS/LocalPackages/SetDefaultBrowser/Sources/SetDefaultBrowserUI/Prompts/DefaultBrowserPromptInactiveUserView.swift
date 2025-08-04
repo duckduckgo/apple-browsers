@@ -100,7 +100,7 @@ private enum Metrics {
     enum Content {
         static let maxWidth = MetricBuilder<CGFloat?>(iPhone: nil, iPad: 542).build()
         static let alignment = MetricBuilder<Alignment>(iPhone: .topLeading, iPad: .top).build()
-        static let topPadding = MetricBuilder(iPhone: 200.0, iPad: 240.0).iPad(landscape: 200)
+        static let topPadding = MetricBuilder(iPhone: 158.0, iPad: 198.0).iPad(landscape: 158.0)
         static let outerHorizontalPadding: CGFloat = 16
         static let bottomPadding: CGFloat = 12
         static let innerPadding: CGFloat = 24

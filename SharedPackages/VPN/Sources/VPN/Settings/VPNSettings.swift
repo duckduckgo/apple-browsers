@@ -392,17 +392,9 @@ public final class VPNSettings {
         defaults.isBlockRiskyDomainsOn
     }
 
+
     public var customDnsServers: [String] {
         defaults.customDnsServers
-    }
-
-    public var didBlockRiskyDomainsDefaultToTrue: Bool {
-        get {
-            defaults.didBlockRiskyDomainsDefaultToTrue
-        }
-        set {
-            defaults.didBlockRiskyDomainsDefaultToTrue = newValue
-        }
     }
 
     public var dnsSettings: NetworkProtectionDNSSettings {
@@ -410,10 +402,6 @@ public final class VPNSettings {
             return defaults.dnsSettings
         }
         set {
-            // If dnsSettings is already ddg(true), mark that we've defaulted.
-            if case .ddg(true) = defaults.dnsSettings {
-                didBlockRiskyDomainsDefaultToTrue = true
-            }
             defaults.dnsSettings = newValue
         }
     }

@@ -146,9 +146,12 @@ public final class DataBrokerProtectionEventPixels {
         #if os(iOS)
         fireBackgroundTaskSessionMetrics()
         #endif
+
+        #if os(iOS) || DEBUG
+        fireStalledOperationMetrics(for: data)
+        #endif
     }
 
-    #if os(iOS)
     private func fireBackgroundTaskSessionMetrics() {
         do {
             let events = try database.fetchBackgroundTaskEvents(since: .daysAgo(7))
@@ -200,7 +203,24 @@ public final class DataBrokerProtectionEventPixels {
             Logger.dataBrokerProtection.error("Failed to fetch background task events: \(error.localizedDescription, privacy: .public)")
         }
     }
-    #endif
+
+    private func fireStalledOperationMetrics(for data: [BrokerProfileQueryData]) {
+        let scanMetrics = StalledOperationCalculator.scan.calculate(from: data)
+        handler.fire(.weeklyReportStalledScans(
+            numTotal: scanMetrics.total,
+            numStalled: scanMetrics.stalled,
+            totalByBroker: scanMetrics.totalByBroker.encodeToJSON() ?? "{}",
+            stalledByBroker: scanMetrics.stalledByBroker.encodeToJSON() ?? "{}"
+        ))
+
+        let optOutMetrics = StalledOperationCalculator.optOut.calculate(from: data)
+        handler.fire(.weeklyReportStalledOptOuts(
+            numTotal: optOutMetrics.total,
+            numStalled: optOutMetrics.stalled,
+            totalByBroker: optOutMetrics.totalByBroker.encodeToJSON() ?? "{}",
+            stalledByBroker: optOutMetrics.stalledByBroker.encodeToJSON() ?? "{}"
+        ))
+    }
 
     private func hadScanThisWeek(_ brokerProfileQuery: BrokerProfileQueryData) -> Bool {
         return brokerProfileQuery.scanJobData.historyEvents.contains { historyEvent in
@@ -298,6 +318,20 @@ extension DataBrokerProtectionEventPixels {
             return partialResult + (hasFoundParentMatch ? 1 : 0)
         }
         return childOptOuts.count - matchingCount
+    }
+}
+
+private extension [String: Int] {
+    func encodeToJSON() -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+
+        do {
+            let data = try encoder.encode(self)
+            return String(data: data, encoding: .utf8)
+        } catch {
+            return nil
+        }
     }
 }
 

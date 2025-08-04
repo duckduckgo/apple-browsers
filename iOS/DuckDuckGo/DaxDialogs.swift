@@ -198,8 +198,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         static let homeScreenMessagesSeenMaxCeiling = 2
     }
 
-    public static let shared = DaxDialogs(entityProviding: ContentBlocking.shared.contentBlockingManager)
-
     private var settings: DaxDialogsSettings
     private var entityProviding: EntityProviding
     private let variantManager: VariantManager

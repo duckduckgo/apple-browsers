@@ -173,7 +173,7 @@ public final class DataBrokerProtectionIOSManager {
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
-    private let queueManager: BrokerProfileJobQueueManaging
+    private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -196,11 +196,13 @@ public final class DataBrokerProtectionIOSManager {
         guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
             return nil
         }
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,
                                        vault: vault,
                                        authenticationManager: authenticationManager,
-                                       localBrokerProvider: nil)
+                                       localBrokerProvider: localBrokerService)
     }()
 
     public var hasScheduledBackgroundJob: Bool {
@@ -241,6 +243,8 @@ public final class DataBrokerProtectionIOSManager {
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.subscriptionManager = subscriptionManager
+
+        self.queueManager.delegate = self
 
         registerBackgroundTaskHandler()
     }
@@ -529,5 +533,15 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     
     public func matchRemovedByUser(with id: Int64) throws {
         try database.matchRemovedByUser(id)
+    }
+}
+
+extension DataBrokerProtectionIOSManager: BrokerProfileJobQueueManagerDelegate {
+    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+        Task {
+            do {
+                try await brokerUpdater?.checkForUpdates()
+            }
+        }
     }
 }

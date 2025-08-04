@@ -187,6 +187,8 @@
 		1DC9DD1F2DB041760029D4A5 /* NSAlert+Tab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */; };
 		1DCFBC8A29ADF32B00313531 /* BurnerHomePageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */; };
 		1DCFBC8B29ADF32B00313531 /* BurnerHomePageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */; };
+		1DD0DBBB2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */; };
+		1DD0DBBC2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */; };
 		1DD6A7B12D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */; };
 		1DD6A7B22D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */; };
 		1DD6A7B42D804ADA006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B32D804AD3006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift */; };
@@ -3996,6 +3998,7 @@
 		1DC6696F2B6CF0D700AA0645 /* TabSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSnapshotStore.swift; sourceTree = "<group>"; };
 		1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSAlert+Tab.swift"; sourceTree = "<group>"; };
 		1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurnerHomePageView.swift; sourceTree = "<group>"; };
+		1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageLoadMetrics.swift; sourceTree = "<group>"; };
 		1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpView.swift; sourceTree = "<group>"; };
 		1DD6A7B32D804AD3006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpViewController.swift; sourceTree = "<group>"; };
 		1DD6A7B62D804B56006AE043 /* PinnedTabsDiscoveryPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopover.swift; sourceTree = "<group>"; };
@@ -6577,6 +6580,7 @@
 				379E4D5F2D4383CE00A901B1 /* NewTabPageCoordinator.swift */,
 				371BBC5A2D00C911008FA0C7 /* NewTabPageActionsManagerExtension.swift */,
 				371BBC5D2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift */,
+				1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */,
 				E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */,
 				E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */,
 				E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarConfigProvider.swift */,
@@ -13433,6 +13437,7 @@
 				372A0FED2B2379310033BF7F /* SyncMetricsEventsHandler.swift in Sources */,
 				3706FCA4293F65D500E42796 /* RecentlyClosedMenu.swift in Sources */,
 				8400DC4C2C6E26AE006509D2 /* BookmarksBarCollectionView.swift in Sources */,
+				1DD0DBBB2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */,
 				3758A38C2D108233001CEAA1 /* NewTabPageFreemiumDBPBannerProvider.swift in Sources */,
 				379858012D72D831008773F6 /* HistoryBurning.swift in Sources */,
 				4B9DB02D2A983B24000927DB /* WaitlistKeychainStorage.swift in Sources */,
@@ -15180,6 +15185,7 @@
 				BD6367252C877BE1009DE7A8 /* UpdateUserDriver.swift in Sources */,
 				3158B1492B0BF73000AF130C /* DBPHomeViewController.swift in Sources */,
 				37F09AD32DDE433500643A1B /* FaviconManagerMock.swift in Sources */,
+				1DD0DBBC2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */,
 				9F56CFA92B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */,
 				37445F9C2A1569F00029F789 /* SyncBookmarksAdapter.swift in Sources */,
 				C1E961EF2B87AA29001760E1 /* AutofillActionBuilder.swift in Sources */,

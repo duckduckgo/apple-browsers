@@ -120,7 +120,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
 
         self.tabCollectionViewModel = tabCollectionViewModel

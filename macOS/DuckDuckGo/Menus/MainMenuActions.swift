@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Common
@@ -663,6 +664,23 @@ extension AppDelegate {
         setPrivacyConfigurationUrl(nil)
     }
 
+    @objc func resetInstallStatistics() {
+        let pixelDataStore = LocalPixelDataStore(database: Application.appDelegate.database.db)
+        pixelDataStore.removeValue(forKey: "stats.atb.key")
+        pixelDataStore.removeValue(forKey: "stats.installdate.key")
+        pixelDataStore.removeValue(forKey: "stats.retentionatb.key")
+        pixelDataStore.removeValue(forKey: "stats.appretentionatb.key")
+        pixelDataStore.removeValue(forKey: "stats.appretentionatb.last.request.key")
+        pixelDataStore.removeValue(forKey: "stats.variant.key")
+    }
+
+    @objc func resetVPNUpsell() {
+        // Clear VPN upsell state
+        vpnUpsellUserDefaultsPersistor.vpnUpsellDismissed = false
+        vpnUpsellUserDefaultsPersistor.vpnUpsellFirstPinnedDate = nil
+        // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
+        vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval = 10
+    }
 }
 
 extension MainViewController {
@@ -782,9 +800,6 @@ extension MainViewController {
     }
 
     @objc func summarize(_ sender: Any) {
-        guard featureFlagger.isFeatureOn(.aiChatTextSummarization), featureFlagger.isFeatureOn(.aiChatSidebar) else {
-            return
-        }
         Logger.aiChat.debug("Summarize action to be implemented")
 
         Task {
@@ -1357,6 +1372,9 @@ extension MainViewController: NSMenuItemValidation {
             menuItem.title = isDownloadsPopoverShown ? UserText.closeDownloads : UserText.openDownloads
 
             return true
+
+        case #selector(MainViewController.summarize(_:)):
+            return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
 
         default:
             return true

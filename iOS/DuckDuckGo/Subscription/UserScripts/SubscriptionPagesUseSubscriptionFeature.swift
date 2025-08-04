@@ -87,6 +87,7 @@ public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool
     let usePaidDuckAi: Bool
+    let useAlternateStripePaymentFlow: Bool
 }
 
 public struct AccessTokenValue: Codable {
@@ -728,7 +729,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: true, usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled)
+        return GetFeatureConfigurationResponse(
+            useSubscriptionsAuthV2: true,
+            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+        )
     }
 
     // Auth V1 unused methods

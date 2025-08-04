@@ -26,6 +26,7 @@ import SyncUI_iOS
 import Persistence
 import Common
 import Configuration
+import SystemSettingsPiPTutorial
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -45,6 +46,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let websiteDataManager: WebsiteDataManaging
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let keyValueStore: ThrowingKeyValueStoring
+    let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -55,7 +57,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          fireproofing: Fireproofing,
          websiteDataManager: WebsiteDataManaging,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
-         keyValueStore: ThrowingKeyValueStoring) {
+         keyValueStore: ThrowingKeyValueStoring,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -66,6 +69,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.websiteDataManager = websiteDataManager
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.keyValueStore = keyValueStore
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
     }
     
     enum LegacyView {
@@ -119,7 +123,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
             fireproofing: self.fireproofing,
             customConfigurationURLProvider: self.customConfigurationURLProvider,
-            keyValueStore: self.keyValueStore))
+            keyValueStore: self.keyValueStore,
+            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

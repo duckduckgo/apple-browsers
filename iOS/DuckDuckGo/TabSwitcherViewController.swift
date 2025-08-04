@@ -242,6 +242,8 @@ class TabSwitcherViewController: UIViewController {
         // These can be done more than once but don't need to
         decorate()
         becomeFirstResponder()
+        collectionView.dragDelegate = self
+        collectionView.dropDelegate = self
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
@@ -373,13 +375,13 @@ class TabSwitcherViewController: UIViewController {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
 
+        dismiss()
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
             tabManager.save()
             delegate?.tabSwitcher(self, didSelectTab: tab)
         }
-        dismiss()
     }
 
     @IBAction func onFirePressed(sender: AnyObject) {

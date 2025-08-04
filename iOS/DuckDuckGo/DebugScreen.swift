@@ -24,6 +24,7 @@ import Core
 import SwiftUI
 import UIKit
 import Configuration
+import SystemSettingsPiPTutorial
 
 enum DebugScreen: Identifiable {
 
@@ -37,6 +38,7 @@ enum DebugScreen: Identifiable {
         let fireproofing: Fireproofing
         let customConfigurationURLProvider: CustomConfigurationURLProviding
         let keyValueStore: ThrowingKeyValueStoring
+        let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
     }
 

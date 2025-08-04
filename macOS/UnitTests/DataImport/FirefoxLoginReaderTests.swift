@@ -295,6 +295,30 @@ class FirefoxLoginReaderTests: XCTestCase {
         XCTAssertEqual(result, .failure(FirefoxLoginReader.ImportError(type: .couldNotFindKeyDB, underlyingError: nil)))
     }
 
+    func testWhenImportingsLoginsWithSinglePBKDF2Iteration_andNoPrimaryPassword_ThenImportSucceeds() throws {
+        let database = resourcesURLWithoutPassword().appendingPathComponent("key4-single-pbkdf2-iteration-no-password.db")
+        let logins = resourcesURLWithoutPassword().appendingPathComponent("logins-single-pbkdf2-iteration-no-password.json")
+
+        let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
+            File("key4.db", contents: .copy(database))
+            File("logins.json", contents: .copy(logins))
+        }
+
+        try structure.writeToTemporaryDirectory()
+        let profileDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
+
+        let firefoxLoginReader = FirefoxLoginReader(firefoxProfileURL: profileDirectoryURL)
+        let result = firefoxLoginReader.readLogins(dataFormat: nil)
+
+        if case let .success(logins) = result {
+            XCTAssertEqual(logins, [ImportedLoginCredential(url: "example.com", username: "test_user", password: "test_password")])
+        } else {
+            XCTFail("Failed to decrypt Firefox logins")
+        }
+
+        try structure.removeCreatedFileSystemStructure()
+    }
+
     // MARK: - Deleted Entries Tests
 
     func testWhenImportingLoginsWithDeletedEntries_ThenImportSucceedsAndFiltersDeletedEntries() throws {

@@ -974,6 +974,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             assert(wkNavigation == nil, "Unexpected didCommitNavigation without preceding didStart")
             return
         }
+
+        excludeUnwantedBackForwardListItemsIfNeeded(for: navigation, in: webView)
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
         updateCurrentHistoryItemIdentity(webView.backForwardList.currentItem)
 #endif
@@ -983,6 +985,29 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         for responder in navigation.navigationResponders {
             responder.didCommit(navigation)
         }
+    }
+
+    @MainActor
+    private func excludeUnwantedBackForwardListItemsIfNeeded(for navigation: Navigation, in webView: WKWebView) {
+#if _SESSION_STATE_WITH_FILTER_ENABLED
+        guard !(navigation.redirectHistory.first ?? navigation.navigationAction).navigationType.isBackForward else { return }
+
+        // when developer redirect breaks client redirect in decidePolicyForNavigationAction
+        // the page initiated client-redirect lands in back history
+        // https://app.asana.com/1/137249556945/project/1177771139624306/task/1201280322539473?focus=true
+        let originalHistoryItemIdentity = (navigation.redirectHistory.first ?? navigation.navigationAction)?.fromHistoryItemIdentity
+        lazy var backList = webView.backForwardList.backList
+        // if extra back list item created during the navigation transaction - remove the extra item
+        if navigation.navigationAction.fromHistoryItemIdentity != originalHistoryItemIdentity,
+           !backList.isEmpty,
+           navigation.navigationAction.fromHistoryItemIdentity?.url == backList.last?.url {
+
+            // reload webView history without navigation excluding the filtered-out item
+            if let sessionState = webView.sessionState(withFilter: { $0.identity != navigation.navigationAction.fromHistoryItemIdentity }) {
+                webView.restoreSessionState(from: sessionState, andNavigate: false)
+            }
+        }
+#endif
     }
 
     @MainActor

@@ -111,13 +111,21 @@ Makes App Store release build and uploads it to TestFlight
 
 Makes Alpha release build and uploads it to TestFlight
 
-### ios latest_build_number_for_version
+### ios build_alpha
 
 ```sh
-[bundle exec] fastlane ios latest_build_number_for_version
+[bundle exec] fastlane ios build_alpha
 ```
 
-Latest build number for version
+Makes Alpha release build only (without uploading)
+
+### ios upload_alpha
+
+```sh
+[bundle exec] fastlane ios upload_alpha
+```
+
+Uploads pre-built Alpha app to TestFlight
 
 ### ios increment_build_number_for_version
 

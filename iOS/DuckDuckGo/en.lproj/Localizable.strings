@@ -2624,7 +2624,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.aichat.shortcuts" = "Duck.ai Shortcuts";
 
 /* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Search Input";
+"settings.aichat.shortcuts.input" = "Experimental Address Bar";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Search the web or ask Duck.ai directly from the Address Bar";
@@ -2745,6 +2745,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Import Passwords";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "New";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
@@ -3111,6 +3114,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Restoring subscription...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Pro is now just called the DuckDuckGo subscription";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remove From This Device";

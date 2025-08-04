@@ -102,10 +102,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case startingTunnelWithoutAuthToken(internalError: Error?)
         case couldNotGenerateTunnelConfiguration(internalError: Error)
         case simulateTunnelFailureError
+        case simulateSubscriptionExpiration
         case tokenReset
 
         // Subscription Errors - 100+
         case vpnAccessRevoked(_ underlyingError: Error)
+        case vpnAccessRevokedDetectedByMonitorCheck
 
         // State Reset - 200+
         case appRequestedCancellation
@@ -114,12 +116,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             switch self {
             case .startingTunnelWithoutAuthToken(let internalError):
                 return "Missing auth token at startup: \(internalError.debugDescription)"
-            case .vpnAccessRevoked:
+            case .vpnAccessRevoked, .vpnAccessRevokedDetectedByMonitorCheck:
                 return "VPN disconnected due to expired subscription"
             case .couldNotGenerateTunnelConfiguration(let internalError):
                 return "Failed to generate a tunnel configuration: \(internalError.localizedDescription)"
             case .simulateTunnelFailureError:
                 return "Simulated a tunnel error as requested"
+            case .simulateSubscriptionExpiration:
+                return nil
             case .tokenReset:
                 return "Abnormal situation caused the token to be reset"
             case .appRequestedCancellation:
@@ -133,9 +137,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .startingTunnelWithoutAuthToken: return 0
             case .couldNotGenerateTunnelConfiguration: return 1
             case .simulateTunnelFailureError: return 2
-            case .tokenReset: return 3
+            case .simulateSubscriptionExpiration: return 3
+            case .tokenReset: return 4
                 // Subscription Errors - 100+
             case .vpnAccessRevoked: return 100
+            case .vpnAccessRevokedDetectedByMonitorCheck: return 101
                 // State Reset - 200+
             case .appRequestedCancellation: return 200
             }
@@ -144,11 +150,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         public var errorUserInfo: [String: Any] {
             switch self {
             case .simulateTunnelFailureError,
-                    .vpnAccessRevoked,
-                    .appRequestedCancellation,
-                    .tokenReset:
+                    .vpnAccessRevokedDetectedByMonitorCheck,
+                    .simulateSubscriptionExpiration,
+                    .tokenReset,
+                    .appRequestedCancellation:
                 return [:]
-            case .couldNotGenerateTunnelConfiguration(let underlyingError):
+            case .couldNotGenerateTunnelConfiguration(let underlyingError),
+                    .vpnAccessRevoked(let underlyingError):
                 return [NSUnderlyingErrorKey: underlyingError]
             case .startingTunnelWithoutAuthToken(let underlyingError):
                 if let underlyingError {
@@ -314,7 +322,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private func subscriptionAccessErrorHandler(_ error: Error) async {
         switch error {
         case TunnelError.vpnAccessRevoked:
-            await handleAccessRevoked(dueTo: error, attemptsShutdown: true)
+            await handleAccessRevoked(dueTo: error)
         default:
             break
         }
@@ -1222,9 +1230,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             handleExpireRegistrationKey(completionHandler: completionHandler)
         case .sendTestNotification:
             handleSendTestNotification(completionHandler: completionHandler)
-        case .disableConnectOnDemandAndShutDown:
+        case .simulateSubscriptionExpirationInTunnel:
             Task { [weak self] in
-                await self?.attemptShutdown(dueTo: TunnelError.appRequestedCancellation)
+                await self?.handleAccessRevoked(dueTo: TunnelError.simulateSubscriptionExpiration)
                 completionHandler?(nil)
             }
         case .removeVPNConfiguration:
@@ -1368,28 +1376,34 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         completionHandler?(nil)
     }
 
-    @available(iOS 17, *)
+    /// Disables on-demand if the OS supports it.
+    ///
+    /// iOS 17+ supports it, but macOS does not - to the best of our knowledge.  Still, we encourage calling this method
+    /// in macOS too in case this feature is ever implemented.
+    ///
     @MainActor
-    public func handleShutDown(dueTo error: Error) async throws {
-        enum ShutDownError: Error {
-            case noManagerFound
+    public func disableOnDemandIfSupportedByOS() async throws {
+        enum DisableOnDemandError: LocalizedError {
+            case notSupportedByOS
+
+            func localizedDescription(in locale: Locale = .current) -> String {
+                switch self {
+                case .notSupportedByOS:
+                    return "Disabling on-demand is not supported by the OS"
+                }
+            }
         }
 
         Logger.networkProtection.log("🔴 Disabling Connect On Demand and shutting down the tunnel")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
 
         guard let manager = managers.first else {
-            Logger.networkProtection.log("Could not find a viable manager, bailing out of shutdown")
-            // Doesn't matter a lot what error we throw here, since we'll try cancelling the
-            // tunnel.
-            throw TunnelError.vpnAccessRevoked(ShutDownError.noManagerFound)
+            throw DisableOnDemandError.notSupportedByOS
         }
 
         manager.isOnDemandEnabled = false
         try await manager.saveToPreferences()
         try await manager.loadFromPreferences()
-
-        await cancelTunnel(with: error)
     }
 
     private func simulateTunnelFailure(completionHandler: ((Data?) -> Void)? = nil) {
@@ -1557,11 +1571,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         await entitlementMonitor.start(entitlementCheck: entitlementCheck) { [weak self] result in
-            /// Attempt tunnel shutdown & show messaging iff the entitlement is verified to be invalid
-            /// Ignore otherwise
+            // Attempt tunnel shutdown & show messaging if the entitlement is verified to be invalid
+            // Ignore otherwise
             switch result {
             case .invalidEntitlement:
-                await self?.handleAccessRevoked(dueTo: TunnelError.appRequestedCancellation, attemptsShutdown: true)
+                await self?.handleAccessRevoked(dueTo: TunnelError.vpnAccessRevokedDetectedByMonitorCheck)
             case .validEntitlement, .error:
                 break
             }
@@ -1600,62 +1614,48 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     @MainActor
-    private func handleAccessRevoked(dueTo error: Error, attemptsShutdown: Bool) async {
+    private func handleAccessRevoked(dueTo error: Error) async {
         defaults.enableEntitlementMessaging()
         notificationsPresenter.showEntitlementNotification()
-
-        await stopMonitors()
 
         // We add a delay here so the notification has a chance to show up
         try? await Task.sleep(interval: .seconds(5))
 
-        if attemptsShutdown {
-            await attemptShutdown(dueTo: error)
-        }
-    }
+        do {
+            try await shutdown(dueTo: error)
+        } catch {
+            // If we can't cleanly shut the tunneldown, we'll do our best to
+            // shut it down even if the process keeps running.
 
-    /// Tries to shut down the tunnel after access has been revoked.
-    ///
-    /// iOS 17+ supports disabling on-demand, but macOS does not... so we resort to removing the subscription token
-    /// which should prevent the VPN from even trying to start.
-    ///
-#if os(macOS)
-    @MainActor
-    private func attemptShutdown(dueTo error: Error) async {
-        Logger.networkProtection.log("Shutting down due to revoked access")
-        let cancelTunnel = {
+            // We don't want to be firing monitoring pixels for failures from this point onward...
+            await stopMonitors()
+
+            // If the extension process restarts we don't want it to attempt to reconnect
             try? await self.tokenHandlerProvider().removeToken()
-            self.cancelTunnelWithError(error)
-        }
 
-        if #available(iOS 17, *) {
-            do {
-                try await handleShutDown(dueTo: error)
-            } catch {
-                await cancelTunnel()
-            }
-        } else {
-            await cancelTunnel()
+            // We show some visual indication that something's off, so the user can chose to
+            // manually stop the VPN.
+            reasserting = true
         }
     }
-    #else
+
+    /// Tries to shut down the tunnel disabling on-demand.
+    ///
+    /// Not all OS versions support disabling on-demand, so this method will throw an error in that case
+    /// to allow the caller to decide what to do next.
+    ///
     @MainActor
-    private func attemptShutdown(dueTo error: Error) async {
-        let cancelTunnel = {
-            self.cancelTunnelWithError(error)
-        }
+    private func shutdown(dueTo error: Error) async throws {
+        Logger.networkProtection.log("Shutting down due to: \(error.localizedDescription, privacy: .public)")
 
-        if #available(iOS 17, *) {
-            do {
-                try await handleShutDown(dueTo: error)
-            } catch {
-                cancelTunnel()
-            }
-        } else {
-            cancelTunnel()
+        do {
+            try await disableOnDemandIfSupportedByOS()
+            await cancelTunnel(with: error)
+        } catch {
+            Logger.networkProtection.debug("Shutdown cancelled, probably because the OS does not support disabling on-demand: \(error.localizedDescription, privacy: .public)")
+            throw error
         }
     }
-#endif
 
     @MainActor
     public func startMonitors(testImmediately: Bool) async throws {

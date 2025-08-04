@@ -150,7 +150,7 @@ final class DebugScanJob: SubJobWebRunning {
         }
 
         await webViewHandler?.execute(action: action,
-                                      ofType: actionsHandler?.step.type,
+                                      ofType: actionsHandler?.stepType,
                                       data: .userData(query.profileQuery, self.extractedProfile))
     }
 

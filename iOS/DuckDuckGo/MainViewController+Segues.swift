@@ -34,7 +34,7 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)
@@ -303,7 +303,8 @@ extension MainViewController {
                                                             fireproofing: fireproofing,
                                                             websiteDataManager: websiteDataManager,
                                                             customConfigurationURLProvider: customConfigurationURLProvider,
-                                                            keyValueStore: keyValueStore)
+                                                            keyValueStore: keyValueStore,
+                                                            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
@@ -323,26 +324,39 @@ extension MainViewController {
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
-                                                  keyValueStore: keyValueStore)
+                                                  keyValueStore: keyValueStore,
+                                                  systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
         Pixel.fire(pixel: .settingsPresented)
 
-        if let navigationController = self.presentedViewController as? UINavigationController,
-           let settingsHostingController = navigationController.viewControllers.first as? SettingsHostingController {
-            navigationController.popToRootViewController(animated: false)
-            completion?(settingsHostingController.viewModel)
-        } else {
-            let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
+        func doLaunch() {
+            if let navigationController = self.presentedViewController as? UINavigationController,
+               let settingsHostingController = navigationController.viewControllers.first as? SettingsHostingController {
+                navigationController.popToRootViewController(animated: false)
+                completion?(settingsHostingController.viewModel)
+            } else {
+                assert(self.presentedViewController == nil)
 
-            // We are still presenting legacy views, so use a Navcontroller
-            let navController = SettingsUINavigationController(rootViewController: settingsController)
-            settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+                let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
 
-            // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
-            configure?(settingsViewModel, settingsController)
+                // We are still presenting legacy views, so use a Navcontroller
+                let navController = SettingsUINavigationController(rootViewController: settingsController)
+                settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
 
-            present(navController, animated: true) {
-                completion?(settingsViewModel)
+                // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
+                configure?(settingsViewModel, settingsController)
+
+                present(navController, animated: true) {
+                    completion?(settingsViewModel)
+                }
             }
+        }
+
+        if let controller = self.presentedViewController as? OmniBarEditingStateViewController {
+            controller.dismissAnimated {
+                doLaunch()
+            }
+        } else {
+            doLaunch()
         }
     }
 
@@ -357,7 +371,8 @@ extension MainViewController {
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
             fireproofing: self.fireproofing,
             customConfigurationURLProvider: customConfigurationURLProvider,
-            keyValueStore: self.keyValueStore))
+            keyValueStore: self.keyValueStore,
+            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
@@ -376,7 +391,7 @@ extension MainViewController {
 }
 
 // Exists to fire a did disappear notification for settings when the controller did disappear
-//  so that we get the event regarldess of where in the UI hierarchy it happens.
+//  so that we get the event regardless of where in the UI hierarchy it happens.
 class SettingsUINavigationController: UINavigationController {
 
     required init?(coder aDecoder: NSCoder) {

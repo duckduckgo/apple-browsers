@@ -240,21 +240,18 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UpdateCheckActor
     private func performUpdateCheck() async {
-        // Check if we can start a new check (no active task + rate limiting)
-        guard await updateCheckState.canStartNewCheck() else {
-            Logger.updates.debug("Update check skipped - task already running or rate limited")
+        // Check if we can start a new check (Sparkle availability + rate limiting)
+        guard await updateCheckState.canStartNewCheck(updater: updater) else {
+            Logger.updates.debug("Update check skipped - not allowed by Sparkle or rate limited")
             return
         }
-
-        // Record that we're starting a check
-        await updateCheckState.recordCheckTime()
 
         if case .updaterError = userDriver?.updateProgress {
             userDriver?.cancelAndDismissCurrentUpdate()
         }
 
         // Create the actual update task
-        let updateTask = Task { @MainActor in
+        Task { @MainActor in
             // Handle expired builds first (critical path)
             guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
                 return
@@ -265,13 +262,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             Logger.updates.log("Checking for updates respecting rollout")
             updater.checkForUpdatesInBackground()
         }
-
-        // Store the task reference
-        await updateCheckState.setActiveTask(updateTask)
-
-        // Wait for the task to complete and clean up
-        await updateTask.value
-        await updateCheckState.setActiveTask(nil)
     }
 
     private var isBuildExpired: Bool {
@@ -314,19 +304,20 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UpdateCheckActor
     private func performUpdateCheckSkippingRollout() async {
-        // Cancel any active task (user-initiated takes priority)
-        await updateCheckState.cancelActiveTask()
-        Logger.updates.debug("User-initiated update check - cancelled any active task")
+        // User-initiated checks skip rate limiting but still respect Sparkle availability
+        guard await updateCheckState.canStartNewCheck(updater: updater, minimumInterval: 0) else {
+            Logger.updates.debug("User-initiated update check skipped - not allowed by Sparkle")
+            return
+        }
 
-        // Record that we're starting a check (no rate limiting for user-initiated)
-        await updateCheckState.recordCheckTime()
+        Logger.updates.debug("User-initiated update check starting")
 
         if case .updaterError = userDriver?.updateProgress {
             userDriver?.cancelAndDismissCurrentUpdate()
         }
 
         // Create the actual update task
-        let updateTask = Task { @MainActor in
+        Task { @MainActor in
             // Handle expired builds first (critical path)
             guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
                 return
@@ -337,13 +328,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             Logger.updates.log("Checking for updates skipping rollout")
             updater.checkForUpdates()
         }
-
-        // Store the task reference
-        await updateCheckState.setActiveTask(updateTask)
-
-        // Wait for the task to complete and clean up
-        await updateTask.value
-        await updateCheckState.setActiveTask(nil)
     }
 
     // MARK: - Private
@@ -556,9 +540,11 @@ extension UpdateController: SPUUpdaterDelegate {
         if error == nil {
             Logger.updates.log("Updater did finish update cycle with no error")
             updateProgress = .updateCycleDone(.finishedWithNoError)
+            Task { @UpdateCheckActor in await updateCheckState.recordCheckTime() }
         } else if let errorCode = (error as? NSError)?.code, errorCode == Int(Sparkle.SUError.noUpdateError.rawValue) {
             Logger.updates.log("Updater did finish update cycle with no update found")
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
+            Task { @UpdateCheckActor in await updateCheckState.recordCheckTime() }
         } else if let error {
             Logger.updates.log("Updater did finish update cycle with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
         }

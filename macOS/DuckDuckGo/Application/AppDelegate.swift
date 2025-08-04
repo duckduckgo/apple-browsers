@@ -128,6 +128,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
+    let hotspotDetectionService: HotspotDetectionServiceProtocol
+    let captivePortalPopupManager: CaptivePortalPopupManager
     let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
@@ -149,7 +151,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireAnimationDecider: visualizeFireAnimationDecider,
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
-        tabsPreferences: TabsPreferences.shared
+        tabsPreferences: TabsPreferences.shared,
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -157,6 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
         windowControllersManager: windowControllersManager
     )
+    let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSidebarProvider: AIChatSidebarProviding
 
     let privacyStats: PrivacyStatsCollecting
@@ -178,8 +182,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
-    private let subscriptionCookieManager: any SubscriptionCookieManaging
-    private var subscriptionCookieManagerFeatureFlagCancellable: AnyCancellable?
 
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
@@ -207,13 +209,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
         return VPNUpsellVisibilityManager(
-            isFirstLaunch: AppDelegate.isFirstLaunch,
+            isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
             subscriptionManager: subscriptionAuthV1toV2Bridge,
-            defaultBrowserPublisher: DefaultBrowserPreferences.shared.$isDefault.eraseToAnyPublisher(),
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            persistor: vpnUpsellUserDefaultsPersistor,
+            timerDuration: vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval
         )
+    }()
+
+    lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
+        return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
 
     // MARK: - DBP
@@ -242,14 +250,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate >= Date.weekAgo
     }
 
-    static var isFirstLaunch = false
-
     static var twoDaysPassedSinceFirstLaunch: Bool {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
-    // swiftlint:disable cyclomatic_complexity
     @MainActor
+    // swiftlint:disable cyclomatic_complexity
     override init() {
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)
@@ -281,7 +287,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         bookmarkDatabase = BookmarkDatabase()
-        aiChatSidebarProvider = AIChatSidebarProvider()
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
@@ -395,6 +400,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        aiChatSidebarProvider = AIChatSidebarProvider()
+        aiChatMenuConfiguration = AIChatMenuConfiguration(
+            storage: DefaultAIChatPreferencesStorage(),
+            remoteSettings: AIChatRemoteSettings(
+                privacyConfigurationManager: privacyConfigurationManager
+            ),
+            featureFlagger: featureFlagger
+        )
 
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,
@@ -543,18 +557,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
 
-            subscriptionCookieManager = SubscriptionCookieManagerV2(subscriptionManager: subscriptionManager, currentCookieStore: {
-                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
-            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
             subscriptionManagerV2 = subscriptionManager
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
         } else {
             Logger.general.log("Configuring Subscription V1")
             let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
-            subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
-                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
-            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
             subscriptionManagerV1 = subscriptionManager
             subscriptionManagerV2 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
@@ -566,7 +574,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
-                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
+                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
+                paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -612,6 +622,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
+        hotspotDetectionService = HotspotDetectionService()
+        captivePortalPopupManager = CaptivePortalPopupManager()
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -821,7 +833,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
@@ -851,10 +862,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = DownloadListCoordinator.shared
         _ = RecentlyClosedCoordinator.shared
 
-        if LocalStatisticsStore().atb == nil {
-            AppDelegate.isFirstLaunch = true
+        let isFirstLaunch = LocalStatisticsStore().atb == nil
+
+        if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
         }
+
+        vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch)
+
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
@@ -868,29 +883,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statisticsLoader?.load()
 
         startupSync()
-
-        let privacyConfigurationManager = privacyFeatures.contentBlocking.privacyConfigurationManager
-
-        // Enable subscriptionCookieManager if feature flag is present
-        if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.setAccessTokenCookieForSubscriptionDomains) {
-            subscriptionCookieManager.enableSettingSubscriptionCookie()
-        }
-
-        // Keep track of feature flag changes
-        subscriptionCookieManagerFeatureFlagCancellable = privacyConfigurationManager.updatesPublisher
-            .sink { [weak self, weak privacyConfigurationManager] in
-                guard let self, let privacyConfigurationManager else { return }
-
-                let isEnabled = privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.setAccessTokenCookieForSubscriptionDomains)
-
-                Task { @MainActor [weak self] in
-                    if isEnabled {
-                        self?.subscriptionCookieManager.enableSettingSubscriptionCookie()
-                    } else {
-                        await self?.subscriptionCookieManager.disableSettingSubscriptionCookie()
-                    }
-                }
-            }
 
         if [.normal, .uiTests].contains(AppVersion.runType) {
             stateRestorationManager.applicationDidFinishLaunching()
@@ -1029,7 +1021,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         Task { @MainActor in
             vpnAppEventsHandler.applicationDidBecomeActive()
-            await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
 

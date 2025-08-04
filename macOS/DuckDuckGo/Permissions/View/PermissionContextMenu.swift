@@ -234,7 +234,7 @@ final class PermissionContextMenu: NSMenu {
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
         case .geolocation:
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!
-        case .popups, .externalScheme:
+        case .popups, .externalScheme, .wifiHotspot:
             assertionFailure("No settings available")
             return
         }
@@ -295,6 +295,9 @@ private extension NSMenuItem {
             title = UserText.privacyDashboardPermissionAsk
         case .popups:
             title = UserText.privacyDashboardPopupsAlwaysAsk
+        case .wifiHotspot:
+            assertionFailure("Not supported permission")
+            title = ""
         }
 
         let item = NSMenuItem(title: title,
@@ -376,6 +379,9 @@ private extension NSMenuItem {
             title = String(format: UserText.permissionMenuHeaderExternalSchemeFormat, permission.localizedDescription.lowercased(), scheme)
         case .popups:
             title = String(format: UserText.permissionMenuHeaderPopupWindowsFormat, domain)
+        case .wifiHotspot:
+            assertionFailure("Not supported permission")
+            title = ""
         }
 
         let attributedTitle = NSMutableAttributedString(string: title)

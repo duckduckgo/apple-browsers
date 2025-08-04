@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Iskanje";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Ogled in upravljanje vaše povezave VPN. Potrebna je naročnina na storitev Privacy Pro.";
+"widget.gallery.vpn.description" = "Ogled in upravljanje vaše povezave VPN. Potrebna je naročnina DuckDuckGo.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

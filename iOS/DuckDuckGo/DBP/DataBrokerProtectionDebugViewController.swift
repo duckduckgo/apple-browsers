@@ -23,6 +23,8 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
 import Subscription
+import PixelKit
+import BrowserServicesKit
 
 final class DataBrokerProtectionDebugViewController: UITableViewController {
 
@@ -109,6 +111,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case runPendingScans
         case runPendingOptOuts
         case runAllPendingJobs
+        case fireWeeklyPixel
 
         var title: String {
             switch self {
@@ -122,6 +125,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Run Pending Opt Outs"
             case .runAllPendingJobs:
                 return "Run All Pending Jobs"
+            case .fireWeeklyPixel:
+                return "Test Firing Weekly Pixels"
             }
         }
     }
@@ -169,6 +174,11 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     
     private var jobCountRefreshTimer: Timer?
     private let webViewWindowHelper = PIRDebugWebViewWindowHelper()
+    
+    private lazy var eventPixels: DataBrokerProtectionEventPixels = {
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .iOS)
+        return DataBrokerProtectionEventPixels(database: manager.database, handler: sharedPixelsHandler)
+    }()
     
     enum JobExecutionState: Equatable {
         case idle
@@ -513,6 +523,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             runPendingJobs(type: .optOut)
         case .runAllPendingJobs:
             runPendingJobs(type: .all)
+        case .fireWeeklyPixel:
+            Task { @MainActor in
+                eventPixels.fireWeeklyReportPixels()
+            }
         }
     }
     

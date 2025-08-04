@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-#if DEBUG
+#if !RELEASE
 import Foundation
 
 final class MockCustomURLProvider: CustomConfigurationURLProviding {

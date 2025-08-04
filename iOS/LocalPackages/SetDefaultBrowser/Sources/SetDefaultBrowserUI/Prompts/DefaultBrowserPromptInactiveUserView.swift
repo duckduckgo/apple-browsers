@@ -90,7 +90,7 @@ struct PlusMoreButton: View {
             .underline(true)
             .multilineTextAlignment(.leading)
             .lineLimit(2)
-            .foregroundColor(Color(designSystemColor: .accent))
+            .tint(Color(designSystemColor: .accent))
     }
 
 }

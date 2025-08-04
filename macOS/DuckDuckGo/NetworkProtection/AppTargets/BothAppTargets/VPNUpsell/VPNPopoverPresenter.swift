@@ -20,6 +20,7 @@ import AppKit
 import SwiftUI
 import Foundation
 import BrowserServicesKit
+import PixelKit
 import Subscription
 
 protocol VPNUpsellPopoverPresenter {
@@ -32,11 +33,16 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    private let pixelHandler: (PrivacyProPixel) -> Void
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, featureFlagger: FeatureFlagger, vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         featureFlagger: FeatureFlagger,
+         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+         pixelHandler: @escaping (PrivacyProPixel) -> Void = { PixelKit.fire($0) }) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
+        self.pixelHandler = pixelHandler
     }
 
     var isShown: Bool {
@@ -78,6 +84,9 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
         self.popover = newPopover
 
         show(newPopover, positionedBelow: view)
+
+        // Fire pixel when popover is shown
+        pixelHandler(.privacyProToolbarButtonPopoverShown)
     }
 
     func dismiss() {

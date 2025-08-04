@@ -34,6 +34,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
     var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager!
     var lastReceivedURL: URL?
+    var firedPixels: [PrivacyProPixel] = []
     var cancellables: Set<AnyCancellable> = []
 
     override func setUp() {
@@ -42,6 +43,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
+        firedPixels = []
 
         mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
 
@@ -54,7 +56,8 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
             timerDuration: 0.01,
-            autoDismissDays: 7
+            autoDismissDays: 7,
+            pixelHandler: { _ in }
         )
         vpnUpsellVisibilityManager.setup(isFirstLaunch: false)
 
@@ -65,7 +68,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             urlOpener: { url in
                 self.lastReceivedURL = url
             },
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
     }
 
@@ -77,6 +83,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         mockFeatureFlagger = nil
         mockDefaultBrowserProvider = nil
         lastReceivedURL = nil
+        firedPixels = []
         mockPersistor = nil
         cancellables.removeAll()
     }
@@ -94,6 +101,18 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         XCTAssertEqual(vpnUpsellVisibilityManager.state, .dismissed)
     }
 
+    func testWhenPopoverIsDismissed_ThenDismissPixelIsFired() throws {
+        // Given
+        XCTAssertTrue(firedPixels.isEmpty)
+
+        // When
+        sut.dismiss()
+
+        // Then
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, PrivacyProPixel.privacyProToolbarButtonPopoverDismissButtonClicked.name)
+    }
+
     func testWhenPrimaryCTAIsClicked_SubscriptionLandingPageIsOpened_AndOriginIsSet() throws {
         // Given
         let baseURL = URL(string: "https://duckduckgo.com/pro/purchase")!
@@ -108,6 +127,20 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         let originQueryItem = try XCTUnwrap(components.queryItems?.first { $0.name == "origin" })
         XCTAssertEqual(originQueryItem.value, SubscriptionFunnelOrigin.vpnUpsell.rawValue)
         XCTAssertEqual(originQueryItem.value, "funnel_toolbar_macos")
+    }
+
+    func testWhenPrimaryCTAIsClicked_ThenProceedPixelIsFired() throws {
+        // Given
+        let baseURL = URL(string: "https://duckduckgo.com/pro/purchase")!
+        mockSubscriptionManager.urls[.purchase] = baseURL
+        XCTAssertTrue(firedPixels.isEmpty)
+
+        // When
+        sut.showSubscriptionLandingPage()
+
+        // Then
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, PrivacyProPixel.privacyProToolbarButtonPopoverProceedButtonClicked.name)
     }
 
     func testWhenUserIsEligibleForFreeTrial_ThenMainCTATitleIsTryForFree() throws {
@@ -129,7 +162,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
 
         wait(for: [expectation], timeout: 1)
@@ -154,7 +190,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
 
         wait(for: [expectation], timeout: 1)
@@ -178,7 +217,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
 
         wait(for: [expectation], timeout: 1)
@@ -203,7 +245,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
 
         wait(for: [expectation], timeout: 1)
@@ -228,7 +273,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
 
         wait(for: [expectation], timeout: 1)
@@ -252,7 +300,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
 
         wait(for: [expectation], timeout: 1)
@@ -277,7 +328,10 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
-            onDismiss: {}
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
         )
 
         wait(for: [expectation], timeout: 1)

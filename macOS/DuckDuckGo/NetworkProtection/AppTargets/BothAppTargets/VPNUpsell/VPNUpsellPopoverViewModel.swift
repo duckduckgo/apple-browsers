@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import PixelKit
 import Subscription
 
 extension VPNUpsellPopoverViewModel {
@@ -81,6 +82,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
     private let urlOpener: @MainActor (URL) -> Void
     private let onDismiss: () -> Void
+    private let pixelHandler: (PrivacyProPixel) -> Void
 
     private let coreFeatures: [Feature] = [
         .hideIPAddress,
@@ -94,13 +96,15 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
          urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
          },
-         onDismiss: @escaping () -> Void)
+         onDismiss: @escaping () -> Void,
+         pixelHandler: @escaping (PrivacyProPixel) -> Void = { PixelKit.fire($0) })
     {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.urlOpener = urlOpener
         self.onDismiss = onDismiss
+        self.pixelHandler = pixelHandler
 
         checkFeatureEligibility()
     }
@@ -139,6 +143,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     }
 
     func showSubscriptionLandingPage() {
+        pixelHandler(.privacyProToolbarButtonPopoverProceedButtonClicked)
         onDismiss()
 
         guard let components = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.vpnUpsell.rawValue),
@@ -153,6 +158,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     }
 
     func dismiss() {
+        pixelHandler(.privacyProToolbarButtonPopoverDismissButtonClicked)
         vpnUpsellVisibilityManager.dismissUpsell()
         onDismiss()
     }

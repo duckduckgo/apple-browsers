@@ -105,18 +105,4 @@
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
-    'm_debug_history-store-load-failed_ios': {
-        description: 'Fires when history database failed to load.',
-        owners: ['jaceklyp', 'bwaresiak'],
-        triggers: ['exception'],
-        suffixes: ['form_factor', 'first_daily_count'],
-        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
-    },
-    'm_debug_history-store-load-failed_ios': {
-        description: 'Fires when history database failed to load.',
-        owners: ['jaceklyp', 'bwaresiak'],
-        triggers: ['exception'],
-        suffixes: ['form_factor', 'first_daily_count'],
-        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
-    },
 }

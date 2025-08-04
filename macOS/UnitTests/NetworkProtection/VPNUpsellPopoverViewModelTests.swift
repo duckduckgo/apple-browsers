@@ -18,6 +18,7 @@
 
 import XCTest
 import Combine
+import Common
 import VPN
 import BrowserServicesKit
 import SubscriptionTestingUtilities
@@ -118,7 +119,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             .dropFirst()
             .sink { featureSet in
                 // Then
-                XCTAssertEqual(featureSet.mainCTATitle, "Try For Free")
+                XCTAssertEqual(featureSet.mainCTATitle, UserText.vpnUpsellPopoverFreeTrialCTA)
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -143,7 +144,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             .dropFirst()
             .sink { featureSet in
                 // Then
-                XCTAssertEqual(featureSet.mainCTATitle, "Learn More")
+                XCTAssertEqual(featureSet.mainCTATitle, UserText.vpnUpsellPopoverLearnMoreCTA)
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -241,7 +242,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             .dropFirst()
             .sink { featureSet in
                 // Then
-                XCTAssertEqual(featureSet.plusFeaturesSubtitle, "+ more premium protections")
+                XCTAssertEqual(featureSet.plusFeaturesSubtitle, UserText.vpnUpsellPopoverPlusFeaturesSubtitle)
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -266,7 +267,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             .dropFirst()
             .sink { featureSet in
                 // Then
-                XCTAssertEqual(featureSet.plusFeaturesSubtitle, "+ 2 more premium protections")
+                XCTAssertEqual(featureSet.plusFeaturesSubtitle, String(format: UserText.vpnUpsellPopoverPlusFeaturesSubtitleCount, 2))
                 expectation.fulfill()
             }
             .store(in: &cancellables)

@@ -1581,6 +1581,22 @@ struct UserText {
     static let restoringSubscriptionTitle = NSLocalizedString("subscription.progress.view.restoring.subscription", value: "Restoring subscription...", comment: "Progress view title when restoring past subscription purchase")
     static let completingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
 
+    // MARK: - VPN Upsell Popover
+    static let vpnUpsellPopoverTitle = NSLocalizedString("subscription.upsell.popover.title", value: "A VPN to secure your\nWi-Fi & personal info", comment: "Title shown in VPN Upsell popover")
+    static let vpnUpsellPopoverFreeTrialCTA = NSLocalizedString("subscription.upsell.popover.cta.free.trial", value: "Try For Free", comment: "Title for the main CTA button in VPN Upsell popover if user is eligible for free trial")
+    static let vpnUpsellPopoverLearnMoreCTA = NSLocalizedString("subscription.upsell.popover.cta.learn.more", value: "Learn More", comment: "Title for the main CTA button in VPN Upsell popover if user is not eligible for free trial")
+    static let vpnUpsellPopoverNoThanksButton = NSLocalizedString("subscription.upsell.popover.button.no.thanks", value: "No Thanks", comment: "Title for the no thanks button in VPN Upsell popover (will dismiss the popover)")
+    static let vpnUpsellPopoverPlusFeaturesSubtitle = NSLocalizedString("subscription.upsell.popover.plus.features.subtitle", value: "+ more premium protections", comment: "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed")
+    static let vpnUpsellPopoverPlusFeaturesSubtitleCount = NSLocalizedString("subscription.upsell.popover.plus.features.subtitle.count", value: "+ %d more premium protections", comment: "Subtitle shown in VPN Upsell popover when there are multiple plus features listed")
+    static let vpnUpsellPopoverPlusFeaturesSectionTitle = NSLocalizedString("subscription.upsell.popover.plus.features.section.title", value: "Plus", comment: "Section title for plus features listed in the VPN Upsell popover")
+    static let hideIPAddressFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.hide.ip.address.title", value: "Hide your IP address from sites", comment: "Title for the hide IP address feature listed in the VPN Upsell popover")
+    static let shieldOnlineActivityFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.shield.online.activity.title", value: "Shield your online activity from others", comment: "Title for the shield online activity feature listed in the VPN Upsell popover")
+    static let blockHarmfulSitesFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.block.harmful.sites.title", value: "Block harmful sites & online scams", comment: "Title for the block harmful sites feature listed in the VPN Upsell popover")
+    static let aiChatFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.ai.chat.title", value: "Chat privately with advanced AI models", comment: "Title for the AI chat feature listed in the VPN Upsell popover")
+    static let identityTheftProtectionFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.identity.theft.protection.title", value: "Restore your identity if it's stolen", comment: "Title for the identity theft protection feature listed in the VPN Upsell popover")
+    static let pirFeatureTitle = NSLocalizedString("subscription.upsell.popover.plus.features.pir.title", value: "Remove info from sites that sell it", comment: "Title for the Private Information Removal feature listed in the VPN Upsell popover")
+    static let pirFeatureSubtitle = NSLocalizedString("subscription.upsell.popover.plus.features.pir.subtitle", value: "currently available on Mac & Windows", comment: "Subtitle for the Private Information Removal feature listed in the VPN Upsell popover")
+
     // Mark: Sync Promo
     static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")
     static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords  ", comment: "Title for the Sync Promotion banner")

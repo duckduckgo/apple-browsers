@@ -27,12 +27,12 @@ extension VPNUpsellPopoverViewModel {
         let isEligibleForFreeTrial: Bool
 
         var mainCTATitle: String {
-            isEligibleForFreeTrial ? "Try For Free" : "Learn More"
+            isEligibleForFreeTrial ? UserText.vpnUpsellPopoverFreeTrialCTA : UserText.vpnUpsellPopoverLearnMoreCTA
         }
 
         var plusFeaturesSubtitle: String {
             let plusCount = plus.count
-            return plusCount > 1 ? "+ \(plusCount) more premium protections" : "+ more premium protections"
+            return plusCount > 1 ? String(format: UserText.vpnUpsellPopoverPlusFeaturesSubtitleCount, plusCount) : UserText.vpnUpsellPopoverPlusFeaturesSubtitle
         }
     }
 
@@ -47,24 +47,24 @@ extension VPNUpsellPopoverViewModel {
         var title: String {
             switch self {
             case .hideIPAddress:
-                return "Hide your IP address from sites"
+                return UserText.hideIPAddressFeatureTitle
             case .shieldOnlineActivity:
-                return "Shield your online activity from others"
+                return UserText.shieldOnlineActivityFeatureTitle
             case .blockHarmfulSites:
-                return "Block harmful sites & online scams"
+                return UserText.blockHarmfulSitesFeatureTitle
             case .aiChat:
-                return "Chat privately with advanced AI models"
+                return UserText.aiChatFeatureTitle
             case .identityTheftProtection:
-                return "Restore your identity if it's stolen"
+                return UserText.identityTheftProtectionFeatureTitle
             case .pir:
-                return "Remove info from sites that sell it"
+                return UserText.pirFeatureTitle
             }
         }
 
         var subtitle: String? {
             switch self {
             case .pir:
-                return "(currently available on Mac & Windows)"
+                return "(\(UserText.pirFeatureSubtitle))"
             default:
                 return nil
             }

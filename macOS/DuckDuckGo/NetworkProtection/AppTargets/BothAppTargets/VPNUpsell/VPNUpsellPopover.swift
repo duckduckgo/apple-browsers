@@ -27,31 +27,31 @@ import SwiftUIExtensions
 // MARK: - Constants
 
 private enum Constants {
-        static let outerVerticalSpacing: CGFloat = 16
-        static let innerVerticalSpacing: CGFloat = 28
-        static let headerHorizontalPadding: CGFloat = 48
-        static let titleAndSubtitleHorizontalPadding: CGFloat = 36
-        static let titleAndSubtitleVerticalSpacing: CGFloat = 8
-        static let featuresHorizontalPadding: CGFloat = 48
-        static let featuresVerticalSpacing: CGFloat = 12
-        static let actionButtonsTopPadding: CGFloat = 12
-        static let topPadding: CGFloat = 28
-        static let horizontalPadding: CGFloat = 16
-        static let bottomPadding: CGFloat = 24
-        static let sparkleSize: CGSize = CGSize(width: 250, height: 100)
-        static let privacyProSize: CGSize = CGSize(width: 256, height: 96)
-        static let plusRowHorizontalSpacing: CGFloat = 12
-        static let plusRowVerticalSpacing: CGFloat = 4
-        static let actionButtonHorizontalSpacing: CGFloat = 8
-        static let actionButtonHeight: CGFloat = 28
-        static let horizontalLineHeight: CGFloat = 1
-        static let horizontalLineCornerRadius: CGFloat = 2
-        static let featureRowImageSize: CGSize = CGSize(width: 16, height: 16)
-        static let featureRowImageTopPadding: CGFloat = 2
-        static let featureRowSubtitleVerticalSpacing: CGFloat = 2
-        static let featureRowHorizontalSpacing: CGFloat = 8
-        static let featureRowImageFontSize: CGFloat = 12
-    }
+    static let outerVerticalSpacing: CGFloat = 16
+    static let innerVerticalSpacing: CGFloat = 28
+    static let headerHorizontalPadding: CGFloat = 48
+    static let titleAndSubtitleHorizontalPadding: CGFloat = 36
+    static let titleAndSubtitleVerticalSpacing: CGFloat = 8
+    static let featuresHorizontalPadding: CGFloat = 48
+    static let featuresVerticalSpacing: CGFloat = 12
+    static let actionButtonsTopPadding: CGFloat = 12
+    static let topPadding: CGFloat = 28
+    static let horizontalPadding: CGFloat = 16
+    static let bottomPadding: CGFloat = 24
+    static let sparkleSize: CGSize = CGSize(width: 250, height: 100)
+    static let privacyProSize: CGSize = CGSize(width: 256, height: 96)
+    static let plusRowHorizontalSpacing: CGFloat = 12
+    static let plusRowVerticalSpacing: CGFloat = 4
+    static let actionButtonHorizontalSpacing: CGFloat = 8
+    static let actionButtonHeight: CGFloat = 28
+    static let horizontalLineHeight: CGFloat = 1
+    static let horizontalLineCornerRadius: CGFloat = 2
+    static let featureRowImageSize: CGSize = CGSize(width: 16, height: 16)
+    static let featureRowImageTopPadding: CGFloat = 2
+    static let featureRowSubtitleVerticalSpacing: CGFloat = 2
+    static let featureRowHorizontalSpacing: CGFloat = 8
+    static let featureRowImageFontSize: CGFloat = 12
+}
 
 // MARK: - View
 
@@ -96,13 +96,13 @@ struct VPNUpsellPopoverView: View {
     }
     var titleAndSubtitle: some View {
         VStack(spacing: Constants.titleAndSubtitleVerticalSpacing) {
-            Text(verbatim: "A VPN to secure your\nWi-Fi & personal info")
+            Text(UserText.vpnUpsellPopoverTitle)
                 .font(.title3.weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
 
-            Text(verbatim: viewModel.featureSet.plusFeaturesSubtitle)
+            Text(viewModel.featureSet.plusFeaturesSubtitle)
                 .font(.subheadline)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
@@ -116,7 +116,7 @@ struct VPNUpsellPopoverView: View {
             }
             HStack(spacing: Constants.plusRowHorizontalSpacing) {
                 horizontalLine
-                Text(verbatim: "PLUS")
+                Text(UserText.vpnUpsellPopoverPlusFeaturesSectionTitle.uppercased())
                     .font(.caption.weight(.semibold))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                 horizontalLine
@@ -134,7 +134,7 @@ struct VPNUpsellPopoverView: View {
             Button {
                 viewModel.dismiss()
             } label: {
-                Text(verbatim: "No Thanks")
+                Text(UserText.vpnUpsellPopoverNoThanksButton)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(StandardButtonStyle())
@@ -142,7 +142,7 @@ struct VPNUpsellPopoverView: View {
             Button {
                 viewModel.showSubscriptionLandingPage()
             } label: {
-                Text(verbatim: viewModel.featureSet.mainCTATitle)
+                Text(viewModel.featureSet.mainCTATitle)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
@@ -180,13 +180,13 @@ private struct FeatureRow: View {
                 .padding(.top, Constants.featureRowImageTopPadding)
 
             VStack(alignment: .leading, spacing: Constants.featureRowSubtitleVerticalSpacing) {
-                Text(verbatim: text)
+                Text(text)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let subtitle = subtitle {
-                    Text(verbatim: subtitle)
+                    Text(subtitle)
                         .font(.caption)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .fixedSize(horizontal: false, vertical: true)

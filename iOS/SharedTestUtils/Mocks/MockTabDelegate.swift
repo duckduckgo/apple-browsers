@@ -157,7 +157,8 @@ extension TabViewController {
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
-            keyValueStore: try! MockKeyValueFileStore()
+            keyValueStore: try! MockKeyValueFileStore(),
+            daxDialogsManager: DummyDaxDialogsManager()
         )
         tab.attachWebView(configuration: .nonPersistent(), andLoadRequest: nil, consumeCookies: false, customWebView: customWebView)
         return tab
@@ -202,6 +203,68 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     
     func advancedInfoPresented() {}
 
+}
+
+class DummyDaxDialogsManager: DaxDialogsManaging {
+    var isShowingFireDialog: Bool = false
+
+    var shouldShowPrivacyButtonPulse: Bool = false
+
+    var isShowingSearchSuggestions: Bool = false
+
+    var isShowingSitesSuggestions: Bool = false
+
+    var shouldShowFireButtonPulse: Bool = false
+
+    var isAddFavoriteFlow: Bool = false
+
+    var isShowingPrivacyProPromotion: Bool = false
+
+    var privacyProPromotionDialogSeen: Bool = false
+
+    func setTryAnonymousSearchMessageSeen() { }
+    
+    func setTryVisitSiteMessageSeen() {}
+    
+    func setSearchMessageSeen() {}
+    
+    func setFireEducationMessageSeen() {}
+    
+    func clearedBrowserData() {}
+    
+    func setFinalOnboardingDialogSeen() {}
+    
+    func setPrivacyButtonPulseSeen() { }
+    
+    func setDaxDialogDismiss() {}
+    
+    func enableAddFavoriteFlow() {}
+    
+    func isStillOnboarding() -> Bool {
+        false
+    }
+    
+    func fireButtonPulseCancelled() {}
+    
+    func resumeRegularFlow() {}
+    
+    func clearHeldURLData() {}
+    
+    func fireButtonPulseStarted() {}
+    
+    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyDashboard.PrivacyInfo) -> DuckDuckGo.DaxDialogs.BrowsingSpec? {
+        nil
+    }
+    
+    func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {}
+    
+    func nextHomeScreenMessageNew() -> DuckDuckGo.DaxDialogs.HomeScreenSpec? {
+        nil
+    }
+    
+    func dismiss() {}
+
+    func disableContextualDaxDialogs() {}
 }
 
 // swiftlint:enable force_try

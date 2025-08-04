@@ -102,7 +102,8 @@ final class TabManagerTests: XCTestCase {
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),
-                          keyValueStore: try! MockKeyValueFileStore())
+                          keyValueStore: try! MockKeyValueFileStore(),
+                          daxDialogsManager: DummyDaxDialogsManager())
     }
 
 }

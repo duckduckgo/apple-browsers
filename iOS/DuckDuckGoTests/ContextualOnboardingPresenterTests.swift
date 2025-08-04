@@ -19,6 +19,7 @@
 
 import XCTest
 import SwiftUI
+import PrivacyDashboard
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterTests: XCTestCase {
@@ -188,6 +189,10 @@ final class MockContextualOnboardingLogic: ContextualOnboardingLogic {
 
     var isShowingSitesSuggestions: Bool = false
 
+    var shouldShowFireButtonPulse: Bool = false
+
+    var isAddFavoriteFlow: Bool = false
+
     func setTryAnonymousSearchMessageSeen() {}
 
     func setTryVisitSiteMessageSeen() {}
@@ -205,5 +210,23 @@ final class MockContextualOnboardingLogic: ContextualOnboardingLogic {
     func setDaxDialogDismiss() {}
 
     func enableAddFavoriteFlow() {}
+
+    func isStillOnboarding() -> Bool {
+        false
+    }
+
+    func fireButtonPulseCancelled() {}
+
+    func resumeRegularFlow() {}
+
+    func clearHeldURLData() {}
+
+    func fireButtonPulseStarted() {}
+
+    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyDashboard.PrivacyInfo) -> DuckDuckGo.DaxDialogs.BrowsingSpec? {
+        nil
+    }
+
+    func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {}
 
 }

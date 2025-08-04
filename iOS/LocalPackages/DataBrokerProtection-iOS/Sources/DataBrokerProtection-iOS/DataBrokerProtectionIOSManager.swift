@@ -314,10 +314,8 @@ public final class DataBrokerProtectionIOSManager {
 
             let timeTaken = Date.now.timeIntervalSince(startDate)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
-                                                              deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-            
+            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0))
+
             // Record terminated event
             let duration = Date.now.timeIntervalSince(startDate) * 1000.0
             do {

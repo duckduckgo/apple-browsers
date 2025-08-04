@@ -58,18 +58,18 @@ final class BrowsingMenuViewController: UIViewController {
     private var headerButtons: [BrowsingMenuButton] = []
     private let headerEntries: [BrowsingMenuEntry]
     private let menuEntries: [BrowsingMenuEntry]
-    private let daxDialogsManager: DaxDialogsOnboardingManaging
+    private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
 
     var onDismiss: (() -> Void)?
 
-    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsOnboardingManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
+    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
             BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, coder: coder)
         }!
     }
 
-    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsOnboardingManaging, appSettings: AppSettings, coder: NSCoder) {
+    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings, coder: NSCoder) {
         self.headerEntries = headerEntries
         self.menuEntries = menuEntries
         self.daxDialogsManager = daxDialogsManager

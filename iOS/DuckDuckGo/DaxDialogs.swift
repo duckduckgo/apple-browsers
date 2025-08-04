@@ -44,6 +44,8 @@ protocol ContextualOnboardingLogic {
     var shouldShowPrivacyButtonPulse: Bool { get }
     var isShowingSearchSuggestions: Bool { get }
     var isShowingSitesSuggestions: Bool { get }
+    var shouldShowFireButtonPulse: Bool { get }
+    var isAddFavoriteFlow: Bool { get }
 
     func setTryAnonymousSearchMessageSeen()
     func setTryVisitSiteMessageSeen()
@@ -55,7 +57,16 @@ protocol ContextualOnboardingLogic {
     func setDaxDialogDismiss()
 
     func enableAddFavoriteFlow()
+    func isStillOnboarding() -> Bool
+    func fireButtonPulseCancelled()
+    func resumeRegularFlow()
+    func clearHeldURLData()
+    func fireButtonPulseStarted()
+    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> DaxDialogs.BrowsingSpec?
+    func overrideShownFlagFor(_ spec: DaxDialogs.BrowsingSpec, flag: Bool)
 }
+
+typealias DaxDialogsManaging = ContextualOnboardingLogic & PrivacyProPromotionCoordinating & NewTabDialogSpecProvider & ContextualDaxDialogDisabling
 
 protocol PrivacyProPromotionCoordinating {
     /// Indicates whether the Privacy Pro promotion dialog is currently being displayed

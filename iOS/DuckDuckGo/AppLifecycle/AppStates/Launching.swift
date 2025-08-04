@@ -45,7 +45,6 @@ struct Launching: LaunchingHandling {
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings = AIChatSettings()
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
-    private let daxDialogsManager = DaxDialogsManager()
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
@@ -94,13 +93,15 @@ struct Launching: LaunchingHandling {
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
 
+        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+
         // Service to display the Default Browser prompt.
         let defaultBrowserPromptService = DefaultBrowserPromptService(
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-            isOnboardingCompletedProvider: { [daxDialogsManager] in daxDialogsManager.isOnboardingCompleted }
+            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
         )
 
         // MARK: - Main Coordinator Setup
@@ -124,7 +125,7 @@ struct Launching: LaunchingHandling {
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-                                              daxDialogsManager: daxDialogsManager)
+                                              daxDialogsManager: daxDialogs)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -237,165 +238,6 @@ extension Launching {
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
-    }
-
-}
-
-import PrivacyDashboard
-
-protocol DaxDialogsOnboardingManaging {
-    var isOnboardingCompleted: Bool { get }
-    var shouldShowFireButtonPulse: Bool { get }
-    var shouldShowPrivacyButtonPulse: Bool { get }
-    var isAddFavoriteFlow: Bool { get }
-
-    func isStillOnboarding() -> Bool
-    func fireButtonPulseCancelled()
-    func resumeRegularFlow()
-    func clearedBrowserData()
-    func clearHeldURLData()
-    func fireButtonPulseStarted()
-    func setPrivacyButtonPulseSeen()
-    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> DaxDialogs.BrowsingSpec?
-    func overrideShownFlagFor(_ spec: DaxDialogs.BrowsingSpec, flag: Bool)
-}
-
-typealias DaxDialogsManaging = DaxDialogsOnboardingManaging & DaxDialogsFlowCoordinator & NewTabDialogSpecProvider & ContextualDaxDialogDisabling
-
-
-final class DaxDialogsManager {
-    lazy var daxDialogs: DaxDialogs = DaxDialogs(entityProviding: ContentBlocking.shared.contentBlockingManager)
-}
-
-extension DaxDialogsManager: DaxDialogsOnboardingManaging {
-
-    var isOnboardingCompleted: Bool {
-        daxDialogs.isEnabled
-    }
-
-    var shouldShowFireButtonPulse: Bool {
-        daxDialogs.shouldShowFireButtonPulse
-    }
-
-    var shouldShowPrivacyButtonPulse: Bool {
-        daxDialogs.shouldShowPrivacyButtonPulse
-    }
-
-    var isAddFavoriteFlow: Bool {
-        daxDialogs.isAddFavoriteFlow
-    }
-
-    func isStillOnboarding() -> Bool {
-        daxDialogs.isStillOnboarding()
-    }
-
-    func fireButtonPulseCancelled() {
-        daxDialogs.fireButtonPulseCancelled()
-    }
-
-    func clearHeldURLData() {
-        daxDialogs.clearHeldURLData()
-    }
-
-    func resumeRegularFlow() {
-        daxDialogs.resumeRegularFlow()
-    }
-
-    func clearedBrowserData() {
-        daxDialogs.clearedBrowserData()
-    }
-
-    func fireButtonPulseStarted() {
-        daxDialogs.fireButtonPulseStarted()
-    }
-
-    func setPrivacyButtonPulseSeen() {
-        daxDialogs.setPrivacyButtonPulseSeen()
-    }
-
-    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> DaxDialogs.BrowsingSpec? {
-        daxDialogs.nextBrowsingMessageIfShouldShow(for: privacyInfo)
-    }
-
-    func overrideShownFlagFor(_ spec: DaxDialogs.BrowsingSpec, flag: Bool) {
-        daxDialogs.overrideShownFlagFor(spec, flag: flag)
-    }
-
-}
-
-extension DaxDialogsManager: DaxDialogsFlowCoordinator {
-
-    var isShowingFireDialog: Bool {
-        daxDialogs.isShowingFireDialog
-    }
-    
-    var isShowingSearchSuggestions: Bool {
-        daxDialogs.isShowingSearchSuggestions
-    }
-    
-    var isShowingSitesSuggestions: Bool {
-        daxDialogs.isShowingSitesSuggestions
-    }
-
-    var isShowingPrivacyProPromotion: Bool {
-        daxDialogs.isShowingPrivacyProPromotion
-    }
-
-    var privacyProPromotionDialogSeen: Bool {
-        get {
-            daxDialogs.privacyProPromotionDialogSeen
-        }
-        set {
-            daxDialogs.privacyProPromotionDialogSeen = newValue
-        }
-    }
-
-    func setTryAnonymousSearchMessageSeen() {
-        daxDialogs.setTryAnonymousSearchMessageSeen()
-    }
-    
-    func setTryVisitSiteMessageSeen() {
-        daxDialogs.setTryVisitSiteMessageSeen()
-    }
-    
-    func setSearchMessageSeen() {
-        daxDialogs.setSearchMessageSeen()
-    }
-    
-    func setFireEducationMessageSeen() {
-        daxDialogs.setSearchMessageSeen()
-    }
-    
-    func setFinalOnboardingDialogSeen() {
-        daxDialogs.setFinalOnboardingDialogSeen()
-    }
-    
-    func setDaxDialogDismiss() {
-        daxDialogs.setDaxDialogDismiss()
-    }
-    
-    func enableAddFavoriteFlow() {
-        daxDialogs.enableAddFavoriteFlow()
-    }
-
-}
-
-extension DaxDialogsManager: NewTabDialogSpecProvider {
-
-    func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec? {
-        daxDialogs.nextHomeScreenMessageNew()
-    }
-
-    func dismiss() {
-        daxDialogs.dismiss()
-    }
-    
-}
-
-extension DaxDialogsManager: ContextualDaxDialogDisabling {
-
-    func disableContextualDaxDialogs() {
-        daxDialogs.disableContextualDaxDialogs()
     }
 
 }

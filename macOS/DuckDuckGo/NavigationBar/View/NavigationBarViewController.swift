@@ -1219,7 +1219,7 @@ final class NavigationBarViewController: NSViewController {
 
     private func toggleNetworkProtectionPopover() {
         guard Application.appDelegate.subscriptionAuthV1toV2Bridge.isUserAuthenticated else {
-            popovers.toggleVPNUpsellPopover(from: networkProtectionButton, withDelegate: self)
+            popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
             return
         }
 

@@ -1368,14 +1368,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.autofillPixelReporter?.updateAutofillEnabledStatus(AutofillPreferences().askToSaveUsernamesAndPasswords)
         }
     }
-
-    @MainActor
-    private func openSubscriptionPurchaseFlow(origin: SubscriptionFunnelOrigin) {
-        let url = subscriptionAuthV1toV2Bridge.url(for: .purchase)
-            .appendingParameter(name: AttributionParameter.origin, value: origin.rawValue)
-
-        windowControllersManager.showTab(with: .subscription(url))
-    }
 }
 
 extension AppDelegate: UNUserNotificationCenterDelegate {

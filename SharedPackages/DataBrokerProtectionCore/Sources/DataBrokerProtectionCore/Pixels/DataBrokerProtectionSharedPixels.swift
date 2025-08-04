@@ -93,6 +93,10 @@ public enum DataBrokerProtectionSharedPixels {
         public static let durationMinMs = "duration_min_ms"
         public static let durationMaxMs = "duration_max_ms"
         public static let durationMedianMs = "duration_median_ms"
+        public static let numTotal = "num_total"
+        public static let numStalled = "num_stalled"
+        public static let totalByBroker = "total_by_broker"
+        public static let stalledByBroker = "stalled_by_broker"
 
 // This should never ever go to production and only exists for internal testing
 #if os(iOS)
@@ -170,6 +174,8 @@ public enum DataBrokerProtectionSharedPixels {
     case weeklyReportScanning(hadNewMatch: Bool, hadReAppereance: Bool, scanCoverage: String)
     case weeklyReportRemovals(removals: Int)
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double)
+    case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
+    case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
     case scanningEventNewMatch
     case scanningEventReAppearance
 
@@ -261,6 +267,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .weeklyReportScanning: return "dbp_event_weekly-report_scanning"
         case .weeklyReportRemovals: return "dbp_event_weekly-report_removals"
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
+        case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
+        case .weeklyReportStalledOptOuts: return "dbp_event_weekly-report_stalled-optouts"
         case .scanningEventNewMatch: return "dbp_event_scanning-events_new-match"
         case .scanningEventReAppearance: return "dbp_event_scanning-events_re-appearance"
 
@@ -428,6 +436,16 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.durationMinMs: String(durationMinMs),
                     Consts.durationMaxMs: String(durationMaxMs),
                     Consts.durationMedianMs: String(durationMedianMs)]
+        case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+            return [Consts.numTotal: String(numTotal),
+                    Consts.numStalled: String(numStalled),
+                    Consts.totalByBroker: totalByBroker,
+                    Consts.stalledByBroker: stalledByBroker]
+        case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+            return [Consts.numTotal: String(numTotal),
+                    Consts.numStalled: String(numStalled),
+                    Consts.totalByBroker: totalByBroker,
+                    Consts.stalledByBroker: stalledByBroker]
         case .optOutJobAt7DaysConfirmed(let dataBroker),
                 .optOutJobAt7DaysUnconfirmed(let dataBroker),
                 .optOutJobAt14DaysConfirmed(let dataBroker),
@@ -577,6 +595,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .weeklyReportScanning,
                     .weeklyReportRemovals,
                     .weeklyReportBackgroundTaskSession,
+                    .weeklyReportStalledScans,
+                    .weeklyReportStalledOptOuts,
                     .optOutJobAt7DaysConfirmed,
                     .optOutJobAt7DaysUnconfirmed,
                     .optOutJobAt14DaysConfirmed,

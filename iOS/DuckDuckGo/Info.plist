@@ -247,6 +247,19 @@
 	<string>https://duckduckgo.com</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>OSLogPreferences</key>
+	<dict>
+		<key>DEFAULT-OPTIONS</key>
+		<dict>
+			<key>Level</key>
+			<dict>
+				<key>Enable</key>
+				<string>Info</string>
+				<key>Persist</key>
+				<string>Info</string>
+			</dict>
+		</dict>
+	</dict>
 	<key>VAULT_APP_GROUP</key>
 	<string>$(AppIdentifierPrefix)$(VAULT_APP_GROUP)</string>
 </dict>

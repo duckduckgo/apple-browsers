@@ -25,7 +25,7 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
 
     enum Constants {
         static let width: CGFloat = 448
-        static let height: CGFloat = 540
+        static let height: CGFloat = 515
 
         // Constants for thank you screen
         static let thankYouWidth: CGFloat = 448
@@ -82,7 +82,7 @@ struct ReportProblemFormFlowView: View {
                         }
                     }
                 }
-            } else if viewModel.isShowingDetailForm, let selectedCategory = viewModel.selectedProblemCategory {
+            } else if viewModel.isShowingDetailForm {
                 ProblemDetailFormView(
                     viewModel: viewModel,
                     onBack: {
@@ -95,6 +95,14 @@ struct ReportProblemFormFlowView: View {
                     viewModel: viewModel,
                     onClose: onClose
                 )
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now()) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            onResize(ReportProblemFormViewController.Constants.width,
+                                     ReportProblemFormViewController.Constants.height)
+                        }
+                    }
+                }
             }
         }
     }
@@ -140,15 +148,21 @@ struct ProblemCategoriesView: View {
     private func shouldShowDivider(for category: ProblemCategory) -> Bool {
         let isLastItem = category.id == viewModel.availableCategories.last?.id
 
+        var shouldShowDivider: Bool = false
+
         if isLastItem {
-            return false
+            shouldShowDivider = false
         } else if hoveredCategoryId == category.id {
-            return false
+            shouldShowDivider = false
         } else if let previousHoveredItem = getHoveredPreviousItem {
-            return previousHoveredItem.id != category.id
+            shouldShowDivider = previousHoveredItem.id != category.id
         } else {
-            return true
+            shouldShowDivider = true
         }
+
+        print("Should show divider for \(category.id) is `\(shouldShowDivider)")
+
+        return shouldShowDivider
     }
 
     private var getHoveredPreviousItem: ProblemCategory? {
@@ -259,8 +273,9 @@ struct ProblemCategoryView: View {
             onHoverChanged(category.id, hovering)
         }
 
-        Divider()
-            .background(shouldShowDivider ? Color.toneShade : Color.clear)
+        Rectangle()
+            .stroke(shouldShowDivider ? Color.toneShade : Color.clear, lineWidth: 1)
+            .frame(height: 1)
             .padding(.horizontal, 8)
     }
 }
@@ -274,11 +289,9 @@ struct ProblemDetailFormView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScrollView {
-                header()
-                optionsPills()
-                userTextInput()
-            }
+            header()
+            optionsPills()
+            userTextInput()
 
             footer()
         }

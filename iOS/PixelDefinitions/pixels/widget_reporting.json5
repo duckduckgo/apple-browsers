@@ -15,9 +15,9 @@
                 examples: [
                     'QuickActionWidget-systemSmall',
                     'QuickActionWidget-systemSmall,FavoritesWidget-systemLarge',
-                    'VPNStatusWidget-systemSmall,QuickActionsWidget-systemSmall,FavoritesWidget-systemMedium,FavoritesWidget-systemLarge'
-                ]
-            }
+                    'VPNStatusWidget-systemSmall,QuickActionsWidget-systemSmall,FavoritesWidget-systemMedium,FavoritesWidget-systemLarge',
+                ],
+            },
         ],
     },
     'm.widget-report-failure': {

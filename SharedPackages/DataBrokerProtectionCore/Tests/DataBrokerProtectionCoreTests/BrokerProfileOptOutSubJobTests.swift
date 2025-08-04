@@ -236,7 +236,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         if let lastPixelFired = mockPixelHandler.lastFiredEvent {
             switch lastPixelFired {
 #if os(iOS)
-            case .optOutSubmitSuccess(_, _, _, let tries, _, _, _, _):
+            case .optOutSubmitSuccess(_, _, _, let tries, _, _, _):
                 XCTAssertEqual(tries, 3)
 #else
             case .optOutSubmitSuccess(_, _, _, let tries, _, _, _):
@@ -259,7 +259,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             if let lastPixelFired = mockPixelHandler.lastFiredEvent {
                 switch lastPixelFired {
 #if os(iOS)
-                case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _, _):
+                case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _):
                     XCTAssertEqual(tries, 3)
 #else
                 case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _):

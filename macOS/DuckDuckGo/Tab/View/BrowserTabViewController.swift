@@ -992,8 +992,9 @@ final class BrowserTabViewController: NSViewController {
                 }
             }
         } else {
-            newTabPageLoadMetrics.onNTPAlreadyPresented()
-        }
+            if tabViewModel?.tabContent == .newtab {
+                newTabPageLoadMetrics.onNTPAlreadyPresented()
+            }
     }
 
     func showTabContentForSettings(pane: PreferencePaneIdentifier?) {

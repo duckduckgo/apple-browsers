@@ -189,7 +189,7 @@ final class AdClickExternalOpenDetector {
     }
 
     private func mitigate() {
-        Logger.adClickExternalOpenDetector.debug("\(self.tabID) Malicious sequence detected - mitigating")
+        Logger.adClickExternalOpenDetector.debug("\(self.tabID) mitigating")
         reset()
         mitigationHandler?()
     }

@@ -1330,6 +1330,30 @@
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS:lle";
 
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Lisää DuckDuckGo-tilauksesi tähän laitteeseen";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Lisää tilauksesi tähän laitteeseen sähköpostiosoitteen avulla.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Lisää tilauksesi muihin laitteisiin";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Lisää tilauksesi muihin laitteisiisi Apple ID:n kautta tai linkittämällä sähköpostiosoite. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Lisää tilauksesi muihin laitteisiisi DuckDuckGo-sovelluksessa käyttämällä tätä sähköpostiosoitetta. Siirry kohtaan Asetukset > DuckDuckGo-tilaus > Minulla on tilaus. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Katso vastaukset usein kysyttyihin kysymyksiin tai ota yhteyttä tilaustukeen ohjesivujemme kautta.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Aktivoi DuckDuckGo-tilaus tietokoneella Personal Information Removalin asettamiseksi.";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Et voi enää käyttää DuckDuckGo-tilaustasi tällä laitteella. Tämä ei peruuta tilaustasi, vaan se pysyy aktiivisena muilla laitteillasi.";
+
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Aina";
 
@@ -2057,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Lisää VPN-widget";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN katkaistu vanhentuneen tilauksen takia. Tilaa Privacy Pro, jotta voit yhdistää DuckDuckGo VPN:n uudelleen.";
+"network.protection.entitlement.expired.notification.body" = "VPN katkaistu vanhentuneen tilauksen takia. Tilaa DuckDuckGo, jotta voit yhdistää VPN:n uudelleen.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN ei onnistunut muodostamaan yhteyttä. Yritä myöhemmin uudelleen.";
@@ -2325,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Yksityinen selaus oletuksena";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo:lla on myös %1$@, joka on saatavilla %2$@:n kanssa ja edistyneellä, yksityisellä tekoälyllä.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valinnainen maksullinen tilaus";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Helppo tavoittaa";
@@ -2698,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Tietoja";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Lisäksi tarjoamme myös [Privacy Pron](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), selaimeemme integroidun 3-in-1-tilauspalvelun. Privacy Pron tilaajat saavat entistä paremman tietosuojan nopealla ja yksinkertaisella [VPN:llä](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), joka auttaa suojaamaan verkkotoimintaasi. Tämä palvelu etsii ja poistaa henkilötietosi käyttäjiä etsiviltä sivustoilta ja palauttaa henkilöllisyytesi, jos se varastetaan.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Lisäksi tarjoamme myös [DuckDuckGo-tilauksen](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integroituna selaimeemme. Tilaajat saavat entistä paremman yksityisyyden suojan helpolla ja nopealla [VPN:llä] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), joka auttaa suojaamaan toimintaasi verkossa, pääsyn edistyneisiin tekoälymalleihin yksityisessä Duck.ai-tekoälykeskustelupalvelussamme, joka etsii ja poistaa henkilötietosi henkilöhakusivustoilta, ja palvelun, joka palauttaa henkilöllisyytesi, jos se varastetaan.";
+
 /* about tagline */
 "settings.about.tagline" = "Suojausta. Tietosuojaa. Mielenrauhaa.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo on riippumaton verkkosuojausta tarjoava yritys kaikille, jotka haluavat saada henkilökohtaiset tietonsa takaisin hallintaansa.\n\nUskomme, että paras tapa suojata henkilötietojasi hakkereilta, huijareilta ja tietosuojaa loukkaavilta yrityksiltä on estää niiden kerääminen kokonaan. Siksi miljoonat ihmiset [valitsevat Chromen ja muiden selainten sijaan DuckDuckGon hakeakseen ja selatakseen verkossa](ddgQuickLink://duckduckgo.com/compare-privacy). Selaimeemme sisältyvä hakukoneemme on kuin Google, mutta se ei koskaan seuraa hakujasi. Selaussuojauksemme, kuten mainosten seurannan esto ja evästeiden esto, auttavat estämään muita yrityksiä keräämästä tietojasi. Lisäksi selaimemme on ilmainen – ansaitsemme rahaa [tietosuojaa kunnioittavilla hakumainoksilla](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ei hyödyntämällä tietojasi. \n\n%@ \n\nOta henkilökohtaiset tietosi takaisin hallintaasi selaimella, joka on suunniteltu tietojen suojaamiseen, ei tietojen keräämiseen.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Käytettävyys";
@@ -2724,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-pikakuvakkeet";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Hakukenttä";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Hae verkosta tai kysy Duck.ai:lta kirjoittamalla suoraan osoiteriville";
@@ -2800,6 +2836,9 @@
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo muilla alustoilla";
 
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Privacy Pro -tilauksesi on päättynyt";
+
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Estä sähköpostiseuranta ja piilota osoitteesi vaihtamatta sähköpostintarjoajaa.\n[Lisätietoja](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
 
@@ -2847,9 +2886,6 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Tuo salasanat";
-
-/* Copy for budge on settings item to show an item is new */
-"settings.item.badge.new" = "Uusi";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Näppäimistö";
@@ -2947,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Minulla on tilaus";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Tilaa uudelleen jatkaaksesi Privacy Pron käyttöä";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Privacy Pro -tilauksesi on päättynyt";
 
@@ -2984,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Suojaa WiFi-yhteytesi ja henkilöllisyytesi";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Kokeile DuckDuckGo-tilausta maksutta";
+"settings.subscription.try.free.button" = "Kokeile maksutta";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Kokeile Privacy Pro -tilausta ilmaiseksi";
@@ -3100,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Minulla on tilaus";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Lähetä ohjeet uudelleen";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Aktivoi tilauksesi muilla laitteillasi lisäämällä sähköpostiosoite. Käytämme tätä osoitetta vain tilauksesi vahvistamiseen.";
 
@@ -3117,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Lisää tilauksesi muihin laitteisiisi DuckDuckGo-sovelluksessa käyttämällä tätä sähköpostiosoitetta. Siirry kohtaan Asetukset > Privacy Pro > Minulla on tilaus. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Privacy Pro on käytettävissä kaikilla laitteilla, joilla on kirjauduttu sisään samalle Apple-tilille.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Tilauksesi on ostettu Google Play Kaupasta. Jos haluat uusia tilauksesi, avaa Google Play Kaupan tilausasetukset laitteella, jolla olet kirjautunut samalle Google-tilille, jolla alun perin ostit tilauksesi.";
@@ -3479,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Tilaa";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Tilaa Privacy Pro, jotta voit yhdistää DuckDuckGo VPN:n uudelleen.";
+"vpn.access-revoked.alert.message" = "Tilaa DuckDuckGo, jotta voit yhdistää VPN:n uudelleen.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "VPN-yhteys katkaistu vanhentuneen tilauksen takia.";

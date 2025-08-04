@@ -1330,6 +1330,30 @@
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo pro iOS";
 
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Přidej své předplatné DuckDuckGo do tohoto zařízení";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Pokud si předplatné chceš přidat do tohoto zařízení, použij e-mailovou adresu.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Přidej své předplatné do jiného zařízení";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Přidej si předplatné do svých dalších zařízení přes Apple ID nebo propojením e-mailové adresy. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Pomocí tohoto e-mailu si v aplikaci DuckDuckGo přidej předplatné do ostatních zařízení. Přejdi do Nastavení > Předplatné DuckDuckGo > Mám předplatné. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Na našich stránkách nápovědy najdeš odpovědi na časté otázky a najdeš tam kontakt na podporu předplatného.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Pro nastavení služby Personal Information Removal si aktivuj předplatné DuckDuckGo na počítači";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Na tomto zařízení už nebudeš mít přístup ke svému předplatnému DuckDuckGo. Tím se tvoje předplatné nezruší, na tvých ostatních zařízeních zůstane aktivní.";
+
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Vždy";
 
@@ -2057,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Přidej si VPN widget";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN byla odpojena kvůli vypršení platnosti předplatného. Předplať si službu Privacy Pro, ať můžeš DuckDuckGo VPN dál používat.";
+"network.protection.entitlement.expired.notification.body" = "VPN byla odpojená, protože platnost předplatného vypršela. Pro opětovné připojení k VPN si DuckDuckGo předplať.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "VPN DuckDuckGo se nepodařilo připojit. Zkus to znovu později.";
@@ -2325,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Soukromé vyhledávání ve výchozím nastavení";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo je k dispozici včetně %1$@, dostupnou %2$@ a špičkovou soukromou umělou inteligencí.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Vždy po ruce";
@@ -2698,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "O společnosti";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Kromě toho nabízíme taky službu [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/). To je předplacená služba „tři v jednom“, která je integrovaná v našem prohlížeči. Předplatitelé Privacy Pro získávají ještě větší ochranu soukromí díky rychlé a jednoduché [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), která pomáhá zabezpečit tvoje online aktivity, službě, která vyhledává a maže tvé osobní údaje ze stránek pro vyhledávání osob, a službě, která obnoví tvou identitu, kdyby ji někdo ukradl.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Kromě toho nabízíme také [předplatné DuckDuckGo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrované do našeho prohlížeče. Předplatitelé získávají ještě lepší ochranu soukromí díky rychlé a jednoduché [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), která pomáhá zabezpečit online aktivity, přístup k pokročilým modelům umělé inteligence v naší soukromé AI chatovací službě Duck.ai, službu, která vyhledává a maže osobní údaje ze stránek pro vyhledávání osob, a službu, která obnoví tvou identitu, kdyby došlo k její krádeži.";
+
 /* about tagline */
 "settings.about.tagline" = "Soukromí.Ochrana.Pocit jistoty.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo je nezávislá společnost zaměřená na ochranu soukromí na internetu pro každého, kdo chce mít své osobní údaje zase pod kontrolou.\n\nVěříme, že nejlepší způsob, jak ochránit tvoje osobní údaje před hackery, podvodníky a společnostmi, co jim soukromí moc neříká, je vůbec jim přístup k tvým údajům neumožnit. Proto miliony lidí [používají DuckDuckGo místo Chromu a jiných prohlížečů](ddgQuickLink://duckduckgo.com/compare-privacy) k vyhledávání a procházení internetu. Náš vyhledávač integrovaný v prohlížeči je jako Google, ale nikdy nesleduje, co hledáš. A naše sada funkcí na ochranu soukromí, která zahrnuje blokování reklamních trackerů a cookies, brání firmám ve sběru tvých dat. A mimochodem, náš prohlížeč je zdarma – peníze vyděláváme z [reklam ve vyhledávání, které respektují soukromí](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), a ne tím, že bychom využívali tvé údaje. \n\n%@ \n\nPřevezmi kontrolu nad svými osobními údaji a pořiď si prohlížeč navržený tak, aby tvoje data neshromažďoval, ale chránil.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Usnadnění";
@@ -2724,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Zkratky Duck.ai";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Zadání hledání";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Hledej na webu nebo se zeptej Duck.ai přímo v adresním řádku.";
@@ -2800,6 +2836,9 @@
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na jiných platformách";
 
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Tvoje předplatné Privacy Pro vypršelo";
+
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokuje e-mailové trackery a skryje tvou adresu bez nutnosti přepínat poskytovatele e-mailu.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
 
@@ -2847,9 +2886,6 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importovat hesla";
-
-/* Copy for budge on settings item to show an item is new */
-"settings.item.badge.new" = "Nová";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnice";
@@ -2947,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Mám předplatné";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Pokud chceš dál používat službu Privacy Pro, znovu si založ předplatné";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Tvoje předplatné Privacy Pro vypršelo";
 
@@ -2984,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Zabezpeč si Wi-Fi a chraň svou identitu";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Vyzkoušet předplatné DuckDuckGo zdarma";
+"settings.subscription.try.free.button" = "Vyzkoušet zdarma";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Vyzkoušej zdarma službu Privacy Pro";
@@ -3100,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Mám předplatné";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Znovu poslat instrukce";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Pokud chceš své předplatné aktivovat na dalších zařízeních, přidej e-mailovou adresu. Použijeme ji jen k ověření tvého předplatného.";
 
@@ -3117,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Pomocí tohoto e-mailu si v aplikaci DuckDuckGo přidej předplatné do ostatních zařízení. Přejdi do Nastavení > Privacy Pro > Mám předplatné. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Služba Privacy Pro je dostupná na jakémkoli zařízení přihlášeném ke stejnému účtu Apple.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Předplatné bylo zakoupeno prostřednictvím obchodu Google Play. Předplatné se dá obnovit tak, že otevřeš nastavení předplatného obchodu Google Play na zařízení přihlášeném ke stejnému účtu Google, který byl původně použit k nákupu předplatného.";
@@ -3479,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Odebírat novinky";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Předplať si službu Privacy Pro, ať můžeš DuckDuckGo VPN dál používat.";
+"vpn.access-revoked.alert.message" = "Pro opětovné připojení k VPN si DuckDuckGo předplať.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "VPN byla odpojena kvůli vypršení platnosti předplatného";

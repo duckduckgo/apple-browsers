@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Αναζήτηση";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Προβολή και διαχείριση της σύνδεσής σας VPN. Απαιτείται συνδρομή στο Privacy Pro.";
+"widget.gallery.vpn.description" = "Προβολή και διαχείριση της σύνδεσής σας VPN. Απαιτείται συνδρομή DuckDuckGo.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

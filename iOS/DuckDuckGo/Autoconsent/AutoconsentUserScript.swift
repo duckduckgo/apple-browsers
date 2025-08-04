@@ -51,7 +51,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     var forMainFrameOnly: Bool { false }
     
     weak var selfTestWebView: WKWebView?
-    weak var selfTestFrameInfo: WKFrameInfo?
+    var selfTestFrameInfo: WKFrameInfo?
     
     var topUrl: URL?
     var preferences: AutoconsentPreferences

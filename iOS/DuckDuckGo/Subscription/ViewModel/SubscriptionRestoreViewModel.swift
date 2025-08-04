@@ -22,6 +22,7 @@ import UserScript
 import Combine
 import Core
 import Subscription
+import BrowserServicesKit
 
 final class SubscriptionRestoreViewModel: ObservableObject {
     
@@ -51,12 +52,19 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state = State()
-        
+
+    private let featureFlagger: FeatureFlagger
+    var isRebrandingOn: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRebranding)
+    }
+
     init(userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         isAddingDevice: Bool = false) {
+         isAddingDevice: Bool = false,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.userScript = userScript
         self.subFeature = subFeature
+        self.featureFlagger = featureFlagger
     }
     
     func onAppear() {

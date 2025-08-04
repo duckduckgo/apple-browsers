@@ -680,6 +680,10 @@ struct UserText {
     static let externalSchemePermissionAuthorizationNoDomainFormat = NSLocalizedString("permission.authorization.externalScheme.empty.format",
                                                                                        value: "Open this link in %@?",
                                                                                        comment: "Popover asking to open link in External App (%@)")
+    static let wifiHotspotPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.wifihotspot.format",
+                                                                            value: "WiFi hotspot requesting authorization to redirect to captive portal login page.",
+                                                                            comment: "Popover asking user to authorize WiFi hotspot captive portal")
+
     static let permissionAlwaysAllowOnDomainCheckbox = NSLocalizedString("dashboard.permission.allow.on", value: "Always allow on", comment: "Permission Popover 'Always allow on' (for domainName) checkbox")
 
     static let permissionMicrophone = NSLocalizedString("permission.microphone", value: "Microphone", comment: "Microphone input media device name")
@@ -687,6 +691,7 @@ struct UserText {
     static let permissionCameraAndMicrophone = NSLocalizedString("permission.cameraAndmicrophone", value: "Camera and Microphone", comment: "camera and microphone input media devices name")
     static let permissionGeolocation = NSLocalizedString("permission.geolocation", value: "Location", comment: "User's Geolocation permission access name")
     static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open Pop Up Windows permission access name")
+    static let permissionWifiHotspot = NSLocalizedString("permission.title.wifihotspot", value: "WiFi Hotspot", comment: "WiFi Hotspot permission title")
 
     static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
     static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")

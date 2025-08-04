@@ -31,6 +31,7 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
     let source: Source
 
     public struct Defaults {
+        @available(*, deprecated, message: "Use PixelKit error field instead")
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
@@ -45,11 +46,13 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
             DailyPixel.fire(pixel: .privacyProSubscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
         case .migrationFailed(let error):
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription].merging(sourceParam) { $1 })
+            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed2, error: error, withAdditionalParameters: sourceParam)
         case .migrationSucceeded:
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationSucceeded, withAdditionalParameters: sourceParam)
         case .getTokensError(let policy, let error):
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription,
                                                                                                             Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
+            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError2, error: error, withAdditionalParameters: [Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
         case .invalidRefreshTokenSignedOut:
             DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenSignedOut, withAdditionalParameters: sourceParam)
         case .invalidRefreshTokenRecovered:

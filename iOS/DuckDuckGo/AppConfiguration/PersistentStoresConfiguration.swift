@@ -57,15 +57,15 @@ final class PersistentStoresConfiguration {
                     case .none:
                         fatalError("Could not create database stack: Unknown Error")
                     case .some(CoreDataDatabase.Error.containerLocationCouldNotBePrepared(let underlyingError)):
-                        Pixel.fire(pixel: .dbContainerInitializationError,
-                                   error: underlyingError,
-                                   withAdditionalParameters: parameters)
+                        DailyPixel.fireDailyAndCount(pixel: .dbContainerInitializationError,
+                                                     error: underlyingError,
+                                                     withAdditionalParameters: parameters)
                         Thread.sleep(forTimeInterval: 1)
                         fatalError("Could not create database stack: \(underlyingError.localizedDescription)")
                     case .some(let error):
-                        Pixel.fire(pixel: .dbInitializationError,
-                                   error: error,
-                                   withAdditionalParameters: parameters)
+                        DailyPixel.fireDailyAndCount(pixel: .dbInitializationError,
+                                                     error: error,
+                                                     withAdditionalParameters: parameters)
                         if error.isDiskFull {
                             throw UIApplication.TerminationError.insufficientDiskSpace
                         } else {
@@ -89,8 +89,8 @@ final class PersistentStoresConfiguration {
         case .success:
             break
         case .failure(let error):
-            Pixel.fire(pixel: .bookmarksCouldNotLoadDatabase,
-                       error: error)
+            DailyPixel.fireDailyAndCount(pixel: .bookmarksCouldNotLoadDatabase,
+                                         error: error)
             if error.isDiskFull {
                 throw UIApplication.TerminationError.insufficientDiskSpace
             } else {

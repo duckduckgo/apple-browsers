@@ -47,7 +47,7 @@ class TabsModelPersistence: TabsModelPersisting {
     convenience init() throws {
 
         guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            Pixel.fire(pixel: .tabsStoreSupportDirAccessError)
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSupportDirAccessError)
 
             // Move app to Terminating state
             throw Error.tabsPersistenceAppSupportDirAccessError
@@ -58,7 +58,7 @@ class TabsModelPersistence: TabsModelPersisting {
             self.init(store: store,
                       legacyStore: UserDefaults.app)
         } catch {
-            Pixel.fire(pixel: .tabsStoreInitError)
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreInitError)
 
             // Move app to Terminating state
             throw Error.tabsPersistenceInitError
@@ -81,6 +81,7 @@ class TabsModelPersistence: TabsModelPersisting {
             }
             return model
         } catch {
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreReadError, error: error)
             Logger.general.error("Something went wrong unarchiving TabsModel \(error.localizedDescription, privacy: .public)")
         }
         return nil
@@ -120,7 +121,7 @@ class TabsModelPersistence: TabsModelPersisting {
             let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
             try store.set(data, forKey: Constants.storageKey)
         } catch {
-            Pixel.fire(pixel: .tabsStoreSaveError, error: error)
+            DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError, error: error)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
         }
     }

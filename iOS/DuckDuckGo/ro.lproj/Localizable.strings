@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Sesizarea ta ajută la îmbunătățirea DuckDuckGo pentru toată lumea!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "JSON broker:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Broker: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Brokeri";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anularea nu este permisă mai mult de o singură dată";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Cum să exporți parolele din Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Selectează fișierul...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Selectează fișierul care conține parolele exportate din Safari sau Chrome. Acesta est,e de obicei, un fișier ZIP sau CSV.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import finalizat!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Carduri de credit";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplicatele au fost omise";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Depanează";
+
+/* No comment provided by engineer. */
+"Delete" = "Ștergere";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispozitiv";
@@ -1948,6 +1966,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Afișează toate filele";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Se încarcă brokerii...";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "DuckDuckGo pentru Mac are viteza de care ai nevoie, funcționalitățile de răsfoire pe care ți le dorești și este prevăzută cu cele mai bune caracteristici de bază în privința confidențialității din domeniu.";
 
@@ -2284,6 +2305,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Pe orice site, deschide meniul ••• și selectează **Adaugă la favorite** pentru a adăuga la pagina Filă nouă.";
 
+/* No comment provided by engineer. */
+"No results found" = "Nu s-a găsit niciun rezultat";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Modulele cookie au fost gestionate";
 
@@ -2377,6 +2404,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Am înțeles! O să omit celelalte sfaturi.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Încearcă gratuit!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo are și un %1$@, disponibile cu un %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "abonament opțional cu plată";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN securizat + încă 2 protecții premium";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Adăugare widget";
 
@@ -2409,6 +2448,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplicația necesară pentru a deschide acel link nu poate fi găsită";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Renunțare...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nu se pot accesa modelele Duck.ai disponibile doar pentru abonați";
@@ -2593,6 +2635,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Pictograma de confidențialitate";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Informații profil";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Renunță";
 
@@ -2606,6 +2651,9 @@
 "prompt.custom.url.scheme.title" = "Deschizi în altă aplicație?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Rude: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Resetează";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2661,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Rezultate";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
@@ -2796,6 +2847,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importă parolele";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Nouă";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatură";
@@ -3168,6 +3222,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Se restabilește abonamentul...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Pro se numește acum doar abonament DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Elimină de pe acest dispozitiv";
@@ -3663,6 +3720,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Continuați";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Carduri de credit";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Parole";

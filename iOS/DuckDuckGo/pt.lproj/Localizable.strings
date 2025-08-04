@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "O teu relatório ajuda a melhorar o DuckDuckGo para todos!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "JSON de mediador:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Corretor: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Corretores";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Não podes cancelar mais do que uma vez";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Como exportar palavras-passe do Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Selecionar ficheiro…";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Seleciona o ficheiro que contém as palavras-passe exportadas do Safari ou do Chrome. Geralmente é um ficheiro ZIP ou CSV.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importação concluída!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Cartões de crédito";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplicados ignorados";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Depurar";
+
+/* No comment provided by engineer. */
+"Delete" = "Eliminar";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispositivo";
@@ -1948,6 +1966,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Mostrar todos os separadores";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "A carregar mediadores…";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "O DuckDuckGo para Mac tem a velocidade de que necessita, as funcionalidades de navegação que espera e os nossos Privacy Essentials líderes no setor.";
 
@@ -2284,6 +2305,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Em qualquer site, abre o menu ••• e seleciona **Adicionar favorito** para o adicionar à tua página de novo separador.";
 
+/* No comment provided by engineer. */
+"No results found" = "Nenhum resultado encontrado";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies geridos";
 
@@ -2377,6 +2404,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Entendido! Quero ignorar as outras dicas.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Experimente grátis!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "O DuckDuckGo também tem uma %1$@, disponível com uma %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "subscrição paga opcional";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 proteções premium adicionais";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Adicionar widget";
 
@@ -2409,6 +2448,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Não encontramos a aplicação necessária para abrir esse link";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "A recusar…";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Não é possível aceder aos modelos Duck.ai só para subscritores";
@@ -2593,6 +2635,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Ícone de privacidade";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Informações do Perfil";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Cancelar";
 
@@ -2606,6 +2651,9 @@
 "prompt.custom.url.scheme.title" = "Abrir noutra aplicação?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Familiares: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Reset";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2661,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Resultados";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Pesquisar ou inserir endereço";
@@ -2796,6 +2847,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importar palavras-passe";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Novo";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Teclado";
@@ -3168,6 +3222,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "A restaurar a subscrição…";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "O Privacy Pro chama-se agora subscrição da DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Remover Deste Dispositivo";
@@ -3663,6 +3720,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Continuar";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Cartões de crédito";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Palavras-passe";

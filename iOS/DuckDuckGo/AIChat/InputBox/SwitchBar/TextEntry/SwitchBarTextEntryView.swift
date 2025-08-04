@@ -37,21 +37,17 @@ class SwitchBarTextEntryView: UIView {
         // Placeholder positioning
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
-
-        // Button view
-        static let buttonViewTrailingOffset: CGFloat = -12
-        static let textButtonSpacing: CGFloat = -10
-
-        // Animation
-        static let animationDuration: TimeInterval = 0.2
     }
 
     private let handler: SwitchBarHandling
 
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
-    private var buttonsHostingController: UIHostingController<SwitchBarButtonsView>?
-    private var currentButtonState: SwitchBarButtonState = .noButtons
+    private var buttonsView = SwitchBarButtonsView()
+    private var currentButtonState: SwitchBarButtonState {
+        get { buttonsView.buttonState }
+        set { buttonsView.buttonState = newValue }
+    }
 
     private var currentMode: TextEntryMode {
         handler.currentToggleState
@@ -59,8 +55,6 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
 
     var isExpandable: Bool = false {
         didSet {
@@ -91,28 +85,25 @@ class SwitchBarTextEntryView: UIView {
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
-        textView.textContainerInset = UIEdgeInsets(top: Constants.textTopInset,
-                                                   left: Constants.textHorizontalInset,
-                                                   bottom: Constants.textBottomInset,
-                                                   right: 0)
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
         placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
-        placeholderLabel.numberOfLines = 0
+
+        // Truncate text in case it exceeds single line
+        placeholderLabel.numberOfLines = 1
 
         setupButtonsView()
 
         addSubview(textView)
         addSubview(placeholderLabel)
+        addSubview(buttonsView)
 
+        buttonsView.translatesAutoresizingMaskIntoConstraints = false
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
         heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
-
-        // Create both trailing constraints for textView
-        textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
 
         setupConstraints()
 
@@ -124,39 +115,25 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - Setup Methods
 
     private func setupButtonsView() {
-        let buttonsView = SwitchBarButtonsView(
-            buttonState: currentButtonState,
-            onClearTapped: { [weak self] in
-                self?.handler.clearText()
-            }
-        )
-
-        let hostingController = UIHostingController(rootView: buttonsView)
-        hostingController.view.backgroundColor = .clear
-        buttonsHostingController = hostingController
-
-        addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        buttonsView.onClearTapped = { [weak self] in
+            self?.handler.clearText()
+        }
     }
 
     private func setupConstraints() {
-        guard let buttonsView = buttonsHostingController?.view else { return }
-
-        textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor, constant: Constants.textButtonSpacing)
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
             textView.leadingAnchor.constraint(equalTo: leadingAnchor),
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            textView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonViewTrailingOffset),
-            buttonsView.heightAnchor.constraint(equalToConstant: 24),
-            buttonsView.widthAnchor.constraint(lessThanOrEqualToConstant: 24)
+            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
     }
 
@@ -202,34 +179,28 @@ class SwitchBarTextEntryView: UIView {
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
-            updateButtonsView()
-            updateConstraintsForButtonVisibility()
+            adjustTextViewContentInset()
         }
     }
 
-    private func updateButtonsView() {
-        let buttonsView = SwitchBarButtonsView(
-            buttonState: currentButtonState,
-            onClearTapped: { [weak self] in
-                self?.handler.clearText()
-            }
+    private func adjustTextViewContentInset() {
+        let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
+
+        // Use default inset or the amount of how buttons interset with the view + required spacing
+        let rightInset = currentButtonState.showsClearButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+
+        textView.textContainerInset = UIEdgeInsets(
+            top: Constants.textTopInset,
+            left: Constants.textHorizontalInset,
+            bottom: Constants.textBottomInset,
+            right: rightInset
         )
-
-        buttonsHostingController?.rootView = buttonsView
-
-        if let hostingView = buttonsHostingController?.view {
-            hostingView.invalidateIntrinsicContentSize()
-        }
     }
 
-    private func updateConstraintsForButtonVisibility() {
-        if currentButtonState.showsClearButton {
-            textViewTrailingConstraint?.isActive = false
-            textViewTrailingConstraintWithButtons?.isActive = true
-        } else {
-            textViewTrailingConstraintWithButtons?.isActive = false
-            textViewTrailingConstraint?.isActive = true
-        }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        adjustTextViewContentInset()
     }
 
     private func updateTextViewHeight() {

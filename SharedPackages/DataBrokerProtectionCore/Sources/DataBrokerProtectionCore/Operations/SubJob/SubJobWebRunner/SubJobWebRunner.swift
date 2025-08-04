@@ -21,6 +21,7 @@ import WebKit
 import BrowserServicesKit
 import UserScript
 import Common
+import os.log
 
 public protocol SubJobWebRunning: CCFCommunicationDelegate {
     associatedtype ReturnValue
@@ -73,7 +74,7 @@ public extension SubJobWebRunning {
     }
 
     func runNextAction(_ action: Action) async {
-        let stepType = actionsHandler?.step.type
+        let stepType = actionsHandler?.stepType
 
         switch action {
         case is GetCaptchaInfoAction:
@@ -262,6 +263,17 @@ public extension SubJobWebRunning {
         }
     }
 
+    func conditionSuccess(actions: [Action]) async {
+        Logger.action.log("Condition action met its expectation, pushing new actions: \(actions, privacy: .public)")
+
+        if actionsHandler?.stepType == .optOut {
+            stageCalculator.fireOptOutConditionFound()
+        }
+
+        actionsHandler?.insert(actions: actions)
+        await self.executeNextStep()
+    }
+
     func captchaInformation(captchaInfo: GetCaptchaInfoResponse) async {
         do {
             stageCalculator.fireOptOutCaptchaParse()
@@ -292,6 +304,17 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
+        if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
+            Logger.action.log("Condition action did NOT meet its expectation, continuing with regular action execution")
+
+            if actionsHandler?.stepType == .optOut {
+                stageCalculator.fireOptOutConditionNotFound()
+            }
+
+            await executeNextStep()
+            return
+        }
+
         if retriesCountOnError > 0 {
             await executeCurrentAction()
         } else {

@@ -44,4 +44,18 @@
         suffixes: ['first_daily_count'],
         parameters: ['appVersion', 'pixelSource'],
     },
+    newTabPageLoadingTime: {
+        description: 'Loading time (in ms) for the new tab page',
+        owners: ['tomasstrba'],
+        triggers: ['new_tab'],
+        suffixes: [],
+        parameters: [
+            'pixelSource',
+            'osMajorVersion',
+            'appVersion',
+            'device',
+            'loadingTime'
+        ]
+    }
+}
 }

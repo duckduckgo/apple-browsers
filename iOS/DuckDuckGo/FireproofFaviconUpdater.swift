@@ -82,21 +82,27 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
         favicons.loadFavicon(forDomain: host, fromURL: url, intoCache: .tabs) { [weak self] image in
             guard let self = self else { return }
             self.tab.didUpdateFavicon()
-
-            guard let image = image else { return }
-            if self.bookmarkExists(for: host) {
-                self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+            guard featureFlagger.isFeatureOn(.createFireproofFaviconUpdaterSecureVaultInBackground) else {
+                legacyReplaceFireproofFaviconIfNecessary(image, forHost: host)
                 return
             }
+            replaceFireproofFaviconIfNecessary(image, forHost: host)
+        }
+    }
 
-            Task { @MainActor in
-                let autofillExists = await self.autofillLoginExists(for: host)
-                if autofillExists {
-                    self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
-                }
-            }
+    private func replaceFireproofFaviconIfNecessary(_ image: UIImage?, forHost host: String) {
+        guard let image = image else { return }
+        if self.bookmarkExists(for: host) {
+            self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+            return
         }
 
+        Task { @MainActor in
+            let autofillExists = await self.autofillLoginExists(for: host)
+            if autofillExists {
+                self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+            }
+        }
     }
 
     private func bookmarkExists(for domain: String) -> Bool {
@@ -158,4 +164,38 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
             Favicons.shared.removeBookmarkFavicon(forDomain: domain)
         }
     }
+
+    // MARK: Legacy flow
+    // To be deleted with createFireproofFaviconUpdaterSecureVaultInBackground FeatureFlag
+
+    private func legacyReplaceFireproofFaviconIfNecessary(_ image: UIImage?, forHost host: String) {
+        guard self.bookmarkExists(for: host) || self.legacyAutofillLoginExists(for: host),
+              let image = image else { return }
+
+        self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+    }
+
+    private func legacyInitSecureVault() -> (any AutofillSecureVault)? {
+        if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
+            if secureVault == nil {
+                return try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            }
+            return secureVault
+        }
+        return nil
+    }
+
+    private func legacyAutofillLoginExists(for domain: String) -> Bool {
+        guard let secureVault = legacyInitSecureVault() else {
+            return false
+        }
+
+        do {
+            let accounts = try secureVault.accounts()
+            return accounts.contains(where: { $0.domain == domain })
+        } catch {
+            return false
+        }
+    }
+
 }

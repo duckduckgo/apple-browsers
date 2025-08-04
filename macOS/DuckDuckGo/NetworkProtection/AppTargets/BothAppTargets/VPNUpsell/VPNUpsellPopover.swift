@@ -56,7 +56,7 @@ private enum Constants {
 // MARK: - View
 
 struct VPNUpsellPopoverView: View {
-    private let viewModel: VPNUpsellPopoverViewModel
+    @ObservedObject private var viewModel: VPNUpsellPopoverViewModel
 
     init(viewModel: VPNUpsellPopoverViewModel) {
         self.viewModel = viewModel
@@ -102,7 +102,7 @@ struct VPNUpsellPopoverView: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
 
-            Text(verbatim: plusFeaturesSubtitle)
+            Text(verbatim: viewModel.featureSet.plusFeaturesSubtitle)
                 .font(.subheadline)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
@@ -111,21 +111,9 @@ struct VPNUpsellPopoverView: View {
 
     var features: some View {
         VStack(spacing: Constants.featuresVerticalSpacing) {
-            coreFeatures
-            plusFeatures
-        }
-    }
-
-    var coreFeatures: some View {
-        VStack(spacing: Constants.featuresVerticalSpacing) {
-            FeatureRow(text: "Hide your IP address from sites")
-            FeatureRow(text: "Shield your online activity from others")
-            FeatureRow(text: "Block harmful sites & online scams")
-        }
-    }
-
-    var plusFeatures: some View {
-        VStack(spacing: Constants.featuresVerticalSpacing) {
+            ForEach(viewModel.featureSet.core, id: \.title) { feature in
+                FeatureRow(text: feature.title, subtitle: feature.subtitle)
+            }
             HStack(spacing: Constants.plusRowHorizontalSpacing) {
                 horizontalLine
                 Text(verbatim: "PLUS")
@@ -135,15 +123,8 @@ struct VPNUpsellPopoverView: View {
             }
             .padding(.vertical, Constants.plusRowVerticalSpacing)
 
-            if viewModel.featureEligibility.hasAIChatFeature {
-                FeatureRow(text: "Chat privately with advanced AI models")
-            }
-
-            FeatureRow(text: "Restore your identity if it's stolen")
-
-            if viewModel.featureEligibility.isPIRFeatureEnabled {
-                FeatureRow(text: "Remove info from sites that sell it",
-                           subtitle: "(currently available on Mac & Windows)")
+            ForEach(viewModel.featureSet.plus, id: \.title) { feature in
+                FeatureRow(text: feature.title, subtitle: feature.subtitle)
             }
         }
     }
@@ -161,7 +142,7 @@ struct VPNUpsellPopoverView: View {
             Button {
                 viewModel.showSubscriptionLandingPage()
             } label: {
-                Text(verbatim: viewModel.featureEligibility.isEligibleForFreeTrial ? "Try For Free" : "Learn More")
+                Text(verbatim: viewModel.featureSet.mainCTATitle)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
@@ -177,10 +158,6 @@ struct VPNUpsellPopoverView: View {
             .cornerRadius(Constants.horizontalLineCornerRadius)
     }
 
-    private var plusFeaturesSubtitle: String {
-        let plusCount = viewModel.featureEligibility.plusFeatureCount
-        return plusCount > 1 ? "+ \(plusCount) more premium protections" : "+ more premium protections"
-    }
 }
 
 // MARK: - Feature Row

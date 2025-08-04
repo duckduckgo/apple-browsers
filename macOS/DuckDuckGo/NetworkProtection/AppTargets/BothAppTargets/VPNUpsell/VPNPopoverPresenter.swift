@@ -47,10 +47,13 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
         if isShown {
             dismiss()
         } else {
-            show(below: view)
+            Task { @MainActor in
+                show(below: view)
+            }
         }
     }
 
+    @MainActor
     func show(below view: NSView) {
         dismiss()
 

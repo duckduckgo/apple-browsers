@@ -21,32 +21,72 @@ import BrowserServicesKit
 import Subscription
 
 extension VPNUpsellPopoverViewModel {
-    struct FeatureStatus {
+    struct FeatureSet {
+        let core: [Feature]
+        let plus: [Feature]
         let isEligibleForFreeTrial: Bool
-        let isPIRFeatureEnabled: Bool
-        let hasAIChatFeature: Bool
 
-        static var `default`: Self {
-            Self(isEligibleForFreeTrial: false, isPIRFeatureEnabled: false, hasAIChatFeature: false)
+        var mainCTATitle: String {
+            isEligibleForFreeTrial ? "Try For Free" : "Learn More"
         }
 
-        var plusFeatureCount: Int {
-            var count = 1
-            if hasAIChatFeature { count += 1 }
-            if isPIRFeatureEnabled { count += 1 }
-            return count
+        var plusFeaturesSubtitle: String {
+            let plusCount = plus.count
+            return plusCount > 1 ? "+ \(plusCount) more premium protections" : "+ more premium protections"
+        }
+    }
+
+    enum Feature: Equatable {
+        case hideIPAddress
+        case shieldOnlineActivity
+        case blockHarmfulSites
+        case aiChat
+        case identityTheftProtection
+        case pir
+
+        var title: String {
+            switch self {
+            case .hideIPAddress:
+                return "Hide your IP address from sites"
+            case .shieldOnlineActivity:
+                return "Shield your online activity from others"
+            case .blockHarmfulSites:
+                return "Block harmful sites & online scams"
+            case .aiChat:
+                return "Chat privately with advanced AI models"
+            case .identityTheftProtection:
+                return "Restore your identity if it's stolen"
+            case .pir:
+                return "Remove info from sites that sell it"
+            }
+        }
+
+        var subtitle: String? {
+            switch self {
+            case .pir:
+                return "(currently available on Mac & Windows)"
+            default:
+                return nil
+            }
         }
     }
 }
 
-final class VPNUpsellPopoverViewModel {
-    @Published private(set) var featureEligibility: FeatureStatus = .default
+@MainActor
+final class VPNUpsellPopoverViewModel: ObservableObject {
+    @Published private(set) var featureSet: FeatureSet = FeatureSet(core: [], plus: [], isEligibleForFreeTrial: false)
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
     private let urlOpener: @MainActor (URL) -> Void
     private let onDismiss: () -> Void
+
+    private let coreFeatures: [Feature] = [
+        .hideIPAddress,
+        .shieldOnlineActivity,
+        .blockHarmfulSites
+    ]
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          featureFlagger: FeatureFlagger,
@@ -61,24 +101,43 @@ final class VPNUpsellPopoverViewModel {
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.urlOpener = urlOpener
         self.onDismiss = onDismiss
+
         checkFeatureEligibility()
     }
 
     private func checkFeatureEligibility() {
-        Task { @MainActor in
+        Task {
             let isPIRFeatureEnabled = try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)
             let isEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
             let hasAIChatFeature = featureFlagger.isFeatureOn(.paidAIChat)
 
-            self.featureEligibility = FeatureStatus(
-                isEligibleForFreeTrial: isEligibleForFreeTrial,
-                isPIRFeatureEnabled: isPIRFeatureEnabled ?? false,
-                hasAIChatFeature: hasAIChatFeature
-            )
+            updateFeatures(isEligibleForFreeTrial: isEligibleForFreeTrial,
+                           isPIRFeatureEnabled: isPIRFeatureEnabled ?? false,
+                           hasAIChatFeature: hasAIChatFeature)
         }
     }
 
-    @MainActor
+    private func updateFeatures(isEligibleForFreeTrial: Bool,
+                                isPIRFeatureEnabled: Bool,
+                                hasAIChatFeature: Bool) {
+
+        var plusFeatures: [Feature] = []
+
+        if hasAIChatFeature {
+            plusFeatures.append(.aiChat)
+        }
+
+        plusFeatures.append(.identityTheftProtection)
+
+        if isPIRFeatureEnabled {
+            plusFeatures.append(.pir)
+        }
+
+        featureSet = FeatureSet(core: coreFeatures,
+                                plus: plusFeatures,
+                                isEligibleForFreeTrial: isEligibleForFreeTrial)
+    }
+
     func showSubscriptionLandingPage() {
         onDismiss()
 

@@ -1,6 +1,6 @@
 // See https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693
 {
-    'm.widget-report': {
+    'm_widget-report': {
         description: 'Fires daily to report configured widgets on the device, including widget kinds and families. This pixel can be enabled and disabled using the iOSBrowserConfig.widgetReporting feature flag which is off by default.',
         owners: ['brindy'],
         triggers: ['app_foreground'],
@@ -20,7 +20,7 @@
             },
         ],
     },
-    'm.widget-report-failure': {
+    'm_widget-report-failure': {
         description: 'Fires when widget configuration reporting fails due to an error retrieving current widget configurations. This pixel can be enabled and disabled using the iOSBrowserConfig.widgetReporting feature flag which is off by default.',
         owners: ['brindy'],
         triggers: ['app_foreground'],

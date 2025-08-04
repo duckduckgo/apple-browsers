@@ -422,6 +422,23 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
+    /// Determines which preference panes display "New" badges for feature discovery.
+    ///
+    ///
+    /// - Parameter pane: The preference pane to evaluate
+    /// - Returns: `true` if a "New" badge should be displayed
+    ///
+    /// - Important: Remember to remove features from this method after they're no
+    ///   longer considered new (typically 1-2 app releases after launch)
+    func isPaneNew(pane: PreferencePaneIdentifier) -> Bool {
+        switch pane {
+        case .paidAIChat:
+            true
+        default:
+            false
+        }
+    }
+
     private let loadSections: (PreferencesSidebarSubscriptionState) -> [PreferencesSection]
     private var cancellables = Set<AnyCancellable>()
 }

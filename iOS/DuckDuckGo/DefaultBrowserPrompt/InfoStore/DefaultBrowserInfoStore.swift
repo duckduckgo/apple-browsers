@@ -18,20 +18,17 @@
 //
 
 import Core
+import SetDefaultBrowserCore
 
-protocol DefaultBrowserInfoStorage: AnyObject {
-    var defaultBrowserInfo: DefaultBrowserInfo? { get set }
-}
-
-final class DefaultBrowserInfoStore: DefaultBrowserInfoStorage {
+final class DefaultBrowserInfoStore: DefaultBrowserContextStorage {
 
     @UserDefaultsWrapper(key: .defaultBrowserInfo, defaultValue: nil)
     private var defaultBrowserInfoData: Data?
 
-    var defaultBrowserInfo: DefaultBrowserInfo? {
+    var defaultBrowserContext: DefaultBrowserContext? {
         get {
             guard let data = defaultBrowserInfoData else { return nil }
-            return try? JSONDecoder().decode(DefaultBrowserInfo.self, from: data)
+            return try? JSONDecoder().decode(DefaultBrowserContext.self, from: data)
         }
         set {
             defaultBrowserInfoData = try? newValue.flatMap(JSONEncoder().encode)

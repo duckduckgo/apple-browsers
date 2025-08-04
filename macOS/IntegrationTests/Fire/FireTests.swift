@@ -39,7 +39,7 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnAll_ThenAllWindowsAreClosed() {
+    func testWhenBurnAll_ThenAllWindowsAreClosed() async {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -68,11 +68,11 @@ final class FireTests: XCTestCase {
             burningExpectation.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        await fulfillment(of: [burningExpectation], timeout: 5)
     }
 
     @MainActor
-    func testWhenBurnAll_ThenPinnedTabsArePersisted() {
+    func testWhenBurnAll_ThenPinnedTabsArePersisted() async {
 
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
@@ -102,14 +102,14 @@ final class FireTests: XCTestCase {
             burningExpectation.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        await fulfillment(of: [burningExpectation], timeout: 5)
 
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0)
         XCTAssertEqual(pinnedTabsManagerProvider.pinnedTabsManager.tabCollection.tabs.map(\.content.userEditableUrl), pinnedTabs.map(\.content.userEditableUrl))
     }
 
     @MainActor
-    func testWhenBurnAll_ThenAllWebsiteDataAreRemoved() {
+    func testWhenBurnAll_ThenAllWebsiteDataAreRemoved() async {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let zoomLevelsCoordinator = MockSavedZoomCoordinator()
@@ -135,7 +135,7 @@ final class FireTests: XCTestCase {
             finishedBurningExpectation.fulfill()
         }
 
-        waitForExpectations(timeout: 5)
+        await fulfillment(of: [finishedBurningExpectation], timeout: 5)
         XCTAssert(manager.clearCalled)
         XCTAssert(historyCoordinator.burnAllCalled)
         XCTAssert(permissionManager.burnPermissionsCalled)
@@ -145,7 +145,7 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnAllThenBurningFlagToggles() {
+    func testWhenBurnAllThenBurningFlagToggles() async {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -172,7 +172,7 @@ final class FireTests: XCTestCase {
 
         fire.burnAll()
 
-        waitForExpectations(timeout: 5, handler: nil)
+        await fulfillment(of: [isBurningExpectation, finishedBurningExpectation], timeout: 5)
     }
 
     @MainActor
@@ -227,7 +227,7 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnVisitIsCalledForTodayThenAllExistingTabsAreCleared() {
+    func testWhenBurnVisitIsCalledForTodayThenAllExistingTabsAreCleared() async {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -255,7 +255,7 @@ final class FireTests: XCTestCase {
             finishedBurningExpectation.fulfill()
         })
 
-        waitForExpectations(timeout: 5)
+        await fulfillment(of: [finishedBurningExpectation], timeout: 5)
         XCTAssertEqual(tabCollectionViewModel.allTabsCount, 0)
         XCTAssert(manager.clearCalled)
         XCTAssert(historyCoordinator.burnVisitsCalled)
@@ -267,7 +267,7 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnVisitIsCalledForOtherDayThenExistingTabsRemainOpen() {
+    func testWhenBurnVisitIsCalledForOtherDayThenExistingTabsRemainOpen() async {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -303,7 +303,7 @@ final class FireTests: XCTestCase {
             finishedBurningExpectation.fulfill()
         })
 
-        waitForExpectations(timeout: 5)
+        await fulfillment(of: [finishedBurningExpectation], timeout: 5)
         XCTAssertEqual(tabCollectionViewModel.allTabsCount, numberOfTabs)
         XCTAssert(manager.clearCalled)
         XCTAssert(historyCoordinator.burnVisitsCalled)

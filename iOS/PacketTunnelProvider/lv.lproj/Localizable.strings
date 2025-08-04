@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN atvienots, jo ir beidzies abonements. Abonē Privacy Pro, lai atkārtoti izveidotu savienojumu ar DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "VPN atvienots, jo ir beidzies abonements. Abonē DuckDuckGo, lai atkārtoti izveidotu savienojumu ar VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Neizdevās izveidot savienojumu ar DuckDuckGo VPN. Lūdzu, mēģini vēlreiz vēlāk.";

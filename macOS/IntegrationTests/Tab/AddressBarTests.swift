@@ -33,7 +33,7 @@ import os.log
 @available(macOS 12.0, *)
 class AddressBarTests: XCTestCase {
 
-    var window: MainWindow!
+    var window: NSWindow!
 
     var mainViewController: MainViewController {
         (window.contentViewController as! MainViewController)
@@ -1044,7 +1044,7 @@ class AddressBarTests: XCTestCase {
     }
 }
 
-private extension MainWindow {
+private extension NSWindow {
 
     func responderDidChangeExpectation(to firstResponder: NSResponder) -> XCTestExpectation {
         let expectation = XCTestExpectation(description: "First responder changed to \(firstResponder)")

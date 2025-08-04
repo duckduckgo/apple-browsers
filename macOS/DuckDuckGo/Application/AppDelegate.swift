@@ -128,6 +128,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
+    let hotspotDetectionService: HotspotDetectionServiceProtocol
+    let captivePortalPopupManager: CaptivePortalPopupManager
     let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
@@ -619,6 +621,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
+        hotspotDetectionService = HotspotDetectionService()
+        captivePortalPopupManager = CaptivePortalPopupManager()
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

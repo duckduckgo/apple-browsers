@@ -139,15 +139,9 @@ extension DebugScreensViewModel {
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
-            {
-                if #available(iOS 15.0, *) {
-                    return DebugScreen.controller(title: "Log Viewer", { d in
-                        return LogViewerViewController(dependencies: d)
-                    })
-                } else {
-                    return nil
-                }
-            }(),
+            .controller(title: "Log Viewer", { d in
+                return LogViewerViewController(dependencies: d)
+            }),
             .controller(title: "Configuration Refresh Info", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "ConfigurationDebugViewController") { coder in
@@ -222,7 +216,7 @@ extension DebugScreensViewModel {
                 capturedController = onboardingController
                 return onboardingController
             }),
-        ].compactMap { $0 }
+        ]
     }
 
 }

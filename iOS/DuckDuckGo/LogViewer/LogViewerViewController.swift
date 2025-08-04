@@ -207,7 +207,6 @@ final class LogViewerViewController: UIViewController {
 
 }
 
-@available(iOS 15.0, *)
 extension LogViewerViewController: LogViewerDataSourceDelegate {
     func logViewerDataSource(_ dataSource: LogViewerDataSource, didUpdateEntries entries: [FormattedLogEntry]) {
         DispatchQueue.main.async {
@@ -246,7 +245,6 @@ extension LogViewerViewController: LogViewerDataSourceDelegate {
     }
 }
 
-@available(iOS 15.0, *)
 extension LogViewerViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return filteredEntries.count
@@ -262,7 +260,6 @@ extension LogViewerViewController: UITableViewDataSource {
     }
 }
 
-@available(iOS 15.0, *)
 extension LogViewerViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
@@ -273,14 +270,12 @@ extension LogViewerViewController: UITableViewDelegate {
     }
 }
 
-@available(iOS 15.0, *)
 extension LogViewerViewController: UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         applySearchFilter()
     }
 }
 
-@available(iOS 15.0, *)
 extension LogViewerViewController: LogFilterViewControllerDelegate {
     func logFilterViewController(_ controller: LogFilterViewController, didUpdateFilter filter: LogFilter) {
         dataSource.updateFilter(filter)

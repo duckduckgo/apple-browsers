@@ -24,7 +24,6 @@ protocol LogFilterViewControllerDelegate: AnyObject {
     func logFilterViewController(_ controller: LogFilterViewController, didUpdateFilter filter: LogFilter)
 }
 
-@available(iOS 15.0, *)
 final class LogFilterViewController: UIViewController {
 
     weak var delegate: LogFilterViewControllerDelegate?
@@ -112,7 +111,6 @@ final class LogFilterViewController: UIViewController {
     }
 }
 
-@available(iOS 15.0, *)
 extension LogFilterViewController: UITableViewDataSource {
     
     enum Section: Int, CaseIterable {
@@ -248,7 +246,6 @@ extension LogFilterViewController: UITableViewDataSource {
     }
 }
 
-@available(iOS 15.0, *)
 extension LogFilterViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)

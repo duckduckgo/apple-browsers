@@ -19,7 +19,6 @@
 
 import UIKit
 
-@available(iOS 15.0, *)
 final class LogEntryDetailViewController: UIViewController {
 
     private let logEntry: FormattedLogEntry

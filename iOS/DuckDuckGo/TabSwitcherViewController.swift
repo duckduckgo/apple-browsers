@@ -375,13 +375,13 @@ class TabSwitcherViewController: UIViewController {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
 
+        dismiss()
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
             tabManager.save()
             delegate?.tabSwitcher(self, didSelectTab: tab)
         }
-        dismiss()
     }
 
     @IBAction func onFirePressed(sender: AnyObject) {

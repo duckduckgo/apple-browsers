@@ -16,17 +16,19 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
 import Combine
 import CoreLocation
+import Foundation
+import OSLog
 import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class GeolocationProviderTests: XCTestCase {
 
-    var geolocationServiceMock: GeolocationServiceMock! = GeolocationServiceMock()
-    var appIsActive: CurrentValueSubject<Bool, Never>! = .init(true)
+    var geolocationServiceMock: GeolocationServiceMock!
+    var appIsActive: CurrentValueSubject<Bool, Never>!
     var windows = [MockWindow]()
     var webViews = [WKWebView]()
     var webView: WKWebView!
@@ -76,6 +78,8 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     override func setUp() {
+        geolocationServiceMock = GeolocationServiceMock()
+        appIsActive = CurrentValueSubject(true)
         webView = makeWebView()
     }
 
@@ -96,6 +100,7 @@ final class GeolocationProviderTests: XCTestCase {
         webViews.append(webView)
 
         webView.uiDelegate = self
+        webView.navigationDelegate = self
 
         window.contentView = view
 
@@ -103,8 +108,7 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     override func tearDown() {
-        geolocationServiceMock.onSubscriptionReceived = nil
-        geolocationServiceMock.onSubscriptionCancelled = nil
+        geolocationServiceMock.tearDown()
         geolocationHandler = nil
         windows = []
         webView = nil
@@ -138,7 +142,7 @@ final class GeolocationProviderTests: XCTestCase {
 
         webView.loadHTMLString(Self.getCurrentPosition, baseURL: .duckDuckGo)
 
-        waitForExpectations(timeout: 2)
+        waitForExpectations(timeout: 5)
         XCTAssertEqual(geolocationServiceMock.history, [.subscribed,
                                                         .locationPublished,
                                                         .cancelled])
@@ -615,7 +619,7 @@ final class GeolocationProviderTests: XCTestCase {
 
 }
 
-extension GeolocationProviderTests: WKUIDelegate {
+extension GeolocationProviderTests: WKUIDelegate, WKNavigationDelegate {
     @objc(_webView:requestGeolocationPermissionForFrame:decisionHandler:)
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void) {
         decisionHandler(shouldGrant)
@@ -628,6 +632,21 @@ extension GeolocationProviderTests: WKUIDelegate {
                  initiatedBy frame: WKFrameInfo,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
         decisionHandler(shouldGrant ? .grant : .deny)
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        Logger.general.debug("decidePolicyForNavigationAction: \(navigationAction.debugDescription)")
+        return .allow
+    }
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        Logger.general.debug("decidePolicyForNavigationResponse: \(navigationResponse.debugDescription)")
+        return .allow
+    }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Logger.general.debug("didFinish: \(navigation.debugDescription)")
+    }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) {
+        Logger.general.debug("didFailProvisionalNavigation: \(navigation.debugDescription) with \(error.localizedDescription)")
     }
 }
 

@@ -1,0 +1,985 @@
+/* shared/components/Text/Text.module.css */
+a {
+  color: var(--ddg-color-primary);
+}
+.Text_title-1 {
+  font-size: calc(22 * var(--px-in-rem));
+  line-height: calc(26 * var(--px-in-rem));
+}
+.Text_title-1.Text_strictSpacing {
+  letter-spacing: calc(-0.26 * var(--px-in-rem));
+}
+.Text_title-2 {
+  font-size: calc(17 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(22 * var(--px-in-rem));
+}
+.Text_title-2.Text_strictSpacing {
+  letter-spacing: calc(-0.43 * var(--px-in-rem));
+}
+.Text_title-2-emphasis {
+  font-size: calc(17 * var(--px-in-rem));
+  font-weight: 700;
+  line-height: calc(22 * var(--px-in-rem));
+}
+.Text_title-2-emphasis.Text_strictSpacing {
+  letter-spacing: calc(-0.43 * var(--px-in-rem));
+}
+.Text_headline {
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(16 * var(--px-in-rem));
+}
+.Text_headline.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_subheadline {
+  font-size: calc(11 * var(--px-in-rem));
+  line-height: calc(14 * var(--px-in-rem));
+}
+.Text_subheadline.Text_strictSpacing {
+  letter-spacing: calc(0.06 * var(--px-in-rem));
+}
+.Text_body {
+  font-size: calc(13 * var(--px-in-rem));
+  line-height: calc(16 * var(--px-in-rem));
+}
+.Text_body.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_body-emphasis {
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(16 * var(--px-in-rem));
+}
+.Text_body-emphasis.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_label-small {
+  font-size: calc(11 * var(--px-in-rem));
+  line-height: calc(11 * var(--px-in-rem));
+}
+.Text_label-small.Text_strictSpacing {
+  letter-spacing: calc(0.06 * var(--px-in-rem));
+}
+.Text_label-default {
+  font-size: calc(13 * var(--px-in-rem));
+  line-height: calc(13 * var(--px-in-rem));
+}
+.Text_label-default.Text_strictSpacing {
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+}
+.Text_label-medium {
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 500;
+  line-height: calc(13 * var(--px-in-rem));
+}
+.Text_label-medium.Text_strictSpacing {
+  letter-spacing: calc(-0.25 * var(--px-in-rem));
+}
+.Text_caption-2-emphasis {
+  font-size: calc(10 * var(--px-in-rem));
+  line-height: calc(13 * var(--px-in-rem));
+}
+.Text_caption-2-emphasis.Text_strictSpacing {
+  letter-spacing: calc(0.12 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_title-2 {
+  font-size: calc(22 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(28 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_title-2.Text_strictSpacing {
+  letter-spacing: calc(0.35 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_body {
+  font-size: calc(16 * var(--px-in-rem));
+  font-weight: 400;
+  line-height: calc(21 * var(--px-in-rem));
+}
+[data-platform-name=ios] .Text_body.Text_strictSpacing {
+  letter-spacing: calc(-0.31 * var(--px-in-rem));
+}
+[data-platform-name=windows] .Text_custom-title-1 {
+  font-size: calc(18 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: calc(22 * var(--px-in-rem));
+  letter-spacing: normal;
+}
+[data-platform-name=windows] .Text_body {
+  font-size: calc(14 * var(--px-in-rem));
+  font-weight: 400;
+  line-height: calc(20 * var(--px-in-rem));
+  letter-spacing: normal;
+}
+
+/* pages/special-error/app/components/AdvancedInfo.module.css */
+.AdvancedInfo_animationContainer {
+  animation-duration: 300ms;
+  animation-fill-mode: forwards;
+  animation-name: AdvancedInfo_appear;
+}
+.AdvancedInfo_container {
+  align-items: flex-start;
+  display: flex;
+  flex-flow: column;
+  gap: var(--sp-4);
+  max-width: var(--ios-content-max-width);
+  padding: var(--sp-6) var(--sp-10);
+  width: 100%;
+}
+.AdvancedInfo_heading a {
+  color: var(--link-color);
+}
+.AdvancedInfo_content {
+  display: flex;
+  flex-flow: column;
+  gap: var(--sp-5);
+}
+.AdvancedInfo_content a {
+  color: var(--link-color);
+}
+.AdvancedInfo_visitSite {
+  color: var(--visit-site-color);
+  cursor: pointer;
+  font-size: calc(13 * var(--px-in-rem));
+  letter-spacing: calc(-0.08 * var(--px-in-rem));
+  line-height: calc(16 * var(--px-in-rem));
+  text-decoration: underline;
+}
+@keyframes AdvancedInfo_appear {
+  0% {
+    max-height: 0;
+  }
+  100% {
+    max-height: calc(400 * var(--px-in-rem));
+  }
+}
+[data-platform-name=ios] .AdvancedInfo_wrapper {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--color-black-at-9);
+  width: 100%;
+}
+@media (prefers-color-scheme: dark) {
+  [data-platform-name=ios] .AdvancedInfo_wrapper {
+    border-top: 1px solid var(--color-white-at-9);
+  }
+}
+[data-platform-name=ios] .AdvancedInfo_container {
+  align-items: center;
+  gap: var(--sp-6);
+}
+[data-platform-name=ios] .AdvancedInfo_heading {
+  text-align: center;
+}
+[data-platform-name=ios] .AdvancedInfo_content {
+  text-align: center;
+}
+[data-platform-name=ios] .AdvancedInfo_visitSite {
+  font-size: calc(16 * var(--px-in-rem));
+  font-weight: 400;
+  letter-spacing: calc(-0.31 * var(--px-in-rem));
+  line-height: calc(21 * var(--px-in-rem));
+}
+[data-platform-name=macos] .AdvancedInfo_container {
+  background: var(--advanced-info-bg);
+  box-shadow: inset 0 1px 0 0 var(--border-color);
+}
+[data-platform-name=windows] .AdvancedInfo_container {
+  background: var(--advanced-info-bg);
+  box-shadow: inset 0 1px 0 0 var(--border-color);
+}
+
+/* pages/special-error/app/components/App.module.css */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  --theme-font-family:
+    system,
+    -apple-system,
+    system-ui,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol";
+}
+.App_main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+@media (max-height: 400px) {
+  .App_main {
+    padding-top: var(--sp-10);
+    align-items: flex-start;
+  }
+}
+@media (max-height: 700px) {
+  [data-platform-name=ios] .App_main {
+    padding-top: var(--sp-10);
+    align-items: flex-start;
+  }
+}
+.App_container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+}
+[data-platform-name=ios] .App_container {
+  align-items: center;
+}
+[data-platform-name=macos] .App_container {
+  background: var(--container-bg);
+  border-radius: var(--sp-4);
+  border: 1px solid var(--border-color);
+  min-width: calc(400 * var(--px-in-rem));
+  width: calc(504 * var(--px-in-rem));
+}
+[data-platform-name=windows] .App_container {
+  background: var(--container-bg);
+  border-radius: var(--sp-4);
+  border: 1px solid var(--border-color);
+  min-width: calc(400 * var(--px-in-rem));
+  width: calc(504 * var(--px-in-rem));
+}
+
+/* shared/components/Button/Button.module.css */
+.Button_button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--button-bg);
+  color: var(--button-text);
+  cursor: pointer;
+  position: relative;
+}
+[data-platform-name=macos] .Button_button {
+  border: 0;
+  border-radius: calc(5 * var(--px-in-rem));
+  box-shadow: var(--button-shadow);
+  font-size: calc(13 * var(--px-in-rem));
+  height: var(--sp-5);
+  opacity: var(--button-opacity);
+  padding: 0 var(--sp-3);
+}
+[data-platform-name=macos] .Button_button.Button_lg {
+  height: var(--sp-7);
+  border-radius: calc(6 * var(--px-in-rem));
+}
+[data-platform-name=macos] .Button_button.Button_xl {
+  height: var(--sp-8);
+  border-radius: calc(6 * var(--px-in-rem));
+}
+[data-platform-name=macos] .Button_button:disabled {
+  background: var(--button-bg--disabled, var(--button-bg));
+  box-shadow: var(--button-shadow--disabled, var(--button-shadow));
+  color: var(--button-text--disabled, var(--button-text));
+  opacity: var(--button-opacity--disabled, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:disabled:hover {
+  background: var(--button-bg--disabled, var(--button-bg));
+  box-shadow: var(--button-shadow--disabled, var(--button-shadow));
+  color: var(--button-text--disabled, var(--button-text));
+  opacity: var(--button-opacity--disabled, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:focus,
+[data-platform-name=macos] .Button_button:focus-visible {
+  background: var(--button-bg--focus, var(--button-bg));
+  box-shadow: var(--button-shadow--focus, var(--button-shadow));
+  color: var(--button-text--focus, var(--button-text));
+  opacity: var(--button-opacity--focus, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:hover {
+  background: var(--button-bg);
+  box-shadow: var(--button-shadow--hover, var(--button-shadow));
+  color: var(--button-text--hover, var(--button-text));
+  opacity: var(--button-opacity--hover, var(--button-opacity));
+}
+[data-platform-name=macos] .Button_button:active {
+  background: var(--button-bg--active, var(--button-bg));
+  box-shadow: var(--button-shadow--active, var(--button-shadow));
+  color: var(--button-text--active, var(--button-text));
+  opacity: var(--button-opacity--active, var(--button-opacity));
+}
+[data-platform-name=ios] .Button_button {
+  border-radius: var(--sp-2);
+  border: 0;
+  font-size: calc(15 * var(--px-in-rem));
+  font-weight: 600;
+  height: calc(50 * var(--px-in-rem));
+  letter-spacing: calc(-0.23 * var(--px-in-rem));
+  padding: 0 var(--sp-6);
+  text-align: center;
+}
+[data-platform-name=ios] .Button_button:active {
+  background: var(--button-bg--active, var(--button-bg));
+  color: var(--button-text--active, var(--button-text));
+}
+[data-platform-name=ios] .Button_button:disabled {
+  background: var(--button-bg--disabled, var(--button-bg));
+  color: var(--button-text--disabled, var(--button-text));
+}
+body:not([data-platform-name]) .Button_button {
+  background-blend-mode:
+    normal,
+    color-burn,
+    normal;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0) 100%),
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.06) 100%),
+    #007aff;
+  border-radius: var(--sp-2);
+  border: 1px solid rgba(40, 145, 255, 0.05);
+  box-shadow: 0 0 1px 0 rgba(40, 145, 255, 0.05), 0 1px 1px 0 rgba(40, 145, 255, 0.1);
+  color: white;
+  font-size: calc(13 * var(--px-in-rem));
+  font-weight: 600;
+  line-height: var(--sp-8);
+  padding: 0 var(--sp-4);
+}
+body:not([data-platform-name]) .Button_button:hover {
+  background:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749db;
+}
+body:not([data-platform-name]) .Button_button:active {
+  background:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #1743d1;
+}
+[data-platform-name=macos] {
+  --macos-control-focused-shadow:
+    0 0 0 3px rgba(57, 105, 239, 0.55),
+    0 0 0 1px rgba(57, 105, 239, 0.55) inset,
+    0 0 1px 0 rgba(0, 0, 0, 0.05),
+    0 1px 1px 0 rgba(0, 0, 0, 0.1);
+  --macos-control-standard-background-rest: var(--color-white);
+  --macos-control-standard-background-rest--dark: rgba(255, 255, 255, 0.28);
+  --macos-control-standard-background-pressed: #e7e7e7;
+  --macos-control-standard-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.2) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 0 1px 0 rgba(0, 0, 0, 0.05),
+    0 1px 1px 0 rgba(0, 0, 0, 0.2);
+  --macos-control-accent-branded-background-rest:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749DB;
+  --macos-control-accent-branded-background-pressed:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2140C0;
+  --macos-control-accent-branded-background-hover:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749DB;
+  --macos-control-accent-branded-background-disabled: var(--color-white);
+  --macos-control-accent-branded-background-focus:
+    linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.00) 0%,
+      rgba(255, 255, 255, 0.16) 100%),
+    #2749DB;
+  --macos-control-accent-branded-shadow-rest:
+    0 1px 0 0 rgba(255, 255, 255, 0) inset,
+    0 1px 0 0 rgba(255, 255, 255, 0) inset,
+    0 0 0 1px rgba(0, 122, 255, 0.05),
+    0 0 1px 0 rgba(0, 122, 255, 0.05),
+    0 1px 1px 0 rgba(0, 122, 255, 0.1);
+  --macos-control-accent-branded-shadow-pressed:
+    0px 0.5px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 1px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 0px 0px 0.5px rgba(0, 122, 255, 0.05),
+    0px 0px 1px 0px rgba(0, 122, 255, 0.05),
+    0px 1px 1px 0px rgba(0, 122, 255, 0.10);
+  --macos-control-accent-branded-shadow-hover:
+    0px 0.5px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 1px 0px 0px rgba(255, 255, 255, 0.00) inset,
+    0px 0px 0px 0.5px rgba(0, 122, 255, 0.05),
+    0px 0px 1px 0px rgba(0, 122, 255, 0.05),
+    0px 1px 1px 0px rgba(0, 122, 255, 0.10);
+  --macos-control-accent-branded-shadow-disabled:
+    0px 0.5px 0px 0px rgba(255, 255, 255, 0.20) inset,
+    0px 1px 0px 0px rgba(255, 255, 255, 0.05) inset,
+    0px 0px 0px 0.5px rgba(0, 0, 0, 0.10),
+    0px 0px 1px 0px rgba(0, 0, 0, 0.05),
+    0px 1px 1px 0px rgba(0, 0, 0, 0.20);
+}
+[data-platform-name=macos] .Button_button.Button_standard {
+  --button-bg: var(--macos-control-standard-background-rest);
+  --button-text: var(--macos-text-primary);
+  --button-shadow: var(--macos-control-standard-shadow);
+  --button-opacity: 1;
+  --button-bg--active: var(--macos-control-standard-background-pressed);
+  --button-bg--disabled: var(--macos-control-standard-background-rest);
+  --button-text--disabled: var(--macos-text-primary);
+  --button-shadow--disabled: var(--macos-control-standard-shadow);
+  --button-opacity--disabled: 0.4;
+  --button-shadow--focus: var(--macos-control-focused-shadow);
+}
+[data-platform-name=macos] .Button_button.Button_accent,
+[data-platform-name=macos] .Button_button.Button_accentBrand {
+  --button-bg: var(--macos-control-accent-branded-background-rest);
+  --button-text: var(--color-white);
+  --button-shadow: var(--macos-control-accent-branded-shadow-rest);
+  --button-opacity: 1;
+  --button-bg--active: var(--macos-control-accent-branded-background-pressed);
+  --button-text--active: var(--color-white-at-80);
+  --button-shadow--active: var(--macos-control-accent-branded-shadow-pressed);
+  --button-bg--disabled: var(--macos-control-standard-background-rest);
+  --button-text--disabled: var(--macos-text-primary);
+  --button-shadow--disabled: var(--macos-control-standard-shadow);
+  --button-opacity--disabled: 0.4;
+  --button-bg--focus: var(--macos-control-accent-branded-background-focus);
+  --button-text--focus: var(--color-white);
+  --button-shadow--focus: var(--macos-control-focused-shadow);
+  --button-bg--hover: var(--macos-control-accent-branded-background-hover);
+  --button-text--hover: var(--color-white);
+  --button-shadow--hover: var(--macos-control-accent-branded-shadow-hover);
+}
+[data-theme=dark] :is([data-platform-name=macos] .Button_button).Button_standard {
+  --button-bg: var(--macos-control-standard-background-rest--dark);
+  --button-text: var(--color-white-at-84);
+}
+[data-platform-name=ios] .Button_button.Button_primary {
+  --button-bg: var(--color-blue-50);
+  --button-text: var(--color-white);
+  --button-bg--active: var(--color-blue-70);
+  --button-text--active: var(--color-white);
+  --button-bg--disabled: var(--color-black-at-6);
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-platform-name=ios] .Button_button.Button_ghost {
+  --button-bg: transparent;
+  --button-text: var(--color-blue-50);
+  --button-bg--active: rgba(57, 105, 239, 0.12);
+  --button-text--active: var(--color-blue-70);
+  --button-bg--disabled: transparent;
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-theme=dark] :is([data-platform-name=ios] .Button_button).Button_primary {
+  --button-bg: var(--color-blue-30);
+  --button-text: var(--color-black-at-84);
+  --button-bg--active: var(--color-blue-50);
+  --button-text--active: var(--color-black-at-84);
+  --button-bg--disabled: var(--color-black-at-6);
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-theme=dark] :is([data-platform-name=ios] .Button_button).Button_ghost {
+  --button-bg: transparent;
+  --button-text: var(--color-blue-30);
+  --button-bg--active: rgba(114, 149, 246, 0.2);
+  --button-text--active: var(--color-blue-20);
+  --button-bg--disabled: transparent;
+  --button-text--disabled: var(--color-black-at-36);
+}
+[data-platform-name=windows] .Button_button {
+  --focus-ring: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--color-black);
+  border-radius: var(--border-radius-sm);
+  height: var(--sp-8);
+  border-width: 0;
+  padding-left: var(--sp-3);
+  padding-right: var(--sp-3);
+}
+[data-platform-name=windows] .Button_button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+[data-platform-name=windows] .Button_button.Button_standard {
+  background-color: var(--color-black-at-6);
+  border-width: 0;
+}
+[data-platform-name=windows] .Button_button.Button_standard:hover {
+  background-color: var(--color-black-at-9);
+  cursor: pointer;
+}
+[data-platform-name=windows] .Button_button.Button_standard:active {
+  background-color: var(--color-black-at-12);
+}
+[data-platform-name=windows] .Button_button.Button_standard:disabled {
+  color: var(--color-black-at-84);
+}
+[data-platform-name=windows] .Button_button.Button_standard:disabled:hover {
+  cursor: not-allowed;
+  background-color: var(--color-white-at-6);
+}
+[data-platform-name=windows] .Button_button.Button_accentBrand {
+  background-color: var(--ddg-color-primary);
+  color: var(--color-white);
+}
+[data-platform-name=windows] .Button_button.Button_accentBrand:hover {
+  background-color: var(--color-blue-60);
+}
+[data-platform-name=windows] .Button_button.Button_accentBrand:active {
+  background-color: var(--color-blue-70);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button) {
+  --focus-ring: 0px 0px 0px 1px var(--color-black), 0px 0px 0px 3px var(--color-white);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard {
+  color: var(--color-white-at-84);
+  background-color: var(--color-white-at-12);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:hover {
+  background-color: var(--color-white-at-18);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:active {
+  background-color: var(--color-white-at-24);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled {
+  color: var(--color-white-at-12);
+  opacity: 0.8;
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled:hover {
+  background-color: var(--color-white-at-12);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand {
+  color: var(--color-black-at-84);
+  background-color: var(--color-blue-20);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:hover {
+  background-color: var(--color-blue-30);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:active {
+  background-color: var(--color-blue-40);
+}
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:disabled {
+  background-color: var(--color-white-at-36);
+  color: var(--color-black-at-84);
+}
+
+/* pages/special-error/app/components/Warning.module.css */
+.Warning_container {
+  display: flex;
+  flex-flow: column;
+  gap: var(--sp-4);
+  max-width: var(--ios-content-max-width);
+  padding: var(--sp-8) var(--sp-10);
+  overflow: hidden;
+  width: 100%;
+}
+.Warning_content {
+  display: flex;
+  flex-flow: column;
+  gap: var(--sp-5);
+}
+.Warning_content a {
+  color: var(--link-color);
+}
+.Warning_heading {
+  align-items: center;
+  display: flex;
+  gap: var(--sp-2);
+}
+.Warning_icon {
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.Warning_buttonContainer {
+  display: flex;
+  gap: var(--sp-2);
+  padding-block-start: var(--sp-2);
+}
+[data-platform-name=macos] .Warning_icon {
+  align-self: flex-start;
+  flex: 0 0 var(--sp-12);
+  height: var(--sp-12);
+  width: var(--sp-12);
+}
+[data-platform-name=macos] .Warning_heading {
+  gap: var(--sp-4);
+}
+[data-platform-name=macos] .Warning_ssl.Warning_heading {
+  height: var(--sp-8);
+}
+[data-platform-name=macos] .Warning_ssl .Warning_icon {
+  background-image: url("./Shield-Alert-96-IXBBD4D7.svg");
+  margin-left: calc(-1 * var(--sp-2));
+  margin-top: calc(-1 * var(--sp-2));
+}
+[data-platform-name=macos] .Warning_phishing .Warning_icon,
+[data-platform-name=macos] .Warning_malware .Warning_icon,
+[data-platform-name=macos] .Warning_scam .Warning_icon {
+  background-image: url("./Malware-Site-96-A35AQOKY.svg");
+  margin-left: calc(-1 * var(--sp-2));
+  margin-right: calc(-1 * var(--sp-1));
+}
+[data-platform-name=macos] .Warning_buttonContainer {
+  justify-content: flex-end;
+}
+[data-platform-name=ios] .Warning_container {
+  gap: var(--sp-6);
+}
+[data-platform-name=ios] .Warning_heading {
+  flex-flow: column;
+  gap: var(--sp-6);
+  justify-content: center;
+  text-align: center;
+}
+[data-platform-name=ios] .Warning_content {
+  text-align: center;
+  text-wrap: balance;
+  white-space: pre-line;
+}
+[data-platform-name=ios] .Warning_buttonContainer {
+  flex-flow: column-reverse;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-top: var(--sp-6);
+}
+[data-platform-name=ios] .Warning_button {
+  max-width: var(--sp-90);
+  width: 100%;
+}
+[data-platform-name=ios] .Warning_advanced {
+  background-color: transparent;
+}
+[data-platform-name=ios] .Warning_icon {
+  flex: 0 0 var(--sp-24);
+  height: var(--sp-24);
+  width: var(--sp-32);
+}
+[data-platform-name=ios] .Warning_ssl .Warning_icon {
+  background-image: url("./Shield-Alert-128-D4E333I2.svg");
+}
+[data-platform-name=ios] .Warning_phishing .Warning_icon,
+[data-platform-name=ios] .Warning_malware .Warning_icon,
+[data-platform-name=ios] .Warning_scam .Warning_icon {
+  background-image: url("./Malware-Site-128-YUDZDGMR.svg");
+}
+[data-platform-name=ios] .Warning_title {
+  white-space: pre-line;
+}
+@media (min-width: 600px) {
+  [data-platform-name=ios] .Warning_title {
+    white-space: normal;
+  }
+}
+@supports (text-wrap: balance) {
+  [data-platform-name=ios] .Warning_title {
+    text-wrap: balance;
+    white-space: normal;
+  }
+}
+[data-platform-name=windows] {
+  --border-radius-sm: 6px;
+}
+[data-platform-name=windows] .Warning_icon {
+  align-self: flex-start;
+  flex: 0 0 var(--sp-12);
+  height: var(--sp-12);
+  width: var(--sp-12);
+}
+[data-platform-name=windows] .Warning_heading {
+  gap: var(--sp-4);
+}
+[data-platform-name=windows] .Warning_ssl.Warning_heading {
+  height: var(--sp-8);
+}
+[data-platform-name=windows] .Warning_ssl .Warning_icon {
+  background-image: url("./Shield-Alert-96-IXBBD4D7.svg");
+  margin-left: calc(-1 * var(--sp-2));
+  margin-top: calc(-1 * var(--sp-2));
+}
+[data-platform-name=windows] .Warning_phishing .Warning_icon,
+[data-platform-name=windows] .Warning_malware .Warning_icon,
+[data-platform-name=windows] .Warning_scam .Warning_icon {
+  background-image: url("./Malware-Site-96-A35AQOKY.svg");
+  margin-left: calc(-1 * var(--sp-2));
+  margin-right: calc(-1 * var(--sp-1));
+}
+[data-platform-name=windows] .Warning_buttonContainer {
+  flex-flow: row-reverse;
+  gap: var(--sp-4);
+  justify-content: flex-end;
+}
+[data-platform-name=windows] .Warning_button {
+  flex: 0 0 calc(50% - var(--sp-2));
+  font-family: var(--theme-font-family);
+  font-size: calc(14 * var(--px-in-rem));
+  font-weight: 400;
+  line-height: normal;
+}
+
+/* pages/special-error/app/components/Components.module.css */
+.Components_selector {
+  width: 100%;
+  display: flex;
+  padding: var(--sp-5);
+  gap: var(--sp-4);
+}
+.Components_selector fieldset {
+  border: 0;
+  display: flex;
+  gap: var(--sp-2);
+}
+.Components_main {
+  display: flex;
+  flex-flow: column;
+  padding: var(--sp-5);
+  gap: var(--sp-5);
+}
+.Components_main > section {
+  display: flex;
+  flex-flow: column;
+  border-top: 1px solid var(--theme-text-primary-color);
+  padding: var(--sp-3);
+  gap: var(--sp-3);
+}
+.Components_main > section > h1 {
+  padding: var(--sp-3) 0;
+}
+.Components_main > section > h2 {
+  padding: var(--sp-2) 0;
+}
+
+/* shared/styles/variables.css */
+:root {
+  --base: 16px;
+  font-size: calc(16px / var(--base));
+  --px-in-rem: calc(1rem / 16);
+  --sp-320: 80rem;
+  --sp-256: 64rem;
+  --sp-192: 48rem;
+  --sp-96: 24rem;
+  --sp-90: 22.5rem;
+  --sp-80: 20rem;
+  --sp-72: 18rem;
+  --sp-64: 16rem;
+  --sp-56: 14rem;
+  --sp-48: 12rem;
+  --sp-40: 10rem;
+  --sp-35: 8.75rem;
+  --sp-32: 8rem;
+  --sp-30: 7.5rem;
+  --sp-25: 6.25rem;
+  --sp-24: 6rem;
+  --sp-20: 5rem;
+  --sp-16: 4rem;
+  --sp-15: 3.75rem;
+  --sp-14: 3.5rem;
+  --sp-13: 3.25rem;
+  --sp-12: 3rem;
+  --sp-11: 2.75rem;
+  --sp-10: 2.5rem;
+  --sp-9: 2.25rem;
+  --sp-8: 2rem;
+  --sp-7: 1.75rem;
+  --sp-6: 1.5rem;
+  --sp-5: 1.25rem;
+  --sp-4: 1rem;
+  --sp-3: 0.75rem;
+  --sp-2: 0.5rem;
+  --sp-1: 0.25rem;
+  --sp-0_5: 0.125rem;
+  --color-red-50: #de5833;
+  --color-purple-50: #5132a9;
+  --color-yellow-50: #fcd00a;
+  --color-green-50: #4cba3c;
+  --color-yellow-60: #f9be1a;
+  --color-blue-100: #051133;
+  --color-blue-90: #0b2059;
+  --color-blue-80: #14307e;
+  --color-blue-70: #1e42a4;
+  --color-blue-60: #2b55ca;
+  --color-blue-50: #3969ef;
+  --color-blue-40: #557ff3;
+  --color-blue-30: #7295f6;
+  --color-blue-20: #8fabf9;
+  --color-blue-10: #adc2fc;
+  --color-blue-0: #ccdaff;
+  --color-black: #000;
+  --color-gray-95: #111;
+  --color-gray-90: #222;
+  --color-gray-85: #333;
+  --color-gray-80: #444;
+  --color-gray-70: #666;
+  --color-gray-60: #888;
+  --color-gray-50: #aaa;
+  --color-gray-40: #ccc;
+  --color-gray-30: #ddd;
+  --color-gray-25: #e5e5e5;
+  --color-gray-20: #eee;
+  --color-gray-10: #f5f5f5;
+  --color-gray-0: #fafafa;
+  --color-white: #fff;
+  --color-black-at-1: rgba(0, 0, 0, 0.01);
+  --color-black-at-3: rgba(0, 0, 0, 0.03);
+  --color-black-at-6: rgba(0, 0, 0, 0.06);
+  --color-black-at-9: rgba(0, 0, 0, 0.09);
+  --color-black-at-12: rgba(0, 0, 0, 0.12);
+  --color-black-at-15: rgba(0, 0, 0, 0.15);
+  --color-black-at-18: rgba(0, 0, 0, 0.18);
+  --color-black-at-36: rgba(0, 0, 0, 0.36);
+  --color-black-at-40: rgba(0, 0, 0, 0.4);
+  --color-black-at-42: rgba(0, 0, 0, 0.42);
+  --color-black-at-48: rgba(0, 0, 0, 0.48);
+  --color-black-at-50: rgba(0, 0, 0, 0.5);
+  --color-black-at-60: rgba(0, 0, 0, 0.6);
+  --color-black-at-72: rgba(0, 0, 0, 0.72);
+  --color-black-at-80: rgba(0, 0, 0, 0.8);
+  --color-black-at-84: rgba(0, 0, 0, 0.84);
+  --color-black-at-90: rgba(0, 0, 0, 0.9);
+  --color-black-at-96: rgba(0, 0, 0, 0.96);
+  --color-gray85-at-80: rgba(51, 51, 51, 0.8);
+  --color-white-at-3: rgba(255, 255, 255, 0.03);
+  --color-white-at-6: rgba(255, 255, 255, 0.06);
+  --color-white-at-9: rgba(255, 255, 255, 0.09);
+  --color-white-at-12: rgba(255, 255, 255, 0.12);
+  --color-white-at-15: rgba(255, 255, 255, 0.15);
+  --color-white-at-18: rgba(255, 255, 255, 0.18);
+  --color-white-at-24: rgba(255, 255, 255, 0.24);
+  --color-white-at-30: rgba(255, 255, 255, 0.3);
+  --color-white-at-36: rgba(255, 255, 255, 0.36);
+  --color-white-at-42: rgba(255, 255, 255, 0.42);
+  --color-white-at-50: rgba(255, 255, 255, 0.5);
+  --color-white-at-60: rgba(255, 255, 255, 0.6);
+  --color-white-at-70: rgba(255, 255, 255, 0.7);
+  --color-white-at-80: rgba(255, 255, 255, 0.8);
+  --color-white-at-84: rgba(255, 255, 255, 0.84);
+  --color-white-at-85: rgba(255, 255, 255, 0.85);
+  --color-white-at-96: rgba(255, 255, 255, 0.96);
+  --ddg-color-primary: var(--color-blue-50);
+  --ddg-color-primary-dark: var(--color-blue-30);
+  --theme-background-color: var(--color-white);
+  --theme-text-primary-color: var(--color-black-at-84);
+  --theme-text-secondary-color: var(--color-black-at-60);
+  --theme-text-link-color: var(--ddg-color-primary);
+  --border-radius-lg: 12px;
+  --border-radius-md: 8px;
+  --border-radius-sm: 6px;
+  --border-radius-xs: 4px;
+  --macos-text-primary: var(--color-black-at-84);
+  --ios-content-max-width: calc(794 * var(--px-in-rem));
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme-background-color: var(--color-gray-95);
+    --theme-text-primary-color: var(--color-white-at-85);
+    --theme-text-secondary-color: var(--color-white-at-50);
+    --theme-text-link-color: var(--ddg-color-primary-dark);
+  }
+}
+
+/* shared/styles/reset.css */
+*,
+*:after,
+*:before {
+  box-sizing: border-box;
+}
+html[data-reduced-motion=true] * {
+  animation: none !important;
+  transition: none !important;
+}
+body {
+  font-family: var(--theme-font-family, system-ui);
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.08px;
+  margin: 0;
+  height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  background: var(--theme-background-color);
+  color: var(--theme-text-primary-color);
+}
+body > main {
+  width: 100%;
+}
+h1,
+h2,
+h3,
+h4,
+p {
+  font-weight: normal;
+  margin: 0;
+}
+a {
+  color: var(--theme-text-link-color);
+}
+button {
+  font-family: system-ui, sans-serif;
+}
+ul {
+  margin: 0;
+  padding: 0;
+}
+li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* shared/styles/utilities.css */
+.offscreen {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+/* shared/styles/global.css */
+
+/* pages/special-error/app/styles/variables.css */
+:root {
+  --theme-background-color: var(--color-gray-20);
+  --theme-text-primary-color: var(--color-black-at-84);
+  --link-color: var(--color-black);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --container-bg: var(--color-white);
+  --advanced-info-bg: var(--color-black-at-3);
+  --visit-site-color: var(--color-black);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --theme-background-color: var(--color-gray-85);
+    --theme-text-primary-color: var(--color-white-at-84);
+    --link-color: var(--color-gray-40);
+    --border-color: var(--color-white-at-18);
+    --container-bg: var(--color-gray-90);
+    --advanced-info-bg: #2f2f2f;
+    --visit-site-color: var(--color-gray-40);
+  }
+  [data-platform-name=ios] {
+    --theme-background-color: #222;
+  }
+}

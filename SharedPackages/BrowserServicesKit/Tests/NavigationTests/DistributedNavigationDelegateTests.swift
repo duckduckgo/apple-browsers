@@ -1664,6 +1664,14 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
         waitForExpectations(timeout: 10)
 
+        // sometimes didCommit and navigationResponse can be received,
+        // we‘re only interested in .didTerminate and .didFail events here
+        if case .didCommit = responder(at: 0).history[safe: 4] {
+            responder(at: 0).history.remove(at: 4)
+        }
+        if case .navigationResponse = responder(at: 0).history[safe: 4] {
+            responder(at: 0).history.remove(at: 4)
+        }
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1), .other, src: main(responderIdx: 0)),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),

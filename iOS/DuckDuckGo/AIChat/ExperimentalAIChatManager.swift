@@ -33,11 +33,7 @@ struct ExperimentalAIChatManager {
     }
 
     var isExperimentalAIChatFeatureFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAIChat)
-    }
-
-    var isExperimentalTransitionEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalSwitcherBarTransition, allowOverride: true)
+        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAIChat, allowOverride: true)
     }
 
     var isExperimentalAIChatSettingsEnabled: Bool {
@@ -54,6 +50,6 @@ struct ExperimentalAIChatManager {
     }
 
     mutating func toggleExperimentalTransition() {
-        featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.experimentalSwitcherBarTransition)
+        featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.experimentalAIChat)
     }
 }

@@ -1,5 +1,5 @@
 //
-//  Logger+NewTabPageOmnibar.swift
+//  Logger+NewTabPage.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

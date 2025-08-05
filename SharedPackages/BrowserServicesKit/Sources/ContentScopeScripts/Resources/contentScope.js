@@ -10451,6 +10451,7 @@ Only "elements" is supported.`);
   }
 
   // src/features/navigator-interface.js
+  var store = {};
   var NavigatorInterface = class extends ContentFeature {
     load(args) {
       if (this.matchConditionalFeatureSetting("privilegedDomains").length) {
@@ -10481,7 +10482,11 @@ Only "elements" is supported.`);
              * @throws {Error}
              */
             createMessageBridge(featureName) {
-              return createPageWorldBridge(featureName, args.messageSecret);
+              const existingBridge = store[featureName];
+              if (existingBridge) return existingBridge;
+              const bridge = createPageWorldBridge(featureName, args.messageSecret);
+              store[featureName] = bridge;
+              return bridge;
             }
           },
           enumerable: true,
@@ -10946,16 +10951,22 @@ Only "elements" is supported.`);
     }
     urlChangeListeners.add(listener);
   }
-  function handleURLChange() {
+  function handleURLChange(navigationType = "unknown") {
     for (const listener of urlChangeListeners) {
-      listener();
+      listener(navigationType);
     }
   }
   function listenForURLChanges() {
     const urlChangedInstance = new ContentFeature("urlChanged", {}, {});
     if ("navigation" in globalThis && "addEventListener" in globalThis.navigation) {
-      globalThis.navigation.addEventListener("navigatesuccess", () => {
-        handleURLChange();
+      const navigations = /* @__PURE__ */ new WeakMap();
+      globalThis.navigation.addEventListener("navigate", (event) => {
+        navigations.set(event.target, event.navigationType);
+      });
+      globalThis.navigation.addEventListener("navigatesuccess", (event) => {
+        const navigationType = navigations.get(event.target);
+        handleURLChange(navigationType);
+        navigations.delete(event.target);
       });
       return;
     }
@@ -10965,13 +10976,14 @@ Only "elements" is supported.`);
     const historyMethodProxy = new DDGProxy(urlChangedInstance, History.prototype, "pushState", {
       apply(target, thisArg, args) {
         const changeResult = DDGReflect.apply(target, thisArg, args);
-        handleURLChange();
+        console.log("pushstate event");
+        handleURLChange("push");
         return changeResult;
       }
     });
     historyMethodProxy.overload();
     window.addEventListener("popstate", () => {
-      handleURLChange();
+      handleURLChange("traverse");
     });
   }
 
@@ -11016,9 +11028,9 @@ Only "elements" is supported.`);
       if (!isFeatureBroken(args, featureName) || alwaysInitExtensionFeatures(args, featureName)) {
         featureInstance2.callInit(args);
         if (featureInstance2.listenForUrlChanges || featureInstance2.urlChanged) {
-          registerForURLChanges(() => {
+          registerForURLChanges((navigationType) => {
             featureInstance2.recomputeSiteObject();
-            featureInstance2?.urlChanged();
+            featureInstance2?.urlChanged(navigationType);
           });
         }
       }

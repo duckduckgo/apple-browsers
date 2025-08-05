@@ -1,5 +1,5 @@
 //
-//  SubscriptionFunnelOrigin.swift
+//  MockVPNUpsellPopoverPresenter.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,19 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
-/// Represents the origin point from which the user enters the subscription funnel in the macOS app.
-enum SubscriptionFunnelOrigin: String {
-    /// User entered the funnel via the App Settings screen.
-    case appSettings = "funnel_appsettings_macos"
+@testable import DuckDuckGo_Privacy_Browser
 
-    /// User entered the funnel via the App More Menu.
-    case appMenu = "funnel_appmenu_macos"
+final class MockVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter {
+    var didShow = false
 
-    /// User entered the funnel via the Free Scan feature.
-    case freeScan = "funnel_freescan_macos"
-
-    /// User entered the funnel via the VPN upsell.
-    case vpnUpsell = "funnel_toolbar_macos"
+    func toggle(below view: NSView) {
+        didShow = true
+    }
 }

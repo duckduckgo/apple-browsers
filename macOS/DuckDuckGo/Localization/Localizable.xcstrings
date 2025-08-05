@@ -71344,6 +71344,174 @@
         }
       }
     },
+    "subscription.upsell.popover.button.no.thanks" : {
+      "comment" : "Title for the no thanks button in VPN Upsell popover (will dismiss the popover)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.cta.free.trial" : {
+      "comment" : "Title for the main CTA button in VPN Upsell popover if user is eligible for free trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try For Free"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.cta.learn.more" : {
+      "comment" : "Title for the main CTA button in VPN Upsell popover if user is not eligible for free trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn More"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.ai.chat.title" : {
+      "comment" : "Title for the AI chat feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat privately with advanced AI models"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.block.harmful.sites.title" : {
+      "comment" : "Title for the block harmful sites feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block harmful sites & online scams"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.hide.ip.address.title" : {
+      "comment" : "Title for the hide IP address feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide your IP address from sites"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.identity.theft.protection.title" : {
+      "comment" : "Title for the identity theft protection feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restore your identity if it's stolen"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.shield.online.activity.title" : {
+      "comment" : "Title for the shield online activity feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shield your online activity from others"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.pir.subtitle" : {
+      "comment" : "Subtitle for the Private Information Removal feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "currently available on Mac & Windows"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.pir.title" : {
+      "comment" : "Title for the Private Information Removal feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove info from sites that sell it"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.section.title" : {
+      "comment" : "Section title for plus features listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Plus"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.subtitle" : {
+      "comment" : "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "+ more premium protections"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.subtitle.count" : {
+      "comment" : "Subtitle shown in VPN Upsell popover when there are multiple plus features listed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "+ %d more premium protections"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.title" : {
+      "comment" : "Title shown in VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A VPN to secure your\nWi-Fi & personal info"
+          }
+        }
+      }
+    },
     "switch.to.tab" : {
       "comment" : "Suggestion to switch to an open tab button title",
       "extractionState" : "extracted_with_value",

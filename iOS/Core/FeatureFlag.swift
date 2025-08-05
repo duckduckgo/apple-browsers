@@ -98,9 +98,6 @@ public enum FeatureFlag: String {
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
 
-    // https://app.asana.com/1/137249556945/project/715106103902962/task/1210647253853346?focus=true
-    case june2025TabManagerLayoutChanges
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
@@ -163,7 +160,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
              .removeWWWInCanonicalizationInThreatProtection,
-             .june2025TabManagerLayoutChanges,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial:
             true
@@ -203,7 +199,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition,
              .subscriptionRebranding,
-             .june2025TabManagerLayoutChanges,
              .widgetReporting,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
@@ -315,8 +310,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
-        case .june2025TabManagerLayoutChanges:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.june2025TabManagerLayoutChanges))
         case .widgetReporting:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.widgetReporting))
         case .experimentalAIChat:

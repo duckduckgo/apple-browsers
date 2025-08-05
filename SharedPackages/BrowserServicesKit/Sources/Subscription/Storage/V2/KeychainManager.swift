@@ -268,17 +268,11 @@ public final class KeychainManager {
 
         Logger.keychainManager.debug("Processing writing backlog with \(self.writingBacklog.count) items")
 
+        let backlogCopy = writingBacklog
         var processedSuccessfully = 0
         var failed = 0
 
-        // Process items one by one and check if they still exist in the backlog
-        // This prevents processing items that may have been handled by recursive calls
-        while let (key, data) = writingBacklog.first {
-            // Check if the item is still in the backlog (not processed by a recursive call)
-            guard writingBacklog[key] != nil else {
-                continue
-            }
-
+        for (key, data) in backlogCopy {
             do {
                 try internalStore(data: data, forKey: key)
                 processedSuccessfully += 1

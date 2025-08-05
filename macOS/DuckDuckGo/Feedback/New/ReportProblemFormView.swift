@@ -320,15 +320,18 @@ struct ProblemDetailFormView: View {
 
     private enum ComponentHeights {
         static let header: CGFloat = 72  // 24 padding + ~24 button/text + 24 padding
-        static let textInputSection: CGFloat = 144  // 12 spacing + 13 label + 12 spacing + 80 textEditor + 16 padding + 8 bottom padding + ~3 border
+        static let textInputSection: CGFloat = 159  // Calculated from original height difference (515 - 356 = 159)
         static let footer: CGFloat = 122  // 16 spacing + 1 divider + ~10 disclaimer + 16 spacing + ~32 buttons + 16 bottom padding + ~31 button spacing
-        static let pillsSectionPadding: CGFloat = 48  // 24 leading + 24 trailing
-        static let pillsBottomPadding: CGFloat = 24
     }
 
     private func calculateTotalHeight() -> CGFloat {
         let baseHeight = ComponentHeights.header + ComponentHeights.footer
-        let pillsHeight = pillsSectionHeight + ComponentHeights.pillsBottomPadding
+
+        // Always use the measured height of the pills section (which includes bottom padding)
+        // The pills section height is dynamic based on how many rows the pills wrap into
+        // Use a reasonable fallback during initial load before measurement completes
+        let pillsHeight = pillsSectionHeight > 0 ? pillsSectionHeight : 80
+
         let textInputHeight = viewModel.selectedOptions.isEmpty ? 0 : ComponentHeights.textInputSection
 
         return baseHeight + pillsHeight + textInputHeight

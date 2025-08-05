@@ -99,6 +99,10 @@ public final class KeychainManager {
             let status = keychainOperations.copyMatching(query as CFDictionary, &item)
 
             if status == errSecSuccess {
+
+                // In case of success, we know the keychain is available. This should be relevant only in the SystemExtension where we can't rely of notifications for triggering a backlog writing.
+                self.processWritingBacklog()
+
                 if let existingItem = item as? Data {
                     return existingItem
                 } else {
@@ -134,6 +138,10 @@ public final class KeychainManager {
             switch status {
             case errSecSuccess:
                 writingBacklog[key] = nil // Removing the data from the writing backlog if present
+
+                // In case of success, we know the keychain is available. This should be relevant only in the SystemExtension where we can't rely of notifications for triggering a backlog writing.
+                self.processWritingBacklog()
+
                 Logger.keychainManager.debug("Successfully added keychain item for \(key)")
                 return
             case errSecDuplicateItem:
@@ -146,6 +154,7 @@ public final class KeychainManager {
                 Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription), adding data to writing queue")
                 writingBacklog[key] = data
             default:
+                writingBacklog[key] = nil // Removing the data from the writing backlog if present
                 Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription)")
                 throw AccountKeychainAccessError.keychainSaveFailure(status)
             }
@@ -217,37 +226,41 @@ public final class KeychainManager {
         #if canImport(UIKit)
         // On iOS, listen for app becoming active and protected data becoming available
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: accessQueue)
             .sink { [weak self] _ in
                 self?.processWritingBacklog()
             }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)
+            .receive(on: accessQueue)
             .sink { [weak self] _ in
                 self?.processWritingBacklog()
             }
             .store(in: &cancellables)
 
-        Logger.keychainManager.debug("KeychainManager: Set up iOS keychain availability notifications")
+        Logger.keychainManager.debug("Set up iOS keychain availability notifications")
 
         #elseif canImport(AppKit)
         // On macOS, listen for app becoming active and workspace session becoming active
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .receive(on: accessQueue)
             .sink { [weak self] _ in
                 self?.processWritingBacklog()
             }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: NSWorkspace.sessionDidBecomeActiveNotification)
+            .receive(on: accessQueue)
             .sink { [weak self] _ in
                 self?.processWritingBacklog()
             }
             .store(in: &cancellables)
 
-        Logger.keychainManager.debug("KeychainManager: Set up macOS keychain availability notifications")
+        Logger.keychainManager.debug("Set up macOS keychain availability notifications")
 
         #else
-        Logger.keychainManager.info("KeychainManager: Keychain notifications not supported on this platform")
+        Logger.keychainManager.info("Keychain notifications not supported on this platform")
         #endif
     }
 
@@ -258,7 +271,7 @@ public final class KeychainManager {
     private func processWritingBacklog() {
         guard !writingBacklog.isEmpty else { return }
 
-        Logger.keychainManager.debug("KeychainManager: Processing writing backlog with \(self.writingBacklog.count) items")
+        Logger.keychainManager.debug("Processing writing backlog with \(self.writingBacklog.count) items")
 
         let backlogCopy = writingBacklog
         var processedSuccessfully = 0
@@ -268,20 +281,20 @@ public final class KeychainManager {
             do {
                 try store(data: data, forKey: key)
                 processedSuccessfully += 1
-                Logger.keychainManager.debug("KeychainManager: Successfully processed backlog item for key: \(key)")
+                Logger.keychainManager.debug("Successfully processed backlog item for key: \(key)")
             } catch {
                 failed += 1
                 // Don't log individual failures at error level to avoid spam
-                Logger.keychainManager.debug("KeychainManager: Failed to process backlog item for key \(key): \(error)")
+                Logger.keychainManager.debug("Failed to process backlog item for key \(key): \(error)")
             }
         }
 
         if processedSuccessfully > 0 {
-            Logger.keychainManager.info("KeychainManager: Successfully processed \(processedSuccessfully) backlog items")
+            Logger.keychainManager.info("Successfully processed \(processedSuccessfully) backlog items")
         }
 
         if failed > 0 {
-            Logger.keychainManager.error("KeychainManager: Failed to process \(failed) backlog items")
+            Logger.keychainManager.error("Failed to process \(failed) backlog items")
         }
     }
 
@@ -292,10 +305,10 @@ public final class KeychainManager {
     /// Cancels notification subscriptions and warns about any unprocessed backlog items.
     deinit {
         cancellables.removeAll()
-        Logger.keychainManager.debug("KeychainManager: Cancelled keychain availability notification subscriptions")
+        Logger.keychainManager.debug("Cancelled keychain availability notification subscriptions")
 
         if !writingBacklog.isEmpty {
-            Logger.keychainManager.warning("KeychainManager: Deallocating with \(self.writingBacklog.count) unprocessed backlog items")
+            Logger.keychainManager.warning("Deallocating with \(self.writingBacklog.count) unprocessed backlog items")
         }
     }
 }

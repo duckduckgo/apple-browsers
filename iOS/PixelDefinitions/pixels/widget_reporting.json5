@@ -25,12 +25,6 @@
         owners: ['brindy'],
         triggers: ['startup'],
         suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'errorCode', 
-            'errorDomain', 
-            'underlyingErrorCode', 
-            'underlyingErrorDomain',
-        ],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 }

@@ -21,7 +21,7 @@ import SwiftUIExtensions
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-final class RequestNewFeatureFormViewController: NSHostingController<RequestNewFeedbackFormFlowView> {
+final class RequestNewFeatureFormViewController: NSHostingController<RequestNewFeatureFormFlowView> {
 
     enum Constants {
         static let width: CGFloat = 448
@@ -32,7 +32,7 @@ final class RequestNewFeatureFormViewController: NSHostingController<RequestNewF
         static let thankYouHeight: CGFloat = 232
     }
 
-    override init(rootView: RequestNewFeedbackFormFlowView) {
+    override init(rootView: RequestNewFeatureFormFlowView) {
         super.init(rootView: rootView)
     }
 
@@ -42,7 +42,7 @@ final class RequestNewFeatureFormViewController: NSHostingController<RequestNewF
     }
 }
 
-struct RequestNewFeedbackFormFlowView: View {
+struct RequestNewFeatureFormFlowView: View {
     @State private var showThankYou = false
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
@@ -197,6 +197,7 @@ struct RequestNewFeatureFormView: View {
                 .buttonStyle(DismissActionButtonStyle())
 
                 Button {
+                    viewModel.submitFeedback()
                     onSubmit()
                 } label: {
                     Text(UserText.submit)

@@ -22,7 +22,12 @@ import Networking
 import PixelKit
 import os.log
 
-final class FeedbackSender {
+protocol FeedbackSenderImplementing {
+    func sendFeedback(_ feedback: Feedback)
+    func sendDataImportReport(_ report: DataImportReportModel)
+}
+
+final class FeedbackSender: FeedbackSenderImplementing {
 
     static let feedbackURL = URL(string: "https://duckduckgo.com/feedback.js")!
 

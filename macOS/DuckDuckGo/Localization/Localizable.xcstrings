@@ -13457,9 +13457,6 @@
         }
       }
     },
-    "Cancel" : {
-
-    },
     "cannot.open.file.alert.header" : {
       "comment" : "Header of the alert dialog informing user it is not possible to open the file",
       "extractionState" : "extracted_with_value",
@@ -66682,9 +66679,6 @@
           }
         }
       }
-    },
-    "Request a New Feature" : {
-
     },
     "reset-zoom" : {
       "comment" : "Button that allows the user to reset the zoom level of the browser page",

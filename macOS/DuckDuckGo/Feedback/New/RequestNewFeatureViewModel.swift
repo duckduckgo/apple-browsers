@@ -18,6 +18,8 @@
 
 import Combine
 import SwiftUI
+import BrowserServicesKit
+import Common
 
 final class RequestNewFeatureViewModel: ObservableObject {
 
@@ -28,6 +30,7 @@ final class RequestNewFeatureViewModel: ObservableObject {
 
     // MARK: - Properties
 
+    private let feedbackSender: FeedbackSenderImplementing
     let availableFeatures: [String]
 
     // MARK: - Computed Properties
@@ -50,7 +53,7 @@ final class RequestNewFeatureViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init() {
+    init(feedbackSender: FeedbackSenderImplementing = FeedbackSender()) {
         let allFeatures = [
             UserText.featureAdvancedAdBlocking,
             UserText.featureAISupport,
@@ -72,6 +75,7 @@ final class RequestNewFeatureViewModel: ObservableObject {
         ]
 
         self.availableFeatures = Array(allFeatures.shuffled().prefix(12))
+        self.feedbackSender = feedbackSender
     }
 
     // MARK: - Methods
@@ -85,6 +89,12 @@ final class RequestNewFeatureViewModel: ObservableObject {
     }
 
     func submitFeedback() {
-        // Future implementation for submitting feedback
+        let feedback = Feedback.from(selectedPills: selectedFeatures,
+                                     text: customFeatureText,
+                                     appVersion: AppVersion.shared.versionNumber,
+                                     category: .featureRequest,
+                                     problemCategory: nil)
+
+         feedbackSender.sendFeedback(feedback)
     }
 }

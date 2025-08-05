@@ -316,7 +316,7 @@ extension AppDelegate {
     @objc func openRequestANewFeature(_ sender: Any?) {
         var window: NSWindow?
 
-        let formView = RequestNewFeedbackFormFlowView(
+        let formView = RequestNewFeatureFormFlowView(
             onClose: {
                 window?.close()
             },

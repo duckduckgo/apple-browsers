@@ -31,7 +31,7 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     // MARK: - Properties
 
-    private let feedbackSender = FeedbackSender()
+    private let feedbackSender: FeedbackSenderImplementing
     let canReportBrokenSite: Bool
     private let onReportBrokenSite: (() -> Void)?
     private(set) var availableOptions: [String] = []
@@ -61,9 +61,12 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(canReportBrokenSite: Bool, onReportBrokenSite: (() -> Void)?) {
+    init(canReportBrokenSite: Bool,
+         onReportBrokenSite: (() -> Void)?,
+         feedbackSender: FeedbackSenderImplementing = FeedbackSender()) {
         self.canReportBrokenSite = canReportBrokenSite
         self.onReportBrokenSite = onReportBrokenSite
+        self.feedbackSender = feedbackSender
     }
 
     // MARK: - Methods
@@ -98,22 +101,14 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     func submitFeedback() {
         guard let category = selectedProblemCategory else { return }
-        let selectedOptionsString = selectedOptions.map { $0.toTag }.joined(separator: ",")
-        let subcategory = "\(category.name.toTag),\(selectedOptionsString)"
-        let description = customText.isEmpty ? category.name : customText
-        let feedback = Feedback(category: .bug,
-                                comment: description,
-                                appVersion: "\(AppVersion.shared.versionNumber)",
-                                osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)",
-                                subcategory: subcategory)
 
-//         feedbackSender.sendFeedback(feedback)
+        let feedback = Feedback.from(selectedPills: selectedOptions,
+                                     text: customText,
+                                     appVersion: AppVersion.shared.versionNumber,
+                                     category: .bug,
+                                     problemCategory: category)
 
-        // Reset form state and show thank you
-        selectedProblemCategory = nil
-        availableOptions.removeAll()
-        selectedOptions.removeAll()
-        customText = ""
+        feedbackSender.sendFeedback(feedback)
         showThankYou = true
     }
 }
@@ -215,13 +210,4 @@ struct ProblemCategory: Identifiable, Hashable {
             ]
         )
     ]
-}
-
-extension String {
-    var toTag: String {
-        self
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
-    }
 }

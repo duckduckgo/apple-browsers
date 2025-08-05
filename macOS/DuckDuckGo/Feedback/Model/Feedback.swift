@@ -49,3 +49,50 @@ struct Feedback {
         self.subcategory = subcategory
     }
 }
+
+extension Feedback {
+
+    static func from(selectedPills: Set<String>,
+                     text: String,
+                     appVersion: String,
+                     category: Feedback.Category,
+                     problemCategory: ProblemCategory?) -> Feedback {
+        let selectedOptionsString = selectedPills.map { $0.toTag }.joined(separator: ",")
+        let description = text.isEmpty ? category.toString : text
+        var subcategory = ""
+
+        if let problemCategory = problemCategory {
+            subcategory = "\(problemCategory.name.toTag),\(selectedOptionsString)"
+        } else {
+            subcategory = "\(selectedOptionsString)"
+        }
+
+        return Feedback(category: .featureRequest,
+                        comment: description,
+                        appVersion: appVersion,
+                        osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)",
+                        subcategory: subcategory)
+    }
+}
+
+private extension String {
+    var toTag: String {
+        self
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
+    }
+}
+
+extension Feedback.Category {
+    var toString: String {
+        switch self {
+        case .bug:
+            return "Via Report a Problem Form"
+        case .featureRequest:
+            return "Via Request New Feature Form"
+        default:
+            return "other"
+        }
+    }
+}

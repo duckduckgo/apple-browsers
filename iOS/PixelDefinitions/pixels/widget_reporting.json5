@@ -4,7 +4,7 @@
         description: 'Fires daily to report configured widgets on the device, including widget kinds and families. This pixel can be enabled and disabled using the iOSBrowserConfig.widgetReporting feature flag which is off by default.',
         owners: ['brindy'],
         triggers: ['startup'],
-        suffixes: ['platform', form_factor'],
+        suffixes: ['platform', 'form_factor'],
         parameters: [
             'appVersion',
             {

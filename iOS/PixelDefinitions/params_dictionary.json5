@@ -24,7 +24,7 @@
     errorDomain: {
         key: 'd',
         type: 'string',
-        description: 'NSError code domain",
+        description: 'NSError code domain',
         examples: ['NSURLErrorDomain'],
     },
     errorCode: {

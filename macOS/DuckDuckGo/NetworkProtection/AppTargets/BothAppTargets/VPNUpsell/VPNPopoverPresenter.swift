@@ -23,7 +23,12 @@ import BrowserServicesKit
 import PixelKit
 import Subscription
 
+/// This protocol is used to present the VPN upsell popover.
+/// It is triggered from the VPN toolbar button if users are eligible for the upsell
 protocol VPNUpsellPopoverPresenter {
+    /// Toggles the popover visibility.
+    /// If the popover is already shown, it will be dismissed.
+    /// If the popover is not shown, it will be shown below the given view.
     func toggle(below view: NSView)
 }
 

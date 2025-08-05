@@ -148,21 +148,15 @@ struct ProblemCategoriesView: View {
     private func shouldShowDivider(for category: ProblemCategory) -> Bool {
         let isLastItem = category.id == viewModel.availableCategories.last?.id
 
-        var shouldShowDivider: Bool = false
-
         if isLastItem {
-            shouldShowDivider = false
+            return false
         } else if hoveredCategoryId == category.id {
-            shouldShowDivider = false
+            return false
         } else if let previousHoveredItem = getHoveredPreviousItem {
-            shouldShowDivider = previousHoveredItem.id != category.id
+            return previousHoveredItem.id != category.id
         } else {
-            shouldShowDivider = true
+            return true
         }
-
-        print("Should show divider for \(category.id) is `\(shouldShowDivider)")
-
-        return shouldShowDivider
     }
 
     private var getHoveredPreviousItem: ProblemCategory? {

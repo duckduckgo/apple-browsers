@@ -209,7 +209,7 @@ struct ProblemCategoriesView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.toneShade, lineWidth: 1)
+                .stroke(Color.divider, lineWidth: 1)
         )
         .padding([.leading, .trailing, .bottom], 24)
     }
@@ -217,7 +217,7 @@ struct ProblemCategoriesView: View {
     private func footer() -> some View {
         VStack(spacing: 16) {
             Divider()
-                .background(Color(baseColor: .gray20))
+                .background(Color.divider)
                 .frame(maxWidth: .infinity)
                 .frame(height: 1)
 
@@ -280,7 +280,7 @@ struct ProblemCategoryView: View {
         }
 
         Rectangle()
-            .stroke(shouldShowDivider ? Color.toneShade : Color.clear, lineWidth: 1)
+            .stroke(shouldShowDivider ? Color.divider : Color.clear, lineWidth: 1)
             .frame(height: 1)
             .padding(.horizontal, 8)
     }
@@ -401,7 +401,7 @@ struct ProblemDetailFormView: View {
     private func footer() -> some View {
         VStack(spacing: 16) {
             Divider()
-                .background(Color(baseColor: .gray20))
+                .background(Color.divider)
                 .frame(maxWidth: .infinity)
                 .frame(height: 1)
 

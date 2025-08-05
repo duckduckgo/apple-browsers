@@ -178,7 +178,7 @@ struct RequestNewFeatureFormView: View {
     private func footer() -> some View {
         VStack(spacing: 16) {
             Divider()
-                .background(Color(baseColor: .gray20))
+                .background(Color.divider)
                 .frame(maxWidth: .infinity)
                 .frame(height: 1)
 

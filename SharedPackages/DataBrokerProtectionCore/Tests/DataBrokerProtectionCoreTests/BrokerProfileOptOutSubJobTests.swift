@@ -352,7 +352,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             showWebView: false,
             shouldRunNextStep: { true }
         )
-        
+
         // Then
         XCTAssertTrue(result)
     }
@@ -360,7 +360,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     func testOptOutSubJob_whenProfileAlreadyRemoved_returnsFalse() async throws {
         // Given
         let removedProfile = ExtractedProfile(id: 1, name: "Test", profileUrl: "test.com", removedDate: Date())
-        
+
         // When
         let result = try await sut.runOptOut(
             for: removedProfile,
@@ -373,7 +373,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             showWebView: false,
             shouldRunNextStep: { true }
         )
-        
+
         // Then
         XCTAssertFalse(result)
     }

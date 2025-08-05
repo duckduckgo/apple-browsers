@@ -150,7 +150,7 @@ struct BrokerProfileOptOutSubJob {
             )
             throw error
         }
-        
+
         return true
     }
 

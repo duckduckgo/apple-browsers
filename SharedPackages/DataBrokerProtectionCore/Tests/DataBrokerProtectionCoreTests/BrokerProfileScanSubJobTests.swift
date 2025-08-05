@@ -579,7 +579,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             isManual: false,
             shouldRunNextStep: { true }
         )
-        
+
         // Then
         XCTAssertTrue(result)
     }

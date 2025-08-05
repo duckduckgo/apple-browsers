@@ -160,7 +160,7 @@ struct BrokerProfileScanSubJob {
                                  schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig)
             throw error
         }
-        
+
         return true
     }
 

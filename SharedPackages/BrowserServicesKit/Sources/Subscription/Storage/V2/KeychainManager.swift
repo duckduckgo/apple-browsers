@@ -171,10 +171,7 @@ public final class KeychainManager {
             return
         case errSecDuplicateItem:
             Logger.keychainManager.debug("Keychain item exists, updating for \(key)")
-            let updateStatus = updateData(data, forKey: key)
-            guard updateStatus == errSecSuccess else {
-                throw AccountKeychainAccessError.keychainSaveFailure(updateStatus)
-            }
+            try updateData(data, forKey: key)
         case errSecNotAvailable:
             Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription), adding data to writing queue")
             writingBacklog[key] = data
@@ -191,7 +188,7 @@ public final class KeychainManager {
     ///   - data: The new data to store
     ///   - key: The unique identifier for the keychain item
     /// - Returns: OSStatus indicating success or failure
-    private func updateData(_ data: Data, forKey key: String) -> OSStatus {
+    private func updateData(_ data: Data, forKey key: String) throws {
         var query = attributes
         query[kSecAttrService] = key
 
@@ -206,10 +203,13 @@ public final class KeychainManager {
         case errSecSuccess:
             writingBacklog[key] = nil // Removing the data from the writing backlog if present
             Logger.keychainManager.debug("Successfully updated keychain item for \(key)")
+        case errSecNotAvailable:
+            Logger.keychainManager.error("Failed to update keychain item: \(status.humanReadableDescription), adding data to writing queue")
+            writingBacklog[key] = data
         default:
             Logger.keychainManager.error("SecItemUpdate failed with status: \(status.humanReadableDescription) for field: \(key)")
+            throw AccountKeychainAccessError.keychainSaveFailure(status)
         }
-        return status
     }
 
     // MARK: - Notification Handling
@@ -268,11 +268,17 @@ public final class KeychainManager {
 
         Logger.keychainManager.debug("Processing writing backlog with \(self.writingBacklog.count) items")
 
-        let backlogCopy = writingBacklog
         var processedSuccessfully = 0
         var failed = 0
 
-        for (key, data) in backlogCopy {
+        // Process items one by one and check if they still exist in the backlog
+        // This prevents processing items that may have been handled by recursive calls
+        while let (key, data) = writingBacklog.first {
+            // Check if the item is still in the backlog (not processed by a recursive call)
+            guard writingBacklog[key] != nil else {
+                continue
+            }
+            
             do {
                 try internalStore(data: data, forKey: key)
                 processedSuccessfully += 1

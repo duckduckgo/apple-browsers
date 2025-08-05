@@ -82,7 +82,7 @@ public final class KeychainManager {
     /// - Parameter key: The unique identifier for the keychain item
     /// - Returns: The stored data, or nil if not found
     /// - Throws: `AccountKeychainAccessError` if retrieval fails
-    func retrieveData(forKey key: String) throws -> Data? {
+    public func retrieveData(forKey key: String) throws -> Data? {
         return try accessQueue.sync {
 
             if let dataFromBacklog = self.writingBacklog[key] {
@@ -121,7 +121,7 @@ public final class KeychainManager {
     ///   - data: The data to store securely
     ///   - key: The unique identifier for the keychain item
     /// - Throws: `AccountKeychainAccessError` if storage fails
-    func store(data: Data, forKey key: String) throws {
+    public func store(data: Data, forKey key: String) throws {
         try accessQueue.sync {
 
             var query = attributes

@@ -27,6 +27,9 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
         static let width: CGFloat = 448
         static let height: CGFloat = 515
 
+        // Constants for the sub-categories screen
+        static let detailsFormHeight: CGFloat = 356
+
         // Constants for thank you screen
         static let thankYouWidth: CGFloat = 448
         static let thankYouHeight: CGFloat = 232
@@ -88,8 +91,17 @@ struct ReportProblemFormFlowView: View {
                     onBack: {
                         viewModel.goBackToCategorySelection()
                     },
-                    onClose: onClose
+                    onClose: onClose,
+                    onResize: onResize
                 )
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now()) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            onResize(ReportProblemFormViewController.Constants.width,
+                                     ReportProblemFormViewController.Constants.detailsFormHeight)
+                        }
+                    }
+                }
             } else if viewModel.isShowingCategorySelection {
                 ProblemCategoriesView(
                     viewModel: viewModel,
@@ -280,16 +292,33 @@ struct ProblemDetailFormView: View {
     @ObservedObject var viewModel: ReportProblemFormViewModel
     var onBack: () -> Void
     var onClose: () -> Void
+    var onResize: (CGFloat, CGFloat) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header()
             optionsPills()
-            userTextInput()
+
+            if !viewModel.selectedOptions.isEmpty {
+                userTextInput()
+            }
 
             footer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: viewModel.selectedOptions) { selectedOptions in
+            DispatchQueue.main.async {
+                withAnimation(.interactiveSpring) {
+                    if selectedOptions.isEmpty {
+                        onResize(ReportProblemFormViewController.Constants.width,
+                                 ReportProblemFormViewController.Constants.detailsFormHeight)
+                    } else {
+                        onResize(ReportProblemFormViewController.Constants.width,
+                                 ReportProblemFormViewController.Constants.height)
+                    }
+                }
+            }
+        }
     }
 
     private func header() -> some View {

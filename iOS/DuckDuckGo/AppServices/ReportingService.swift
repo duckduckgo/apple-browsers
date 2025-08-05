@@ -68,23 +68,20 @@ final class ReportingService {
 
     private func reportWidgetUsage() {
         guard featureFlagging.isFeatureOn(.widgetReporting) else { return }
-
-        Task {
-            WidgetCenter.shared.getCurrentConfigurations { result in
-                switch result {
-                case .success(let widgetInfo):
-                    if widgetInfo.count > 0 {
-                        let enabledWidgets = widgetInfo.map {
-                            "\($0.id.kind)-\($0.family.debugDescription)"
-                        }.joined(separator: ",")
-                        DailyPixel.fireDaily(.widgetReport, withAdditionalParameters: [
-                            "enabled_widgets": enabledWidgets
-                        ])
-                    }
-
-                case .failure(let error):
-                    DailyPixel.fire(pixel: .widgetReportFailure, error: error)
+        WidgetCenter.shared.getCurrentConfigurations { result in
+            switch result {
+            case .success(let widgetInfo):
+                if widgetInfo.count > 0 {
+                    let enabledWidgets = widgetInfo.map {
+                        "\($0.id.kind)-\($0.family.debugDescription)"
+                    }.joined(separator: ",")
+                    DailyPixel.fireDaily(.widgetReport, withAdditionalParameters: [
+                        "enabled_widgets": enabledWidgets
+                    ])
                 }
+
+            case .failure(let error):
+                DailyPixel.fire(pixel: .widgetReportFailure, error: error)
             }
         }
     }

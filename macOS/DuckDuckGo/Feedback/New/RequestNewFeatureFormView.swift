@@ -124,7 +124,7 @@ struct RequestNewFeatureFormView: View {
             spacing: 8,
             alignment: .leading
         ) { feature in
-            FeaturePill(
+            Pill(
                 text: feature,
                 isSelected: viewModel.selectedFeatures.contains(feature)
             ) {

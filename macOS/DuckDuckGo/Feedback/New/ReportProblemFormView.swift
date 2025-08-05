@@ -349,7 +349,7 @@ struct ProblemDetailFormView: View {
             spacing: 8,
             alignment: .leading
         ) { option in
-            FeaturePill(
+            Pill(
                 text: option,
                 isSelected: viewModel.selectedOptions.contains(option)
             ) {

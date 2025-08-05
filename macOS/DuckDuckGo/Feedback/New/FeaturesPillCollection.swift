@@ -18,7 +18,7 @@
 
 import SwiftUI
 
-struct FeaturePill: View {
+struct Pill: View {
     let text: String
     let isSelected: Bool
     let action: () -> Void
@@ -33,14 +33,14 @@ struct FeaturePill: View {
                 .padding(.vertical, 8)
         }
         .frame(maxHeight: 32)
-        .buttonStyle(FeaturePillButtonStyle(isSelected: isSelected, isHovered: isHovered))
+        .buttonStyle(PillButtonStyle(isSelected: isSelected, isHovered: isHovered))
         .onHover { hovering in
             isHovered = hovering
         }
     }
 }
 
-struct FeaturePillButtonStyle: ButtonStyle {
+struct PillButtonStyle: ButtonStyle {
     let isSelected: Bool
     let isHovered: Bool
 

@@ -33,7 +33,7 @@ struct DefaultBrowserPromptInactiveUserView: View {
     let setAsDefaultAction: () -> Void
 
     var body: some View {
-        ZStack(alignment: Metrics.Content.alignment) {
+        ZStack(alignment: .top) {
             Image(.daxmag)
 
             content
@@ -139,7 +139,6 @@ private enum Metrics {
     @MainActor
     enum Content {
         static let maxWidth = MetricBuilder<CGFloat?>(iPhone: nil, iPad: 542).build()
-        static let alignment = MetricBuilder<Alignment>(iPhone: .topLeading, iPad: .top).build()
         static let topPadding = MetricBuilder(iPhone: 158.0, iPad: 198.0).iPad(landscape: 158.0)
         static let outerHorizontalPadding: CGFloat = 16
         static let bottomPadding: CGFloat = 12

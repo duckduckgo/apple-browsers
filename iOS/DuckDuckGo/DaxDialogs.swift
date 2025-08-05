@@ -40,28 +40,36 @@ protocol ContextualDaxDialogDisabling {
 }
 
 protocol ContextualOnboardingLogic {
-    var isShowingFireDialog: Bool { get }
     var shouldShowPrivacyButtonPulse: Bool { get }
+    var shouldShowFireButtonPulse: Bool { get }
+
+    var isShowingFireDialog: Bool { get }
     var isShowingSearchSuggestions: Bool { get }
     var isShowingSitesSuggestions: Bool { get }
-    var shouldShowFireButtonPulse: Bool { get }
     var isAddFavoriteFlow: Bool { get }
 
     func setTryAnonymousSearchMessageSeen()
-    func setTryVisitSiteMessageSeen()
     func setSearchMessageSeen()
-    func setFireEducationMessageSeen()
-    func clearedBrowserData()
-    func setFinalOnboardingDialogSeen()
+
+    func setTryVisitSiteMessageSeen()
     func setPrivacyButtonPulseSeen()
+
+    func setFireEducationMessageSeen()
+    func fireButtonPulseStarted()
+    func fireButtonPulseCancelled()
+
+    func setFinalOnboardingDialogSeen()
+
     func setDaxDialogDismiss()
 
     func enableAddFavoriteFlow()
-    func isStillOnboarding() -> Bool
-    func fireButtonPulseCancelled()
     func resumeRegularFlow()
+
+    func isStillOnboarding() -> Bool
+
     func clearHeldURLData()
-    func fireButtonPulseStarted()
+    func clearedBrowserData()
+
     func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyInfo) -> DaxDialogs.BrowsingSpec?
     func overrideShownFlagFor(_ spec: DaxDialogs.BrowsingSpec, flag: Bool)
 }

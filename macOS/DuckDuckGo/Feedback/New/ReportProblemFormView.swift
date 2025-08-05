@@ -215,7 +215,7 @@ struct ProblemCategoriesView: View {
     }
 
     private func footer() -> some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             Divider()
                 .background(Color.divider)
                 .frame(maxWidth: .infinity)
@@ -294,6 +294,8 @@ struct ProblemDetailFormView: View {
     var onClose: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
 
+    @State private var pillsSectionHeight: CGFloat = 0
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header()
@@ -306,17 +308,37 @@ struct ProblemDetailFormView: View {
             footer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: viewModel.selectedOptions) { selectedOptions in
-            DispatchQueue.main.async {
-                withAnimation(.interactiveSpring) {
-                    if selectedOptions.isEmpty {
-                        onResize(ReportProblemFormViewController.Constants.width,
-                                 ReportProblemFormViewController.Constants.detailsFormHeight)
-                    } else {
-                        onResize(ReportProblemFormViewController.Constants.width,
-                                 ReportProblemFormViewController.Constants.height)
-                    }
-                }
+        .onChange(of: viewModel.selectedOptions) { _ in
+            updateDialogHeight()
+        }
+        .onChange(of: pillsSectionHeight) { _ in
+            updateDialogHeight()
+        }
+    }
+
+    // MARK: - Height Calculation
+
+    private enum ComponentHeights {
+        static let header: CGFloat = 72  // 24 padding + ~24 button/text + 24 padding
+        static let textInputSection: CGFloat = 144  // 12 spacing + 13 label + 12 spacing + 80 textEditor + 16 padding + 8 bottom padding + ~3 border
+        static let footer: CGFloat = 122  // 16 spacing + 1 divider + ~10 disclaimer + 16 spacing + ~32 buttons + 16 bottom padding + ~31 button spacing
+        static let pillsSectionPadding: CGFloat = 48  // 24 leading + 24 trailing
+        static let pillsBottomPadding: CGFloat = 24
+    }
+
+    private func calculateTotalHeight() -> CGFloat {
+        let baseHeight = ComponentHeights.header + ComponentHeights.footer
+        let pillsHeight = pillsSectionHeight + ComponentHeights.pillsBottomPadding
+        let textInputHeight = viewModel.selectedOptions.isEmpty ? 0 : ComponentHeights.textInputSection
+
+        return baseHeight + pillsHeight + textInputHeight
+    }
+
+    private func updateDialogHeight() {
+        DispatchQueue.main.async {
+            withAnimation(.interactiveSpring) {
+                let calculatedHeight = calculateTotalHeight()
+                onResize(ReportProblemFormViewController.Constants.width, calculatedHeight)
             }
         }
     }
@@ -358,6 +380,20 @@ struct ProblemDetailFormView: View {
         }
         .padding([.leading, .trailing], 24)
         .padding(.bottom, 24)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        pillsSectionHeight = geometry.size.height
+                        updateDialogHeight()
+                    }
+                    .onChange(of: geometry.size) { newSize in
+                        if pillsSectionHeight != newSize.height {
+                            pillsSectionHeight = newSize.height
+                        }
+                    }
+            }
+        )
     }
 
     private func userTextInput() -> some View {
@@ -399,7 +435,7 @@ struct ProblemDetailFormView: View {
     }
 
     private func footer() -> some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             Divider()
                 .background(Color.divider)
                 .frame(maxWidth: .infinity)

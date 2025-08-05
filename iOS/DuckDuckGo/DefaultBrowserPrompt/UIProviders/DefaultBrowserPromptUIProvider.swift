@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import SetDefaultBrowserUI
 
 struct DefaultBrowserPromptUIProvider: DefaultBrowserPromptUIProviding {
 
@@ -44,5 +45,5 @@ private extension BrowsersComparisonModel {
                 BrowsersComparisonModel.PrivacyFeature(type: featureType, browsersSupport: browsersSupport(for: featureType))
             }
     }()
-
+    
 }

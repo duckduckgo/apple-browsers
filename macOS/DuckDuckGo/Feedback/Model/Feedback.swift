@@ -67,7 +67,7 @@ extension Feedback {
             subcategory = "\(selectedOptionsString)"
         }
 
-        return Feedback(category: .featureRequest,
+        return Feedback(category: category,
                         comment: description,
                         appVersion: appVersion,
                         osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)",

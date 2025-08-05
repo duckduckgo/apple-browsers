@@ -3221,6 +3221,12 @@
 		B6F9BDE52B45CD1900677B33 /* ModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F9BDE32B45CD1900677B33 /* ModalView.swift */; };
 		B6FA893F269C424500588ECD /* PrivacyDashboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA893E269C424500588ECD /* PrivacyDashboardViewController.swift */; };
 		B6FA8941269C425400588ECD /* PrivacyDashboardPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA8940269C425400588ECD /* PrivacyDashboardPopover.swift */; };
+		BB0036612E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365D2E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift */; };
+		BB0036622E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365E2E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift */; };
+		BB0036642E426E9D0016DDEF /* FeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365A2E426E9D0016DDEF /* FeedbackTests.swift */; };
+		BB0036652E426EDD0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365D2E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift */; };
+		BB0036662E426EDD0016DDEF /* FeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365A2E426E9D0016DDEF /* FeedbackTests.swift */; };
+		BB0036672E426EDD0016DDEF /* RequestNewFeatureViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00365E2E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift */; };
 		BB0346F52CEB80B400D23E05 /* DownloadsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0346F42CEB80B400D23E05 /* DownloadsTests.swift */; };
 		BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
 		BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
@@ -5502,6 +5508,9 @@
 		B6F9BDE32B45CD1900677B33 /* ModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalView.swift; sourceTree = "<group>"; };
 		B6FA893E269C424500588ECD /* PrivacyDashboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardViewController.swift; sourceTree = "<group>"; };
 		B6FA8940269C425400588ECD /* PrivacyDashboardPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardPopover.swift; sourceTree = "<group>"; };
+		BB00365A2E426E9D0016DDEF /* FeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackTests.swift; sourceTree = "<group>"; };
+		BB00365D2E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormViewModelTests.swift; sourceTree = "<group>"; };
+		BB00365E2E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestNewFeatureViewModelTests.swift; sourceTree = "<group>"; };
 		BB0346F42CEB80B400D23E05 /* DownloadsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsTests.swift; sourceTree = "<group>"; };
 		BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyShieldAddressBarStyleProviding.swift; sourceTree = "<group>"; };
 		BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-green-hover.json"; sourceTree = "<group>"; };
@@ -9169,6 +9178,7 @@
 		AA585D93248FD31400E9A3E2 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				BB0036602E426E9D0016DDEF /* Feedback */,
 				31F25EFD2CC3C9F9002F9084 /* AIChat */,
 				B6A5A28C25B962CB00AA7ADA /* App */,
 				85F1B0C725EF9747004792B6 /* AppDelegate */,
@@ -10583,6 +10593,32 @@
 				B6FA8940269C425400588ECD /* PrivacyDashboardPopover.swift */,
 			);
 			path = View;
+			sourceTree = "<group>";
+		};
+		BB00365C2E426E9D0016DDEF /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				BB00365A2E426E9D0016DDEF /* FeedbackTests.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		BB00365F2E426E9D0016DDEF /* New */ = {
+			isa = PBXGroup;
+			children = (
+				BB00365D2E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift */,
+				BB00365E2E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift */,
+			);
+			path = New;
+			sourceTree = "<group>";
+		};
+		BB0036602E426E9D0016DDEF /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				BB00365C2E426E9D0016DDEF /* Model */,
+				BB00365F2E426E9D0016DDEF /* New */,
+			);
+			path = Feedback;
 			sourceTree = "<group>";
 		};
 		BB4EC6902D9B5C6400660600 /* VisualRefresh */ = {
@@ -13997,6 +14033,9 @@
 				7B1522B12DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */,
 				3706FE81293F661700E42796 /* PermissionModelTests.swift in Sources */,
 				5681ED442BDBA5F900F59729 /* SyncBookmarksAdapterTests.swift in Sources */,
+				BB0036652E426EDD0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */,
+				BB0036662E426EDD0016DDEF /* FeedbackTests.swift in Sources */,
+				BB0036672E426EDD0016DDEF /* RequestNewFeatureViewModelTests.swift in Sources */,
 				C1F142DB2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift in Sources */,
 				B60C6F8529B1BAD3007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
 				567DA94629E95C3F008AC5EE /* YoutubeOverlayUserScriptTests.swift in Sources */,
@@ -15591,6 +15630,9 @@
 				37D23780287EFEE200BCE03B /* PinnedTabsManagerTests.swift in Sources */,
 				AA0877BA26D5161D00B05660 /* WebKitVersionProviderTests.swift in Sources */,
 				9FA75A3E2BA00E1400DA5FA6 /* BookmarksBarMenuFactoryTests.swift in Sources */,
+				BB0036612E426E9D0016DDEF /* ReportProblemFormViewModelTests.swift in Sources */,
+				BB0036622E426E9D0016DDEF /* RequestNewFeatureViewModelTests.swift in Sources */,
+				BB0036642E426E9D0016DDEF /* FeedbackTests.swift in Sources */,
 				B69B50462726C5C200758A2B /* AtbAndVariantCleanupTests.swift in Sources */,
 				567DA94529E95C3F008AC5EE /* YoutubeOverlayUserScriptTests.swift in Sources */,
 				4B59024C26B38BB800489384 /* ChromiumLoginReaderTests.swift in Sources */,

@@ -178,7 +178,7 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     private func legacyInitSecureVault() -> (any AutofillSecureVault)? {
         if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
             if secureVault == nil {
-                return try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+                secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             }
             return secureVault
         }

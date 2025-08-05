@@ -136,24 +136,25 @@ extension Preferences {
                         .padding(.bottom, 8)
 
                     PreferencePaneSection {
-                        TextAndImageMenuItemHeader(UserText.searchAssistSettings,
-                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
-                                                   bottomPadding: 0)
+                        VStack(alignment: .leading) {
+                            TextAndImageMenuItemHeader(UserText.searchAssistSettings,
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                       bottomPadding: 0)
 
-                        TextMenuItemCaption(UserText.searchAssistSettingsDescription)
-                            .padding(.top, -6)
-                            .padding(.bottom, 6)
-                        Button {
-                            model.openSearchAssistSettings()
-                        } label: {
-                            HStack {
-                                Text(UserText.searchAssistSettingsLink)
-                                Image(.externalAppScheme)
+                            TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                                .padding(.bottom, 6)
+                            Button {
+                                model.openSearchAssistSettings()
+                            } label: {
+                                HStack {
+                                    Text(UserText.searchAssistSettingsLink)
+                                    Image(.externalAppScheme)
+                                }
+                                .foregroundColor(Color.linkBlue)
+                                .cursor(.pointingHand)
                             }
-                            .foregroundColor(Color.linkBlue)
-                            .cursor(.pointingHand)
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 } else { // Legacy UI displayed when aiChatGlobalSwitch is disabled (to be removed after rollout)
                     // Duck.ai Shortcuts

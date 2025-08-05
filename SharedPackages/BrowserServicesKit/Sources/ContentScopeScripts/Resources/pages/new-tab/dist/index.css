@@ -265,15 +265,18 @@ body {
   --focus-ring-primary: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--ntp-color-primary);
   --ntp-selection-color: var(--color-white);
   --ntp-selection-background-color: #3A69EF;
-  --ntp-surface-tertiary: #FFFFFF;
-  --ntp-text-primary: #1F1F1F;
-  --ntp-text-tertiary: rgba(31, 31, 31, 0.4);
-  --ntp-icons-primary: rgba(31, 31, 31, 0.84);
+  --ntp-surface-tertiary: rgba(255, 255, 255, 0.88);
+  --ntp-text-primary: rgba(0, 0, 0, 0.96);
+  --ntp-text-tertiary: rgba(0, 0, 0, 0.42);
+  --ntp-icons-primary: rgba(0, 0, 0, 0.84);
+  --ntp-icons-tertiary: rgba(0, 0, 0, 0.36);
   --ntp-accent-primary: var(--color-blue-50);
   --ntp-accent-secondary: var(--color-blue-60);
+  --ntp-accent-tertiary: var(--color-blue-70);
   --ntp-accent-glow: rgba(57, 105, 239, 0.2);
   --ntp-accent-content-primary: #FFFFFF;
   --ntp-controls-fill-primary: rgba(31, 31, 31, 0.09);
+  --ntp-controls-fill-secondary: rgba(31, 31, 31, 0.12);
   --ntp-controls-raised-backdrop: rgba(0, 0, 0, 0.09);
   --ntp-controls-raised-fill-primary: #FFFFFF;
   --ntp-decoration-tertiary: rgba(0, 0, 0, 0.09);
@@ -294,15 +297,18 @@ body {
   --focus-ring-primary: 0px 0px 0px 1px var(--default-dark-background-color), 0px 0px 0px 3px var(--ntp-color-primary);
   --ntp-selection-color: var(--color-white);
   --ntp-selection-background-color: var(--color-blue-30);
-  --ntp-surface-tertiary: rgba(71, 71, 71, 0.66);
-  --ntp-text-primary: rgba(255, 255, 255, 0.9);
-  --ntp-text-tertiary: rgba(255, 255, 255, 0.4);
+  --ntp-surface-tertiary: rgba(0, 0, 0, 0.72);
+  --ntp-text-primary: rgba(255, 255, 255, 0.96);
+  --ntp-text-tertiary: rgba(255, 255, 255, 0.36);
   --ntp-icons-primary: rgba(255, 255, 255, 0.78);
+  --ntp-icons-tertiary: rgba(255, 255, 255, 0.24);
   --ntp-accent-primary: var(--color-blue-20);
   --ntp-accent-secondary: var(--color-blue-30);
+  --ntp-accent-tertiary: var(--color-blue-40);
   --ntp-accent-glow: rgba(114, 149, 246, 0.2);
   --ntp-accent-content-primary: var(--color-blue-80);
   --ntp-controls-fill-primary: rgba(249, 249, 249, 0.12);
+  --ntp-controls-fill-secondary: rgba(249, 249, 249, 0.18);
   --ntp-controls-raised-backdrop: rgba(0, 0, 0, 0.6);
   --ntp-controls-raised-fill-primary: rgba(255, 255, 255, 0.18);
   --ntp-decoration-tertiary: rgba(255, 255, 255, 0.12);
@@ -1503,7 +1509,7 @@ body:not([data-platform-name]) .Button_button:active {
   box-sizing: content-box;
   color: var(--ntp-text-primary);
   max-height: 10lh;
-  padding: 11px 15px 0;
+  padding: var(--sp-3) var(--sp-3) 0;
   resize: none;
 }
 [data-platform=macos] .AiChatForm_textarea {
@@ -1521,7 +1527,7 @@ body:not([data-platform-name]) .Button_button:active {
 }
 .AiChatForm_hasScroll .AiChatForm_textarea {
   border-bottom: 1px solid var(--ntp-decoration-tertiary);
-  padding-bottom: 11px;
+  padding-bottom: var(--sp-3);
 }
 .AiChatForm_buttons {
   align-self: stretch;
@@ -1534,6 +1540,7 @@ body:not([data-platform-name]) .Button_button:active {
 }
 .AiChatForm_submitButton {
   align-items: center;
+  animation: AiChatForm_fadeIn 0.3s ease-in-out;
   background: var(--ntp-accent-primary);
   border-radius: 100%;
   border: none;
@@ -1548,12 +1555,25 @@ body:not([data-platform-name]) .Button_button:active {
 }
 .AiChatForm_submitButton[disabled] {
   background: none;
-  color: var(--ntp-icons-primary);
+  color: color-mix(in srgb, var(--ntp-icons-primary) 30%, transparent);
   cursor: default;
-  opacity: 0.3;
+}
+.AiChatForm_submitButton:hover:not([disabled]) {
+  background: var(--ntp-accent-secondary);
+}
+.AiChatForm_submitButton:active:not([disabled]) {
+  background: var(--ntp-accent-tertiary);
 }
 .AiChatForm_submitButton:focus-visible {
   box-shadow: var(--focus-ring);
+}
+@keyframes AiChatForm_fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* pages/new-tab/app/omnibar/components/Omnibar.module.css */
@@ -1569,15 +1589,6 @@ body:not([data-platform-name]) .Button_button:active {
   width: 164px;
 }
 .Omnibar_spacer {
-  --box-shadow-rest: 0px 1px 4px 0px rgba(0, 0, 0, 0.1), 0px 4px 8px 0px rgba(0, 0, 0, 0.08);
-  --box-shadow-focused:
-    0 0 0 1px var(--ntp-surface-tertiary),
-    0 0 0 3px var(--ntp-accent-primary),
-    0 0 0 5px var(--ntp-accent-glow);
-  --box-shadow-suggestions:
-    0 0 0 3px var(--ntp-surface-tertiary),
-    0px 4px 12px 3px rgba(0, 0, 0, 0.10),
-    0px 20px 40px 3px rgba(0, 0, 0, 0.08);
   align-self: stretch;
   transition: height 200ms ease;
   z-index: 1;
@@ -1588,12 +1599,19 @@ body:not([data-platform-name]) .Button_button:active {
   }
 }
 [data-mode=search] .Omnibar_spacer {
-  height: var(--sp-10);
+  height: calc(var(--sp-10) + 3px * 2);
 }
 [data-mode=ai] .Omnibar_spacer {
-  height: var(--sp-20);
+  height: calc(var(--sp-20) + 3px * 2);
+}
+.Omnibar_popup {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  background: var(--ntp-surface-tertiary);
+  display: flow-root;
 }
 .Omnibar_field {
+  box-sizing: content-box;
   overflow: hidden;
   position: relative;
   transition: height 200ms ease;
@@ -1603,47 +1621,48 @@ body:not([data-platform-name]) .Button_button:active {
     transition: none;
   }
 }
-.Omnibar_root:has([role=listbox]) .Omnibar_popup,
-.Omnibar_root:not(:has([role=listbox])) .Omnibar_field {
-  -webkit-backdrop-filter: blur(48px);
-  backdrop-filter: blur(48px);
-  background: var(--ntp-surface-tertiary);
-  border-radius: var(--border-radius-lg);
+.Omnibar_root:not(:has([role=listbox])) .Omnibar_popup {
+  border-radius: 12px;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 8px 0 rgba(0, 0, 0, 0.08);
+  margin: 3px;
 }
-.Omnibar_root:not(:has([role=listbox])) .Omnibar_field {
-  box-shadow: var(--box-shadow-rest);
+.Omnibar_root:not(:has([role=listbox])):focus-within:not([data-focus-ring=false]) .Omnibar_popup,
+.Omnibar_root:not(:has([role=listbox]))[data-focus-ring=true] .Omnibar_popup {
+  border-radius: 15px;
+  border: 2px solid var(--ntp-accent-primary);
+  box-shadow: none;
+  margin: 0;
+  outline: 2px solid var(--ntp-accent-glow);
 }
-.Omnibar_root:not(:has([role=listbox])) .Omnibar_field[data-focus-ring=true],
-.Omnibar_root:not(:has([role=listbox])) .Omnibar_field:focus-within:not([data-focus-ring=false]) {
-  box-shadow: var(--box-shadow-focused);
+:is(.Omnibar_root:not(:has([role=listbox])):focus-within:not([data-focus-ring=false]) .Omnibar_popup, .Omnibar_root:not(:has([role=listbox]))[data-focus-ring=true] .Omnibar_popup) .Omnibar_field {
+  margin: 1px;
 }
 .Omnibar_root:has([role=listbox]) .Omnibar_popup {
-  box-shadow: var(--box-shadow-suggestions);
+  border-radius: 15px;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
+  margin: 0;
+}
+.Omnibar_root:has([role=listbox]) .Omnibar_popup .Omnibar_field {
+  margin: 3px;
 }
 
 /* pages/new-tab/app/omnibar/components/SearchForm.module.css */
 .SearchForm_form {
   align-items: center;
   display: flex;
-  padding: var(--sp-1) 7px;
-}
-.SearchForm_form svg {
-  flex: none;
-  margin: var(--sp-2);
+  height: var(--sp-10);
+  padding: var(--sp-3);
 }
 .SearchForm_input {
   background: none;
   border: none;
   color: var(--ntp-text-primary);
   font: var(--input-font);
-  height: var(--sp-8);
-  left: 7px;
-  padding-bottom: 0;
-  padding-left: calc(var(--sp-2) + var(--sp-4) + var(--sp-2));
-  padding-right: var(--suffix-text-width);
-  padding-top: 0;
+  left: 0;
+  padding: var(--sp-3);
+  padding-right: calc(var(--suffix-text-width) + var(--sp-1) + var(--sp-8) + var(--sp-3));
   position: absolute;
-  right: 7px;
+  right: 0;
 }
 .SearchForm_input::placeholder {
   color: var(--ntp-text-tertiary);
@@ -1666,13 +1685,47 @@ body:not([data-platform-name]) .Button_button:active {
   flex: none;
   font: var(--input-font);
 }
+.SearchForm_closeButton {
+  align-items: center;
+  background: none;
+  border-radius: 9px;
+  border: none;
+  color: var(--ntp-text-primary);
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  height: var(--sp-8);
+  justify-content: center;
+  margin-left: auto;
+  outline: none;
+  padding: 0;
+  width: var(--sp-8);
+  z-index: 1;
+  visibility: hidden;
+}
+.SearchForm_closeButton:hover {
+  background: var(--ntp-controls-fill-primary);
+}
+.SearchForm_closeButton:active {
+  background: var(--ntp-controls-fill-secondary);
+}
+.SearchForm_closeButton:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.SearchForm_form:hover .SearchForm_closeButton {
+  visibility: visible;
+}
+[data-entry-point=omnibar]:has([role=listbox]) .SearchForm_closeButton {
+  visibility: visible;
+}
 
 /* pages/new-tab/app/omnibar/components/SuggestionsList.module.css */
 .SuggestionsList_list {
   border-top: 1px solid var(--ntp-surface-border-color);
   display: flex;
   flex-direction: column;
-  padding: 7px;
+  padding: calc(3px + var(--sp-1));
+  padding-top: calc(3px + var(--sp-1) - 1px);
 }
 .SuggestionsList_item {
   align-items: center;
@@ -2789,45 +2842,6 @@ body:not([data-platform-name]) .Button_button:active {
   background: var(--color-gray-80);
 }
 
-/* pages/new-tab/app/customizer/components/VisibilityMenu.module.css */
-.VisibilityMenu_list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-  font-size: var(--title-3-em-font-size);
-}
-.VisibilityMenu_embedded {
-  font-size: var(--body-font-size);
-  gap: 12px;
-}
-.VisibilityMenu_menuItemLabel {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  height: calc(28 * var(--px-in-rem));
-}
-.VisibilityMenu_menuItemLabelEmbedded {
-  white-space: normal;
-  gap: 6px;
-  height: auto;
-}
-.VisibilityMenu_menuItemLabelEmbedded *:last-child {
-  margin-left: auto;
-}
-.VisibilityMenu_menuItemLabelEmbedded input:focus-visible + * {
-  box-shadow: var(--focus-ring);
-}
-.VisibilityMenu_svg {
-  flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
-  display: flex;
-}
-
 /* shared/components/Switch/Switch.module.css */
 .Switch_label {
   --switch-width: 40px;
@@ -2990,6 +3004,45 @@ body:not([data-platform-name]) .Button_button:active {
 }
 [data-platform-name=macos][data-theme=dark] .Switch_switch:after {
   box-shadow: 0px 0px 1px 1px rgba(255, 255, 255, 0.10) inset, 0px 0px 0px 0.5px rgba(255, 255, 255, 0.06) inset;
+}
+
+/* pages/new-tab/app/customizer/components/VisibilityMenu.module.css */
+.VisibilityMenu_list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--title-3-em-font-size);
+}
+.VisibilityMenu_embedded {
+  font-size: var(--body-font-size);
+  gap: 12px;
+}
+.VisibilityMenu_menuItemLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  height: calc(28 * var(--px-in-rem));
+}
+.VisibilityMenu_menuItemLabelEmbedded {
+  white-space: normal;
+  gap: 6px;
+  height: auto;
+}
+.VisibilityMenu_menuItemLabelEmbedded *:last-child {
+  margin-left: auto;
+}
+.VisibilityMenu_menuItemLabelEmbedded input:focus-visible + * {
+  box-shadow: var(--focus-ring);
+}
+.VisibilityMenu_svg {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
 }
 
 /* pages/new-tab/app/components/Components.module.css */

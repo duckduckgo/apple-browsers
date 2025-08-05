@@ -15073,7 +15073,7 @@ ul.messages {
         navigations.set(event.target, event.navigationType);
       });
       globalThis.navigation.addEventListener("navigatesuccess", (event) => {
-        const navigationType = navigations.get(event.target) || "unknown";
+        const navigationType = navigations.get(event.target);
         handleURLChange(navigationType);
         navigations.delete(event.target);
       });
@@ -15092,7 +15092,7 @@ ul.messages {
     });
     historyMethodProxy.overload();
     window.addEventListener("popstate", () => {
-      handleURLChange("popState");
+      handleURLChange("traverse");
     });
   }
 

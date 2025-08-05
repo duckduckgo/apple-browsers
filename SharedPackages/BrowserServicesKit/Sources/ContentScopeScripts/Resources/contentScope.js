@@ -10964,7 +10964,7 @@ Only "elements" is supported.`);
         navigations.set(event.target, event.navigationType);
       });
       globalThis.navigation.addEventListener("navigatesuccess", (event) => {
-        const navigationType = navigations.get(event.target) || "unknown";
+        const navigationType = navigations.get(event.target);
         handleURLChange(navigationType);
         navigations.delete(event.target);
       });
@@ -10983,7 +10983,7 @@ Only "elements" is supported.`);
     });
     historyMethodProxy.overload();
     window.addEventListener("popstate", () => {
-      handleURLChange("popState");
+      handleURLChange("traverse");
     });
   }
 

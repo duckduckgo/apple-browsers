@@ -1789,6 +1789,24 @@
       }
     ));
   }
+  function ArrowIndentCenteredIcon(props) {
+    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "currentColor",
+        d: "M3.625 1c.345 0 .625.28.625.625V5c0 1.52 1.23 2.75 2.749 2.75h7.117l-2.683-2.683a.625.625 0 0 1 .86-.906l.024.022 2.69 2.69c.83.83.83 2.175 0 3.005l-2.69 2.689a.625.625 0 1 1-.884-.884L14.116 9H7a3.999 3.999 0 0 1-4-4V1.625C3 1.28 3.28 1 3.625 1Z"
+      }
+    ));
+  }
+  function CloseSmallIcon(props) {
+    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "currentColor",
+        d: "M10.433 4.683a.625.625 0 1 1 .884.884L8.884 8l2.433 2.433a.625.625 0 1 1-.884.884L8 8.884l-2.433 2.433a.625.625 0 1 1-.884-.884L7.116 8 4.683 5.567a.625.625 0 1 1 .884-.884L8 7.116l2.433-2.433Z"
+      }
+    ));
+  }
   var init_Icons2 = __esm({
     "pages/new-tab/app/components/Icons.js"() {
       "use strict";
@@ -6246,8 +6264,7 @@
       [service]
     );
     const customizerContextMenu = q2((params) => service.contextMenu(params), [service]);
-    const settingsLinks = useSignal({});
-    return /* @__PURE__ */ _(CustomizerContext.Provider, { value: { data: data2, select, upload, setTheme, deleteImage, customizerContextMenu, settingsLinks } }, /* @__PURE__ */ _(CustomizerThemesContext.Provider, { value: { main, browser } }, children));
+    return /* @__PURE__ */ _(CustomizerContext.Provider, { value: { data: data2, select, upload, setTheme, deleteImage, customizerContextMenu } }, /* @__PURE__ */ _(CustomizerThemesContext.Provider, { value: { main, browser } }, children));
   }
   var CustomizerThemesContext, CustomizerContext;
   var init_CustomizerProvider = __esm({
@@ -6291,11 +6308,7 @@
          * @param {UserImageContextMenu} _params
          */
         customizerContextMenu: (_params) => {
-        },
-        /**
-         * @type {import('@preact/signals').Signal<Record<string, SettingsLinkData>>}
-         */
-        settingsLinks: d3({})
+        }
       });
     }
   });
@@ -6677,7 +6690,7 @@
     );
     const { id, visibility, toggle, index: index2 } = useVisibility();
     const title = t4("favorites_menu_title");
-    useCustomizer({ title, id, icon: "star", toggle, visibility: visibility.value, index: index2 });
+    useCustomizer({ title, id, icon: /* @__PURE__ */ _(Shield, null), toggle, visibility: visibility.value, index: index2 });
     if (visibility.value === "hidden") {
       return null;
     }
@@ -6696,6 +6709,7 @@
       init_Favorites2();
       init_utils2();
       init_CustomizerProvider();
+      init_Icons2();
     }
   });
 
@@ -7746,7 +7760,8 @@
         textarea: "AiChatForm_textarea",
         hasScroll: "AiChatForm_hasScroll",
         buttons: "AiChatForm_buttons",
-        submitButton: "AiChatForm_submitButton"
+        submitButton: "AiChatForm_submitButton",
+        fadeIn: "AiChatForm_fadeIn"
       };
     }
   });
@@ -7862,8 +7877,8 @@
         root: "Omnibar_root",
         logo: "Omnibar_logo",
         spacer: "Omnibar_spacer",
-        field: "Omnibar_field",
-        popup: "Omnibar_popup"
+        popup: "Omnibar_popup",
+        field: "Omnibar_field"
       };
     }
   });
@@ -7898,35 +7913,21 @@
 
   // pages/new-tab/app/omnibar/utils.js
   function getInputSuffix(term, selectedSuggestion) {
-    if (!term) {
-      return null;
-    }
-    if (selectedSuggestion) {
-      return getSuggestionInputSuffix(selectedSuggestion, term);
-    }
-    if (isURLish(term)) {
-      const url7 = parseURL(term);
-      if (!url7) throw new Error("isURLish returned true but parseURL failed");
-      return { kind: "visit", url: formatURL(url7, { scheme: false, trailingSlash: false, search: false, hash: false }) };
-    } else {
-      return { kind: "searchDuckDuckGo" };
-    }
-  }
-  function getSuggestionInputSuffix(suggestion, term) {
-    switch (suggestion.kind) {
+    if (!term || !selectedSuggestion) return null;
+    switch (selectedSuggestion.kind) {
       case "phrase":
         return { kind: "searchDuckDuckGo" };
       case "website": {
-        const url7 = parseURL(suggestion.url);
+        const url7 = parseURL(selectedSuggestion.url);
         if (!url7) return null;
         return { kind: "visit", url: formatURL(url7, { scheme: false, trailingSlash: false, search: false, hash: false }) };
       }
       case "bookmark":
       case "historyEntry":
       case "internalPage": {
-        const title = getSuggestionTitle(suggestion, term);
-        const autocompletion = getSuggestionCompletionString(suggestion, term);
-        const url7 = parseURL(suggestion.url);
+        const title = getSuggestionTitle(selectedSuggestion, term);
+        const autocompletion = getSuggestionCompletionString(selectedSuggestion, term);
+        const url7 = parseURL(selectedSuggestion.url);
         if (title && title !== autocompletion) {
           return { kind: "raw", text: title };
         } else if (url7) {
@@ -8015,9 +8016,6 @@
     }
     return null;
   }
-  function isURLish(string) {
-    return string.includes(".") && parseURL(string) !== null;
-  }
   function formatURL(url7, { scheme = true, www = true, trailingSlash = true, search = true, hash = true } = {}) {
     let result = "";
     if (scheme) {
@@ -8074,7 +8072,8 @@
         form: "SearchForm_form",
         input: "SearchForm_input",
         suffixSpacer: "SearchForm_suffixSpacer",
-        suffix: "SearchForm_suffix"
+        suffix: "SearchForm_suffix",
+        closeButton: "SearchForm_closeButton"
       };
     }
   });
@@ -8398,12 +8397,6 @@
       {
         class: SearchForm_default.form,
         style: { "--input-font": inputFont, "--suffix-text-width": `${inputSuffixWidth}px` },
-        onBlurCapture: (event) => {
-          if (event.relatedTarget instanceof Element && event.relatedTarget.role === "option") {
-            return;
-          }
-          hideSuggestions();
-        },
         onSubmit: (event) => {
           event.preventDefault();
           onSubmit({
@@ -8412,7 +8405,6 @@
           });
         }
       },
-      inputSuffix?.kind === "visit" ? /* @__PURE__ */ _(GlobeIcon, { inert: true }) : /* @__PURE__ */ _(SearchIcon, { inert: true }),
       /* @__PURE__ */ _(
         "input",
         {
@@ -8436,10 +8428,34 @@
             setTerm(term2);
             updateSuggestions(term2);
           },
-          onClick: () => acceptSuggestion()
+          onClick: () => acceptSuggestion(),
+          onBlurCapture: (event) => {
+            if (event.relatedTarget instanceof Element) {
+              if (event.relatedTarget.role === "option") return;
+              if (event.relatedTarget.classList.contains(SearchForm_default.closeButton)) return;
+            }
+            hideSuggestions();
+          }
         }
       ),
-      inputSuffix && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("span", { class: SearchForm_default.suffixSpacer, inert: true }, (inputBase + inputCompletion).replace(/\n/g, "") || t4("omnibar_searchFormPlaceholder")), /* @__PURE__ */ _("span", { class: SearchForm_default.suffix, inert: true }, inputSuffixText))
+      inputSuffix && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("span", { class: SearchForm_default.suffixSpacer, inert: true }, (inputBase + inputCompletion).replace(/\n/g, "") || t4("omnibar_searchFormPlaceholder")), /* @__PURE__ */ _("span", { class: SearchForm_default.suffix, inert: true }, inputSuffixText)),
+      term.length > 0 && /* @__PURE__ */ _(
+        "button",
+        {
+          class: SearchForm_default.closeButton,
+          "aria-label": t4("omnibar_searchFormCloseButtonLabel"),
+          tabIndex: 0,
+          onClick: (event) => {
+            event.preventDefault();
+            if (suggestions.length > 0) {
+              hideSuggestions();
+            } else {
+              setTerm("");
+            }
+          }
+        },
+        /* @__PURE__ */ _(CloseSmallIcon, null)
+      )
     );
   }
   function measureText(text2, font) {
@@ -8456,7 +8472,6 @@
       init_preact_module();
       init_hooks_module();
       init_handlers();
-      init_Icons2();
       init_settings_provider();
       init_types();
       init_utils3();
@@ -8464,6 +8479,7 @@
       init_SearchFormProvider();
       init_SuffixText();
       init_useSuggestionInput();
+      init_Icons2();
     }
   });
 
@@ -8624,7 +8640,7 @@
       setFocusRing(void 0);
       setMode(nextMode);
     };
-    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field, "data-focus-ring": focusRing }, mode === "search" ? /* @__PURE__ */ _(SearchForm, { autoFocus, onOpenSuggestion: handleOpenSuggestion, onSubmit: handleSubmitSearch }) : /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode, "data-focus-ring": focusRing }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field }, mode === "search" ? /* @__PURE__ */ _(SearchForm, { autoFocus, onOpenSuggestion: handleOpenSuggestion, onSubmit: handleSubmitSearch }) : /* @__PURE__ */ _(
       AiChatForm,
       {
         chat: query,
@@ -8664,41 +8680,36 @@
     return null;
   }
   function OmnibarReadyState({ config: { enableAi = true, showAiSetting = true, mode } }) {
+    const { setEnableAi, setMode } = x2(OmnibarContext);
+    return /* @__PURE__ */ _(k, null, showAiSetting && /* @__PURE__ */ _(AiSetting, { enableAi, setEnableAi }), /* @__PURE__ */ _(Omnibar, { mode, setMode, enableAi: showAiSetting && enableAi }));
+  }
+  function AiSetting({ enableAi, setEnableAi }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
       {}
     );
-    const { settingsLinks } = x2(CustomizerContext);
-    const { setMode, setEnableAi } = x2(OmnibarContext);
-    y2(() => {
-      if (!showAiSetting) {
-        return;
-      }
-      settingsLinks.value = {
-        ...settingsLinks.value,
-        duckAi: {
-          title: enableAi ? t4("omnibar_hideDuckAi") : t4("omnibar_showDuckAi"),
-          icon: /* @__PURE__ */ _(AiChatIcon, null),
-          onClick: () => setEnableAi(!enableAi)
-        }
-      };
-      return () => {
-        const { duckAi: _5, ...rest } = settingsLinks.value;
-        settingsLinks.value = rest;
-      };
-    }, [enableAi, showAiSetting]);
-    return /* @__PURE__ */ _(Omnibar, { mode, setMode, enableAi });
+    const { id, index: index2 } = useVisibility();
+    useCustomizer({
+      title: t4("omnibar_toggleDuckAi"),
+      id: `_${id}-toggleAi`,
+      icon: /* @__PURE__ */ _(ArrowIndentCenteredIcon, { style: { color: "var(--ntp-icons-tertiary)" } }),
+      toggle: () => setEnableAi(!enableAi),
+      visibility: enableAi ? "visible" : "hidden",
+      index: index2 + 0.1
+    });
+    return null;
   }
   var init_OmnibarConsumer = __esm({
     "pages/new-tab/app/omnibar/components/OmnibarConsumer.js"() {
       "use strict";
-      init_hooks_module();
-      init_OmnibarProvider();
       init_preact_module();
-      init_Omnibar2();
-      init_CustomizerProvider();
-      init_Icons2();
+      init_hooks_module();
+      init_CustomizerMenu();
       init_types();
+      init_widget_config_provider();
+      init_Omnibar2();
+      init_OmnibarProvider();
+      init_Icons2();
     }
   });
 
@@ -8710,7 +8721,7 @@
     );
     const sectionTitle = t4("omnibar_menuTitle");
     const { visibility, id, toggle, index: index2 } = useVisibility();
-    useCustomizer({ title: sectionTitle, id, icon: "search", toggle, visibility: visibility.value, index: index2 });
+    useCustomizer({ title: sectionTitle, id, icon: /* @__PURE__ */ _(SearchIcon, null), toggle, visibility: visibility.value, index: index2 });
     if (visibility.value === "hidden") {
       return null;
     }
@@ -8725,6 +8736,7 @@
       init_OmnibarProvider();
       init_preact_module();
       init_OmnibarConsumer();
+      init_Icons2();
     }
   });
 
@@ -27199,7 +27211,7 @@
     );
     const sectionTitle = t4("protections_menuTitle");
     const { visibility, id, toggle, index: index2 } = useVisibility();
-    useCustomizer({ title: sectionTitle, id, icon: "shield", toggle, visibility: visibility.value, index: index2 });
+    useCustomizer({ title: sectionTitle, id, icon: /* @__PURE__ */ _(DuckFoot, null), toggle, visibility: visibility.value, index: index2 });
     if (visibility.value === "hidden") {
       return null;
     }
@@ -27214,6 +27226,7 @@
       init_ProtectionsProvider();
       init_preact_module();
       init_ProtectionsConsumer();
+      init_Icons2();
     }
   });
 
@@ -27925,13 +27938,14 @@
   }
 
   // pages/new-tab/app/telemetry/Debug.js
+  init_Icons2();
   function DebugCustomized({ index: index2, isOpenInitially = false }) {
     const [isOpen, setOpen] = d2(isOpenInitially);
     const telemetry2 = useTelemetry();
     useCustomizer({
       title: "\u{1F41E} Debug",
       id: "debug",
-      icon: "shield",
+      icon: /* @__PURE__ */ _(DuckFoot, null),
       visibility: isOpen ? "visible" : "hidden",
       toggle: (_id) => setOpen((prev) => !prev),
       index: index2
@@ -28429,19 +28443,9 @@
   init_CustomizerMenu();
 
   // pages/new-tab/app/customizer/components/VisibilityMenu.js
-  init_preact_module();
   var import_classnames16 = __toESM(require_classnames(), 1);
+  init_preact_module();
   init_hooks_module();
-  init_Icons2();
-
-  // pages/new-tab/app/customizer/components/VisibilityMenu.module.css
-  var VisibilityMenu_default = {
-    list: "VisibilityMenu_list",
-    embedded: "VisibilityMenu_embedded",
-    menuItemLabel: "VisibilityMenu_menuItemLabel",
-    menuItemLabelEmbedded: "VisibilityMenu_menuItemLabelEmbedded",
-    svg: "VisibilityMenu_svg"
-  };
 
   // shared/components/Switch/Switch.js
   init_preact_module();
@@ -28480,11 +28484,22 @@
   // pages/new-tab/app/customizer/components/VisibilityMenu.js
   init_settings_provider();
   init_CustomizerProvider();
+
+  // pages/new-tab/app/customizer/components/VisibilityMenu.module.css
+  var VisibilityMenu_default = {
+    list: "VisibilityMenu_list",
+    embedded: "VisibilityMenu_embedded",
+    menuItemLabel: "VisibilityMenu_menuItemLabel",
+    menuItemLabelEmbedded: "VisibilityMenu_menuItemLabelEmbedded",
+    svg: "VisibilityMenu_svg"
+  };
+
+  // pages/new-tab/app/customizer/components/VisibilityMenu.js
   function EmbeddedVisibilityMenu({ rows }) {
     const platformName = usePlatformName();
     const { browser } = x2(CustomizerThemesContext);
     return /* @__PURE__ */ _("ul", { className: (0, import_classnames16.default)(VisibilityMenu_default.list, VisibilityMenu_default.embedded) }, rows.map((row) => {
-      return /* @__PURE__ */ _("li", { key: row.id }, /* @__PURE__ */ _("div", { class: (0, import_classnames16.default)(VisibilityMenu_default.menuItemLabel, VisibilityMenu_default.menuItemLabelEmbedded) }, /* @__PURE__ */ _("span", { className: VisibilityMenu_default.svg }, row.icon === "shield" && /* @__PURE__ */ _(DuckFoot, null), row.icon === "star" && /* @__PURE__ */ _(Shield, null), row.icon === "search" && /* @__PURE__ */ _(SearchIcon, null)), /* @__PURE__ */ _("span", null, row.title ?? row.id), /* @__PURE__ */ _(
+      return /* @__PURE__ */ _("li", { key: row.id }, /* @__PURE__ */ _("div", { class: (0, import_classnames16.default)(VisibilityMenu_default.menuItemLabel, VisibilityMenu_default.menuItemLabelEmbedded) }, /* @__PURE__ */ _("span", { className: VisibilityMenu_default.svg }, row.icon), /* @__PURE__ */ _("span", null, row.title ?? row.id), /* @__PURE__ */ _(
         Switch,
         {
           theme: browser.value,
@@ -28835,7 +28850,7 @@
   }
 
   // pages/new-tab/app/customizer/components/CustomizerDrawerInner.js
-  function CustomizerDrawerInner({ data: data2, select, onUpload, setTheme, deleteImage, customizerContextMenu, settingsLinks }) {
+  function CustomizerDrawerInner({ data: data2, select, onUpload, setTheme, deleteImage, customizerContextMenu }) {
     const { close } = useDrawerControls();
     const { t: t4 } = useTypedTranslationWith(
       /** @type {enStrings} */
@@ -28860,7 +28875,7 @@
       /* @__PURE__ */ _(
         TwoCol,
         {
-          left: ({ push }) => /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.sections }, /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_background") }, /* @__PURE__ */ _(BackgroundSection, { data: data2, onNav: push, onUpload, select })), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_theme") }, /* @__PURE__ */ _(BrowserThemeSection, { data: data2, setTheme })), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_sections") }, /* @__PURE__ */ _(VisibilityMenuSection, null)), /* @__PURE__ */ _(BorderedSection, null, Object.entries(settingsLinks.value).map(([key2, link]) => /* @__PURE__ */ _(SettingsLink, { key: key2, title: link.title, icon: link.icon, onClick: () => link.onClick() })), /* @__PURE__ */ _(
+          left: ({ push }) => /* @__PURE__ */ _("div", { class: CustomizerDrawerInner_default.sections }, /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_background") }, /* @__PURE__ */ _(BackgroundSection, { data: data2, onNav: push, onUpload, select })), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_theme") }, /* @__PURE__ */ _(BrowserThemeSection, { data: data2, setTheme })), /* @__PURE__ */ _(CustomizerSection, { title: t4("customizer_section_title_sections") }, /* @__PURE__ */ _(VisibilityMenuSection, null)), /* @__PURE__ */ _(BorderedSection, null, /* @__PURE__ */ _(
             SettingsLink,
             {
               title: t4("customizer_settings_link"),
@@ -28913,7 +28928,7 @@
     return /* @__PURE__ */ _("div", { class: CustomizerDrawer_default.root }, displayChildren.value === true && /* @__PURE__ */ _(CustomizerConsumer, null));
   }
   function CustomizerConsumer() {
-    const { data: data2, select, upload, setTheme, deleteImage, customizerContextMenu, settingsLinks } = x2(CustomizerContext);
+    const { data: data2, select, upload, setTheme, deleteImage, customizerContextMenu } = x2(CustomizerContext);
     return /* @__PURE__ */ _(
       CustomizerDrawerInner,
       {
@@ -28922,8 +28937,7 @@
         onUpload: upload,
         setTheme,
         deleteImage,
-        customizerContextMenu,
-        settingsLinks
+        customizerContextMenu
       }
     );
   }
@@ -29203,13 +29217,13 @@
       title: "Search privately",
       description: "Placeholder text for the search input field."
     },
-    omnibar_hideDuckAi: {
-      title: "Hide Duck.ai",
-      description: "Label for the button to hide the Duck.ai chat interface."
+    omnibar_searchFormCloseButtonLabel: {
+      title: "Close",
+      description: "Accessible label for the close button in the search form."
     },
-    omnibar_showDuckAi: {
-      title: "Show Duck.ai",
-      description: "Label for the button to show the Duck.ai chat interface."
+    omnibar_toggleDuckAi: {
+      title: "Duck.ai",
+      description: "Label for the button to toggle the Duck.ai chat interface."
     },
     omnibar_searchDuckDuckGoSuffix: {
       title: "Search DuckDuckGo",

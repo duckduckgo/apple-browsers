@@ -70,7 +70,7 @@ struct UserText {
                                                                comment: "Display name for VPN widget in widget gallery")
 
     static let vpnWidgetGalleryDescription = NSLocalizedString("widget.gallery.vpn.description",
-                                                               value: "View and manage your VPN connection. Requires a Privacy Pro subscription.",
+                                                               value: "View and manage your VPN connection. Requires a DuckDuckGo subscription.",
                                                                comment: "Description of VPN widget in widget gallery")
 
     static let vpnWidgetConnectedStatus = NSLocalizedString("widget.vpn.status.connected",

@@ -23,6 +23,7 @@ import Core
 import Foundation
 import Onboarding
 import SystemSettingsPiPTutorial
+import SetDefaultBrowserCore
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
@@ -91,8 +92,10 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging) {
         let onboardingManager = OnboardingManager()
+        let defaultBrowserInfoStore = DefaultBrowserInfoStore()
+        let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
         self.init(
-            defaultBrowserManager: DefaultBrowserManager(),
+            defaultBrowserManager: DefaultBrowserManager(defaultBrowserInfoStore: defaultBrowserInfoStore, defaultBrowserEventMapper: defaultBrowserEventMapper),
             contextualDaxDialogs: DaxDialogs.shared,
             pixelReporter: pixelReporter,
             onboardingManager: onboardingManager,

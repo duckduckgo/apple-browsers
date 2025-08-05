@@ -1,0 +1,120 @@
+{
+  "smartling": {
+    "string_format": "icu",
+    "translate_paths": [
+      {
+        "path": "*/title",
+        "key": "{*}/title",
+        "instruction": "*/note"
+      }
+    ]
+  },
+  "empty_title": {
+    "title": "Nothing to see here!",
+    "note": "Text shown where there are no remaining history entries"
+  },
+  "empty_text": {
+    "title": "No browsing history yet.",
+    "note": "Placeholder text when there's no results to show"
+  },
+  "no_results_title": {
+    "title": "No results found for {term}",
+    "note": "The placeholder {term} will be dynamically replaced with the search term entered by the user. For example, if the user searches for 'cats', the title will become 'No results found for cats'."
+  },
+  "no_results_text": {
+    "title": "Try searching for a different URL or keywords.",
+    "note": "Placeholder text when a search gave no results."
+  },
+  "delete_all": {
+    "title": "Delete All",
+    "note": "Text for a button that deletes all items or entries. An additional confirmation dialog will be presented."
+  },
+  "delete_some": {
+    "title": "Delete",
+    "note": "Text for a button that deletes currently selected items"
+  },
+  "delete_none": {
+    "title": "Nothing to delete",
+    "note": "Title/tooltip text on a button that does nothing when there is no browsing history to delete. It's additional information shown on hover."
+  },
+  "page_title": {
+    "title": "History",
+    "note": "The main page title"
+  },
+  "search": {
+    "title": "Search",
+    "note": "The placeholder text in a search input field."
+  },
+  "show_history_all": {
+    "title": "Show all history",
+    "note": "Button text for an action that removes all filters and searches, and replaces the list with all history."
+  },
+  "show_history_older": {
+    "title": "Show older history",
+    "note": "Button that shows older history entries"
+  },
+  "show_history_for": {
+    "title": "Show history for {range}",
+    "note": "The placeholder {range} in the title will be dynamically replaced with specific date ranges such as 'Today', 'Yesterday', or days of the week like 'Monday'. For example, if the range is set to 'Today', the title will become 'Show history for Today'."
+  },
+  "delete_history_all": {
+    "title": "Delete all history",
+    "note": "Button text for an action that removes all history entries."
+  },
+  "delete_history_older": {
+    "title": "Delete older history",
+    "note": "Button that deletes older history entries."
+  },
+  "delete_history_for": {
+    "title": "Delete history for {range}",
+    "note": "The placeholder {range} in the title will be dynamically replaced with specific date ranges such as 'Today', 'Yesterday', or days of the week like 'Monday'. For example, if the range is set to 'Today', the title will become 'Delete history for Today'."
+  },
+  "search_your_history": {
+    "title": "Search your history",
+    "note": "Label text for screen readers. It's shown next to the search input field"
+  },
+  "range_all": {
+    "title": "All",
+    "note": "Label on a button that shows all history entries"
+  },
+  "range_today": {
+    "title": "Today",
+    "note": "Label on a button that shows history entries for today only"
+  },
+  "range_yesterday": {
+    "title": "Yesterday",
+    "note": "Label on a button that shows history entries for yesterday only"
+  },
+  "range_monday": {
+    "title": "Monday",
+    "note": "Label on a button that shows history entries for monday only"
+  },
+  "range_tuesday": {
+    "title": "Tuesday",
+    "note": "Label on a button that shows history entries for tuesday only"
+  },
+  "range_wednesday": {
+    "title": "Wednesday",
+    "note": "Label on a button that shows history entries for wednesday only"
+  },
+  "range_thursday": {
+    "title": "Thursday",
+    "note": "Label on a button that shows history entries for thursday only"
+  },
+  "range_friday": {
+    "title": "Friday",
+    "note": "Label on a button that shows history entries for friday only"
+  },
+  "range_saturday": {
+    "title": "Saturday",
+    "note": "Label on a button that shows history entries for saturday only"
+  },
+  "range_sunday": {
+    "title": "Sunday",
+    "note": "Label on a button that shows history entries for sunday only"
+  },
+  "range_older": {
+    "title": "Older",
+    "note": "Label on a button that shows older history entries."
+  }
+}

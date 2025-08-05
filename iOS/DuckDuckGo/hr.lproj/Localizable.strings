@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Tvoje prijave pomažu nam poboljšati DuckDuckGo za sve!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "JSON broker:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Broker: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Brokeri";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Otkazivanje nije dopušteno više od jednom";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kako izvesti lozinke iz Safarija:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Odaberi datoteku...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Odaberi datoteku koja sadrži lozinke izvezene iz Safarija ili Chromea. To je obično ZIP ili CSV datoteka.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Uvoz dovršen!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kreditne kartice";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Preskočeni duplikati";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Ispravi pogreške";
+
+/* No comment provided by engineer. */
+"Delete" = "Izbriši";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "uređaj";
@@ -1311,6 +1329,30 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo za iOS";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Dodaj svoju pretplatu na DuckDuckGo na ovaj uređaj";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Upotrijebi adresu e-pošte za dodavanje pretplate na ovaj uređaj.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Dodaj svoju pretplatu na druge uređaje";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Dodaj svoju pretplatu na svoje druge uređaje putem Apple ID-a ili povezivanjem adrese e-pošte. **[Saznaj više](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Koristi ovu adresu e-pošte za dodavanje pretplate na svoje druge uređaje u aplikaciji DuckDuckGo, idi na Postavke > DuckDuckGo pretplata > Imam pretplatu. **[Saznaj više](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Pronađi odgovore na često postavljana pitanja ili kontaktiraj podršku za pretplatu putem naših stranica pomoći.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Aktiviraj pretplatu DuckDuckGo na radnoj površini kako bi postavio Personal Information Removal";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Više nećeš moći pristupiti svojoj pretplati na DuckDuckGo na ovom uređaju. Ovo neće otkazati tvoju pretplatu i ostat će aktivna na tvojim drugim uređajima.";
 
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Uvijek";
@@ -1948,6 +1990,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Prikaži sve kartice";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Učitavanje brokera...";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "Aplikacija DuckDuckGo za Mac pruža ti potrebnu brzinu i značajke pretraživanja kakve očekuješ, a isporučuje se s našim najboljim alatima za privatnost u svojoj klasi - privacy essentials.";
 
@@ -2036,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Dodaj VPN widget";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN je prekinut zbog istekle pretplate. Pretplati se na Privacy Pro kako bi ponovno povezao DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "VPN je prekinut zbog istekle pretplate. Pretplati se na DuckDuckGo za ponovno povezivanje VPN-a.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN nije se mogao povezati. Pokušaj ponovno nešto kasnije.";
@@ -2284,6 +2329,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Na bilo kojem web-mjestu otvori ••• izbornik i odaberi **Dodaj favorit** kako bi se on dodao na stranicu nove kartice.";
 
+/* No comment provided by engineer. */
+"No results found" = "Nema rezultata";
+
+/* No comment provided by engineer. */
+"OK" = "U redu";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Upravlja se kolačićima";
 
@@ -2298,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Pretražuj privatno po zadanim postavkama";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo također ima %1$@, dostupan s %2$@ i naprednom, privatnom umjetnom inteligencijom.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "neobaveznom plaćenom pretplatom";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Lako dostupno";
@@ -2377,6 +2437,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Shvaćam! Preskočit ću ostale savjete.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Isprobaj besplatno!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo također ima siguran %1$@, dostupan s %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "neobaveznom plaćenom pretplatom";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + još 2 vrhunske zaštite";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Dodaj widget";
 
@@ -2409,6 +2481,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Nije moguće pronaći aplikaciju koja je potrebna za otvaranje te poveznice";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Odjava...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nije moguće pristupiti modelima Duck.ai koji su dostupni samo pretplatnicima";
@@ -2593,6 +2668,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Ikona privatnosti";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Informacije o profilu";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Otkaži";
 
@@ -2606,6 +2684,9 @@
 "prompt.custom.url.scheme.title" = "Otvori u drugoj aplikaciji?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Rodbina: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Resetiraj";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2694,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Rezultati";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Pretraži ili unesi adresu";
@@ -2647,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "O nama";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Osim toga, nudimo i [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), našu tri-u-jednom pretplatničku uslugu integriranu u naš preglednik. Pretplatnici na Privacy Pro dobivaju još veću zaštitu privatnosti putem brzog i jednostavnog [VPN-a](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) koji pomaže osigurati tvoju online aktivnost, zatim usluge koja pronalazi i uklanja tvoje osobne podatke s mrežne lokacije za pronalaženje osoba te usluge koja vraća tvoj identitet u slučaju krađe.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Osim toga, nudimo i [DuckDuckGo pretplatu](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integriran u naš preglednik. Pretplatnici dobivaju još veću zaštitu privatnosti putem brzog i jednostavnog [VPN-a](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) koji pomaže osigurati tvoju online aktivnost, pristup naprednim modelima umjetne inteligencije u našoj privatnoj usluzi razgovora s umjetnom inteligencijom Duck.ai, usluge koja pronalazi i uklanja tvoje osobne podatke s mrežne lokacije za pronalaženje osoba te usluge koja vraća tvoj identitet u slučaju krađe.";
+
 /* about tagline */
 "settings.about.tagline" = "Zaštita. Privatnost. Bezbrižnost.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo je neovisna tvrtka za zaštitu privatnosti na internetu za svakoga tko želi preuzeti kontrolu nad svojim osobnim podacima.Mi vjerujemo da je najbolji način zaštite tvojih osobnih podataka od hakera, prevaranata i tvrtki koje narušavaju privatnost spriječiti prikupljanje takvih podataka. Zato milijuni ljudi [biraju DuckDuckGo umjesto Chromea i drugih preglednika](ddgQuickLink://duckduckgo.com/compare-privacy) za pretraživanje i pregledavanje interneta. Naša ugrađena tražilica je poput Googlea, ali nikad ne prati tvoja pretraživanja. Uz to, naša zaštita pri pregledavanju, poput blokiranja praćenja oglasa i blokiranja kolačića, pomaže spriječiti druge tvrtke da prikupljaju tvoje podatke. Napominjemo i da je naš preglednik besplatan — mi zarađujemo od [oglasa koji poštuju privatnost](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), a ne iskorištavanjem tvojih podataka. \n\n%@ \n\nPreuzmi kontrolu nad svojim osobnim podacima uz preglednik dizajniran za zaštitu, a ne za prikupljanje podataka.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pristupačnost";
@@ -2673,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai prečaci";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Unos pretraživanja";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Pretraži mrežu ili pitaj Duck.ai izravno iz adresne trake";
@@ -2748,6 +2835,9 @@
 
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na drugim platformama";
+
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Tvoja pretplata na Privacy Pro je istekla";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokiraj programe za praćenje e-pošte i sakrij svoju adresu bez promjene pružatelja usluga e-pošte.\n[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2893,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Imam pretplatu";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Pretplati se ponovno i nastavi koristiti Privacy Pro";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Tvoja pretplata na Privacy Pro je istekla";
 
@@ -2930,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Osiguraj svoj Wi-Fi i zaštiti svoj identitet";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Besplatno isprobaj DuckDuckGo pretplatu";
+"settings.subscription.try.free.button" = "Isprobaj besplatno";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Besplatno isprobaj Privacy Pro";
@@ -3046,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Imam pretplatu";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Ponovno pošalji upute";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Dodaj adresu e-pošte kako bi aktivirao pretplatu na svojim drugim uređajima. Ovu adresu ćemo koristiti samo za potvrdu tvoje pretplate.";
 
@@ -3063,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Koristi ovu adresu e-pošte za dodavanje pretplate na svoje druge uređaje u aplikaciji DuckDuckGo. Idi na Postavke > Privacy Pro > Imam pretplatu. **[Saznaj više](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Privacy Pro dostupan je na svakom uređaju prijavljenom na isti Apple račun.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Tvoja pretplata kupljena je putem trgovine Google Play. Za obnavljanje pretplate, otvori postavke pretplate na Google Play Storeu na uređaju koji je prijavljen na isti Google račun koji je upotrijebljen za prvobitnu kupnju pretplate.";
@@ -3168,6 +3249,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Obnavljanje pretplate...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Pro sada se jednostavno zove DuckDuckGo pretplata";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Ukloni s ovog uređaja";
@@ -3422,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Pretplati se";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Pretplati se na Privacy Pro kako bi ponovno povezao DuckDuckGo VPN.";
+"vpn.access-revoked.alert.message" = "Pretplati se na DuckDuckGo za ponovno povezivanje VPN-a.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "VPN je isključen zbog isteka pretplate";
@@ -3663,6 +3747,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Nastavi";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kreditne kartice";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Lozinke";

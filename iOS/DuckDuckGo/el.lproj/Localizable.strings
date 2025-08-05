@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Η αναφορά σας βοηθάει ώστε να γίνει το DuckDuckGo καλύτερο για όλους!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "Διαμεσολαβητής JSON:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Διαμεσολαβητής: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Διαμεσολαβητές";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Δεν μπορείτε να ακυρώσετε περισσότερες από μία φορές";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Πώς να εξαγάγετε κωδικούς πρόσβασης από το Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Επιλογή αρχείυο...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Επίλεξε το αρχείο που περιέχει κωδικούς πρόσβασης που εξάγονται από το Safari ή το Chrome. Αυτό είναι συνήθως ένα αρχείο ZIP ή CSV.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Η εισαγωγή ολοκληρώθηκε!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Πιστωτικές κάρτες";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Παραλείφθηκαν διπλότυπα";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
+
+/* No comment provided by engineer. */
+"Delete" = "Διαγραφή";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "συσκευή";
@@ -1311,6 +1329,30 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo για iOS";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Προσθέστε τη συνδρομή DuckDuckGo σε αυτήν τη συσκευή";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Χρησιμοποιήστε μια διεύθυνση email για να προσθέσετε τη συνδρομή σας σε αυτήν τη συσκευή.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Προσθέστε τη συνδρομή σας σε άλλες συσκευές";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Προσθέστε τη συνδρομή σας στις άλλες συσκευές σας μέσω Apple ID ή συνδέοντας μια διεύθυνση email. **[Μάθετε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Χρησιμοποιήστε αυτό το email για να προσθέσετε τη συνδρομή σας στις άλλες συσκευές σας στην εφαρμογή DuckDuckGo, μεταβείτε στις Ρυθμίσεις > Συνδρομή DuckDuckGo > Έχω συνδρομή. **[Μάθετε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Πάρτε απαντήσεις σε συχνές ερωτήσεις ή επικοινωνήστε με την υποστήριξη συνδρομών από τις σελίδες βοήθειας που διαθέτουμε.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Ενεργοποιήστε τη συνδρομή DuckDuckGo στον υπολογιστή για να ρυθμίσετε το Personal Information Removal";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Δεν θα μπορείτε πλέον να έχετε πρόσβαση στη συνδρομή DuckDuckGo σε αυτήν τη συσκευή. Αυτό δεν θα ακυρώσει τη συνδρομή σας και θα παραμείνει ενεργή στις υπόλοιπες συσκευές σας.";
 
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Πάντα";
@@ -1948,6 +1990,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Προβολή όλων των καρτελών";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Φόρτωση διαμεσολαβητών...";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "Το DuckDuckGo για Mac έχει την ταχύτητα που χρειάζεστε, τις λειτουργίες περιήγησης που αναμένετε και περιλαμβάνει τις καλύτερες δυνατότητες απορρήτου στην κατηγορία μας.";
 
@@ -2036,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Προσθήκη μικροεφαρμογής VPN";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "Το VPN αποσυνδέθηκε λόγω λήξης της συνδρομής. Εγγραφείτε στο Privacy Pro για να συνδέσετε εκ νέου το DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "Το VPN αποσυνδέθηκε λόγω λήξης της συνδρομής. Εγγραφείτε στο DuckDuckGo για να συνδέσετε εκ νέου το VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Η σύνδεση του DuckDuckGo VPN απέτυχε. Ξαναδοκιμάστε αργότερα.";
@@ -2284,6 +2329,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Σε οποιονδήποτε ιστότοπο, ανοίξτε το μενού ••• και επιλέξτε **Προσθήκη αγαπημένου** για προσθήκη στη σελίδα νέας καρτέλας σας.";
 
+/* No comment provided by engineer. */
+"No results found" = "Δεν βρέθηκαν αποτελέσματα";
+
+/* No comment provided by engineer. */
+"OK" = "Εντάξει";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Διαχειριζόμενα cookies";
 
@@ -2298,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Ιδιωτική αναζήτηση βάσει προεπιλογής";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "Το DuckDuckGo διαθέτει επίσης μια %1$@, διαθέσιμη με %2$@ και προηγμένη, ιδιωτική τεχνητή νοημοσύνη.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "προαιρετική επί πληρωμή συνδρομή";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Εύκολη πρόσβαση";
@@ -2377,6 +2437,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Το κατάλαβα! Θα παραλείψω τις άλλες συμβουλές.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Δοκιμάστε το δωρεάν!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "Το DuckDuckGo έχει επίσης ένα ασφαλές %1$@, διαθέσιμο με μια %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "προαιρετική επί πληρωμή συνδρομή";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 επιπλέον προστασίες premium";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Προσθήκη γραφικού στοιχείου";
 
@@ -2409,6 +2481,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Δεν είναι δυνατή η εύρεση της εφαρμογής που απαιτείται για άνοιγμα αυτού του συνδέσμου";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Εξαίρεση...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Δεν είναι δυνατή η πρόσβαση στα μοντέλα Duck.ai μόνο για συνδρομητές";
@@ -2593,6 +2668,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Εικονίδιο απορρήτου";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Πληροφορίες προφίλ";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Ακύρωση";
 
@@ -2606,6 +2684,9 @@
 "prompt.custom.url.scheme.title" = "Άνοιγμα σε άλλη εφαρμογή;";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Συγγενείς: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Επαναφορά";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2694,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Αποτελέσματα";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
@@ -2647,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Σχετικά";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Επιπλέον, προσφέρουμε επίσης το [Privacy Pro] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), μια συνδρομητική υπηρεσία τρία σε ένα, ενσωματωμένη στο πρόγραμμα περιήγησής μας. Οι συνδρομητές του Privacy Pro απολαμβάνουν ακόμα μεγαλύτερη προστασία απορρήτου με ένα γρήγορο και απλό [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), που βοηθά στην ασφάλεια της διαδικτυακής δραστηριότητάς σας, μια υπηρεσία που εντοπίζει και αφαιρεί τα προσωπικά στοιχεία σας από ιστότοπους εύρεσης ατόμων και μια υπηρεσία που αποκαθιστά την ταυτότητά σας σε περίπτωση κλοπής.\n\n";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Επιπλέον, προσφέρουμε επίσης τη συνδρομή [DuckDuckGo subscription](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) ενοποιημένη στο πρόγραμμα περιήγησής σας. Οι συνδρομητές απολαμβάνουν ακόμα μεγαλύτερη προστασία απορρήτου με ένα γρήγορο και απλό [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), που βοηθά στην ασφάλεια της διαδικτυακής δραστηριότητάς σας, στην πρόσβαση σε προηγμένα μοντέλα τεχνητής νοημοσύνης στην ιδιωτική υπηρεσία συνομιλίας AI Duck.ai, σε μια υπηρεσία που εντοπίζει και αφαιρεί τα προσωπικά στοιχεία σας από ιστότοπους εύρεσης ατόμων και σε μια υπηρεσία που αποκαθιστά την ταυτότητά σας σε περίπτωση κλοπής.\n\n";
+
 /* about tagline */
 "settings.about.tagline" = "Προστασία. Ιδιωτικότητα. Ηρεμία.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "Η DuckDuckGo αποτελεί ανεξάρτητη εταιρεία διαδικτυακής προστασίας για οποιονδήποτε επιθυμεί να ανακτήσει τον έλεγχο των προσωπικών πληροφοριών του.\n\nΠιστεύουμε ότι ο καλύτερος τρόπος για να προστατέψετε τις προσωπικές πληροφορίες σας από χάκερ, απατεώνες και εταιρείες που παραβιάζουν την ιδιωτικότητα είναι να μη συλλέγονται καθόλου. Αυτός είναι ο λόγος για τον οποίον εκατομμύρια άνθρωποι [επιλέγουν το DuckDuckGo έναντι του Chrome και άλλων προγραμμάτων περιήγησης] (ddgQuickLink://duckduckgo.com/compare-privacy) για να πραγματοποιήσουν αναζητήσεις και να περιηγηθούν στο διαδίκτυο Η ενσωματωμένη μηχανή αναζήτησής μας είναι σαν της Google, ωστόσο δεν παρακολουθεί ποτέ τις αναζητήσεις σας. Και οι προστασίες περιήγησής μας, όπως ο αποκλεισμός παρακολούθησης διαφημίσεων και ο αποκλεισμός cookie, βοηθούν ώστε να σταματήσουν άλλες εταιρείες να συλλέγουν τα δεδομένα σας. Και, φυσικά, το πρόγραμμα περιήγησής μας είναι δωρεάν. Κερδίζουμε χρήματα από [διαφημίσεις αναζήτησης που σέβονται την ιδιωτικότητα], (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), όχι από την εκμετάλλευση των δεδομένων σας. \n\n%@ \n\nΑνακτήστε τον έλεγχο των προσωπικών πληροφοριών σας με το πρόγραμμα περιήγησης που έχει σχεδιαστεί για προστασία δεδομένων και όχι για συλλογή δεδομένων.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Προσβασιμότητα";
@@ -2673,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Συντομεύσεις Duck.ai";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Εισαγωγή αναζήτησης";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Κάντε αναζήτηση στο διαδίκτυο ή ρωτήστε το Duck.ai απευθείας από τη Γραμμή διευθύνσεων";
@@ -2748,6 +2835,9 @@
 
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "Το DuckDuckGo σε άλλες πλατφόρμες";
+
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Η συνδρομή σας στο Privacy Pro έληξε";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Αποκλείστε εφαρμογές παρακολούθησης email και αποκρύψτε τη διεύθυνσή σας, χωρίς να αλλάξετε πάροχο email.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2893,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Έχω συνδρομή";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Εγγραφείτε ξανά για να συνεχίσετε να χρησιμοποιείτε το Privacy Pro";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Η συνδρομή σας στο Privacy Pro έληξε";
 
@@ -2930,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Ασφαλίστε το Wi-Fi σας και προστατέψτε την ταυτότητά σας";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Δοκιμάστε τη συνδρομή DuckDuckGo δωρεάν";
+"settings.subscription.try.free.button" = "Δοκιμάστε το δωρεάν";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Δοκιμάστε το Privacy Pro δωρεάν";
@@ -3046,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Έχω συνδρομή";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Εκ νέου αποστολή οδηγιών";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Πρόσθεσε μια διεύθυνση email για να ενεργοποιήσετε τη συνδρομή σας στις άλλες συσκευές σας. Θα χρησιμοποιήσουμε αυτήν τη διεύθυνση μόνο για να επαληθεύσουμε τη συνδρομή σας.";
 
@@ -3063,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Χρησιμοποιήστε αυτό το email για να προσθέσετε τη συνδρομή σας στις άλλες συσκευές σας στην εφαρμογή DuckDuckGo. Μεταβείτε στις Ρυθμίσεις > Privacy Pro > Έχω συνδρομή. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Το Privacy Pro είναι διαθέσιμο σε οποιαδήποτε συσκευή που είναι συνδεδεμένη στον ίδιο Λογαριασμό Apple.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Η συνδρομή σας αγοράστηκε μέσω του Google Play Store. Για να ανανεώσετε τη συνδρομή σας, ανοίξτε τις ρυθμίσεις συνδρομής στο Google Play Store σε συσκευή που είναι συνδεδεμένη στον ίδιο λογαριασμό Google που χρησιμοποιήθηκε για την αρχική αγορά της συνδρομής σας.";
@@ -3168,6 +3249,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Επαναφορά συνδρομής...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Το Privacy Pro ονομάζεται πλέον απλά Συνδρομή DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Αφαίρεση από αυτήν τη συσκευή";
@@ -3422,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Εγγραφείτε";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Εγγραφείτε στο Privacy Pro για να συνδέσετε εκ νέου το DuckDuckGo VPN.";
+"vpn.access-revoked.alert.message" = "Εγγραφείτε στο DuckDuckGo για να συνδέσετε εκ νέου το VPN.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "Το VPN αποσυνδέθηκε λόγω λήξης της συνδρομής";
@@ -3663,6 +3747,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Συνέχεια";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Πιστωτικές κάρτες";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Κωδικός πρόσβασης";

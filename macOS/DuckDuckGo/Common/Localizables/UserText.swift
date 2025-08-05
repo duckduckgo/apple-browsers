@@ -64,6 +64,7 @@ struct UserText {
     static let bookmarkDialogAdd = NSLocalizedString("bookmark.dialog.add", value: "Add", comment: "Button to confim a bookmark creation")
     static let newFolderDialogAdd = NSLocalizedString("folder.dialog.add", value: "Add", comment: "Button to confim a bookmark folder creation")
     static let doneDialog = NSLocalizedString("done", value: "Done", comment: "Done button")
+    static let newBadge = NSLocalizedString("badge.new", value: "New", comment: "Copy of badge used to indicate a new item")
 
     static func openIn(value: String) -> String {
         let localized = NSLocalizedString("open.in",
@@ -679,6 +680,10 @@ struct UserText {
     static let externalSchemePermissionAuthorizationNoDomainFormat = NSLocalizedString("permission.authorization.externalScheme.empty.format",
                                                                                        value: "Open this link in %@?",
                                                                                        comment: "Popover asking to open link in External App (%@)")
+    static let wifiHotspotPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.wifihotspot.format",
+                                                                            value: "WiFi hotspot requesting authorization to redirect to captive portal login page.",
+                                                                            comment: "Popover asking user to authorize WiFi hotspot captive portal")
+
     static let permissionAlwaysAllowOnDomainCheckbox = NSLocalizedString("dashboard.permission.allow.on", value: "Always allow on", comment: "Permission Popover 'Always allow on' (for domainName) checkbox")
 
     static let permissionMicrophone = NSLocalizedString("permission.microphone", value: "Microphone", comment: "Microphone input media device name")
@@ -686,6 +691,7 @@ struct UserText {
     static let permissionCameraAndMicrophone = NSLocalizedString("permission.cameraAndmicrophone", value: "Camera and Microphone", comment: "camera and microphone input media devices name")
     static let permissionGeolocation = NSLocalizedString("permission.geolocation", value: "Location", comment: "User's Geolocation permission access name")
     static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open Pop Up Windows permission access name")
+    static let permissionWifiHotspot = NSLocalizedString("permission.title.wifihotspot", value: "WiFi Hotspot", comment: "WiFi Hotspot permission title")
 
     static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
     static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")
@@ -1557,7 +1563,13 @@ struct UserText {
 
     // Key: "preferences.subscription"
     // Comment: "Show subscription preferences"
-    static let subscription = "Privacy Pro"
+    static let subscriptionDeprecated = "Privacy Pro"
+    static func subscriptionName(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.general.name", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
+        }
+        return "Privacy Pro"
+    }
     static func purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: Bool) -> String {
         if isSubscriptionRebrandingOn {
             return NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")

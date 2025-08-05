@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Ara";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "VPN bağlantınızı görüntüleyin ve yönetin. Privacy Pro aboneliği gerektirir.";
+"widget.gallery.vpn.description" = "VPN bağlantınızı görüntüleyin ve yönetin. DuckDuckGo aboneliği gerektirir.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

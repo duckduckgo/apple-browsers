@@ -125,6 +125,18 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         autofillPopoverPresenter.popoverIsShown
     }
 
+    var isSaveCredentialsPopoverShown: Bool {
+        saveCredentialsPopover?.isShown ?? false
+    }
+
+    var isSaveIdentityPopoverShown: Bool {
+        saveIdentityPopover?.isShown ?? false
+    }
+
+    var isSavePaymentMethodPopoverShown: Bool {
+        savePaymentMethodPopover?.isShown ?? false
+    }
+
     @MainActor
     var isNetworkProtectionPopoverShown: Bool {
         networkProtectionPopoverManager.isShown
@@ -151,8 +163,14 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     func passwordManagementButtonPressed(_ button: MouseOverButton, withDelegate delegate: NSPopoverDelegate) {
-        if autofillPopoverPresenter.popoverIsShown == true && button.window == autofillPopoverPresenter.popoverPresentingWindow {
+        if isPasswordManagementPopoverShown && button.window == autofillPopoverPresenter.popoverPresentingWindow {
             autofillPopoverPresenter.dismiss()
+        } else if isSaveCredentialsPopoverShown && button.window == saveCredentialsPopover?.mainWindow {
+            saveCredentialsPopover?.viewController.onNotNowClicked(sender: button)
+        } else if isSaveIdentityPopoverShown && button.window == saveIdentityPopover?.mainWindow {
+            saveIdentityPopover?.viewController.onNotNowClicked(sender: button)
+        } else if isSavePaymentMethodPopoverShown && button.window == savePaymentMethodPopover?.mainWindow {
+            savePaymentMethodPopover?.viewController.onNotNowClicked(sender: button)
         } else {
             showPasswordManagementPopover(selectedCategory: nil, from: button, withDelegate: delegate, source: .shortcut)
         }

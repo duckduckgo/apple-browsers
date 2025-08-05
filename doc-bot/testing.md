@@ -9,6 +9,27 @@ keywords: ["testing", "unit tests", "XCTest", "mocks", "async testing", "UI test
 
 *This guide covers testing practices and patterns for the DuckDuckGo browser on iOS and macOS platforms.*
 
+## 🚨 MANDATORY: Testing Execution Rules
+
+### NEVER Run Tests Without Permission
+**NEVER execute any test commands without EXPLICIT user permission or unles user explicitly asked to in their prompt.**
+
+#### Required Testing Workflow:
+1. Write or modify test code as requested
+2. if user did not ask to run tests in their prompt, **STOP** before running any test commands:
+   - `swift test`
+   - `npm test` 
+   - `xcodebuild test`
+   - `fastlane test`
+   - Any other test execution commands
+3. **ASK** the user: "Should I run the tests?"
+4. **WAIT** for explicit permission (e.g., "yes", "run tests", "test it")
+5. Only then execute test commands
+
+**This rule applies to ALL test execution - unit tests, integration tests, UI tests, performance tests, etc.**
+
+---
+
 ## Future Improvements
 
 This guide is a living document. Consider these areas for future improvements:
@@ -505,6 +526,8 @@ BSK (BrowserServicesKit) tests are specialized for the shared browser services p
 log stream --debug --info --predicate 'process == "xctest"' --style syslog &
 swift test
 ```
+
+> ⚠️ **AI Assistant Note**: These commands are examples for manual execution only. Never run test commands automatically without explicit user permission.
 
 #### Enabling Private Data in Console App
 
@@ -1143,6 +1166,8 @@ xcodebuild -project macOS/DuckDuckGo.xcodeproj -scheme 'DuckDuckGo (macOS)' -con
 cd SharedPackages/BrowserServicesKit
 swift test --filter NavigationTests.DistributedNavigationDelegateTests.testWhenCustomHeadersAreSet_headersAreSent
 ```
+
+> ⚠️ **AI Assistant Note**: These commands are examples for manual execution only. Never run test commands automatically without explicit user permission.
 
 ### 3. Reproduce Flaky Tests
 Reduce timeouts to increase failure rate locally:

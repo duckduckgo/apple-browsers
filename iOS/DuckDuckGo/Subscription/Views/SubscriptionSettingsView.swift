@@ -484,10 +484,9 @@ struct SubscriptionSettingsViewV2: View {
             if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
                 SettingsCellView(label: UserText.subscriptionEditEmailButton,
                                  subtitle: email,
-                                 disclosureIndicator: true)
-                .onTapGesture {
-                    isShowingManageEmailView = true
-                }
+                                 action: { isShowingManageEmailView = true },
+                                 disclosureIndicator: true,
+                                 isButton: true)
             }
 
             SettingsCustomCell(content: {

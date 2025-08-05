@@ -217,8 +217,6 @@ extension AppDelegate {
         Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
     }
 
-#if FEEDBACK
-
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
@@ -370,8 +368,6 @@ extension AppDelegate {
     @objc func copyVersion(_ sender: Any?) {
         NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
     }
-
-#endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {
@@ -1513,10 +1509,8 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.openExportLogins(_:)):
             return areTherePasswords
 
-#if FEEDBACK
         case #selector(AppDelegate.openReportBrokenSite(_:)):
             return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
-#endif
         default:
             return true
         }

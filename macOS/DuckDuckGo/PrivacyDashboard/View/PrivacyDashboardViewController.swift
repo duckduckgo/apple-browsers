@@ -266,13 +266,13 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
-#if FEEDBACK
+
         if featureFlagger.isFeatureOn(.newFeedbackForm) {
             NSApp.delegateTyped.openReportABrowserProblem(nil)
         } else {
             NSApp.delegateTyped.openFeedback(nil)
         }
-#endif
+
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,

@@ -163,7 +163,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private func setupMenuItems() {
         addUpdateItem()
 
-#if FEEDBACK
         let feedbackString: String = {
             guard internalUserDecider.isInternalUser else {
                 return UserText.sendFeedback
@@ -179,8 +178,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
-
-#endif // FEEDBACK
 
 #if SPARKLE
         if let dockCustomizer = self.dockCustomizer {
@@ -804,8 +801,6 @@ final class FeedbackSubMenu: NSMenu {
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
-#if FEEDBACK
-
         if featureFlagger.isFeatureOn(.newFeedbackForm) {
             newFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
         } else {
@@ -827,7 +822,6 @@ final class FeedbackSubMenu: NSMenu {
             addItem(.separator())
             addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
-#endif
     }
 
     private func newFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
@@ -867,7 +861,6 @@ final class FeedbackSubMenu: NSMenu {
         addItem(reportBrokenSiteItem)
     }
 
-#if FEEDBACK
     @MainActor
     @objc private func sendFeedback(_ sender: Any?) {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
@@ -879,7 +872,6 @@ final class FeedbackSubMenu: NSMenu {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
         Application.appDelegate.openPProFeedback(sender)
     }
-#endif
 }
 
 final class ZoomSubMenu: NSMenu {
@@ -1143,11 +1135,8 @@ final class HelpSubMenu: NSMenu {
         let whatIsNew = (NSApp.mainMenuTyped.whatIsNewMenuItem.copy() as? NSMenuItem)!
         addItem(whatIsNew)
 #endif
-
-#if FEEDBACK
         let feedback = (NSApp.mainMenuTyped.sendFeedbackMenuItem.copy() as? NSMenuItem)!
         addItem(feedback)
-#endif
     }
 
     override func performActionForItem(at index: Int) {

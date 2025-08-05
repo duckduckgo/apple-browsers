@@ -34,11 +34,6 @@
         pattern: '^-?\\d+$',
         examples: ['-1009', '42'],
     },
-    errorDescription: {
-        key: 'de',
-        type: 'string',
-        description: 'NSError code description",
-    },
     underlyingErrorCode: {
         keyPattern: '^ue[0-9]$',
         type: 'string',

@@ -49,27 +49,32 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
     }
 
     func test_invalidSequence_startThenFinishNavigation_doesNotTriggerMitigation() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered")
+            expectation.fulfill()
         }
 
         detector.startNavigation()
         detector.finishNavigation()
         detector.appDidEnterBackground()
 
-        // Small delay to allow any async events to fire
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
 
     func test_invalidSequence_startThenLeaveApp_doesNotTriggerMitigation() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered")
+            expectation.fulfill()
         }
 
         detector.startNavigation()
         detector.appDidEnterBackground()
 
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
 
     func test_timeout_preventsMitigation() {
@@ -84,7 +89,11 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.startNavigation()
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         // Allow timeout to elapse
-        RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        let timeoutExpectation = self.expectation(description: "Timeout elapsed")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            timeoutExpectation.fulfill()
+        }
+        wait(for: [timeoutExpectation], timeout: 0.1)
         detector.appDidEnterBackground()
 
         wait(for: [expectation], timeout: 1.0)
@@ -118,27 +127,33 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
     // MARK: - Error Validation Tests
     
     func test_wrongErrorDomain_doesNotTriggerMitigation() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered for wrong error domain")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered for wrong error domain")
+            expectation.fulfill()
         }
         
         detector.startNavigation()
         detector.failNavigation(error: NSError(domain: "NSURLErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_wrongErrorCode_doesNotTriggerMitigation() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered for wrong error code")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered for wrong error code")
+            expectation.fulfill()
         }
         
         detector.startNavigation()
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 101))
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_correctWebKitError102_triggersMitigation() {
@@ -155,26 +170,32 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
     }
     
     func test_otherWebKitErrorCodes_doNotTriggerMitigation() {
+        let otherWebKitErrors = [100, 101, 103, 200, 404, 500]
+        
         detector.mitigationHandler = {
             XCTFail("Mitigation should not be triggered for other WebKit error codes")
         }
         
-        let otherWebKitErrors = [100, 101, 103, 200, 404, 500]
+        let expectation = self.expectation(description: "Mitigation should not be triggered for other WebKit error codes")
+        expectation.isInverted = true
         
         for errorCode in otherWebKitErrors {
             detector.startNavigation()
             detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: errorCode))
             detector.appDidEnterBackground()
-            
-            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
+        
+        wait(for: [expectation], timeout: 1.0)
     }
     
     // MARK: - User Interaction Invalidation Tests
     
     func test_userInteractionInvalidation_preventsDetection() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered after user interaction invalidation")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered after user interaction invalidation")
+            expectation.fulfill()
         }
         
         detector.startNavigation()
@@ -182,12 +203,15 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_userInteractionAfterStart_preventsDetection() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered when user interaction occurs after start")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered when user interaction occurs after start")
+            expectation.fulfill()
         }
 
         detector.invalidateForUserInitiated()
@@ -195,7 +219,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_userInteractionResetsState() {
@@ -214,8 +238,11 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
     }
     
     func test_userInteractionDuringFailedState_preventsDetection() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered when user interaction occurs during failed state")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered when user interaction occurs during failed state")
+            expectation.fulfill()
         }
         
         detector.startNavigation()
@@ -223,14 +250,17 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.invalidateForUserInitiated() // User interacts after failure but before background
         detector.appDidEnterBackground()
 
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     // MARK: - Edge Case Tests
     
     func test_multipleStartNavigations_resetsState() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered after multiple start navigations")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered after multiple start navigations")
+            expectation.fulfill()
         }
         
         detector.startNavigation()
@@ -238,17 +268,20 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_backgroundNotificationWithoutSequence_doesNotTriggerMitigation() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered by background notification alone")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered by background notification alone")
+            expectation.fulfill()
         }
         
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     func test_finishNavigationAfterStart_resetsState() {
@@ -270,8 +303,11 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
     }
     
     func test_errorThenFinishNavigation_resetsState() {
+        let expectation = self.expectation(description: "Mitigation should not be triggered when finish navigation comes after error")
+        expectation.isInverted = true
+        
         detector.mitigationHandler = {
-            XCTFail("Mitigation should not be triggered when finish navigation comes after error")
+            expectation.fulfill()
         }
         
         detector.startNavigation()
@@ -279,7 +315,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.finishNavigation() // This should reset the state
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        wait(for: [expectation], timeout: 0.5)
     }
     
     // MARK: - Timeout Edge Cases
@@ -293,10 +329,20 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         
         // Test timeout during startNavigation state
         shortTimeout.startNavigation()
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2)) // Exceed timeout
+        
+        let timeoutExpectation = self.expectation(description: "Timeout exceeded")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            timeoutExpectation.fulfill()
+        }
+        wait(for: [timeoutExpectation], timeout: 0.3)
+        
         shortTimeout.failNavigation(error: NSError(domain: "WebKitErrorDomain", code: 102))
         detector.appDidEnterBackground()
         
-        RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        let finalExpectation = self.expectation(description: "Final check completed")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            finalExpectation.fulfill()
+        }
+        wait(for: [finalExpectation], timeout: 0.2)
     }
 }

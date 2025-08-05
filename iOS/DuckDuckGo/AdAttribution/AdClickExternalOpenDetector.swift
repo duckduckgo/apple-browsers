@@ -22,7 +22,6 @@ import UIKit
 import os.log
 import Combine
 import WebKit
-
 extension Logger {
     static let adClickExternalOpenDetector = Logger(subsystem: "AdClickExternalOpenDetector", category: "")
 }
@@ -179,7 +178,7 @@ final class AdClickExternalOpenDetector {
     
     private func isRelevantWebKitError(_ error: Error) -> Bool {
         let nsError = error as NSError
-        return nsError.domain == "WebKitErrorDomain" && nsError.code == 102
+        return nsError.domain == WKError.WebKitErrorDomain && nsError.code == WKError.Code.frameLoadInterruptedByPolicyChange.rawValue
     }
     
     func reset() {

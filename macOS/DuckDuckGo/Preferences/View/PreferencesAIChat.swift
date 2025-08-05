@@ -50,7 +50,7 @@ extension Preferences {
                             VStack(alignment: .leading) {
                                 TextAndImageMenuItemHeader(UserText.aiChatTitle,
                                                            image: Image(nsImage: DesignSystemImages.Color.Size16.aiChatGradient),
-                                                           bottomPadding: 0)
+                                                           bottomPadding: 2)
                                 TextMenuItemCaption(UserText.aiChatDescription)
                             }
 
@@ -65,7 +65,8 @@ extension Preferences {
                         }
                     }
 
-                    PreferencePaneSection(UserText.aiChatVisibilitySectionTitle) {
+                    PreferencePaneSection(UserText.aiChatShortcutsSectionTitle,
+                                          spacing: 6) {
                         ToggleMenuItem(UserText.aiChatShowOnNewTabPageBarToggle,
                                        isOn: $model.showShortcutOnNewTabPage)
                         .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
@@ -114,7 +115,8 @@ extension Preferences {
                     }
                     .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
-                    PreferencePaneSection(UserText.aiChatOpenNewChatsSectionTitle) {
+                    PreferencePaneSection(UserText.aiChatOpenNewChatsSectionTitle,
+                                          spacing: 6) {
                         Picker(selection: $model.openAIChatInSidebar, content: {
                             Text(UserText.aiChatOpenInSidebarOption).tag(true)
                                 .padding(.bottom, 4).accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.inSidebar")
@@ -139,7 +141,7 @@ extension Preferences {
                         VStack(alignment: .leading) {
                             TextAndImageMenuItemHeader(UserText.searchAssistSettings,
                                                        image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
-                                                       bottomPadding: 0)
+                                                       bottomPadding: 2)
 
                             TextMenuItemCaption(UserText.searchAssistSettingsDescription)
                                 .padding(.bottom, 6)

@@ -22578,55 +22578,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai deaktivieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Disable Duck.ai"
+            "value" : "Disable Duck.ai..."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desactivar Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Désactiver Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Disabilita Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai uitschakelen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wyłącz Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desativar Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Отключить Duck.ai"
           }
         }
@@ -22998,55 +22998,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "In der Seitenleiste"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "In sidebar"
+            "value" : "Sidebar"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "En la barra lateral"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dans la barre latérale"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nella barra laterale"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "In zijbalk"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "W pasku bocznym"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Na barra lateral"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "На боковой панели"
           }
         }
@@ -23408,6 +23408,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть настройки Search Assist"
+          }
+        }
+      }
+    },
+    "duckai.shortcuts.section.title" : {
+      "comment" : "Section title for Duck.ai shortcuts settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Shortcuts"
           }
         }
       }
@@ -23834,7 +23846,7 @@
     },
     "duckai.visibility.section.title" : {
       "comment" : "Section title for Duck.ai visibility settings",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

@@ -471,12 +471,12 @@ struct UserText {
     static let aiChatTitle = NSLocalizedString("duckai.title", value: "Duck.ai", comment: "Title for Duck.ai feature")
     static let aiChatDescription = NSLocalizedString("duckai.description", value: "Chat privately with popular 3rd-party AI models", comment: "Description of Duck.ai feature in settings")
     static let aiChatEnableButton = NSLocalizedString("duckai.enable.button", value: "Enable Duck.ai", comment: "Button to enable Duck.ai feature")
-    static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai", comment: "Button to disable Duck.ai feature")
-    static let aiChatVisibilitySectionTitle = NSLocalizedString("duckai.visibility.section.title", value: "Visibility", comment: "Section title for Duck.ai visibility settings")
+    static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai...", comment: "Button to disable Duck.ai feature")
+    static let aiChatShortcutsSectionTitle = NSLocalizedString("duckai.shortcuts.section.title", value: "Duck.ai Shortcuts", comment: "Section title for Duck.ai shortcuts settings")
     static let aiChatShowInBrowserMenusToggle = NSLocalizedString("duckai.show-in-browser-menus.toggle", value: "Show in browser menus", comment: "Toggle for showing Duck.ai in browser menus")
     static let aiChatShowInAddressBarLabel = NSLocalizedString("duckai.show-in-address-bar.label", value: "Show in address bar", comment: "Label for showing Duck.ai in address bar")
     static let aiChatOpenNewChatsSectionTitle = NSLocalizedString("duckai.open-new-chats.section.title", value: "Open New Chats", comment: "Section title for Duck.ai new chat location settings")
-    static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "In sidebar", comment: "Option to open Duck.ai chats in sidebar")
+    static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "Sidebar", comment: "Option to open Duck.ai chats in sidebar")
     static let aiChatOpenInFullPageOption = NSLocalizedString("duckai.open-in-full-page.option", value: "Full page", comment: "Option to open Duck.ai chats in full page")
 
     // Duck.ai Disable Dialog

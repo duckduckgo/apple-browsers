@@ -353,9 +353,7 @@ struct ProblemDetailFormView: View {
                 text: option,
                 isSelected: viewModel.selectedOptions.contains(option)
             ) {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    viewModel.toggleOption(option)
-                }
+                viewModel.toggleOption(option)
             }
         }
         .padding([.leading, .trailing], 24)

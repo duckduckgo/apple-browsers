@@ -207,6 +207,7 @@ public final class KeychainManager {
             Logger.keychainManager.error("Failed to update keychain item: \(status.humanReadableDescription), adding data to writing queue")
             writingBacklog[key] = data
         default:
+            writingBacklog[key] = nil // Removing the data from the writing backlog if present
             Logger.keychainManager.error("SecItemUpdate failed with status: \(status.humanReadableDescription) for field: \(key)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)
         }

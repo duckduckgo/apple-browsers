@@ -702,6 +702,7 @@ struct SubscriptionSettingsViewV2: View {
                 }),
             isActive: $isShowingManageEmailView
         ) { EmptyView() }
+            .isDetailLink(false)
             .hidden()
 
         NavigationLink(
@@ -718,6 +719,7 @@ struct SubscriptionSettingsViewV2: View {
                 }),
             isActive: $isShowingActivationView
         ) { EmptyView() }
+            .isDetailLink(false)
             .hidden()
 
         NavigationLink(destination: SubscriptionGoogleView(),

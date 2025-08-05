@@ -106,7 +106,7 @@ extension Preferences {
     struct NewBadgeView: View {
         var body: some View {
             Text(UserText.newBadge.uppercased())
-                .font(.custom("SFProText-Bold", size: 11))
+                .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
                 .background(Color(designSystemColor: .alertYellow))

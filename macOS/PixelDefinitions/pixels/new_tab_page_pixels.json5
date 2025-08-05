@@ -51,11 +51,22 @@
         suffixes: [],
         parameters: [
             'pixelSource',
-            'osMajorVersion',
+            {
+                key: 'osMajorVersion',
+                type: 'string',
+                description: 'Operating system major version',
+            },
             'appVersion',
-            'device',
-            'loadingTime'
-        ]
-    }
-}
+            {
+                key: 'device',
+                type: 'string',
+                description: 'System-level identifier provided by macOS that describes the Mac hardware model family',
+            },
+            {
+                key: 'loadingTime',
+                type: 'number',
+                description: 'Loading time of the new tab page in milliseconds',
+            },
+        ],
+    },
 }

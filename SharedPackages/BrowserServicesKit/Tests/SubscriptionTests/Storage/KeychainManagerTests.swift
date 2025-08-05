@@ -459,7 +459,7 @@ final class KeychainManagerTests: XCTestCase {
 
         measure {
             for i in 0..<100 {
-                try! keychainManager.store(data: testData, forKey: "perf-key-\(i)")
+                XCTAssertNoThrow(try keychainManager.store(data: testData, forKey: "perf-key-\(i)"))
             }
         }
     }

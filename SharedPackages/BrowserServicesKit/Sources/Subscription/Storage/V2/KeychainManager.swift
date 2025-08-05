@@ -278,7 +278,7 @@ public final class KeychainManager {
             guard writingBacklog[key] != nil else {
                 continue
             }
-            
+
             do {
                 try internalStore(data: data, forKey: key)
                 processedSuccessfully += 1

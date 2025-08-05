@@ -995,6 +995,7 @@ final class BrowserTabViewController: NSViewController {
             if tabViewModel?.tabContent == .newtab {
                 newTabPageLoadMetrics.onNTPAlreadyPresented()
             }
+        }
     }
 
     func showTabContentForSettings(pane: PreferencePaneIdentifier?) {

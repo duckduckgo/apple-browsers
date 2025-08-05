@@ -33,6 +33,8 @@ final class NewTabPageViewModel: ObservableObject {
     private var introDataStorage: NewTabPageIntroDataStoring
     private let pixelFiring: PixelFiring.Type
 
+    @Published var canEditFavorites = true
+
     init(introDataStorage: NewTabPageIntroDataStoring = NewTabPageIntroDataUserDefaultsStorage(),
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.introDataStorage = introDataStorage

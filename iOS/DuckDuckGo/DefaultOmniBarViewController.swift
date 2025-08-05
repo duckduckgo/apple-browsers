@@ -144,6 +144,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingSmallTopSpacing = false
     }
 
+    override func endEditing() {
+        super.endEditing()
+        editingStateViewController?.dismissAnimated()
+    }
+
     var shouldClipShadows: Bool {
         state.isBrowsing
             && !isSuggestionTrayVisible

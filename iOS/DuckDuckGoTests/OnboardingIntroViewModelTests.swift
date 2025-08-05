@@ -19,11 +19,12 @@
 
 import XCTest
 import SystemSettingsPiPTutorialTestSupport
+import SetDefaultBrowserTestSupport
 @testable import DuckDuckGo
 
 @MainActor
 final class OnboardingIntroViewModelTests: XCTestCase {
-    private var defaultBrowserManagerMock: DefaultBrowserManagerMock!
+    private var defaultBrowserManagerMock: MockDefaultBrowserManager!
     private var contextualDaxDialogs: ContextualOnboardingLogicMock!
     private var pixelReporterMock: OnboardingPixelReporterMock!
     private var onboardingManagerMock: OnboardingManagerMock!
@@ -33,7 +34,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        defaultBrowserManagerMock = DefaultBrowserManagerMock()
+        defaultBrowserManagerMock = MockDefaultBrowserManager()
         contextualDaxDialogs = ContextualOnboardingLogicMock()
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()

@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "A jelentésed segít nekünk abban, hogy a DuckDuckGo mindenki számára jobb élményt nyújthasson!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "Bróker JSON:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Bróker: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Brókerek";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "A visszavonás egynél többször nem engedélyezett";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Jelszavak Safariból való exportálásának módja:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Fájl kiválasztása…";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Válaszd ki a Safariból vagy a Chrome-ból exportált jelszavakat tartalmazó fájlt. Ez általában egy ZIP- vagy CSV-fájl.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importálás kész!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Hitelkártyák";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Kihagyott duplikátumok";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Hibakeresés";
+
+/* No comment provided by engineer. */
+"Delete" = "Törlés";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "eszközön";
@@ -1311,6 +1329,30 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo iOS verzió";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "DuckDuckGo-előfizetésed hozzáadása ehhez az eszközhöz";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "E-mail-cím használatával add hozzá az előfizetésedet ehhez az eszközhöz.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Előfizetésed hozzáadása más eszközökhöz";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Add hozzá az előfizetésedet a többi eszközödön is az Apple-fiókon keresztül, vagy e-mail-cím társításával. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "A DuckDuckGo alkalmazásban hozzáadhatod az előfizetésedet a többi eszközödön ezen e-mail-cím használatával. Lépj a Beállítások > DuckDuckGo-előfizetés > Van előfizetésem menüpontra. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "A súgóoldalainkon választ kaphatsz a gyakran ismételt kérdésekre, vagy felveheted a kapcsolatot az előfizetési támogatást nyújtó ügyfélszolgálattal.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "A DuckDuckGo-előfizetés aktiválása asztali számítógépen a Personal Information Removal beállításához";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Ezen az eszközön többé nem férhetsz hozzá a DuckDuckGo-előfizetésedhez. Ez nem szünteti meg az előfizetésedet, amely a többi eszközödön aktív marad.";
 
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Mindig";
@@ -1948,6 +1990,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Összes lap megjelenítése";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Brókerek betöltése…";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "A DuckDuckGo Mac verziója gyors, böngészési funkciókban gazdag, és kategóriája legjobb adatvédelmi megoldásait kínálja.";
 
@@ -2036,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "VPN-minialkalmazás hozzáadása";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "A VPN-kapcsolat megszakadt, mert lejárt az előfizetésed. Fizess elő a Privacy Pro szolgáltatásra a DuckDuckGo VPN újracsatlakoztatásához.";
+"network.protection.entitlement.expired.notification.body" = "A VPN-kapcsolat megszakadt, mert lejárt az előfizetésed. Fizess elő a DuckDuckGóra, hogy újra csatlakozhass a VPN-hez.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "A DuckDuckGo VPN nem tudott csatlakozni. Próbálkozz újra később.";
@@ -2284,6 +2329,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Nyisd meg a „•••” jelzésű menüt, és válaszd a **Kedvenc hozzáadása** lehetőséget, hogy hozzáadhasd azt az új laphoz.";
 
+/* No comment provided by engineer. */
+"No results found" = "Nincs találat";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Kezelt sütik";
 
@@ -2298,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Privát keresés alapértelmezés szerint";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "A DuckDuckGo kínálatában %1$@ is szerepel, amelyhez %2$@ és fejlett, privát AI is tartozik.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "opcionális előfizetés";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Könnyen elérhető";
@@ -2377,6 +2437,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Értem! Kihagyom a többi tippet.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Próbáld ki ingyen!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "A DuckDuckGo kínálatában %2$@ mellett igénybe vehető biztonságos %1$@ is szerepel.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "opcionális előfizetés";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN és további két prémium védelem";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Minialkalmazás hozzáadása";
 
@@ -2409,6 +2481,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "A link megnyitásához szükséges alkalmazás nem található.";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Leiratkozás…";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nem tudok hozzáférni a csak előfizetőknek szóló Duck.ai modellekhez";
@@ -2593,6 +2668,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Adatvédelmi ikon";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Profiladatok";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Mégsem";
 
@@ -2606,6 +2684,9 @@
 "prompt.custom.url.scheme.title" = "Megnyitás másik alkalmazásban?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Rokonok: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Visszaállítás";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2694,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Találatok";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Keresés vagy cím megadása";
@@ -2647,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Rólunk";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Kínálatunkban szerepel továbbá a böngészőbe integrált három az egyben [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) szolgáltatás. A Privacy Pro előfizetői még nagyobb adatvédelmet élvezhetnek egy gyors és egyszerű [VPN-nel](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), melynek segítségével biztonságossá tehető az online tevékenység oly módon, hogy a szolgáltatás megkeresi és eltávolítja a személyek keresésére alkalmas webhelyeken elérhető személyes adatokat, illetve eltulajdonítás esetén visszaállítja a személyazonosságot.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Ezen felül böngészőnkbe integráltan kínáljuk a [DuckDuckGo-előfizetést](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/). Az előfizetők még nagyobb adatvédelmet élvezhetnek a következőknek köszönhetően: gyors és egyszerű [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), melynek segítségével biztonságossá tehető az online tevékenység; hozzáférés a fejlett MI-modellekhez (a privát MI-alapú csevegőszolgáltatásunkban, a Duck.ai-ban); egy szolgáltatás, amely felkutatja és eltávolítja a személyes adatokat a kereshető személyadatbázis-oldalakról; illetve egy másik szolgáltatás, amely segít helyreállítani a személyazonosságot annak ellopása esetén.";
+
 /* about tagline */
 "settings.about.tagline" = "Védelem. Adatvédelem. Nyugalom.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "A DuckDuckGo független online adatvédelmi cég azoknak kínál megoldást, akik vissza akarják venni a személyes adataik feletti irányítást.\n\nÚgy gondoljuk, hogy a legjobb módja annak, hogy megvédjük a személyes adataidat a hekkerektől, a csalóktól és az adatvédelmet sértő cégektől az, ha egyáltalán nem gyűjtjük őket. Emberek milliói ezért [választják a DuckDuckGót a Chrome és más böngészők helyett](ddgQuickLink://duckduckgo.com/compare-privacy) az online kereséshez és böngészéshez. Beépített keresőmotorunk olyan, mint a Google, de sosem követi a kereséseidet. Böngészési védelmeink, mint például a hirdetéskövetők és a sütik blokkolása, segítenek megakadályozni, hogy más cégek összegyűjtsék az adataidat. Ja, és a böngészőnk ingyenes – a bevételünket az [adatvédelmet tiszteletben tartó keresési hirdetésekből](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) szerezzük, nem az adataid kihasználásából. \n\n%@ \n\nVedd vissza az irányítást a személyes adataid felett az adatgyűjtés helyett adatvédelemre tervezett böngészővel.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Kisegítő lehetőségek";
@@ -2673,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-gyorsparancsok";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Keresési mező";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Keresés a weben vagy a Duck.ai megkérdezése közvetlenül a címsorból";
@@ -2748,6 +2835,9 @@
 
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo más platformokhoz";
+
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Lejárt a Privacy Pro-előfizetésed";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Tiltsd le az e-mail-nyomkövetőket, és rejtsd el a címedet anélkül, hogy e-mail-szolgáltatót váltanál.\n[További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2893,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Van előfizetésem";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Fizess elő újra, hogy tovább használhasd a Privacy Pro szolgáltatást";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Lejárt a Privacy Pro-előfizetésed";
 
@@ -2930,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "A Wi-Fi biztonságossá tétele, és a személyazonosság védelme";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "DuckDuckGo-előfizetés ingyenes kipróbálása";
+"settings.subscription.try.free.button" = "Ingyenes próba";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Próbáld ki a Privacy Prót ingyen";
@@ -3046,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Van előfizetésem";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Útmutató újraküldése";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Az előfizetés más eszközeiden való aktiválásához adj meg egy e-mail-címet. Ezt a címet csak az előfizetésed megerősítésére fogjuk használni.";
 
@@ -3063,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "A DuckDuckGo-alkalmazásban hozzáadhatod az előfizetésedet a többi eszközödön ezzel az e-mail-címmel. Ezt a Beállítások > Privacy Pro > Van előfizetésem menüpontban tudod megtenni. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "A Privacy Pro az ugyanabba az Apple-fiókba bejelentkezett minden eszközön elérhető.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Előfizetésed a Google Play áruházban lett megvásárolva. Az előfizetés megújításához nyisd meg a Google Play áruház előfizetési beállításait egy olyan eszközön, amely ugyanabba a Google-fiókba van bejelentkezve, amellyel eredetileg megvásároltad az előfizetést.";
@@ -3168,6 +3249,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Előfizetés visszaállítása…";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "A Privacy Pro mostantól egyszerűen DuckDuckGo-előfizetés néven fut";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Eltávolítás erről az eszközről";
@@ -3422,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Feliratkozás";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Fizess elő a Privacy Pro szolgáltatásra a DuckDuckGo VPN újracsatlakoztatásához.";
+"vpn.access-revoked.alert.message" = "Fizess elő a DuckDuckGóra, hogy újra csatlakozhass a VPN-hez.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "A VPN megszakadt, mert lejárt az előfizetésed";
@@ -3663,6 +3747,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Folytatás";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Hitelkártyák";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Jelszavak";

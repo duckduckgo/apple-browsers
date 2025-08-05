@@ -248,6 +248,7 @@ final class AddressBarViewController: NSViewController {
 
     override func viewWillDisappear() {
         cancellables.removeAll()
+        addressBarTextField.tabCollectionViewModel = nil
     }
 
     override func viewDidLayout() {

@@ -20,11 +20,22 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import PixelKit
 import Subscription
 import VPN
 
 extension VPNUpsellVisibilityManager {
+    enum Constants {
+        static let defaultBrowserPollingCount = 60
+        static let defaultBrowserPollingInterval = 1.0
+        static let timeIntervalBeforeShowingUpsell = 600.0
+        static let autoDismissDays = 7
+    }
+}
+
+extension VPNUpsellVisibilityManager {
     enum State: Equatable {
+        case uninitialized // Initial state, before setup is called
         case notEligible // User is not new, or already subscribed, or feature flag is off
         case dismissed // User has dismissed the upsell, or it has been auto-dismissed
         case waitingForConditions // 1st launch: waiting for the user to finish contextual onboarding and set default browser
@@ -37,41 +48,55 @@ extension VPNUpsellVisibilityManager {
 ///
 final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Output
-    @Published private(set) var state: State = .notEligible
+    @Published private(set) var state: State = .uninitialized
 
     // MARK: - Dependencies
     private let isFirstLaunch: Bool
     private let isNewUser: Bool
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    private let defaultBrowserPublisher: AnyPublisher<Bool, Never>
+    private let defaultBrowserProvider: DefaultBrowserProvider
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
     private let featureFlagger: FeatureFlagger
     private let timerDuration: TimeInterval
     private let autoDismissDays: Int
     private var persistor: VPNUpsellUserDefaultsPersisting
+    private let pixelHandler: (PrivacyProPixel) -> Void
 
     // MARK: - State
+    private let isDefaultBrowserSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
+    private var defaultBrowserPollingTimer: Timer?
     private var timer: Timer?
+    private var defaultBrowserPollingCount = 0
 
     init(isFirstLaunch: Bool,
          isNewUser: Bool,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         defaultBrowserPublisher: AnyPublisher<Bool, Never>,
+         defaultBrowserProvider: DefaultBrowserProvider,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
          featureFlagger: FeatureFlagger,
-         persistor: VPNUpsellUserDefaultsPersisting = VPNUpsellUserDefaultsPersistor(keyValueStore: UserDefaults.standard),
-         timerDuration: TimeInterval = 600,
-         autoDismissDays: Int = 7) {
+         persistor: VPNUpsellUserDefaultsPersisting,
+         timerDuration: TimeInterval = Constants.timeIntervalBeforeShowingUpsell,
+         autoDismissDays: Int = Constants.autoDismissDays,
+         pixelHandler: @escaping (PrivacyProPixel) -> Void = { PixelKit.fire($0) }) {
         self.isFirstLaunch = isFirstLaunch
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
-        self.defaultBrowserPublisher = defaultBrowserPublisher
+        self.defaultBrowserProvider = defaultBrowserProvider
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
         self.featureFlagger = featureFlagger
         self.timerDuration = timerDuration
         self.autoDismissDays = autoDismissDays
         self.persistor = persistor
+        self.pixelHandler = pixelHandler
+    }
+
+    public func setup(isFirstLaunch: Bool) {
+        guard state == .uninitialized else {
+            return
+        }
+
+        updateState(.notEligible)
 
         guard isUserEligible, isFeatureOn else {
             return
@@ -115,21 +140,25 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
+        let isDefaultBrowser = isDefaultBrowserSubject
+            .dropFirst()
+
         Publishers.CombineLatest(
             contextualOnboardingPublisher,
-            defaultBrowserPublisher
+            isDefaultBrowser
         )
         .receive(on: DispatchQueue.main)
         .sink { [weak self] onboardingDone, isDefault in
-            guard onboardingDone, isDefault else {
+            guard let self, onboardingDone, isDefault else {
                 return
             }
 
-            self?.startTimerIfNeeded()
+            self.startTimerIfNeeded()
         }
         .store(in: &cancellables)
 
         updateState(.waitingForConditions)
+        monitorDefaultBrowserChanges()
     }
 
     private func monitorSubscriptionChanges() {
@@ -164,6 +193,8 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
+        resetDefaultBrowserPolling()
+
         timer = Timer.scheduledTimer(withTimeInterval: timerDuration, repeats: false) { [weak self] _ in
             self?.handleTimerCompletion()
         }
@@ -188,7 +219,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         updateState(.notEligible)
     }
 
-    private func dismissUpsell() {
+    func dismissUpsell() {
         guard state == .visible else {
             return
         }
@@ -196,6 +227,50 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         persistor.vpnUpsellDismissed = true
 
         updateState(.dismissed)
+    }
+
+    // MARK: - Default Browser Polling
+
+    private func monitorDefaultBrowserChanges() {
+        guard state == .waitingForConditions else {
+            return
+        }
+        NotificationCenter.default.publisher(for: .defaultBrowserPromptPresented)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.defaultBrowserPromptPresented()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func defaultBrowserPromptPresented() {
+        guard state == .waitingForConditions else {
+            return
+        }
+        // Poll the default browser status for 60 seconds after the default browser prompt has been presented.
+        defaultBrowserPollingTimer = Timer.scheduledTimer(withTimeInterval: Constants.defaultBrowserPollingInterval, repeats: true) { [weak self] _ in
+            self?.handleDefaultBrowserPolling()
+        }
+    }
+
+    private func handleDefaultBrowserPolling() {
+        guard state == .waitingForConditions else {
+            return
+        }
+
+        guard defaultBrowserPollingCount < Constants.defaultBrowserPollingCount else {
+            resetDefaultBrowserPolling()
+            return
+        }
+
+        defaultBrowserPollingCount += 1
+        isDefaultBrowserSubject.send(defaultBrowserProvider.isDefault)
+    }
+
+    private func resetDefaultBrowserPolling() {
+        defaultBrowserPollingTimer?.invalidate()
+        defaultBrowserPollingTimer = nil
+        defaultBrowserPollingCount = 0
     }
 
     // MARK: - Upsell Visibility
@@ -211,10 +286,30 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
+        let previousState = state
         state = newState
+
+        // Fire pixel when transitioning to visible state
+        if previousState != .visible && newState == .visible {
+            pixelHandler(.privacyProToolbarButtonShown)
+        }
     }
 
     deinit {
         timer?.invalidate()
+        defaultBrowserPollingTimer?.invalidate()
+    }
+}
+
+// MARK: - Debug Menu
+/// These methods are triggered from the VPN Debug Menu (Debug > VPN > Upsell)
+/// They explicitly set the state, bypassing all eligibility checks.
+extension VPNUpsellVisibilityManager {
+    func makeVisible() {
+        state = .visible
+    }
+
+    func makeNotEligible() {
+        state = .notEligible
     }
 }

@@ -76,6 +76,10 @@ final class DBPService: NSObject {
     func onBackground() {
         dbpIOSManager?.scheduleBGProcessingTask()
     }
+
+    func resume() {
+        dbpIOSManager?.tryToFireWeeklyPixels()
+    }
 }
 
 final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {

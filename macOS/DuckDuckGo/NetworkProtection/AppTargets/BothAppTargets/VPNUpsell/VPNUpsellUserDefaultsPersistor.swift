@@ -22,6 +22,7 @@ import Persistence
 protocol VPNUpsellUserDefaultsPersisting {
     var vpnUpsellDismissed: Bool { get set }
     var vpnUpsellFirstPinnedDate: Date? { get set }
+    var expectedUpsellTimeInterval: TimeInterval { get set }
 }
 
 struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
@@ -29,27 +30,33 @@ struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
     enum Key: String {
         case vpnUpsellDismissed = "vpn.upsell.dismissed"
         case vpnUpsellFirstPinnedDate = "vpn.upsell.first-pinned-date"
+        case expectedUpsellTimeInterval = "vpn.upsell.expected.time.interval"
     }
 
-    private let keyValueStore: KeyValueStoring
+    private let keyValueStore: ThrowingKeyValueStoring
 
-    init(keyValueStore: KeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
     }
 
     var vpnUpsellDismissed: Bool {
-        get { keyValueStore.object(forKey: Key.vpnUpsellDismissed.rawValue) as? Bool ?? false }
-        set { keyValueStore.set(newValue, forKey: Key.vpnUpsellDismissed.rawValue) }
+        get { (try? keyValueStore.object(forKey: Key.vpnUpsellDismissed.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.vpnUpsellDismissed.rawValue) }
     }
 
     var vpnUpsellFirstPinnedDate: Date? {
-        get { keyValueStore.object(forKey: Key.vpnUpsellFirstPinnedDate.rawValue) as? Date }
+        get { try? keyValueStore.object(forKey: Key.vpnUpsellFirstPinnedDate.rawValue) as? Date }
         set {
             if let value = newValue {
-                keyValueStore.set(value, forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
+                try? keyValueStore.set(value, forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
             } else {
-                keyValueStore.removeObject(forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
+                try? keyValueStore.removeObject(forKey: Key.vpnUpsellFirstPinnedDate.rawValue)
             }
         }
+    }
+
+    var expectedUpsellTimeInterval: TimeInterval {
+        get { (try? keyValueStore.object(forKey: Key.expectedUpsellTimeInterval.rawValue) as? TimeInterval) ?? 10 * 60 }
+        set { try? keyValueStore.set(newValue, forKey: Key.expectedUpsellTimeInterval.rawValue) }
     }
 }

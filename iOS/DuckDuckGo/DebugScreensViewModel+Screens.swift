@@ -53,7 +53,7 @@ extension DebugScreensViewModel {
                     func dataGatheringStarted() {
                         ActionMessageView.present(message: "Data Gathering Started... please wait")
                     }
-                    
+
                     func dataGatheringComplete() {
                         ActionMessageView.present(message: "Data Gathering Complete")
                     }
@@ -138,6 +138,9 @@ extension DebugScreensViewModel {
                                             sync: d.syncService,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
+            }),
+            .controller(title: "Log Viewer", { d in
+                return LogViewerViewController(dependencies: d)
             }),
             .controller(title: "Configuration Refresh Info", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)

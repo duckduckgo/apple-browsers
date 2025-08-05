@@ -98,10 +98,6 @@ class TabSwitcherViewController: UIViewController {
         collectionView.indexPathsForSelectedItems ?? []
     }
 
-    var isJune2025LayoutChangeEnabled: Bool {
-        featureFlagger.isFeatureOn(.june2025TabManagerLayoutChanges)
-    }
-
     private(set) var bookmarksDatabase: CoreDataDatabase
     let syncService: DDGSyncing
 
@@ -126,8 +122,7 @@ class TabSwitcherViewController: UIViewController {
         tabManager.model
     }
 
-    /// Updated based on featureflag / killswitch in `viewDidLoad`
-    var barsHandler: TabSwitcherBarsStateHandling!
+    let barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
@@ -162,7 +157,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
-        let isBottomBar = isJune2025LayoutChangeEnabled && appSettings.currentAddressBarPosition.isBottom
+        let isBottomBar = appSettings.currentAddressBarPosition.isBottom
 
         // Potentially for these 3 we could do thing better for 'normal' on iPad
         let topOffset = -6.0
@@ -232,7 +227,6 @@ class TabSwitcherViewController: UIViewController {
         super.viewDidLoad()
 
         // These should only be done once
-        applyJune2025LayoutChanges()
         createTitleBar()
         setupBackgroundView()
         tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
@@ -248,11 +242,6 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
 
-    }
-
-    private func applyJune2025LayoutChanges() {
-        assert(barsHandler == nil)
-        barsHandler = isJune2025LayoutChangeEnabled ? DefaultTabSwitcherBarsStateHandler() : LegacyTabSwitcherBarsStateHandler()
     }
 
     private func setupBackgroundView() {
@@ -375,13 +364,13 @@ class TabSwitcherViewController: UIViewController {
         // Will be dismissed, so no need to process incoming updates
         canUpdateCollection = false
 
+        dismiss()
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
             tabManager.save()
             delegate?.tabSwitcher(self, didSelectTab: tab)
         }
-        dismiss()
     }
 
     @IBAction func onFirePressed(sender: AnyObject) {

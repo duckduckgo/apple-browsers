@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Twoje zgłoszenie pomoże ulepszyć DuckDuckGo u wszystkich użytkowników!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "Broker JSON:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Broker: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Brokerzy";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anulowanie nie jest dozwolone więcej niż jeden raz";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Jak wyeksportować hasła z Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Wybierz plik...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Wybierz plik zawierający hasła wyeksportowane z przeglądarki Safari lub Chrome. Zwykle jest to plik ZIP lub CSV.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import zakończony!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Karty kredytowe";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Pominięte duplikaty";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Debugowanie";
+
+/* No comment provided by engineer. */
+"Delete" = "Usuń";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "tym urządzeniu";
@@ -1311,6 +1329,30 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo dla systemu iOS";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Dodaj subskrypcję DuckDuckGo do tego urządzenia";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Użyj adresu e-mail, aby dodać subskrypcję do tego urządzenia.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Dodaj subskrypcję do innych urządzeń";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Dodaj subskrypcję do innych urządzeń za pośrednictwem konta Apple ID lub połączenia adresu e-mail. **[Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Użyj tego adresu e-mail, aby dodać subskrypcję na innych urządzeniach w aplikacji DuckDuckGo. Wybierz kolejno Ustawienia > Subskrypcja DuckDuckGo > Mam subskrypcję. **[Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Uzyskaj odpowiedzi na często zadawane pytania lub skontaktuj się z pomocą techniczną ds. subskrypcji na naszych stronach pomocy.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Aktywuj subskrypcję DuckDuckGo na komputerze, aby skonfigurować usługę Personal Information Removal";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Nie będziesz już mieć dostępu do subskrypcji DuckDuckGo na tym urządzeniu. Nie spowoduje to anulowania Twojej subskrypcji, która pozostanie aktywna na pozostałych urządzeniach.";
 
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Zawsze";
@@ -1948,6 +1990,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Pokaż wszystkie karty";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Ładowanie brokerów…";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "Aplikacja DuckDuckGo dla komputerów Mac zapewnia szybkość, której potrzebujesz, i niezbędne funkcje przeglądania. Ponadto jest wyposażona w najlepsze w swojej klasie narzędzia do ochrony prywatności.";
 
@@ -2036,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Dodaj widżet VPN";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "Sieć VPN została rozłączona z powodu wygasłej subskrypcji. Subskrybuj Privacy Pro, aby ponownie połączyć się z siecią DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "Sieć VPN została rozłączona z powodu wygasłej subskrypcji. Subskrybuj DuckDuckGo, aby ponownie połączyć się z siecią VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Nie udało się nawiązać połączenia DuckDuckGo VPN. Spróbuj ponownie później.";
@@ -2284,6 +2329,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "W dowolnej witrynie otwórz menu ••• i wybierz **Dodaj ulubione**, aby dodać je do strony nowej karty.";
 
+/* No comment provided by engineer. */
+"No results found" = "Nie znaleziono wyników";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Zarządzane pliki cookie";
 
@@ -2298,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Domyślnie szukaj prywatnie";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo oferuje również 1$@ dostępną wraz z %2$@ i zaawansowaną, prywatną sztuczną inteligencją.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "opcjonalna płatna subskrypcja";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Łatwy dostęp";
@@ -2377,6 +2437,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Rozumiem! Pominę pozostałe wskazówki.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Wypróbuj bezpłatnie!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo ma także bezpieczną sieć %1$@ dostępne w ramach %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "opcjonalna płatna subskrypcja";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 dodatkowe zabezpieczenia premium";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Dodaj widżet";
 
@@ -2409,6 +2481,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Nie można znaleźć aplikacji wymaganej do otwarcia tego linku";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Rezygnacja...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Nie można uzyskać dostępu do modeli Duck.ai dostępnych wyłącznie dla subskrybentów";
@@ -2593,6 +2668,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Ikona prywatności";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Informacje o profilu";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Anuluj";
 
@@ -2606,6 +2684,9 @@
 "prompt.custom.url.scheme.title" = "Otworzyć w innej aplikacji?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Krewni: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Resetowanie";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2694,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Wyniki";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Wyszukaj lub wprowadź adres";
@@ -2647,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Informacje";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Dodatkowo oferujemy [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), zintegrowaną z przeglądarką usługę subskrypcji obejmującą trzy produkty. Subskrybenci Privacy Pro otrzymują jeszcze większą ochronę prywatności dzięki szybkiej i prostej sieci [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), która pomaga zabezpieczyć aktywność w Internecie, usłudze, która wyszukuje i usuwa dane osobowe użytkownika z witryn wyszukiwania osób oraz usłudze, która przywraca tożsamość w przypadku jej kradzieży.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Ponadto oferujemy również [subskrypcję DuckDuckGo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) zintegrowaną z przeglądarką. Subskrybenci otrzymują jeszcze większą ochronę prywatności dzięki szybkiej i prostej w obsłudze sieci [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), która pomaga zabezpieczyć aktywność w Internecie, zapewnia dostęp do zaawansowanych modeli sztucznej inteligencji w prywatnej usłudze czatu AI Duck.ai, usłudze, która wyszukuje i usuwa dane osobowe użytkownika z witryn wyszukiwania osób oraz usłudze, która przywraca tożsamość w przypadku jej kradzieży.";
+
 /* about tagline */
 "settings.about.tagline" = "Ochrona. Prywatność. Spokój.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo to niezależna firma oferująca ochronę w Internecie użytkownikom, którzy chcą odzyskać kontrolę nad swoimi danymi osobowymi.\n\nWierzymy, że najlepszym sposobem ochrony Twoich danych osobowych przed hakerami, oszustami i firmami naruszającymi prywatność jest zapobieganie ich gromadzeniu. Dlatego miliony ludzi [wybierają DuckDuckGo zamiast Chrome i innych przeglądarek](ddgQuickLink://duckduckgo.com/compare-privacy) do wyszukiwania i przeglądania online. Nasza wbudowana wyszukiwarka jest jak Google, ale nigdy nie śledzi Twoich wyszukiwań. Nasze zabezpieczenia przeglądania, takie jak blokowanie mechanizmów śledzących reklam i blokowanie plików cookie, pomagają powstrzymać inne firmy przed gromadzeniem Twoich danych. Nasza przeglądarka jest bezpłatna — zarabiamy na [reklamach szanujących prywatność](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), a nie na wykorzystywaniu danych użytkowników. \n\n%@ \n\nOdzyskaj kontrolę nad swoimi danymi osobowymi dzięki przeglądarce zaprojektowanej do ochrony danych, a nie ich gromadzenia.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Dostępność";
@@ -2673,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Skróty Duck.ai";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Pole wyszukiwania";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Wyszukaj w Internecie lub zapytaj Duck.ai bezpośrednio z paska adresu";
@@ -2748,6 +2835,9 @@
 
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na innych platformach";
+
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Twoja subskrypcja Privacy Pro wygasła";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Zablokuj mechanizmy śledzące pocztę e-mail i ukryj swój adres bez zmiany dostawcy poczty e-mail.\n[Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2893,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Mam subskrypcję";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Wznów subskrypcję, aby nadal korzystać z Privacy Pro";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Twoja subskrypcja Privacy Pro wygasła";
 
@@ -2930,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Zabezpiecz swoje Wi-Fi i chroń tożsamość";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "Wypróbuj subskrypcję DuckDuckGo za darmo";
+"settings.subscription.try.free.button" = "Wypróbuj za darmo";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Wypróbuj Privacy Pro bezpłatnie";
@@ -3046,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Mam subskrypcję";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Wyślij ponownie instrukcje";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Dodaj adres e-mail, aby aktywować subskrypcję na innych urządzeniach. Użyjemy tego adresu w celu zweryfikowania Twojej subskrypcji.";
 
@@ -3063,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Użyj tego adresu e-mail, aby dodać subskrypcję na innych urządzeniach w aplikacji DuckDuckGo. Wybierz kolejno Ustawienia > Privacy Pro > Mam subskrypcję. **[Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Subskrypcja Privacy Pro jest dostępna na każdym urządzeniu zalogowanym na to samo konto Apple.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Twoja subskrypcja została zakupiona za pośrednictwem sklepu Google Play. Aby odnowić subskrypcję, otwórz ustawienia subskrypcji w sklepie Google Play na urządzeniu zalogowanym na konto Google wykorzystane do zakupu subskrypcji.";
@@ -3168,6 +3249,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Przywracanie subskrypcji...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Pro jest teraz po prostu nazywane subskrypcją DuckDuckGo";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Usuń z tego urządzenia";
@@ -3422,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Subskrybuj";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Subskrybuj Privacy Pro, aby ponownie połączyć się z siecią DuckDuckGo VPN.";
+"vpn.access-revoked.alert.message" = "Subskrybuj DuckDuckGo, aby ponownie połączyć się z siecią VPN.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "Sieć VPN została rozłączona z powodu wygasłej subskrypcji";
@@ -3663,6 +3747,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Kontynuuj";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Karty kredytowe";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Hasła";

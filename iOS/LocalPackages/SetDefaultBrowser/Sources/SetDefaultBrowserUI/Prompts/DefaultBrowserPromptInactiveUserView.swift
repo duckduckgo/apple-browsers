@@ -40,6 +40,12 @@ struct DefaultBrowserPromptInactiveUserView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background(background.ignoresSafeArea())
+        .overlay(alignment: .topLeading) {
+            DismissButton(action: closeAction)
+                .padding(.top, Metrics.DismissButton.closeButtonTopPadding)
+                .padding(.leading, Metrics.DismissButton.horizontalPadding)
+        }
+
     }
 
     @ViewBuilder
@@ -72,11 +78,6 @@ struct DefaultBrowserPromptInactiveUserView: View {
         .frame(maxWidth: Metrics.Content.maxWidth, alignment: .bottom)
         .cornerRadius(Metrics.Content.cornerRadius)
         .padding(.horizontal, Metrics.Content.outerHorizontalPadding)
-        .overlay(alignment: .topTrailing) {
-            DismissButton(action: closeAction)
-                .alignmentGuide(.trailing) { $0.width }
-                .alignmentGuide(.top) { $0.height / 2 - Metrics.PlusMoreButton.padding }
-        }
         .padding(.bottom, Metrics.Content.bottomPadding)
         .padding(.top, Metrics.Content.topPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
     }
@@ -86,7 +87,7 @@ struct PlusMoreButton: View {
 
     var body: some View {
         Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
-            .font(.system(size: Metrics.Content.moreProtectionsFontSize))
+            .font(.system(size: Metrics.PlusMoreButton.moreProtectionsFontSize))
             .underline(true)
             .multilineTextAlignment(.leading)
             .lineLimit(2)
@@ -105,25 +106,11 @@ struct DismissButton: View {
             Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                 .foregroundColor(.primary)
                 .padding(Metrics.PlusMoreButton.padding)
-                .background(Color(designSystemColor: .surface))
-                .clipShape(Circle())
+                .background(Color(designSystemColor: .textSelectionFill))
+                .clipShape(RoundedRectangle(cornerRadius: Metrics.DismissButton.cornerRadius))
         }
         .buttonStyle(.plain)
-        .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
-        .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
-        .shadow(color: Color(red: 0.1, green: 0.16, blue: 0.3).opacity(0.08), radius: 1, x: 0, y: 1)
-        .frame(width: 44, height: 44)
-    }
-
-    private var backgroundColor: Color {
-        switch colorScheme {
-        case .light:
-            Color(red: 0.98, green: 0.98, blue: 0.98)
-        case .dark:
-            Color(red: 0.27, green: 0.27, blue: 0.27)
-        @unknown default:
-            Color(red: 0.98, green: 0.98, blue: 0.98)
-        }
+        .frame(width: Metrics.DismissButton.size, height: Metrics.DismissButton.size)
     }
 }
 
@@ -160,7 +147,6 @@ private enum Metrics {
         static let cornerRadius: CGFloat = 24
         static let sectionsSpacing: CGFloat = 0
         static let innerSectionsVerticalSpacing = MetricBuilder(default: 24.0).iPhoneSmallScreen(16.0)
-        static let moreProtectionsFontSize: CGFloat = 15
     }
 
     enum Chart {
@@ -169,7 +155,16 @@ private enum Metrics {
 
     enum PlusMoreButton {
         static let height: CGFloat = 48.0
-        static let padding: CGFloat = 8.0
+        static let padding: CGFloat = 12.0
+        static let moreProtectionsFontSize: CGFloat = 15
+    }
+
+    @MainActor
+    enum DismissButton {
+        static let closeButtonTopPadding: CGFloat = MetricBuilder(iPhone: 30.0, iPad: 60.0).build()
+        static let size: CGFloat = 44.0
+        static let horizontalPadding =  MetricBuilder(iPhone: 16.0, iPad: 24.0).build()
+        static let cornerRadius: CGFloat = 12
     }
 
     enum Footer {

@@ -19,7 +19,6 @@
 
 import XCTest
 import SwiftUI
-import PrivacyDashboard
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterTests: XCTestCase {
@@ -27,7 +26,7 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
 
     override func setUpWithError() throws {
         throw XCTSkip("Tests involving controllers. Sometimes they fail on CI. Disabling them for now")
-        contextualDaxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: MockContextualOnboardingLogic(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
+        contextualDaxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
         try super.setUpWithError()
     }
 
@@ -176,57 +175,5 @@ final class DaxContextualOnboardingControllerMock: UIViewController {
         didCallRemoveFromParent = true
         removeFromParentExpectation?.fulfill()
     }
-
-}
-
-final class MockContextualOnboardingLogic: ContextualOnboardingLogic {
-
-    var isShowingFireDialog: Bool = false
-
-    var shouldShowPrivacyButtonPulse: Bool = false
-
-    var isShowingSearchSuggestions: Bool = false
-
-    var isShowingSitesSuggestions: Bool = false
-
-    var shouldShowFireButtonPulse: Bool = false
-
-    var isAddFavoriteFlow: Bool = false
-
-    func setTryAnonymousSearchMessageSeen() {}
-
-    func setTryVisitSiteMessageSeen() {}
-
-    func setSearchMessageSeen() {}
-
-    func setFireEducationMessageSeen() {}
-
-    func clearedBrowserData() {}
-
-    func setFinalOnboardingDialogSeen() {}
-
-    func setPrivacyButtonPulseSeen() {}
-
-    func setDaxDialogDismiss() {}
-
-    func enableAddFavoriteFlow() {}
-
-    func isStillOnboarding() -> Bool {
-        false
-    }
-
-    func fireButtonPulseCancelled() {}
-
-    func resumeRegularFlow() {}
-
-    func clearHeldURLData() {}
-
-    func fireButtonPulseStarted() {}
-
-    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyDashboard.PrivacyInfo) -> DuckDuckGo.DaxDialogs.BrowsingSpec? {
-        nil
-    }
-
-    func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {}
 
 }

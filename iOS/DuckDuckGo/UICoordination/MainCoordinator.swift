@@ -80,7 +80,7 @@ final class MainCoordinator {
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter,
-                                                          isStillOnboarding: { [daxDialogsManager] in daxDialogsManager.isStillOnboarding() })
+                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let historyManager = try Self.makeHistoryManager()
         let tabsPersistence = try TabsModelPersistence()

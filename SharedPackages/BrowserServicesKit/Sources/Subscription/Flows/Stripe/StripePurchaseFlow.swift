@@ -91,9 +91,9 @@ public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
             case .success(let response):
                 token = response.authToken
                 accountManager.storeAuthToken(token: token)
-            case .failure:
+            case .failure(let error):
                 Logger.subscription.error("[StripePurchaseFlow] Error: accountCreationFailed")
-                return .failure(.accountCreationFailed)
+                return .failure(.accountCreationFailed(error))
             }
         }
 

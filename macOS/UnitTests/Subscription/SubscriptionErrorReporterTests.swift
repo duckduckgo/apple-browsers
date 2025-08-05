@@ -67,7 +67,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForPurchaseFailedError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .purchaseFailed
+        let errorToBeHandled: SubscriptionError = .purchaseFailed(NSError(domain: "error", code: 1))
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)
@@ -159,7 +159,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForAccountCreationFailedError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .accountCreationFailed
+        let errorToBeHandled: SubscriptionError = .accountCreationFailed(NSError(domain: "error", code: 1))
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)

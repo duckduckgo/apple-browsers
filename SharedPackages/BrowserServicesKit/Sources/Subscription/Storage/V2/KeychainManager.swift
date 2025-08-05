@@ -99,10 +99,6 @@ public final class KeychainManager {
             let status = keychainOperations.copyMatching(query as CFDictionary, &item)
 
             if status == errSecSuccess {
-
-                // In case of success, we know the keychain is available. This should be relevant only in the SystemExtension where we can't rely of notifications for triggering a backlog writing.
-                self.processWritingBacklog()
-
                 if let existingItem = item as? Data {
                     return existingItem
                 } else {
@@ -127,37 +123,7 @@ public final class KeychainManager {
     /// - Throws: `AccountKeychainAccessError` if storage fails
     public func store(data: Data, forKey key: String) throws {
         try accessQueue.sync {
-
-            var query = attributes
-            query[kSecAttrService] = key
-            query[kSecAttrAccessible] = Constants.keychainAccessibilityLevel
-            query[kSecValueData] = data
-
-            let status = keychainOperations.add(query as CFDictionary, nil)
-
-            switch status {
-            case errSecSuccess:
-                writingBacklog[key] = nil // Removing the data from the writing backlog if present
-
-                // In case of success, we know the keychain is available. This should be relevant only in the SystemExtension where we can't rely of notifications for triggering a backlog writing.
-                self.processWritingBacklog()
-
-                Logger.keychainManager.debug("Successfully added keychain item for \(key)")
-                return
-            case errSecDuplicateItem:
-                Logger.keychainManager.debug("Keychain item exists, updating for \(key)")
-                let updateStatus = updateData(data, forKey: key)
-                guard updateStatus == errSecSuccess else {
-                    throw AccountKeychainAccessError.keychainSaveFailure(updateStatus)
-                }
-            case errSecNotAvailable:
-                Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription), adding data to writing queue")
-                writingBacklog[key] = data
-            default:
-                writingBacklog[key] = nil // Removing the data from the writing backlog if present
-                Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription)")
-                throw AccountKeychainAccessError.keychainSaveFailure(status)
-            }
+            try internalStore(data: data, forKey: key)
         }
     }
 
@@ -189,6 +155,35 @@ public final class KeychainManager {
     }
 
     // MARK: - Private Helpers
+
+    private func internalStore(data: Data, forKey key: String) throws {
+        var query = attributes
+        query[kSecAttrService] = key
+        query[kSecAttrAccessible] = Constants.keychainAccessibilityLevel
+        query[kSecValueData] = data
+
+        let status = keychainOperations.add(query as CFDictionary, nil)
+
+        switch status {
+        case errSecSuccess:
+            writingBacklog[key] = nil // Removing the data from the writing backlog if present
+            Logger.keychainManager.debug("Successfully added keychain item for \(key)")
+            return
+        case errSecDuplicateItem:
+            Logger.keychainManager.debug("Keychain item exists, updating for \(key)")
+            let updateStatus = updateData(data, forKey: key)
+            guard updateStatus == errSecSuccess else {
+                throw AccountKeychainAccessError.keychainSaveFailure(updateStatus)
+            }
+        case errSecNotAvailable:
+            Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription), adding data to writing queue")
+            writingBacklog[key] = data
+        default:
+            writingBacklog[key] = nil // Removing the data from the writing backlog if present
+            Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription)")
+            throw AccountKeychainAccessError.keychainSaveFailure(status)
+        }
+    }
 
     /// Updates existing keychain data for the specified key.
     /// 
@@ -279,7 +274,7 @@ public final class KeychainManager {
 
         for (key, data) in backlogCopy {
             do {
-                try store(data: data, forKey: key)
+                try internalStore(data: data, forKey: key)
                 processedSuccessfully += 1
                 Logger.keychainManager.debug("Successfully processed backlog item for key: \(key)")
             } catch {

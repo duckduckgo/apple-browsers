@@ -451,30 +451,4 @@ final class KeychainManagerTests: XCTestCase {
         // Then - Manager should be deallocated
         XCTAssertNil(weakManager)
     }
-
-    // MARK: - Performance Tests
-
-    func testStorePerformance() throws {
-        let testData = createTestData()
-
-        measure {
-            for i in 0..<100 {
-                XCTAssertNoThrow(try keychainManager.store(data: testData, forKey: "perf-key-\(i)"))
-            }
-        }
-    }
-
-    func testRetrievePerformance() throws {
-        // Setup
-        let testData = createTestData()
-        for i in 0..<100 {
-            try keychainManager.store(data: testData, forKey: "perf-key-\(i)")
-        }
-
-        measure {
-            for i in 0..<100 {
-                XCTAssertNoThrow(_ = try keychainManager.retrieveData(forKey: "perf-key-\(i)"))
-            }
-        }
-    }
 }

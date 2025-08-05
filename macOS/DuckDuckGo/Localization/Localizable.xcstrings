@@ -22698,55 +22698,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai ist von Natur aus privat. Chats werden von uns anonymisiert und niemals zum Trainieren von KI verwendet.\n\n Wenn du Duck.ai deaktivierst, wird der Zugriff über die neue Registerkarte, die Adressleiste und die Browser-Menüs entfernt. Du kannst es jederzeit wieder aktivieren."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\n Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.You can re-enable it at any time."
+            "value" : "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\nDisabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.\n\nYou can re-enable it at any time."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai es privada por naturaleza. Anonimizamos los chats y nunca los usamos para entrenar la IA.\n\n Al desactivar Duck.ai, se eliminará el acceso desde la página de nueva pestaña, la barra de direcciones y los menús del navegador. Puedes volver a activarlo en cualquier momento."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "De par sa conception, Duck.ai est privé. Les discussions sont anonymisées par nos soins et ne sont jamais utilisées pour entraîner l'IA.\n\n La désactivation de Duck.ai supprimera l'accès à partir de la nouvelle page d'onglet, de la barre d'adresse et des menus du navigateur. Vous pouvez le réactiver à tout moment."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai è privato sin dalla progettazione. Le chat vengono rese anonime da noi e non vengono mai utilizzate per addestrare l'IA.\n\n Disattivando Duck.ai, non potrai più usarlo dalla pagina Nuova scheda, dalla barra degli indirizzi e dai menu del browser. Puoi riattivarlo quando vuoi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy staat voorop met Duck.ai. Chats worden door ons geanonimiseerd en worden nooit gebruikt om AI te trainen.\n\n Als je Duck.ai uitschakelt, wordt de toegang vanaf een nieuw tabblad, de adresbalk en de browsermenu's verwijderd. Je kunt de functie op ieder moment weer inschakelen."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Funkcja Duck.ai została zaprojektowana z myślą o prywatności. Czaty są przez nas anonimizowane i nigdy nie są wykorzystywane do trenowania sztucznej inteligencji.\n\n Wyłączenie Duck.ai spowoduje usunięcie dostępu ze strony nowej karty, paska adresu i menu przeglądarki. Możesz ponownie włączyć tę funkcję w dowolnym momencie."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "O Duck.ai foi criado a pensar na privacidade. As conversas são anonimizadas por nós e nunca utilizadas para treinar a IA.\n\n Desativar o Duck.ai remove o acesso da página Novo separador, da barra de endereços e dos menus do navegador. Podes reativá-lo a qualquer momento."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "В основу Duck.ai заложена конфиденциальность. Все чаты — анонимны и никогда не используются для обучения ИИ. Отключение Duck.ai приведет к его удалению со страницы новой вкладки, из адресной строки и меню браузера. Можно снова включить его в любое время."
           }
         }

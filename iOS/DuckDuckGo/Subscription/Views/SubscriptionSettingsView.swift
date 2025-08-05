@@ -694,7 +694,9 @@ struct SubscriptionSettingsViewV2: View {
         if viewModel.showRebrandingMessage {
             HStack(alignment: .top) {
                 Text(UserText.subscriptionRebrandingMessage)
-                    .font(.headline)
+                    .font(
+                        Font(uiFont: UIFont.daxSubheadSemibold())
+                    )
                 Spacer()
                 Button(action: {
                     viewModel.dismissRebrandingMessage()
@@ -703,6 +705,7 @@ struct SubscriptionSettingsViewV2: View {
                         .foregroundColor(.secondary)
                 }
             }
+            .padding(.vertical, 2)
         }
     }
 

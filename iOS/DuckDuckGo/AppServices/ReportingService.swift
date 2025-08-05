@@ -60,17 +60,13 @@ final class ReportingService {
     }
 
     private func onStatisticsLoaded() {
-        fireAppLaunchPixel()
+        Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
         reportAdAttribution()
-        reportWidgetUsageAsync()
+        reportWidgetUsage()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
     }
 
-    private func fireAppLaunchPixel() {
-        Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
-    }
-
-    private func reportWidgetUsageAsync() {
+    private func reportWidgetUsage() {
         guard featureFlagging.isFeatureOn(.widgetReporting) else { return }
 
         Task {

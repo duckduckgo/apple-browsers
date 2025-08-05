@@ -39,7 +39,6 @@ struct SubscriptionSettingsView: View {
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
-
     @State var isShowingStripeView = false
     @State var isShowingGoogleView = false
     @State var isShowingRemovalNotice = false
@@ -123,7 +122,7 @@ struct SubscriptionSettingsView: View {
                     .foregroundColor(Color.init(designSystemColor: .accent)) },
                                    disclosureIndicator: false)
             }.isDetailLink(false)
-        }
+        }.listRowBackground(Color(designSystemColor: .surface))
     }
 
     private var devicesSectionFooter: some View {

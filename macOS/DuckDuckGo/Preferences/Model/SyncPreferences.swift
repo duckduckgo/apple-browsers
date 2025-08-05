@@ -424,6 +424,9 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         }
 
         onEndFlow = { [weak self] in
+            self?.connector?.stopPolling()
+            self?.connector = nil
+
             Task { @MainActor in
                 await self?.connectionController.cancel()
                 guard let window = syncWindowController.window, let sheetParent = window.sheetParent else {
@@ -461,6 +464,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private let syncCredentialsAdapter: SyncCredentialsAdapter
     private let appearancePreferences: AppearancePreferences
     private var cancellables = Set<AnyCancellable>()
+    private var connector: RemoteConnecting?
     private let userAuthenticator: UserAuthenticating
     private var syncPromoSource: String?
 }
@@ -595,6 +599,11 @@ extension SyncPreferences: ManagementDialogModelDelegate {
                 }
             }
         }
+    }
+
+    func stopPollingForRecoveryKey() {
+        self.connector?.stopPolling()
+        self.connector = nil
     }
 
     func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool, codeSource: SyncCodeSource) {

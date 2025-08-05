@@ -473,7 +473,7 @@ final class KeychainManagerTests: XCTestCase {
 
         measure {
             for i in 0..<100 {
-                _ = try! keychainManager.retrieveData(forKey: "perf-key-\(i)")
+                XCTAssertNoThrow(_ = try keychainManager.retrieveData(forKey: "perf-key-\(i)"))
             }
         }
     }

@@ -40,7 +40,7 @@ struct LogMonitorToolbarView: View {
                 Button("Clear") {
                     onClear()
                 }
-                .disabled(isMonitoring)
+                .disabled(logCount > 0)
             }
 
             Divider()
@@ -121,11 +121,7 @@ struct LogFilterControlsView: View {
                     .font(.caption)
                     .fontWeight(.medium)
 
-                ForEach([OSLogEntryLog.Level.debug,
-                         OSLogEntryLog.Level.info,
-                         OSLogEntryLog.Level.notice,
-                         OSLogEntryLog.Level.error,
-                         OSLogEntryLog.Level.fault], id: \.self) { level in
+                ForEach(OSLogEntryLog.Level.allPirSupportedLevels, id: \.self) { level in
 
                     Toggle(level.description, isOn: Binding(
                         get: { filterSettings.logLevels.contains(level) },
@@ -153,7 +149,15 @@ struct LogFilterControlsView: View {
     }
 }
 
-fileprivate extension OSLogEntryLog.Level {
+extension OSLogEntryLog.Level {
+    public static var allPirSupportedLevels: [OSLogEntryLog.Level] {
+        [OSLogEntryLog.Level.debug,
+         OSLogEntryLog.Level.info,
+         OSLogEntryLog.Level.notice,
+         OSLogEntryLog.Level.error,
+         OSLogEntryLog.Level.fault]
+    }
+
     var description: String {
         switch self {
         case .debug:
@@ -263,7 +267,7 @@ struct LogEmptyStateView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: isMonitoring ? "eye" : "play.circle")
+            Image(systemName: "eye")
                 .font(.system(size: 48))
                 .foregroundColor(.secondary)
         }

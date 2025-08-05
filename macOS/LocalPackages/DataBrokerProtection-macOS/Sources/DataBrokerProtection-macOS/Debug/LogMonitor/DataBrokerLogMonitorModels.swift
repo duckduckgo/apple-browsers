@@ -83,7 +83,7 @@ struct LogFilterSettings {
 
     var hasActiveFilters: Bool {
         categories.count != DataBrokerProtectionLoggerCategory.allCases.count ||
-        logLevels.count != 5 ||
+        logLevels.count != OSLogEntryLog.Level.allPirSupportedLevels.count ||
         !searchText.isEmpty
     }
 }

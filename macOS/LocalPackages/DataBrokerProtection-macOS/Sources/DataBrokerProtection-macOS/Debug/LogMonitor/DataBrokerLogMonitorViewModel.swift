@@ -71,6 +71,8 @@ final class DataBrokerLogMonitorViewModel: ObservableObject {
         filteredLogs.removeAll()
         errorMessage = nil
 
+        logService.resetPosition()
+
         Logger.dataBrokerProtection.debug("Log monitor cleared")
     }
 

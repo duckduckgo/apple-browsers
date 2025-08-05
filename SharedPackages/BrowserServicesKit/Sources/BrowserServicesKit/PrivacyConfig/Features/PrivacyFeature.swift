@@ -196,7 +196,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     case sidebar
 
     /// Global switch to disable all AI Chat related functionality
-    case globalAIToggle
+    case globalToggle
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

@@ -114,7 +114,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Eligibility
 
     private var isUserEligible: Bool {
-        isNewUser && !subscriptionManager.isUserAuthenticated && subscriptionManager.canPurchase
+        isNewUser && !subscriptionManager.isUserAuthenticated
     }
 
     private var isFeatureOn: Bool {

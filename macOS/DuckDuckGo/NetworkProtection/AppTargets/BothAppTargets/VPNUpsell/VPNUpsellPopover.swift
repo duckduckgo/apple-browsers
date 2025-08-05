@@ -82,7 +82,7 @@ struct VPNUpsellPopoverView: View {
         .padding(.bottom, Constants.bottomPadding)
     }
 
-    var animatedHeader: some View {
+    private var animatedHeader: some View {
         ZStack {
             LottieView(animation: .named("sparkleloop_wide"))
                 .playing(loopMode: .loop)
@@ -94,7 +94,8 @@ struct VPNUpsellPopoverView: View {
                 .clipped()
             }
     }
-    var titleAndSubtitle: some View {
+
+    private var titleAndSubtitle: some View {
         VStack(spacing: Constants.titleAndSubtitleVerticalSpacing) {
             Text(UserText.vpnUpsellPopoverTitle)
                 .font(.title3.weight(.semibold))
@@ -109,7 +110,7 @@ struct VPNUpsellPopoverView: View {
         }
     }
 
-    var features: some View {
+    private var features: some View {
         VStack(spacing: Constants.featuresVerticalSpacing) {
             ForEach(viewModel.featureSet.core, id: \.title) { feature in
                 FeatureRow(text: feature.title, subtitle: feature.subtitle)
@@ -129,7 +130,7 @@ struct VPNUpsellPopoverView: View {
         }
     }
 
-    var actionButtons: some View {
+    private var actionButtons: some View {
         HStack(spacing: Constants.actionButtonHorizontalSpacing) {
             Button {
                 viewModel.dismiss()
@@ -150,7 +151,7 @@ struct VPNUpsellPopoverView: View {
         .frame(height: Constants.actionButtonHeight)
     }
 
-    var horizontalLine: some View {
+    private var horizontalLine: some View {
         Rectangle()
             .foregroundColor(.clear)
             .frame(maxWidth: .infinity, minHeight: Constants.horizontalLineHeight, maxHeight: Constants.horizontalLineHeight)

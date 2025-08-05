@@ -100,28 +100,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
     }
 
-    func testWhenSubscriptionPurchaseIsNotAvailable_ItDoesNotShowTheUpsell() {
-        // Given
-        mockSubscriptionManager.canPurchase = false
-
-        // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
-
-        // Then
-        XCTAssertEqual(sut.state, .notEligible)
-    }
-
-    func testWhenSubscriptionPurchaseIsNotAvailableOnFirstLaunch_ItDoesNotShowTheUpsell() {
-        // Given
-        mockSubscriptionManager.canPurchase = false
-
-        // When
-        sut = createUpsellManager(isFirstLaunch: true, isNewUser: true)
-
-        // Then
-        XCTAssertEqual(sut.state, .notEligible)
-    }
-
     func testWhenUserIsEligible_ItFiresPixelOnTransitionToVisible() {
         // Given
         let expectation = XCTestExpectation(description: "Pixel should be fired")
@@ -375,17 +353,6 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     func testWhenUserIsNotNew_ItDoesNotShowTheUpsell() {
         // When
         sut = createUpsellManager(isFirstLaunch: true, isNewUser: false)
-
-        // Then
-        XCTAssertEqual(sut.state, .notEligible)
-    }
-
-    func testWhenUserIsNewAndNotAuthenticatedButCannotPurchase_ItDoesNotShowTheUpsell() {
-        // Given
-        mockSubscriptionManager.canPurchase = false
-
-        // When
-        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)

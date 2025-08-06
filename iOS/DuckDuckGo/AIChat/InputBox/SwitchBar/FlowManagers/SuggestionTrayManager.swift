@@ -71,9 +71,16 @@ final class SuggestionTrayManager: NSObject {
 
     var shouldDisplaySuggestionTray: Bool {
         let query = switchBarHandler.currentText
-        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
+        // No text so don't show suggestins
+        guard !query.isBlank else { return false }
 
-        return !(query.isEmpty || !hasUserInteracted)
+        // For URLs, only show suggestions if the user has interacted with the text
+        if switchBarHandler.isCurrentTextValidURL {
+            return switchBarHandler.hasUserInteractedWithText
+        }
+
+        // For all other cases just show suggestions
+        return true
     }
 
     // MARK: - Initialization
@@ -178,12 +185,11 @@ final class SuggestionTrayManager: NSObject {
     }
     
     private func updateSuggestionTrayForCurrentState() {
-        let query = switchBarHandler.currentText
-
-        if !shouldDisplaySuggestionTray {
-            showSuggestionTray(.favorites)
-        } else {
+        if shouldDisplaySuggestionTray {
+            let query = switchBarHandler.currentText
             showSuggestionTray(.autocomplete(query: query))
+        } else {
+            showSuggestionTray(.favorites)
         }
     }
     

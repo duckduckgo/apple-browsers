@@ -158,6 +158,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case inputFocusApi
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
+    case createFireproofFaviconUpdaterSecureVaultInBackground
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -191,8 +192,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Adds context menu action for summarizing text selected on a website.
     case textSummarization
 
-    // Adds capability to load AI Chat in a sidebar
+    /// Adds capability to load AI Chat in a sidebar
     case sidebar
+
+    /// Experimental address bar with duck.ai
+    case experimentalAddressBar
+
+    /// Global switch to disable all AI Chat related functionality
+    case globalToggle
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

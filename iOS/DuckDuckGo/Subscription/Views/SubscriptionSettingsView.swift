@@ -39,7 +39,6 @@ struct SubscriptionSettingsView: View {
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
-    
     @State var isShowingStripeView = false
     @State var isShowingGoogleView = false
     @State var isShowingRemovalNotice = false
@@ -302,10 +301,10 @@ struct SubscriptionSettingsView: View {
         }.hidden()
 
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                                                    apiService: DefaultAPIService(),
-                                                                                                    vpnMetadataCollector: DefaultVPNMetadataCollector(),
-                                                                                                    isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
-                                                                                                    source: .ppro)),
+                                                                                                apiService: DefaultAPIService(),
+                                                                                                vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                                                isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
+                                                                                                source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()
         }.hidden()
@@ -483,41 +482,19 @@ struct SubscriptionSettingsViewV2: View {
                 footer: devicesSectionFooter) {
 
             if let email = viewModel.state.subscriptionEmail, !email.isEmpty {
-                NavigationLink(destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
-                    navigationCoordinator: subscriptionNavigationCoordinator,
-                    subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                    subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                    emailFlow: .manageEmailFlow,
-                    onDisappear: {
-                        Task {
-                            await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
-                        }
-                    }),
-                               isActive: $isShowingManageEmailView) {
-                    SettingsCellView(label: UserText.subscriptionEditEmailButton,
-                                     subtitle: email)
-                }.isDetailLink(false)
+                SettingsCellView(label: UserText.subscriptionEditEmailButton,
+                                 subtitle: email,
+                                 action: { isShowingManageEmailView = true },
+                                 disclosureIndicator: true,
+                                 isButton: true)
             }
 
-            NavigationLink(destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
-                navigationCoordinator: subscriptionNavigationCoordinator,
-                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                emailFlow: .activationFlow,
-                onDisappear: {
-                    Task {
-                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
-                    }
-                }),
-                           isActive: $isShowingActivationView) {
-                SettingsCustomCell(content: {
-                    Text(UserText.subscriptionAddToDeviceButton)
-                        .daxBodyRegular()
-                    .foregroundColor(Color.init(designSystemColor: .accent)) },
-                                   disclosureIndicator: false)
-            }.isDetailLink(false)
+            SettingsCustomCell(content: {
+                Text(UserText.subscriptionAddToDeviceButton)
+                    .daxBodyRegular()
+                    .foregroundColor(Color.init(designSystemColor: .accent))
+            }, action: { isShowingActivationView = true },
+                               disclosureIndicator: true, isButton: true)
         }
     }
 
@@ -694,7 +671,9 @@ struct SubscriptionSettingsViewV2: View {
         if viewModel.showRebrandingMessage {
             HStack(alignment: .top) {
                 Text(UserText.subscriptionRebrandingMessage)
-                    .font(.headline)
+                    .font(
+                        Font(uiFont: UIFont.daxSubheadSemibold())
+                    )
                 Spacer()
                 Button(action: {
                     viewModel.dismissRebrandingMessage()
@@ -703,11 +682,46 @@ struct SubscriptionSettingsViewV2: View {
                         .foregroundColor(.secondary)
                 }
             }
+            .padding(.vertical, 2)
         }
     }
 
     @ViewBuilder
     private var optionsView: some View {
+        NavigationLink(
+            destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
+                navigationCoordinator: subscriptionNavigationCoordinator,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                emailFlow: .manageEmailFlow,
+                onDisappear: {
+                    Task {
+                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
+                    }
+                }),
+            isActive: $isShowingManageEmailView
+        ) { EmptyView() }
+            .isDetailLink(false)
+            .hidden()
+
+        NavigationLink(
+            destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
+                navigationCoordinator: subscriptionNavigationCoordinator,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                emailFlow: .activationFlow,
+                onDisappear: {
+                    Task {
+                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
+                    }
+                }),
+            isActive: $isShowingActivationView
+        ) { EmptyView() }
+            .isDetailLink(false)
+            .hidden()
+
         NavigationLink(destination: SubscriptionGoogleView(),
                        isActive: $isShowingGoogleView) {
             EmptyView()

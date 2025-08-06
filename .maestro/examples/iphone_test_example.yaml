@@ -11,32 +11,29 @@ tags:
 - runFlow: 
     file: ../shared/setup.yaml
 
-# First, verify we're running on iPhone by checking user agent
+# First, verify we're running on iPhone by checking browser info
 - assertVisible:
     id: searchEntry
 - tapOn: 
     id: searchEntry
     
-# Navigate to a user agent checking service
-- inputText: "whatismybrowser.com"
+# Use a data URI to display user agent directly
+- inputText: "data:text/html,<h1>User Agent:</h1><p style='font-size:20px'>%3Cscript%3Edocument.write(navigator.userAgent)%3C/script%3E</p>"
 - pressKey: Enter
 
-# Wait for search results and click the first result
-- assertVisible: "WhatIsMyBrowser.com"
-- tapOn: "WhatIsMyBrowser.com"
-
-# Wait for the page to load and verify iPhone is detected (not iPad)
+# Wait for the page to render and verify iPhone is detected (not iPad)
 - waitForAnimationToEnd
-- assertVisible: ".*iPhone.*"
-- assertNotVisible: ".*iPad.*"
+- assertVisible: "iPhone"
+- assertNotVisible: "iPad"
 
 # Navigate back to search
 - tapOn:
     id: searchEntry
-- clearText
+
+- pressKey: Backspace
     
 # Now run a normal search to verify iPhone-specific layout
-- inputText: "iOS developer jobs"
+- inputText: "remote iOS developer jobs"
 - pressKey: Enter
 
 - assertVisible: ".*" # This will match any visible element

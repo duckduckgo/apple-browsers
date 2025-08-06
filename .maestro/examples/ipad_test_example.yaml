@@ -11,31 +11,28 @@ tags:
 - runFlow: 
     file: ../shared/setup.yaml
 
-# First, verify we're running on iPad by checking user agent
+# First, verify we're running on iPad by checking browser info
 - assertVisible:
     id: searchEntry
 - tapOn: 
     id: searchEntry
     
-# Navigate to a user agent checking service
-- inputText: "whatismybrowser.com"
+# Use a data URI to display user agent directly
+- inputText: "data:text/html,<h1>User Agent:</h1><p style='font-size:20px'>%3Cscript%3Edocument.write(navigator.userAgent)%3C/script%3E</p>"
 - pressKey: Enter
 
-# Wait for search results and click the first result
-- assertVisible: "WhatIsMyBrowser.com"
-- tapOn: "WhatIsMyBrowser.com"
-
-# Wait for the page to load and verify iPad is detected
+# Wait for the page to render and verify iPad is in the user agent
 - waitForAnimationToEnd
-- assertVisible: ".*iPad.*"
+- assertVisible: "iPad"
 
 # Navigate back to search
 - tapOn:
     id: searchEntry
-- clearText
+
+- pressKey: Backspace
     
-# Now run a normal search to verify iPad-specific layout
-- inputText: "iOS developer jobs"
+# Now run a normal search
+- inputText: "remote iOS developer jobs"
 - pressKey: Enter
 
 - assertVisible: ".*" # This will match any visible element

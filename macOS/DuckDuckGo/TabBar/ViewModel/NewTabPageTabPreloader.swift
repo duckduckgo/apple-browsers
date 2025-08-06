@@ -1,5 +1,5 @@
 //
-//  NewTabPageTabCache.swift
+//  NewTabPageTabPreloader.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,40 +19,39 @@
 import Foundation
 
 @MainActor
-protocol NewTabPageTabCaching: AnyObject {
-    func cachedTab() -> Tab?
+protocol NewTabPageTabPreloading: AnyObject {
+
+    func newTab() -> Tab?
+
 }
 
-final class NewTabPageTabCache: NewTabPageTabCaching {
+final class NewTabPageTabPreloader: NewTabPageTabPreloading {
+
+    private var getViewSize: () -> CGSize?
+    private var preloadedTab: Tab?
 
     init(viewSizeProvider: @escaping () -> CGSize?) {
         getViewSize = viewSizeProvider
-        cacheNTPTab()
+        loadNewTab()
     }
 
-    func cachedTab() -> Tab? {
+    private func loadNewTab() {
+        preloadedTab = Tab(
+            content: .newtab,
+            shouldLoadInBackground: true,
+            burnerMode: .regular,
+            webViewSize: getViewSize() ?? CGSize(width: 1024, height: 768))
+    }
+
+    func newTab() -> Tab? {
         defer {
-            cacheNTPTab()
+            loadNewTab()
         }
-        guard let cachedNTPTab else {
+        guard let preloadedTab else {
             return nil
         }
-        // It doesn't really help
-        if let size = getViewSize() {
-            cachedNTPTab.webViewSize = size
-        }
-        return cachedNTPTab
+
+        return preloadedTab
     }
 
-    private func cacheNTPTab() {
-        cachedNTPTab = Tab(
-            content: .newtab,
-            shouldLoadInBackground: false,
-            burnerMode: .regular,
-            webViewSize: getViewSize() ?? .zero
-        )
-    }
-
-    private var getViewSize: () -> CGSize?
-    private var cachedNTPTab: Tab?
 }

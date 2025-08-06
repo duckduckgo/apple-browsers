@@ -210,12 +210,7 @@ final class MainViewController: NSViewController {
         browserTabViewController.delegate = self
         findInPageViewController.delegate = self
 
-        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            let newTabPageTabCache = NewTabPageTabCache(viewSizeProvider: { [weak self] in
-                self?.browserTabViewController.view.bounds.size
-            })
-            tabCollectionViewModel.newTabPageTabCache = newTabPageTabCache
-        }
+        initPreloader()
     }
 
     override func loadView() {
@@ -374,6 +369,15 @@ final class MainViewController: NSViewController {
         mainView.updateTrackingAreas()
 
         updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+    }
+
+    private func initPreloader() {
+        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            let preloader = NewTabPageTabPreloader(viewSizeProvider: { [weak self] in
+                self?.browserTabViewController.view.bounds.size
+            })
+            tabCollectionViewModel.newTabPageTabPreloader = preloader
+        }
     }
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {

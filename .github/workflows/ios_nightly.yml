@@ -71,7 +71,7 @@ jobs:
 
     - name: Upload logs if workflow failed
       uses: actions/upload-artifact@v4
-      if: always() || failure() || cancelled()
+      if: failure() || cancelled()
       with:
         name: ATBBuildLogs
         path: |
@@ -128,7 +128,7 @@ jobs:
 
     - name: Upload logs if workflow failed
       uses: actions/upload-artifact@v4
-      if: always() || failure() || cancelled()
+      if: failure() || cancelled()
       with:
         name: FingerprintingBuildLogs
         path: |

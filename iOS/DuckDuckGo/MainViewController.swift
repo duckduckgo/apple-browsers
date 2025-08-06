@@ -1151,18 +1151,29 @@ class MainViewController: UIViewController {
         }
     }
 
-    fileprivate func loadQuery(_ query: String) {
+    fileprivate func loadQuery(_ query: String, forceSearch: Bool = false) {
 
-        guard let url = URL.makeSearchURL(query: query, queryContext: currentTab?.url) else {
+        guard let url = URL.makeSearchURL(query: query, forceSearchQuery: forceSearch, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
             return
         }
 
         if featureFlagger.isFeatureOn(.useTLDOnQuerySubmit),
-            // skip duckduckgo URLs immediately
+            // Immediately skip ddg URLs as they've already been processed
             !url.isDuckDuckGo,
-            URL.webUrl(from: query, usingTLD: TLD()) != nil {
-            Swift.print("*** bad host", url.host!)
+
+            // Also skip queries with http(s):// because the user clearly intended to navigate
+            URL.hasHypertextPrefix(query)
+        {
+
+            let tld = AppDependencyProvider.shared.storageCache.tld
+            let validator = TLDBasedURLValidator(tld: tld)
+
+            if !validator.isValid(url) {
+                // Not valid so try again but force the search
+                loadQuery(query, forceSearch: true)
+                return
+            }
         }
 
         // Make sure that once query is submitted, we don't trigger the non-SERP flow

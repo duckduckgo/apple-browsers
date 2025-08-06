@@ -38,11 +38,10 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
     private let keychainManager: KeychainManager
 
-    public init(keychainType: KeychainType = .dataProtection(.unspecified),
-                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void,
-                keychainOperations: KeychainOperationsProtocol = DefaultKeychainOperations()) {
+    public init(keychainManager: KeychainManager,
+                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
         self.errorEventsHandler = errorEventsHandler
-        self.keychainManager = KeychainManager(keychainOperations: keychainOperations, attributes: Self.defaultAttributes(keychainType: keychainType))
+        self.keychainManager = keychainManager
     }
 
     /*
@@ -57,7 +56,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         }
     }
 
-    private static func defaultAttributes(keychainType: KeychainType) -> [CFString: Any] {
+    public static func defaultAttributes(keychainType: KeychainType) -> [CFString: Any] {
         var attributes: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrSynchronizable: false

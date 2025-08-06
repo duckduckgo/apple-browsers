@@ -42,6 +42,13 @@ public final class KeychainManager {
 
     // MARK: - Types
 
+    public enum Pixel {
+        case deallocatedWithBacklog
+        case dataAddedToTheBacklog
+        case dataWroteFromBacklog
+        case failedToWriteDataFromBacklog
+    }
+    public typealias PixelHandler = (Pixel) -> Void
     public typealias KeychainAttributes = [CFString: Any]
 
     // MARK: - Constants
@@ -58,6 +65,7 @@ public final class KeychainManager {
     private var writingBacklog: [String: Data] = [:]
     private var cancellables = Set<AnyCancellable>()
     private let accessQueue = DispatchQueue(label: Constants.accessQueueLabel)
+    private let pixelHandler: PixelHandler
 
     // MARK: - Initialization
 
@@ -67,10 +75,27 @@ public final class KeychainManager {
     ///   - keychainOperations: The keychain operations provider (defaults to system keychain)
     ///   - attributes: Base keychain query attributes for all operations
     public init(keychainOperations: KeychainOperationsProtocol = DefaultKeychainOperations(),
-                attributes: KeychainAttributes) {
+                attributes: KeychainAttributes,
+                pixelHandler: @escaping PixelHandler) {
         self.keychainOperations = keychainOperations
         self.attributes = attributes
+        self.pixelHandler = pixelHandler
         self.setupKeychainAvailabilityNotifications()
+    }
+
+    // MARK: - Cleanup
+
+    /// Cleans up resources when the KeychainManager is deallocated.
+    ///
+    /// Cancels notification subscriptions and warns about any unprocessed backlog items.
+    deinit {
+        cancellables.removeAll()
+        Logger.keychainManager.debug("Cancelled keychain availability notification subscriptions")
+
+        if !writingBacklog.isEmpty {
+            self.pixelHandler(.deallocatedWithBacklog)
+            Logger.keychainManager.warning("Deallocating with \(self.writingBacklog.count) unprocessed backlog items")
+        }
     }
 
     // MARK: - Public API
@@ -98,15 +123,16 @@ public final class KeychainManager {
             var item: CFTypeRef?
             let status = keychainOperations.copyMatching(query as CFDictionary, &item)
 
-            if status == errSecSuccess {
+            switch status {
+            case errSecSuccess:
                 if let existingItem = item as? Data {
                     return existingItem
                 } else {
                     throw AccountKeychainAccessError.failedToDecodeKeychainData
                 }
-            } else if status == errSecItemNotFound {
+            case errSecItemNotFound:
                 return nil
-            } else {
+            default:
                 throw AccountKeychainAccessError.keychainLookupFailure(status)
             }
         }
@@ -122,8 +148,15 @@ public final class KeychainManager {
     ///   - key: The unique identifier for the keychain item
     /// - Throws: `AccountKeychainAccessError` if storage fails
     public func store(data: Data, forKey key: String) throws {
-        try accessQueue.sync {
+        let writingResultStatus = try accessQueue.sync {
             try internalStore(data: data, forKey: key)
+        }
+
+        if writingResultStatus == errSecSuccess {
+            // Trigger backlog processing for that contexts that can't rely on notifications for detecting keychain availability (SysExt)
+            accessQueue.async {
+                self.processWritingBacklog()
+            }
         }
     }
 
@@ -135,7 +168,7 @@ public final class KeychainManager {
     /// - Throws: `AccountKeychainAccessError` if deletion fails
     public func deleteItem(forKey key: String) throws {
         return try accessQueue.sync {
-            writingBacklog[key] = nil // Removing the data from the writing backlog if present
+            removeFromWritingBacklog(forKey: key)
 
             var query = attributes
             query[kSecAttrService] = key
@@ -156,7 +189,17 @@ public final class KeychainManager {
 
     // MARK: - Private Helpers
 
-    private func internalStore(data: Data, forKey key: String) throws {
+    private func addToWritingBacklog(_ data: Data, forKey key: String) {
+        writingBacklog[key] = data
+        pixelHandler(.dataAddedToTheBacklog)
+    }
+
+    private func removeFromWritingBacklog(forKey key: String) {
+        writingBacklog[key] = nil
+    }
+
+    @discardableResult
+    private func internalStore(data: Data, forKey key: String) throws -> OSStatus {
         var query = attributes
         query[kSecAttrService] = key
         query[kSecAttrAccessible] = Constants.keychainAccessibilityLevel
@@ -166,20 +209,21 @@ public final class KeychainManager {
 
         switch status {
         case errSecSuccess:
-            writingBacklog[key] = nil // Removing the data from the writing backlog if present
+            removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.debug("Successfully added keychain item for \(key)")
-            return
         case errSecDuplicateItem:
             Logger.keychainManager.debug("Keychain item exists, updating for \(key)")
             try updateData(data, forKey: key)
-        case errSecNotAvailable:
+        case errSecNotAvailable,
+        errSecInteractionNotAllowed:
             Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription), adding data to writing queue")
-            writingBacklog[key] = data
+            addToWritingBacklog(data, forKey: key)
         default:
-            writingBacklog[key] = nil // Removing the data from the writing backlog if present
+            removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)
         }
+        return status
     }
 
     /// Updates existing keychain data for the specified key.
@@ -201,13 +245,14 @@ public final class KeychainManager {
 
         switch status {
         case errSecSuccess:
-            writingBacklog[key] = nil // Removing the data from the writing backlog if present
+            removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.debug("Successfully updated keychain item for \(key)")
-        case errSecNotAvailable:
+        case errSecNotAvailable,
+        errSecInteractionNotAllowed:
             Logger.keychainManager.error("Failed to update keychain item: \(status.humanReadableDescription), adding data to writing queue")
-            writingBacklog[key] = data
+            addToWritingBacklog(data, forKey: key)
         default:
-            writingBacklog[key] = nil // Removing the data from the writing backlog if present
+            removeFromWritingBacklog(forKey: key)
             Logger.keychainManager.error("SecItemUpdate failed with status: \(status.humanReadableDescription) for field: \(key)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)
         }
@@ -219,7 +264,7 @@ public final class KeychainManager {
     /// 
     /// This enables automatic retry of operations that were queued when the keychain was unavailable.
     private func setupKeychainAvailabilityNotifications() {
-        #if canImport(UIKit)
+        #if os(iOS)
         // On iOS, listen for app becoming active and protected data becoming available
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .receive(on: accessQueue)
@@ -237,7 +282,7 @@ public final class KeychainManager {
 
         Logger.keychainManager.debug("Set up iOS keychain availability notifications")
 
-        #elseif canImport(AppKit)
+        #elseif os(macOS)
         // On macOS, listen for app becoming active and workspace session becoming active
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
             .receive(on: accessQueue)
@@ -287,24 +332,12 @@ public final class KeychainManager {
 
         if processedSuccessfully > 0 {
             Logger.keychainManager.info("Successfully processed \(processedSuccessfully) backlog items")
+            self.pixelHandler(.dataWroteFromBacklog)
         }
 
         if failed > 0 {
             Logger.keychainManager.error("Failed to process \(failed) backlog items")
-        }
-    }
-
-    // MARK: - Cleanup
-
-    /// Cleans up resources when the KeychainManager is deallocated.
-    /// 
-    /// Cancels notification subscriptions and warns about any unprocessed backlog items.
-    deinit {
-        cancellables.removeAll()
-        Logger.keychainManager.debug("Cancelled keychain availability notification subscriptions")
-
-        if !writingBacklog.isEmpty {
-            Logger.keychainManager.warning("Deallocating with \(self.writingBacklog.count) unprocessed backlog items")
+            self.pixelHandler(.failedToWriteDataFromBacklog)
         }
     }
 }

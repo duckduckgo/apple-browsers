@@ -32,7 +32,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case launch
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
 
-    case navigation
+    case navigation(NavigationKind)
     case serp
     case serpInitial
 
@@ -1262,6 +1262,10 @@ enum GeneralPixel: PixelKitEventV2 {
             }
 
             return params
+
+        case .navigation(let kind):
+            return ["kind": kind.description]
+
         case .dataImportFailed(source: _, sourceVersion: let version, error: let error):
             var params = error.pixelParameters
 
@@ -1418,6 +1422,13 @@ enum GeneralPixel: PixelKitEventV2 {
         case attributed = "attributed"
         case unknown = "unknown"
 
+    }
+
+    enum NavigationKind: String, CustomStringConvertible {
+        var description: String { rawValue }
+
+        case regular
+        case client
     }
 
     enum OnboardingShown: String, CustomStringConvertible {

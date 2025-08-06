@@ -45,7 +45,7 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.aiChat),
 
             .weak(nullable: self.navigationHotkeyHandler),
-            .struct(NavigationPixelNavigationResponder()),
+            .strong(NavigationPixelNavigationResponder()),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
 

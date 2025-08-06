@@ -1631,6 +1631,16 @@
 		4B9579212AC687170062CA31 /* HardwareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9579202AC687170062CA31 /* HardwareModel.swift */; };
 		4B9579222AC687170062CA31 /* HardwareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9579202AC687170062CA31 /* HardwareModel.swift */; };
 		4B9754EC2984300100D7B834 /* EmailManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3B848F297A0E1000A384BD /* EmailManagerExtension.swift */; };
+		4B975BFF2E431FD40019F757 /* VPNUpsellPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFB2E431FD40019F757 /* VPNUpsellPopover.swift */; };
+		4B975C002E431FD40019F757 /* VPNUpsellVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFE2E431FD40019F757 /* VPNUpsellVisibilityManager.swift */; };
+		4B975C012E431FD40019F757 /* VPNPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFA2E431FD40019F757 /* VPNPopoverPresenter.swift */; };
+		4B975C022E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFD2E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift */; };
+		4B975C032E431FD40019F757 /* VPNUpsellPopoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFC2E431FD40019F757 /* VPNUpsellPopoverViewModel.swift */; };
+		4B975C042E431FD40019F757 /* VPNUpsellPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFB2E431FD40019F757 /* VPNUpsellPopover.swift */; };
+		4B975C052E431FD40019F757 /* VPNUpsellVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFE2E431FD40019F757 /* VPNUpsellVisibilityManager.swift */; };
+		4B975C062E431FD40019F757 /* VPNPopoverPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFA2E431FD40019F757 /* VPNPopoverPresenter.swift */; };
+		4B975C072E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFD2E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift */; };
+		4B975C082E431FD40019F757 /* VPNUpsellPopoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B975BFC2E431FD40019F757 /* VPNUpsellPopoverViewModel.swift */; };
 		4B980E212817604000282EE1 /* NSNotificationName+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B980E202817604000282EE1 /* NSNotificationName+Debug.swift */; };
 		4B98D27A28D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B98D27928D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift */; };
 		4B98D27C28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B98D27B28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift */; };
@@ -4575,6 +4585,11 @@
 		4B9292DA2667125D00AD2C21 /* BookmarksContextMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksContextMenu.swift; sourceTree = "<group>"; };
 		4B94B7512D471E7E0014AAB8 /* SyncUI-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "SyncUI-macOS"; sourceTree = "<group>"; };
 		4B9579202AC687170062CA31 /* HardwareModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardwareModel.swift; sourceTree = "<group>"; };
+		4B975BFA2E431FD40019F757 /* VPNPopoverPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNPopoverPresenter.swift; sourceTree = "<group>"; };
+		4B975BFB2E431FD40019F757 /* VPNUpsellPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellPopover.swift; sourceTree = "<group>"; };
+		4B975BFC2E431FD40019F757 /* VPNUpsellPopoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellPopoverViewModel.swift; sourceTree = "<group>"; };
+		4B975BFD2E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellUserDefaultsPersistor.swift; sourceTree = "<group>"; };
+		4B975BFE2E431FD40019F757 /* VPNUpsellVisibilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellVisibilityManager.swift; sourceTree = "<group>"; };
 		4B980E202817604000282EE1 /* NSNotificationName+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSNotificationName+Debug.swift"; sourceTree = "<group>"; };
 		4B98D27928D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumFaviconsReaderTests.swift; sourceTree = "<group>"; };
 		4B98D27B28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxFaviconsReaderTests.swift; sourceTree = "<group>"; };
@@ -5733,10 +5748,6 @@
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		BB970C1A2E3CE79200FEA1E9 /* VPNUpsell */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = VPNUpsell; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3706FCA6293F65D500E42796 /* Frameworks */ = {
@@ -7396,7 +7407,7 @@
 		4B4D60632A0B29FA00BCD287 /* BothAppTargets */ = {
 			isa = PBXGroup;
 			children = (
-				BB970C1A2E3CE79200FEA1E9 /* VPNUpsell */,
+				4B975C092E43227E0019F757 /* VPNUpsellNew */,
 				7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */,
 				7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */,
 				4B4D60722A0B29FA00BCD287 /* EventMapping+NetworkProtectionError.swift */,
@@ -7697,6 +7708,18 @@
 				9F872D972B8DA9F800138637 /* Bookmarks+Tab.swift */,
 			);
 			path = Extensions;
+			sourceTree = "<group>";
+		};
+		4B975C092E43227E0019F757 /* VPNUpsellNew */ = {
+			isa = PBXGroup;
+			children = (
+				4B975BFA2E431FD40019F757 /* VPNPopoverPresenter.swift */,
+				4B975BFB2E431FD40019F757 /* VPNUpsellPopover.swift */,
+				4B975BFC2E431FD40019F757 /* VPNUpsellPopoverViewModel.swift */,
+				4B975BFD2E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift */,
+				4B975BFE2E431FD40019F757 /* VPNUpsellVisibilityManager.swift */,
+			);
+			path = VPNUpsellNew;
 			sourceTree = "<group>";
 		};
 		4B9DB0062A983B23000927DB /* Waitlist */ = {
@@ -11055,9 +11078,6 @@
 				4BBA2D292B6ACD4D00F6A470 /* PBXTargetDependency */,
 				4B5F14FE2A1529230060320F /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				BB970C1A2E3CE79200FEA1E9 /* VPNUpsell */,
-			);
 			name = "DuckDuckGo Privacy Browser App Store";
 			packageProductDependencies = (
 				3706FA71293F65D500E42796 /* BrowserServicesKit */,
@@ -11571,9 +11591,6 @@
 				8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */,
 				7BC3E42F2D6DF1F6009787CD /* PBXTargetDependency */,
 				31C6E9AD2B0C07BA0086DC30 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				BB970C1A2E3CE79200FEA1E9 /* VPNUpsell */,
 			);
 			name = "DuckDuckGo Privacy Browser";
 			packageProductDependencies = (
@@ -12985,6 +13002,11 @@
 				3707C72A294B5D2900682A9F /* URLExtension.swift in Sources */,
 				373114BD2DEF513D0010C256 /* NavigationBarPixel.swift in Sources */,
 				3706FB76293F65D500E42796 /* ASN1Parser.swift in Sources */,
+				4B975C042E431FD40019F757 /* VPNUpsellPopover.swift in Sources */,
+				4B975C052E431FD40019F757 /* VPNUpsellVisibilityManager.swift in Sources */,
+				4B975C062E431FD40019F757 /* VPNPopoverPresenter.swift in Sources */,
+				4B975C072E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift in Sources */,
+				4B975C082E431FD40019F757 /* VPNUpsellPopoverViewModel.swift in Sources */,
 				379858142D730EFB008773F6 /* DefaultHistoryViewDialogPresenter.swift in Sources */,
 				F17E7DDF2C7C83E500907A84 /* Logger+FileDownload.swift in Sources */,
 				9F56CFAA2B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */,
@@ -14994,6 +15016,11 @@
 				EED4D3D82C874AE200C79EEA /* PopoverInfoViewController.swift in Sources */,
 				B6F1B0222BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */,
 				3199AF7F2C80734A003AEBDC /* TabModalManageable.swift in Sources */,
+				4B975BFF2E431FD40019F757 /* VPNUpsellPopover.swift in Sources */,
+				4B975C002E431FD40019F757 /* VPNUpsellVisibilityManager.swift in Sources */,
+				4B975C012E431FD40019F757 /* VPNPopoverPresenter.swift in Sources */,
+				4B975C022E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift in Sources */,
+				4B975C032E431FD40019F757 /* VPNUpsellPopoverViewModel.swift in Sources */,
 				1DF78E0C2CE5F58B00AB898E /* WebExtensionManager.swift in Sources */,
 				C10529462C9F456C0041E502 /* AutofillCredentialsDebugViewModel.swift in Sources */,
 				4B4D60C02A0C848D00BCD287 /* NetworkProtectionControllerErrorStore.swift in Sources */,

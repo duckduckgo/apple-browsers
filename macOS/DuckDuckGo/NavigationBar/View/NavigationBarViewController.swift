@@ -50,7 +50,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var homeButton: MouseOverButton!
     @IBOutlet weak var homeButtonSeparator: NSView!
     @IBOutlet weak var downloadsButton: MouseOverButton!
-    @IBOutlet weak var networkProtectionButton: MouseOverButton!
+    @IBOutlet weak var networkProtectionButton: NetworkProtectionButton!
     @IBOutlet weak var navigationButtons: NSStackView!
     @IBOutlet weak var addressBarContainer: NSView!
     @IBOutlet weak var daxLogo: NSImageView!
@@ -107,6 +107,7 @@ final class NavigationBarViewController: NSViewController {
     private let fireproofDomains: FireproofDomains
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
+    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -187,6 +188,8 @@ final class NavigationBarViewController: NSViewController {
                        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
+                       vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
+                       vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -212,6 +215,8 @@ final class NavigationBarViewController: NSViewController {
                 visualStyle: visualStyle,
                 aiChatMenuConfig: aiChatMenuConfig,
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
+                vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
+                vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 showTab: showTab
             )
         }!
@@ -235,6 +240,8 @@ final class NavigationBarViewController: NSViewController {
         visualStyle: VisualStyleProviding,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
+        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -246,12 +253,14 @@ final class NavigationBarViewController: NSViewController {
             permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
+            vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
             isBurner: tabCollectionViewModel.isBurner
         )
         self.tabCollectionViewModel = tabCollectionViewModel
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
                                                                                statusReporter: networkProtectionStatusReporter,
-                                                                               iconProvider: visualStyle.iconsProvider.vpnNavigationIconsProvider)
+                                                                               iconProvider: visualStyle.iconsProvider.vpnNavigationIconsProvider,
+                                                                               vpnUpsellVisibilityManager: vpnUpsellVisibilityManager)
         self.downloadListCoordinator = downloadListCoordinator
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
@@ -265,6 +274,7 @@ final class NavigationBarViewController: NSViewController {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.showTab = showTab
+        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         super.init(coder: coder)
@@ -573,6 +583,13 @@ final class NavigationBarViewController: NSViewController {
             homeButtonSeparator.isHidden = true
         }
     }
+
+    private func updateNetworkProtectionButton() {
+        let isPinned = LocalPinningManager.shared.isPinned(.networkProtection)
+        vpnUpsellVisibilityManager.handlePinningChange(isPinned: isPinned)
+        networkProtectionButtonModel.updateVisibility()
+    }
+
     private enum DownloadsButtonUpdateSource {
         case pinnedViewsNotification
         case popoverDidClose
@@ -732,7 +749,7 @@ final class NavigationBarViewController: NSViewController {
                 case .homeButton:
                     self.updateHomeButton()
                 case .networkProtection:
-                    self.networkProtectionButtonModel.updateVisibility()
+                    self.updateNetworkProtectionButton()
                 }
             } else {
                 assertionFailure("Failed to get changed pinned view type")
@@ -1202,6 +1219,7 @@ final class NavigationBarViewController: NSViewController {
 
     private func toggleNetworkProtectionPopover() {
         guard Application.appDelegate.subscriptionAuthV1toV2Bridge.isUserAuthenticated else {
+            popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
             return
         }
 
@@ -1695,6 +1713,14 @@ extension NavigationBarViewController: NSMenuDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] image in
                 self?.networkProtectionButton.image = image
+            }
+            .store(in: &cancellables)
+
+        // Show notification dot when VPN upsell should be shown
+        networkProtectionButtonModel.$shouldShowUpsell
+            .receive(on: RunLoop.main)
+            .sink { [weak self] shouldShowUpsell in
+                self?.networkProtectionButton.isNotificationVisible = shouldShowUpsell
             }
             .store(in: &cancellables)
     }

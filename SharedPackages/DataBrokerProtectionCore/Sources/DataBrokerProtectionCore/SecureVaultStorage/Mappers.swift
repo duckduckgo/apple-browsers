@@ -121,6 +121,21 @@ public struct MapperToDB {
               lastStageDate: lastStageDate,
               startDate: startTime)
     }
+
+    func mapToDB(_ event: BackgroundTaskEvent) throws -> BackgroundTaskEventDB {
+        var metadata: Data?
+        if let eventMetadata = event.metadata {
+            metadata = try jsonEncoder.encode(eventMetadata)
+        }
+
+        return .init(
+            id: event.id,
+            sessionId: event.sessionId,
+            eventType: event.eventType.rawValue,
+            timestamp: event.timestamp,
+            metadata: metadata
+        )
+    }
 }
 
 struct MapperToModel {
@@ -268,6 +283,25 @@ struct MapperToModel {
               attemptId: optOutAttempt.attemptId,
               lastStageDate: optOutAttempt.lastStageDate,
               startDate: optOutAttempt.startDate)
+    }
+
+    func mapToModel(_ eventDB: BackgroundTaskEventDB) throws -> BackgroundTaskEvent {
+        guard let eventType = BackgroundTaskEvent.EventType(rawValue: eventDB.eventType) else {
+            throw BackgroundTaskEvent.Error.invalidEventType
+        }
+
+        var metadata: BackgroundTaskEvent.Metadata?
+        if let eventMetadata = eventDB.metadata {
+            metadata = try jsonDecoder.decode(BackgroundTaskEvent.Metadata.self, from: eventMetadata)
+        }
+
+        return .init(
+            id: eventDB.id,
+            sessionId: eventDB.sessionId,
+            eventType: eventType,
+            timestamp: eventDB.timestamp,
+            metadata: metadata
+        )
     }
 }
 

@@ -19,6 +19,7 @@
 
 import Foundation
 import UIKit
+import UIComponents
 import SwiftUI
 
 /// Manages the Dax logo view display and positioning
@@ -26,15 +27,30 @@ final class DaxLogoManager {
     
     // MARK: - Properties
 
-    private(set) var logoView: UIView = DaxLogoView()
+    private var logoContainerView: UIView = UIView()
+
+    private var homeDaxLogoView: UIView = DaxLogoView(isAIDax: false)
+    private var aiDaxLogoView: UIView = DaxLogoView(isAIDax: true)
+
+    private var isHomeDaxVisible: Bool = false
+    private var isAIDaxVisible: Bool = false
+
+    private var progress: CGFloat = 0
 
     // MARK: - Public Methods
     
     func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
 
-        viewController.view.addSubview(logoView)
-        logoView.translatesAutoresizingMaskIntoConstraints = false
-        logoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        logoContainerView.translatesAutoresizingMaskIntoConstraints = false
+        viewController.view.addSubview(logoContainerView)
+
+        logoContainerView.addSubview(homeDaxLogoView)
+        homeDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
+        homeDaxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+
+        logoContainerView.addSubview(aiDaxLogoView)
+        aiDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
+        aiDaxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         let centeringGuide = UILayoutGuide()
         centeringGuide.identifier = "DaxLogoCenteringGuide"
@@ -49,26 +65,66 @@ final class DaxLogoManager {
             viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
 
             // Center within the layout guide
-            logoView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
-            logoView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
-            logoView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
-            logoView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
-            logoView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
-            logoView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
+            logoContainerView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
+            logoContainerView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
+            logoContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
+            logoContainerView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
+            logoContainerView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
+            logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor),
+
+            homeDaxLogoView.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
+            homeDaxLogoView.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),
+            homeDaxLogoView.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
+            homeDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
+
+            aiDaxLogoView.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
+            aiDaxLogoView.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),
+            aiDaxLogoView.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
+            aiDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
         ])
 
-        viewController.view.sendSubviewToBack(logoView)
+        viewController.view.bringSubviewToFront(logoContainerView)
+    }
+
+    func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {
+        self.isHomeDaxVisible = isHomeDaxVisible
+        self.isAIDaxVisible = isAIDaxVisible
+
+        updateState()
+    }
+
+    func updateSwipeProgress(_ progress: CGFloat) {
+        self.progress = progress
+
+        updateState()
+    }
+
+    private func updateState() {
+
+        let homeLogoProgress = 1 - progress
+        let aiLogoProgress = progress
+
+        if isHomeDaxVisible == isAIDaxVisible {
+            homeDaxLogoView.alpha = isAIDaxVisible ? 1.0 : 0.0
+            aiDaxLogoView.alpha = isAIDaxVisible ? aiLogoProgress : 0
+        } else {
+            // Fade out home only when one logo is visible - prevents flashing
+            homeDaxLogoView.alpha = isHomeDaxVisible ? Easing.inOutCirc(homeLogoProgress) : 0
+            aiDaxLogoView.alpha = isAIDaxVisible ? Easing.inOutCirc(aiLogoProgress) : 0
+        }
     }
 }
 
 private final class DaxLogoView: UIView {
-    let logoImage = UIImageView(image: UIImage(resource: .home))
+    private(set) lazy var logoImage = UIImageView(image: UIImage(resource: isAIDax ? .duckAI : .searchDax))
     let textImage = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
     private let stackView = UIStackView()
+    private let isAIDax: Bool
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(isAIDax: Bool) {
+        self.isAIDax = isAIDax
+        super.init(frame: .zero)
 
         setUpSubviews()
     }
@@ -93,8 +149,9 @@ private final class DaxLogoView: UIView {
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: topAnchor),
+            stackView.topAnchor.constraint(equalTo: topAnchor, constant: 0),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
             logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: Metrics.maxLogoSize),
             logoImage.heightAnchor.constraint(equalToConstant: Metrics.maxLogoSize).withPriority(.defaultHigh)
         ])

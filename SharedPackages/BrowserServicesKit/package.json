@@ -1,0 +1,9 @@
+{
+  "name": "bsk-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "copy-content-scope-scripts": "node scripts/copy-content-scope-scripts.js",
+    "build-content-scope-scripts": "npm run copy-content-scope-scripts"
+  }
+} 

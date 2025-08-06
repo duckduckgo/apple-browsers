@@ -64,6 +64,7 @@ struct UserText {
     static let bookmarkDialogAdd = NSLocalizedString("bookmark.dialog.add", value: "Add", comment: "Button to confim a bookmark creation")
     static let newFolderDialogAdd = NSLocalizedString("folder.dialog.add", value: "Add", comment: "Button to confim a bookmark folder creation")
     static let doneDialog = NSLocalizedString("done", value: "Done", comment: "Done button")
+    static let newBadge = NSLocalizedString("badge.new", value: "New", comment: "Copy of badge used to indicate a new item")
 
     static func openIn(value: String) -> String {
         let localized = NSLocalizedString("open.in",
@@ -466,6 +467,23 @@ struct UserText {
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
 
+    // Duck.ai Settings
+    static let aiChatTitle = NSLocalizedString("duckai.title", value: "Duck.ai", comment: "Title for Duck.ai feature")
+    static let aiChatDescription = NSLocalizedString("duckai.description", value: "Chat privately with popular 3rd-party AI models", comment: "Description of Duck.ai feature in settings")
+    static let aiChatEnableButton = NSLocalizedString("duckai.enable.button", value: "Enable Duck.ai", comment: "Button to enable Duck.ai feature")
+    static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai", comment: "Button to disable Duck.ai feature")
+    static let aiChatVisibilitySectionTitle = NSLocalizedString("duckai.visibility.section.title", value: "Visibility", comment: "Section title for Duck.ai visibility settings")
+    static let aiChatShowInBrowserMenusToggle = NSLocalizedString("duckai.show-in-browser-menus.toggle", value: "Show in browser menus", comment: "Toggle for showing Duck.ai in browser menus")
+    static let aiChatShowInAddressBarLabel = NSLocalizedString("duckai.show-in-address-bar.label", value: "Show in address bar", comment: "Label for showing Duck.ai in address bar")
+    static let aiChatOpenNewChatsSectionTitle = NSLocalizedString("duckai.open-new-chats.section.title", value: "Open New Chats", comment: "Section title for Duck.ai new chat location settings")
+    static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "In sidebar", comment: "Option to open Duck.ai chats in sidebar")
+    static let aiChatOpenInFullPageOption = NSLocalizedString("duckai.open-in-full-page.option", value: "Full page", comment: "Option to open Duck.ai chats in full page")
+
+    // Duck.ai Disable Dialog
+    static let aiChatDisableDialogTitle = NSLocalizedString("duckai.disable.dialog.title", value: "Disable Duck.ai?", comment: "Title for dialog asking to disable Duck.ai")
+    static let aiChatDisableDialogMessage = NSLocalizedString("duckai.disable.dialog.message", value: "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\n Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.You can re-enable it at any time.", comment: "Message explaining consequences of disabling Duck.ai")
+    static let aiChatDisableDialogConfirmButton = NSLocalizedString("duckai.disable.dialog.confirm", value: "Disable Duck.ai", comment: "Button to confirm disabling Duck.ai")
+
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")
     static let duckPlayerAlwaysOpenInPlayer = NSLocalizedString("duck-player.always-open-in-player", value: "Always open YouTube videos in Duck Player", comment: "Private YouTube Player option")
@@ -662,6 +680,10 @@ struct UserText {
     static let externalSchemePermissionAuthorizationNoDomainFormat = NSLocalizedString("permission.authorization.externalScheme.empty.format",
                                                                                        value: "Open this link in %@?",
                                                                                        comment: "Popover asking to open link in External App (%@)")
+    static let wifiHotspotPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.wifihotspot.format",
+                                                                            value: "WiFi hotspot requesting authorization to redirect to captive portal login page.",
+                                                                            comment: "Popover asking user to authorize WiFi hotspot captive portal")
+
     static let permissionAlwaysAllowOnDomainCheckbox = NSLocalizedString("dashboard.permission.allow.on", value: "Always allow on", comment: "Permission Popover 'Always allow on' (for domainName) checkbox")
 
     static let permissionMicrophone = NSLocalizedString("permission.microphone", value: "Microphone", comment: "Microphone input media device name")
@@ -669,6 +691,7 @@ struct UserText {
     static let permissionCameraAndMicrophone = NSLocalizedString("permission.cameraAndmicrophone", value: "Camera and Microphone", comment: "camera and microphone input media devices name")
     static let permissionGeolocation = NSLocalizedString("permission.geolocation", value: "Location", comment: "User's Geolocation permission access name")
     static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open Pop Up Windows permission access name")
+    static let permissionWifiHotspot = NSLocalizedString("permission.title.wifihotspot", value: "WiFi Hotspot", comment: "WiFi Hotspot permission title")
 
     static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
     static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")
@@ -1540,7 +1563,13 @@ struct UserText {
 
     // Key: "preferences.subscription"
     // Comment: "Show subscription preferences"
-    static let subscription = "Privacy Pro"
+    static let subscriptionDeprecated = "Privacy Pro"
+    static func subscriptionName(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.general.name", value: "DuckDuckGo Subscription", comment: "Title for Subscription item in the options menu")
+        }
+        return "Privacy Pro"
+    }
     static func purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: Bool) -> String {
         if isSubscriptionRebrandingOn {
             return NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")
@@ -1551,6 +1580,22 @@ struct UserText {
     static let purchasingSubscriptionTitle = NSLocalizedString("subscription.progress.view.purchasing.subscription", value: "Purchase in progress...", comment: "Progress view title when starting the purchase")
     static let restoringSubscriptionTitle = NSLocalizedString("subscription.progress.view.restoring.subscription", value: "Restoring subscription...", comment: "Progress view title when restoring past subscription purchase")
     static let completingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
+
+    // MARK: - VPN Upsell Popover
+    static let vpnUpsellPopoverTitle = NSLocalizedString("subscription.upsell.popover.title", value: "A VPN to secure your\nWi-Fi & personal info", comment: "Title shown in VPN Upsell popover")
+    static let vpnUpsellPopoverFreeTrialCTA = NSLocalizedString("subscription.upsell.popover.cta.free.trial", value: "Try For Free", comment: "Title for the main CTA button in VPN Upsell popover if user is eligible for free trial")
+    static let vpnUpsellPopoverLearnMoreCTA = NSLocalizedString("subscription.upsell.popover.cta.learn.more", value: "Learn More", comment: "Title for the main CTA button in VPN Upsell popover if user is not eligible for free trial")
+    static let vpnUpsellPopoverNoThanksButton = NSLocalizedString("subscription.upsell.popover.button.no.thanks", value: "No Thanks", comment: "Title for the no thanks button in VPN Upsell popover (will dismiss the popover)")
+    static let vpnUpsellPopoverPlusFeaturesSubtitle = NSLocalizedString("subscription.upsell.popover.plus.features.subtitle", value: "+ more premium protections", comment: "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed")
+    static let vpnUpsellPopoverPlusFeaturesSubtitleCount = NSLocalizedString("subscription.upsell.popover.plus.features.subtitle.count", value: "+ %d more premium protections", comment: "Subtitle shown in VPN Upsell popover when there are multiple plus features listed")
+    static let vpnUpsellPopoverPlusFeaturesSectionTitle = NSLocalizedString("subscription.upsell.popover.plus.features.section.title", value: "Plus", comment: "Section title for plus features listed in the VPN Upsell popover")
+    static let hideIPAddressFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.hide.ip.address.title", value: "Hide your IP address from sites", comment: "Title for the hide IP address feature listed in the VPN Upsell popover")
+    static let shieldOnlineActivityFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.shield.online.activity.title", value: "Shield your online activity from others", comment: "Title for the shield online activity feature listed in the VPN Upsell popover")
+    static let blockHarmfulSitesFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.block.harmful.sites.title", value: "Block harmful sites & online scams", comment: "Title for the block harmful sites feature listed in the VPN Upsell popover")
+    static let aiChatFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.ai.chat.title", value: "Chat privately with advanced AI models", comment: "Title for the AI chat feature listed in the VPN Upsell popover")
+    static let identityTheftProtectionFeatureTitle = NSLocalizedString("subscription.upsell.popover.features.identity.theft.protection.title", value: "Restore your identity if it's stolen", comment: "Title for the identity theft protection feature listed in the VPN Upsell popover")
+    static let pirFeatureTitle = NSLocalizedString("subscription.upsell.popover.plus.features.pir.title", value: "Remove info from sites that sell it", comment: "Title for the Private Information Removal feature listed in the VPN Upsell popover")
+    static let pirFeatureSubtitle = NSLocalizedString("subscription.upsell.popover.plus.features.pir.subtitle", value: "currently available on Mac & Windows", comment: "Subtitle for the Private Information Removal feature listed in the VPN Upsell popover")
 
     // Mark: Sync Promo
     static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")

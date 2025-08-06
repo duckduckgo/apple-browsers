@@ -19,170 +19,56 @@
 
 import Foundation
 import UIKit
-import Combine
 
-/// Protocol for handling swipe container events
-protocol SwipeContainerManagerDelegate: AnyObject {
-    func swipeContainerManager(_ manager: SwipeContainerManager, didSwipeToMode mode: TextEntryMode)
-    func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat)
-}
 
 /// Manages the horizontal swipe container with pagination between search and AI chat modes
 final class SwipeContainerManager: NSObject {
     
     // MARK: - Properties
-    
-    weak var delegate: SwipeContainerManagerDelegate?
-    
+
     private let switchBarHandler: SwitchBarHandling
-    private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Scroll Progress
-    @Published private(set) var scrollProgress: CGFloat = 0.0
-    var scrollProgressPublisher: AnyPublisher<CGFloat, Never> {
-        $scrollProgress.eraseToAnyPublisher()
+
+    var searchPageContainer: UIView { swipeContainerViewController.searchPageContainer }
+
+    lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
+
+    var delegate: SwipeContainerViewControllerDelegate? {
+        get { swipeContainerViewController.delegate }
+        set { swipeContainerViewController.delegate = newValue }
     }
-    
-    // MARK: - UI Elements
-    
-    private(set) var swipeScrollView: UIScrollView!
-    private(set) var searchPageContainer: UIView!
-    private(set) var chatPageContainer: UIView!
-    
+
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         super.init()
-        setupBindings()
     }
     
     // MARK: - Public Methods
     
     /// Installs the swipe container in the provided parent view
-    func installInView(_ parentView: UIView, belowView topView: UIView) {
-        createScrollView()
-        createContainerViews()
-        addToParentView(parentView)
-        setupConstraints(belowView: topView, superview: parentView)
-        configureInitialPosition()
-    }
-    
-    /// Updates the scroll view position and content size when bounds change
-    func updateLayout(viewBounds: CGRect) {
-        guard swipeScrollView != nil else { return }
-        let pageWidth = viewBounds.width
-        swipeScrollView.contentSize = CGSize(width: pageWidth * 2, height: 0)
-        updateScrollViewPosition(pageWidth: pageWidth, animated: false)
-    }
-    
-    // MARK: - Private Methods
-    
-    private func setupBindings() {
-        switchBarHandler.toggleStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateScrollViewPosition(animated: true)
-            }
-            .store(in: &cancellables)
-    }
-    
-    private func createScrollView() {
-        swipeScrollView = UIScrollView()
-        swipeScrollView.isPagingEnabled = true
-        swipeScrollView.showsHorizontalScrollIndicator = false
-        swipeScrollView.showsVerticalScrollIndicator = false
-        swipeScrollView.delegate = self
-        swipeScrollView.bounces = false
-        swipeScrollView.translatesAutoresizingMaskIntoConstraints = false
-        swipeScrollView.contentInsetAdjustmentBehavior = .never
-    }
-    
-    private func createContainerViews() {
-        searchPageContainer = UIView()
-        searchPageContainer.translatesAutoresizingMaskIntoConstraints = false
-        
-        chatPageContainer = UIView()
-        chatPageContainer.backgroundColor = .clear
-        chatPageContainer.translatesAutoresizingMaskIntoConstraints = false
-        
-        swipeScrollView.addSubview(searchPageContainer)
-        swipeScrollView.addSubview(chatPageContainer)
-    }
-    
-    private func addToParentView(_ parentView: UIView) {
-        parentView.addSubview(swipeScrollView)
-    }
-    
-    private func setupConstraints(belowView topView: UIView, superview: UIView) {
+    func installInViewController(_ parentController: UIViewController, belowView: UIView) {
+        parentController.addChild(swipeContainerViewController)
+
+        parentController.view.insertSubview(swipeContainerViewController.view, belowSubview: belowView)
+        swipeContainerViewController.view.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
-            // Scroll view constraints
-            swipeScrollView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            swipeScrollView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            swipeScrollView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 4),
-            swipeScrollView.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
-
-            // Search page constraints
-            searchPageContainer.leadingAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.leadingAnchor),
-            searchPageContainer.topAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.topAnchor),
-            searchPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.bottomAnchor),
-            searchPageContainer.widthAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.widthAnchor),
-            searchPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.heightAnchor),
-
-            // Chat page constraints
-            chatPageContainer.leadingAnchor.constraint(equalTo: searchPageContainer.trailingAnchor),
-            chatPageContainer.trailingAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.trailingAnchor),
-            chatPageContainer.topAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.topAnchor),
-            chatPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.bottomAnchor),
-            chatPageContainer.widthAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.widthAnchor),
-            chatPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.heightAnchor)
+            swipeContainerViewController.view.leadingAnchor.constraint(equalTo: parentController.view.leadingAnchor),
+            swipeContainerViewController.view.trailingAnchor.constraint(equalTo: parentController.view.trailingAnchor),
+            // Allow scroll to flow under
+            swipeContainerViewController.view.topAnchor.constraint(equalTo: belowView.bottomAnchor, constant: -Metrics.contentUnderflowOffset),
+            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: parentController.view.bottomAnchor),
         ])
-    }
-    
-    private func configureInitialPosition() {
-        guard let parentView = swipeScrollView.superview else { return }
 
-        let pageWidth = parentView.bounds.width
-        swipeScrollView.contentSize = CGSize(width: pageWidth * 2, height: 0)
-        updateScrollViewPosition(pageWidth: pageWidth, animated: false)
-    }
-    
-    private func updateScrollViewPosition(pageWidth: CGFloat? = nil, animated: Bool) {
-        guard let parentView = swipeScrollView.superview else { return }
+        // Compensate for the underflow + margin
+        swipeContainerViewController.additionalSafeAreaInsets.top = Metrics.contentMargin + Metrics.contentUnderflowOffset
 
-        let pageWidth = pageWidth ?? parentView.bounds.width
-
-        let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : pageWidth
-        swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: animated)
+        swipeContainerViewController.didMove(toParent: parentController)
     }
-    
-    private func updateScrollProgress(_ progress: CGFloat) {
-        scrollProgress = progress
-        delegate?.swipeContainerManager(self, didUpdateScrollProgress: progress)
-    }
-}
 
-// MARK: - UIScrollViewDelegate
-
-extension SwipeContainerManager: UIScrollViewDelegate {
-    
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let pageWidth = scrollView.frame.width
-        guard pageWidth > 0 else { return }
-        
-        // Calculate progress (0 = search, 1 = aiChat)
-        let progress = max(0, min(1, scrollView.contentOffset.x / pageWidth))
-        updateScrollProgress(progress)
-    }
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        let pageWidth = scrollView.frame.width
-        let currentPage = Int(scrollView.contentOffset.x / pageWidth)
-        
-        let newMode: TextEntryMode = currentPage == 0 ? .search : .aiChat
-        
-        if newMode != switchBarHandler.currentToggleState {
-            delegate?.swipeContainerManager(self, didSwipeToMode: newMode)
-        }
+    private struct Metrics {
+        static let contentUnderflowOffset = 16.0
+        static let contentMargin = 8.0
     }
 }

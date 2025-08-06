@@ -53,7 +53,7 @@ extension DebugScreensViewModel {
                     func dataGatheringStarted() {
                         ActionMessageView.present(message: "Data Gathering Started... please wait")
                     }
-                    
+
                     func dataGatheringComplete() {
                         ActionMessageView.present(message: "Data Gathering Complete")
                     }
@@ -139,6 +139,9 @@ extension DebugScreensViewModel {
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
+            .controller(title: "Log Viewer", { d in
+                return LogViewerViewController(dependencies: d)
+            }),
             .controller(title: "Configuration Refresh Info", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "ConfigurationDebugViewController") { coder in
@@ -195,7 +198,7 @@ extension DebugScreensViewModel {
                     ConfigurationURLDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "Onboarding", { _ in
+            .controller(title: "Onboarding", { d in
                 class OnboardingDebugViewController: UIHostingController<OnboardingDebugView>, OnboardingDelegate {
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
@@ -205,7 +208,7 @@ extension DebugScreensViewModel {
                 weak var capturedController: OnboardingDebugViewController?
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter())
+                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager)
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)

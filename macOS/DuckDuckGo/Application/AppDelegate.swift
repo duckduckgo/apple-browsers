@@ -128,6 +128,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
+    let hotspotDetectionService: HotspotDetectionServiceProtocol
+    let captivePortalPopupManager: CaptivePortalPopupManager
     let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
@@ -168,6 +170,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
+        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        featureFlagger: featureFlagger,
+        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+    )
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
@@ -207,13 +214,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = {
         return VPNUpsellVisibilityManager(
-            isFirstLaunch: AppDelegate.isFirstLaunch,
+            isFirstLaunch: false,
             isNewUser: AppDelegate.isNewUser,
             subscriptionManager: subscriptionAuthV1toV2Bridge,
-            defaultBrowserPublisher: DefaultBrowserPreferences.shared.$isDefault.eraseToAnyPublisher(),
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            persistor: vpnUpsellUserDefaultsPersistor,
+            timerDuration: vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval
         )
+    }()
+
+    lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
+        return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
 
     // MARK: - DBP
@@ -241,8 +254,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     static var isNewUser: Bool {
         return firstLaunchDate >= Date.weekAgo
     }
-
-    static var isFirstLaunch = false
 
     static var twoDaysPassedSinceFirstLaunch: Bool {
         return firstLaunchDate.daysSinceNow() >= 2
@@ -568,7 +579,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
-                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
+                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
+                paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -614,6 +627,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
+        hotspotDetectionService = HotspotDetectionService()
+        captivePortalPopupManager = CaptivePortalPopupManager()
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -860,10 +875,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = DownloadListCoordinator.shared
         _ = RecentlyClosedCoordinator.shared
 
-        if LocalStatisticsStore().atb == nil {
-            AppDelegate.isFirstLaunch = true
+        let isFirstLaunch = LocalStatisticsStore().atb == nil
+
+        if isFirstLaunch {
             AppDelegate.firstLaunchDate = Date()
         }
+
+        vpnUpsellVisibilityManager.setup(isFirstLaunch: isFirstLaunch)
+
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here

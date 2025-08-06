@@ -944,6 +944,15 @@
 "broken.site.report.success.toast" = "Raporunuz DuckDuckGo'yu herkes için daha iyi hale getirmeye yardımcı oluyor!";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "Broker JSON:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Broker: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Brokerlar";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Bir kereden fazla iptal uygulanamaz";
 
 /* Close All Tabs */
@@ -1135,6 +1144,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Safari'den şifreleri dışa aktarma:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Dosya Seçin...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Safari veya Chrome'dan dışa aktarılan şifreleri içeren dosyayı seçin. Bu genellikle bir ZIP veya CSV dosyasıdır.";
 
@@ -1161,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "İçe aktarma tamamlandı!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kredi Kartları";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Atlanan Kopyalar";
@@ -1203,6 +1218,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Hata Ayıklama";
+
+/* No comment provided by engineer. */
+"Delete" = "Sil";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "cihaz";
@@ -1311,6 +1329,30 @@
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "iOS için DuckDuckGo";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "DuckDuckGo aboneliğinizi bu cihaza ekleyin";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Aboneliğinizi bu cihaza eklemek için bir e-posta adresi kullanın.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Aboneliğinizi diğer cihazlara ekleyin";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Aboneliğinizi Apple Kimliğiniz üzerinden veya bir e-posta adresi bağlayarak diğer cihazlarınıza ekleyebilirsiniz. **[Daha fazla bilgi](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Aboneliğinizi DuckDuckGo uygulamasındaki diğer cihazlarınıza eklemek için bu e-postayı kullanın. Ayarlar > DuckDuckGo Aboneliği > Aboneliğim Var'a gidin. **[Daha fazla bilgi](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "Yardım sayfalarımızdan sıkça sorulan soruların yanıtlarını alabilir veya abonelik destek ekibiyle iletişime geçebilirsiniz.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Personal Information Removal kurulumu için masaüstünde DuckDuckGo aboneliğini etkinleştirin";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "DuckDuckGo aboneliğinize artık bu cihaz üzerinden erişemeyeceksiniz. Bu işlem aboneliğinizi iptal etmez ve abonelik diğer cihazlarınızda aktif kalır.";
 
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Her zaman";
@@ -1948,6 +1990,9 @@
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Tüm Sekmeleri Göster";
 
+/* No comment provided by engineer. */
+"Loading brokers..." = "Brokerlar yükleniyor...";
+
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "Mac için DuckDuckGo, ihtiyacınız olan hız ve beklediğiniz tarama özelliklerinin yanı sıra sınıfındaki en iyi gizlilik özelliklerini (Privacy Essentials) sunuyor.";
 
@@ -2036,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "VPN Widget'ı Ekleyin";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "Abonelik süresi dolduğu için VPN bağlantısı kesildi. DuckDuckGo VPN'e yeniden bağlanmak için Privacy Pro'ya abone olun.";
+"network.protection.entitlement.expired.notification.body" = "Abonelik süresi dolduğu için VPN bağlantısı kesildi. VPN'i yeniden bağlamak için DuckDuckGo'ya abone olun.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "DuckDuckGo VPN bağlanamadı. Lütfen daha sonra tekrar deneyin.";
@@ -2284,6 +2329,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Herhangi bir sitedeyken, ••• menüsünü açın ve siteyi yeni sekme sayfanıza eklemek için **Favori Ekle**'yi seçin.";
 
+/* No comment provided by engineer. */
+"No results found" = "Sonuç bulunamadı";
+
+/* No comment provided by engineer. */
+"OK" = "Tamam";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Yönetilen Çerezler";
 
@@ -2298,6 +2349,15 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Varsayılan olarak gizli arama yapın";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ayrıca %2$@ ve gelişmiş, özel yapay zeka ile kullanılabilen %1$@ özelliği sunmaktadır.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "isteğe bağlı ücretli abonelik";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Ulaşması kolay";
@@ -2377,6 +2437,18 @@
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Anladım! Diğer ipuçlarını atlayacağım.";
 
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Ücretsiz dene!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo'nun ayrıca %2$@ ile kullanılabilen güvenli bir %1$@ var.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "isteğe bağlı ücretli abonelik";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN'i + 2 premium koruması daha";
+
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Widget Ekle";
 
@@ -2409,6 +2481,9 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Bu bağlantıyı açmak için gereken uygulama bulunamıyor";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Kapsam Dışı Kalınıyor...";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
 "paid-duck-ai.feedback-form.category.access-subscription-models" = "Abonelere özel Duck.ai modellerine erişilemiyor.";
@@ -2593,6 +2668,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Gizlilik Simgesi";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Profil Bilgileri";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "İptal";
 
@@ -2606,6 +2684,9 @@
 "prompt.custom.url.scheme.title" = "Başka Bir Uygulamada Açılsın mı?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Akrabalar: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Sıfırla";
 
 /* No comment provided by engineer. */
@@ -2613,6 +2694,9 @@
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Sonuçlar";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Adres ara veya gir";
@@ -2647,11 +2731,17 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Hakkında";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Buna ek olarak, tarayıcımıza entegre edilmiş üçü bir arada abonelik hizmeti [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)'yu da sunuyoruz. Privacy Pro aboneleri, internetteki etkinliğinizin güvenliğini sağlayan hızlı ve basit bir [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kişisel bilgilerinizi kişi bulma sitelerinden bulup kaldırma hizmeti ve çalınması durumunda kimliğinizi geri yükleme özelliği ile daha fazla gizlilik koruması elde eder.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Ayrıca, tarayıcımıza entegre edilmiş bir [DuckDuckGo aboneliği](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) de sunuyoruz. Aboneler, internetteki etkinliklerinin güvenliğini sağlayan hızlı ve basit bir [VPN] (ddgQuickLink: //duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), yapay zekâ sohbet hizmetimiz Duck.ai'daki gelişmiş yapay zekâ modellerine erişim, kişisel bilgilerinizi kişi bulma sitelerinden bulan ve kaldıran ve çalınması durumunda kimliğinizi geri yükleyen bir hizmet ile daha fazla gizlilik koruması elde eder.";
+
 /* about tagline */
 "settings.about.tagline" = "Koruma. Gizlilik. İçiniz rahat olsun.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo, kişisel bilgilerinin kontrolünü geri almak isteyen herkes için bağımsız bir online koruma şirketidir.\n\nKişisel bilgilerinizi bilgisayar korsanlarından, dolandırıcılardan ve gizliliğinizi ihlal eden şirketlerden korumanın en iyi yolunun, bu bilgilerin toplanmasını tamamen durdurmak olduğuna inanıyoruz. Bu yüzden milyonlarca insan internette arama yapmak ve gezinmek için [Chrome ve diğer tarayıcılar yerine DuckDuckGo'yu tercih ediyor](ddgQuickLink://duckduckgo.com/compare-privacy). Yerleşik arama motorumuz Google gibidir ancak aramalarınızı asla izlemez. Reklam izleyici ve çerezleri engelleme gibi tarama korumalarımız, diğer şirketlerin verilerinizi toplamasını önlemeye de yardımcı olur. Ayrıca, tarayıcımız ücretsizdir. Verilerinizi kullanarak değil, [gizliliğe saygılı arama reklamlarından](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) para kazanıyoruz. \n\n%@ \n\nVeri koruma için tasarlanmış, veri toplama amacı gütmeyen tarayıcıyla kişisel bilgilerinizin kontrolünü geri alın.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Erişilebilirlik";
@@ -2673,9 +2763,6 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai Kısayolları";
-
-/* Settings screen text for showing AI Chat in the input box */
-"settings.aichat.shortcuts.input" = "Arama Girdisi";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Web'de arama yapın veya doğrudan Adres Çubuğundan Duck.ai'a sorun";
@@ -2748,6 +2835,9 @@
 
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "Diğer Platformlarda DuckDuckGo";
+
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Privacy Pro aboneliğiniz sona erdi";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "E-posta sağlayıcınızı değiştirmeden e-posta izleyicileri engelleyin ve adresinizi gizleyin.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2893,9 +2983,6 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Aboneliğim Var";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Privacy Pro'yu kullanmaya devam etmek için tekrar abone olun";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Privacy Pro aboneliğiniz sona erdi";
 
@@ -2930,7 +3017,7 @@
 "settings.subscription.subscribe.title.no.ai.chat" = "Wi-Fi bağlantınızı güvence altına alın ve kimliğinizi koruyun";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free.button" = "DuckDuckGo Aboneliğini Ücretsiz Deneyin";
+"settings.subscription.try.free.button" = "Ücretsiz Deneyin";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Privacy Pro'yu Ücretsiz Deneyin";
@@ -3046,9 +3133,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "Aboneliğim Var";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Talimatları Tekrar Gönder";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Aboneliğinizi diğer cihazlarınızda etkinleştirmek için bir e-posta adresi ekleyin. Bu adresi yalnızca aboneliğinizi doğrulamak için kullanacağız.";
 
@@ -3063,9 +3147,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Aboneliğinizi DuckDuckGo uygulamasındaki diğer cihazlarınıza eklemek için bu e-postayı kullanın. Ayarlar > Privacy Pro > Aboneliğim Var'a gidin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Privacy Pro, aynı Apple Hesabında oturum açılmış herhangi bir cihazda kullanılabilir.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Aboneliğiniz Google Play Store üzerinden satın alınmış. Aboneliğinizi yenilemek için lütfen ilk olarak aboneliğinizi satın alırken kullandığınız Google Hesabında oturum açılmış bir cihazda Google Play Store abonelik ayarlarını açın.";
@@ -3168,6 +3249,9 @@
 
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Abonelik geri yükleniyor...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Pro artık sadece DuckDuckGo aboneliği olarak adlandırılıyor";
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Bu Cihazdan Kaldır";
@@ -3422,7 +3506,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Abone ol";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "DuckDuckGo VPN'e yeniden bağlanmak için Privacy Pro'ya abone olun.";
+"vpn.access-revoked.alert.message" = "VPN'i yeniden bağlamak için DuckDuckGo'ya abone olun.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "Abonelik süresi dolduğu için VPN bağlantısı kesildi";
@@ -3663,6 +3747,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Devam et";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kredi Kartları";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Şifreler";

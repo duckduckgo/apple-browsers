@@ -1,0 +1,17 @@
+{
+  "name": "apple-browsers",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "iOS",
+    "macOS",
+    "SharedPackages/BrowserServicesKit"
+  ],
+  "scripts": {
+    "build-content-scope-scripts": "npm run build-content-scope-scripts --workspace=SharedPackages/BrowserServicesKit",
+    "postinstall": "npm run build-content-scope-scripts"
+  },
+  "dependencies": {
+    "@duckduckgo/content-scope-scripts": "github:duckduckgo/content-scope-scripts#11.3.0"
+  }
+}

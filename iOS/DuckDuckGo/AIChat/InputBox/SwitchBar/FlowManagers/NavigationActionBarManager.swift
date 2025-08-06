@@ -37,7 +37,9 @@ final class NavigationActionBarManager {
     private let switchBarHandler: SwitchBarHandling
     private var navigationActionBarViewController: NavigationActionBarViewController?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
-    
+
+    var view: UIView? { navigationActionBarViewController?.viewIfLoaded }
+
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling) {
@@ -48,7 +50,7 @@ final class NavigationActionBarManager {
     
     /// Installs the navigation action bar in the provided parent view controller
     @MainActor
-    func installInViewController(_ viewController: UIViewController, safeAreaGuide: UILayoutGuide) {
+    func installInViewController(_ viewController: UIViewController) {
         let viewModel = NavigationActionBarViewModel(
             switchBarHandler: switchBarHandler,
             onMicrophoneTapped: { [weak self] in
@@ -76,7 +78,7 @@ final class NavigationActionBarManager {
         NSLayoutConstraint.activate([
             actionBarViewController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
             actionBarViewController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
-            actionBarViewController.view.bottomAnchor.constraint(equalTo: viewController.view.safeAreaLayoutGuide.bottomAnchor)
+            actionBarViewController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
         ])
         
         actionBarViewController.didMove(toParent: viewController)

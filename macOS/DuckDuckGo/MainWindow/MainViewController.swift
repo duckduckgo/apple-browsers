@@ -47,6 +47,7 @@ final class MainViewController: NSViewController {
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let visualStyle: VisualStyleProviding
+    private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -100,7 +101,8 @@ final class MainViewController: NSViewController {
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
-         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider
+         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider,
+         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -192,7 +194,8 @@ final class MainViewController: NSViewController {
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
-                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
+                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                                         vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -201,6 +204,7 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager
         )
+        self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
 
         super.init(nibName: nil, bundle: nil)
         browserTabViewController.delegate = self

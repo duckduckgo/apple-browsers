@@ -254,7 +254,7 @@ public final class AutofillPixelReporter {
             }
 
             if let cardsCount = try? vault()?.creditCardsCount() {
-                eventMapping.fire(.autofillCreditCardsStacked, parameters: [AutofillPixelEvent.Parameter.countBucket: creditCardsBucketNameFrom(count: cardsCount)])
+                eventMapping.fire(.autofillCreditCardsStacked, parameters: [AutofillPixelEvent.Parameter.countBucket: Self.creditCardsBucketNameFrom(count: cardsCount)])
             }
 
             if let identitiesCount = try? vault()?.identitiesCount() {
@@ -348,7 +348,7 @@ public final class AutofillPixelReporter {
         }
     }
 
-    private func creditCardsBucketNameFrom(count: Int) -> String {
+    public static func creditCardsBucketNameFrom(count: Int) -> String {
         if count == 0 {
             return BucketName.none.rawValue
         } else if count < 4 {

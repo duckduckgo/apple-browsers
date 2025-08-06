@@ -26,7 +26,7 @@ import Bookmarks
 import os.log
 
 final class HomePageConfiguration: HomePageMessagesConfiguration {
-    
+
     // MARK: - Messages
     
     private var homeMessageStorage: HomeMessageStorage
@@ -75,10 +75,10 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         case .remoteMessage(let remoteMessage):
             Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
             await remoteMessagingClient.store.dismissRemoteMessage(withID: remoteMessage.id)
-
             if let index = homeMessages.firstIndex(of: homeMessage) {
                 homeMessages.remove(at: index)
             }
+            NotificationCenter.default.post(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange, object: nil)
         default:
             break
         }

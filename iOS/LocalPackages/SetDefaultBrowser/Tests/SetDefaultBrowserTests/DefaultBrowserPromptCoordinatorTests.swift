@@ -31,7 +31,7 @@ final class DefaultBrowserPromptCoordinatorTests {
     private var promptStoreMock: MockDefaultBrowserPromptStore
     private var userActivityManagerMock: MockDefaultBrowserPromptUserActivityManager
     private var promptTypeDeciderMock: MockDefaultBrowserPromptTypeDecider
-    private var urlOpenerMock: MockURLOpener
+    private var defaultBrowserSettingsNavigator: MockDefaultBrowserPromptSettingsNavigating
     private var eventMapperMock: MockDefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>
     private var sut: DefaultBrowserPromptCoordinator!
 
@@ -40,7 +40,7 @@ final class DefaultBrowserPromptCoordinatorTests {
         promptStoreMock = MockDefaultBrowserPromptStore()
         userActivityManagerMock = MockDefaultBrowserPromptUserActivityManager()
         promptTypeDeciderMock = MockDefaultBrowserPromptTypeDecider()
-        urlOpenerMock = MockURLOpener()
+        defaultBrowserSettingsNavigator = MockDefaultBrowserPromptSettingsNavigating()
         eventMapperMock = MockDefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>()
 
         sut = DefaultBrowserPromptCoordinator(
@@ -48,7 +48,7 @@ final class DefaultBrowserPromptCoordinatorTests {
             promptStore: promptStoreMock,
             userActivityManager: userActivityManagerMock,
             promptTypeDecider: promptTypeDeciderMock,
-            urlOpener: urlOpenerMock,
+            defaultBrowserSettingsNavigator: defaultBrowserSettingsNavigator,
             eventMapper: eventMapperMock,
             dateProvider: dateProviderMock.getDate
         )
@@ -172,18 +172,16 @@ final class DefaultBrowserPromptCoordinatorTests {
 
     // MARK: - Actions
 
-    @Test("Check Set Default Browser Action Opens Settings URL")
-    func whenSetDefaultBrowserActionIsCalledThenSettingsUrlIsOpened() {
+    @Test("Check Set Default Browser Action Navigate To Default Browser Settings")
+    func whenSetDefaultBrowserActionIsCalledThenAskNavigatorToNavigateToDefaultBrowser() {
         // GIVEN
-        #expect(!urlOpenerMock.didCallOpenURL)
-        #expect(urlOpenerMock.capturedURL == nil)
+        #expect(!defaultBrowserSettingsNavigator.didCallNavigateToSetDefaultBrowserSettings)
 
         // WHEN
         sut.setDefaultBrowserAction()
 
         // THEN
-        #expect(urlOpenerMock.didCallOpenURL)
-        #expect(urlOpenerMock.capturedURL == URL(string: UIApplication.openSettingsURLString))
+        #expect(defaultBrowserSettingsNavigator.didCallNavigateToSetDefaultBrowserSettings)
     }
 
     @Test(

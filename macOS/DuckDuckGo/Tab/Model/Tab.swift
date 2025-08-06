@@ -62,6 +62,8 @@ protocol NewWindowPolicyDecisionMaker {
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+        var hotspotDetectionService: HotspotDetectionServiceProtocol
+        var captivePortalPopupManager: CaptivePortalPopupManager
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -113,6 +115,8 @@ protocol NewWindowPolicyDecisionMaker {
                      downloadManager: FileDownloadManagerProtocol = FileDownloadManager.shared,
                      permissionManager: PermissionManagerProtocol? = nil,
                      geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+                     hotspotDetectionService: HotspotDetectionServiceProtocol? = nil,
+                     captivePortalPopupManager: CaptivePortalPopupManager? = nil,
                      cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? = ContentBlockingAssetsCompilationTimeReporter.shared,
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
@@ -169,6 +173,7 @@ protocol NewWindowPolicyDecisionMaker {
                   downloadManager: downloadManager,
                   permissionManager: permissionManager ?? NSApp.delegateTyped.permissionManager,
                   geolocationService: geolocationService,
+                  hotspotDetectionService: hotspotDetectionService ?? NSApp.delegateTyped.hotspotDetectionService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
                   contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
@@ -193,7 +198,8 @@ protocol NewWindowPolicyDecisionMaker {
                   tabsPreferences: tabsPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
-                  aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration)
+                  aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
+                  captivePortalPopupManager: captivePortalPopupManager ?? NSApp.delegateTyped.captivePortalPopupManager)
     }
 
     @MainActor
@@ -212,6 +218,7 @@ protocol NewWindowPolicyDecisionMaker {
          downloadManager: FileDownloadManagerProtocol,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol,
+         hotspotDetectionService: HotspotDetectionServiceProtocol,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -236,7 +243,8 @@ protocol NewWindowPolicyDecisionMaker {
          tabsPreferences: TabsPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+         captivePortalPopupManager: CaptivePortalPopupManager
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -320,7 +328,9 @@ protocol NewWindowPolicyDecisionMaker {
                                                        faviconManagement: faviconManagement,
                                                        featureFlagger: featureFlagger,
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
-                                                       aiChatMenuConfiguration: aiChatMenuConfiguration))
+                                                       aiChatMenuConfiguration: aiChatMenuConfiguration,
+                                                       hotspotDetectionService: hotspotDetectionService,
+                                                       captivePortalPopupManager: captivePortalPopupManager))
 
         super.init()
         tabGetter = { [weak self] in self }
@@ -702,7 +712,7 @@ protocol NewWindowPolicyDecisionMaker {
         if #available(macOS 12.0, *) {
             self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
         } else {
-            self.interactionState = (try? webView.sessionStateData()).map { .webViewProvided($0) } ?? .none
+            self.interactionState = webView.sessionStateData().map { .webViewProvided($0) } ?? .none
         }
 
         return self.interactionState.data
@@ -1063,7 +1073,7 @@ protocol NewWindowPolicyDecisionMaker {
 
     private func restoreInteractionState(with interactionStateData: Data) {
         guard #available(macOS 12.0, *) else {
-            try? webView.restoreSessionState(from: interactionStateData)
+            webView.restoreSessionState(from: interactionStateData)
             return
         }
         webView.interactionState = interactionStateData

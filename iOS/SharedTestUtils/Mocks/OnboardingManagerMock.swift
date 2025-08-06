@@ -21,25 +21,8 @@ import Foundation
 import Core
 @testable import DuckDuckGo
 
-final class OnboardingManagerMock: OnboardingIntroExperimentManaging, OnboardingSettingsURLProvider, OnboardingStepsProvider {
+final class OnboardingManagerMock: OnboardingStepsProvider {
     private(set) var didCallSettingsURLPath = false
-    var cohortToReturn: OnboardingSetAsDefaultBrowserPiPVideoCohort?
 
     var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingIntroStep.newUserSteps(isIphone: true)
-    var isEnrolledInSetAsDefaultBrowserPipVideoExperiment: Bool = false
-
-    var settingsURLPathToReturn: String = "www.example.com"
-    var settingsURLPath: String {
-        get {
-            didCallSettingsURLPath = true
-            return settingsURLPathToReturn
-        }
-        set {
-            settingsURLPathToReturn = newValue
-        }
-    }
-
-    func resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: Bool) -> OnboardingSetAsDefaultBrowserPiPVideoCohort? {
-        cohortToReturn
-    }
 }

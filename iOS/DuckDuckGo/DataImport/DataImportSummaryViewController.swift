@@ -77,14 +77,14 @@ extension DataImportSummaryViewController: DataImportSummaryViewModelDelegate {
                 parent.segueToSync()
             }
         } else {
-            self.onSegueToSync()
+            onSegueToSync()
         }
     }
 
 
     func dataImportSummaryViewModelComplete(_ viewModel: DataImportSummaryViewModel) {
-        if let navigationController = presentingViewController as? UINavigationController, navigationController.topViewController is DataImportViewController {
-            self.onCompletion()
+        if let navigationController = presentingViewController as? UINavigationController, navigationController.children.first is DataImportViewController {
+            onCompletion()
         } else {
             dismiss(animated: true) { [weak self] in
                 self?.onCompletion()

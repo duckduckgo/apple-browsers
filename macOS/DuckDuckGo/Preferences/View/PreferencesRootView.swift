@@ -520,7 +520,9 @@ enum Preferences {
 
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
-                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
+                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
+                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                          isRebrandingOn: { featureFlagger.isFeatureOn(.subscriptionRebranding) })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

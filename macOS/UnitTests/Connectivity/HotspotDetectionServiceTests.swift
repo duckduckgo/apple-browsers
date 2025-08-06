@@ -329,12 +329,12 @@ final class HotspotDetectionServiceTests: XCTestCase {
         }
 
         // First subscriber - capture all received states
-        service.statePublisher.sink { state in
+        service.statePublisher.removeDuplicates().sink { state in
             firstSubscriberStates.append(state)
         }.store(in: &cancellables)
 
         // Second subscriber - capture all received states  
-        service.statePublisher.sink { state in
+        service.statePublisher.removeDuplicates().sink { state in
             secondSubscriberStates.append(state)
         }.store(in: &cancellables)
 

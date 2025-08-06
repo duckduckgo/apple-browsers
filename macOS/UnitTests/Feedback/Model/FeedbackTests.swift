@@ -150,14 +150,33 @@ final class FeedbackTests: XCTestCase {
             ("UPPERCASE", "uppercase"),
             ("MixedCASE String", "mixedcase-string"),
             ("String\nWith\tWhitespace", "string-with-whitespace"),
+            ("Single", "single"),
+            // Special character handling
+            ("Feature & Bug", "feature-and-bug"),
+            ("Browser doesn't work", "browser-doesnt-work"),
+            ("100% CPU usage", "100-percent-cpu-usage"),
+            ("Camera/audio permissions", "camera-audio-permissions"),
+            ("Feature@#$", "feature-at-number-dollar"),
+            ("Another Feature!", "another-feature"),
+            ("User@domain.com", "user-at-domain-com"),
+            ("Test (with parentheses)", "test-with-parentheses"),
+            ("Multiple---dashes", "multiple-dashes"),
             ("", ""),
-            ("Single", "single")
+            ("   ", "")
         ]
 
         for (input, expected) in testCases {
             let result = input.toTag
             XCTAssertEqual(result, expected, "Failed for input: '\(input)'")
         }
+    }
+
+        func testWhenConvertingStringToTagThenSpecialCharactersAreHandledCorrectly() {
+        // Test comprehensive special character handling
+        let complexInput = "Browser doesn't work @ 100% & has issues/problems!"
+        let result = complexInput.toTag
+        let expected = "browser-doesnt-work-at-100-percent-and-has-issues-problems"
+        XCTAssertEqual(result, expected, "Complex special character handling failed")
     }
 
     // MARK: - Category Extension Tests
@@ -212,7 +231,7 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithSpecialCharactersInPillsThenTaggingHandlesCorrectly() {
-        let selectedPills: Set<String> = ["Feature@#$%", "Another Feature!"]
+        let selectedPills: Set<String> = ["Feature@#$", "Another Feature!"]
         let text = "Test text"
         let appVersion = "1.0.0"
         let category = Feedback.Category.featureRequest
@@ -226,18 +245,7 @@ final class FeedbackTests: XCTestCase {
         )
 
         // The toTag function should handle special characters
-        XCTAssertTrue(feedback.subcategory.contains("feature"))
+        XCTAssertTrue(feedback.subcategory.contains("feature-at-number-dollar"))
         XCTAssertTrue(feedback.subcategory.contains("another-feature"))
-    }
-}
-
-// MARK: - Helper Extensions
-
-private extension String {
-    var toTag: String {
-        self
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
     }
 }

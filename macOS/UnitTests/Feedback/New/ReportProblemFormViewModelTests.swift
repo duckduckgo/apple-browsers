@@ -401,14 +401,3 @@ final class MockFeedbackSender: FeedbackSenderImplementing {
         lastDataImportReport = report
     }
 }
-
-// MARK: - Helper Extensions
-
-private extension String {
-    var toTag: String {
-        self
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
-    }
-}

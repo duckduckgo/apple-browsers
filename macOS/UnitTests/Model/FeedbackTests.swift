@@ -269,14 +269,3 @@ final class FeedbackTests: XCTestCase {
         XCTAssertTrue(feedback.subcategory.contains("feature"))
     }
 }
-
-// MARK: - Helper Extensions
-
-private extension String {
-    var toTag: String {
-        self
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
-    }
-}

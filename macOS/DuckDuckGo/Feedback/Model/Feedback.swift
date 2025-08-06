@@ -75,12 +75,28 @@ extension Feedback {
     }
 }
 
-private extension String {
+extension String {
     var toTag: String {
-        self
+        return self
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "&", with: "-and-")
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ".", with: "-")
+            .replacingOccurrences(of: "(", with: "")
+            .replacingOccurrences(of: ")", with: "")
+            .replacingOccurrences(of: "\"", with: "")
+            .replacingOccurrences(of: "!", with: "")
+            .replacingOccurrences(of: "?", with: "")
+            .replacingOccurrences(of: "%", with: "-percent-")
+            .replacingOccurrences(of: "@", with: "-at-")
+            .replacingOccurrences(of: "#", with: "-number-")
+            .replacingOccurrences(of: "$", with: "-dollar-")
             .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
+            .replacingOccurrences(of: "[^a-z0-9-]", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "-+", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 }
 

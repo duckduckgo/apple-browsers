@@ -151,21 +151,25 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public func executeNextStep() async {
         resetRetriesCount()
-        Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
+        Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
-            Logger.action.debug("Next action: \(String(describing: action.actionType.rawValue), privacy: .public)")
+            Logger.action.debug(loggerContext(action: action), message: "Next action")
             await runNextAction(action)
         } else {
-            Logger.action.debug("Releasing the web view")
+            Logger.action.debug(loggerContext(), message: "Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
 
             if !shouldContinue {
                 failed(with: DataBrokerProtectionError.cancelled)
             }
         }
+    }
+
+    private func loggerContext(action: Action? = nil) -> PIRActionLogContext {
+        .init(stepType: .scan, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

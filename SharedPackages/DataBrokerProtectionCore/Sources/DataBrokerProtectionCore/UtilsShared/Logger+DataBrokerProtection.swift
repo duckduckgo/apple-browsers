@@ -40,6 +40,22 @@ public extension Logger {
     static var pixel = {
         Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.pixel.rawValue)
     }()
+
+    func log(_ context: PIRActionLogContext, message: String? = nil) {
+        self.log("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
+
+    func info(_ context: PIRActionLogContext, message: String? = nil) {
+        self.info("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
+
+    func error(_ context: PIRActionLogContext, message: String? = nil) {
+        self.info("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
+
+    func debug(_ context: PIRActionLogContext, message: String? = nil) {
+        self.info("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
 }
 
 public enum DataBrokerProtectionLoggerCategory: String, CaseIterable, Identifiable {
@@ -51,4 +67,27 @@ public enum DataBrokerProtectionLoggerCategory: String, CaseIterable, Identifiab
     case pixel = "Pixel"
 
     public var id: String { rawValue }
+}
+
+public struct PIRActionLogContext {
+    let stepType: StepType?
+    let broker: DataBroker?
+    let attemptId: UUID?
+    let action: Action?
+
+    public init(stepType: StepType? = nil, broker: DataBroker? = nil, attemptId: UUID? = nil, action: Action? = nil) {
+        self.stepType = stepType
+        self.broker = broker
+        self.attemptId = attemptId
+        self.action = action
+    }
+
+    public var formattedContext: String {
+        let stepString = stepType.map { "Step: \($0.rawValue), " } ?? ""
+        let brokerString = broker.map { "Broker: \($0.name) \($0.version), " } ?? ""
+        let attemptIdString = attemptId.map { "Attempt: \($0.uuidString), " } ?? ""
+        let actionString = action.map { "Action: \($0.actionType.rawValue) - \($0.id)" } ?? ""
+
+        return "[\(stepString)\(brokerString)\(attemptIdString)\(actionString)]"
+    }
 }

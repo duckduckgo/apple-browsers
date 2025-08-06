@@ -141,7 +141,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
     public func executeNextStep() async {
         resetRetriesCount()
-        Logger.action.debug("OPTOUT Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
+        Logger.action.debug(loggerContext, message: "Waiting \(self.operationAwaitTime) seconds...")
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
         let shouldContinue = self.shouldRunNextStep()
@@ -157,5 +157,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 failed(with: DataBrokerProtectionError.cancelled)
             }
         }
+    }
+
+    private var loggerContext: PIRActionLogContext {
+        .init(stepType: .optOut, broker: query.dataBroker, attemptId: stageCalculator.attemptId)
     }
 }

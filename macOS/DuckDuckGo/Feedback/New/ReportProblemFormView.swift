@@ -404,34 +404,8 @@ struct ProblemDetailFormView: View {
             Text(UserText.reportProblemFormTellUsMore)
                 .systemLabel()
 
-            TextEditor(text: $viewModel.customText)
-                .systemLabel()
-                .frame(minHeight: 80)
-                .padding(8)
-                .background(Color(.textBackgroundColor))
-                .cornerRadius(6)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(viewModel.customText.isEmpty ? Color(.separatorColor) : Color(baseColor: .blue50),
-                                lineWidth: 1)
-                )
-                .overlay(
-                    Group {
-                        if viewModel.customText.isEmpty {
-                            HStack {
-                                VStack {
-                                    HStack {
-                                        Text(UserText.reportProblemFormPlaceholder)
-                                            .systemLabel(color: .textTertiary)
-                                        Spacer()
-                                    }
-                                    Spacer()
-                                }
-                                .padding(11)
-                            }
-                        }
-                    }
-                )
+            AdaptiveTextEditor(text: $viewModel.customText)
+                .textEditorStyling(isEmpty: viewModel.customText.isEmpty)
         }
         .padding([.leading, .trailing], 24)
         .padding(.bottom, 8)
@@ -469,5 +443,70 @@ struct ProblemDetailFormView: View {
             .padding([.leading, .trailing], 24)
             .padding(.bottom, 16)
         }
+    }
+}
+
+// MARK: - Adaptive Text Editor Components
+
+private struct AdaptiveTextEditor: View {
+    @Binding var text: String
+
+    var body: some View {
+        if #available(macOS 12, *) {
+            AutoFocusTextEditor(text: $text)
+        } else {
+            TextEditor(text: $text)
+        }
+    }
+}
+
+@available(macOS 12.0, *)
+private struct AutoFocusTextEditor: View {
+    @Binding var text: String
+    @FocusState private var focusState: Bool
+
+    var body: some View {
+        TextEditor(text: $text)
+            .focused($focusState)
+            .onAppear {
+                DispatchQueue.main.async {
+                    focusState = true
+                }
+            }
+    }
+}
+
+// MARK: - Text Editor Styling Extension
+
+extension View {
+    func textEditorStyling(isEmpty: Bool) -> some View {
+        self
+            .systemLabel()
+            .frame(minHeight: 80)
+            .padding(8)
+            .background(Color(.textBackgroundColor))
+            .cornerRadius(6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isEmpty ? Color(.separatorColor) : Color(baseColor: .blue50),
+                            lineWidth: 1)
+            )
+            .overlay(
+                Group {
+                    if isEmpty {
+                        HStack {
+                            VStack {
+                                HStack {
+                                    Text(UserText.reportProblemFormPlaceholder)
+                                        .systemLabel(color: .textTertiary)
+                                    Spacer()
+                                }
+                                Spacer()
+                            }
+                            .padding(11)
+                        }
+                    }
+                }
+            )
     }
 }

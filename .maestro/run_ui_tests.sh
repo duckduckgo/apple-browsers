@@ -21,15 +21,16 @@ log_message() {
     echo "$timestamp: $message" >> $run_log
 }
 
-check_for_ipad_tag() {
+get_device_type() {
 	local test_file=$1
 	
 	# Check if the test has an 'ipad' tag
-	# Use grep for simpler and more reliable tag detection
-	if grep -A 10 "^tags:" "$test_file" | grep -q "^[[:space:]]*- ipad"; then
-		echo "true"
+	# Extract tags section and check for ipad tag
+	# This approach handles any number of tags without hardcoded limits
+	if awk '/^tags:/{flag=1; next} /^[^ -]/{flag=0} flag' "$test_file" | grep -q "^[[:space:]]*- ipad"; then
+		echo "iPad"
 	else
-		echo "false"
+		echo "iPhone"
 	fi
 }
 
@@ -79,13 +80,11 @@ get_simulator_uuid() {
 run_flow() {
 	local flow=$1
 
-	# Check if this test needs iPad
-	local needs_ipad=$(check_for_ipad_tag "$flow")
-	local device_type="iPhone"
+	# Determine device type based on test tags
+	local device_type=$(get_device_type "$flow")
 	
-	if [ "$needs_ipad" = "true" ]; then
+	if [ "$device_type" = "iPad" ]; then
 		echo "ℹ️ Test requires iPad simulator"
-		device_type="iPad"
 	fi
 	
 	# Get the appropriate simulator UUID
@@ -93,9 +92,12 @@ run_flow() {
 
 	echo "ℹ️ Deleting app in $device_type simulator"
 
-	xcrun simctl uninstall $target_device_uuid $app_bundle
-	if [ $? -ne 0 ]; then
-		echo "⚠️  Failed to uninstall app, continuing anyway..."
+	xcrun simctl uninstall $target_device_uuid $app_bundle 2>&1
+	local uninstall_result=$?
+	if [ $uninstall_result -ne 0 ]; then
+		# App might not be installed, which is fine
+		log_message $run_log "⚠️  App uninstall failed for $device_type (may not be installed)"
+		echo "⚠️  Failed to uninstall app (may not be installed), continuing..."
 	fi
 
 	echo "ℹ️ Installing app in $device_type simulator"

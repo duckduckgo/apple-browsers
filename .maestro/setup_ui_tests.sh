@@ -4,6 +4,10 @@
 
 source $(dirname $0)/common.sh
 
+## Constants
+IPAD_DEVICE_TYPE="iPad-10th-generation"
+IPAD_DEVICE_NAME="iPad-10th-generation"
+
 ## Functions
 
 check_maestro() {
@@ -93,7 +97,7 @@ iphone_uuid=$(create_or_get_simulator "$target_device" "$target_device")
 echo "📱 iPhone simulator: $iphone_uuid"
 
 # Create iPad simulator  
-ipad_uuid=$(create_or_get_simulator "iPad-10th-generation" "iPad-10th-generation")
+ipad_uuid=$(create_or_get_simulator "$IPAD_DEVICE_NAME" "$IPAD_DEVICE_TYPE")
 echo "📱 iPad simulator: $ipad_uuid"
 
 # Use iPhone as default for building

@@ -146,6 +146,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
+    /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
+    case widgetReporting
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -195,6 +199,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition,
              .subscriptionRebranding,
+             .widgetReporting,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
@@ -305,6 +310,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+        case .widgetReporting:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.widgetReporting))
         case .experimentalAIChat:
             return .internalOnly()
         case .experimentalSwitcherBarTransition:

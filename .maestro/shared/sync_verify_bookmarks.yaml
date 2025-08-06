@@ -3,9 +3,17 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: Settings
 - tapOn: Done
+- runFlow:
+    file: delay.yaml
+- runFlow:
+    when:
+      visible:
+        text: Download Missing Icons?
+    commands:
+      - tapOn: Not Now
 - tapOn: Bookmarks
-- runFlow: 
-    when: 
+- runFlow:
+    when:
       visible:
         text: Download Missing Icons?
     commands:

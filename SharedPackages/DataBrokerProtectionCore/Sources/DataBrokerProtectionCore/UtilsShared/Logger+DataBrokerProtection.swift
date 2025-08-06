@@ -20,12 +20,35 @@ import Foundation
 import os.log
 
 public extension Logger {
-    fileprivate static let subsystem = "com.duckduckgo.macos.browser.databroker-protection"
+    static let dbpSubsystem = "PIR"
 
-    static var dataBrokerProtection = { Logger(subsystem: subsystem, category: "Data Broker Protection") }()
-    static var action = { Logger(subsystem: subsystem, category: "Action") }()
-    static var service = { Logger(subsystem: subsystem, category: "Service") }()
-    static var backgroundAgent = { Logger(subsystem: subsystem, category: "Background Agent") }()
-    static var backgroundAgentMemoryManagement = { Logger(subsystem: subsystem, category: "Background Agent Memory Management") }()
-    static var pixel = { Logger(subsystem: subsystem, category: "Pixel") }()
+    static var dataBrokerProtection = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.dataBrokerProtection.rawValue)
+    }()
+    static var action = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.action.rawValue)
+    }()
+    static var service = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.service.rawValue)
+    }()
+    static var backgroundAgent = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgent.rawValue)
+    }()
+    static var backgroundAgentMemoryManagement = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgentMemoryManagement.rawValue)
+    }()
+    static var pixel = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.pixel.rawValue)
+    }()
+}
+
+public enum DataBrokerProtectionLoggerCategory: String, CaseIterable, Identifiable {
+    case dataBrokerProtection = "Data Broker Protection"
+    case action = "Action"
+    case service = "Service"
+    case backgroundAgent = "Background Agent"
+    case backgroundAgentMemoryManagement = "Background Agent Memory Management"
+    case pixel = "Pixel"
+
+    public var id: String { rawValue }
 }

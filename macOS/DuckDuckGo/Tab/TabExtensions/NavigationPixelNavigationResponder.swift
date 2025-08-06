@@ -79,10 +79,13 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
         /// on the `pop state` event and then we filter out the `hash change` if it happens immediately
         /// after `pop state` for the same URL.
         let sameDocumentNavigation = SameDocumentNavigation(url: navigation.url, type: navigationType)
-        if sameDocumentNavigation.isAnchorFollowingStatePop(previousSameDocumentNavigation) {
+        let isAnchorFollowingStatePop = sameDocumentNavigation.isAnchorFollowingStatePop(previousSameDocumentNavigation)
+        previousSameDocumentNavigation = sameDocumentNavigation
+
+        guard !isAnchorFollowingStatePop else {
             return
         }
-        previousSameDocumentNavigation = sameDocumentNavigation
+
         PixelKit.fire(GeneralPixel.navigation(.client))
     }
 }

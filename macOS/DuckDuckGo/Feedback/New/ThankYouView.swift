@@ -23,6 +23,8 @@ import SwiftUI
 import SwiftUIExtensions
 
 struct ThankYouView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
 
@@ -53,10 +55,10 @@ struct ThankYouView: View {
                 } label: {
                     HStack(spacing: 3) {
                         Text(UserText.thankYouSeeWhatsNew)
-                            .systemLabel(color: .init(baseColor: .blue60))
+                            .systemLabel(color: colorScheme == .light ? .init(baseColor: .blue60) : .init(baseColor: .blue30))
 
                         Image(nsImage: DesignSystemImages.Glyphs.Size12.open)
-                            .foregroundColor(.init(baseColor: .blue60))
+                            .foregroundColor(colorScheme == .light ? .init(baseColor: .blue60) : .init(baseColor: .blue30))
                     }
                 }
                 .buttonStyle(.plain)
@@ -65,7 +67,7 @@ struct ThankYouView: View {
                 Spacer()
 
                 Divider()
-                    .background(Color(baseColor: .gray20))
+                    .background(Color.divider)
                     .frame(maxWidth: .infinity)
                     .frame(height: 1)
 

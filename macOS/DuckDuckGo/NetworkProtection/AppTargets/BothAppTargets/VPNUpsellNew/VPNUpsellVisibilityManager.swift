@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import PixelKit
 import Subscription
 import VPN
 
@@ -59,6 +60,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private let timerDuration: TimeInterval
     private let autoDismissDays: Int
     private var persistor: VPNUpsellUserDefaultsPersisting
+    private let pixelHandler: (PrivacyProPixel) -> Void
 
     // MARK: - State
     private let isDefaultBrowserSubject = PassthroughSubject<Bool, Never>()
@@ -75,7 +77,8 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          featureFlagger: FeatureFlagger,
          persistor: VPNUpsellUserDefaultsPersisting,
          timerDuration: TimeInterval = Constants.timeIntervalBeforeShowingUpsell,
-         autoDismissDays: Int = Constants.autoDismissDays) {
+         autoDismissDays: Int = Constants.autoDismissDays,
+         pixelHandler: @escaping (PrivacyProPixel) -> Void = { PixelKit.fire($0) }) {
         self.isFirstLaunch = isFirstLaunch
         self.isNewUser = isNewUser
         self.subscriptionManager = subscriptionManager
@@ -85,6 +88,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.timerDuration = timerDuration
         self.autoDismissDays = autoDismissDays
         self.persistor = persistor
+        self.pixelHandler = pixelHandler
     }
 
     public func setup(isFirstLaunch: Bool) {
@@ -215,7 +219,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         updateState(.notEligible)
     }
 
-    private func dismissUpsell() {
+    func dismissUpsell() {
         guard state == .visible else {
             return
         }
@@ -282,7 +286,13 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
+        let previousState = state
         state = newState
+
+        // Fire pixel when transitioning to visible state
+        if previousState != .visible && newState == .visible {
+            pixelHandler(.privacyProToolbarButtonShown)
+        }
     }
 
     deinit {

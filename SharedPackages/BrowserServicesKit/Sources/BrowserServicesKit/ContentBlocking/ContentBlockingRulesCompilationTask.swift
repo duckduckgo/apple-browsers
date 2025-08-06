@@ -90,10 +90,6 @@ extension ContentBlockerRulesManager {
 
                 // Delegate querying to main thread - crashes were observed in background.
                 DispatchQueue.main.async {
-
-                    // https://app.asana.com/1/137249556945/project/949243614371883/task/1210912586079501?focus=true
-                    _ = WKWebView()
-
                     let identifier = model.rulesIdentifier.stringValue
                     Logger.contentBlocking.debug("Lookup CBR with \(identifier, privacy: .public)")
 

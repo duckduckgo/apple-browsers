@@ -79,6 +79,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let fireproofDomains: FireproofDomains
     private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
+    private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let isBurner: Bool
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
@@ -91,6 +92,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         permissionManager: PermissionManagerProtocol,
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
+        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         isBurner: Bool
     ) {
         self.bookmarkManager = bookmarkManager
@@ -100,6 +102,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.permissionManager = permissionManager
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
+        self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.isBurner = isBurner
     }
 
@@ -182,6 +185,10 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
                 bindIsMouseDownState(of: button, to: popover)
             }
         }
+    }
+
+    func toggleVPNUpsellPopover(from button: MouseOverButton) {
+        vpnUpsellPopoverPresenter.toggle(below: button)
     }
 
     @MainActor

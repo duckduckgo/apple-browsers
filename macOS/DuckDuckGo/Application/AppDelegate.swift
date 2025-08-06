@@ -169,6 +169,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
+        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        featureFlagger: featureFlagger,
+        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+    )
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding

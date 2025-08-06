@@ -262,7 +262,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             purchaseResult = try await product.purchase(options: options)
         } catch {
             Logger.subscription.error("[StorePurchaseManager] Error: \(error.localizedDescription, privacy: .public)")
-            return .failure(StorePurchaseManagerError.purchaseFailed)
+            return .failure(StorePurchaseManagerError.purchaseFailed(error))
         }
 
         Logger.subscription.info("[StorePurchaseManager] purchaseSubscription complete")

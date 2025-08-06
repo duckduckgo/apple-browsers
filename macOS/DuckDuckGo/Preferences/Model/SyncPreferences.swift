@@ -41,6 +41,15 @@ extension SyncDevice {
 }
 
 final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel {
+    @Published var devices: [SyncDevice] = [] {
+        didSet {
+            syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding = devices.count > 1
+        }
+    }
+
+    func refreshDevices() {
+        syncDialogController.refreshDevices()
+    }
 
     var syncPausedTitle: String? {
         return syncPausedStateManager.syncPausedMessageData?.title
@@ -98,12 +107,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncService.account != nil
     }
 
-    @Published var devices: [SyncDevice] = [] {
-        didSet {
-            syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding = devices.count > 1
-        }
-    }
-
     @Published var isFaviconsFetchingEnabled: Bool {
         didSet {
             syncBookmarksAdapter.isFaviconsFetchingEnabled = isFaviconsFetchingEnabled
@@ -132,7 +135,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var invalidCredentialsTitles: [String] = []
 
     private var shouldRequestSyncOnFavoritesOptionChange: Bool = true
-    private var isScreenLocked: Bool = false
 
     @Published var syncFeatureFlags: SyncFeatureFlags {
         didSet {
@@ -157,6 +159,12 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         isAppVersionNotSupported = syncFeatureFlags.unavailableReason == .appVersionNotSupported
     }
 
+    private let syncService: DDGSyncing
+    private let syncBookmarksAdapter: SyncBookmarksAdapter
+    private let syncCredentialsAdapter: SyncCredentialsAdapter
+    private let appearancePreferences: AppearancePreferences
+    private var cancellables = Set<AnyCancellable>()
+
     private let diagnosisHelper: SyncDiagnosisHelper
 
     init(
@@ -178,25 +186,14 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified
 
-        // Create SyncDialogController with the same dependencies
-        // Using unsafeCreateSync to avoid MainActor isolation issues in init
         self.syncDialogController = SyncDialogController(
             syncService: syncService,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
             userAuthenticator: userAuthenticator,
             syncPausedStateManager: syncPausedStateManager,
             featureFlagger: featureFlagger
         )
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
-
-        Task { @MainActor in
-            // Set up devices provider for dialog controller
-            self.syncDialogController.devicesProvider = { [weak self] in
-                return self?.devices ?? []
-            }
-        }
 
         updateSyncFeatureFlags(self.syncFeatureFlags)
         setUpObservables()
@@ -227,15 +224,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .assign(to: \.syncFeatureFlags, onWeaklyHeld: self)
             .store(in: &cancellables)
 
-        syncService.authStatePublisher
-            .removeDuplicates()
-            .asVoid()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.refreshDevices()
-            }
-            .store(in: &cancellables)
-
         syncService.isSyncInProgressPublisher
             .removeDuplicates()
             .filter { !$0 }
@@ -253,22 +241,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             }
             .store(in: &cancellables)
 
-        let screenIsLockedPublisher = DistributedNotificationCenter.default
-            .publisher(for: .init(rawValue: "com.apple.screenIsLocked"))
-            .map { _ in true }
-        let screenIsUnlockedPublisher = DistributedNotificationCenter.default
-            .publisher(for: .init(rawValue: "com.apple.screenIsUnlocked"))
-            .map { _ in false }
-
-        Publishers.Merge(screenIsLockedPublisher, screenIsUnlockedPublisher)
+        syncDialogController.$devices
             .receive(on: DispatchQueue.main)
-            .assign(to: \.isScreenLocked, onWeaklyHeld: self)
+            .assign(to: \.devices, onWeaklyHeld: self)
             .store(in: &cancellables)
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(launchedFromSyncPromo(_:)),
-                                               name: SyncPromoManager.SyncPromoManagerNotifications.didGoToSync,
-                                               object: nil)
     }
 
     @MainActor
@@ -296,18 +272,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
                 }
             }
             .store(in: &cancellables)
-        apperancePreferences.$favoritesDisplayMode
-            .map(\.isDisplayUnified)
-            .sink { [weak self] isUnifiedFavoritesEnabled in
-                guard let self else {
-                    return
-                }
-                if self.isUnifiedFavoritesEnabled != isUnifiedFavoritesEnabled {
-                    self.shouldRequestSyncOnFavoritesOptionChange = false
-                    self.isUnifiedFavoritesEnabled = isUnifiedFavoritesEnabled
-                }
-            }
-            .store(in: &cancellables)
 
         apperancePreferences.$favoritesDisplayMode
             .map(\.isDisplayUnified)
@@ -321,70 +285,36 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
                 }
             }
             .store(in: &cancellables)
-    }
 
-    // MARK: - Private
-
-    @MainActor
-    private func mapDevices(_ registeredDevices: [RegisteredDevice]) {
-        guard let deviceId = syncService.account?.deviceId else { return }
-        self.devices = registeredDevices.map {
-            deviceId == $0.id ? SyncDevice(kind: .current, name: $0.name, id: $0.id) : SyncDevice($0)
-        }.sorted(by: { item, _ in
-            item.isCurrent
-        })
-    }
-
-    func refreshDevices() {
-        guard !isScreenLocked else {
-            Logger.sync.debug("Screen is locked, skipping devices refresh")
-            return
-        }
-        guard syncService.account != nil else {
-            devices = []
-            return
-        }
-        Task { @MainActor in
-            do {
-                let registeredDevices = try await syncService.fetchDevices()
-                mapDevices(registeredDevices)
-            } catch {
-                if case SyncError.unauthenticatedWhileLoggedIn = error {
-                    // Ruling this out as it's a predictable event likely caused by disabling on another device
-                    diagnosisHelper.didManuallyDisableSync()
+        apperancePreferences.$favoritesDisplayMode
+            .map(\.isDisplayUnified)
+            .sink { [weak self] isUnifiedFavoritesEnabled in
+                guard let self else {
+                    return
                 }
-                PixelKit.fire(DebugEvent(GeneralPixel.syncRefreshDevicesError(error: error), error: error))
-                Logger.sync.debug("Failed to refresh devices: \(error)")
+                if self.isUnifiedFavoritesEnabled != isUnifiedFavoritesEnabled {
+                    self.shouldRequestSyncOnFavoritesOptionChange = false
+                    self.isUnifiedFavoritesEnabled = isUnifiedFavoritesEnabled
+                }
             }
-        }
-    }
-
-    @objc @MainActor
-    private func launchedFromSyncPromo(_ sender: Notification) {
-        // Pass through to dialog controller
-        syncDialogController.launchedFromSyncPromo(sender)
+            .store(in: &cancellables)
     }
 
     // MARK: - Public API (Delegation to SyncDialogController)
 
     @MainActor
-    func turnOnSync() {
-        syncDialogController.turnOnSync()
-    }
-
-    @MainActor
     func turnOffSyncPressed() {
-        syncDialogController.presentDialog(for: .turnOffSync)
+        syncDialogController.turnOffSyncPressed()
     }
 
     @MainActor
     func presentDeviceDetails(_ device: SyncDevice) {
-        syncDialogController.presentDialog(for: .deviceDetails(device))
+        syncDialogController.presentDeviceDetails(device)
     }
 
     @MainActor
     func presentRemoveDevice(_ device: SyncDevice) {
-        syncDialogController.presentDialog(for: .removeDevice(device))
+        syncDialogController.presentRemoveDevice(device)
     }
 
     @MainActor
@@ -411,10 +341,4 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     func saveRecoveryPDF() {
         syncDialogController.saveRecoveryPDF()
     }
-
-    private let syncService: DDGSyncing
-    private let syncBookmarksAdapter: SyncBookmarksAdapter
-    private let syncCredentialsAdapter: SyncCredentialsAdapter
-    private let appearancePreferences: AppearancePreferences
-    private var cancellables = Set<AnyCancellable>()
 }

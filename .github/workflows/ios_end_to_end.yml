@@ -106,32 +106,32 @@ jobs:
           # iPhone tests - exclude iPad tagged tests
           - test-tag: release
             exclude-tags: ipad
-            device-model: iphone-15
+            device-model: iPhone-16
             device-name: iPhone
           - test-tag: privacy 
             exclude-tags: ipad
-            device-model: iphone-15
+            device-model: iPhone-16
             device-name: iPhone
           - test-tag: securityTest
             exclude-tags: ipad
-            device-model: iphone-15
+            device-model: iPhone-16
             device-name: iPhone
           - test-tag: adClick
             exclude-tags: ipad
-            device-model: iphone-15
+            device-model: iPhone-16
             device-name: iPhone
           - test-tag: duckplayer.native
             exclude-tags: ipad
-            device-model: iphone-15
+            device-model: iPhone-16
             device-name: iPhone
           - test-tag: example
             exclude-tags: ipad
-            device-model: iphone-15
+            device-model: iPhone-16
             device-name: iPhone
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
           - test-tag: example
             exclude-tags: iphone
-            device-model: ipad-pro-6th-gen
+            device-model: iPad-10th-generation
             device-name: iPad          
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
@@ -168,6 +168,7 @@ jobs:
         env: ONBOARDING_COMPLETED=true
         device-os: iOS-18-2
         device-model: ${{ matrix.device-model }}
+        device-name: ${{ matrix.device-name }}
 
     - name: Report job duration
       uses: ./.github/actions/measure-duration

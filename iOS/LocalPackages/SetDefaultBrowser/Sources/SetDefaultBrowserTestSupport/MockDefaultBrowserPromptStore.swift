@@ -26,4 +26,5 @@ public final class MockDefaultBrowserPromptStore: DefaultBrowserPromptStorage {
     public var lastModalShownDate: TimeInterval?
     public var modalShownOccurrences: Int = 0
     public var isPromptPermanentlyDismissed: Bool = false
+    public var hasInactiveModalShown: Bool = false
 }

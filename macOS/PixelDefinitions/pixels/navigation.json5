@@ -1,0 +1,8 @@
+{
+    navigation: {
+        description: 'Fired when a website navigation is performed.',
+        owners: ['ayoy'],
+        triggers: ['new_tab', 'page_load'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

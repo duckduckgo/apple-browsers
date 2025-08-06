@@ -23,41 +23,50 @@ import PreferencesUI_macOS
 
 public struct PreferencesSidebarSubscriptionState: Equatable {
     public let hasSubscription: Bool
-    public let subscriptionFeatures: [Entitlement.ProductName]?
-    public let userEntitlements: [SubscriptionEntitlement]
     public let shouldHideSubscriptionPurchase: Bool
 
-    public let personalInformationRemovalStatus: StatusIndicator
-    public let identityTheftRestorationStatus: StatusIndicator
-    public let paidAIChatStatus: StatusIndicator
-    public let isPaidAIChatEnabled: Bool
+    public let isNetworkProtectionRemovalEnable: Bool
+    public let isPersonalInformationRemovalEnable: Bool
+    public let isIdentityTheftRestorationEnable: Bool
+    public let isPaidAIChatEnable: Bool
 
-    public init(hasSubscription: Bool,
-                subscriptionFeatures: [Entitlement.ProductName]?,
-                userEntitlements: [SubscriptionEntitlement],
-                shouldHideSubscriptionPurchase: Bool,
-                personalInformationRemovalStatus: StatusIndicator,
-                identityTheftRestorationStatus: StatusIndicator,
-                paidAIChatStatus: StatusIndicator,
-                isPaidAIChatEnabled: Bool) {
+    public let isNetworkProtectionRemovalAvailable: Bool
+    public let isPersonalInformationRemovalAvailable: Bool
+    public let isIdentityTheftRestorationAvailable: Bool
+    public let isPaidAIChatAvailable: Bool
+
+    public init(hasSubscription: Bool = false,
+                shouldHideSubscriptionPurchase: Bool = true,
+                isNetworkProtectionRemovalEnable: Bool = false,
+                isPersonalInformationRemovalEnable: Bool = false,
+                isIdentityTheftRestorationEnable: Bool = false,
+                isPaidAIChatEnable: Bool = false,
+                isNetworkProtectionRemovalAvailable: Bool = false,
+                isPersonalInformationRemovalAvailable: Bool = false,
+                isIdentityTheftRestorationAvailable: Bool = false,
+                isPaidAIChatAvailable: Bool = false) {
         self.hasSubscription = hasSubscription
-        self.subscriptionFeatures = subscriptionFeatures
-        self.userEntitlements = userEntitlements
         self.shouldHideSubscriptionPurchase = shouldHideSubscriptionPurchase
-        self.personalInformationRemovalStatus = personalInformationRemovalStatus
-        self.identityTheftRestorationStatus = identityTheftRestorationStatus
-        self.paidAIChatStatus = paidAIChatStatus
-        self.isPaidAIChatEnabled = isPaidAIChatEnabled
+        self.isNetworkProtectionRemovalEnable = isNetworkProtectionRemovalEnable
+        self.isPersonalInformationRemovalEnable = isPersonalInformationRemovalEnable
+        self.isIdentityTheftRestorationEnable = isIdentityTheftRestorationEnable
+        self.isPaidAIChatEnable = isPaidAIChatEnable
+        self.isNetworkProtectionRemovalAvailable = isNetworkProtectionRemovalAvailable
+        self.isPersonalInformationRemovalAvailable = isPersonalInformationRemovalAvailable
+        self.isIdentityTheftRestorationAvailable = isIdentityTheftRestorationAvailable
+        self.isPaidAIChatAvailable = isPaidAIChatAvailable
     }
 
-    public static var initial: Self {
-        .init(hasSubscription: false,
-              subscriptionFeatures: nil,
-              userEntitlements: [],
-              shouldHideSubscriptionPurchase: true,
-              personalInformationRemovalStatus: .off,
-              identityTheftRestorationStatus: .off,
-              paidAIChatStatus: .off,
-              isPaidAIChatEnabled: false)
+    public var hasAnyEntitlement: Bool {
+        return isNetworkProtectionRemovalEnable
+        || isPersonalInformationRemovalEnable
+        || isIdentityTheftRestorationEnable
+        || isPaidAIChatEnable
+    }
+}
+
+extension PreferencesSidebarSubscriptionState: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        return "PreferencesSidebarSubscriptionState(hasSubscription: \(hasSubscription), shouldHideSubscriptionPurchase: \(shouldHideSubscriptionPurchase), isNetworkProtectionRemovalEnable: \(isNetworkProtectionRemovalEnable), isPersonalInformationRemovalEnable: \(isPersonalInformationRemovalEnable), isIdentityTheftRestorationEnable: \(isIdentityTheftRestorationEnable), isPaidAIChatEnable: \(isPaidAIChatEnable), isNetworkProtectionRemovalAvailable: \(isNetworkProtectionRemovalAvailable), isPersonalInformationRemovalAvailable: \(isPersonalInformationRemovalAvailable), isIdentityTheftRestorationAvailable: \(isIdentityTheftRestorationAvailable), isPaidAIChatAvailable: \(isPaidAIChatAvailable))"
     }
 }

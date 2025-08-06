@@ -51,7 +51,7 @@ final class PreferencesSidebarModel: ObservableObject {
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let settingsIconProvider: SettingsIconsProviding
 
-    @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
+    @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
 
     private let personalInformationRemovalSubject = PassthroughSubject<StatusIndicator, Never>()
     public let personalInformationRemovalUpdates: AnyPublisher<StatusIndicator, Never>
@@ -186,14 +186,13 @@ final class PreferencesSidebarModel: ObservableObject {
     func isSidebarItemEnabled(for pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
         case .vpn:
-            currentSubscriptionState.userEntitlements.contains(.networkProtection)
+            currentSubscriptionState.isNetworkProtectionRemovalEnable
         case .personalInformationRemoval:
-            currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection)
+            currentSubscriptionState.isPersonalInformationRemovalEnable
         case .paidAIChat:
-            currentSubscriptionState.userEntitlements.contains(.paidAIChat)
+            currentSubscriptionState.isPaidAIChatEnable
         case .identityTheftRestoration:
-            currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration) ||
-            currentSubscriptionState.userEntitlements.contains(.identityTheftRestorationGlobal)
+            currentSubscriptionState.isIdentityTheftRestorationEnable
         default:
             true
         }
@@ -226,11 +225,11 @@ final class PreferencesSidebarModel: ObservableObject {
         case .vpn:
             return vpnProtectionStatus()
         case .personalInformationRemoval:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.personalInformationRemovalStatus)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPersonalInformationRemovalEnable ? .on : .off)
         case .paidAIChat:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.paidAIChatStatus)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPaidAIChatEnable ? .on : .off)
         case .identityTheftRestoration:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.identityTheftRestorationStatus)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isIdentityTheftRestorationEnable ? .on : .off)
         default:
             return nil
         }
@@ -293,16 +292,16 @@ final class PreferencesSidebarModel: ObservableObject {
             if self.currentSubscriptionState != updatedState {
                 hasLoadedInitialSubscriptionState = true
 
-                if self.currentSubscriptionState.personalInformationRemovalStatus != updatedState.personalInformationRemovalStatus {
-                    personalInformationRemovalSubject.send(updatedState.personalInformationRemovalStatus)
+                if self.currentSubscriptionState.isPersonalInformationRemovalEnable != updatedState.isPersonalInformationRemovalEnable {
+                    personalInformationRemovalSubject.send(updatedState.isPersonalInformationRemovalEnable ? .on : .off)
                 }
 
-                if self.currentSubscriptionState.paidAIChatStatus != updatedState.paidAIChatStatus {
-                    paidAIChatSubject.send(updatedState.paidAIChatStatus)
+                if self.currentSubscriptionState.isPaidAIChatEnable != updatedState.isPaidAIChatEnable {
+                    paidAIChatSubject.send(updatedState.isPaidAIChatEnable ? .on : .off)
                 }
 
-                if self.currentSubscriptionState.identityTheftRestorationStatus != updatedState.identityTheftRestorationStatus {
-                    identityTheftRestorationSubject.send(updatedState.identityTheftRestorationStatus)
+                if self.currentSubscriptionState.isIdentityTheftRestorationEnable != updatedState.isIdentityTheftRestorationEnable {
+                    identityTheftRestorationSubject.send(updatedState.isIdentityTheftRestorationEnable ? .on : .off)
                 }
 
                 self.currentSubscriptionState = updatedState
@@ -314,48 +313,20 @@ final class PreferencesSidebarModel: ObservableObject {
     private func makeSubscriptionState() async -> PreferencesSidebarSubscriptionState {
         // This requires follow-up work:
         // https://app.asana.com/1/137249556945/task/1210799126744217
-        let currentSubscriptionFeatures = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
-
-        if subscriptionManager.isUserAuthenticated {
-            // Calculate current user entitlements
-            var currentUserEntitlements: [SubscriptionEntitlement] = []
-            let entitlements: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
-
-            for entitlement in entitlements {
-                if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(entitlement.product), hasEntitlement == true {
-                    currentUserEntitlements.append(entitlement)
-                }
-            }
-
-            // Calculate PIR protection status
-            let currentPersonalInformationRemovalStatus = LoginItem.dbpBackgroundAgent.isRunning ? StatusIndicator.on : StatusIndicator.off
-
-            // Calculate ITR protection status
-            let isIdentityTheftRestorationActive = currentUserEntitlements.contains(.identityTheftRestoration) || currentUserEntitlements.contains(.identityTheftRestorationGlobal)
-            let currentIdentityTheftRestorationStatus = isIdentityTheftRestorationActive ? StatusIndicator.on : StatusIndicator.off
-
-            // Calculate DAP protection status
-            let currentPaidAIChatStatus = currentUserEntitlements.contains(.paidAIChat) ? StatusIndicator.on : StatusIndicator.off
-
-            return PreferencesSidebarSubscriptionState(hasSubscription: true,
-                                                       subscriptionFeatures: currentSubscriptionFeatures,
-                                                       userEntitlements: currentUserEntitlements,
-                                                       shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-                                                       personalInformationRemovalStatus: currentPersonalInformationRemovalStatus,
-                                                       identityTheftRestorationStatus: currentIdentityTheftRestorationStatus,
-                                                       paidAIChatStatus: currentPaidAIChatStatus,
-                                                       isPaidAIChatEnabled: featureFlagger.isFeatureOn(.paidAIChat))
-        } else {
-            return PreferencesSidebarSubscriptionState(hasSubscription: false,
-                                                       subscriptionFeatures: currentSubscriptionFeatures,
-                                                       userEntitlements: [],
-                                                       shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-                                                       personalInformationRemovalStatus: .off,
-                                                       identityTheftRestorationStatus: .off,
-                                                       paidAIChatStatus: .off,
-                                                       isPaidAIChatEnabled: featureFlagger.isFeatureOn(.paidAIChat))
-        }
+        let isIdentityTheftRestorationAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestoration)) ?? false
+        let isIdentityTheftRestorationGlobalAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestorationGlobal)) ?? false
+        let isPaidAIChatAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false && featureFlagger.isFeatureOn(.paidAIChat)
+        return await PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isSubscriptionPresent(),
+                                                         shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+                                                         isNetworkProtectionRemovalEnable: (try? subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false,
+                                                         isPersonalInformationRemovalEnable: (try? subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false,
+                                                         isIdentityTheftRestorationEnable: (try? subscriptionManager.isFeatureEnabled(.identityTheftRestoration)) ?? false,
+                                                         isPaidAIChatEnable: (try? subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false,
+                                                         isNetworkProtectionRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false,
+                                                         isPersonalInformationRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false,
+                                                         isIdentityTheftRestorationAvailable: isIdentityTheftRestorationAvailable || isIdentityTheftRestorationGlobalAvailable,
+                                                         isPaidAIChatAvailable: isPaidAIChatAvailable)
     }
 
     func refreshSections() {
@@ -383,12 +354,9 @@ final class PreferencesSidebarModel: ObservableObject {
             }
         }
 
-        // Adjust Privacy Pro selection for missing entitlements
-        let entitlements = currentSubscriptionState.userEntitlements
-        if (selectedPane == .vpn && !entitlements.contains(.networkProtection)) ||
-            (selectedPane == .personalInformationRemoval && !entitlements.contains(.dataBrokerProtection)) ||
-            (selectedPane == .identityTheftRestoration && !(entitlements.contains(.identityTheftRestoration) || entitlements.contains(.identityTheftRestorationGlobal))) {
-
+        if (selectedPane == .vpn && !currentSubscriptionState.isNetworkProtectionRemovalEnable) ||
+            (selectedPane == .personalInformationRemoval && !currentSubscriptionState.isPersonalInformationRemovalEnable) ||
+             (selectedPane == .identityTheftRestoration && !currentSubscriptionState.isIdentityTheftRestorationEnable) {
             selectedPane = currentSubscriptionState.hasSubscription ? .subscriptionSettings : .privacyPro
         }
     }

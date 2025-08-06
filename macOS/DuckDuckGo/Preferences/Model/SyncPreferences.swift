@@ -98,26 +98,11 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncService.account != nil
     }
 
-    var recoveryCode: String? {
-        syncService.account?.recoveryCode
-    }
-
-    var stringForQR: String? {
-        syncDialogController.stringForQR
-    }
-
-    var codeForDisplayOrPasting: String? {
-        syncDialogController.codeForDisplayOrPasting
-    }
-
     @Published var devices: [SyncDevice] = [] {
         didSet {
             syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding = devices.count > 1
         }
     }
-
-    @Published var shouldShowErrorMessage: Bool = false
-    @Published private(set) var syncErrorMessage: SyncErrorMessage?
 
     @Published var isFaviconsFetchingEnabled: Bool {
         didSet {
@@ -259,12 +244,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .sink { [weak self] in
                 self?.updateInvalidObjects()
             }
-            .store(in: &cancellables)
-
-        $syncErrorMessage
-            .map { $0 != nil }
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.shouldShowErrorMessage, onWeaklyHeld: self)
             .store(in: &cancellables)
 
         syncPausedStateManager.syncPausedChangedPublisher

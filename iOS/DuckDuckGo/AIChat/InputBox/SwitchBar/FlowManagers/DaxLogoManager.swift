@@ -42,6 +42,7 @@ final class DaxLogoManager {
     func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
 
         logoContainerView.translatesAutoresizingMaskIntoConstraints = false
+        logoContainerView.isUserInteractionEnabled = false
         viewController.view.addSubview(logoContainerView)
 
         logoContainerView.addSubview(homeDaxLogoView)

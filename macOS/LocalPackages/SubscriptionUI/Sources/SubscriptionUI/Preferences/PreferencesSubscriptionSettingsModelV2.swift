@@ -102,8 +102,8 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
             .map { status, hasTrialOffer, state in
 
                 Logger.subscription.debug("""
-                                            Update subscription state: \(state.debugDescription)
-                                            hasActiveTrialOffer: \(hasTrialOffer)
+Update subscription state: \(state.debugDescription, privacy: .public)
+hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 """)
 
                 switch status {

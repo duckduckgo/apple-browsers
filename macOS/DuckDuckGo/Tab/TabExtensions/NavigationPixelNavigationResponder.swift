@@ -86,6 +86,6 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             return
         }
 
-        PixelKit.fire(GeneralPixel.navigation(.client))
+        pixelFiring?.fire(GeneralPixel.navigation(.client))
     }
 }

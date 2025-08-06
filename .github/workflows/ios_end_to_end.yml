@@ -132,6 +132,7 @@ jobs:
           - test-tag: device_info
             exclude-tags: iphone
             device-model: iPad-10th-generation
+            device-name: iPad
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 

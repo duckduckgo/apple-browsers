@@ -21,29 +21,95 @@ log_message() {
     echo "$timestamp: $message" >> $run_log
 }
 
+check_for_ipad_tag() {
+	local test_file=$1
+	
+	# Check if the test has an 'ipad' tag
+	# Use grep for simpler and more reliable tag detection
+	if grep -A 10 "^tags:" "$test_file" | grep -q "^[[:space:]]*- ipad"; then
+		echo "true"
+	else
+		echo "false"
+	fi
+}
+
+ensure_simulator_booted() {
+	local uuid=$1
+	local device_name=$2
+	
+	# Check if simulator is booted
+	local state=$(xcrun simctl list devices | grep "$uuid" | grep -o "(.*)" | tr -d "()")
+	
+	if [ "$state" != "Booted" ]; then
+		echo "ℹ️ Booting $device_name simulator..." >&2
+		xcrun simctl boot "$uuid"
+		if [ $? -ne 0 ]; then
+			echo "⚠️  Failed to boot $device_name simulator, it might already be booted..." >&2
+		fi
+		# Give it a moment to boot
+		sleep 3
+	fi
+}
+
+get_simulator_uuid() {
+	local device_type=$1
+	
+	if [ "$device_type" = "iPad" ]; then
+		# Read iPad UUID from file
+		local ipad_uuid_path="${device_uuid_path%.txt}_ipad.txt"
+		if [ -f "$ipad_uuid_path" ]; then
+			local uuid=$(cat "$ipad_uuid_path")
+			ensure_simulator_booted "$uuid" "iPad"
+			echo "$uuid"
+		else
+			fail "iPad simulator not found. Please run setup_ui_tests.sh first"
+		fi
+	else
+		# Read iPhone UUID from file
+		if [ -f "$device_uuid_path" ]; then
+			local uuid=$(cat "$device_uuid_path")
+			ensure_simulator_booted "$uuid" "iPhone"
+			echo "$uuid"
+		else
+			fail "iPhone simulator not found. Please run setup_ui_tests.sh first"
+		fi
+	fi
+}
+
 run_flow() {
-	local device_uuid=$1
-	local flow=$2
+	local flow=$1
 
-	echo "ℹ️ Deleting app in simulator $device_uuid"
+	# Check if this test needs iPad
+	local needs_ipad=$(check_for_ipad_tag "$flow")
+	local device_type="iPhone"
+	
+	if [ "$needs_ipad" = "true" ]; then
+		echo "ℹ️ Test requires iPad simulator"
+		device_type="iPad"
+	fi
+	
+	# Get the appropriate simulator UUID
+	local target_device_uuid=$(get_simulator_uuid "$device_type")
 
-	xcrun simctl uninstall $device_uuid $app_bundle
+	echo "ℹ️ Deleting app in $device_type simulator"
+
+	xcrun simctl uninstall $target_device_uuid $app_bundle
 	if [ $? -ne 0 ]; then
-		fail "Failed to uninstall the app"
+		echo "⚠️  Failed to uninstall app, continuing anyway..."
 	fi
 
-	echo "ℹ️ Installing app in simulator $device_uuid"
-	xcrun simctl install $device_uuid $app_location
+	echo "ℹ️ Installing app in $device_type simulator"
+	xcrun simctl install $target_device_uuid $app_location
 
-	echo "⏲️ Starting flow $( basename $flow)"
+	echo "⏲️ Starting flow $( basename $flow) on $device_type"
 
 	export MAESTRO_DRIVER_STARTUP_TIMEOUT=60000
-	maestro --udid=$device_uuid test -e ONBOARDING_COMPLETED=true $flow
+	maestro --udid=$target_device_uuid test -e ONBOARDING_COMPLETED=true $flow
 	if [ $? -ne 0 ]; then
-		log_message $run_log "❌ FAIL: $flow"
+		log_message $run_log "❌ FAIL: $flow ($device_type)"
 		echo "🚨 Flow failed $flow"
 	else		
-		log_message $run_log "✅ PASS: $flow"
+		log_message $run_log "✅ PASS: $flow ($device_type)"
 	fi
 }
 
@@ -73,11 +139,17 @@ fi
 echo
 echo "ℹ️ Running UI tests for $1"
 
-device_uuid=$(cat $device_uuid_path)
-echo "ℹ️ using device $device_uuid"
+# Ensure Simulator app is running
+if ! pgrep -x "Simulator" > /dev/null; then
+    echo "ℹ️ Opening Simulator app..."
+    open -a Simulator
+    sleep 2
+fi
 
-# Simulator should already be up and running from running the setup script
-#  re-run the setup script with `--skip-build` to set up again 
+# Simulators are pre-created by setup_ui_tests.sh
+echo "ℹ️ Using pre-configured simulators (iPhone and iPad)"
+echo "ℹ️ Device will be selected based on test tags (default: iPhone, 'ipad' tag: iPad)"
+
 echo "ℹ️ creating run log in $run_log"
 if [ -f $run_log ]; then
 	rm $run_log
@@ -86,10 +158,12 @@ fi
 log_message $run_log "START"
 
 if [ -f $1 ]; then
-	run_flow $device_uuid $1
+	# Run single test file
+	run_flow $1
 elif [ -d $1 ]; then
+	# Run all test files in directory
 	for file in "$1"/*.yaml; do
-		run_flow $device_uuid $file
+		run_flow $file
 	done
 fi
 

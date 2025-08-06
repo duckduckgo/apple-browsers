@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - privacy
 name: 01_content_scope_experiments_setup
 

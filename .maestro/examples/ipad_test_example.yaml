@@ -1,0 +1,22 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - example
+
+---
+
+# This test will run on iPad simulator because it has the 'ipad' tag
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Run a random search
+- assertVisible:
+    id: searchEntry
+- tapOn: 
+    id: searchEntry
+- inputText: "iOS developer jobs"
+- pressKey: Enter
+
+- assertVisible: ".*" # This will match any visible element

@@ -260,6 +260,11 @@ extension AppDelegate {
 
     @MainActor
     @objc func openReportABrowserProblem(_ sender: Any?) {
+        guard !self.internalUserDecider.isInternalUser else {
+            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            return
+        }
+
         var window: NSWindow?
 
         // Check if we can report broken site (same logic as openReportBrokenSite)
@@ -318,6 +323,11 @@ extension AppDelegate {
 
     @MainActor
     @objc func openRequestANewFeature(_ sender: Any?) {
+        guard !self.internalUserDecider.isInternalUser else {
+            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            return
+        }
+
         var window: NSWindow?
 
         let formView = RequestNewFeatureFormFlowView(

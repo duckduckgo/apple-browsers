@@ -93,7 +93,10 @@ final class StripePurchaseFlowTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, .noProductsFound)
+            switch error {
+            case .noProductsFound: break
+            default: XCTFail("Expected noProductsFound")
+            }
         }
     }
 
@@ -163,7 +166,10 @@ final class StripePurchaseFlowTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, .accountCreationFailed)
+            switch error {
+            case .accountCreationFailed: break
+            default: XCTFail("Expected accountCreationFailed")
+            }
         }
     }
 

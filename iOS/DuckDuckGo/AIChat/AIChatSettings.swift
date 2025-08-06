@@ -119,7 +119,7 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     var isAIChatSearchInputUserSettingsEnabled: Bool {
-        userDefaults.showAIChatExperimentalSearchInput && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAIChat)
+        userDefaults.showAIChatExperimentalSearchInput && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
     }
 
     func enableAIChat(enable: Bool) {

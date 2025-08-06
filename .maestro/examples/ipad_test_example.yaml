@@ -11,11 +11,30 @@ tags:
 - runFlow: 
     file: ../shared/setup.yaml
 
-# Run a random search
+# First, verify we're running on iPad by checking user agent
 - assertVisible:
     id: searchEntry
 - tapOn: 
     id: searchEntry
+    
+# Navigate to a user agent checking service
+- inputText: "whatismybrowser.com"
+- pressKey: Enter
+
+# Wait for search results and click the first result
+- assertVisible: "WhatIsMyBrowser.com"
+- tapOn: "WhatIsMyBrowser.com"
+
+# Wait for the page to load and verify iPad is detected
+- waitForAnimationToEnd
+- assertVisible: ".*iPad.*"
+
+# Navigate back to search
+- tapOn:
+    id: searchEntry
+- clearText
+    
+# Now run a normal search to verify iPad-specific layout
 - inputText: "iOS developer jobs"
 - pressKey: Enter
 

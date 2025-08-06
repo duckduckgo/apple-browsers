@@ -122,7 +122,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     var updateValidityStartDate: Date?
 
     @UserDefaultsWrapper(key: .pendingUpdateInfo, defaultValue: nil)
-    private var pendingUpdateInfo: Data?
+    var pendingUpdateInfo: Data?
 
     var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     var lastUpdateNotificationShownDate: Date = .distantPast
@@ -206,9 +206,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         self.internalUserDecider = internalUserDecider
         self.updateCheckState = updateCheckState
         super.init()
-
-        // Try to restore cached release notes if we just updated
-        restoreCachedReleaseNotesIfNeeded()
 
         _ = try? configureUpdater()
 
@@ -365,35 +362,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             pendingUpdateInfo = encoded
             Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
         }
-    }
-
-    // Restore cached release notes on app startup if version matches
-    private func restoreCachedReleaseNotesIfNeeded() {
-        guard cachedUpdateResult == nil,
-              let data = pendingUpdateInfo,
-              let cached = try? JSONDecoder().decode(PendingUpdateInfo.self, from: data) else {
-            return
-        }
-
-        // Check if current app version matches the cached update version
-        let currentBuild = AppVersion().buildNumber
-        guard currentBuild == cached.build else {
-            Logger.updates.log("Skipping cached release notes - build mismatch (current: \(currentBuild), cached: \(cached.build))")
-            return
-        }
-
-        // We just updated to this version - show its release notes
-        latestUpdate = Update(
-            isInstalled: true,
-            type: cached.isCritical ? .critical : .regular,
-            version: cached.version,
-            build: cached.build,
-            date: cached.date,
-            releaseNotes: cached.releaseNotes,
-            releaseNotesPrivacyPro: cached.releaseNotesPrivacyPro,
-            needsLatestReleaseNote: false
-        )
-        Logger.updates.log("Restored cached release notes for current version \(cached.version)")
     }
 
     // Determines if a forced update check is necessary

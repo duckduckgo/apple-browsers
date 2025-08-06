@@ -150,7 +150,32 @@ extension ReleaseNotesValues {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
+        // Fall back to cached release notes if necessary
+        // This happens when there's no connectivity,
+        // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
+            if let data = updateController.pendingUpdateInfo,
+               let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data),
+               AppVersion().buildNumber == cached.build,
+               AppVersion().versionNumber == cached.version {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMMM dd yyyy"
+                let releaseTitle = formatter.string(from: cached.date)
+
+                self.init(status: .loaded,
+                          currentVersion: currentVersion,
+                          latestVersion: currentVersion,
+                          lastUpdate: lastUpdate,
+                          releaseTitle: releaseTitle,
+                          releaseNotes: cached.releaseNotes,
+                          releaseNotesPrivacyPro: cached.releaseNotesPrivacyPro,
+                          downloadProgress: nil,
+                          automaticUpdate: updateController.areAutomaticUpdatesEnabled)
+                return
+            }
+
+            // Show an empty box in place of the release notes
+            // This should be replaced with a proper design for errors
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,

@@ -1158,8 +1158,11 @@ class MainViewController: UIViewController {
             return
         }
 
-        if featureFlagger.isFeatureOn(.useTLDOnQuerySubmit) {
-            // TODO 
+        if featureFlagger.isFeatureOn(.useTLDOnQuerySubmit),
+            // skip duckduckgo URLs immediately
+            !url.isDuckDuckGo,
+            URL.webUrl(from: query, usingTLD: TLD()) != nil {
+            Swift.print("*** bad host", url.host!)
         }
 
         // Make sure that once query is submitted, we don't trigger the non-SERP flow

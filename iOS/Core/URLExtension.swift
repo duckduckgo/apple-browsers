@@ -42,7 +42,7 @@ extension URL {
 
     // MARK: static
 
-    public static func webUrl(from text: String) -> URL? {
+    public static func webUrl(from text: String, usingTLD tld: TLD? = nil) -> URL? {
         guard var url = URL(string: text) else { return nil }
 
         switch url.scheme {

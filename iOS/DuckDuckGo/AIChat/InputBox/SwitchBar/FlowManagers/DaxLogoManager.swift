@@ -119,7 +119,7 @@ final class DaxLogoManager {
 
 private final class DaxLogoView: UIView {
     private(set) lazy var logoImage = UIImageView(image: UIImage(resource: isAIDax ? .duckAI : .searchDax))
-    private(set) lazy var textImage = UIImageView(image: UIImage(resource: isAIDax ? .textDuckAI : .textDuckDuckGo))
+    private(set) lazy var textImage = UIImageView(image: UIImage(resource: isAIDax ? .textDuckAi : .textDuckDuckGo))
 
     private let stackView = UIStackView()
     private let isAIDax: Bool

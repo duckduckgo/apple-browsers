@@ -151,6 +151,8 @@ public enum FeatureFlag: String {
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
     case widgetReporting
 
+    // https://app.asana.com/1/137249556945/project/414709148257752/task/1210955337868542?focus=true
+    /// On by default (failsafe)
     case useTLDOnQuerySubmit
 }
 
@@ -163,7 +165,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
-             .setAsDefaultBrowserPiPVideoTutorial:
+             .setAsDefaultBrowserPiPVideoTutorial,
+             .useTLDOnQuerySubmit:
             true
         default:
             false
@@ -205,7 +208,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
-             .supportsAlternateStripePaymentFlow:
+             .supportsAlternateStripePaymentFlow,
+             .useTLDOnQuerySubmit:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -346,9 +350,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
-#warning("needs to be defined properly")
         case .useTLDOnQuerySubmit:
-            return .enabled
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.useTLDOnQuerySubmit))
         }
     }
 }

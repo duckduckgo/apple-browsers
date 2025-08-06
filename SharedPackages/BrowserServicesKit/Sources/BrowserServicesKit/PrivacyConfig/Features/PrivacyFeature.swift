@@ -126,6 +126,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case defaultBrowserTutorial
 
     case widgetReporting
+
+    case useTLDOnQuerySubmit
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

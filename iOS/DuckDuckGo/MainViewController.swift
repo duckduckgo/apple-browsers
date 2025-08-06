@@ -1153,12 +1153,15 @@ class MainViewController: UIViewController {
 
     fileprivate func loadQuery(_ query: String) {
 
-        let tld: TLD? = featureFlagger.isFeatureOn(.useTLDOnQuerySubmit) ? TLD() : nil
-
-        guard let url = URL.makeSearchURL(query: query, queryContext: currentTab?.url, tld: tld) else {
+        guard let url = URL.makeSearchURL(query: query, queryContext: currentTab?.url) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
             return
         }
+
+        if featureFlagger.isFeatureOn(.useTLDOnQuerySubmit) {
+            // TODO 
+        }
+
         // Make sure that once query is submitted, we don't trigger the non-SERP flow
         skipSERPFlow = false
         loadUrl(url)

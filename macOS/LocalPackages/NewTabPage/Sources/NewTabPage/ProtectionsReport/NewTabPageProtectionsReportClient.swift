@@ -83,6 +83,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
         ])
     }
 
+    @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
         return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: model.activeFeed, showBurnAnimation: model.shouldShowBurnAnimation)

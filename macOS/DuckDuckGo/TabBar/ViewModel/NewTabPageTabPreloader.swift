@@ -22,6 +22,7 @@ import Foundation
 protocol NewTabPageTabPreloading: AnyObject {
 
     func newTab() -> Tab?
+    func reloadTab()
 
 }
 
@@ -29,6 +30,7 @@ final class NewTabPageTabPreloader: NewTabPageTabPreloading {
 
     private var getViewSize: () -> CGSize?
     private var preloadedTab: Tab?
+    private var preloadedTabViewSize: CGSize?
 
     init(viewSizeProvider: @escaping () -> CGSize?) {
         getViewSize = viewSizeProvider
@@ -36,22 +38,30 @@ final class NewTabPageTabPreloader: NewTabPageTabPreloading {
     }
 
     private func loadNewTab() {
+        let viewSize = getViewSize()
+        preloadedTabViewSize = viewSize
         preloadedTab = Tab(
             content: .newtab,
             shouldLoadInBackground: true,
             burnerMode: .regular,
-            webViewSize: getViewSize() ?? CGSize(width: 1024, height: 768))
+            webViewSize: viewSize ?? CGSize(width: 1024, height: 768))
     }
 
     func newTab() -> Tab? {
         defer {
             loadNewTab()
         }
-        guard let preloadedTab else {
-            return nil
-        }
 
         return preloadedTab
+    }
+
+    func reloadTab() {
+        // Avoid unnecessary reloading
+        if let preloadedTabViewSize, preloadedTabViewSize == getViewSize() {
+            return
+        }
+
+        loadNewTab()
     }
 
 }

@@ -61,6 +61,7 @@ final class MainViewController: NSViewController {
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
+    private var appearanceChangedCancellable: AnyCancellable?
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
 
@@ -209,8 +210,6 @@ final class MainViewController: NSViewController {
         super.init(nibName: nil, bundle: nil)
         browserTabViewController.delegate = self
         findInPageViewController.delegate = self
-
-        initPreloader()
     }
 
     override func loadView() {
@@ -262,6 +261,8 @@ final class MainViewController: NSViewController {
     }
 
     override func viewDidAppear() {
+        initPreloader()
+
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
 
@@ -303,6 +304,10 @@ final class MainViewController: NSViewController {
     func windowDidResignKey() {
         browserTabViewController.windowDidResignKey()
         tabBarViewController.hideTabPreview()
+    }
+
+    func windowDidEndLiveResize() {
+        tabCollectionViewModel.newTabPageTabPreloader?.reloadTab()
     }
 
     func showBookmarkPromptIfNeeded() {
@@ -372,6 +377,10 @@ final class MainViewController: NSViewController {
     }
 
     private func initPreloader() {
+        guard tabCollectionViewModel.newTabPageTabPreloader == nil else {
+            return
+        }
+
         if featureFlagger.isFeatureOn(.newTabPagePerTab) {
             let preloader = NewTabPageTabPreloader(viewSizeProvider: { [weak self] in
                 self?.browserTabViewController.view.bounds.size
@@ -458,6 +467,13 @@ final class MainViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
+            }
+    }
+
+    private func subscribeToAppearanceChanges() {
+        appearanceChangedCancellable = NSApp.publisher(for: \.effectiveAppearance)
+            .sink { [weak self] _ in
+                self?.tabCollectionViewModel.newTabPageTabPreloader?.reloadTab()
             }
     }
 

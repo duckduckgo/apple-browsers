@@ -106,27 +106,27 @@ jobs:
           # iPhone tests - exclude iPad tagged tests
           - test-tag: release
             exclude-tags: ipad
-            device-model: iphone-16
+            device-model: iphone-15
             device-name: iPhone
           - test-tag: privacy 
             exclude-tags: ipad
-            device-model: iphone-16
+            device-model: iphone-15
             device-name: iPhone
           - test-tag: securityTest
             exclude-tags: ipad
-            device-model: iphone-16
+            device-model: iphone-15
             device-name: iPhone
           - test-tag: adClick
             exclude-tags: ipad
-            device-model: iphone-16
+            device-model: iphone-15
             device-name: iPhone
           - test-tag: duckplayer.native
             exclude-tags: ipad
-            device-model: iphone-16
+            device-model: iphone-15
             device-name: iPhone
           - test-tag: example
             exclude-tags: ipad
-            device-model: iphone-16
+            device-model: iphone-15
             device-name: iPhone
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
           - test-tag: example

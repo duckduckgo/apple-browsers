@@ -112,6 +112,7 @@ final class DaxLogoManager {
         } else {
             // Fade out home only when one logo is visible - prevents flashing
             homeDaxLogoView.alpha = isHomeDaxVisible ? Easing.inOutCirc(homeLogoProgress) : 0
+            homeDaxLogoView.textImage.alpha = 1.0
             aiDaxLogoView.alpha = isAIDaxVisible ? Easing.inOutCirc(aiLogoProgress) : 0
         }
     }

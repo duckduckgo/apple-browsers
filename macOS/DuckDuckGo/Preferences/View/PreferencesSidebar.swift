@@ -70,7 +70,7 @@ extension Preferences {
 
         var body: some View {
             Button(action: action) {
-                HStack(spacing: 6) {
+                HStack(alignment: .center, spacing: 6) {
                     Image(nsImage: pane.preferenceIconName(for: settingsIconProvider, isSubscriptionRebrandingOn: isSubscriptionRebrandingOn))
                         .frame(width: 16, height: 16)
                         .if(!isEnabled) {
@@ -83,7 +83,7 @@ extension Preferences {
                         }
 
                     if isNew {
-                        BadgeView(text: UserText.newBadge.uppercased())
+                        NewBadgeView()
                     }
 
                     Spacer()
@@ -100,6 +100,18 @@ extension Preferences {
             .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
             .disabled(!isEnabled)
+        }
+    }
+
+    struct NewBadgeView: View {
+        var body: some View {
+            Text(UserText.newBadge.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .alertYellow))
+                .foregroundColor(.black)
+                .cornerRadius(4)
         }
     }
 

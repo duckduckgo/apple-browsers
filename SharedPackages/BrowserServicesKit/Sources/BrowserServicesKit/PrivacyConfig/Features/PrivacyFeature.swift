@@ -124,6 +124,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
     case defaultBrowserTutorial
+
+    case widgetReporting
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -156,6 +158,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case inputFocusApi
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
+    case createFireproofFaviconUpdaterSecureVaultInBackground
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -191,6 +194,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     // Adds capability to load AI Chat in a sidebar
     case sidebar
+
+    /// Experimental address bar with duck.ai
+    case experimentalAddressBar
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

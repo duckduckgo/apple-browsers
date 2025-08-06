@@ -151,6 +151,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func setDefaultBrowserAction() {
+        pixelReporter.measureChooseBrowserCTAAction()
         systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
         makeNextViewState()
     }

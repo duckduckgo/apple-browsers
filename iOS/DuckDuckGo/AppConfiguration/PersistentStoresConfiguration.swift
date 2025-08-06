@@ -41,8 +41,12 @@ final class PersistentStoresConfiguration {
         let tmp = FileManager.default.temporaryDirectory
         do {
             try FileManager.default.removeItem(at: tmp)
+            Logger.general.info("🧹 Removed temp directory at: \(tmp.path)")
+            // https://app.asana.com/1/137249556945/project/1201392122292466/task/1210925187026095?focus=true
+            try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true, attributes: nil)
+            Logger.general.info("📁 Recreated temp directory at: \(tmp.path)")
         } catch {
-            Logger.general.error("Failed to delete tmp dir")
+            Logger.general.error("❌ Failed to reset tmp dir: \(error.localizedDescription)")
         }
     }
 

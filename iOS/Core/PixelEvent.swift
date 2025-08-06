@@ -42,6 +42,10 @@ extension Pixel {
         case refreshPressed
         case pullToRefresh
 
+        // https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
+        case widgetReport
+        case widgetReportFailure
+
         case deviceOrientationLandscape
 
         case keyboardGoWhileOnNTP
@@ -1263,6 +1267,7 @@ extension Pixel {
         case aiChatMetricOpenMostRecentHistoryChat
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
+        case aiChatExperimentalAddressBarIsEnabledDaily
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1336,6 +1341,8 @@ extension Pixel.Event {
         case .appLaunchFromShareExtension: return "m_app-launch_shared-link"
         case .refreshPressed: return "m_r"
         case .pullToRefresh: return "m_pull-to-reload"
+        case .widgetReport: return "m_widget-report"
+        case .widgetReportFailure: return "m_widget-report-failure"
 
         case .deviceOrientationLandscape: return "m_device_orientation_landscape"
 
@@ -2475,6 +2482,7 @@ extension Pixel.Event {
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
+        case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

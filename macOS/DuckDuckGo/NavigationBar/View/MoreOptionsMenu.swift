@@ -833,13 +833,13 @@ final class FeedbackSubMenu: NSMenu {
 
         addItem(.separator())
 
-        let reportABrowserProblemItem = NSMenuItem(title: "Report a Browser Problem",
+        let reportABrowserProblemItem = NSMenuItem(title: UserText.reportBrowserProblem,
                                                    action: #selector(AppDelegate.openReportABrowserProblem(_:)),
                                                    keyEquivalent: "")
             .withImage(DesignSystemImages.Glyphs.Size16.feedbackAlert)
         addItem(reportABrowserProblemItem)
 
-        let requestANewFeatureItem = NSMenuItem(title: "Request a New Feature",
+        let requestANewFeatureItem = NSMenuItem(title: UserText.requestNewFeature,
                                                 action: #selector(AppDelegate.openRequestANewFeature(_:)),
                                                 keyEquivalent: "")
             .withImage(DesignSystemImages.Glyphs.Size16.windowNew)

@@ -66680,6 +66680,30 @@
         }
       }
     },
+    "report.browser.problem" : {
+      "comment" : "Menu with feedback commands",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Report a Browser Problem"
+          }
+        }
+      }
+    },
+    "request.new.feature" : {
+      "comment" : "Menu with feedback commands",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Request a New Feature"
+          }
+        }
+      }
+    },
     "reset-zoom" : {
       "comment" : "Button that allows the user to reset the zoom level of the browser page",
       "extractionState" : "extracted_with_value",

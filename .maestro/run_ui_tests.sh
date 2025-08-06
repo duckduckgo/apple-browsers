@@ -39,7 +39,8 @@ ensure_simulator_booted() {
 	local device_name=$2
 	
 	# Check if simulator is booted
-	local state=$(xcrun simctl list devices | grep "$uuid" | grep -o "(.*)" | tr -d "()")
+	# Extract just the state from the last set of parentheses
+	local state=$(xcrun simctl list devices | grep "$uuid" | sed -n 's/.*(\(.*\))$/\1/p')
 	
 	if [ "$state" != "Booted" ]; then
 		echo "ℹ️ Booting $device_name simulator..." >&2

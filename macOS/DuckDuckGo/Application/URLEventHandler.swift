@@ -80,6 +80,8 @@ final class URLEventHandler {
             return
         }
 
+        PixelKit.fire(GeneralPixel.navigationToExternalURL, frequency: .dailyAndStandard)
+
         handleURLs([url])
     }
 

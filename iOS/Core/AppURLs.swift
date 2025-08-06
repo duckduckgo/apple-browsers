@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Foundation
+import Common
 
 public extension URL {
 
@@ -136,8 +137,8 @@ public extension URL {
 
     static func makeSearchURL(text: String) -> URL? { defaultStatisticsDependentURLFactory.makeSearchURL(text: text) }
 
-    static func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
-        defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
+    static func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil, tld: TLD? = nil) -> URL? {
+        defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext, tld: tld)
     }
 
     func applyingStatsParams() -> URL { URL.defaultStatisticsDependentURLFactory.applyingStatsParams(to: self) }
@@ -168,8 +169,8 @@ public final class StatisticsDependentURLFactory {
         makeSearchURL(text: text, additionalParameters: [])
     }
 
-    func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
-        if !forceSearchQuery, let url = URL.webUrl(from: query) {
+    func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil, tld: TLD?) -> URL? {
+        if !forceSearchQuery, let url = URL.webUrl(from: query), isValidWithTLD(url, tld) {
             return url
         }
 
@@ -184,6 +185,12 @@ public final class StatisticsDependentURLFactory {
         }
 
         return makeSearchURL(text: query, additionalParameters: parameters)
+    }
+
+    private func isValidWithTLD(_ url: URL, _ tld: TLD?) -> Bool {
+        // If no TLD supplied, then we'll assume it's valid (as per previous behaviour)
+        guard let tld else { return true }
+        return tld.eTLDplus1(url.host) != nil
     }
 
     /**

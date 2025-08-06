@@ -150,6 +150,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
     case widgetReporting
+
+    case useTLDOnQuerySubmit
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -344,6 +346,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+#warning("needs to be defined properly")
+        case .useTLDOnQuerySubmit:
+            return .enabled
         }
     }
 }

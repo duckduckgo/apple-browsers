@@ -1152,7 +1152,10 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func loadQuery(_ query: String) {
-        guard let url = URL.makeSearchURL(query: query, queryContext: currentTab?.url) else {
+
+        let tld: TLD? = featureFlagger.isFeatureOn(.useTLDOnQuerySubmit) ? TLD() : nil
+
+        guard let url = URL.makeSearchURL(query: query, queryContext: currentTab?.url, tld: tld) else {
             Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
             return
         }

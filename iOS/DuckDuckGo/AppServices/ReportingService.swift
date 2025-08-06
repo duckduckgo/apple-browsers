@@ -27,6 +27,7 @@ final class ReportingService {
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
     let onboardingPixelReporter = OnboardingPixelReporter()
     let privacyProDataReporter: PrivacyProDataReporting
+    let featureFlagging: FeatureFlagger
 
     var syncService: SyncService? {
         didSet {
@@ -35,7 +36,8 @@ final class ReportingService {
         }
     }
 
-    init(fireproofing: Fireproofing) {
+    init(fireproofing: Fireproofing, featureFlagging: FeatureFlagger) {
+        self.featureFlagging = featureFlagging
         privacyProDataReporter = PrivacyProDataReporter(fireproofing: fireproofing)
         NotificationCenter.default.addObserver(forName: .didFetchConfigurationOnForeground,
                                                object: nil,
@@ -58,36 +60,28 @@ final class ReportingService {
     }
 
     private func onStatisticsLoaded() {
-        fireAppLaunchPixel()
+        Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
         reportAdAttribution()
+        reportWidgetUsage()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
     }
 
-    private func fireAppLaunchPixel() {
+    private func reportWidgetUsage() {
+        guard featureFlagging.isFeatureOn(.widgetReporting) else { return }
         WidgetCenter.shared.getCurrentConfigurations { result in
-            let paramKeys: [WidgetFamily: String] = [
-                .systemSmall: PixelParameters.widgetSmall,
-                .systemMedium: PixelParameters.widgetMedium,
-                .systemLarge: PixelParameters.widgetLarge
-            ]
-
             switch result {
-            case .failure(let error):
-                Pixel.fire(pixel: .appLaunch, withAdditionalParameters: [
-                    PixelParameters.widgetError: "1",
-                    PixelParameters.widgetErrorCode: "\((error as NSError).code)",
-                    PixelParameters.widgetErrorDomain: (error as NSError).domain
-                ], includedParameters: [.appVersion, .atb])
-
             case .success(let widgetInfo):
-                let params = widgetInfo.reduce([String: String]()) {
-                    var result = $0
-                    if let key = paramKeys[$1.family] {
-                        result[key] = "1"
-                    }
-                    return result
+                if widgetInfo.count > 0 {
+                    let enabledWidgets = widgetInfo.map {
+                        "\($0.id.kind)-\($0.family.debugDescription)"
+                    }.joined(separator: ",")
+                    DailyPixel.fireDaily(.widgetReport, withAdditionalParameters: [
+                        "enabled_widgets": enabledWidgets
+                    ])
                 }
-                Pixel.fire(pixel: .appLaunch, withAdditionalParameters: params, includedParameters: [.appVersion, .atb])
+
+            case .failure(let error):
+                DailyPixel.fire(pixel: .widgetReportFailure, error: error)
             }
         }
     }

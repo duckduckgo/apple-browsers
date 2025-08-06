@@ -23,3 +23,4 @@ CODE_SIGNING_ALLOWED[config=Review][sdk=macosx*] = NO
 CODE_SIGNING_ALLOWED[config=CI][sdk=macosx*] = NO
 SKIP_INSTALL[config=Release][sdk=macosx*] = YES
 SKIP_INSTALL[config=Review][sdk=macosx*] = YES
+SKIP_INSTALL[config=Alpha][sdk=macosx*] = YES

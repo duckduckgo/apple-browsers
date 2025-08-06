@@ -134,6 +134,7 @@ class ConfigurationDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        cell.detailTextLabel?.text = nil
         switch Sections(rawValue: indexPath.section) {
         case .refreshInformation:
             switch RefreshInformationRows(rawValue: indexPath.row) {

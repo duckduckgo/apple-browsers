@@ -1,10 +1,9 @@
 appId: com.duckduckgo.mobile.ios
 tags:
     - iphone
-    - duckplayer.native
+    - duckplayer_native
 
 ---
-
 
 # Load constants
 - runFlow:

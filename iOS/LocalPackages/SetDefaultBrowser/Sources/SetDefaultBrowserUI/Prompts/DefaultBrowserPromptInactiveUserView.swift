@@ -40,10 +40,10 @@ struct DefaultBrowserPromptInactiveUserView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background(background.ignoresSafeArea())
-        .overlay(alignment: .topLeading) {
+        .overlay(alignment: .topTrailing) {
             DismissButton(action: closeAction)
                 .padding(.top, Metrics.DismissButton.closeButtonTopPadding)
-                .padding(.leading, Metrics.DismissButton.horizontalPadding)
+                .padding(.trailing, Metrics.DismissButton.horizontalPadding)
         }
 
     }

@@ -30,7 +30,7 @@ final class MockInitializing: InitializingHandling {
 
     func makeLaunchingState() throws -> any LaunchingHandling {
         if shouldThrowOnLaunching {
-            throw UIApplication.TerminationError.insufficientDiskSpace
+            throw TerminationError.keyValueFileStore(.kvfsInitError)
         } else {
             MockLaunching()
         }
@@ -103,8 +103,7 @@ final class MockTerminating: TerminatingHandling {
 
     private(set) var terminationError: String?
 
-    init() {}
-    init(terminationError: UIApplication.TerminationError, application: UIApplication) {
+    init(terminationError: TerminationError, application: UIApplication) {
         self.terminationError = terminationError.localizedDescription
     }
 
@@ -188,7 +187,7 @@ final class LaunchingTests {
 
         if case .terminating(let terminating) = stateMachine.currentState,
            let terminating = terminating as? Terminating {
-            #expect(terminating.terminationError == UIApplication.TerminationError.insufficientDiskSpace)
+            #expect(terminating.terminationError == TerminationError.keyValueFileStore(.kvfsInitError))
         } else {
             Issue.record("Incorrect state")
         }

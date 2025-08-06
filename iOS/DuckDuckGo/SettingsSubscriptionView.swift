@@ -156,7 +156,8 @@ struct SettingsSubscriptionView: View {
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
-                isGreyedOut: true
+                isGreyedOut: true,
+                isNew: true
             )
         }
 
@@ -185,7 +186,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
@@ -200,7 +201,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
                     image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
@@ -299,7 +300,8 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                     statusIndicator: StatusIndicatorView(status: hasAIChatEntitlement ? .on : .off),
-                    isGreyedOut: !hasAIChatEntitlement
+                    isGreyedOut: !hasAIChatEntitlement,
+                    isNew: true
                 )
             }
             .disabled(!hasAIChatEntitlement)

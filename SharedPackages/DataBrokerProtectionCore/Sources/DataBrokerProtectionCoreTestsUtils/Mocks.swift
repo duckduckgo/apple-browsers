@@ -764,6 +764,16 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func fetchFirstEligibleJobDate() throws -> Date? {
         return nil
     }
+
+    public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        return []
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+    }
 }
 
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
@@ -1063,6 +1073,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         attemptInformation = nil
         scanEvents.removeAll()
         optOutEvents.removeAll()
+        backgroundTaskEventsToReturn.removeAll()
+    }
+
+    public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []
+
+    public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
+        backgroundTaskEventsToReturn.append(event)
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        return backgroundTaskEventsToReturn.filter { $0.timestamp >= date }
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        backgroundTaskEventsToReturn.removeAll { $0.timestamp < date }
     }
 }
 
@@ -2100,6 +2125,7 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
     public static var didCallV4Migrations = false
     public static var didCallV5Migrations = false
     public static var didCallV6Migrations = false
+    public static var didCallV7Migrations = false
 
     public static var v2Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV2Migrations = true
@@ -2123,6 +2149,11 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
 
     public static var v6Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV6Migrations = true
+        return { _ in }
+    }
+
+    public static var v7Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV7Migrations = true
         return { _ in }
     }
 }

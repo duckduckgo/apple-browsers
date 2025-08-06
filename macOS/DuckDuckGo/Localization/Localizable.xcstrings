@@ -7688,6 +7688,66 @@
         }
       }
     },
+    "badge.new" : {
+      "comment" : "Copy of badge used to indicate a new item",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowa"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая вкладка"
+          }
+        }
+      }
+    },
     "BETA" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -50025,6 +50085,18 @@
         }
       }
     },
+    "permission.authorization.wifihotspot.format" : {
+      "comment" : "Popover asking user to authorize WiFi hotspot captive portal",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "WiFi hotspot requesting authorization to redirect to captive portal login page."
+          }
+        }
+      }
+    },
     "permission.camera" : {
       "comment" : "Camera input media device name",
       "extractionState" : "extracted_with_value",
@@ -51041,6 +51113,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перезагрузите страницу, чтобы снова увидеть запрос"
+          }
+        }
+      }
+    },
+    "permission.title.wifihotspot" : {
+      "comment" : "WiFi Hotspot permission title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "WiFi Hotspot"
           }
         }
       }
@@ -71256,6 +71340,174 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подписаться на DuckDuckGo"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.button.no.thanks" : {
+      "comment" : "Title for the no thanks button in VPN Upsell popover (will dismiss the popover)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.cta.free.trial" : {
+      "comment" : "Title for the main CTA button in VPN Upsell popover if user is eligible for free trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try For Free"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.cta.learn.more" : {
+      "comment" : "Title for the main CTA button in VPN Upsell popover if user is not eligible for free trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn More"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.ai.chat.title" : {
+      "comment" : "Title for the AI chat feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat privately with advanced AI models"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.block.harmful.sites.title" : {
+      "comment" : "Title for the block harmful sites feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block harmful sites & online scams"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.hide.ip.address.title" : {
+      "comment" : "Title for the hide IP address feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide your IP address from sites"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.identity.theft.protection.title" : {
+      "comment" : "Title for the identity theft protection feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restore your identity if it's stolen"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.features.shield.online.activity.title" : {
+      "comment" : "Title for the shield online activity feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shield your online activity from others"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.pir.subtitle" : {
+      "comment" : "Subtitle for the Private Information Removal feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "currently available on Mac & Windows"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.pir.title" : {
+      "comment" : "Title for the Private Information Removal feature listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove info from sites that sell it"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.section.title" : {
+      "comment" : "Section title for plus features listed in the VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Plus"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.subtitle" : {
+      "comment" : "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "+ more premium protections"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.plus.features.subtitle.count" : {
+      "comment" : "Subtitle shown in VPN Upsell popover when there are multiple plus features listed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "+ %d more premium protections"
+          }
+        }
+      }
+    },
+    "subscription.upsell.popover.title" : {
+      "comment" : "Title shown in VPN Upsell popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A VPN to secure your\nWi-Fi & personal info"
           }
         }
       }

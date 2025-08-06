@@ -27,8 +27,10 @@ final class DaxLogoManager {
     
     // MARK: - Properties
 
-    private(set) var homeDaxLogoView: UIView = DaxLogoView(isAIDax: false)
-    private(set) var aiDaxLogoView: UIView = DaxLogoView(isAIDax: true)
+    private var logoContainerView: UIView = UIView()
+
+    private var homeDaxLogoView: UIView = DaxLogoView(isAIDax: false)
+    private var aiDaxLogoView: UIView = DaxLogoView(isAIDax: true)
 
     private var isHomeDaxVisible: Bool = false
     private var isAIDaxVisible: Bool = false
@@ -39,11 +41,14 @@ final class DaxLogoManager {
     
     func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
 
-        viewController.view.addSubview(homeDaxLogoView)
+        logoContainerView.translatesAutoresizingMaskIntoConstraints = false
+        viewController.view.addSubview(logoContainerView)
+
+        logoContainerView.addSubview(homeDaxLogoView)
         homeDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
         homeDaxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
-        viewController.view.addSubview(aiDaxLogoView)
+        logoContainerView.addSubview(aiDaxLogoView)
         aiDaxLogoView.translatesAutoresizingMaskIntoConstraints = false
         aiDaxLogoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
@@ -60,23 +65,25 @@ final class DaxLogoManager {
             viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
 
             // Center within the layout guide
-            homeDaxLogoView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
-            homeDaxLogoView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
-            homeDaxLogoView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
-            homeDaxLogoView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
-            homeDaxLogoView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
-            homeDaxLogoView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor),
+            logoContainerView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
+            logoContainerView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
+            logoContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
+            logoContainerView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
+            logoContainerView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
+            logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor),
 
-            aiDaxLogoView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
-            aiDaxLogoView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
-            aiDaxLogoView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
-            aiDaxLogoView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
-            aiDaxLogoView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
-            aiDaxLogoView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
+            homeDaxLogoView.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
+            homeDaxLogoView.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),
+            homeDaxLogoView.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
+            homeDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
+
+            aiDaxLogoView.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
+            aiDaxLogoView.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),
+            aiDaxLogoView.topAnchor.constraint(equalTo: logoContainerView.topAnchor),
+            aiDaxLogoView.bottomAnchor.constraint(equalTo: logoContainerView.bottomAnchor),
         ])
 
-        viewController.view.sendSubviewToBack(aiDaxLogoView)
-        viewController.view.sendSubviewToBack(homeDaxLogoView)
+        viewController.view.bringSubviewToFront(logoContainerView)
     }
 
     func updateVisibility(isHomeDaxVisible: Bool, isAIDaxVisible: Bool) {
@@ -93,20 +100,23 @@ final class DaxLogoManager {
     }
 
     private func updateState() {
-        homeDaxLogoView.alpha = isHomeDaxVisible ? Easing.inOutCirc(1 - progress) : 0
-        aiDaxLogoView.alpha = isAIDaxVisible ? Easing.inOutCirc(progress) : 0
 
-        aiDaxLogoView.transform = CGAffineTransform(translationX: translation(for: aiDaxLogoView, progress: progress), y: 0)
-        homeDaxLogoView.transform = CGAffineTransform(translationX: -translation(for: homeDaxLogoView, progress: 1-progress), y: 0)
-    }
+        let homeLogoProgress = 1 - progress
+        let aiLogoProgress = progress
 
-    private func translation(for logoView: UIView, progress: CGFloat) -> CGFloat {
-        (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0)
+        if isHomeDaxVisible == isAIDaxVisible {
+            homeDaxLogoView.alpha = isAIDaxVisible ? 1.0 : 0.0
+            aiDaxLogoView.alpha = isAIDaxVisible ? aiLogoProgress : 0
+        } else {
+            // Fade out home only when one logo is visible - prevents flashing
+            homeDaxLogoView.alpha = isHomeDaxVisible ? Easing.inOutCirc(homeLogoProgress) : 0
+            aiDaxLogoView.alpha = isAIDaxVisible ? Easing.inOutCirc(aiLogoProgress) : 0
+        }
     }
 }
 
 private final class DaxLogoView: UIView {
-    private(set) lazy var logoImage = UIImageView(image: UIImage(resource: isAIDax ? .duckAI : .home))
+    private(set) lazy var logoImage = UIImageView(image: UIImage(resource: isAIDax ? .duckAI : .searchDax))
     let textImage = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
     private let stackView = UIStackView()
@@ -130,21 +140,20 @@ private final class DaxLogoView: UIView {
 
         textImage.tintColor = UIColor(designSystemColor: .textPrimary)
 
-        stackView.spacing = Metrics.spacing(isDuckAI: isAIDax)
+        stackView.spacing = Metrics.spacing
         stackView.axis = .vertical
 
         addSubview(stackView)
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
-        let maxSize = Metrics.maxLogoSize(isDuckAI: isAIDax)
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: topAnchor, constant: isAIDax ? -Metrics.paddingDiff/2 : 0),
+            stackView.topAnchor.constraint(equalTo: topAnchor, constant: 0),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: maxSize),
-            logoImage.heightAnchor.constraint(equalToConstant: maxSize).withPriority(.defaultHigh)
+            logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: Metrics.maxLogoSize),
+            logoImage.heightAnchor.constraint(equalToConstant: Metrics.maxLogoSize).withPriority(.defaultHigh)
         ])
 
         logoImage.contentMode = .scaleAspectFit
@@ -154,20 +163,6 @@ private final class DaxLogoView: UIView {
 
     private struct Metrics {
         static let maxLogoSize: CGFloat = 96
-        static let maxDuckAILogoSize: CGFloat = 140
         static let spacing: CGFloat = 12
-
-        // DuckAI logo contains padding around an icon. Calculating the difference to compensate in the layout.
-        static let paddingDiff: CGFloat = maxDuckAILogoSize - maxLogoSize
-
-        static func maxLogoSize(isDuckAI: Bool) -> CGFloat {
-            isDuckAI ? maxDuckAILogoSize : maxLogoSize
-        }
-
-        static func spacing(isDuckAI: Bool) -> CGFloat {
-            // For AI mode, adjust the spacing by subtracting half of the padding difference.
-            // This ensures the layout remains visually balanced despite the larger AI logo size.
-            isDuckAI ? spacing - (paddingDiff/2) : spacing
-        }
     }
 }

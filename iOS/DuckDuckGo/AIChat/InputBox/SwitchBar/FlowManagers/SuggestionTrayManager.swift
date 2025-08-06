@@ -64,8 +64,9 @@ final class SuggestionTrayManager: NSObject {
 
     var shouldDisplayFavoritesOverlay: Bool {
         let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
+        let hasRemoteMessages = suggestionTrayViewController?.hasRemoteMessages ?? false
 
-        return !shouldDisplaySuggestionTray && canDisplayFavorites
+        return !shouldDisplaySuggestionTray && (canDisplayFavorites || hasRemoteMessages)
     }
 
     var shouldDisplaySuggestionTray: Bool {
@@ -189,7 +190,9 @@ final class SuggestionTrayManager: NSObject {
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         guard let suggestionTray = suggestionTrayViewController else { return }
         
-        let canShowSuggestion = suggestionTray.canShow(for: type)
+        let canShowSuggestion =
+            suggestionTray.canShow(for: type) ||
+            (type == .favorites && suggestionTray.hasRemoteMessages)
 
         if canShowSuggestion {
             suggestionTray.fill()

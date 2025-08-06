@@ -46,6 +46,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
+    private var logMonitorWindowController: NSWindowController?
     private let customURLLabelMenuItem = NSMenuItem(title: "")
     private let customServiceRootLabelMenuItem = NSMenuItem(title: "")
 
@@ -54,6 +55,29 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
+
+    private lazy var eventPixels: DataBrokerProtectionEventPixels = {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: DatabaseConstants.directoryName,
+            fileName: DatabaseConstants.fileName,
+            appGroupIdentifier: Bundle.main.appGroupName
+        )
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(
+            appGroupName: Bundle.main.appGroupName,
+            databaseFileURL: databaseURL
+        )
+        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
+            fatalError("Failed to make secure storage vault for event pixels")
+        }
+        let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+        let database = DataBrokerProtectionDatabase(
+            fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+            pixelHandler: pixelHandler,
+            vault: vault,
+            localBrokerService: brokerUpdater
+        )
+        return DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
+    }()
 
     private lazy var brokerUpdater: BrokerJSONServiceProvider = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
@@ -161,9 +185,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
             NSMenuItem(title: "Show DB Browser", action: #selector(DataBrokerProtectionDebugMenu.showDatabaseBrowser))
                 .targetting(self)
+            NSMenuItem(title: "Log Monitor", action: #selector(DataBrokerProtectionDebugMenu.openLogMonitor))
+                .targetting(self)
             NSMenuItem(title: "Force Profile Removal", action: #selector(DataBrokerProtectionDebugMenu.showForceOptOutWindow))
                 .targetting(self)
             NSMenuItem(title: "Force broker JSON files update", action: #selector(DataBrokerProtectionDebugMenu.forceBrokerJSONFilesUpdate))
+                .targetting(self)
+            NSMenuItem(title: "Test Firing Weekly Pixels", action: #selector(DataBrokerProtectionDebugMenu.testFireWeeklyPixels))
                 .targetting(self)
             NSMenuItem(title: "Run Personal Information Removal Debug Mode", action: #selector(DataBrokerProtectionDebugMenu.runCustomJSON))
                 .targetting(self)
@@ -319,6 +347,28 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         window.delegate = self
     }
 
+    @objc private func openLogMonitor() {
+        if logMonitorWindowController == nil {
+            let viewController = DataBrokerLogMonitorViewController()
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 900),
+                                  styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                                  backing: .buffered,
+                                  defer: false)
+
+            window.contentViewController = viewController
+            window.title = "DataBrokerProtection Log Monitor"
+            window.minSize = NSSize(width: 1000, height: 650)
+            logMonitorWindowController = NSWindowController(window: window)
+            window.delegate = self
+
+            // Center after setting up the controller to ensure proper sizing
+            window.center()
+        }
+
+        logMonitorWindowController?.showWindow(self)
+        logMonitorWindowController?.window?.makeKeyAndOrderFront(self)
+    }
+
     @objc private func runCustomJSON() {
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager)
@@ -339,6 +389,12 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         Task {
             settings.resetBrokerDeliveryData()
             try await brokerUpdater.checkForUpdates(skipsLimiter: true)
+        }
+    }
+
+    @objc private func testFireWeeklyPixels() {
+        Task { @MainActor in
+            eventPixels.fireWeeklyReportPixels()
         }
     }
 
@@ -458,5 +514,6 @@ extension DataBrokerProtectionDebugMenu: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         databaseBrowserWindowController = nil
         dataBrokerForceOptOutWindowController = nil
+        logMonitorWindowController = nil
     }
 }

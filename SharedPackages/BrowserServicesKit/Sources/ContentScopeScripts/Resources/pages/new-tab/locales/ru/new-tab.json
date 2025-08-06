@@ -156,13 +156,13 @@
     "title" : "Конфиденциальный поиск",
     "description" : "Placeholder text for the search input field."
   },
-  "omnibar_hideDuckAi" : {
-    "title" : "Скрыть Duck.ai",
-    "description" : "Label for the button to hide the Duck.ai chat interface."
+  "omnibar_searchFormCloseButtonLabel" : {
+    "title" : "Закрыть",
+    "description" : "Accessible label for the close button in the search form."
   },
-  "omnibar_showDuckAi" : {
-    "title" : "Показать Duck.ai",
-    "description" : "Label for the button to show the Duck.ai chat interface."
+  "omnibar_toggleDuckAi" : {
+    "title" : "Duck.ai",
+    "description" : "Label for the button to toggle the Duck.ai chat interface."
   },
   "omnibar_searchDuckDuckGoSuffix" : {
     "title" : "Поиск в DuckDuckGo",

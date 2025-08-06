@@ -120,6 +120,8 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
     private var pendingUpdateSince: Date
 
+    private var onCancellationAndDismissal: (() -> Void)?
+
     func updateLastUpdateDownloadedDate() {
         pendingUpdateSince = Date()
     }
@@ -155,11 +157,13 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     init(internalUserDecider: InternalUserDecider,
          areAutomaticUpdatesEnabled: Bool,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         onCancellationAndDismissal: (() -> Void)? = nil) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
+        self.onCancellationAndDismissal = onCancellationAndDismissal
     }
 
     func resume() {
@@ -175,6 +179,8 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         onDismiss()
         pendingUpdateSince = .distantPast
         onResuming = nil
+
+        onCancellationAndDismissal?()
     }
 
     func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {

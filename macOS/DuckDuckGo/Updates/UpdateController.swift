@@ -78,6 +78,26 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     }
     private var cachedUpdateResult: UpdateCheckResult?
 
+    // Struct used to persist pending update info across app restarts
+    struct PendingUpdateInfo: Codable {
+        let version: String
+        let build: String
+        let date: Date
+        let releaseNotes: [String]
+        let releaseNotesPrivacyPro: [String]
+        let isCritical: Bool
+
+        init(from item: SUAppcastItem) {
+            self.version = item.displayVersionString
+            self.build = item.versionString
+            self.date = item.date ?? Date()
+            let (notes, notesPro) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
+            self.releaseNotes = notes
+            self.releaseNotesPrivacyPro = notesPro
+            self.isCritical = item.isCriticalUpdate
+        }
+    }
+
     @Published private(set) var updateProgress = UpdateCycleProgress.default {
         didSet {
             if let cachedUpdateResult {
@@ -100,6 +120,9 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
+
+    @UserDefaultsWrapper(key: .pendingUpdateInfo, defaultValue: nil)
+    private var pendingUpdateInfo: Data?
 
     var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     var lastUpdateNotificationShownDate: Date = .distantPast
@@ -183,6 +206,9 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         self.internalUserDecider = internalUserDecider
         self.updateCheckState = updateCheckState
         super.init()
+
+        // Try to restore cached release notes if we just updated
+        restoreCachedReleaseNotesIfNeeded()
 
         _ = try? configureUpdater()
 
@@ -332,6 +358,44 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     // MARK: - Private
 
+    // Cache the pending update info to persist across app restarts
+    private func cachePendingUpdate(from item: SUAppcastItem) {
+        let info = PendingUpdateInfo(from: item)
+        if let encoded = try? JSONEncoder().encode(info) {
+            pendingUpdateInfo = encoded
+            Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
+        }
+    }
+
+    // Restore cached release notes on app startup if version matches
+    private func restoreCachedReleaseNotesIfNeeded() {
+        guard cachedUpdateResult == nil,
+              let data = pendingUpdateInfo,
+              let cached = try? JSONDecoder().decode(PendingUpdateInfo.self, from: data) else {
+            return
+        }
+
+        // Check if current app version matches the cached update version
+        let currentBuild = AppVersion().buildNumber
+        guard currentBuild == cached.build else {
+            Logger.updates.log("Skipping cached release notes - build mismatch (current: \(currentBuild), cached: \(cached.build))")
+            return
+        }
+
+        // We just updated to this version - show its release notes
+        latestUpdate = Update(
+            isInstalled: true,
+            type: cached.isCritical ? .critical : .regular,
+            version: cached.version,
+            build: cached.build,
+            date: cached.date,
+            releaseNotes: cached.releaseNotes,
+            releaseNotesPrivacyPro: cached.releaseNotesPrivacyPro,
+            needsLatestReleaseNote: false
+        )
+        Logger.updates.log("Restored cached release notes for current version \(cached.version)")
+    }
+
     // Determines if a forced update check is necessary
     //
     // Due to frequent releases (weekly public, daily internal), the downloaded update
@@ -352,12 +416,12 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     //     Set to `true` if the pending update might be obsolete.
     //     Defaults to `false`
     private func configureUpdater(needsUpdateCheck: Bool = false) throws -> SPUUpdater? {
-        // Workaround to reset the updater state
-        cachedUpdateResult = nil
-        latestUpdate = nil
+        resetCachedReleaseNotes()
 
         userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                      areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
+                                      areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled) { [weak self] in
+            self?.resetCachedReleaseNotes()
+        }
         guard let userDriver else { return nil }
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
@@ -385,6 +449,11 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         self.updater = updater
 
         return updater
+    }
+
+    private func resetCachedReleaseNotes() {
+        cachedUpdateResult = nil
+        latestUpdate = nil
     }
 
     private func showUpdateNotificationIfNeeded() {
@@ -440,6 +509,11 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         guard let userDriver else { return }
 
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
+
+        // Cache release notes when user clicks restart for manual update
+        if !areAutomaticUpdatesEnabled, let cachedUpdateResult {
+            cachePendingUpdate(from: cachedUpdateResult.item)
+        }
 
         guard useLegacyAutoRestartLogic else {
             userDriver.resume()
@@ -514,6 +588,11 @@ extension UpdateController: SPUUpdaterDelegate {
     func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
         Logger.updates.log("Updater did download update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidDownloadUpdate))
+
+        // Cache release notes when automatic update is downloaded and ready
+        if areAutomaticUpdatesEnabled {
+            cachePendingUpdate(from: item)
+        }
 
         if !useLegacyAutoRestartLogic,
            let userDriver {

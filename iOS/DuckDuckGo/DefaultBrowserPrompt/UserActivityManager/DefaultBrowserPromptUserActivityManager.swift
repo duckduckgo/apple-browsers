@@ -67,6 +67,8 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
             return
         }
 
+        // If last active date is nil it means that we run the code for the first time. In that case the last activity and second last activity should be the same day.
+        // The second last active day will be used to calculate the number of inactive days from `lastActiveDate`
         let lastActiveDate = today
         let secondLastActiveDate = currentActivity.lastActiveDate ?? lastActiveDate
 

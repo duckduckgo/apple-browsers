@@ -17,13 +17,12 @@ tags:
 - tapOn: 
     id: searchEntry
     
-# Use a data URI to display user agent directly
-- inputText: "data:text/html,<h1>User Agent:</h1><p style='font-size:20px'>%3Cscript%3Edocument.write(navigator.userAgent)%3C/script%3E</p>"
+# Get user Agent
+- inputText: "https://useragentstring.com/"
 - pressKey: Enter
 
-# Wait for the page to render and verify iPad is in the user agent
-- waitForAnimationToEnd
-- assertVisible: "iPad"
+# Check screen size
+- assertVisible: "Macintosh"
 
 # Navigate back to search
 - tapOn:

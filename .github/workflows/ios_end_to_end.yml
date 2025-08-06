@@ -120,18 +120,18 @@ jobs:
             exclude-tags: ipad
             device-model: iPhone-16
             device-name: iPhone
-          - test-tag: duckplayer.native
+          - test-tag: duckplayer_native
             exclude-tags: ipad
             device-model: iPhone-16
             device-name: iPhone
-          - test-tag: example
+          - test-tag: device_info
             exclude-tags: ipad
             device-model: iPhone-16
             device-name: iPhone
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
-          - test-tag: example
+          - test-tag: device_info
             exclude-tags: iphone
-            device-model: iPad-10th-generation            
+            device-model: iPad-10th-generation
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 

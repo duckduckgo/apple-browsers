@@ -1,5 +1,5 @@
 //
-//  FlexibleView.swift
+//  PillCollectionView.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -23,12 +23,13 @@ struct Pill: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
             Text(text)
-                .systemLabel(color: isSelected || isHovered ? .init(baseColor: .blue60) : .textPrimary)
+                .systemLabel(color: isSelected || isHovered ? textColor : .textPrimary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
         }
@@ -38,9 +39,21 @@ struct Pill: View {
             isHovered = hovering
         }
     }
+
+    private var textColor: Color {
+        if isSelected {
+            return colorScheme == .light ? .init(baseColor: .blue60) : .init(baseColor: .blue0)
+        } else if isHovered {
+            return colorScheme == .light ? .init(baseColor: .blue60) : .white.opacity(0.84)
+        } else {
+            return .textPrimary.opacity(0.84)
+        }
+    }
 }
 
 struct PillButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
     let isSelected: Bool
     let isHovered: Bool
 
@@ -60,12 +73,12 @@ struct PillButtonStyle: ButtonStyle {
 
     private func backgroundColor(configuration: Configuration) -> Color {
         if isSelected {
-            return .init(baseColor: .blue0)
+            return colorScheme == .light ? .init(baseColor: .blue0) : .init(baseColor: .blue30).opacity(0.32)
         } else {
             if configuration.isPressed {
-                return .init(baseColor: .blue0).opacity(0.56)
+                return colorScheme == .light ? .init(baseColor: .blue0).opacity(0.56) : .white.opacity(0.09)
             } else if isHovered {
-                return .init(baseColor: .blue0).opacity(0.48)
+                return colorScheme == .light ? .init(baseColor: .blue0).opacity(0.48) : .white.opacity(0.06)
             } else {
                 return Color(.controlBackgroundColor)
             }
@@ -74,12 +87,12 @@ struct PillButtonStyle: ButtonStyle {
 
     private func borderColor(configuration: Configuration) -> Color {
         if isSelected {
-            return .init(baseColor: .blue40)
+            return colorScheme == .light ? .init(baseColor: .blue40) : .init(baseColor: .blue20)
         } else {
             if configuration.isPressed {
-                return .init(baseColor: .blue40).opacity(0.8)
+                return colorScheme == .light ? .init(baseColor: .blue40).opacity(0.8) : .white.opacity(0.16)
             } else if isHovered {
-                return .init(baseColor: .blue40).opacity(0.64)
+                return colorScheme == .light ? .init(baseColor: .blue40).opacity(0.64) : .white.opacity(0.12)
             } else {
                 return Color(.separatorColor)
             }

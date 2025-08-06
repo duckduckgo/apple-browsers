@@ -3320,8 +3320,8 @@
 		BBBD2A032E2FE458005E7664 /* ThankYouView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A012E2FE44B005E7664 /* ThankYouView.swift */; };
 		BBBD2A052E2FE4C6005E7664 /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */; };
 		BBBD2A062E2FE4C6005E7664 /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */; };
-		BBBD2A082E2FE548005E7664 /* FeaturesPillCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A072E2FE544005E7664 /* FeaturesPillCollection.swift */; };
-		BBBD2A092E2FE548005E7664 /* FeaturesPillCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A072E2FE544005E7664 /* FeaturesPillCollection.swift */; };
+		BBBD2A082E2FE548005E7664 /* PillCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A072E2FE544005E7664 /* PillCollectionView.swift */; };
+		BBBD2A092E2FE548005E7664 /* PillCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBD2A072E2FE544005E7664 /* PillCollectionView.swift */; };
 		BBBEE1BF2C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBBEE1C02C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBC0001E2DF743DE0003E9F5 /* VisualStyleManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC0001D2DF743D20003E9F5 /* VisualStyleManagerTests.swift */; };
@@ -5561,7 +5561,7 @@
 		BBBD29FE2E2FE16A005E7664 /* RequestNewFeatureViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestNewFeatureViewModel.swift; sourceTree = "<group>"; };
 		BBBD2A012E2FE44B005E7664 /* ThankYouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThankYouView.swift; sourceTree = "<group>"; };
 		BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
-		BBBD2A072E2FE544005E7664 /* FeaturesPillCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturesPillCollection.swift; sourceTree = "<group>"; };
+		BBBD2A072E2FE544005E7664 /* PillCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PillCollectionView.swift; sourceTree = "<group>"; };
 		BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModelTests.swift; sourceTree = "<group>"; };
 		BBC0001D2DF743D20003E9F5 /* VisualStyleManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualStyleManagerTests.swift; sourceTree = "<group>"; };
 		BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModelTests.swift; sourceTree = "<group>"; };
@@ -10649,7 +10649,7 @@
 			children = (
 				BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */,
 				BBB3F1F02E302143009E77AF /* ReportProblemFormView.swift */,
-				BBBD2A072E2FE544005E7664 /* FeaturesPillCollection.swift */,
+				BBBD2A072E2FE544005E7664 /* PillCollectionView.swift */,
 				BBBD2A042E2FE4C3005E7664 /* ViewExtensions.swift */,
 				BBBD2A012E2FE44B005E7664 /* ThankYouView.swift */,
 				BBBD29FE2E2FE16A005E7664 /* RequestNewFeatureViewModel.swift */,
@@ -13427,7 +13427,7 @@
 				C18194602C7CDD0E00381092 /* PromotionViewModel.swift in Sources */,
 				3706FC31293F65D500E42796 /* PermissionButton.swift in Sources */,
 				317307262CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */,
-				BBBD2A092E2FE548005E7664 /* FeaturesPillCollection.swift in Sources */,
+				BBBD2A092E2FE548005E7664 /* PillCollectionView.swift in Sources */,
 				9F6434622BEC82B700D2D8A0 /* AttributionPixelHandler.swift in Sources */,
 				843AD3DC2CD389CC00163067 /* XMLNodeExtension.swift in Sources */,
 				7B969B3E2D52A81D004AE4E8 /* VPNUIPresenting.swift in Sources */,
@@ -14865,7 +14865,7 @@
 				4B0AACAE28BC6FD0001038AC /* SafariFaviconsReader.swift in Sources */,
 				376E8C1A2D41186B00D5D2EC /* DefaultRecentActivityActionsHandler.swift in Sources */,
 				B6B3E0E12657EA7A0040E0A2 /* NSScreenExtension.swift in Sources */,
-				BBBD2A082E2FE548005E7664 /* FeaturesPillCollection.swift in Sources */,
+				BBBD2A082E2FE548005E7664 /* PillCollectionView.swift in Sources */,
 				B65E6BA026D9F10600095F96 /* NSBezierPathExtension.swift in Sources */,
 				31ECDA112BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */,
 				4B4D60E02A0C875F00BCD287 /* Bundle+VPN.swift in Sources */,

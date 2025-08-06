@@ -29,10 +29,6 @@ import os.log
 import BrowserServicesKit
 
 protocol DeviceSyncCoordinating: AnyObject {
-    @MainActor
-    func presentDialog()
-    @MainActor
-    func dismissDialog()
 }
 
 final class DeviceSyncCoordinator: DeviceSyncCoordinating {
@@ -50,13 +46,8 @@ final class DeviceSyncCoordinator: DeviceSyncCoordinating {
     private let managementDialogModel: ManagementDialogModel
     private var syncWindowController: NSWindowController?
 
-    func startDeviceSync(returning: (() -> Void)? = nil) {
-        // Clean up any existing sync session
-        cleanUp()
-    }
-
     @MainActor
-    func presentDialog() {
+    private func presentDialog() {
         guard !(syncWindowController?.window?.isVisible ?? false) else {
             return
         }
@@ -78,7 +69,7 @@ final class DeviceSyncCoordinator: DeviceSyncCoordinating {
     }
 
     @MainActor
-    func dismissDialog() {
+    private func dismissDialog() {
         guard let window = syncWindowController?.window, let sheetParent = window.sheetParent else {
             return
         }

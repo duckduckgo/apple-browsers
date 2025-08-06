@@ -45,16 +45,14 @@ protocol SyncSettingsViewHandling {
     func recoverDataPressed() async
 }
 
+@MainActor
 final class SyncDialogController {
     private let syncService: DDGSyncing
+    private let managementDialogModel: ManagementDialogModel
     private let userAuthenticator: UserAuthenticating
     private let syncPausedStateManager: any SyncPausedStateManaging
     private let featureFlagger: FeatureFlagger
     private let diagnosisHelper: SyncDiagnosisHelper
-
-    let deviceSyncCoordinating: DeviceSyncCoordinating
-
-    let managementDialogModel: ManagementDialogModel
 
     private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
         syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: delegate)
@@ -62,24 +60,23 @@ final class SyncDialogController {
     private let connectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling
     private lazy var connectionController: SyncConnectionControlling = connectionControllerFactory(syncService, self)
 
+    private let defaultDeviceSyncCoordinatorFactory: (ManagementDialogModel) -> DeviceSyncCoordinating = {
+        DeviceSyncCoordinator(managementDialogModel: $0)
+    }
+    private let deviceSyncCoordinating: DeviceSyncCoordinating
+
     private var cancellables = Set<AnyCancellable>()
-    private var connector: RemoteConnecting?
-    var onEndFlow: () -> Void = {}
     private var syncPromoSource: String?
 
-    private var stringForQR: String?
-    private var codeForDisplayOrPasting: String?
+    @Published var stringForQR: String?
+    @Published var codeForDisplayOrPasting: String?
     private var recoveryCode: String? {
         syncService.account?.recoveryCode
     }
 
     private var isScreenLocked: Bool = false
 
-    // Properties that need to be accessible
     @Published var devices: [SyncDevice] = []
-
-    // Add device access delegation
-    var devicesProvider: (() -> [SyncDevice])?
 
     init(
         syncService: DDGSyncing,
@@ -87,18 +84,18 @@ final class SyncDialogController {
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
-        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
+        deviceSyncCoordinatorFactory: ((ManagementDialogModel) -> DeviceSyncCoordinating)? = nil,
+        featureFlagger: FeatureFlagger? = nil
     ) {
         self.syncService = syncService
         self.userAuthenticator = userAuthenticator
         self.syncPausedStateManager = syncPausedStateManager
         self.connectionControllerFactory = connectionControllerFactory ?? SyncDialogController.defaultConnectionControllerFactory
-        self.featureFlagger = featureFlagger
+        self.deviceSyncCoordinating = deviceSyncCoordinatorFactory?(managementDialogModel) ?? defaultDeviceSyncCoordinatorFactory(managementDialogModel)
+        self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.managementDialogModel = managementDialogModel
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
-
-        deviceSyncCoordinating = DeviceSyncCoordinator(managementDialogModel: managementDialogModel)
 
         self.managementDialogModel.delegate = self
 
@@ -137,11 +134,9 @@ final class SyncDialogController {
         syncPromoSource = sender.userInfo?[SyncPromoManager.Constants.syncPromoSourceKey] as? String
     }
 
-    // Update presentDeleteAccount to use devices provider
     @MainActor
     func presentDeleteAccount() {
-        let devices = devicesProvider?() ?? self.devices
-        presentDialog(for: .deleteAccount(devices))
+        presentDialog(for: .deleteAccount(self.devices))
     }
 
     // MARK: - Private Helper Methods
@@ -184,7 +179,7 @@ final class SyncDialogController {
                 let codeForDisplayOrPasting = pairingInfo.base64Code
                 let stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
-                self.stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+                self.stringForQR = stringForQR
                 if isRecovery {
                     self.presentDialog(for: .enterRecoveryCode(stringForQRCode: stringForQR))
                 } else {
@@ -220,7 +215,7 @@ final class SyncDialogController {
         do {
             let device = Self.deviceInfo()
             let registeredDevices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
-            await mapDevices(registeredDevices)
+            mapDevices(registeredDevices)
         } catch {
             PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError.withoutMacPrefix)
         }
@@ -243,7 +238,7 @@ final class SyncDialogController {
             .sink { [weak self] _ in
                 guard let self else { return }
                 Task {
-                    await self.presentDialog(for: .nowSyncing)
+                    self.presentDialog(for: .nowSyncing)
                 }
             }.store(in: &cancellables)
     }
@@ -261,7 +256,7 @@ final class SyncDialogController {
         codeForDisplayOrPasting = recoveryCode
         stringForQR = recoveryCode
         Task {
-            await presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: recoveryCode, stringForQRCode: recoveryCode))
+            presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: recoveryCode, stringForQRCode: recoveryCode))
         }
     }
 
@@ -411,9 +406,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func recoveryCodeNextPressed() {
-        Task {
-            await showDevicesSynced()
-        }
+        showDevicesSynced()
     }
 
     func turnOnSync() {
@@ -458,7 +451,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         }
         Task {
             await switchAccounts(recoveryKey: recoveryKey)
-            await managementDialogModel.endFlow()
+            managementDialogModel.endFlow()
         }
     }
 
@@ -489,9 +482,8 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func didEndFlow() {
-        Task {
-            await connectionController.cancel()
-            await deviceSyncCoordinating.dismissDialog()
+        Task { [weak self] in
+            await self?.connectionController.cancel()
         }
     }
 }

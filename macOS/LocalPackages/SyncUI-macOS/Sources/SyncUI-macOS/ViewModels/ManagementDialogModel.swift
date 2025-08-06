@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 
+@MainActor
 public protocol ManagementDialogModelDelegate: AnyObject {
     func turnOffSync()
     func updateDeviceName(_ name: String)

@@ -63,6 +63,7 @@ class MockSyncFeatureFlagger: FeatureFlagger {
     var allActiveExperiments: Experiments = [:]
 }
 
+@MainActor
 final class SyncPreferencesTests: XCTestCase {
 
     var scheduler: CapturingScheduler! = CapturingScheduler()
@@ -158,13 +159,6 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertTrue(syncPreferences.isSyncEnabled)
     }
 
-    func testCorrectRecoveryCodeIsReturned() throws {
-        let account = SyncAccount(deviceId: "some device", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
-        ddgSyncing.account = account
-
-        try XCTAssertEqual(SyncCode.RecoveryKey(base64Code: syncPreferences.recoveryCode), SyncCode.RecoveryKey(base64Code: account.recoveryCode))
-    }
-
     func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {
         await syncPreferences.recoverDataPressed()
 
@@ -198,7 +192,7 @@ final class SyncPreferencesTests: XCTestCase {
         ddgSyncing.spyDisconnectCalled = {
             expectation.fulfill()
         }
-        syncPreferences.turnOffSync()
+        syncPreferences.syncDialogController.turnOffSync()
         await fulfillment(of: [expectation], timeout: 5.0)
     }
 
@@ -270,7 +264,7 @@ final class SyncPreferencesTests: XCTestCase {
             expectation.fulfill()
         }
 
-        syncPreferences.turnOffSync()
+        syncPreferences.syncDialogController.turnOffSync()
 
         await fulfillment(of: [expectation], timeout: 5.0)
 
@@ -283,7 +277,7 @@ final class SyncPreferencesTests: XCTestCase {
             expectation.fulfill()
         }
 
-        syncPreferences.deleteAccount()
+        syncPreferences.syncDialogController.deleteAccount()
 
         await fulfillment(of: [expectation], timeout: 5.0)
     }
@@ -314,7 +308,7 @@ final class SyncPreferencesTests: XCTestCase {
         connectionController.syncCodeEnteredCalled = { _, _, _ in
             expectation.fulfill()
         }
-        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false, codeSource: .qrCode)
+        syncPreferences.syncDialogController.recoveryCodePasted(testRecoveryCode, fromRecoveryScreen: false)
         await fulfillment(of: [expectation], timeout: 5)
     }
 
@@ -328,7 +322,7 @@ final class SyncPreferencesTests: XCTestCase {
             XCTAssert(ddgSyncing.disconnectCalled)
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncPreferences.syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
         XCTAssert(didCallDDGSyncLogin)
     }
 
@@ -340,7 +334,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         ddgSyncing.stubLogin = [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
 
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncPreferences.syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
         syncPreferences.$devices.sink {
             if $0.map(\.id) == ["1", "2"] {
@@ -362,7 +356,7 @@ final class SyncPreferencesTests: XCTestCase {
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncPreferences.syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
         XCTAssertNil(managementDialogModel.currentDialog)
     }
@@ -372,7 +366,7 @@ final class SyncPreferencesTests: XCTestCase {
         ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         syncPreferences.devices = [SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")), SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "iPhone"))]
 
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
+        await syncPreferences.syncDialogController.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
         XCTAssert(managementDialogModel.shouldShowErrorMessage)
         XCTAssert(managementDialogModel.shouldShowSwitchAccountsMessage)
@@ -389,7 +383,7 @@ final class SyncPreferencesTests: XCTestCase {
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        syncPreferences.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
+        syncPreferences.syncDialogController.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
 
         await fulfillment(of: [loginCalledExpectation], timeout: 5.0)
     }
@@ -412,7 +406,7 @@ final class SyncPreferencesTests: XCTestCase {
         }.store(in: &cancellables)
 
         Task {
-            syncPreferences.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
+            syncPreferences.syncDialogController.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
         }
 
         await fulfillment(of: [expectation], timeout: 5)
@@ -431,13 +425,13 @@ final class SyncPreferencesTests: XCTestCase {
         codeForDisplayExpectation.assertForOverFulfill = false
         stringForQRExpectation.assertForOverFulfill = false
 
-        syncPreferences.$codeForDisplayOrPasting.sink {
+        syncPreferences.syncDialogController.$codeForDisplayOrPasting.sink {
             if $0 == codeForDisplayOrPasting {
                 codeForDisplayExpectation.fulfill()
             }
         }.store(in: &cancellables)
 
-        syncPreferences.$stringForQR.sink {
+        syncPreferences.syncDialogController.$stringForQR.sink {
             if $0 == stringForQR {
                 stringForQRExpectation.fulfill()
             }
@@ -453,7 +447,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
 
-        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        syncPreferences.syncDialogController.enterRecoveryCodePressed()
 
         await fulfillment(of: expectations, timeout: 5)
     }
@@ -466,7 +460,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
 
-        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        syncPreferences.syncDialogController.enterRecoveryCodePressed()
 
         await fulfillment(of: expectations, timeout: 5)
     }
@@ -515,10 +509,10 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertTrue(codes.displayCode.isRecoveryKey)
         XCTAssertTrue(codes.qrCode.isRecoveryKey)
 
-        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.codeForDisplayOrPasting)
+        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.syncDialogController.codeForDisplayOrPasting)
         XCTAssertTrue(codeForDisplayOrPasting.isRecoveryKey)
 
-        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        let stringForQR = try XCTUnwrap(syncPreferences.syncDialogController.stringForQR)
         XCTAssertTrue(stringForQR.isRecoveryKey)
     }
 
@@ -540,10 +534,10 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertEqual(codes.displayCode, expectedExchangeCode)
         XCTAssertTrue(codes.qrCode.isDDGURLString)
 
-        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.codeForDisplayOrPasting)
+        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.syncDialogController.codeForDisplayOrPasting)
         XCTAssertEqual(codeForDisplayOrPasting, expectedExchangeCode)
 
-        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        let stringForQR = try XCTUnwrap(syncPreferences.syncDialogController.stringForQR)
         XCTAssertTrue(stringForQR.isDDGURLString)
     }
 
@@ -553,18 +547,16 @@ final class SyncPreferencesTests: XCTestCase {
         let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
         connectionController.startConnectModeStub = stubbedPairingInfo
 
-        Task {
-            await syncPreferences.enterRecoveryCodePressed()
-        }
+        syncPreferences.syncDialogController.enterRecoveryCodePressed()
 
         let code = try await waitForEnterRecoveryCodeDialog()
 
         XCTAssertTrue(code.isDDGURLString)
 
-        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.codeForDisplayOrPasting)
+        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.syncDialogController.codeForDisplayOrPasting)
         XCTAssertEqual(codeForDisplayOrPasting, expectedDisplayCode)
 
-        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        let stringForQR = try XCTUnwrap(syncPreferences.syncDialogController.stringForQR)
         XCTAssertTrue(stringForQR.isDDGURLString)
     }
 
@@ -574,15 +566,13 @@ final class SyncPreferencesTests: XCTestCase {
         let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
         connectionController.startConnectModeStub = stubbedPairingInfo
 
-        Task {
-            await syncPreferences.enterRecoveryCodePressed()
-        }
+        syncPreferences.syncDialogController.enterRecoveryCodePressed()
 
         let code = try await waitForEnterRecoveryCodeDialog()
 
         XCTAssertEqual(code, expectedDisplayCode)
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedDisplayCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedDisplayCode)
+        XCTAssertEqual(syncPreferences.syncDialogController.codeForDisplayOrPasting, expectedDisplayCode)
+        XCTAssertEqual(syncPreferences.syncDialogController.stringForQR, expectedDisplayCode)
     }
 
     func test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
@@ -602,8 +592,8 @@ final class SyncPreferencesTests: XCTestCase {
         let dialogQrCode = try XCTUnwrap(codes.qrCode)
         XCTAssertTrue(dialogQrCode.isDDGURLString)
 
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
-        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        XCTAssertEqual(syncPreferences.syncDialogController.codeForDisplayOrPasting, expectedCode)
+        let stringForQR = try XCTUnwrap(syncPreferences.syncDialogController.stringForQR)
         XCTAssertTrue(stringForQR.isDDGURLString)
     }
 
@@ -624,8 +614,8 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertEqual(codes.qrCode, expectedCode)
         XCTAssertEqual(codes.displayCode, expectedCode)
 
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
+        XCTAssertEqual(syncPreferences.syncDialogController.codeForDisplayOrPasting, expectedCode)
+        XCTAssertEqual(syncPreferences.syncDialogController.stringForQR, expectedCode)
     }
 
     func test_startPollingForRecoveryKey_whenError_showsError() async {
@@ -641,7 +631,7 @@ final class SyncPreferencesTests: XCTestCase {
             }
         }.store(in: &cancellables)
 
-        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        await syncPreferences.syncDialogController.syncWithAnotherDevicePressed()
 
         await fulfillment(of: [expectation], timeout: 5)
     }

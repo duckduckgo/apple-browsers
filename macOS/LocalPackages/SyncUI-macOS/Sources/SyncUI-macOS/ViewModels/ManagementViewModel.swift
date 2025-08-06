@@ -18,6 +18,7 @@
 
 import Foundation
 
+@MainActor
 public protocol ManagementViewModel: ObservableObject {
 
     var isDataSyncingAvailable: Bool { get }
@@ -124,6 +125,7 @@ public enum SyncErrorType {
         }
     }
 
+    @MainActor
     func onButtonPressed(delegate: ManagementDialogModelDelegate?) {
         switch self {
         case .unableToAuthenticateOnDevice:

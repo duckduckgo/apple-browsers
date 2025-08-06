@@ -40,6 +40,7 @@ extension SyncDevice {
     }
 }
 
+@MainActor
 final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel {
     @Published var devices: [SyncDevice] = [] {
         didSet {
@@ -149,7 +150,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAppVersionNotSupported: Bool = true
 
     private let syncPausedStateManager: any SyncPausedStateManaging
-    private let syncDialogController: SyncDialogController
+    let syncDialogController: SyncDialogController
 
     private func updateSyncFeatureFlags(_ syncFeatureFlags: SyncFeatureFlags) {
         isDataSyncingAvailable = syncFeatureFlags.contains(.dataSyncing)
@@ -172,8 +173,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncBookmarksAdapter: SyncBookmarksAdapter,
         syncCredentialsAdapter: SyncCredentialsAdapter,
         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
+        managementDialogModel: ManagementDialogModel = ManagementDialogModel(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
+        connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.syncService = syncService
@@ -188,8 +191,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
         self.syncDialogController = SyncDialogController(
             syncService: syncService,
+            managementDialogModel: managementDialogModel,
             userAuthenticator: userAuthenticator,
             syncPausedStateManager: syncPausedStateManager,
+            connectionControllerFactory: connectionControllerFactory,
             featureFlagger: featureFlagger
         )
 

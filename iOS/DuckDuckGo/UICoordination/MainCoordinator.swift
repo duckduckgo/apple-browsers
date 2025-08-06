@@ -152,12 +152,7 @@ final class MainCoordinator {
                                    privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                    tld: provider.storageCache.tld) {
         case .failure(let error):
-            DailyPixel.fireDailyAndCount(pixel: .historyStoreLoadFailed, error: error)
-            if error.isDiskFull {
-                throw UIApplication.TerminationError.insufficientDiskSpace
-            } else {
-                throw UIApplication.TerminationError.unrecoverableState
-            }
+            throw TerminationError.historyDatabase(error)
         case .success(let historyManager):
             return historyManager
         }

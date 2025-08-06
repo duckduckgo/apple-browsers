@@ -45,17 +45,25 @@ struct AppConfiguration {
         NewTabPageIntroMessageConfiguration().disableIntroMessageForReturningUsers()
 
         contentBlockingConfiguration.prepareContentBlocking()
-        configureAPIRequestUserAgent()
+        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+
         onboardingConfiguration.migrateToNewOnboarding()
+        clearTemporaryDirectory()
         try persistentStoresConfiguration.configure()
+
         setConfigurationURLProvider()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
     }
 
-    private func configureAPIRequestUserAgent() {
-        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+    private func clearTemporaryDirectory() {
+        let tmp = FileManager.default.temporaryDirectory
+        do {
+            try FileManager.default.removeItem(at: tmp)
+        } catch {
+            Logger.general.error("Failed to delete tmp dir")
+        }
     }
 
     private func setConfigurationURLProvider() {

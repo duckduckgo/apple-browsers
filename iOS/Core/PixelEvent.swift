@@ -1321,6 +1321,8 @@ extension Pixel {
 
         // MARK: - System Settings Picture-in-Picture Video Tutorial
         case systemSettingsPiPTutorialFailedToLoadVideo
+
+        case appDidTerminateWithUnhandledError
     }
 
 }
@@ -2583,6 +2585,8 @@ extension Pixel.Event {
 
         // MARK: System Settings PiP Video Tutorial
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
+
+        case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
         }
     }
 }

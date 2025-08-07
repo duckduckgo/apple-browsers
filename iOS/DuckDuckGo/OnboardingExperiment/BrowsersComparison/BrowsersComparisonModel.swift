@@ -27,7 +27,7 @@ struct BrowsersComparisonModel {
         }
     }()
 
-    static func browsersSupport(for feature: PrivacyFeature.FeatureType) -> [PrivacyFeature.BrowserSupport] {
+    private static func browsersSupport(for feature: PrivacyFeature.FeatureType) -> [PrivacyFeature.BrowserSupport] {
         Browser.allCases.map { browser in
             let availability: PrivacyFeature.Availability
             switch feature {

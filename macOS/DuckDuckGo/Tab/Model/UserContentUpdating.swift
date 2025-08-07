@@ -53,7 +53,23 @@ final class UserContentUpdating {
 
     private(set) var userContentBlockingAssets: AnyPublisher<UserContentUpdating.NewContent, Never>!
 
-    weak var userScriptDependenciesProvider: UserScriptDependenciesProviding?
+    weak var userScriptDependenciesProvider: UserScriptDependenciesProviding? {
+        didSet {
+            isDependenciesProviderInitialized = true
+        }
+    }
+
+    /// This property is used to avoid race condition upon app initialization.
+    ///
+    /// `makeValue` closure in the initializer requires `userScriptDependenciesProvider`
+    /// (that initializes `newTabPageActionsManager`), but the dependencies provider
+    /// is only set after the initializer returns. In the rare case when
+    /// `AppDelegate.init` takes too long, and content blocking rules get updated
+    /// before dependencies provider is assigned, `makeValue` would use nil
+    /// `newTabPageActionsManager`. By halting `updatesStream` until this property
+    /// is `true` we ensure that `ScriptSourceProvider` is initialized with a correct
+    /// value of `newTabPageActionsManager`.
+    @Published private var isDependenciesProviderInitialized: Bool = false
 
     @MainActor
     private lazy var newTabPageActionsManager: NewTabPageActionsManager? = userScriptDependenciesProvider?.makeNewTabPageActionsManager()
@@ -120,7 +136,9 @@ final class UserContentUpdating {
                 .map { $0.0 } // drop gpcEnabled value: $0.1
                 .combineLatest(onNotificationWithInitial(.autofillUserSettingsDidChange), combine)
                 .combineLatest(onNotificationWithInitial(.autofillScriptDebugSettingsDidChange), combine)
-                .sink { value in
+                .combineLatest($isDependenciesProviderInitialized.removeDuplicates())
+                .filter { (_, isInitialized) in isInitialized } // only proceed if provider was initialized
+                .sink { (value, _) in
                     continuation.yield(value)
                 }
 

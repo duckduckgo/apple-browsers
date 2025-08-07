@@ -143,7 +143,7 @@ class DuckPlayerTests: UITestCase {
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
         app.closeCurrentTab()
-        
+
         // Search
         openURL(url: Self.searchURL)
 
@@ -175,7 +175,7 @@ class DuckPlayerTests: UITestCase {
         XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         organicVideo.click()
         sleep(2)
-        
+
         // Close Opener tab
         app.typeKey("1", modifierFlags: [.command])
         app.closeCurrentTab()

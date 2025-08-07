@@ -157,7 +157,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
-            Logger.action.debug(loggerContext(action: action), message: "Next action")
+            Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
             Logger.action.debug(loggerContext(), message: "Releasing the web view")
@@ -170,7 +170,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         }
     }
 
-    private func loggerContext(action: Action? = nil) -> PIRActionLogContext {
+    private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
         .init(stepType: .scan, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

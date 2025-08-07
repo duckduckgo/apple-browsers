@@ -306,7 +306,7 @@ public extension SubJobWebRunning {
 
     func onError(error: Error) async {
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
-            Logger.action.log(loggerContext(action: currentAction),
+            Logger.action.log(loggerContext(for: currentAction),
                               message: "Condition action did NOT meet its expectation, continuing with regular action execution")
 
             if actionsHandler?.stepType == .optOut {
@@ -356,7 +356,7 @@ public extension SubJobWebRunning {
                                      actionType: action.actionType.rawValue))
     }
 
-    private func loggerContext(action: Action? = nil) -> PIRActionLogContext {
+    private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
         .init(stepType: actionsHandler?.stepType, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

@@ -227,12 +227,10 @@ final class NavigationActionBarView: UIView {
         
         // Determine icon
         let icon: UIImage? = {
-            if isValidURL {
-                return DesignSystemImages.Glyphs.Size24.globe
-            } else if isSearchMode {
+            if isSearchMode && !isValidURL {
                 return DesignSystemImages.Glyphs.Size24.searchFind
             } else {
-                return DesignSystemImages.Glyphs.Size24.arrowUp
+                return DesignSystemImages.Glyphs.Size24.arrowRightSmall
             }
         }()
         

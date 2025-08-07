@@ -58,6 +58,7 @@ struct SettingsCellView: View, Identifiable {
     var id: UUID = UUID()
     var isButton: Bool
     var isGreyedOut: Bool
+    var isNew: Bool = false
 
     /// Initializes a `SettingsCellView` with the specified label and accessory.
     ///
@@ -72,7 +73,8 @@ struct SettingsCellView: View, Identifiable {
     ///   - disclosureIndicator: Forces Adds a disclosure indicator on the right (chevron)
     ///   - webLinkIndicator: Adds a link indicator on the right
     ///   - isButton: Disables the tap actions on the cell if true
-    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false) {
+    ///   - isNew: Displays "New" badges next to the item for feature discovery
+    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, isNew: Bool = false) {
         self.label = label
         self.subtitle = subtitle
         self.image = image
@@ -84,6 +86,7 @@ struct SettingsCellView: View, Identifiable {
         self.webLinkIndicator = webLinkIndicator
         self.isButton = isButton
         self.isGreyedOut = isGreyedOut
+        self.isNew = isNew
     }
 
     /// Initializes a `SettingsCellView` for custom content.
@@ -140,33 +143,38 @@ struct SettingsCellView: View, Identifiable {
     private var defaultView: some View {
         Group {
             HStack(alignment: .center) {
-                HStack(alignment: .top) {
-                    // Image
-                    if let image {
-                        if isGreyedOut {
-                            image
-                                .padding(.top, -2)
-                                .saturation(0)
-                                .opacity(0.5)
-                        } else {
-                            image
-                                .padding(.top, -2)
+                HStack(alignment: .center) {
+                    HStack(alignment: .top) {
+                        // Image
+                        if let image {
+                            if isGreyedOut {
+                                image
+                                    .padding(.top, -2)
+                                    .saturation(0)
+                                    .opacity(0.5)
+                            } else {
+                                image
+                                    .padding(.top, -2)
+                            }
                         }
+                        VStack(alignment: .leading) {
+                            // Title
+                            Text(label)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: isGreyedOut == true ? .textSecondary : .textPrimary))
+                            // Subtitle
+                            if let subtitleText = subtitle {
+                                Text(subtitleText)
+                                    .daxFootnoteRegular()
+                                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                            }
+                        }.fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(0.7)
+                    }.scaledToFit()
+                    if isNew {
+                        BadgeView(text: UserText.settingsItemNewBadge)
                     }
-                    VStack(alignment: .leading) {
-                        // Title
-                        Text(label)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: isGreyedOut == true ? .textSecondary : .textPrimary))
-                        // Subtitle
-                        if let subtitleText = subtitle {
-                            Text(subtitleText)
-                                .daxFootnoteRegular()
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                        }
-                    }.fixedSize(horizontal: false, vertical: true)
-                        .layoutPriority(0.7)
-                }.scaledToFit()
+                }
 
                 Spacer(minLength: 8)
 
@@ -183,6 +191,20 @@ struct SettingsCellView: View, Identifiable {
                 }
             }.padding(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
         }.contentShape(Rectangle())
+    }
+
+    struct BadgeView: View {
+        let text: String
+        var body: some View {
+            Text(text.uppercased())
+                .font(.caption2)
+                .bold()
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .alertYellow))
+                .foregroundColor(.black)
+                .cornerRadius(6)
+        }
     }
 
     @ViewBuilder

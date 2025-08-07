@@ -36,6 +36,7 @@ struct AboutView: View {
 }
 
 struct AboutViewText: View {
+    @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {
         VStack(spacing: 12) {
@@ -63,7 +64,7 @@ struct AboutViewText: View {
                 .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(LocalizedStringKey(UserText.aboutText))
+            Text(LocalizedStringKey(UserText.aboutText(isSubscriptionRebrandingOn: viewModel.isSubscriptionRebrandingEnabled)))
                 .lineLimit(nil)
                 .multilineTextAlignment(.leading)
                 .foregroundColor(.primary)

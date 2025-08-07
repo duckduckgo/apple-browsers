@@ -321,6 +321,7 @@ public extension DesignSystemImages {
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft24) }
             public static var arrowLeftSmall: DesignSystemImage { .init(resource: .arrowLeftSmall24) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight24) }
+            public static var arrowRightSmall: DesignSystemImage { .init(resource: .arrowRightSmall24) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp24) }
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight24) }
             public static var assist: DesignSystemImage { .init(resource: .assist24) }
@@ -435,6 +436,7 @@ public extension DesignSystemImages {
             public static var support: DesignSystemImage { .init(resource: .support24) }
             public static var syncCloud: DesignSystemImage { .init(resource: .syncCloud24) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile24) }
+            public static var tabsMobile: DesignSystemImage { .init(resource: .tabsMobile24) }
             public static var tabMobileAlert: DesignSystemImage { .init(resource: .tabMobileAlert24) }
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }

@@ -50,7 +50,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var homeButton: MouseOverButton!
     @IBOutlet weak var homeButtonSeparator: NSView!
     @IBOutlet weak var downloadsButton: MouseOverButton!
-    @IBOutlet weak var networkProtectionButton: MouseOverButton!
+    @IBOutlet weak var networkProtectionButton: NetworkProtectionButton!
     @IBOutlet weak var navigationButtons: NSStackView!
     @IBOutlet weak var addressBarContainer: NSView!
     @IBOutlet weak var daxLogo: NSImageView!
@@ -188,6 +188,8 @@ final class NavigationBarViewController: NSViewController {
                        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
+                       vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
+                       vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -213,6 +215,8 @@ final class NavigationBarViewController: NSViewController {
                 visualStyle: visualStyle,
                 aiChatMenuConfig: aiChatMenuConfig,
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
+                vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
+                vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 showTab: showTab
             )
         }!
@@ -236,7 +240,8 @@ final class NavigationBarViewController: NSViewController {
         visualStyle: VisualStyleProviding,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
-        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = Application.appDelegate.vpnUpsellVisibilityManager,
+        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -248,6 +253,7 @@ final class NavigationBarViewController: NSViewController {
             permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
+            vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
             isBurner: tabCollectionViewModel.isBurner
         )
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -1213,6 +1219,7 @@ final class NavigationBarViewController: NSViewController {
 
     private func toggleNetworkProtectionPopover() {
         guard Application.appDelegate.subscriptionAuthV1toV2Bridge.isUserAuthenticated else {
+            popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
             return
         }
 
@@ -1706,6 +1713,14 @@ extension NavigationBarViewController: NSMenuDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] image in
                 self?.networkProtectionButton.image = image
+            }
+            .store(in: &cancellables)
+
+        // Show notification dot when VPN upsell should be shown
+        networkProtectionButtonModel.$shouldShowUpsell
+            .receive(on: RunLoop.main)
+            .sink { [weak self] shouldShowUpsell in
+                self?.networkProtectionButton.isNotificationVisible = shouldShowUpsell
             }
             .store(in: &cancellables)
     }

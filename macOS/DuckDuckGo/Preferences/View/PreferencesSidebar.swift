@@ -47,6 +47,7 @@ extension Preferences {
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
         let isSubscriptionRebrandingOn: Bool
+        let isNew: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
         init(pane: PreferencePaneIdentifier,
@@ -55,6 +56,7 @@ extension Preferences {
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
              isSubscriptionRebrandingOn: Bool,
+             isNew: Bool = false,
              action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
@@ -63,12 +65,13 @@ extension Preferences {
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
             self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
+            self.isNew = isNew
         }
 
         var body: some View {
             Button(action: action) {
-                HStack(spacing: 6) {
-                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider))
+                HStack(alignment: .center, spacing: 6) {
+                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider, isSubscriptionRebrandingOn: isSubscriptionRebrandingOn))
                         .frame(width: 16, height: 16)
                         .if(!isEnabled) {
                             $0.grayscale(1.0).opacity(0.5)
@@ -78,6 +81,10 @@ extension Preferences {
                         .if(!isEnabled) {
                             $0.opacity(0.5)
                         }
+
+                    if isNew {
+                        NewBadgeView()
+                    }
 
                     Spacer()
 
@@ -93,6 +100,18 @@ extension Preferences {
             .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
             .disabled(!isEnabled)
+        }
+    }
+
+    struct NewBadgeView: View {
+        var body: some View {
+            Text(UserText.newBadge.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .alertYellow))
+                .foregroundColor(.black)
+                .cornerRadius(4)
         }
     }
 
@@ -160,6 +179,7 @@ extension Preferences {
                                 status: model.protectionStatus(for: pane),
                                 settingsIconProvider: settingsIconProvider,
                                 isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled,
+                                isNew: model.isPaneNew(pane: pane),
                                 action: {
                                     model.selectPane(pane)
                                 })

@@ -19,11 +19,12 @@
 
 import XCTest
 import SystemSettingsPiPTutorialTestSupport
+import SetDefaultBrowserTestSupport
 @testable import DuckDuckGo
 
 @MainActor
 final class OnboardingIntroViewModelTests: XCTestCase {
-    private var defaultBrowserManagerMock: DefaultBrowserManagerMock!
+    private var defaultBrowserManagerMock: MockDefaultBrowserManager!
     private var contextualDaxDialogs: ContextualOnboardingLogicMock!
     private var pixelReporterMock: OnboardingPixelReporterMock!
     private var onboardingManagerMock: OnboardingManagerMock!
@@ -33,7 +34,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        defaultBrowserManagerMock = DefaultBrowserManagerMock()
+        defaultBrowserManagerMock = MockDefaultBrowserManager()
         contextualDaxDialogs = ContextualOnboardingLogicMock()
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()
@@ -362,7 +363,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     // MARK: - Pixels
 
-    func testWhenOnAppearIsCalledThenPixelReporterTrackOnboardingIntroImpression() {
+    func testWhenOnAppearIsCalledThenPixelReporterMeasureOnboardingIntroImpression() {
         // GIVEN
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureOnboardingIntroImpression)
@@ -374,7 +375,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureOnboardingIntroImpression)
     }
 
-    func testWhenStartOnboardingActionIsCalledThenPixelReporterTrackBrowserComparisonImpression() {
+    func testWhenStartOnboardingActionIsCalledThenPixelReporterMeasureBrowserComparisonImpression() {
         // GIVEN
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
@@ -386,7 +387,19 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
     }
 
-    func testWhenAppIconScreenPresentedThenPixelReporterTrackAppIconImpression() {
+    func testWhenSetDefaultBrowserActionThenPixelReporterMeasureChooseBrowserCTAAction() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
+
+        // WHEN
+        sut.setDefaultBrowserAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
+    }
+
+    func testWhenAppIconScreenPresentedThenPixelReporterMeasureAppIconImpression() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: false)
         let sut = makeSUT(currentOnboardingStep: .browserComparison)
@@ -399,7 +412,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconImpression)
     }
 
-    func testWhenAppIconPickerContinueActionIsCalledAndIconIsCustomColorThenPixelReporterTrackCustomAppIconColor() {
+    func testWhenAppIconPickerContinueActionIsCalledAndIconIsCustomColorThenPixelReporterMeasureCustomAppIconColor() {
         // GIVEN
         appIconProvider = { .purple }
         let sut = makeSUT()
@@ -412,7 +425,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
     }
 
-    func testWhenAppIconPickerContinueActionIsCalledAndIconIsDefaultColorThenPixelReporterDoNotTrackCustomAppIconColor() {
+    func testWhenAppIconPickerContinueActionIsCalledAndIconIsDefaultColorThenPixelReporterDoNotMeasureCustomAppIconColor() {
         // GIVEN
         appIconProvider = { .defaultAppIcon }
         let sut = makeSUT()
@@ -425,7 +438,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
     }
 
-    func testWhenStateChangesToChooseAddressBarPositionThenPixelReporterTrackAddressBarSelectionImpression() {
+    func testWhenStateChangesToChooseAddressBarPositionThenPixelReporterMeasureAddressBarSelectionImpression() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
         let sut = makeSUT(currentOnboardingStep: .appIconSelection)
@@ -438,7 +451,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddressBarPositionSelectionImpression)
     }
 
-    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsBottomThenPixelReporterTrackChooseBottomAddressBarPosition() {
+    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsBottomThenPixelReporterMeasureChooseBottomAddressBarPosition() {
         // GIVEN
         addressBarPositionProvider = { .bottom }
         let sut = makeSUT()
@@ -451,7 +464,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
     }
 
-    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsTopThenPixelReporterDoNotTrackChooseBottomAddressBarPosition() {
+    func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsTopThenPixelReporterDoNotMeasureChooseBottomAddressBarPosition() {
         // GIVEN
         addressBarPositionProvider = { .top }
         let sut = makeSUT()
@@ -466,7 +479,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     // MARK: - Pixels Skip Onboarding
 
-    func testWhenSkipOnboardingActionIsCalledThenPixelReporterTrackSkipOnboardingCTA() {
+    func testWhenSkipOnboardingActionIsCalledThenPixelReporterMeasureSkipOnboardingCTA() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: true)
         let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
@@ -479,7 +492,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
     }
 
-    func testWhenConfirmSkipOnboardingActionIsCalledThenPixelReporterTrackConfirmSkipOnboardingCTA() {
+    func testWhenConfirmSkipOnboardingActionIsCalledThenPixelReporterMeasureConfirmSkipOnboardingCTA() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: true)
         let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
@@ -492,7 +505,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureConfirmSkipOnboardingCTAAction)
     }
 
-    func testWhenStartOnboardingActionResumingTrueIsCalledThenPixelReporterTrackResumeOnboardingCTA() {
+    func testWhenStartOnboardingActionResumingTrueIsCalledThenPixelReporterMeasureResumeOnboardingCTA() {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: true)
         let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
@@ -531,7 +544,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     // MARK: - Pixel Add To Dock
 
-    func testWhenStateChangesToAddToDockPromoThenPixelReporterTrackAddToDockPromoImpression() {
+    func testWhenStateChangesToAddToDockPromoThenPixelReporterMeasureAddToDockPromoImpression() {
         // GIVEN
         let sut = makeSUT(currentOnboardingStep: .browserComparison)
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoImpression)
@@ -543,7 +556,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoImpression)
     }
 
-    func testWhenAddToDockShowTutorialActionIsCalledThenPixelReporterTrackAddToDockPromoShowTutorialCTA() {
+    func testWhenAddToDockShowTutorialActionIsCalledThenPixelReporterMeasureAddToDockPromoShowTutorialCTA() {
         // GIVEN
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
@@ -555,7 +568,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
     }
 
-    func testWhenAddToDockContinueActionIsCalledAndIsShowingFromAddToDockTutorialIsTrueThenPixelReporterTrackAddToDockTutorialDismissCTA() {
+    func testWhenAddToDockContinueActionIsCalledAndIsShowingFromAddToDockTutorialIsTrueThenPixelReporterMeasureAddToDockTutorialDismissCTA() {
         // GIVEN
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
@@ -567,7 +580,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
     }
 
-    func testWhenAddToDockContinueActionIsCalledAndIsShowingFromAddToDockTutorialIsFalseThenPixelReporterTrackAddToDockTutorialDismissCTA() {
+    func testWhenAddToDockContinueActionIsCalledAndIsShowingFromAddToDockTutorialIsFalseThenPixelReporterMeasureAddToDockTutorialDismissCTA() {
         // GIVEN
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)

@@ -764,6 +764,16 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func fetchFirstEligibleJobDate() throws -> Date? {
         return nil
     }
+
+    public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        return []
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+    }
 }
 
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
@@ -1063,6 +1073,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         attemptInformation = nil
         scanEvents.removeAll()
         optOutEvents.removeAll()
+        backgroundTaskEventsToReturn.removeAll()
+    }
+
+    public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []
+
+    public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
+        backgroundTaskEventsToReturn.append(event)
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        return backgroundTaskEventsToReturn.filter { $0.timestamp >= date }
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        backgroundTaskEventsToReturn.removeAll { $0.timestamp < date }
     }
 }
 
@@ -1081,84 +1106,166 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public var tries = 1
     public var stage: Stage?
 
+    public var durationSinceLastStageCalled = false
+    public var durationSinceStartTimeCalled = false
+    public var fireOptOutStartCalled = false
+    public var fireOptOutEmailGenerateCalled = false
+    public var fireOptOutCaptchaParseCalled = false
+    public var fireOptOutCaptchaSendCalled = false
+    public var fireOptOutCaptchaSolveCalled = false
+    public var fireOptOutSubmitCalled = false
+    public var fireOptOutEmailReceiveCalled = false
+    public var fireOptOutEmailConfirmCalled = false
+    public var fireOptOutValidateCalled = false
+    public var fireOptOutSubmitSuccessCalled = false
+    public var fireOptOutFillFormCalled = false
+    public var fireOptOutFailureCalled = false
+    public var fireOptOutConditionFoundCalled = false
+    public var fireOptOutConditionNotFoundCalled = false
+    public var fireScanStartedCalled = false
+    public var fireScanSuccessCalled = false
+    public var fireScanFailedCalled = false
+    public var fireScanErrorCalled = false
+    public var setStageCalled = false
+    public var setEmailPatternCalled = false
+    public var setLastActionIdCalled = false
+    public var resetTriesCalled = false
+    public var incrementTriesCalled = false
+
     public init() {}
 
     public func durationSinceLastStage() -> Double {
+        durationSinceLastStageCalled = true
         return 0.0
     }
 
     public func durationSinceStartTime() -> Double {
+        durationSinceStartTimeCalled = true
         return 0.0
     }
 
     public func fireOptOutStart() {
+        fireOptOutStartCalled = true
     }
 
     public func fireOptOutEmailGenerate() {
+        fireOptOutEmailGenerateCalled = true
     }
 
     public func fireOptOutCaptchaParse() {
+        fireOptOutCaptchaParseCalled = true
     }
 
     public func fireOptOutCaptchaSend() {
+        fireOptOutCaptchaSendCalled = true
     }
 
     public func fireOptOutCaptchaSolve() {
+        fireOptOutCaptchaSolveCalled = true
     }
 
     public func fireOptOutSubmit() {
+        fireOptOutSubmitCalled = true
     }
 
     public func fireOptOutEmailReceive() {
+        fireOptOutEmailReceiveCalled = true
     }
 
     public func fireOptOutEmailConfirm() {
+        fireOptOutEmailConfirmCalled = true
     }
 
     public func fireOptOutValidate() {
+        fireOptOutValidateCalled = true
     }
 
     public func fireOptOutSubmitSuccess(tries: Int) {
+        fireOptOutSubmitSuccessCalled = true
     }
 
     public func fireOptOutFillForm() {
+        fireOptOutFillFormCalled = true
     }
 
     public func fireOptOutFailure(tries: Int) {
+        fireOptOutFailureCalled = true
+    }
+
+    public func fireOptOutConditionFound() {
+        fireOptOutConditionFoundCalled = true
+    }
+
+    public func fireOptOutConditionNotFound() {
+        fireOptOutConditionNotFoundCalled = true
     }
 
     public func fireScanStarted() {
+        fireScanStartedCalled = true
     }
 
     public func fireScanSuccess(matchesFound: Int) {
+        fireScanSuccessCalled = true
     }
 
     public func fireScanFailed() {
+        fireScanFailedCalled = true
     }
 
     public func fireScanError(error: any Error) {
+        fireScanErrorCalled = true
     }
 
     public func setStage(_ stage: Stage) {
+        setStageCalled = true
         self.stage = stage
     }
 
     public func setEmailPattern(_ emailPattern: String?) {
+        setEmailPatternCalled = true
     }
 
     public func setLastActionId(_ actionID: String) {
+        setLastActionIdCalled = true
     }
 
     public func resetTries() {
+        resetTriesCalled = true
         self.tries = 1
     }
 
     public func incrementTries() {
+        incrementTriesCalled = true
         self.tries += 1
     }
 
-    func clear() {
+    public func clear() {
         self.stage = nil
+        durationSinceLastStageCalled = false
+        durationSinceStartTimeCalled = false
+        fireOptOutStartCalled = false
+        fireOptOutEmailGenerateCalled = false
+        fireOptOutCaptchaParseCalled = false
+        fireOptOutCaptchaSendCalled = false
+        fireOptOutCaptchaSolveCalled = false
+        fireOptOutSubmitCalled = false
+        fireOptOutEmailReceiveCalled = false
+        fireOptOutEmailConfirmCalled = false
+        fireOptOutValidateCalled = false
+        fireOptOutSubmitSuccessCalled = false
+        fireOptOutFillFormCalled = false
+        fireOptOutFailureCalled = false
+        fireOptOutConditionFoundCalled = false
+        fireOptOutConditionNotFoundCalled = false
+        fireScanStartedCalled = false
+        fireScanSuccessCalled = false
+        fireScanFailedCalled = false
+        fireScanErrorCalled = false
+        setStageCalled = false
+        setEmailPatternCalled = false
+        setLastActionIdCalled = false
+        resetTriesCalled = false
+        incrementTriesCalled = false
     }
 }
 
@@ -1630,7 +1737,7 @@ public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
     }
 }
 
-public final class MockFileManager: FileManager {
+public final class MockFileManager: FileManager, @unchecked Sendable {
     public var hasUnzippedContent = false
 
     let fileNames = ["valid-broker", "invalid-broker-with-unsupported-type", "invalid-broker-with-unsupported-action"]
@@ -2018,6 +2125,7 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
     public static var didCallV4Migrations = false
     public static var didCallV5Migrations = false
     public static var didCallV6Migrations = false
+    public static var didCallV7Migrations = false
 
     public static var v2Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV2Migrations = true
@@ -2041,6 +2149,11 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
 
     public static var v6Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV6Migrations = true
+        return { _ in }
+    }
+
+    public static var v7Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV7Migrations = true
         return { _ in }
     }
 }

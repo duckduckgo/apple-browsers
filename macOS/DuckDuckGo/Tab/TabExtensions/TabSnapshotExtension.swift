@@ -154,7 +154,7 @@ final class TabSnapshotExtension {
     func renderWebViewSnapshot() async {
         guard let webView, let tabContent,
               let url = tabContent.userEditableUrl,
-              url.navigationalScheme != .duck || url == .onboarding || url.isHistory else {
+              isAllowedURL(url) else {
             // Previews of native views are rendered in renderNativePreview()
             return
         }
@@ -173,7 +173,7 @@ final class TabSnapshotExtension {
             return
         }
 
-        guard let snapshot = await webViewSnapshotRenderer.renderSnapshot(webView: webView) else {
+        guard let snapshot = await webViewSnapshotRenderer.renderSnapshot(webView: webView, delay: snapshotDelay(forURL: url)) else {
             return
         }
 
@@ -199,6 +199,18 @@ final class TabSnapshotExtension {
         Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
+    private func isAllowedURL(_ url: URL) -> Bool {
+        // If duck url allow exception only if it's DuckPlayer or Onboarding or History.
+        guard url.navigationalScheme == .duck else { return true }
+
+        return url.host == URL.duckPlayerHost || url == .onboarding || url.isHistory
+    }
+
+    private func snapshotDelay(forURL url: URL) -> TimeInterval {
+        // If DuckPlayer URL delay screenshot rendering to give time to load the video
+        // Otherwise wait a bit to allow super-fast loading pages (e.g. localhost and special pages) get rendered in the webView
+        url.navigationalScheme == .duck && url.host == URL.duckPlayerHost ? 1.0 : 0.1
+    }
 }
 
 extension TabSnapshotExtension: WebViewInteractionEventsDelegate {

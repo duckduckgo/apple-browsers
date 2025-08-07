@@ -28,7 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
-import SwiftUICore
+import SwiftUI
 
 public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
 
@@ -295,16 +295,45 @@ public final class DataBrokerProtectionIOSManager {
         Logger.dataBrokerProtection.log("Background task started")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
         iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-        let startTime = Date.now
+        let startDate = Date.now
+        let sessionId = UUID().uuidString
+        
+        // Record started event
+        do {
+            let event = BackgroundTaskEvent(
+                sessionId: sessionId,
+                eventType: .started,
+                timestamp: startDate,
+                metadata: nil
+            )
+            try database.recordBackgroundTaskEvent(event)
+        } catch {
+            Logger.dataBrokerProtection.error("Failed to record background task start event: \(error.localizedDescription, privacy: .public)")
+        }
 
         task.expirationHandler = {
             self.queueManager.stop()
 
-            let timeTaken = Date.now.timeIntervalSince(startTime)
+            let timeTaken = Date.now.timeIntervalSince(startDate)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
             self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
                                                               deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+            
+            // Record terminated event
+            let duration = Date.now.timeIntervalSince(startDate) * 1000.0
+            do {
+                let event = BackgroundTaskEvent(
+                    sessionId: sessionId,
+                    eventType: .terminated,
+                    timestamp: Date.now,
+                    metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
+                )
+                try self.database.recordBackgroundTaskEvent(event)
+            } catch {
+                Logger.dataBrokerProtection.error("Failed to record background task terminated event: \(error.localizedDescription, privacy: .public)")
+            }
+            
             self.scheduleBGProcessingTask()
             task.setTaskCompleted(success: false)
         }
@@ -317,12 +346,26 @@ public final class DataBrokerProtectionIOSManager {
             }
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
-                let timeTaken = Date.now.timeIntervalSince(startTime)
+                let timeTaken = Date.now.timeIntervalSince(startDate)
                 Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
                 self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
                     duration: timeTaken * 1000.0,
                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+
+                // Record completed event
+                let duration = Date.now.timeIntervalSince(startDate) * 1000.0
+                do {
+                    let event = BackgroundTaskEvent(
+                        sessionId: sessionId,
+                        eventType: .completed,
+                        timestamp: Date.now,
+                        metadata: BackgroundTaskEvent.Metadata(durationInMs: duration)
+                    )
+                    try self.database.recordBackgroundTaskEvent(event)
+                } catch {
+                    Logger.dataBrokerProtection.error("Failed to record background task completed event: \(error.localizedDescription, privacy: .public)")
+                }
 
                 self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
@@ -348,7 +391,7 @@ public final class DataBrokerProtectionIOSManager {
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
     }
-
+    
     /// Used by the iOS PIR debug menu to reset tester data.
     public func deleteAllData() throws {
         try database.deleteProfileData()
@@ -393,6 +436,14 @@ public final class DataBrokerProtectionIOSManager {
     /// Used by the iOS PIR debug menu to check if jobs are currently running.
     public var isRunningJobs: Bool {
         return queueManager.debugRunningStatusString == "running"
+    }
+
+    public func tryToFireWeeklyPixels() {
+        let eventPixels = DataBrokerProtectionEventPixels(
+            database: jobDependencies.database,
+            handler: jobDependencies.pixelHandler
+        )
+        eventPixels.tryToFireWeeklyPixels()
     }
 
     // MARK: - Run Prerequisites

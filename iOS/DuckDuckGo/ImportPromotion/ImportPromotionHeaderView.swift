@@ -79,6 +79,7 @@ struct ImportPromotionHeaderView: View {
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
                     .padding(0)
+                    .accessibilityIdentifier("Button_DismissImportPromo")
                 }
             }
             .alignmentGuide(.top) { dimension in

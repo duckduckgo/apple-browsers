@@ -92,7 +92,7 @@ extension SystemSettingsPiPTutorialDestination {
 
     static let defaultBrowser = SystemSettingsPiPTutorialDestination(
         identifier: Identifiers.defaultBrowser.rawValue,
-        url: URL(string: UIApplication.openSettingsURLString)!
+        url: URL(string: UIApplication.openSettingsURLString)! // If this URL changes (E.g. to openDefaultApplicationsSettingsURLString) ensure that the PiP Video UI reflects the system settings UI.
     )
 
 }

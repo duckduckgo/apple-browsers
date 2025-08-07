@@ -119,7 +119,7 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     var isAIChatSearchInputUserSettingsEnabled: Bool {
-        userDefaults.showAIChatSearchInputInternal && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalSwitcherBarTransition)
+        userDefaults.showAIChatExperimentalSearchInput && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
     }
 
     func enableAIChat(enable: Bool) {
@@ -156,7 +156,7 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     func enableAIChatSearchInputUserSettings(enable: Bool) {
-        userDefaults.showAIChatSearchInputInternal = enable
+        userDefaults.showAIChatExperimentalSearchInput = enable
         triggerSettingsChangedNotification()
 
         if enable {
@@ -210,9 +210,7 @@ private extension UserDefaults {
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
         static let showAIChatTabSwitcher = "aichat.settings.showAIChatTabSwitcher"
-
-        /// We are using a specific flag for internal purposes because when we ship this to external users, the default value will be different, and we don't want to set the default before the feature is ready
-        static let showAIChatSearchInputInternal = "aichat.settings.showAIChatSearchInputInternal"
+        static let showAIChatExperimentalSearchInput = "aichat.settings.showAIChatExperimentalSearchInput"
     }
 
     static let isAIChatEnabledDefaultValue = true
@@ -220,7 +218,7 @@ private extension UserDefaults {
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
-    static let showAIChatSearchInputDefaultValueInternal = false
+    static let showAIChatExperimentalSearchInputDefaultValue = false
 
     @objc dynamic var isAIChatEnabled: Bool {
         get {
@@ -266,14 +264,14 @@ private extension UserDefaults {
         }
     }
 
-    @objc dynamic var showAIChatSearchInputInternal: Bool {
+    @objc dynamic var showAIChatExperimentalSearchInput: Bool {
         get {
-            value(forKey: Keys.showAIChatSearchInputInternal) as? Bool ?? Self.showAIChatSearchInputDefaultValueInternal
+            value(forKey: Keys.showAIChatExperimentalSearchInput) as? Bool ?? Self.showAIChatExperimentalSearchInputDefaultValue
         }
 
         set {
-            guard newValue != showAIChatSearchInputInternal else { return }
-            set(newValue, forKey: Keys.showAIChatSearchInputInternal)
+            guard newValue != showAIChatExperimentalSearchInput else { return }
+            set(newValue, forKey: Keys.showAIChatExperimentalSearchInput)
         }
     }
 

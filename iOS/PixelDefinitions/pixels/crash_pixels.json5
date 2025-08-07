@@ -121,7 +121,7 @@
             {
                 key: 'time',
                 description: 'Duration time',
-                type: 'double',
+                type: 'number',
             },
         ],
     },

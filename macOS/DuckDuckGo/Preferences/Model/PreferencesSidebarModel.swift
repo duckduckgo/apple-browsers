@@ -316,7 +316,7 @@ final class PreferencesSidebarModel: ObservableObject {
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
         let isIdentityTheftRestorationAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestoration)) ?? false
         let isIdentityTheftRestorationGlobalAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestorationGlobal)) ?? false
-        let isPaidAIChatAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false && featureFlagger.isFeatureOn(.paidAIChat)
+        let isPaidAIChatAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.paidAIChat)) ?? false
         return await PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isSubscriptionPresent(),
                                                          shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                          isNetworkProtectionRemovalEnable: (try? subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false,
@@ -326,7 +326,7 @@ final class PreferencesSidebarModel: ObservableObject {
                                                          isNetworkProtectionRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false,
                                                          isPersonalInformationRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false,
                                                          isIdentityTheftRestorationAvailable: isIdentityTheftRestorationAvailable || isIdentityTheftRestorationGlobalAvailable,
-                                                         isPaidAIChatAvailable: isPaidAIChatAvailable)
+                                                         isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable)
     }
 
     func refreshSections() {

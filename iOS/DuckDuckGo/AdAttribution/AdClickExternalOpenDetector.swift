@@ -27,15 +27,14 @@ extension Logger {
 }
 
 /**
- * This class detects and mitigates a specific DDG SERP issue with ad clicks that attempt to redirect users to external applications.
- * It implements a state machine that monitors navigation events and app background transitions to identify when an ad click sequence indicates malicious behaviour.
+ * This class detects and mitigates a specific navigation issue with redirects to external applications.
+ * It implements a state machine that monitors navigation events and app background transitions to identify when we leave the app due to navigation and need to emulate Safari's behaviour: tab cleanup or URL updates.
+ * This is to ensure correct URL is being presented to the user, and that no "empty new tabs" are being left open in the app post-navigation.
  *
- * We handle 2 different scenarios:
- * 1. Click on a product AD (Opens the bing.com url in a new tab)
- * 2. Click on a SERP result AD, e.g. searching amazon and clicking on the first AD result for amazon.co.uk (Opens the bing.com url in the same tab)
+ * We handle two scenarios: for same-tab navigations and for navigation that are being done in a new tab.
  *
  * The detector follows a specific event sequence to trigger mitigation:
- * 1. Navigation starts (user clicks an ad)
+ * 1. Navigation to external domain starts.
  * 2. Navigation fails with a specific error (redirect doesn't complete normally)
  * 3. App enters background (indicating external app launch attempt)
  *

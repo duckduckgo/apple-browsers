@@ -316,7 +316,7 @@ final class PreferencesSidebarModel: ObservableObject {
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
         let isIdentityTheftRestorationAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestoration)) ?? false
         let isIdentityTheftRestorationGlobalAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestorationGlobal)) ?? false
-        let isPaidAIChatAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.paidAIChat)) ?? false
+        let isPaidAIChatAvailable = (try? await subscriptionManager.isFeatureIncludedInSubscription(.paidAIChat)) ?? false
         return await PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isSubscriptionPresent(),
                                                          shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                          isNetworkProtectionRemovalEnable: (try? subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false,

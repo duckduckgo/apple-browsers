@@ -48,7 +48,6 @@ public final class KeychainManager {
         case dataWroteFromBacklog
         case failedToWriteDataFromBacklog
     }
-    public typealias PixelHandler = (Pixel) -> Void
     public typealias KeychainAttributes = [CFString: Any]
 
     // MARK: - Constants
@@ -65,7 +64,7 @@ public final class KeychainManager {
     private var writingBacklog: [String: Data] = [:]
     private var cancellables = Set<AnyCancellable>()
     private let accessQueue = DispatchQueue(label: Constants.accessQueueLabel)
-    private let pixelHandler: PixelHandler
+    private let pixelHandler: SubscriptionPixelHandling
 
     // MARK: - Initialization
 
@@ -76,7 +75,7 @@ public final class KeychainManager {
     ///   - attributes: Base keychain query attributes for all operations
     public init(keychainOperations: KeychainOperationsProtocol = DefaultKeychainOperations(),
                 attributes: KeychainAttributes,
-                pixelHandler: @escaping PixelHandler) {
+                pixelHandler: SubscriptionPixelHandling) {
         self.keychainOperations = keychainOperations
         self.attributes = attributes
         self.pixelHandler = pixelHandler
@@ -93,7 +92,7 @@ public final class KeychainManager {
         Logger.keychainManager.debug("Cancelled keychain availability notification subscriptions")
 
         if !writingBacklog.isEmpty {
-            self.pixelHandler(.deallocatedWithBacklog)
+            self.pixelHandler.handle(pixel: .deallocatedWithBacklog)
             Logger.keychainManager.warning("Deallocating with \(self.writingBacklog.count) unprocessed backlog items")
         }
     }
@@ -191,7 +190,7 @@ public final class KeychainManager {
 
     private func addToWritingBacklog(_ data: Data, forKey key: String) {
         writingBacklog[key] = data
-        pixelHandler(.dataAddedToTheBacklog)
+        pixelHandler.handle(pixel: .dataAddedToTheBacklog)
     }
 
     private func removeFromWritingBacklog(forKey key: String) {
@@ -332,12 +331,12 @@ public final class KeychainManager {
 
         if processedSuccessfully > 0 {
             Logger.keychainManager.info("Successfully processed \(processedSuccessfully) backlog items")
-            self.pixelHandler(.dataWroteFromBacklog)
+            self.pixelHandler.handle(pixel: .dataWroteFromBacklog)
         }
 
         if failed > 0 {
             Logger.keychainManager.error("Failed to process \(failed) backlog items")
-            self.pixelHandler(.failedToWriteDataFromBacklog)
+            self.pixelHandler.handle(pixel: .failedToWriteDataFromBacklog)
         }
     }
 }

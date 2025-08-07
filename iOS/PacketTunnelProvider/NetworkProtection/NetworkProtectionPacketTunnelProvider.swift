@@ -451,26 +451,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let authService = DefaultOAuthService(baseURL: authEnvironment.url,
                                                   apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
 
+            let pixelHandler = SubscriptionPixelHandler(source: .systemExtension)
             // keychain storage
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
-            let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType)) { pixel in
-                let parameters = [PixelParameters.source: KeychainErrorSource.vpn.rawValue]
-                switch pixel {
-                case .deallocatedWithBacklog:
-                    DailyPixel.fireDailyAndCount(pixel: .,
-                                                 withAdditionalParameters: parameters)
-                case .dataAddedToTheBacklog:
-                    DailyPixel.fireDailyAndCount(pixel: .,
-                                                 withAdditionalParameters: parameters)
-                case .dataWroteFromBacklog:
-                    DailyPixel.fireDailyAndCount(pixel: .,
-                                                 withAdditionalParameters: parameters)
-                case .failedToWriteDataFromBacklog:
-                    DailyPixel.fireDailyAndCount(pixel: .,
-                                                 withAdditionalParameters: parameters)
-                }
-            }
+            let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
             let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
                 let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
                                   PixelParameters.privacyProKeychainError: error.localizedDescription,
@@ -483,7 +468,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: nil, // Only the main app can migrate
                                                 authService: authService)
-            let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)

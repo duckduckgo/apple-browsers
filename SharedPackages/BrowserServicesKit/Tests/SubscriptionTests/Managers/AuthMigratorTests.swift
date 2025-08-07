@@ -24,11 +24,11 @@ import NetworkingTestingUtils
 
 final class AuthMigratorTests: XCTestCase {
 
-    class TestPixelHandler: SubscriptionPixelHandler {
+    class TestPixelHandler: SubscriptionPixelHandling {
         var lastPixelType: Subscription.SubscriptionPixelType?
 
-        func handle(pixelType: Subscription.SubscriptionPixelType) {
-            lastPixelType = pixelType
+        func handle(pixel: Subscription.SubscriptionPixelType) {
+            lastPixelType = pixel
         }
     }
 

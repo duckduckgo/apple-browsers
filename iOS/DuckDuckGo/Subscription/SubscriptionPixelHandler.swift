@@ -1,5 +1,5 @@
 //
-//  AuthV2PixelHandler.swift
+//  SubscriptionPixelHandler.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import Foundation
 import Subscription
 import Core
 
-public struct AuthV2PixelHandler: SubscriptionPixelHandler {
+public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 
     public enum Source: String {
         case mainApp = "MainApp"
@@ -37,9 +37,9 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         static let sourceKey = "source"
     }
 
-    public func handle(pixelType: Subscription.SubscriptionPixelType) {
+    public func handle(pixel: Subscription.SubscriptionPixelType) {
         let sourceParam = [Defaults.sourceKey: source.rawValue]
-        switch pixelType {
+        switch pixel {
         case .invalidRefreshToken:
             DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
         case .subscriptionIsActive:
@@ -60,4 +60,17 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         }
     }
 
+    public func handle(pixel: Subscription.KeychainManager.Pixel) {
+        let sourceParam = [Defaults.sourceKey: source.rawValue]
+        switch pixel {
+        case .deallocatedWithBacklog:
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainManagerDeallocatedWithBacklog, withAdditionalParameters: sourceParam)
+        case .dataAddedToTheBacklog:
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainManagerDataAddedToTheBacklog, withAdditionalParameters: sourceParam)
+        case .dataWroteFromBacklog:
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainManagerDataWroteFromBacklog, withAdditionalParameters: sourceParam)
+        case .failedToWriteDataFromBacklog:
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainManagerFailedToWriteDataFromBacklog, withAdditionalParameters: sourceParam)
+        }
+    }
 }

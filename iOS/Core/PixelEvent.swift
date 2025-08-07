@@ -2251,7 +2251,7 @@ extension Pixel.Event {
         case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychainmanager_deallocated_with_backlog"
         case .privacyProKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychainmanager_data_wrote_from_backlog"
         case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychainmanager_failed_to_write_data_from_backlog"
-        // Auth V2
+            // Auth V2
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"

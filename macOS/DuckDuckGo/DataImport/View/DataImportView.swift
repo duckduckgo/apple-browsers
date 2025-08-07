@@ -59,16 +59,18 @@ struct DataImportView: ModalView {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .center, spacing: 0) {
             viewHeader()
-                .padding(.top, 20)
+                .padding(.top, 30)
                 .padding(.leading, 20)
                 .padding(.trailing, 20)
+                .padding(.bottom, 0)
 
             viewBody()
                 .padding(.leading, 20)
                 .padding(.trailing, 20)
                 .padding(.bottom, 20)
+                .padding(.top, 0)
 
             // if import in progress…
             if let importProgress = model.importProgress {
@@ -148,7 +150,7 @@ struct DataImportView: ModalView {
 
     @ViewBuilder
     private func viewBody() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .center, spacing: 0) {
             // body
             switch model.screen {
             case .profileAndDataTypesPicker:
@@ -168,11 +170,22 @@ struct DataImportView: ModalView {
             case .shortcuts(let dataTypes):
                 DataImportShortcutsView(dataTypes: dataTypes)
             }
+
+            Button {
+                model.startSync()
+            } label: {
+                Text("Or Sync from DuckDuckGo on another device")
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(.linkBlue))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 20)
         }
     }
 
     @ViewBuilder
     private var profileAndDataTypesPickerBody: some View {
+        passwordsExplainerView().padding(.bottom, 20).padding(.horizontal, 20).frame(alignment: .center)
         importPickerPanel {
             VStack(alignment: .leading, spacing: 8) {
                 // Browser Profile picker
@@ -188,7 +201,6 @@ struct DataImportView: ModalView {
                 .padding(.top, 8)
             }
         }
-        passwordsExplainerView().padding(.top, 12)
     }
 
     @ViewBuilder
@@ -246,12 +258,6 @@ struct DataImportView: ModalView {
             }
         }
 
-        Text("Or Sync from DuckDuckGo on another device")
-            .fontWeight(.semibold)
-            .foregroundColor(Color(.linkBlue))
-            .onTapGesture {
-                model.startSync()
-            }
     }
 
     private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
@@ -314,9 +320,10 @@ struct DataImportView: ModalView {
                 +
                 Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
             )
-            .font(.system(size: 10))
+            .font(.system(size: 12))
             .foregroundColor(.secondary)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 

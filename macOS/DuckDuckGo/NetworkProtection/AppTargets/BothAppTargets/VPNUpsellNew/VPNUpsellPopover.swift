@@ -147,7 +147,7 @@ struct VPNUpsellPopoverView: View {
             Button {
                 viewModel.showSubscriptionLandingPage()
             } label: {
-                Text(viewModel.featureSet.mainCTATitle)
+                Text(viewModel.featureSet.mainCTATitle.capitalized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))

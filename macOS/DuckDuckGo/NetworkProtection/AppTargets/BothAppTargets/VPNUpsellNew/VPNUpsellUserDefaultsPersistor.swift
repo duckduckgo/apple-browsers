@@ -21,6 +21,7 @@ import Persistence
 
 protocol VPNUpsellUserDefaultsPersisting {
     var vpnUpsellDismissed: Bool { get set }
+    var vpnUpsellPopoverViewed: Bool { get set }
     var vpnUpsellFirstPinnedDate: Date? { get set }
     var expectedUpsellTimeInterval: TimeInterval { get set }
 }
@@ -29,6 +30,7 @@ struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
 
     enum Key: String {
         case vpnUpsellDismissed = "vpn.upsell.dismissed"
+        case vpnUpsellPopoverViewed = "vpn.upsell.popover.viewed"
         case vpnUpsellFirstPinnedDate = "vpn.upsell.first-pinned-date"
         case expectedUpsellTimeInterval = "vpn.upsell.expected.time.interval"
     }
@@ -42,6 +44,11 @@ struct VPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
     var vpnUpsellDismissed: Bool {
         get { (try? keyValueStore.object(forKey: Key.vpnUpsellDismissed.rawValue) as? Bool) ?? false }
         set { try? keyValueStore.set(newValue, forKey: Key.vpnUpsellDismissed.rawValue) }
+    }
+
+    var vpnUpsellPopoverViewed: Bool {
+        get { (try? keyValueStore.object(forKey: Key.vpnUpsellPopoverViewed.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.vpnUpsellPopoverViewed.rawValue) }
     }
 
     var vpnUpsellFirstPinnedDate: Date? {

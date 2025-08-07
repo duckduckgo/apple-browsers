@@ -49,6 +49,7 @@ extension VPNUpsellVisibilityManager {
 final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Output
     @Published private(set) var state: State = .uninitialized
+    @Published private(set) var shouldShowNotificationDot: Bool = false
 
     // MARK: - Dependencies
     private let isFirstLaunch: Bool
@@ -218,6 +219,11 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         }
     }
 
+    public func dismissNotificationDot() {
+        persistor.vpnUpsellPopoverViewed = true
+        shouldShowNotificationDot = false
+    }
+
     private func startTimerIfNeeded() {
         guard state == .waitingForConditions else {
             return
@@ -323,6 +329,12 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         if previousState != .visible && newState == .visible {
             pixelHandler(.privacyProToolbarButtonShown)
         }
+
+        guard newState == .visible else {
+            return
+        }
+
+        shouldShowNotificationDot = !persistor.vpnUpsellPopoverViewed
     }
 
     deinit {

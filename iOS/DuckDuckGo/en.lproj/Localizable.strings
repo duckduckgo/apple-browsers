@@ -2599,6 +2599,15 @@ https://duckduckgo.com/mac";
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Search or enter address";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Ask Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Search";
+
 /* No comment provided by engineer. */
 "section.title.bookmarks" = "Bookmarks";
 

@@ -2701,6 +2701,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Pretraži ili unesi adresu";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Pitaj Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Traži";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundarna/druga radnja";
 
@@ -2763,6 +2772,9 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai prečaci";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Eksperimentalna adresna traka";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Pretraži mrežu ili pitaj Duck.ai izravno iz adresne trake";
@@ -2886,6 +2898,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Uvezi lozinke";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Novo";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";

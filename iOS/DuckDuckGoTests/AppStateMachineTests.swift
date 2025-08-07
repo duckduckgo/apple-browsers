@@ -30,7 +30,14 @@ final class MockInitializing: InitializingHandling {
 
     func makeLaunchingState() throws -> any LaunchingHandling {
         if shouldThrowOnLaunching {
-            throw TerminationError.keyValueFileStore(.kvfsInitError)
+            let underlying = NSError(domain: "com.example", code: 13, userInfo: nil)
+
+            let diskFullError = NSError(
+                domain: "com.example.wrapper",
+                code: 1,
+                userInfo: [NSUnderlyingErrorKey: underlying]
+            )
+            throw TerminationError.database(.other(diskFullError))
         } else {
             MockLaunching()
         }

@@ -201,7 +201,6 @@ final class AddressBarViewController: NSViewController {
         updateView()
         // only activate active text field leading constraint on its appearance to avoid constraint conflicts
         activeTextFieldMinXConstraint.isActive = false
-        addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
         addressBarTextField.onboardingDelegate = onboardingPixelReporter
 
         // allow dropping text to inactive address bar
@@ -240,6 +239,8 @@ final class AddressBarViewController: NSViewController {
             subscribeToMouseEvents()
             subscribeToFirstResponder()
         }
+        addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
+
         subscribeToSelectedTabViewModel()
         subscribeToAddressBarValue()
         subscribeToButtonsWidth()

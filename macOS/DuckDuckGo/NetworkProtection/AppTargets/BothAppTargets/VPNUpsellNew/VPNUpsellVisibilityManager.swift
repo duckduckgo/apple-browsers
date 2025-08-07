@@ -49,6 +49,7 @@ extension VPNUpsellVisibilityManager {
 final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Output
     @Published private(set) var state: State = .uninitialized
+    @Published private(set) var shouldShowNotificationDot: Bool = false
 
     // MARK: - Dependencies
     private let isFirstLaunch: Bool
@@ -64,6 +65,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
     // MARK: - State
     private let isDefaultBrowserSubject = PassthroughSubject<Bool, Never>()
+    private let canUserPurchaseSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
     private var defaultBrowserPollingTimer: Timer?
     private var timer: Timer?
@@ -102,6 +104,22 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
+        canUserPurchaseSubject
+            .sink { [weak self] canPurchase in
+                guard let self else { return }
+                guard canPurchase else {
+                    self.updateState(.notEligible)
+                    return
+                }
+
+                self.start(isFirstLaunch: isFirstLaunch)
+            }
+            .store(in: &cancellables)
+
+        checkPurchaseEligibility()
+    }
+
+    private func start(isFirstLaunch: Bool) {
         if isFirstLaunch {
             monitorFirstLaunchConditions()
         } else {
@@ -131,6 +149,19 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         }
 
         return firstPinnedDate.daysSinceNow() >= autoDismissDays
+    }
+
+    private func checkPurchaseEligibility() {
+        switch subscriptionManager.currentEnvironment.purchasePlatform {
+        case .appStore:
+            subscriptionManager.canPurchasePublisher
+                .sink { [weak self] canPurchase in
+                    self?.canUserPurchaseSubject.send(canPurchase)
+                }
+                .store(in: &cancellables)
+        case .stripe:
+            canUserPurchaseSubject.send(true)
+        }
     }
 
     // MARK: - Monitoring Setup
@@ -186,6 +217,11 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         if persistor.vpnUpsellFirstPinnedDate == nil {
             persistor.vpnUpsellFirstPinnedDate = Date()
         }
+    }
+
+    public func dismissNotificationDot() {
+        persistor.vpnUpsellPopoverViewed = true
+        shouldShowNotificationDot = false
     }
 
     private func startTimerIfNeeded() {
@@ -293,6 +329,12 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         if previousState != .visible && newState == .visible {
             pixelHandler(.privacyProToolbarButtonShown)
         }
+
+        guard newState == .visible else {
+            return
+        }
+
+        shouldShowNotificationDot = !persistor.vpnUpsellPopoverViewed
     }
 
     deinit {

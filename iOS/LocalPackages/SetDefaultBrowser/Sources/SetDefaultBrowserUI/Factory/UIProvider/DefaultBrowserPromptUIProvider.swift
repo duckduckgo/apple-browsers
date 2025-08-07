@@ -1,7 +1,8 @@
 //
-//  MockWebViewSnapshotRenderer.swift
+//  DefaultBrowserPromptUIProvider.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,23 +17,12 @@
 //  limitations under the License.
 //
 
-import AppKit
-import Foundation
-import WebKit
+import SwiftUI
 
-@testable import DuckDuckGo_Privacy_Browser
+public protocol DefaultBrowserPromptUIProviding {
+    associatedtype BackgroundView: View
+    associatedtype BrowsersComparisonChartView: View
 
-class MockWebViewSnapshotRenderer: WebViewSnapshotRendering {
-
-    var nextSnapshot: NSImage?
-    var lastWebView: WKWebView?
-    var lastDelay: TimeInterval?
-
-    @MainActor
-    func renderSnapshot(webView: WKWebView, delay: TimeInterval) async -> NSImage? {
-        lastWebView = webView
-        lastDelay = delay
-        return nextSnapshot
-    }
-
+    func makeBackground() -> BackgroundView
+    func makeBrowserComparisonChart() -> BrowsersComparisonChartView
 }

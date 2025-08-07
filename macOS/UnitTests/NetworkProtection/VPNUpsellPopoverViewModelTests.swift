@@ -46,6 +46,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         firedPixels = []
 
         mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
 
         vpnUpsellVisibilityManager = VPNUpsellVisibilityManager(
             isFirstLaunch: false,

@@ -1163,7 +1163,7 @@ class MainViewController: UIViewController {
             !url.isDuckDuckGo,
 
             // Also skip queries with http(s):// because the user clearly intended to navigate
-            URL.hasHypertextPrefix(query)
+            !URL.hasHypertextPrefix(query)
         {
 
             let tld = AppDependencyProvider.shared.storageCache.tld

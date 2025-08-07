@@ -107,7 +107,7 @@ class TabSwitcherViewController: UIViewController {
 
     var tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
     var isProcessingUpdates = false
-    var canUpdateCollection = true
+    private var canUpdateCollection = true
 
     let favicons: Favicons
 
@@ -327,6 +327,16 @@ class TabSwitcherViewController: UIViewController {
     func editBookmark(_ url: URL?) {
         guard let url else { return }
         delegate?.tabSwitcher(self, editBookmarkForUrl: url)
+    }
+
+    func addNewTab() {
+        guard !isProcessingUpdates else { return }
+        // Will be dismissed, so no need to process incoming updates
+        canUpdateCollection = false
+
+        Pixel.fire(pixel: .tabSwitcherNewTab)
+        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
+        dismiss()
     }
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {

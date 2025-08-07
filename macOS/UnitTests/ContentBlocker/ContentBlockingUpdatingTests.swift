@@ -96,7 +96,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         }
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
@@ -123,7 +123,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         rulesManager.updatesSubject.send(Self.testUpdate())
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
@@ -146,7 +146,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         preferences.isGPCEnabled = !preferences.isGPCEnabled
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
@@ -168,10 +168,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         rulesManager.updatesSubject.send(update1)
         rulesManager.updatesSubject.send(update2)
 
-        c.cancel()
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
+        c.cancel()
     }
 
     // MARK: - Test data

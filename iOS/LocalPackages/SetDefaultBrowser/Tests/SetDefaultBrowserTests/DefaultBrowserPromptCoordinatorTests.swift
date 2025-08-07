@@ -85,9 +85,9 @@ final class DefaultBrowserPromptCoordinatorTests {
     @Test(
         "Check Prompt Return the Correct Prompt When Prompt Decider Returns Prompt",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal)
         ]
     )
     func whenPromptDeciderReturnsPromptThenPromptIsReturned(promptType: DefaultBrowserPromptType) {
@@ -106,9 +106,10 @@ final class DefaultBrowserPromptCoordinatorTests {
     @Test(
         "Check Prompt Is Set Seen When Prompt Is Not Nil",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal),
+            .inactive
         ]
     )
     func whenPromptIsNotNilThenPromptIsSetSeen(promptType: DefaultBrowserPromptType) {
@@ -126,11 +127,12 @@ final class DefaultBrowserPromptCoordinatorTests {
     }
 
     @Test(
-        "Check Prompt Occurrence Is Incremented When Prompt Is Not Nil",
+        "Check Prompt Occurrence Is Incremented For Active Modals When Prompt Is Not Nil",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal),
+            .inactive
         ],
         [
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10
@@ -147,15 +149,44 @@ final class DefaultBrowserPromptCoordinatorTests {
         _ = sut.getPrompt()
 
         // THEN
-        #expect(promptStoreMock.modalShownOccurrences == numberOfModalShown + 1)
+        let expectedNumberOfModalShown = promptType.isActiveModal ? numberOfModalShown + 1 : numberOfModalShown
+        #expect(promptStoreMock.modalShownOccurrences == expectedNumberOfModalShown)
+    }
+
+    @Test(
+        "Check Inactive Modal Flag Is Set When Prompt Is Inactive",
+        arguments: zip(
+            [
+                DefaultBrowserPromptType.active(.firstModal),
+                .active(.secondModal),
+                .active(.subsequentModal),
+                .inactive
+            ],
+            [
+                false,
+                false,
+                false,
+                true
+            ]
+        )
+    )
+    func whenPromptIsNotNilThenI(promptType: DefaultBrowserPromptType, expectedHasInactiveModalShownFlag: Bool) {
+        // GIVEN
+        promptTypeDeciderMock.promptToReturn = promptType
+
+        // WHEN
+        _ = sut.getPrompt()
+
+        // THEN
+        #expect(promptStoreMock.hasInactiveModalShown == expectedHasInactiveModalShownFlag)
     }
 
     @Test(
         "Check User Activity Is Reset Once The Prompt Is Shown",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal)
         ]
     )
     func whenPromptIsShownThenUserActivityIsReset(promptType: DefaultBrowserPromptType) {
@@ -207,9 +238,9 @@ final class DefaultBrowserPromptCoordinatorTests {
     @Test(
         "Check Modal Shown Event Is Sent Along With Number Of Modal Shown",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal)
         ],
         [
             0,
@@ -277,6 +308,19 @@ final class DefaultBrowserPromptCoordinatorTests {
         // THEN
         #expect(eventMapperMock.didCallFireEvent)
         #expect(eventMapperMock.capturedEvent == expectedEvent)
+    }
+
+}
+
+private extension DefaultBrowserPromptType {
+
+    var isActiveModal: Bool {
+        switch self {
+        case .active:
+            return true
+        case .inactive:
+            return false
+        }
     }
 
 }

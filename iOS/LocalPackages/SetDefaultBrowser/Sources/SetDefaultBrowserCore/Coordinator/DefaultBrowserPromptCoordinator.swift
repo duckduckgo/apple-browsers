@@ -20,15 +20,16 @@
 import Foundation
 import class UIKit.UIApplication
 
-// Represent the type of the modal to display for active/inactive user. Currently only active.
-// More info for inactive users: https://app.asana.com/1/137249556945/project/492600419927320/task/1210568683672934?focus=true
+// Represent the type of the modal to display for active/inactive user.
 package enum DefaultBrowserPromptPresentationType {
     case activeUserModal
     case inactiveUserModal
 
     init(_ prompt: DefaultBrowserPromptType) {
         switch prompt {
-        case .firstModal, .secondModal, .subsequentModal:
+        case .inactive:
+            self = .inactiveUserModal
+        case .active:
             self = .activeUserModal
         }
     }
@@ -85,7 +86,7 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
         // Set prompt seen
         guard let prompt = promptTypeDecider.promptType() else { return nil }
 
-        setPromptSeen()
+        setPromptSeen(isInactiveModal: prompt == .inactive)
         resetUserActivity()
 
         return DefaultBrowserPromptPresentationType(prompt)
@@ -110,10 +111,18 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
 
 private extension DefaultBrowserPromptCoordinator {
 
-    func setPromptSeen() {
+    func setPromptSeen(isInactiveModal: Bool) {
         let now = dateProvider()
+        // The last shown date is stored regardless of the prompt type.
+        // When displaying a prompt, we calculate the number of active days to determine if an active user prompt should be shown based on the last prompt (active/inactive) the user has seen.
+        // We increment the prompt counter only for active prompts, as this counter helps decide whether to show the first or second prompt.
+        // For inactive prompts, we set a flag instead, since they are only displayed once.
         promptStore.lastModalShownDate = now.timeIntervalSince1970
-        promptStore.modalShownOccurrences += 1
+        if isInactiveModal {
+            promptStore.hasInactiveModalShown = true
+        } else {
+            promptStore.modalShownOccurrences += 1
+        }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Set Prompt Seen \(now).")
         firePromptSeenEvent()
     }

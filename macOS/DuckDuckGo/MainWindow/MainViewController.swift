@@ -230,6 +230,7 @@ final class MainViewController: NSViewController {
         subscribeToMouseTrackingArea()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
+        subscribeToAppearanceChanges()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 

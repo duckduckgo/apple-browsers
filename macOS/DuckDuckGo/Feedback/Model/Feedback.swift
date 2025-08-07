@@ -52,7 +52,7 @@ struct Feedback {
 
 extension Feedback {
 
-    static func from(selectedPills: Set<String>,
+    static func from(selectedPills: [String],
                      text: String,
                      appVersion: String,
                      category: Feedback.Category,

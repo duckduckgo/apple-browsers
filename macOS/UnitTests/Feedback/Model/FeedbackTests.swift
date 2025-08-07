@@ -37,7 +37,7 @@ final class FeedbackTests: XCTestCase {
     // MARK: - Factory Method Tests
 
     func testWhenCreatingFeedbackFromSelectedPillsAndTextThenPropertiesAreSetCorrectly() {
-        let selectedPills: Set<String> = ["Fast Browser", "Bug Fix"]
+        let selectedPills = ["Fast Browser", "Bug Fix"]
         let text = "This is my feedback"
         let appVersion = "1.2.3"
         let category = Feedback.Category.bug
@@ -64,7 +64,7 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithEmptyTextThenCommentIsDefaultForCategory() {
-        let selectedPills: Set<String> = ["Feature"]
+        let selectedPills = ["Feature"]
         let text = ""
         let appVersion = "1.0.0"
         let category = Feedback.Category.bug
@@ -81,7 +81,7 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithFeatureRequestCategoryThenCommentIsCorrect() {
-        let selectedPills: Set<String> = ["Feature"]
+        let selectedPills = ["Feature"]
         let text = ""
         let appVersion = "1.0.0"
         let category = Feedback.Category.featureRequest
@@ -98,7 +98,7 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithNoProblemCategoryThenSubcategoryContainsOnlySelectedPills() {
-        let selectedPills: Set<String> = ["Feature One", "Feature Two"]
+        let selectedPills = ["Feature One", "Feature Two"]
         let text = "Test text"
         let appVersion = "1.0.0"
         let category = Feedback.Category.featureRequest
@@ -117,7 +117,7 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithProblemCategoryThenSubcategoryContainsBoth() {
-        let selectedPills: Set<String> = ["Option One"]
+        let selectedPills = ["Option One"]
         let text = "Test text"
         let appVersion = "1.0.0"
         let category = Feedback.Category.bug
@@ -208,7 +208,7 @@ final class FeedbackTests: XCTestCase {
     // MARK: - Edge Cases and Validation Tests
 
     func testWhenCreatingFeedbackWithEmptySelectedPillsThenSubcategoryIsCorrect() {
-        let selectedPills: Set<String> = []
+        let selectedPills: [String] = []
         let text = "Test text"
         let appVersion = "1.0.0"
         let category = Feedback.Category.bug
@@ -231,7 +231,7 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithSpecialCharactersInPillsThenTaggingHandlesCorrectly() {
-        let selectedPills: Set<String> = ["Feature@#$", "Another Feature!"]
+        let selectedPills = ["Feature@#$", "Another Feature!"]
         let text = "Test text"
         let appVersion = "1.0.0"
         let category = Feedback.Category.featureRequest

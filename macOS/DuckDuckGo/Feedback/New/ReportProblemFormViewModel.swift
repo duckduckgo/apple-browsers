@@ -102,7 +102,7 @@ final class ReportProblemFormViewModel: ObservableObject {
     func submitFeedback() {
         guard let category = selectedProblemCategory else { return }
 
-        let feedback = Feedback.from(selectedPills: selectedOptions,
+        let feedback = Feedback.from(selectedPills: Array(selectedOptions),
                                      text: customText,
                                      appVersion: AppVersion.shared.versionNumber,
                                      category: .bug,

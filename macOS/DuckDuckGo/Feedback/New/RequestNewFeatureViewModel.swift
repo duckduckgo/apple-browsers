@@ -89,7 +89,7 @@ final class RequestNewFeatureViewModel: ObservableObject {
     }
 
     func submitFeedback() {
-        let feedback = Feedback.from(selectedPills: selectedFeatures,
+        let feedback = Feedback.from(selectedPills: Array(selectedFeatures),
                                      text: customFeatureText,
                                      appVersion: AppVersion.shared.versionNumber,
                                      category: .featureRequest,

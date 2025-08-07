@@ -70,24 +70,7 @@ final class NewTabPageLoadMetrics {
 
     private func reportLoadTime(_ loadTime: TimeInterval) {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
-        let device = getMacModelIdentifier()
-        firePixel(NewTabPagePixel.newTabPageLoadingTime(duration: loadTime,
-                                                        osMajorVersion: osVersion,
-                                                        device: device))
-    }
-
-    private func getMacModelIdentifier() -> String {
-        var size: Int = 0
-        guard sysctlbyname("hw.model", nil, &size, nil, 0) == 0, size > 0 else {
-            return "unknown"
-        }
-
-        var machine = [CChar](repeating: 0, count: size)
-        guard sysctlbyname("hw.model", &machine, &size, nil, 0) == 0 else {
-            return "unknown"
-        }
-
-        return String(cString: machine)
+        firePixel(NewTabPagePixel.newTabPageLoadingTime(duration: loadTime, osMajorVersion: osVersion))
     }
 
 }

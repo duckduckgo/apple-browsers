@@ -169,6 +169,12 @@ class SwitchBarTextEntryView: UIView {
             textView.autocapitalizationType = .sentences
             textView.autocorrectionType = .default
             textView.spellCheckingType = .default
+            
+            /// Auto-focus the text field when switching to duck.ai mode
+            /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975209610640?focus=true
+            DispatchQueue.main.async { [weak self] in
+                self?.textView.becomeFirstResponder()
+            }
         }
 
         updatePlaceholderVisibility()

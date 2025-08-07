@@ -211,6 +211,8 @@
 		1DDD3EC52B84F96B004CBF2B /* CookiePopupProtectionPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDD3EC32B84F96B004CBF2B /* CookiePopupProtectionPreferences.swift */; };
 		1DDF076328F815AD00EDFBE3 /* NativeMessagingCommunicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDF075D28F815AD00EDFBE3 /* NativeMessagingCommunicator.swift */; };
 		1DDF076428F815AD00EDFBE3 /* BWManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDF075E28F815AD00EDFBE3 /* BWManager.swift */; };
+		1DE717CE2E44B052009BDFFA /* MockNewTabPageTabPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */; };
+		1DE717CF2E44B052009BDFFA /* MockNewTabPageTabPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */; };
 		1DEF3BAD2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
 		1DEF3BAE2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
 		1DF78E0C2CE5F58B00AB898E /* WebExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF78E0A2CE5F58400AB898E /* WebExtensionManager.swift */; };
@@ -4070,6 +4072,7 @@
 		1DDF075F28F815AD00EDFBE3 /* BWStatus.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BWStatus.swift; sourceTree = "<group>"; };
 		1DDF076028F815AD00EDFBE3 /* BWError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BWError.swift; sourceTree = "<group>"; };
 		1DDF076128F815AD00EDFBE3 /* BWResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BWResponse.swift; sourceTree = "<group>"; };
+		1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewTabPageTabPreloader.swift; sourceTree = "<group>"; };
 		1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoClearHandler.swift; sourceTree = "<group>"; };
 		1DF78E0A2CE5F58400AB898E /* WebExtensionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionManager.swift; sourceTree = "<group>"; };
 		1DF78E0E2CE6197200AB898E /* WKWebExtensionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKWebExtensionTab.swift; sourceTree = "<group>"; };
@@ -9905,6 +9908,7 @@
 				BBC114642D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift */,
 				BB9BA21F2D10BC6B009229F3 /* TabBarRemoteMessageViewModelTests.swift */,
 				AAC9C01D24CB6BEB00AD1325 /* TabCollectionViewModelTests.swift */,
+				1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */,
 				37D23788288009CF00BCE03B /* TabCollectionViewModelTests+PinnedTabs.swift */,
 				37479F142891BC8300302FE2 /* TabCollectionViewModelTests+WithoutPinnedTabsManager.swift */,
 				AAE39D1A24F44885008EF28B /* TabCollectionViewModelDelegateMock.swift */,
@@ -13892,6 +13896,7 @@
 				3706FE53293F661700E42796 /* CoreDataEncryptionTests.swift in Sources */,
 				3706FE54293F661700E42796 /* PasteboardBookmarkTests.swift in Sources */,
 				3706FE55293F661700E42796 /* CBRCompileTimeReporterTests.swift in Sources */,
+				1DE717CF2E44B052009BDFFA /* MockNewTabPageTabPreloader.swift in Sources */,
 				B6E6BA172BA2CF60008AA7E1 /* SandboxTestToolNotifications.swift in Sources */,
 				566B196429CDB824007E38F4 /* MoreOptionsMenuTests.swift in Sources */,
 				CC5B3D012E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */,
@@ -15607,6 +15612,7 @@
 				31FBF2312CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */,
 				F1AFDBD42C231B9700710F2C /* SubscriptionErrorReporterTests.swift in Sources */,
 				1D8C2FEA2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,
+				1DE717CE2E44B052009BDFFA /* MockNewTabPageTabPreloader.swift in Sources */,
 				AAC9C01724CAFBDC00AD1325 /* TabCollectionTests.swift in Sources */,
 				378205F8283BC6A600D1D4AA /* StartupPreferencesTests.swift in Sources */,
 				BBE5FD8B2E393ADE008674A2 /* VPNMocks.swift in Sources */,

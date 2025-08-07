@@ -52,17 +52,17 @@ struct Feedback {
 
 extension Feedback {
 
-    static func from(selectedPills: [String],
+    static func from(selectedPillIds: [String],
                      text: String,
                      appVersion: String,
                      category: Feedback.Category,
                      problemCategory: ProblemCategory?) -> Feedback {
-        let selectedOptionsString = selectedPills.map { $0.toTag }.joined(separator: ",")
+        let selectedOptionsString = selectedPillIds.joined(separator: ",")
         let description = text.isEmpty ? category.toString : text
         var subcategory = ""
 
         if let problemCategory = problemCategory {
-            subcategory = "\(problemCategory.name.toTag),\(selectedOptionsString)"
+            subcategory = "\(problemCategory.id),\(selectedOptionsString)"
         } else {
             subcategory = "\(selectedOptionsString)"
         }
@@ -72,31 +72,6 @@ extension Feedback {
                         appVersion: appVersion,
                         osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)",
                         subcategory: subcategory)
-    }
-}
-
-extension String {
-    var toTag: String {
-        return self
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "'", with: "")
-            .replacingOccurrences(of: "&", with: "-and-")
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: ".", with: "-")
-            .replacingOccurrences(of: "(", with: "")
-            .replacingOccurrences(of: ")", with: "")
-            .replacingOccurrences(of: "\"", with: "")
-            .replacingOccurrences(of: "!", with: "")
-            .replacingOccurrences(of: "?", with: "")
-            .replacingOccurrences(of: "%", with: "-percent-")
-            .replacingOccurrences(of: "@", with: "-at-")
-            .replacingOccurrences(of: "#", with: "-number-")
-            .replacingOccurrences(of: "$", with: "-dollar-")
-            .replacingOccurrences(of: "\\s+", with: "-", options: .regularExpression)
-            .replacingOccurrences(of: "[^a-z0-9-]", with: "", options: .regularExpression)
-            .replacingOccurrences(of: "-+", with: "-", options: .regularExpression)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 }
 

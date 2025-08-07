@@ -21,17 +21,32 @@ import SwiftUI
 import BrowserServicesKit
 import Common
 
+// MARK: - Feature Model
+
+struct FeedbackFeature: Identifiable, Hashable {
+    let id: String      // Backend identifier (e.g., "advanced-ad-blocking")
+    let text: String    // Localized display text
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: FeedbackFeature, rhs: FeedbackFeature) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 final class RequestNewFeatureViewModel: ObservableObject {
 
     // MARK: - Published Properties
 
-    @Published var selectedFeatures: Set<String> = []
+    @Published var selectedFeatures: Set<String> = []  // Now stores Feature IDs
     @Published var customFeatureText: String = ""
 
     // MARK: - Properties
 
     private let feedbackSender: FeedbackSenderImplementing
-    let availableFeatures: [String]
+    let availableFeatures: [FeedbackFeature]
 
     // MARK: - Computed Properties
 
@@ -40,7 +55,7 @@ final class RequestNewFeatureViewModel: ObservableObject {
     }
 
     var shouldShowIncognitoInfo: Bool {
-        selectedFeatures.contains(UserText.featureIncognito)
+        selectedFeatures.contains("incognito")
     }
 
     var hasSelectedFeatures: Bool {
@@ -55,23 +70,23 @@ final class RequestNewFeatureViewModel: ObservableObject {
 
     init(feedbackSender: FeedbackSenderImplementing = FeedbackSender()) {
         let allFeatures = [
-            UserText.featureAdvancedAdBlocking,
-            UserText.featureAISupport,
-            UserText.featureCastVideo,
-            UserText.featureCustomizeTheme,
-            UserText.featureDarkModeAllSites,
-            UserText.featureImportBookmarkFolders,
-            UserText.featureImportHistory,
-            UserText.featureIncognito,
-            UserText.featureMoveBrowserButtons,
-            UserText.featureNewTabPageWidgets,
-            UserText.featurePasswordManagerExtensions,
-            UserText.featurePictureInPicture,
-            UserText.featureReaderMode,
-            UserText.featureTabGroups,
-            UserText.featureUserProfiles,
-            UserText.featureVerticalTabs,
-            UserText.featureWebsiteTranslation
+            FeedbackFeature(id: "advanced-ad-blocking", text: UserText.featureAdvancedAdBlocking),
+            FeedbackFeature(id: "ai-support", text: UserText.featureAISupport),
+            FeedbackFeature(id: "cast-video-audio", text: UserText.featureCastVideo),
+            FeedbackFeature(id: "customize-browser-theme", text: UserText.featureCustomizeTheme),
+            FeedbackFeature(id: "dark-mode-on-all-sites", text: UserText.featureDarkModeAllSites),
+            FeedbackFeature(id: "import-bookmarks-folders", text: UserText.featureImportBookmarkFolders),
+            FeedbackFeature(id: "import-history", text: UserText.featureImportHistory),
+            FeedbackFeature(id: "incognito", text: UserText.featureIncognito),
+            FeedbackFeature(id: "move-browser-buttons", text: UserText.featureMoveBrowserButtons),
+            FeedbackFeature(id: "new-tab-page-widgets", text: UserText.featureNewTabPageWidgets),
+            FeedbackFeature(id: "password-manager-extensions", text: UserText.featurePasswordManagerExtensions),
+            FeedbackFeature(id: "picture-in-picture", text: UserText.featurePictureInPicture),
+            FeedbackFeature(id: "reader-mode", text: UserText.featureReaderMode),
+            FeedbackFeature(id: "tab-groups", text: UserText.featureTabGroups),
+            FeedbackFeature(id: "user-profiles", text: UserText.featureUserProfiles),
+            FeedbackFeature(id: "vertical-tabs", text: UserText.featureVerticalTabs),
+            FeedbackFeature(id: "website-translation", text: UserText.featureWebsiteTranslation)
         ]
 
         self.availableFeatures = Array(allFeatures.shuffled().prefix(12))
@@ -80,16 +95,16 @@ final class RequestNewFeatureViewModel: ObservableObject {
 
     // MARK: - Methods
 
-    func toggleFeature(_ feature: String) {
-        if selectedFeatures.contains(feature) {
-            selectedFeatures.remove(feature)
+    func toggleFeature(_ featureId: String) {
+        if selectedFeatures.contains(featureId) {
+            selectedFeatures.remove(featureId)
         } else {
-            selectedFeatures.insert(feature)
+            selectedFeatures.insert(featureId)
         }
     }
 
     func submitFeedback() {
-        let feedback = Feedback.from(selectedPills: Array(selectedFeatures),
+        let feedback = Feedback.from(selectedPillIds: Array(selectedFeatures),
                                      text: customFeatureText,
                                      appVersion: AppVersion.shared.versionNumber,
                                      category: .featureRequest,

@@ -140,43 +140,54 @@ final class FeedbackTests: XCTestCase {
         XCTAssertTrue(feedback.subcategory.contains(",")) // Should contain comma separator
     }
 
-    // MARK: - String Extension Tests
+    // MARK: - ID-Based Feedback Tests
 
-    func testWhenConvertingStringToTagThenFormattingIsCorrect() {
-        let testCases = [
-            ("Simple String", "simple-string"),
-            ("String With   Multiple Spaces", "string-with-multiple-spaces"),
-            ("  Leading and Trailing  ", "leading-and-trailing"),
-            ("UPPERCASE", "uppercase"),
-            ("MixedCASE String", "mixedcase-string"),
-            ("String\nWith\tWhitespace", "string-with-whitespace"),
-            ("Single", "single"),
-            // Special character handling
-            ("Feature & Bug", "feature-and-bug"),
-            ("Browser doesn't work", "browser-doesnt-work"),
-            ("100% CPU usage", "100-percent-cpu-usage"),
-            ("Camera/audio permissions", "camera-audio-permissions"),
-            ("Feature@#$", "feature-at-number-dollar"),
-            ("Another Feature!", "another-feature"),
-            ("User@domain.com", "user-at-domain-com"),
-            ("Test (with parentheses)", "test-with-parentheses"),
-            ("Multiple---dashes", "multiple-dashes"),
-            ("", ""),
-            ("   ", "")
-        ]
+    func testWhenCreatingFeedbackWithCategoryThenSubcategoryUsesCorrectIDs() {
+        // Test that problem categories use their IDs instead of localized names
+        let problemCategory = ProblemCategory(
+            id: "ads-causing-issues",
+            text: "Ads causing issues",
+            subcategories: [
+                SubCategory(id: "banner-ads-blocking-content", text: "Banner ads blocking content"),
+                SubCategory(id: "large-banner-ads", text: "Large banner ads")
+            ]
+        )
 
-        for (input, expected) in testCases {
-            let result = input.toTag
-            XCTAssertEqual(result, expected, "Failed for input: '\(input)'")
-        }
+        let selectedSubcategoryIds = ["banner-ads-blocking-content", "large-banner-ads"]
+
+        let feedback = Feedback.from(
+            selectedPillIds: selectedSubcategoryIds,
+            text: "Test feedback",
+            appVersion: "1.0.0",
+            category: .bug,
+            problemCategory: problemCategory
+        )
+
+        // Should contain the category ID and subcategory IDs, not localized text
+        XCTAssertTrue(feedback.subcategory.contains("ads-causing-issues"))
+        XCTAssertTrue(feedback.subcategory.contains("banner-ads-blocking-content"))
+        XCTAssertTrue(feedback.subcategory.contains("large-banner-ads"))
+        XCTAssertFalse(feedback.subcategory.contains("Ads causing issues"))
+        XCTAssertFalse(feedback.subcategory.contains("Banner ads blocking content"))
     }
 
-        func testWhenConvertingStringToTagThenSpecialCharactersAreHandledCorrectly() {
-        // Test comprehensive special character handling
-        let complexInput = "Browser doesn't work @ 100% & has issues/problems!"
-        let result = complexInput.toTag
-        let expected = "browser-doesnt-work-at-100-percent-and-has-issues-problems"
-        XCTAssertEqual(result, expected, "Complex special character handling failed")
+    func testWhenCreatingFeatureRequestFeedbackThenUsesFeatureIDs() {
+        // Test that feature requests use feature IDs
+        let selectedFeatureIds = ["advanced-ad-blocking", "ai-support", "reader-mode"]
+
+        let feedback = Feedback.from(
+            selectedPillIds: selectedFeatureIds,
+            text: "Feature request feedback",
+            appVersion: "1.0.0",
+            category: .featureRequest,
+            problemCategory: nil
+        )
+
+        // Should contain the feature IDs directly
+        XCTAssertTrue(feedback.subcategory.contains("advanced-ad-blocking"))
+        XCTAssertTrue(feedback.subcategory.contains("ai-support"))
+        XCTAssertTrue(feedback.subcategory.contains("reader-mode"))
+        XCTAssertTrue(feedback.subcategory.contains(",")) // Should contain comma separators
     }
 
     // MARK: - Category Extension Tests

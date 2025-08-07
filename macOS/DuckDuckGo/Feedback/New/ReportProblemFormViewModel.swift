@@ -26,7 +26,7 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     @Published var showThankYou = false
     @Published var selectedProblemCategory: ProblemCategory?
-    @Published var selectedOptions: Set<String> = []
+    @Published var selectedOptions: Set<String> = []  // Now stores SubCategory IDs
     @Published var customText: String = ""
 
     // MARK: - Properties
@@ -34,7 +34,7 @@ final class ReportProblemFormViewModel: ObservableObject {
     private let feedbackSender: FeedbackSenderImplementing
     let canReportBrokenSite: Bool
     private let onReportBrokenSite: (() -> Void)?
-    private(set) var availableOptions: [String] = []
+    private(set) var availableOptions: [SubCategory] = []
 
     // MARK: - Computed Properties
 
@@ -72,12 +72,14 @@ final class ReportProblemFormViewModel: ObservableObject {
     // MARK: - Methods
 
     func selectCategory(_ category: ProblemCategory) {
-        if category.id == "brokenWebsite" {
+        if category.id == "report-broken-website" {
             onReportBrokenSite?()
         } else {
             selectedProblemCategory = category
             // Set available options once when category is selected (shuffled once and stable)
-            availableOptions = Array(category.subcategories.shuffled().prefix(7)) + [UserText.feedbackSomethingElse]
+            let shuffledSubcategories = Array(category.subcategories.shuffled().prefix(7))
+            let somethingElseOption = SubCategory(id: "something-else", text: UserText.feedbackSomethingElse)
+            availableOptions = shuffledSubcategories + [somethingElseOption]
             // Reset form data when selecting a new category
             selectedOptions.removeAll()
             customText = ""
@@ -91,18 +93,18 @@ final class ReportProblemFormViewModel: ObservableObject {
         customText = ""
     }
 
-    func toggleOption(_ option: String) {
-        if selectedOptions.contains(option) {
-            selectedOptions.remove(option)
+    func toggleOption(_ optionId: String) {
+        if selectedOptions.contains(optionId) {
+            selectedOptions.remove(optionId)
         } else {
-            selectedOptions.insert(option)
+            selectedOptions.insert(optionId)
         }
     }
 
     func submitFeedback() {
         guard let category = selectedProblemCategory else { return }
 
-        let feedback = Feedback.from(selectedPills: Array(selectedOptions),
+        let feedback = Feedback.from(selectedPillIds: Array(selectedOptions),
                                      text: customText,
                                      appVersion: AppVersion.shared.versionNumber,
                                      category: .bug,
@@ -115,10 +117,23 @@ final class ReportProblemFormViewModel: ObservableObject {
 
 // MARK: - ProblemCategory Model
 
+struct SubCategory: Identifiable, Hashable {
+    let id: String      // Backend identifier (e.g., "banner-ads-blocking-content")
+    let text: String    // Localized display text
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: SubCategory, rhs: SubCategory) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
 struct ProblemCategory: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let subcategories: [String]
+    let id: String              // Backend identifier (e.g., "ads-causing-issues")
+    let text: String            // Localized display text
+    let subcategories: [SubCategory]
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -130,83 +145,83 @@ struct ProblemCategory: Identifiable, Hashable {
 
     static let allCategories: [ProblemCategory] = [
         ProblemCategory(
-            id: "browserTooSlow",
-            name: UserText.problemCategoryBrowserTooSlow,
+            id: "computer-or-browser-is-too-slow",
+            text: UserText.problemCategoryBrowserTooSlow,
             subcategories: [
-                UserText.problemSubcategoryBrowserStartsSlowly,
-                UserText.problemSubcategoryBrowserUsesTooMuchMemory,
-                UserText.problemSubcategoryChangingTabsTakesTooLong,
-                UserText.problemSubcategoryNewTabsOpenSlowly,
-                UserText.problemSubcategoryWebsitesLoadSlowly
+                SubCategory(id: "browser-starts-slowly", text: UserText.problemSubcategoryBrowserStartsSlowly),
+                SubCategory(id: "browser-uses-too-much-memory", text: UserText.problemSubcategoryBrowserUsesTooMuchMemory),
+                SubCategory(id: "changing-tabs-takes-too-long", text: UserText.problemSubcategoryChangingTabsTakesTooLong),
+                SubCategory(id: "new-tabs-open-slowly", text: UserText.problemSubcategoryNewTabsOpenSlowly),
+                SubCategory(id: "websites-load-slowly", text: UserText.problemSubcategoryWebsitesLoadSlowly)
             ]
         ),
         ProblemCategory(
-            id: "browserDoesntWork",
-            name: UserText.problemCategoryBrowserDoesntWork,
+            id: "browser-doesnt-work-as-expected",
+            text: UserText.problemCategoryBrowserDoesntWork,
             subcategories: [
-                UserText.problemSubcategoryBrowserUsesTooMuchMemory,
-                UserText.problemSubcategoryCameraAudioPermissions,
-                UserText.problemSubcategoryCantRestartFailedDownloads,
-                UserText.problemSubcategoryConfusingOrMissingSettings,
-                UserText.problemSubcategoryLoggedOutUnexpectedly,
-                UserText.problemSubcategoryLostTabsOrHistory,
-                UserText.problemSubcategoryNoDownloadHistory,
-                UserText.problemSubcategoryTooManyCaptchas,
-                UserText.problemSubcategoryVideoAudioPlaysAutomatically,
-                UserText.problemSubcategoryVideoDoesntPlay
+                SubCategory(id: "browser-uses-too-much-memory", text: UserText.problemSubcategoryBrowserUsesTooMuchMemory),
+                SubCategory(id: "camera-audio-permissions", text: UserText.problemSubcategoryCameraAudioPermissions),
+                SubCategory(id: "cant-restart-failed-downloads", text: UserText.problemSubcategoryCantRestartFailedDownloads),
+                SubCategory(id: "confusing-or-missing-settings", text: UserText.problemSubcategoryConfusingOrMissingSettings),
+                SubCategory(id: "logged-out-unexpectedly", text: UserText.problemSubcategoryLoggedOutUnexpectedly),
+                SubCategory(id: "lost-tabs-or-history", text: UserText.problemSubcategoryLostTabsOrHistory),
+                SubCategory(id: "no-download-history", text: UserText.problemSubcategoryNoDownloadHistory),
+                SubCategory(id: "too-many-captchas", text: UserText.problemSubcategoryTooManyCaptchas),
+                SubCategory(id: "video-audio-plays-automatically", text: UserText.problemSubcategoryVideoAudioPlaysAutomatically),
+                SubCategory(id: "video-doesnt-play", text: UserText.problemSubcategoryVideoDoesntPlay)
             ]
         ),
         ProblemCategory(
-            id: "installUpdates",
-            name: UserText.problemCategoryInstallUpdates,
+            id: "browser-install-and-updates",
+            text: UserText.problemCategoryInstallUpdates,
             subcategories: [
-                UserText.problemSubcategoryBrowserVersionIssues,
-                UserText.problemSubcategoryCantControlUpdates,
-                UserText.problemSubcategoryInstalling,
-                UserText.problemSubcategoryUninstalling,
-                UserText.problemSubcategoryTooManyUpdates
+                SubCategory(id: "browser-version-issues", text: UserText.problemSubcategoryBrowserVersionIssues),
+                SubCategory(id: "cant-control-updates", text: UserText.problemSubcategoryCantControlUpdates),
+                SubCategory(id: "installing", text: UserText.problemSubcategoryInstalling),
+                SubCategory(id: "uninstalling", text: UserText.problemSubcategoryUninstalling),
+                SubCategory(id: "too-many-updates", text: UserText.problemSubcategoryTooManyUpdates)
             ]
         ),
         ProblemCategory(
-            id: "brokenWebsite",
-            name: UserText.problemCategoryBrokenWebsite,
+            id: "report-broken-website",
+            text: UserText.problemCategoryBrokenWebsite,
             subcategories: [
-                UserText.problemSubcategorySiteWontLoad,
-                UserText.problemSubcategorySiteLooksBroken,
-                UserText.problemSubcategoryFeaturesDontWork,
-                UserText.problemSubcategorySomethingElse
+                SubCategory(id: "site-wont-load", text: UserText.problemSubcategorySiteWontLoad),
+                SubCategory(id: "site-looks-broken", text: UserText.problemSubcategorySiteLooksBroken),
+                SubCategory(id: "features-dont-work", text: UserText.problemSubcategoryFeaturesDontWork),
+                SubCategory(id: "something-else", text: UserText.problemSubcategorySomethingElse)
             ]
         ),
         ProblemCategory(
-            id: "adsIssues",
-            name: UserText.problemCategoryAdsIssues,
+            id: "ads-causing-issues",
+            text: UserText.problemCategoryAdsIssues,
             subcategories: [
-                UserText.problemSubcategoryBannerAdsBlockingContent,
-                UserText.problemSubcategoryDistractingAnimationsOnAds,
-                UserText.problemSubcategoryInterruptingPopups,
-                UserText.problemSubcategoryLargeBannerAds,
-                UserText.problemSubcategorySiteAsksToTurnOffAdBlocker
+                SubCategory(id: "banner-ads-blocking-content", text: UserText.problemSubcategoryBannerAdsBlockingContent),
+                SubCategory(id: "distracting-animations-on-ads", text: UserText.problemSubcategoryDistractingAnimationsOnAds),
+                SubCategory(id: "interrupting-pop-ups", text: UserText.problemSubcategoryInterruptingPopups),
+                SubCategory(id: "large-banner-ads", text: UserText.problemSubcategoryLargeBannerAds),
+                SubCategory(id: "site-asks-to-turn-off-ad-blocker", text: UserText.problemSubcategorySiteAsksToTurnOffAdBlocker)
             ]
         ),
         ProblemCategory(
-            id: "passwordIssues",
-            name: UserText.problemCategoryPasswordIssues,
+            id: "password-issues",
+            text: UserText.problemCategoryPasswordIssues,
             subcategories: [
-                UserText.problemSubcategoryCantSyncPasswords,
-                UserText.problemSubcategoryExportingPasswords,
-                UserText.problemSubcategoryImportingPasswords,
-                UserText.problemSubcategoryPasswordsManagement
+                SubCategory(id: "cant-sync-passwords", text: UserText.problemSubcategoryCantSyncPasswords),
+                SubCategory(id: "exporting-passwords", text: UserText.problemSubcategoryExportingPasswords),
+                SubCategory(id: "importing-passwords", text: UserText.problemSubcategoryImportingPasswords),
+                SubCategory(id: "passwords-management", text: UserText.problemSubcategoryPasswordsManagement)
             ]
         ),
         ProblemCategory(
-            id: "somethingElse",
-            name: UserText.problemCategorySomethingElse,
+            id: "something-else",
+            text: UserText.problemCategorySomethingElse,
             subcategories: [
-                UserText.problemSubcategoryCantCompleteAPurchase,
-                UserText.problemSubcategoryCantRestartFailedDownloads,
-                UserText.problemSubcategoryConfusingOrMissingSettings,
-                UserText.problemSubcategoryNoDownloadsHistory,
-                UserText.problemSubcategoryVideoAudioPlaysAutomatically
+                SubCategory(id: "cant-complete-a-purchase", text: UserText.problemSubcategoryCantCompleteAPurchase),
+                SubCategory(id: "cant-restart-failed-downloads", text: UserText.problemSubcategoryCantRestartFailedDownloads),
+                SubCategory(id: "confusing-or-missing-settings", text: UserText.problemSubcategoryConfusingOrMissingSettings),
+                SubCategory(id: "no-downloads-history", text: UserText.problemSubcategoryNoDownloadsHistory),
+                SubCategory(id: "video-audio-plays-automatically", text: UserText.problemSubcategoryVideoAudioPlaysAutomatically)
             ]
         )
     ]

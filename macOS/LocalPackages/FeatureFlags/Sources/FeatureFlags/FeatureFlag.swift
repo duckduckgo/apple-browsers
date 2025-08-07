@@ -339,7 +339,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
-            return .remoteReleasable(.feature(.newFeedbackForm))
+            return .enabled
+//            return .remoteReleasable(.feature(.newFeedbackForm))
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .supportsAlternateStripePaymentFlow:

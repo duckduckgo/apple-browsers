@@ -254,7 +254,7 @@ struct ProblemCategoryView: View {
             onCategorySelected(category)
         } label: {
             HStack {
-                Text(category.name)
+                Text(category.text)
                     .systemLabel()
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -354,7 +354,7 @@ struct ProblemDetailFormView: View {
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(viewModel.selectedProblemCategory?.name ?? "")
+                Text(viewModel.selectedProblemCategory?.text ?? "")
                     .systemTitle2()
 
                 Text(UserText.reportProblemFormSelectAllThatApply)
@@ -373,10 +373,10 @@ struct ProblemDetailFormView: View {
             alignment: .leading
         ) { option in
             Pill(
-                text: option,
-                isSelected: viewModel.selectedOptions.contains(option)
+                text: option.text,
+                isSelected: viewModel.selectedOptions.contains(option.id)
             ) {
-                viewModel.toggleOption(option)
+                viewModel.toggleOption(option.id)
             }
         }
         .padding([.leading, .trailing], 24)

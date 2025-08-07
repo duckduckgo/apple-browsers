@@ -174,11 +174,11 @@ struct RequestNewFeatureFormView: View {
             alignment: .leading
         ) { feature in
             Pill(
-                text: feature,
-                isSelected: viewModel.selectedFeatures.contains(feature)
+                text: feature.text,
+                isSelected: viewModel.selectedFeatures.contains(feature.id)
             ) {
                 withAnimation(.easeInOut(duration: 0.3)) {
-                    viewModel.toggleFeature(feature)
+                    viewModel.toggleFeature(feature.id)
                 }
             }
         }

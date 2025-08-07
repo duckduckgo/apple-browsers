@@ -59,11 +59,13 @@ final class BrowserTabViewController: NSViewController {
         let newTabPageWebViewModel = NewTabPageWebViewModel(
             featureFlagger: featureFlagger,
             actionsManager: newTabPageActionsManager,
-            activeRemoteMessageModel: activeRemoteMessageModel
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            newTabPageLoadMetrics: newTabPageLoadMetrics
         )
         _newTabPageWebViewModel = newTabPageWebViewModel
         return newTabPageWebViewModel
     }
+    let newTabPageLoadMetrics = NewTabPageLoadMetrics()
 
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -978,8 +980,21 @@ final class BrowserTabViewController: NSViewController {
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {
         if shouldReplaceWebView(for: tabViewModel) {
+            if tabViewModel?.tabContent == .newtab {
+                newTabPageLoadMetrics.onNTPWillPresent()
+            }
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
+            if tabViewModel?.tabContent == .newtab {
+                if !newTabPageWebViewModel.webView.isLoading {
+                    // New Tab Page is presented, but still loading
+                    newTabPageLoadMetrics.onNTPDidPresent()
+                }
+            }
+        } else {
+            if tabViewModel?.tabContent == .newtab {
+                newTabPageLoadMetrics.onNTPAlreadyPresented()
+            }
         }
     }
 

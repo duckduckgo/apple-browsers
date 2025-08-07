@@ -1,6 +1,7 @@
 # state_restoration.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---

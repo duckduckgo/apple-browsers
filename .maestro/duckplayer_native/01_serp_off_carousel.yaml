@@ -1,6 +1,7 @@
 appId: com.duckduckgo.mobile.ios
 tags:
-    - duckplayer.native
+    - iphone
+    - duckplayer_native
 
 ---
 
@@ -16,10 +17,10 @@ tags:
 - runFlow: 
     file: shared/open_settings.yaml
 
-# Turn DuckPlayer to Auto
+# Turn SERP off
 - tapOn:
-    id: chevron.up.chevron.down
-- tapOn: ${output.dontShowLabel}
+    text: ${output.serpToggleOn}
+    index: 0
 
 # Close Settings
 - runFlow: 
@@ -28,7 +29,7 @@ tags:
 # Navigate to a video
 # Load Site
 - runFlow: 
-    file: shared/load_youtube_url.yaml
+    file: shared/load_serp_url.yaml
 
   # Assert Youtube Search Page opens and open the video
 - assertVisible: ${output.videoTitle}
@@ -38,12 +39,5 @@ tags:
 - assertVisible: ${output.youtubeMobileDomain}
 
 # Assert Duck Player Welcome Pill is present
-- assertNotVisible:
+- assertVisible:
     id: duckPlayerWelcomePill
-
-# Assert Duck Player Welcome Pill is not present
-- assertNotVisible:
-    id: ${output.playInDuckPlayerLabel}
-- assertNotVisible:
-    id: ${output.resumeInDuckPlayerLabel}
-

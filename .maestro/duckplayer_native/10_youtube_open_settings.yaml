@@ -1,6 +1,7 @@
 appId: com.duckduckgo.mobile.ios
 tags:
-    - duckplayer.native
+    - iphone
+    - duckplayer_native
 
 ---
 
@@ -38,10 +39,6 @@ tags:
 - runFlow: 
     file: shared/duckplayer_is_visible.yaml
 
-# Close Duck Player
-- runFlow: 
-    file: shared/close_player.yaml
+- tapOn: ${output.duckPlayerSettingsId}
 
-# Assert Duck Player Welcome Pill is not present
-- assertVisible:
-    id: ${output.resumeInDuckPlayerLabel}
+- assertVisible: "SettingsDuckPlayerHero"

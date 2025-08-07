@@ -37,6 +37,7 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
         super.setUp()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
     }
 
     override func tearDown() {
@@ -200,6 +201,29 @@ final class NetworkProtectionNavBarButtonModelTests: XCTestCase {
         // Then
         XCTAssertFalse(mockPersistor.vpnUpsellDismissed)
         XCTAssertFalse(sut.showVPNButton)
+    }
+
+    func testItUpdatesBlueDotVisibility() {
+        // Given
+        let upsellManager = createUpsellManager(shouldShowUpsell: true)
+        sut = createButtonModel(with: upsellManager)
+
+        let expectation = XCTestExpectation(description: "shouldShowNotificationDot should become false")
+
+        cancellable = sut.$shouldShowNotificationDot
+            .dropFirst()
+            .sink { shouldShowNotificationDot in
+                if !shouldShowNotificationDot {
+                    expectation.fulfill()
+                }
+            }
+
+        // When
+        upsellManager.dismissNotificationDot()
+
+        // Then
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertFalse(sut.shouldShowNotificationDot)
     }
 }
 

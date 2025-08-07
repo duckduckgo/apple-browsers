@@ -2876,6 +2876,7 @@ extension MainViewController: TabDelegate {
             }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)
+            self.currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
             self.currentTab?.openingTab = tab
         }
 

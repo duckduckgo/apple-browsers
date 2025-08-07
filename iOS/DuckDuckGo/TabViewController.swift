@@ -139,6 +139,7 @@ class TabViewController: UIViewController {
 
     private static let tld = AppDependencyProvider.shared.storageCache.tld
     private let adClickAttributionDetection = ContentBlocking.shared.makeAdClickAttributionDetection(tld: tld)
+    let adClickExternalOpenDetector: AdClickExternalOpenDetector
     let adClickAttributionLogic = ContentBlocking.shared.makeAdClickAttributionLogic(tld: tld)
 
     private var httpsForced: Bool = false
@@ -464,7 +465,8 @@ class TabViewController: UIViewController {
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
-                   keyValueStore: ThrowingKeyValueStoring) {
+                   keyValueStore: ThrowingKeyValueStoring,
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
 
         self.tabModel = tabModel
         self.appSettings = appSettings
@@ -487,7 +489,7 @@ class TabViewController: UIViewController {
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
-
+        self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
@@ -500,6 +502,14 @@ class TabViewController: UIViewController {
         // Assign itself as specialErrorPageNavigationDelegate for SpecialErrorPages
         specialErrorPageNavigationHandler.delegate  = self
 
+        self.adClickExternalOpenDetector.mitigationHandler = { [weak self] in
+            guard let self else { return }
+            if self.tabModel.link?.title == nil {
+                self.closeTab()
+            } else if self.url != self.webView.url {
+                self.url = self.webView.url
+            }
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -883,17 +893,18 @@ class TabViewController: UIViewController {
             progressWorker.progressDidChange(webView.estimatedProgress)
             
         case #keyPath(WKWebView.url):
-        // A short delay is required here, because the URL takes some time
-        // to propagate to the webView.url property accessor and might not
-        // be immediately available in the observer
-        let previousURL = self.url
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.webViewUrlHasChanged(previousURL: previousURL, newURL: self?.webView.url)
-        }
-            
+            // A short delay is required here, because the URL takes some time
+            // to propagate to the webView.url property accessor and might not
+            // be immediately available in the observer
+            let previousURL = self.url
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self else { return }
+                self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
+            }
+
         case #keyPath(WKWebView.canGoBack):
             delegate?.tabLoadingStateDidChange(tab: self)
-            
+
         case #keyPath(WKWebView.canGoForward):
             delegate?.tabLoadingStateDidChange(tab: self)
 
@@ -906,16 +917,15 @@ class TabViewController: UIViewController {
     }
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
-        
         // Handle DuckPlayer Navigation URL changes
         if let currentURL = newURL ?? webView.url {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
-            
+
         if url == nil {
-            url = webView.url
-        } else if let currentHost = url?.host, let newHost = webView.url?.host, currentHost == newHost {
-            url = webView.url
+            url = newURL
+        } else if let currentHost = url?.host, let newHost = newURL?.host, currentHost == newHost {
+            url = newURL
         }
     }
     
@@ -1551,6 +1561,7 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(webView.url)
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
+        adClickExternalOpenDetector.startNavigation()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -1558,6 +1569,7 @@ extension TabViewController: WKNavigationDelegate {
         self.currentlyLoadedURL = webView.url
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
+        adClickExternalOpenDetector.finishNavigation()
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
@@ -1749,6 +1761,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
         webpageDidFailToLoad()
         checkForReloadOnError()
@@ -1774,6 +1787,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()

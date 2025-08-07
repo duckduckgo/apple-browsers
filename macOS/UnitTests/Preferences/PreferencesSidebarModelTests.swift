@@ -214,7 +214,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
-        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnable)
+        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnabled)
         XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalAvailable)
         XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalAvailable)
         XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationAvailable)
@@ -231,7 +231,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         try await Task.sleep(interval: 0.1)
 
         // Then
-        XCTAssertFalse(model.currentSubscriptionState.isPaidAIChatEnable)
+        XCTAssertFalse(model.currentSubscriptionState.isPaidAIChatEnabled)
     }
 
     func testCurrentSubscriptionStateForUserEntitlements() async throws {
@@ -248,10 +248,10 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
-        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalEnable)
-        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalEnable)
-        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationEnable)
-        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnable)
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalEnabled)
+        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationEnabled)
+        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnabled)
 
         XCTAssertTrue(model.isSidebarItemEnabled(for: .vpn))
         XCTAssertTrue(model.isSidebarItemEnabled(for: .personalInformationRemoval))
@@ -273,10 +273,10 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
-        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnable)
-        XCTAssertFalse(model.currentSubscriptionState.isPersonalInformationRemovalEnable)
-        XCTAssertFalse(model.currentSubscriptionState.isIdentityTheftRestorationEnable)
-        XCTAssertFalse(model.currentSubscriptionState.isPaidAIChatEnable)
+        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertFalse(model.currentSubscriptionState.isPersonalInformationRemovalEnabled)
+        XCTAssertFalse(model.currentSubscriptionState.isIdentityTheftRestorationEnabled)
+        XCTAssertFalse(model.currentSubscriptionState.isPaidAIChatEnabled)
 
         XCTAssertFalse(model.isSidebarItemEnabled(for: .vpn))
         XCTAssertFalse(model.isSidebarItemEnabled(for: .personalInformationRemoval))

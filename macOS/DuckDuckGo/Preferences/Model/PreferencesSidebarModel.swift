@@ -186,13 +186,13 @@ final class PreferencesSidebarModel: ObservableObject {
     func isSidebarItemEnabled(for pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
         case .vpn:
-            currentSubscriptionState.isNetworkProtectionRemovalEnable
+            currentSubscriptionState.isNetworkProtectionRemovalEnabled
         case .personalInformationRemoval:
-            currentSubscriptionState.isPersonalInformationRemovalEnable
+            currentSubscriptionState.isPersonalInformationRemovalEnabled
         case .paidAIChat:
-            currentSubscriptionState.isPaidAIChatEnable
+            currentSubscriptionState.isPaidAIChatEnabled
         case .identityTheftRestoration:
-            currentSubscriptionState.isIdentityTheftRestorationEnable
+            currentSubscriptionState.isIdentityTheftRestorationEnabled
         default:
             true
         }
@@ -225,11 +225,11 @@ final class PreferencesSidebarModel: ObservableObject {
         case .vpn:
             return vpnProtectionStatus()
         case .personalInformationRemoval:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPersonalInformationRemovalEnable ? .on : .off)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPersonalInformationRemovalEnabled ? .on : .off)
         case .paidAIChat:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPaidAIChatEnable ? .on : .off)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPaidAIChatEnabled ? .on : .off)
         case .identityTheftRestoration:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isIdentityTheftRestorationEnable ? .on : .off)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isIdentityTheftRestorationEnabled ? .on : .off)
         default:
             return nil
         }
@@ -292,16 +292,16 @@ final class PreferencesSidebarModel: ObservableObject {
             if self.currentSubscriptionState != updatedState {
                 hasLoadedInitialSubscriptionState = true
 
-                if self.currentSubscriptionState.isPersonalInformationRemovalEnable != updatedState.isPersonalInformationRemovalEnable {
-                    personalInformationRemovalSubject.send(updatedState.isPersonalInformationRemovalEnable ? .on : .off)
+                if self.currentSubscriptionState.isPersonalInformationRemovalEnabled != updatedState.isPersonalInformationRemovalEnabled {
+                    personalInformationRemovalSubject.send(updatedState.isPersonalInformationRemovalEnabled ? .on : .off)
                 }
 
-                if self.currentSubscriptionState.isPaidAIChatEnable != updatedState.isPaidAIChatEnable {
-                    paidAIChatSubject.send(updatedState.isPaidAIChatEnable ? .on : .off)
+                if self.currentSubscriptionState.isPaidAIChatEnabled != updatedState.isPaidAIChatEnabled {
+                    paidAIChatSubject.send(updatedState.isPaidAIChatEnabled ? .on : .off)
                 }
 
-                if self.currentSubscriptionState.isIdentityTheftRestorationEnable != updatedState.isIdentityTheftRestorationEnable {
-                    identityTheftRestorationSubject.send(updatedState.isIdentityTheftRestorationEnable ? .on : .off)
+                if self.currentSubscriptionState.isIdentityTheftRestorationEnabled != updatedState.isIdentityTheftRestorationEnabled {
+                    identityTheftRestorationSubject.send(updatedState.isIdentityTheftRestorationEnabled ? .on : .off)
                 }
 
                 self.currentSubscriptionState = updatedState
@@ -354,9 +354,9 @@ final class PreferencesSidebarModel: ObservableObject {
             }
         }
 
-        if (selectedPane == .vpn && !currentSubscriptionState.isNetworkProtectionRemovalEnable) ||
-            (selectedPane == .personalInformationRemoval && !currentSubscriptionState.isPersonalInformationRemovalEnable) ||
-             (selectedPane == .identityTheftRestoration && !currentSubscriptionState.isIdentityTheftRestorationEnable) {
+        if (selectedPane == .vpn && !currentSubscriptionState.isNetworkProtectionRemovalEnabled) ||
+            (selectedPane == .personalInformationRemoval && !currentSubscriptionState.isPersonalInformationRemovalEnabled) ||
+             (selectedPane == .identityTheftRestoration && !currentSubscriptionState.isIdentityTheftRestorationEnabled) {
             selectedPane = currentSubscriptionState.hasSubscription ? .subscriptionSettings : .privacyPro
         }
     }

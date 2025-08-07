@@ -30,6 +30,8 @@ final class AuthMigratorTests: XCTestCase {
         func handle(pixel: Subscription.SubscriptionPixelType) {
             lastPixelType = pixel
         }
+
+        func handle(pixel: Subscription.KeychainManager.Pixel) {}
     }
 
     var mockOAuthClient: MockOAuthClient!

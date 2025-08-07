@@ -32,13 +32,44 @@ public extension Logger {
     static var keychainManager = { Logger(subsystem: Self.subscriptionSubsystem, category: "KeychainManager") }()
 }
 
+public protocol KeychainManaging {
+
+    /// Retrieves data from the keychain for the specified key.
+    ///
+    /// This method first checks the writing backlog for any pending data, then queries the keychain.
+    ///
+    /// - Parameter key: The unique identifier for the keychain item
+    /// - Returns: The stored data, or nil if not found
+    /// - Throws: `AccountKeychainAccessError` if retrieval fails
+    func retrieveData(forKey key: String) throws -> Data?
+
+    /// Stores data in the keychain for the specified key.
+    ///
+    /// If the keychain is unavailable, the data is queued in a writing backlog and will be
+    /// automatically retried when the keychain becomes available.
+    ///
+    /// - Parameters:
+    ///   - data: The data to store securely
+    ///   - key: The unique identifier for the keychain item
+    /// - Throws: `AccountKeychainAccessError` if storage fails
+    func store(data: Data, forKey key: String) throws
+
+    /// Deletes a keychain item for the specified key.
+    ///
+    /// Also removes any pending data from the writing backlog.
+    ///
+    /// - Parameter key: The unique identifier for the keychain item to delete
+    /// - Throws: `AccountKeychainAccessError` if deletion fails
+    func deleteItem(forKey key: String) throws
+}
+
 /// A thread-safe keychain manager that handles secure storage operations with automatic retry capabilities.
 /// 
 /// This manager provides:
 /// - Thread-safe access to keychain operations via dispatch queue
 /// - Automatic retry mechanism for operations that fail when keychain is unavailable
 /// - Cross-platform notification handling for keychain availability
-public final class KeychainManager {
+public final class KeychainManager: KeychainManaging {
 
     // MARK: - Types
 
@@ -99,13 +130,6 @@ public final class KeychainManager {
 
     // MARK: - Public API
 
-    /// Retrieves data from the keychain for the specified key.
-    /// 
-    /// This method first checks the writing backlog for any pending data, then queries the keychain.
-    /// 
-    /// - Parameter key: The unique identifier for the keychain item
-    /// - Returns: The stored data, or nil if not found
-    /// - Throws: `AccountKeychainAccessError` if retrieval fails
     public func retrieveData(forKey key: String) throws -> Data? {
         return try accessQueue.sync {
 
@@ -137,15 +161,6 @@ public final class KeychainManager {
         }
     }
 
-    /// Stores data in the keychain for the specified key.
-    /// 
-    /// If the keychain is unavailable, the data is queued in a writing backlog and will be
-    /// automatically retried when the keychain becomes available.
-    /// 
-    /// - Parameters:
-    ///   - data: The data to store securely
-    ///   - key: The unique identifier for the keychain item
-    /// - Throws: `AccountKeychainAccessError` if storage fails
     public func store(data: Data, forKey key: String) throws {
         let writingResultStatus = try accessQueue.sync {
             try internalStore(data: data, forKey: key)
@@ -159,12 +174,6 @@ public final class KeychainManager {
         }
     }
 
-    /// Deletes a keychain item for the specified key.
-    ///
-    /// Also removes any pending data from the writing backlog.
-    ///
-    /// - Parameter key: The unique identifier for the keychain item to delete
-    /// - Throws: `AccountKeychainAccessError` if deletion fails
     public func deleteItem(forKey key: String) throws {
         return try accessQueue.sync {
             removeFromWritingBacklog(forKey: key)

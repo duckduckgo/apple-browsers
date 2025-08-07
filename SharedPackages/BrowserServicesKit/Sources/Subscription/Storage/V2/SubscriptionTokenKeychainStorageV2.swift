@@ -36,9 +36,9 @@ public enum KeychainErrorAuthVersion: String {
 public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
-    private let keychainManager: KeychainManager
+    private let keychainManager: any KeychainManaging
 
-    public init(keychainManager: KeychainManager,
+    public init(keychainManager: any KeychainManaging,
                 errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
         self.errorEventsHandler = errorEventsHandler
         self.keychainManager = keychainManager

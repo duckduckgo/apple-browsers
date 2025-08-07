@@ -26,7 +26,7 @@ final class KeychainManagerTests: XCTestCase {
 
     // MARK: - Properties
 
-    private var mockKeychainOperations: MockKeychainOperations!
+    private var mockKeychainOperations: KeychainOperationsMock!
     private var keychainManager: KeychainManager!
     private var cancellables = Set<AnyCancellable>()
 
@@ -34,7 +34,7 @@ final class KeychainManagerTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        mockKeychainOperations = MockKeychainOperations()
+        mockKeychainOperations = KeychainOperationsMock()
         keychainManager = createKeychainManager()
     }
 
@@ -52,7 +52,7 @@ final class KeychainManagerTests: XCTestCase {
             kSecClass: kSecClassGenericPassword,
             kSecAttrSynchronizable: false
         ]
-        return KeychainManager(keychainOperations: mockKeychainOperations, attributes: attributes)
+        return KeychainManager(keychainOperations: mockKeychainOperations, attributes: attributes, pixelHandler: MockPixelHandler())
     }
 
     private func createTestData() -> Data {
@@ -125,7 +125,7 @@ final class KeychainManagerTests: XCTestCase {
 
         // Mock a scenario where copyMatching returns success but with invalid data
         mockKeychainOperations.shouldFailCopyMatching = false
-        // We can't easily simulate this with MockKeychainOperations, so we'll test the error case indirectly
+        // We can't easily simulate this with KeychainOperationsMock, so we'll test the error case indirectly
         // by ensuring the mock returns valid data when expected
         let testData = createTestData()
         mockKeychainOperations.setStoredData(testData, for: testKey)
@@ -347,11 +347,11 @@ final class KeychainManagerTests: XCTestCase {
         mockKeychainOperations.shouldFailAdd = false
 
         // Create a custom mock that fails for specific keys
-        let customMock = MockKeychainOperations()
+        let customMock = KeychainOperationsMock()
         let customManager = KeychainManager(keychainOperations: customMock, attributes: [
             kSecClass: kSecClassGenericPassword,
             kSecAttrSynchronizable: false
-        ])
+        ], pixelHandler: MockPixelHandler())
 
         // Add data to custom manager backlog
         customMock.shouldFailAdd = true

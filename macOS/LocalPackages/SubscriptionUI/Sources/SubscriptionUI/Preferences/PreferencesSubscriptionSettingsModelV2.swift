@@ -113,7 +113,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                     // Check for free trial first
                     if hasTrialOffer {
                         return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
-                    } else if state.hasSubscription {
+                    } else if state.hasAnyEntitlement {
                         return PreferencesSubscriptionSettingsState.subscriptionActive
                     } else {
                         return PreferencesSubscriptionSettingsState.subscriptionPendingActivation

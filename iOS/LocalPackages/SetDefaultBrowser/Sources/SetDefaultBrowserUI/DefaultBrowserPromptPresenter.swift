@@ -86,10 +86,10 @@ private extension DefaultBrowserModalPresenter {
             },
             setAsDefaultAction: { [weak viewController, weak coordinator] in
                 coordinator?.setDefaultBrowserAction(forPrompt: .inactiveUserModal)
-                viewController?.dismiss(animated: true)
+                viewController?.dismiss(animated: false)
             }
         )
-        let hostingController = UIHostingController(rootView: rootView)
+        let hostingController = PortraitHostingController(rootView: rootView)
         hostingController.modalPresentationStyle = .overFullScreen
         viewController.present(hostingController, animated: true)
     }
@@ -129,4 +129,10 @@ private extension DefaultBrowserModalPresenter {
         }
     }
 
+}
+
+class PortraitHostingController<Content: View>: UIHostingController<Content> {
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return .portrait
+    }
 }

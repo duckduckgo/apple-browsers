@@ -39,7 +39,7 @@ final class DefaultBrowserPromptPixelHandlerTests {
         let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
 
         // WHEN
-        sut.fire(.modalShown(numberOfModalShown: numberOfModalShown))
+        sut.fire(.activeModalShown(numberOfModalShown: numberOfModalShown))
 
         // THEN
         let expectedParameter = numberOfModalShown <= 10 ? String(numberOfModalShown) : "10+"
@@ -58,7 +58,7 @@ final class DefaultBrowserPromptPixelHandlerTests {
         let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
 
         // WHEN
-        sut.fire(.modalActioned(numberOfModalShown: numberOfModalShown))
+        sut.fire(.activeModalActioned(numberOfModalShown: numberOfModalShown))
 
         // THEN
         let expectedParameter = numberOfModalShown <= 10 ? String(numberOfModalShown) : "10+"
@@ -72,7 +72,7 @@ final class DefaultBrowserPromptPixelHandlerTests {
         let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
 
         // WHEN
-        sut.fire(.modalDismissed)
+        sut.fire(.activeModalDismissed)
 
         // THEN
         #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.defaultBrowserPromptModalClosedButtonTapped.name)
@@ -85,7 +85,7 @@ final class DefaultBrowserPromptPixelHandlerTests {
         let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
 
         // WHEN
-        sut.fire(.modalDismissedPermanently)
+        sut.fire(.activeModalDismissedPermanently)
 
         // THEN
         #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.defaultBrowserPromptModalDoNotAskAgainButtonTapped.name)

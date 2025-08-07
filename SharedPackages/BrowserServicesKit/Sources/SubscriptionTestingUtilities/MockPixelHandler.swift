@@ -26,4 +26,8 @@ public struct MockPixelHandler: SubscriptionPixelHandling {
     public func handle(pixel: Subscription.SubscriptionPixelType) {
         Logger.subscription.debug("Pixel fired: \(String(describing: pixel))")
     }
+
+    public func handle(pixel: Subscription.KeychainManager.Pixel) {
+        Logger.subscription.debug("Pixel fired: \(String(describing: pixel))")
+    }
 }

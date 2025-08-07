@@ -141,7 +141,7 @@ class TabBarTests: UITestCase {
 
     func testContextMenuOpens_withRightClickOnTab() {
         let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
-        tab.click()
+        tab.rightClick()
 
         let contextMenu = tab.children(matching: .menu).firstMatch
 

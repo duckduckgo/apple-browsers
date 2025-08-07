@@ -59,13 +59,13 @@ private extension DefaultBrowserModalPresenter {
     func presentDefaultDefaultBrowserPromptForActiveUser(from viewController: UIViewController) {
         let rootView = DefaultBrowserPromptActiveUserView(
             closeAction: { [weak viewController, weak coordinator] in
-                coordinator?.dismissAction(shouldDismissPromptPermanently: false)
+                coordinator?.dismissAction(forPrompt: .activeUserModal, shouldDismissPromptPermanently: false)
                 viewController?.dismiss(animated: true)
             }, setAsDefaultAction: { [weak viewController, weak coordinator] in
-                coordinator?.setDefaultBrowserAction()
+                coordinator?.setDefaultBrowserAction(forPrompt: .activeUserModal)
                 viewController?.dismiss(animated: true)
             }, doNotAskAgainAction: { [weak viewController, weak coordinator] in
-                coordinator?.dismissAction(shouldDismissPromptPermanently: true)
+                coordinator?.dismissAction(forPrompt: .activeUserModal, shouldDismissPromptPermanently: true)
                 viewController?.dismiss(animated: true)
             }
         )
@@ -80,10 +80,12 @@ private extension DefaultBrowserModalPresenter {
         let rootView = DefaultBrowserPromptInactiveUserView(
             background: AnyView(uiProvider.makeBackground()),
             browserComparisonChart: AnyView(uiProvider.makeBrowserComparisonChart()),
-            closeAction: { [weak viewController] in
+            closeAction: { [weak viewController, weak coordinator] in
+                coordinator?.dismissAction(forPrompt: .inactiveUserModal, shouldDismissPromptPermanently: false)
                 viewController?.dismiss(animated: true)
             },
-            setAsDefaultAction: { [weak viewController] in
+            setAsDefaultAction: { [weak viewController, weak coordinator] in
+                coordinator?.setDefaultBrowserAction(forPrompt: .inactiveUserModal)
                 viewController?.dismiss(animated: true)
             }
         )

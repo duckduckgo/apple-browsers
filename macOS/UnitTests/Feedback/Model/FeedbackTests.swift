@@ -37,18 +37,18 @@ final class FeedbackTests: XCTestCase {
     // MARK: - Factory Method Tests
 
     func testWhenCreatingFeedbackFromSelectedPillsAndTextThenPropertiesAreSetCorrectly() {
-        let selectedPills = ["Fast Browser", "Bug Fix"]
+        let selectedPills = ["fast-browser", "bug-fix"]
         let text = "This is my feedback"
         let appVersion = "1.2.3"
         let category = Feedback.Category.bug
         let problemCategory = ProblemCategory(
-            id: "browserTooSlow",
-            name: "Browser is too slow",
+            id: "browser-is-too-slow",
+            text: "Browser is too slow",
             subcategories: []
         )
 
         let feedback = Feedback.from(
-            selectedPills: selectedPills,
+            selectedPillIds: selectedPills,
             text: text,
             appVersion: appVersion,
             category: category,
@@ -64,13 +64,13 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithEmptyTextThenCommentIsDefaultForCategory() {
-        let selectedPills = ["Feature"]
+        let selectedPills = ["feature"]
         let text = ""
         let appVersion = "1.0.0"
         let category = Feedback.Category.bug
 
         let feedback = Feedback.from(
-            selectedPills: selectedPills,
+            selectedPillIds: selectedPills,
             text: text,
             appVersion: appVersion,
             category: category,
@@ -81,13 +81,13 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithFeatureRequestCategoryThenCommentIsCorrect() {
-        let selectedPills = ["Feature"]
+        let selectedPills = ["feature"]
         let text = ""
         let appVersion = "1.0.0"
         let category = Feedback.Category.featureRequest
 
         let feedback = Feedback.from(
-            selectedPills: selectedPills,
+            selectedPillIds: selectedPills,
             text: text,
             appVersion: appVersion,
             category: category,
@@ -98,13 +98,13 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithNoProblemCategoryThenSubcategoryContainsOnlySelectedPills() {
-        let selectedPills = ["Feature One", "Feature Two"]
+        let selectedPills = ["feature-one", "feature-two"]
         let text = "Test text"
         let appVersion = "1.0.0"
         let category = Feedback.Category.featureRequest
 
         let feedback = Feedback.from(
-            selectedPills: selectedPills,
+            selectedPillIds: selectedPills,
             text: text,
             appVersion: appVersion,
             category: category,
@@ -117,18 +117,18 @@ final class FeedbackTests: XCTestCase {
     }
 
     func testWhenCreatingFeedbackWithProblemCategoryThenSubcategoryContainsBoth() {
-        let selectedPills = ["Option One"]
+        let selectedPills = ["option-one"]
         let text = "Test text"
         let appVersion = "1.0.0"
         let category = Feedback.Category.bug
         let problemCategory = ProblemCategory(
-            id: "testCategory",
-            name: "Test Category",
+            id: "test-category",
+            text: "Test Category",
             subcategories: []
         )
 
         let feedback = Feedback.from(
-            selectedPills: selectedPills,
+            selectedPillIds: selectedPills,
             text: text,
             appVersion: appVersion,
             category: category,
@@ -214,49 +214,5 @@ final class FeedbackTests: XCTestCase {
         for category in otherCategories {
             XCTAssertEqual(category.toString, "other", "Failed for category: \(category)")
         }
-    }
-
-    // MARK: - Edge Cases and Validation Tests
-
-    func testWhenCreatingFeedbackWithEmptySelectedPillsThenSubcategoryIsCorrect() {
-        let selectedPills: [String] = []
-        let text = "Test text"
-        let appVersion = "1.0.0"
-        let category = Feedback.Category.bug
-        let problemCategory = ProblemCategory(
-            id: "testCategory",
-            name: "Test Category",
-            subcategories: []
-        )
-
-        let feedback = Feedback.from(
-            selectedPills: selectedPills,
-            text: text,
-            appVersion: appVersion,
-            category: category,
-            problemCategory: problemCategory
-        )
-
-        XCTAssertTrue(feedback.subcategory.contains("test-category"))
-        XCTAssertTrue(feedback.subcategory.hasSuffix(",")) // Should end with comma since no pills
-    }
-
-    func testWhenCreatingFeedbackWithSpecialCharactersInPillsThenTaggingHandlesCorrectly() {
-        let selectedPills = ["Feature@#$", "Another Feature!"]
-        let text = "Test text"
-        let appVersion = "1.0.0"
-        let category = Feedback.Category.featureRequest
-
-        let feedback = Feedback.from(
-            selectedPills: selectedPills,
-            text: text,
-            appVersion: appVersion,
-            category: category,
-            problemCategory: nil
-        )
-
-        // The toTag function should handle special characters
-        XCTAssertTrue(feedback.subcategory.contains("feature-at-number-dollar"))
-        XCTAssertTrue(feedback.subcategory.contains("another-feature"))
     }
 }

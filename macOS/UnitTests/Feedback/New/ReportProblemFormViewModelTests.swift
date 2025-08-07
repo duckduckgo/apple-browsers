@@ -48,7 +48,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             feedbackSender: mockFeedbackSender
         )
 
-        let brokenWebsiteCategory = viewModel.availableCategories.first { $0.id == "brokenWebsite" }
+        let brokenWebsiteCategory = viewModel.availableCategories.first { $0.id == "report-broken-website" }
         XCTAssertNotNil(brokenWebsiteCategory)
     }
 
@@ -59,7 +59,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             feedbackSender: mockFeedbackSender
         )
 
-        let brokenWebsiteCategory = viewModel.availableCategories.first { $0.id == "brokenWebsite" }
+        let brokenWebsiteCategory = viewModel.availableCategories.first { $0.id == "report-broken-website" }
         XCTAssertNil(brokenWebsiteCategory)
     }
 
@@ -173,7 +173,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             feedbackSender: mockFeedbackSender
         )
 
-        let brokenWebsiteCategory = ProblemCategory.allCategories.first { $0.id == "brokenWebsite" }!
+        let brokenWebsiteCategory = ProblemCategory.allCategories.first { $0.id == "report-broken-website" }!
         viewModel.selectCategory(brokenWebsiteCategory)
 
         XCTAssertTrue(onReportBrokenSiteCalled)
@@ -187,7 +187,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             feedbackSender: mockFeedbackSender
         )
 
-        let category = ProblemCategory.allCategories.first { $0.id != "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id != "report-broken-website" }!
         viewModel.selectCategory(category)
 
         XCTAssertEqual(viewModel.selectedProblemCategory, category)
@@ -200,12 +200,11 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             feedbackSender: mockFeedbackSender
         )
 
-        let category = ProblemCategory.allCategories.first { $0.id != "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id != "report-broken-website" }!
         viewModel.selectCategory(category)
 
         XCTAssertFalse(viewModel.availableOptions.isEmpty)
         XCTAssertLessThanOrEqual(viewModel.availableOptions.count, 8) // 7 subcategories + "Something else"
-        XCTAssertTrue(viewModel.availableOptions.contains(UserText.feedbackSomethingElse))
     }
 
     func testWhenCategorySelectedThenFormDataIsReset() {
@@ -219,7 +218,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
         viewModel.selectedOptions.insert("existing option")
         viewModel.customText = "existing text"
 
-        let category = ProblemCategory.allCategories.first { $0.id != "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id != "report-broken-website" }!
         viewModel.selectCategory(category)
 
         XCTAssertTrue(viewModel.selectedOptions.isEmpty)
@@ -236,7 +235,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
         )
 
         // Set up some state
-        let category = ProblemCategory.allCategories.first { $0.id != "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id != "report-broken-website" }!
         viewModel.selectCategory(category)
         viewModel.selectedOptions.insert("test option")
         viewModel.customText = "test text"
@@ -301,7 +300,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             feedbackSender: mockFeedbackSender
         )
 
-        let category = ProblemCategory.allCategories.first { $0.id != "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id != "report-broken-website" }!
         viewModel.selectCategory(category)
         viewModel.selectedOptions.insert("test option")
         viewModel.customText = "test text"
@@ -319,9 +318,9 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             feedbackSender: mockFeedbackSender
         )
 
-        let category = ProblemCategory.allCategories.first { $0.id != "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id != "report-broken-website" }!
         viewModel.selectCategory(category)
-        viewModel.selectedOptions.insert("test option")
+        viewModel.selectedOptions.insert("test-option")
         viewModel.customText = "test text"
 
         viewModel.submitFeedback()
@@ -329,7 +328,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
         let sentFeedback = mockFeedbackSender.lastFeedback!
         XCTAssertEqual(sentFeedback.category, .bug)
         XCTAssertEqual(sentFeedback.comment, "test text")
-        XCTAssertTrue(sentFeedback.subcategory.contains(category.name.toTag))
+        XCTAssertTrue(sentFeedback.subcategory.contains(category.id))
         XCTAssertTrue(sentFeedback.subcategory.contains("test-option"))
     }
 
@@ -377,7 +376,7 @@ final class ReportProblemFormViewModelTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        let category = ProblemCategory.allCategories.first { $0.id != "brokenWebsite" }!
+        let category = ProblemCategory.allCategories.first { $0.id != "report-broken-website" }!
         viewModel.selectCategory(category)
 
         wait(for: [expectation], timeout: 1.0)

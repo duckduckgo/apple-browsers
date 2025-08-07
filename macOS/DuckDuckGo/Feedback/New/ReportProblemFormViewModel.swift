@@ -40,7 +40,7 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     var availableCategories: [ProblemCategory] {
         ProblemCategory.allCategories.filter { category in
-            if category.id == "brokenWebsite" {
+            if category.id == "report-broken-website" {
                 return canReportBrokenSite
             }
             return true

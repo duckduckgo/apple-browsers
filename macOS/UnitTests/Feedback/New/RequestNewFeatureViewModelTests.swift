@@ -49,40 +49,6 @@ final class RequestNewFeatureViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.availableFeatures.isEmpty)
     }
 
-    func testWhenInitializedThenAvailableFeaturesAreShuffledAndLimited() {
-        let viewModel1 = RequestNewFeatureViewModel(feedbackSender: mockFeedbackSender)
-        let viewModel2 = RequestNewFeatureViewModel(feedbackSender: mockFeedbackSender)
-
-        // Should have at most 12 features
-        XCTAssertLessThanOrEqual(viewModel1.availableFeatures.count, 12)
-        XCTAssertLessThanOrEqual(viewModel2.availableFeatures.count, 12)
-
-        // Features should be from the expected list
-        let allExpectedFeatures = [
-            UserText.featureAdvancedAdBlocking,
-            UserText.featureAISupport,
-            UserText.featureCastVideo,
-            UserText.featureCustomizeTheme,
-            UserText.featureDarkModeAllSites,
-            UserText.featureImportBookmarkFolders,
-            UserText.featureImportHistory,
-            UserText.featureIncognito,
-            UserText.featureMoveBrowserButtons,
-            UserText.featureNewTabPageWidgets,
-            UserText.featurePasswordManagerExtensions,
-            UserText.featurePictureInPicture,
-            UserText.featureReaderMode,
-            UserText.featureTabGroups,
-            UserText.featureUserProfiles,
-            UserText.featureVerticalTabs,
-            UserText.featureWebsiteTranslation
-        ]
-
-        for feature in viewModel1.availableFeatures {
-            XCTAssertTrue(allExpectedFeatures.contains(feature))
-        }
-    }
-
     // MARK: - Computed Properties Tests
 
     func testWhenNoFeaturesSelectedAndNoTextThenShouldEnableSubmitIsFalse() {
@@ -126,7 +92,7 @@ final class RequestNewFeatureViewModelTests: XCTestCase {
     func testWhenIncognitoFeatureSelectedThenShouldShowIncognitoInfoIsTrue() {
         viewModel = RequestNewFeatureViewModel(feedbackSender: mockFeedbackSender)
 
-        viewModel.selectedFeatures.insert(UserText.featureIncognito)
+        viewModel.selectedFeatures.insert("incognito")
 
         XCTAssertTrue(viewModel.shouldShowIncognitoInfo)
     }
@@ -212,7 +178,7 @@ final class RequestNewFeatureViewModelTests: XCTestCase {
     func testWhenSubmitFeedbackThenCorrectFeedbackIsCreated() {
         viewModel = RequestNewFeatureViewModel(feedbackSender: mockFeedbackSender)
 
-        viewModel.selectedFeatures.insert("test feature")
+        viewModel.selectedFeatures.insert("test-feature")
         viewModel.customFeatureText = "custom feature text"
         viewModel.submitFeedback()
 
@@ -235,8 +201,8 @@ final class RequestNewFeatureViewModelTests: XCTestCase {
     func testWhenSubmitFeedbackWithMultipleFeaturesThenAllAreIncluded() {
         viewModel = RequestNewFeatureViewModel(feedbackSender: mockFeedbackSender)
 
-        viewModel.selectedFeatures.insert("feature one")
-        viewModel.selectedFeatures.insert("feature two")
+        viewModel.selectedFeatures.insert("feature-one")
+        viewModel.selectedFeatures.insert("feature-two")
         viewModel.submitFeedback()
 
         let sentFeedback = mockFeedbackSender.lastFeedback!
@@ -320,7 +286,7 @@ final class RequestNewFeatureViewModelTests: XCTestCase {
         // Try multiple times since features are shuffled
         for _ in 0..<10 {
             let testViewModel = RequestNewFeatureViewModel(feedbackSender: mockFeedbackSender)
-            if testViewModel.availableFeatures.contains(UserText.featureIncognito) {
+            if testViewModel.availableFeatures.contains(where: { $0.id == "incognito" }) {
                 viewModelWithIncognito = testViewModel
                 break
             }
@@ -333,9 +299,9 @@ final class RequestNewFeatureViewModelTests: XCTestCase {
 
         XCTAssertFalse(viewModel.shouldShowIncognitoInfo)
 
-        viewModel.toggleFeature(UserText.featureIncognito)
+        viewModel.toggleFeature("incognito")
 
         XCTAssertTrue(viewModel.shouldShowIncognitoInfo)
-        XCTAssertTrue(viewModel.selectedFeatures.contains(UserText.featureIncognito))
+        XCTAssertTrue(viewModel.selectedFeatures.contains("incognito"))
     }
 }

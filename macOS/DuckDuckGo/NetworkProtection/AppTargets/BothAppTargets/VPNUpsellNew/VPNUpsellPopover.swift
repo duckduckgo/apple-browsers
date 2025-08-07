@@ -27,10 +27,12 @@ import SwiftUIExtensions
 // MARK: - Constants
 
 private enum Constants {
+    static let popoverMaxWidth: CGFloat = 380
     static let outerVerticalSpacing: CGFloat = 16
     static let innerVerticalSpacing: CGFloat = 28
     static let headerHorizontalPadding: CGFloat = 48
     static let titleAndSubtitleHorizontalPadding: CGFloat = 36
+    static let titleAndSubtitleMaxWidth: CGFloat = 280
     static let titleAndSubtitleVerticalSpacing: CGFloat = 8
     static let featuresHorizontalPadding: CGFloat = 48
     static let featuresVerticalSpacing: CGFloat = 12
@@ -69,6 +71,7 @@ struct VPNUpsellPopoverView: View {
 
             VStack(spacing: Constants.innerVerticalSpacing) {
                 titleAndSubtitle
+                    .frame(width: Constants.titleAndSubtitleMaxWidth)
                     .padding(.horizontal, Constants.titleAndSubtitleHorizontalPadding)
                 features
                     .padding(.horizontal, Constants.featuresHorizontalPadding)
@@ -77,6 +80,7 @@ struct VPNUpsellPopoverView: View {
             actionButtons
                 .padding(.top, Constants.actionButtonsTopPadding)
         }
+        .frame(width: Constants.popoverMaxWidth)
         .padding(.top, Constants.topPadding)
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.bottom, Constants.bottomPadding)

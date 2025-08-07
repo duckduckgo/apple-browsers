@@ -96,8 +96,6 @@ class DuckPlayerTests: UITestCase {
         // Get the DuckPlayer webview
         let duckPlayerWebView = app.windows.firstMatch.webViews["\(Self.duckPlayerTabPreffix)\(Self.carouselVideoTitle)"]
 
-        print(app.windows.firstMatch.webViews["\(Self.duckPlayerTabPreffix)\(Self.carouselVideoTitle)"].buttons)
-
         // Validate DuckPlayer View Exists
         XCTAssertTrue(
             duckPlayerWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),

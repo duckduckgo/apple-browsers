@@ -103,8 +103,8 @@ final class MockTerminating: TerminatingHandling {
 
     private(set) var terminationError: String?
 
-    init(terminationError: TerminationError, application: UIApplication) {
-        self.terminationError = terminationError.localizedDescription
+    init(error: Error, application: UIApplication) {
+        self.terminationError = error.localizedDescription
     }
 
 }

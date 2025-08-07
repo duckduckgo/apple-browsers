@@ -167,8 +167,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
-                .supportsAlternateStripePaymentFlow,
-                .newFeedbackForm:
+                .supportsAlternateStripePaymentFlow:
             true
         default:
             false
@@ -340,7 +339,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
-            return .enabled
+            return .remoteReleasable(.feature(.newFeedbackForm))
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .supportsAlternateStripePaymentFlow:

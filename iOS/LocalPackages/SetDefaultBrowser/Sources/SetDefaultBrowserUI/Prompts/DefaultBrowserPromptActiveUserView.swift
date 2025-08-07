@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserPromptModalView.swift
+//  DefaultBrowserPromptActiveUserView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,7 +23,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
-struct DefaultBrowserPromptModalView: View {
+struct DefaultBrowserPromptActiveUserView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -56,7 +56,7 @@ struct DefaultBrowserPromptModalView: View {
 
 // MARK: - Inner Views
 
-private extension DefaultBrowserPromptModalView {
+private extension DefaultBrowserPromptActiveUserView {
 
     struct Header: View {
         @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -94,17 +94,16 @@ private extension DefaultBrowserPromptModalView {
                     .frame(width: imageSize.width, height: imageSize.height)
 
                 Group {
-                    Text(UserText.title)
-                        .font(.system(size: Metrics.Content.titleFontSize, weight: .bold))
-                        .kerning(Metrics.Content.kerning)
+                    Text(UserText.ActiveUserModal.title)
+                        .titleStyle(alignment: .center)
 
-                    Text(UserText.message)
+                    Text(UserText.ActiveUserModal.message)
                         .font(.system(size: Metrics.Content.messageFontSize))
+                        .foregroundStyle(Color.primary)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.7)
                 }
-                .foregroundStyle(Color.primary)
                 .opacity(0.84)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.7)
             }
         }
 
@@ -120,10 +119,10 @@ private extension DefaultBrowserPromptModalView {
         var body: some View {
             VStack(spacing: Metrics.Footer.itemsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
                 Group {
-                    Button(UserText.setDefaultBrowserCTA, action: setDefaultBrowserAction)
+                    Button(UserText.ActiveUserModal.setDefaultBrowserCTA, action: setDefaultBrowserAction)
                         .buttonStyle(PrimaryButtonStyle(compact: Metrics.Footer.buttonsCompact.build(v: verticalSizeClass, h: horizontalSizeClass)))
 
-                    Button(UserText.doNotAskAgainCTA, action: doNotAskAgainAction)
+                    Button(UserText.ActiveUserModal.doNotAskAgainCTA, action: doNotAskAgainAction)
                         .buttonStyle(GhostButtonStyle(compact: Metrics.Footer.buttonsCompact.build(v: verticalSizeClass, h: horizontalSizeClass)))
                 }
                 .frame(maxWidth: Metrics.Footer.buttonMaxWidth.build(v: verticalSizeClass, h: horizontalSizeClass))
@@ -167,5 +166,5 @@ private enum Metrics {
 }
 
 #Preview {
-    DefaultBrowserPromptModalView(closeAction: {}, setAsDefaultAction: {}, doNotAskAgainAction: {})
+    DefaultBrowserPromptActiveUserView(closeAction: {}, setAsDefaultAction: {}, doNotAskAgainAction: {})
 }

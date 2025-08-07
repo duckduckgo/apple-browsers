@@ -435,11 +435,22 @@ class MainViewController: UIViewController {
         if DaxDialogs.shared.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+
+        fireExperimentalAddressBarPixel()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
         assertionFailure()
         super.performSegue(withIdentifier: identifier, sender: sender)
+    }
+
+    private func fireExperimentalAddressBarPixel() {
+        let isEnabledParam = "is_enabled"
+        let isEnableValue = "\(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)"
+
+        DailyPixel.fireDaily(.aiChatExperimentalAddressBarIsEnabledDaily,
+                             withAdditionalParameters: [isEnabledParam: isEnableValue])
+        
     }
 
     private func installSwipeTabs() {

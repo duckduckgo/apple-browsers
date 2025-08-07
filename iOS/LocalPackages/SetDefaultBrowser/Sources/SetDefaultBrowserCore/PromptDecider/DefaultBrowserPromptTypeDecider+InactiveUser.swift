@@ -20,28 +20,33 @@
 extension DefaultBrowserPromptTypeDecider {
 
     final class InactiveUser: DefaultBrowserPromptTypeDeciding {
+        private let featureFlagger: DefaultBrowserPromptInactiveUserFeatureFlagger
         private let store: DefaultBrowserPromptStorage
         private let userActivityProvider: DefaultBrowserPromptUserActivityProvider
         private let daysSinceInstallProvider: () -> Int
 
         init(
+            featureFlagger: DefaultBrowserPromptInactiveUserFeatureFlagger,
             store: DefaultBrowserPromptStorage,
             userActivityProvider: DefaultBrowserPromptUserActivityProvider,
             daysSinceInstallProvider: @escaping () -> Int
         ) {
+            self.featureFlagger = featureFlagger
             self.store = store
             self.userActivityProvider = userActivityProvider
             self.daysSinceInstallProvider = daysSinceInstallProvider
         }
 
         func promptType() -> DefaultBrowserPromptType? {
+            guard featureFlagger.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled else { return nil }
+
             // Conditions to show prompt for inactive users:
             // 1. The user has not seen this modal ever.
             // 2. User has been inactive for at least seven days.
             // 3. The user has installed the app for at least 28 days.
             let shouldShowInactiveModal = !store.hasInactiveModalShown &&
-            userActivityProvider.numberOfInactiveDays() >= 7 &&
-            daysSinceInstallProvider() >= 28
+            userActivityProvider.numberOfInactiveDays() >= featureFlagger.inactiveModalNumberOfInactiveDays &&
+            daysSinceInstallProvider() >= featureFlagger.inactiveModalNumberOfDaysSinceInstall
 
             return shouldShowInactiveModal ? .inactive : nil
         }

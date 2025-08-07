@@ -44,7 +44,7 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     @Test("Check No Modal Is Presented When Feature Is Disabled")
     func checkPromptIsNilWhenFeatureFlagIsDisabled() {
         // GIVEN
-        featureFlaggerMock.isDefaultBrowserPromptsFeatureEnabled = false
+        featureFlaggerMock.isDefaultBrowserPromptsForActiveUsersFeatureEnabled = false
         makeSUT()
         #expect(!userTypeProviderMock.didCallCurrentUserType)
 
@@ -93,7 +93,7 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
         storeMock.modalShownOccurrences = 1
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 4
-        featureFlaggerMock.secondModalDelayDays = 4
+        featureFlaggerMock.secondActiveModalDelayDays = 4
         makeSUT()
 
         // WHEN
@@ -115,7 +115,7 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
         storeMock.modalShownOccurrences = 1
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 4
-        featureFlaggerMock.secondModalDelayDays = 4
+        featureFlaggerMock.secondActiveModalDelayDays = 4
         makeSUT()
 
         // WHEN
@@ -138,7 +138,7 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
         storeMock.modalShownOccurrences = 2
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         makeSUT()
 
         // WHEN
@@ -160,7 +160,7 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
         storeMock.modalShownOccurrences = 1
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         makeSUT()
 
         // WHEN
@@ -186,7 +186,7 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
         storeMock.modalShownOccurrences = numberOfModalShown
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         makeSUT()
 
         // WHEN
@@ -211,7 +211,7 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
         storeMock.modalShownOccurrences = numberOfModalShown
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         makeSUT()
 
         // WHEN

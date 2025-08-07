@@ -66,9 +66,6 @@ tags:
 - tapOn: "Bookmarks"
 - tapOn: "DuckDuckGo - Protection. Privacy. Peace of mind."
 
-# Give JavaScript time to execute
-#- waitForAnimationToEnd
-
 # Verify test passed
 - extendedWaitUntil:
     visible: "TEST PASSED"

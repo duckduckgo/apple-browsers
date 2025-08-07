@@ -143,7 +143,7 @@ struct ProblemCategoriesView: View {
             Image(.feedbackAsk)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(UserText.reportProblemFormTitle)
+                Text(UserText.reportBrowserProblem)
                     .systemTitle2()
 
                 Text(UserText.reportProblemFormSubtitle)

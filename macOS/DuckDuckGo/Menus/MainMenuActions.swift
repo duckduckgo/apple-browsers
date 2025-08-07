@@ -307,8 +307,8 @@ extension AppDelegate {
         window.styleMask.remove(.resizable)
         let windowRect = NSRect(x: 0,
                                 y: 0,
-                                width: RequestNewFeatureFormViewController.Constants.width,
-                                height: RequestNewFeatureFormViewController.Constants.height)
+                                width: ReportProblemFormViewController.Constants.width,
+                                height: ReportProblemFormViewController.Constants.height)
         window.setFrame(windowRect, display: true)
 
         DispatchQueue.main.async {

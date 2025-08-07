@@ -71,7 +71,6 @@ struct LottieView: UIViewRepresentable {
         animationView.animation = animation
         animationView.contentMode = .scaleAspectFit
         animationView.clipsToBounds = false
-
         if let animationImageProvider {
             animationView.imageProvider = animationImageProvider
         }

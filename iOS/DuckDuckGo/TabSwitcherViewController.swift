@@ -107,7 +107,7 @@ class TabSwitcherViewController: UIViewController {
 
     var tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
     var isProcessingUpdates = false
-    private var canUpdateCollection = true
+    var canUpdateCollection = true
 
     let favicons: Favicons
 

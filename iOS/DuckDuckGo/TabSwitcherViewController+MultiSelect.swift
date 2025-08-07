@@ -123,6 +123,8 @@ extension TabSwitcherViewController {
 
     func addNewTab() {
         guard !isProcessingUpdates else { return }
+        // Will be dismissed, so no need to process incoming updates
+        canUpdateCollection = false
 
         Pixel.fire(pixel: .tabSwitcherNewTab)
         delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)

@@ -64,9 +64,21 @@ struct RequestNewFeatureFormFlowView: View {
                     }
                 }
             } else {
-                RequestNewFeatureFormView(onSubmit: {
-                    showThankYou = true
-                }, onClose: onClose)
+                RequestNewFeatureFormView(
+                    onSubmit: {
+                        showThankYou = true
+                    },
+                    onClose: onClose,
+                    onResize: onResize
+                )
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now()) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            // Initial height calculation will be handled by the view's updateDialogHeight()
+                            // We don't need to set a fixed height here anymore
+                        }
+                    }
+                }
             }
         }
     }
@@ -77,26 +89,63 @@ struct RequestNewFeatureFormView: View {
 
     var onSubmit: () -> Void
     var onClose: () -> Void
+    var onResize: (CGFloat, CGFloat) -> Void
+
+    @State private var pillsSectionHeight: CGFloat = 0
+    @State private var incognitoInfoHeight: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScrollView {
-                header()
-                featurePills()
+            header()
+            featurePills()
 
-                if viewModel.shouldShowIncognitoInfo {
-                    IncognitoInfoBox()
-                        .padding([.leading, .trailing], 24)
-                        .padding(.bottom, 16)
-                        .transition(.opacity)
-                }
-
-                userTextInput()
+            if viewModel.shouldShowIncognitoInfo {
+                incognitoInfoSection()
             }
 
+            userTextInput()
             footer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: viewModel.selectedFeatures) { _ in
+            updateDialogHeight()
+        }
+        .onChange(of: pillsSectionHeight) { _ in
+            updateDialogHeight()
+        }
+        .onChange(of: incognitoInfoHeight) { _ in
+            updateDialogHeight()
+        }
+    }
+
+    // MARK: - Height Calculation
+
+    private enum ComponentHeights {
+        static let header: CGFloat = 72  // 24 padding + ~24 button/text + 24 padding
+        static let textInputSection: CGFloat = 159  // Same as problem form
+        static let footer: CGFloat = 122  // Same as problem form structure
+    }
+
+    private func calculateTotalHeight() -> CGFloat {
+        let baseHeight = ComponentHeights.header + ComponentHeights.textInputSection + ComponentHeights.footer
+
+        // Always use the measured height of the pills section (which includes bottom padding)
+        // Use a reasonable fallback during initial load before measurement completes
+        let pillsHeight = pillsSectionHeight > 0 ? pillsSectionHeight : 100
+
+        // Add incognito info box height if visible
+        let incognitoHeight = viewModel.shouldShowIncognitoInfo ? (incognitoInfoHeight > 0 ? incognitoInfoHeight : 80) : 0
+
+        return baseHeight + pillsHeight + incognitoHeight
+    }
+
+    private func updateDialogHeight() {
+        DispatchQueue.main.async {
+            withAnimation(.interactiveSpring) {
+                let calculatedHeight = calculateTotalHeight()
+                onResize(RequestNewFeatureFormViewController.Constants.width, calculatedHeight)
+            }
+        }
     }
 
     private func header() -> some View {
@@ -135,6 +184,41 @@ struct RequestNewFeatureFormView: View {
         }
         .padding([.leading, .trailing], 24)
         .padding(.bottom, 24)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        pillsSectionHeight = geometry.size.height
+                        updateDialogHeight()
+                    }
+                    .onChange(of: geometry.size) { newSize in
+                        if pillsSectionHeight != newSize.height {
+                            pillsSectionHeight = newSize.height
+                        }
+                    }
+            }
+        )
+        }
+
+    private func incognitoInfoSection() -> some View {
+        IncognitoInfoBox()
+            .padding([.leading, .trailing], 24)
+            .padding(.bottom, 16)
+            .transition(.opacity)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear {
+                            incognitoInfoHeight = geometry.size.height
+                            updateDialogHeight()
+                        }
+                        .onChange(of: geometry.size) { newSize in
+                            if incognitoInfoHeight != newSize.height {
+                                incognitoInfoHeight = newSize.height
+                            }
+                        }
+                }
+            )
     }
 
     private func userTextInput() -> some View {

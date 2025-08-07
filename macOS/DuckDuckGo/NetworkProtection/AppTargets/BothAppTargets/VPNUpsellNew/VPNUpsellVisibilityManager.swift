@@ -64,6 +64,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
     // MARK: - State
     private let isDefaultBrowserSubject = PassthroughSubject<Bool, Never>()
+    private let canUserPurchaseSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
     private var defaultBrowserPollingTimer: Timer?
     private var timer: Timer?
@@ -102,6 +103,22 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
+        canUserPurchaseSubject
+            .sink { [weak self] canPurchase in
+                guard let self else { return }
+                guard canPurchase else {
+                    self.updateState(.notEligible)
+                    return
+                }
+
+                self.start(isFirstLaunch: isFirstLaunch)
+            }
+            .store(in: &cancellables)
+
+        checkPurchaseEligibility()
+    }
+
+    private func start(isFirstLaunch: Bool) {
         if isFirstLaunch {
             monitorFirstLaunchConditions()
         } else {
@@ -131,6 +148,19 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         }
 
         return firstPinnedDate.daysSinceNow() >= autoDismissDays
+    }
+
+    private func checkPurchaseEligibility() {
+        switch subscriptionManager.currentEnvironment.purchasePlatform {
+        case .appStore:
+            subscriptionManager.canPurchasePublisher
+                .sink { [weak self] canPurchase in
+                    self?.canUserPurchaseSubject.send(canPurchase)
+                }
+                .store(in: &cancellables)
+        case .stripe:
+            canUserPurchaseSubject.send(true)
+        }
     }
 
     // MARK: - Monitoring Setup

@@ -102,7 +102,7 @@ struct VPNUpsellPopoverView: View {
     private var titleAndSubtitle: some View {
         VStack(spacing: Constants.titleAndSubtitleVerticalSpacing) {
             Text(UserText.vpnUpsellPopoverTitle)
-                .font(.title3.weight(.semibold))
+                .font(.title2.weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
@@ -180,7 +180,7 @@ private struct FeatureRow: View {
         HStack(alignment: .top, spacing: Constants.featureRowHorizontalSpacing) {
             Image(systemName: "checkmark")
                 .font(.system(size: Constants.featureRowImageFontSize, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .accent))
+                .foregroundColor(Color(designSystemColor: .icons))
                 .frame(width: Constants.featureRowImageSize.width, height: Constants.featureRowImageSize.height)
                 .padding(.top, Constants.featureRowImageTopPadding)
 

@@ -20,6 +20,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockNewTabPageTabPreloader: NewTabPageTabPreloading {
+
     var didCallNewTab = false
     let tabToReturn = Tab(content: .newtab, shouldLoadInBackground: true, burnerMode: .regular)
 
@@ -32,4 +33,7 @@ final class MockNewTabPageTabPreloader: NewTabPageTabPreloading {
     // satisfy the protocol
     @MainActor
     func reloadTab() { }
+
+    @MainActor
+    func reloadTab(force: Bool) { }
 }

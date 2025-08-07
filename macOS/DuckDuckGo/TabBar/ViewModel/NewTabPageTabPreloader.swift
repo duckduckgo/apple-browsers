@@ -23,6 +23,7 @@ protocol NewTabPageTabPreloading: AnyObject {
 
     func newTab() -> Tab?
     func reloadTab()
+    func reloadTab(force: Bool)
 
 }
 
@@ -56,8 +57,12 @@ final class NewTabPageTabPreloader: NewTabPageTabPreloading {
     }
 
     func reloadTab() {
+        reloadTab(force: false)
+    }
+
+    func reloadTab(force: Bool = false) {
         // Avoid unnecessary reloading
-        if let preloadedTabViewSize, preloadedTabViewSize == getViewSize() {
+        if !force, let preloadedTabViewSize, preloadedTabViewSize == getViewSize() {
             return
         }
 

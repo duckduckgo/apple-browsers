@@ -215,6 +215,8 @@
 		1DE717CF2E44B052009BDFFA /* MockNewTabPageTabPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */; };
 		1DE717D12E44B24D009BDFFA /* NewTabPagePreloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717D02E44B244009BDFFA /* NewTabPagePreloaderTests.swift */; };
 		1DE717D22E44B24D009BDFFA /* NewTabPagePreloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717D02E44B244009BDFFA /* NewTabPagePreloaderTests.swift */; };
+		1DE717D42E44B4FA009BDFFA /* NewTabPageTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717D32E44B4F3009BDFFA /* NewTabPageTabExtensionTests.swift */; };
+		1DE717D52E44B4FA009BDFFA /* NewTabPageTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717D32E44B4F3009BDFFA /* NewTabPageTabExtensionTests.swift */; };
 		1DEF3BAD2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
 		1DEF3BAE2BD145A9004A2FBA /* AutoClearHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */; };
 		1DF78E0C2CE5F58B00AB898E /* WebExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF78E0A2CE5F58400AB898E /* WebExtensionManager.swift */; };
@@ -4076,6 +4078,7 @@
 		1DDF076128F815AD00EDFBE3 /* BWResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BWResponse.swift; sourceTree = "<group>"; };
 		1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewTabPageTabPreloader.swift; sourceTree = "<group>"; };
 		1DE717D02E44B244009BDFFA /* NewTabPagePreloaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePreloaderTests.swift; sourceTree = "<group>"; };
+		1DE717D32E44B4F3009BDFFA /* NewTabPageTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageTabExtensionTests.swift; sourceTree = "<group>"; };
 		1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutoClearHandler.swift; sourceTree = "<group>"; };
 		1DF78E0A2CE5F58400AB898E /* WebExtensionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionManager.swift; sourceTree = "<group>"; };
 		1DF78E0E2CE6197200AB898E /* WKWebExtensionTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKWebExtensionTab.swift; sourceTree = "<group>"; };
@@ -10526,6 +10529,7 @@
 			isa = PBXGroup;
 			children = (
 				B6CA4823298CDC2E0067ECCE /* AdClickAttributionTabExtensionTests.swift */,
+				1DE717D32E44B4F3009BDFFA /* NewTabPageTabExtensionTests.swift */,
 				6590DB542DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift */,
 				56BA1E7C2BAB290E001CF69F /* ErrorPageTabExtensionTest.swift */,
 				1D1C36E529FB019C001FA40C /* HistoryTabExtensionTests.swift */,
@@ -13643,6 +13647,7 @@
 				BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */,
 				3706FDE8293F661700E42796 /* TemporaryFileHandlerTests.swift in Sources */,
 				37D315C32D4A42280019C1F8 /* RecentActivityFavoritesHandlerTests.swift in Sources */,
+				1DE717D42E44B4FA009BDFFA /* NewTabPageTabExtensionTests.swift in Sources */,
 				3706FDE9293F661700E42796 /* StateRestorationManagerTests.swift in Sources */,
 				374EF08429B7575B003D2E87 /* RecentlyClosedCoordinatorTests.swift in Sources */,
 				3706FDEA293F661700E42796 /* BookmarkNodeTests.swift in Sources */,
@@ -15811,6 +15816,7 @@
 				B6AE74342609AFCE005B9B1A /* ProgressEstimationTests.swift in Sources */,
 				B6619F032B17123200CD9186 /* DataImportViewModelTests.swift in Sources */,
 				C1E961EB2B879E79001760E1 /* MockAutofillActionPresenter.swift in Sources */,
+				1DE717D52E44B4FA009BDFFA /* NewTabPageTabExtensionTests.swift in Sources */,
 				4BA1A6FE258C5C1300F6F690 /* EncryptedValueTransformerTests.swift in Sources */,
 				85F69B3C25EDE81F00978E59 /* URLExtensionTests.swift in Sources */,
 				4B9292BA2667103100AD2C21 /* BookmarkNodePathTests.swift in Sources */,

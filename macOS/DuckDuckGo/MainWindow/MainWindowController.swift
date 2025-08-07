@@ -545,15 +545,3 @@ extension NSWindow {
         return self.styleMask.contains(.fullScreen) && self.isMiniaturized == false
     }
 }
-
-@available(macOS 26.0, *)
-extension NSGlassEffectContainerView {
-    open override func hitTest(_ point: NSPoint) -> NSView? {
-        // Prevent glass view in the toolbar from intercepting events.
-        // This works around an issue in macOS 26 where the glass view prevents the context menu from appearing in the tab bar.
-        if superview?.className == "NSToolbarView" {
-            return nil
-        }
-        return super.hitTest(point)
-    }
-}

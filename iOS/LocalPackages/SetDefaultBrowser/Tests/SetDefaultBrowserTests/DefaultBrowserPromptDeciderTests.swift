@@ -48,7 +48,8 @@ final class DefaultBrowserPromptDeciderTests {
     @Test("Check No Modal Is Presented When Prompt Is Permanently Dismissed")
     func checkPromptIsNilWhenPromptIsPermanentlyDismissed() {
         // GIVEN
-        featureFlaggerMock.isDefaultBrowserPromptsFeatureEnabled = true
+        featureFlaggerMock.isDefaultBrowserPromptsForActiveUsersFeatureEnabled = true
+        featureFlaggerMock.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled = true
         storeMock.isPromptPermanentlyDismissed = true
         makeSUT()
         #expect(!userTypeProviderMock.didCallCurrentUserType)
@@ -223,9 +224,9 @@ final class DefaultBrowserPromptDeciderTests {
     )
     func checkFullFlowCorrectnessForNewAndReturningUser(userType: DefaultBrowserPromptUserType) {
         // GIVEN
-        featureFlaggerMock.firstModalDelayDays = 1
-        featureFlaggerMock.secondModalDelayDays = 4
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.firstActiveModalDelayDays = 1
+        featureFlaggerMock.secondActiveModalDelayDays = 4
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = userType
         storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
@@ -285,9 +286,9 @@ final class DefaultBrowserPromptDeciderTests {
 
     @Test("Check Full Flow Correctness Of Modal For Existing Active User")
     func checkFullFlowCorrectnessForExistingUser() {
-        featureFlaggerMock.firstModalDelayDays = 1
-        featureFlaggerMock.secondModalDelayDays = 4
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.firstActiveModalDelayDays = 1
+        featureFlaggerMock.secondActiveModalDelayDays = 4
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = .existing
         storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
@@ -376,9 +377,9 @@ final class DefaultBrowserPromptDeciderTests {
 
     @Test("Check Inactive Modal Is Presented First If User Install The App And Become Inactive", arguments: [DefaultBrowserPromptUserType.new, .returning, .existing])
     func checkInactiveModalIsPresentedFirstThenActiveModalIsPresented(_ userType: DefaultBrowserPromptUserType) async throws {
-        featureFlaggerMock.firstModalDelayDays = 1
-        featureFlaggerMock.secondModalDelayDays = 4
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.firstActiveModalDelayDays = 1
+        featureFlaggerMock.secondActiveModalDelayDays = 4
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = userType
         storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
@@ -410,9 +411,9 @@ final class DefaultBrowserPromptDeciderTests {
 
     @Test("Check Inactive Modal Is Presented If Presenting Active Modal And User Become Inactive", arguments: [DefaultBrowserPromptUserType.new, .returning, .existing])
     func checkInactiveModalIsPresentedAfterActiveModal(_ userType: DefaultBrowserPromptUserType) async throws {
-        featureFlaggerMock.firstModalDelayDays = 1
-        featureFlaggerMock.secondModalDelayDays = 4
-        featureFlaggerMock.subsequentModalRepeatIntervalDays = 14
+        featureFlaggerMock.firstActiveModalDelayDays = 1
+        featureFlaggerMock.secondActiveModalDelayDays = 4
+        featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = userType
         storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0

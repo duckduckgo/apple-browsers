@@ -76,9 +76,14 @@ final class DefaultBrowserPromptService {
 
     func resume() {
         // Application has been launched or brought to foreground.
-        guard featureFlagAdapter.isDefaultBrowserPromptsFeatureEnabled else { return }
+        guard shouldRecordActivity() else { return }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Record User Activity If Needed.")
         userActivityManager.recordActivity()
+    }
+
+    private func shouldRecordActivity() -> Bool {
+        // True if either active/inactive prompt features is enabled
+        featureFlagAdapter.isDefaultBrowserPromptsForActiveUsersFeatureEnabled || featureFlagAdapter.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
     }
 }
 

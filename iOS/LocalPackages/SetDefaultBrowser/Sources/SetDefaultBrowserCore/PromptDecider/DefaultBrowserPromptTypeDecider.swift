@@ -118,6 +118,7 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
         )
 
         let inactiveUserPromptDecider = DefaultBrowserPromptTypeDecider.InactiveUser(
+            featureFlagger: featureFlagger,
             store: store,
             userActivityProvider: userActivityProvider,
             daysSinceInstallProvider: daysSinceInstall

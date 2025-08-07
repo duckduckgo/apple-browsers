@@ -32,8 +32,12 @@ final class DefaultBrowserPromptFeatureFlagAdapter: DefaultBrowserPromptFeatureF
         self.privacyConfigurationManager = privacyConfigurationManager
     }
 
-    public var isDefaultBrowserPromptsFeatureEnabled: Bool {
+    public var isDefaultBrowserPromptsForActiveUsersFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(FeatureFlag.scheduledSetDefaultBrowserPrompts)
+    }
+
+    public var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(FeatureFlag.scheduledSetDefaultBrowserPromptsForInactiveUsers)
     }
 
     public var defaultBrowserPromptFeatureSettings: [String: Any] {

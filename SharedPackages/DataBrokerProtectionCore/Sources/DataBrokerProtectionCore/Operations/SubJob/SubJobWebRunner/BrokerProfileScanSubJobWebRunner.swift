@@ -164,6 +164,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
             await webViewHandler?.finish() // If we executed all steps we release the web view
 
             if !shouldContinue {
+                Logger.action.debug(loggerContext(), message: "Job cancelled")
                 failed(with: DataBrokerProtectionError.cancelled)
             }
         }

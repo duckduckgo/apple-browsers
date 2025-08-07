@@ -50,11 +50,11 @@ public extension Logger {
     }
 
     func error(_ context: PIRActionLogContext, message: String? = nil) {
-        self.info("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+        self.error("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
     }
 
     func debug(_ context: PIRActionLogContext, message: String? = nil) {
-        self.info("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+        self.debug("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
     }
 }
 
@@ -83,11 +83,13 @@ public struct PIRActionLogContext {
     }
 
     public var formattedContext: String {
-        let stepString = stepType.map { "Step: \($0.rawValue), " } ?? ""
-        let brokerString = broker.map { "Broker: \($0.name) \($0.version), " } ?? ""
-        let attemptIdString = attemptId.map { "Attempt: \($0.uuidString), " } ?? ""
-        let actionString = action.map { "Action: \($0.actionType.rawValue) - \($0.id)" } ?? ""
+        let context = [
+            stepType.map { "Step: \($0.rawValue)" },
+            broker.map { "Broker: \($0.name) \($0.version)" },
+            attemptId.map { "Attempt: \($0.uuidString)" },
+            action.map { "Action: \($0.actionType.rawValue) - \($0.id)" },
+        ].compacted()
 
-        return "[\(stepString)\(brokerString)\(attemptIdString)\(actionString)]"
+        return "[\(context.joined(separator: ", "))]"
     }
 }

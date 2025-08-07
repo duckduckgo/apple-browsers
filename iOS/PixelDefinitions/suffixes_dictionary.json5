@@ -27,4 +27,9 @@
         description: 'Device platform',
         enum: ['ios'],
     },
+    time_bucket: {
+        type: 'string',
+        description: 'Corresponding time bucket',
+        enum: ['0', '0.1', '0.5', '1', '5', '10', '20', '40', 'more'],
+    },
 }

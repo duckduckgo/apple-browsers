@@ -66,6 +66,7 @@ final class DefaultBrowserPromptService {
             defaultBrowserSettingsNavigator: systemSettingsPiPTutorialManager,
             checkDefaultBrowserDebugEventMapper: checkDefaultBrowserPixelHandler,
             promptUserInteractionEventMapper: promptActivityPixelHandler,
+            uiProvider: DefaultBrowserPromptUIProvider(),
             isOnboardingCompletedProvider: { !DaxDialogs.shared.isEnabled },
             installDateProvider: { StatisticsUserDefaults().installDate },
             currentDateProvider: defaultBrowserDateProvider

@@ -99,10 +99,8 @@ public enum FeatureFlag: String {
     case failsafeExamplePlatformSpecificSubfeature
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
-    case experimentalAIChat
-
     /// https://app.asana.com/1/137249556945/task/1210496258241813
-    case experimentalSwitcherBarTransition
+    case experimentalAddressBar
 
     /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
@@ -154,6 +152,9 @@ public enum FeatureFlag: String {
     // https://app.asana.com/1/137249556945/project/414709148257752/task/1210955337868542?focus=true
     /// On by default (failsafe)
     case useTLDOnQuerySubmit
+
+    /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1210964217479369?focus=true
+    case createFireproofFaviconUpdaterSecureVaultInBackground
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -166,7 +167,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
-             .useTLDOnQuerySubmit:
+             .useTLDOnQuerySubmit,
+             .createFireproofFaviconUpdaterSecureVaultInBackground:
             true
         default:
             false
@@ -202,14 +204,14 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .experimentalSwitcherBarTransition,
              .subscriptionRebranding,
              .widgetReporting,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
-             .useTLDOnQuerySubmit:
+             .useTLDOnQuerySubmit,
+             .createFireproofFaviconUpdaterSecureVaultInBackground:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -318,10 +320,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .widgetReporting:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.widgetReporting))
-        case .experimentalAIChat:
-            return .internalOnly()
-        case .experimentalSwitcherBarTransition:
-            return .internalOnly()
+        case .experimentalAddressBar:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.experimentalAddressBar))
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .syncSetupBarcodeIsUrlBased:
@@ -352,6 +352,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .useTLDOnQuerySubmit:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.useTLDOnQuerySubmit))
+        case .createFireproofFaviconUpdaterSecureVaultInBackground:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         }
     }
 }

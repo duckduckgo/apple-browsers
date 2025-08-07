@@ -2701,6 +2701,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Введите поисковый запрос или адрес сайта";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Спросить у Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Поиск";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Вторичное / Второе действие";
 
@@ -2763,6 +2772,9 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Ярлыки Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Пробная адресная строка";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Выполнить поиск в интернете или задать вопрос ИИ-ассистенту Duck.ai можно прямо из адресной строки.";
@@ -2886,6 +2898,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Импорт паролей";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "новый";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";

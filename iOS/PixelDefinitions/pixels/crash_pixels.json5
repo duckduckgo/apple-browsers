@@ -37,7 +37,6 @@
                 type: 'boolean',
             },
 	],
-	],
     },
     'm_d_dbie': {
         description: 'Fires when core database stack could not be prepared.',

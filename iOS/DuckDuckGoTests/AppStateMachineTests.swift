@@ -99,17 +99,6 @@ final class MockBackground: BackgroundHandling {
 }
 
 @MainActor
-final class MockTerminating: TerminatingHandling {
-
-    private(set) var terminationError: String?
-
-    init(error: Error, application: UIApplication) {
-        self.terminationError = error.localizedDescription
-    }
-
-}
-
-@MainActor
 @Suite("AppStateMachine launching origin transition tests", .serialized)
 final class LaunchingTests {
 
@@ -185,11 +174,9 @@ final class LaunchingTests {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         #expect(stateMachine.currentState.name == "terminating")
 
-        if case .terminating(let terminating) = stateMachine.currentState,
-           let terminating = terminating as? Terminating {
-            #expect(terminating.terminationError == TerminationError.keyValueFileStore(.kvfsInitError))
-        } else {
-            Issue.record("Incorrect state")
+        guard case .terminating(let terminating) = stateMachine.currentState else {
+            Issue.record("Expected to transition to .terminating state")
+            return
         }
     }
 

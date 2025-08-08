@@ -359,6 +359,46 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         XCTAssertEqual(sut.state, .notEligible)
     }
 
+    func testWhenShowingTheUpsell_AndFeatureFlagIsDisabledAtInitialSetup_ButBecomesEnabledBeforeTheTrigger_ItShowsTheUpsell() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        mockDefaultBrowserProvider.isDefault = true
+
+        sut = VPNUpsellVisibilityManager(
+            isFirstLaunch: true,
+            isNewUser: true,
+            subscriptionManager: mockSubscriptionManager,
+            defaultBrowserProvider: mockDefaultBrowserProvider,
+            contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
+            featureFlagger: mockFeatureFlagger,
+            persistor: mockPersistor,
+            timerDuration: 0.1,
+            pixelHandler: { _ in }
+        )
+
+        sut.setup(isFirstLaunch: true)
+
+        let expectation = XCTestExpectation(description: "State should transition to visible")
+
+        sut.$state
+            .sink { state in
+                if state == .visible {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
+        onboardingSubject.send(true)
+        NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
+
+        // Then
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertEqual(sut.state, .visible)
+    }
+
     // MARK: - Purchase Eligibility Tests
 
     func testWhenUserCannotPurchaseSubscription_ItDoesNotShowTheUpsell() {

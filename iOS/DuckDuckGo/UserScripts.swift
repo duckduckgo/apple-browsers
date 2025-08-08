@@ -57,6 +57,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingUserScript = PrintingUserScript()
     private(set) var debugScript = DebugUserScript()
+    private(set) var daxEasterEggScript = DaxEasterEggUserScript()
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -109,6 +110,7 @@ final class UserScripts: UserScriptsProvider {
         debugScript,
         autoconsentUserScript,
         findInPageScript,
+        daxEasterEggScript,
         navigatorPatchScript,
         surrogatesScript,
         contentBlockerUserScript,

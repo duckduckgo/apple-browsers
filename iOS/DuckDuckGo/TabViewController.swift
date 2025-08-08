@@ -113,6 +113,11 @@ class TabViewController: UIViewController {
         get { return findInPageScript?.findInPage }
         set { findInPageScript?.findInPage = newValue }
     }
+    
+    var daxEasterEggHandler: DaxEasterEggHandling? {
+        get { return daxEasterEggScript?.daxEasterEggHandler }
+        set { daxEasterEggScript?.daxEasterEggHandler = newValue }
+    }
 
     let favicons = Favicons.shared
     let progressWorker = WebProgressWorker()
@@ -1593,6 +1598,7 @@ extension TabViewController: WKNavigationDelegate {
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
+        extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
@@ -1674,6 +1680,12 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
+    }
+    
+    /// Trigger DaxEasterEgg extraction only on DuckDuckGo search pages
+    private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard let url = webView.url, url.isDuckDuckGoSearch else { return }
+        daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 
     func trackSecondSiteVisitIfNeeded(url: URL?) {
@@ -2718,6 +2730,16 @@ extension TabViewController: UIGestureRecognizerDelegate {
 }
 
 // MARK: - UserContentControllerDelegate
+extension TabViewController: DaxEasterEggDelegate {
+    
+    func daxEasterEggHandler(_ handler: DaxEasterEggHandling, didFindLogoURL logoURL: String?, for pageURL: String) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.delegate?.tab(self, didExtractDaxEasterEggLogoURL: logoURL)
+        }
+    }
+}
+
 extension TabViewController: UserContentControllerDelegate {
 
     var userScripts: UserScripts? {
@@ -2725,6 +2747,9 @@ extension TabViewController: UserContentControllerDelegate {
     }
     private var findInPageScript: FindInPageUserScript? {
         userScripts?.findInPageScript
+    }
+    private var daxEasterEggScript: DaxEasterEggUserScript? {
+        userScripts?.daxEasterEggScript
     }
     private var contentBlockerUserScript: ContentBlockerRulesUserScript? {
         userScripts?.contentBlockerUserScript
@@ -2752,6 +2777,12 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.webView = webView
+        
+        // Setup DaxEasterEgg handler only for DuckDuckGo search pages
+        if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView)
+            daxEasterEggHandler?.delegate = self
+        }
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)

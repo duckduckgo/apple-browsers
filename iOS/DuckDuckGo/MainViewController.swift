@@ -2874,6 +2874,12 @@ extension MainViewController: TabDelegate {
             themeColorManager.updateThemeColor()
         }
     }
+    
+    func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
+        if currentTab == tab {
+            viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+        }
+    }
 
     func tabDidRequestReportBrokenSite(tab: TabViewController) {
         segueToReportBrokenSite()

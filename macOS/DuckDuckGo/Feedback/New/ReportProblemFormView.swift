@@ -195,7 +195,7 @@ struct ProblemCategoriesView: View {
                     isLastCategory: category.id == viewModel.availableCategories.last?.id,
                     onCategorySelected: { selectedCategory in
                         viewModel.selectCategory(selectedCategory)
-                        if selectedCategory.id == "report-broken-website" {
+                        if selectedCategory.isReportBrokenWebsiteCategory {
                             onClose()
                         }
                     },

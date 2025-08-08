@@ -40,7 +40,7 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     var availableCategories: [ProblemCategory] {
         ProblemCategory.allCategories.filter { category in
-            if category.id == "report-broken-website" {
+            if category.isReportBrokenWebsiteCategory {
                 return canReportBrokenSite
             }
             return true
@@ -72,7 +72,7 @@ final class ReportProblemFormViewModel: ObservableObject {
     // MARK: - Methods
 
     func selectCategory(_ category: ProblemCategory) {
-        if category.id == "report-broken-website" {
+        if category.isReportBrokenWebsiteCategory {
             onReportBrokenSite?()
         } else {
             selectedProblemCategory = category
@@ -135,6 +135,8 @@ struct ProblemCategory: Identifiable, Hashable {
     let text: String            // Localized display text
     let subcategories: [SubCategory]
 
+    var isReportBrokenWebsiteCategory: Bool { id == Self.reportBrokenWebsiteID }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
@@ -142,6 +144,8 @@ struct ProblemCategory: Identifiable, Hashable {
     static func == (lhs: ProblemCategory, rhs: ProblemCategory) -> Bool {
         lhs.id == rhs.id
     }
+
+    private static let reportBrokenWebsiteID = "report-broken-website"
 
     static let allCategories: [ProblemCategory] = [
         ProblemCategory(
@@ -183,7 +187,7 @@ struct ProblemCategory: Identifiable, Hashable {
             ]
         ),
         ProblemCategory(
-            id: "report-broken-website",
+            id: reportBrokenWebsiteID,
             text: UserText.problemCategoryBrokenWebsite,
             subcategories: [
                 SubCategory(id: "site-wont-load", text: UserText.problemSubcategorySiteWontLoad),

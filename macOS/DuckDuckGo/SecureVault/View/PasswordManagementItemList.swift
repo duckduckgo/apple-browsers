@@ -538,7 +538,7 @@ private struct HideMenuIndicatorModifier: ViewModifier {
 }
 
 // Xcode 26: When we transition to Xcode 26, we will need this modifier to fix the layout in macOS 26.
-//private struct FlexibleButtonSizingModifier: ViewModifier {
+// private struct FlexibleButtonSizingModifier: ViewModifier {
 //
 //    func body(content: Content) -> some View {
 //        if #available(macOS 26, *) {
@@ -549,4 +549,4 @@ private struct HideMenuIndicatorModifier: ViewModifier {
 //        }
 //    }
 //
-//}
+// }

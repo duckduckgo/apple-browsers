@@ -38,7 +38,9 @@ final class NavigationPixelNavigationResponder {
         let type: WKSameDocumentNavigationType
 
         func isAnchorFollowingStatePop(_ previous: SameDocumentNavigation?) -> Bool {
-            return previous?.url == url && type == .anchorNavigation && previous?.type == .sessionStatePop
+            previous?.url.removingFragment() == url.removingFragment()
+            && type == .anchorNavigation
+            && previous?.type == .sessionStatePop
         }
     }
 }

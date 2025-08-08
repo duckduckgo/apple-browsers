@@ -19,7 +19,9 @@
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: ['appVersion', 'pixelSource',
+        parameters: [
+            'appVersion',
+            'pixelSource',
             {
                 key: 'itemsWritten',
                 description: 'The number of items successfully written from the backlog',
@@ -32,7 +34,9 @@
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: ['appVersion', 'pixelSource',
+        parameters: [
+            'appVersion',
+            'pixelSource',
             {
                 key: 'error',
                 description: 'The error code or description for the failed write operation',

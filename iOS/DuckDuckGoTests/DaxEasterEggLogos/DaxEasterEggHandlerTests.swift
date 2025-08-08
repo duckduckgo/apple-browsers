@@ -145,20 +145,6 @@ final class DaxEasterEggHandlerTests: XCTestCase {
         XCTAssertNil(handler.delegate)
     }
     
-    // MARK: - Reset Tests
-    
-    func testReset_ClearsState() {
-        // Given - handler has some state
-        
-        // When
-        handler.reset()
-        
-        // Then - should not crash and should clear any timers/state
-        XCTAssertNoThrow {
-            self.handler.reset()
-        }
-    }
-    
     // MARK: - Extract Logos Tests
     
     func testExtractLogosForCurrentPage_WithValidWebView_CallsJavaScript() {

@@ -54,8 +54,6 @@ public protocol DaxEasterEggHandling: AnyObject {
     ///   - pageURL: URL of the page where logo was extracted
     func didExtractLogo(_ logoURL: String?, from pageURL: String)
     
-    /// Resets any pending extraction operations
-    func reset()
 }
 
 /// Handler that manages extraction and processing of dynamic logos from DuckDuckGo search pages.
@@ -70,8 +68,6 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
     
     public weak var delegate: DaxEasterEggDelegate?
     private weak var webView: WKWebView?
-    private var currentPageURL: String?
-    private var extractionTimer: Timer?
     
     public init(webView: WKWebView) {
         self.webView = webView
@@ -79,11 +75,8 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
     
     public func extractLogosForCurrentPage() {
         guard let webView = webView else {
-            Swift.print("DaxEasterEgg Handler: No webView available")
             return
         }
-        
-        Swift.print("DaxEasterEgg Handler: extractLogosForCurrentPage called")
         
         // Call the global function provided by UserScript
         webView.evaluateJavaScript("window.extractDaxEasterEggLogo()")
@@ -93,7 +86,6 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
         // Process the logo URL (convert relative to absolute, handle "themed|" prefix)
         let processedURL = processLogoURL(logoURL)
         
-        // Send to delegate (MainViewController will show the logo)
         delegate?.daxEasterEggHandler(self, didFindLogoURL: processedURL, for: pageURL)
     }
     
@@ -121,15 +113,5 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
         }
         
         return nil
-    }
-    
-    public func reset() {
-        extractionTimer?.invalidate()
-        extractionTimer = nil
-        currentPageURL = nil
-    }
-    
-    deinit {
-        extractionTimer?.invalidate()
     }
 }

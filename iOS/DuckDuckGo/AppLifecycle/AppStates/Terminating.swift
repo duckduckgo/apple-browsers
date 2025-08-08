@@ -71,16 +71,6 @@ struct Terminating: TerminatingHandling {
             fatalError("Unhandled error: \(error)")
         }
 
-        defer {
-            DailyPixel.fireDailyAndCount(pixel: pixel, error: errorToReport, withAdditionalParameters: additionalParams)
-            switch mode {
-            case .immediately(let message):
-                fatalError(message)
-            case .afterAlert(let reason):
-                alertAndTerminate(with: reason)
-            }
-        }
-
         switch error {
         case .database(let error):
             additionalParams = [
@@ -95,16 +85,12 @@ struct Terminating: TerminatingHandling {
             case .other(let error):
                 pixel = .dbInitializationError
                 errorToReport = error
-                mode = error.isDiskFull
-                    ? .afterAlert(reason: .insufficientDiskSpace)
-                    : .immediately(message: "DB init failed: \(error.localizedDescription)")
+                mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(message: "DB init failed: \(error.localizedDescription)")
             }
         case .bookmarksDatabase(let error):
             pixel = .bookmarksCouldNotLoadDatabase
             errorToReport = error
-            mode = error.isDiskFull
-            ? .afterAlert(reason: .insufficientDiskSpace)
-            : .immediately(message: "Bookmarks DB init failed: \(error.localizedDescription)")
+            mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(message: "Bookmarks DB init failed: \(error.localizedDescription)")
         case .historyDatabase(let error):
             pixel = .historyStoreLoadFailed
             errorToReport = error
@@ -115,6 +101,14 @@ struct Terminating: TerminatingHandling {
             case .kvfsInitError: .keyValueFileStoreInitError
             }
             mode = .immediately(message: "KeyValueFileStore init failed: \(error)")
+        }
+
+        DailyPixel.fireDailyAndCount(pixel: pixel, error: errorToReport, withAdditionalParameters: additionalParams)
+        switch mode {
+        case .immediately(let message):
+            fatalError(message)
+        case .afterAlert(let reason):
+            alertAndTerminate(with: reason)
         }
     }
 

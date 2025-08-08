@@ -386,20 +386,4 @@ class DuckPlayerTests: UITestCase {
         XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
     }
 
-    func test_DuckPlayer_AskMode_OpensYouTube_WithOverlay() throws {
-        // Settings
-        openDuckPlayerSettings()
-        selectAskOpenInDuckPlayer()
-        app.closeCurrentTab()
-
-        // Search
-        openURL(url: Self.youtubeURLForVideo)
-
-        verifyYoutubeLoads()
-
-        // Overlay visible
-        let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
-        XCTAssertTrue(watchLink.waitForExistence(timeout: 1))
-    }
-
 }

@@ -37,20 +37,20 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
 
     public init(hasSubscription: Bool = false,
                 shouldHideSubscriptionPurchase: Bool = true,
-                isNetworkProtectionRemovalEnable: Bool = false,
-                isPersonalInformationRemovalEnable: Bool = false,
-                isIdentityTheftRestorationEnable: Bool = false,
-                isPaidAIChatEnable: Bool = false,
+                isNetworkProtectionRemovalEnabled: Bool = false,
+                isPersonalInformationRemovalEnabled: Bool = false,
+                isIdentityTheftRestorationEnabled: Bool = false,
+                isPaidAIChatEnabled: Bool = false,
                 isNetworkProtectionRemovalAvailable: Bool = false,
                 isPersonalInformationRemovalAvailable: Bool = false,
                 isIdentityTheftRestorationAvailable: Bool = false,
                 isPaidAIChatAvailable: Bool = false) {
         self.hasSubscription = hasSubscription
         self.shouldHideSubscriptionPurchase = shouldHideSubscriptionPurchase
-        self.isNetworkProtectionRemovalEnabled = isNetworkProtectionRemovalEnable
-        self.isPersonalInformationRemovalEnabled = isPersonalInformationRemovalEnable
-        self.isIdentityTheftRestorationEnabled = isIdentityTheftRestorationEnable
-        self.isPaidAIChatEnabled = isPaidAIChatEnable
+        self.isNetworkProtectionRemovalEnabled = isNetworkProtectionRemovalEnabled
+        self.isPersonalInformationRemovalEnabled = isPersonalInformationRemovalEnabled
+        self.isIdentityTheftRestorationEnabled = isIdentityTheftRestorationEnabled
+        self.isPaidAIChatEnabled = isPaidAIChatEnabled
         self.isNetworkProtectionRemovalAvailable = isNetworkProtectionRemovalAvailable
         self.isPersonalInformationRemovalAvailable = isPersonalInformationRemovalAvailable
         self.isIdentityTheftRestorationAvailable = isIdentityTheftRestorationAvailable
@@ -67,6 +67,6 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
 
 extension PreferencesSidebarSubscriptionState: CustomDebugStringConvertible {
     public var debugDescription: String {
-        return "PreferencesSidebarSubscriptionState(hasSubscription: \(hasSubscription), shouldHideSubscriptionPurchase: \(shouldHideSubscriptionPurchase), isNetworkProtectionRemovalEnable: \(isNetworkProtectionRemovalEnabled), isPersonalInformationRemovalEnable: \(isPersonalInformationRemovalEnabled), isIdentityTheftRestorationEnable: \(isIdentityTheftRestorationEnabled), isPaidAIChatEnable: \(isPaidAIChatEnabled), isNetworkProtectionRemovalAvailable: \(isNetworkProtectionRemovalAvailable), isPersonalInformationRemovalAvailable: \(isPersonalInformationRemovalAvailable), isIdentityTheftRestorationAvailable: \(isIdentityTheftRestorationAvailable), isPaidAIChatAvailable: \(isPaidAIChatAvailable))"
+        return "PreferencesSidebarSubscriptionState(hasSubscription: \(hasSubscription), shouldHideSubscriptionPurchase: \(shouldHideSubscriptionPurchase), isNetworkProtectionRemovalEnabled: \(isNetworkProtectionRemovalEnabled), isPersonalInformationRemovalEnabled: \(isPersonalInformationRemovalEnabled), isIdentityTheftRestorationEnabled: \(isIdentityTheftRestorationEnabled), isPaidAIChatEnabled: \(isPaidAIChatEnabled), isNetworkProtectionRemovalAvailable: \(isNetworkProtectionRemovalAvailable), isPersonalInformationRemovalAvailable: \(isPersonalInformationRemovalAvailable), isIdentityTheftRestorationAvailable: \(isIdentityTheftRestorationAvailable), isPaidAIChatAvailable: \(isPaidAIChatAvailable))"
     }
 }

@@ -106,6 +106,7 @@ struct Terminating: TerminatingHandling {
         DailyPixel.fireDailyAndCount(pixel: pixel, pixelNameSuffixes: ("_daily", ""), error: errorToReport, withAdditionalParameters: additionalParams)
         switch mode {
         case .immediately(let message):
+            Thread.sleep(forTimeInterval: 1)
             fatalError(message)
         case .afterAlert(let reason):
             alertAndTerminate(with: reason)

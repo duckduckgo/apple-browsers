@@ -72,6 +72,9 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     @Published
     private(set) var shouldShowUpsell = false
 
+    @Published
+    private(set) var shouldShowNotificationDot = false
+
     // MARK: - Initialization
 
     init(popoverManager: NetPPopoverManager,
@@ -149,6 +152,16 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
             Task { @MainActor in
                 self.shouldShowUpsell = state == .visible
                 self.updateVisibility()
+            }
+        }.store(in: &cancellables)
+
+        vpnUpsellVisibilityManager.$shouldShowNotificationDot.sink { [weak self] shouldShowNotificationDot in
+            guard let self = self else {
+                return
+            }
+
+            Task { @MainActor in
+                self.shouldShowNotificationDot = shouldShowNotificationDot
             }
         }.store(in: &cancellables)
     }

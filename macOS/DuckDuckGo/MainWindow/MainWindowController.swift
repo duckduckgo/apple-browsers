@@ -330,6 +330,10 @@ extension MainWindowController: NSWindowDelegate {
         fullscreenController.resetFullscreenExitFlag()
     }
 
+    func windowDidEndLiveResize(_ notification: Notification) {
+        mainViewController.windowDidEndLiveResize()
+    }
+
     private func hideTabBarAndBookmarksBar() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             guard let self else { return }

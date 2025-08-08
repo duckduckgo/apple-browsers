@@ -33,6 +33,7 @@ typealias HistoryProviderCoordinating = HistoryCoordinating & SuggestionContaine
 final class NewTabPageCoordinator {
     let actionsManager: NewTabPageActionsManager
 
+    @MainActor
     init(
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
@@ -73,6 +74,7 @@ final class NewTabPageCoordinator {
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,
             contentBlocking: contentBlocking,
+            trackerDataManager: contentBlocking.trackerDataManager,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,

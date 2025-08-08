@@ -58,8 +58,9 @@ extension WKWebViewConfiguration {
         preferences.isFraudulentWebsiteWarningEnabled = false
 
         if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
+            let featureFlagger = NSApp.delegateTyped.featureFlagger
             setURLSchemeHandler(
-                DuckURLSchemeHandler(featureFlagger: NSApp.delegateTyped.featureFlagger, isHistorySpecialPageSupported: true),
+                DuckURLSchemeHandler(featureFlagger: featureFlagger, isNTPSpecialPageSupported: featureFlagger.isFeatureOn(.newTabPagePerTab), isHistorySpecialPageSupported: true),
                 forURLScheme: URL.NavigationalScheme.duck.rawValue
             )
         }

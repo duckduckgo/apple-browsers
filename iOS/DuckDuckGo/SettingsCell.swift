@@ -143,36 +143,38 @@ struct SettingsCellView: View, Identifiable {
     private var defaultView: some View {
         Group {
             HStack(alignment: .center) {
-                HStack(alignment: .top) {
-                    // Image
-                    if let image {
-                        if isGreyedOut {
-                            image
-                                .padding(.top, -2)
-                                .saturation(0)
-                                .opacity(0.5)
-                        } else {
-                            image
-                                .padding(.top, -2)
+                HStack(alignment: .center) {
+                    HStack(alignment: .top) {
+                        // Image
+                        if let image {
+                            if isGreyedOut {
+                                image
+                                    .padding(.top, -2)
+                                    .saturation(0)
+                                    .opacity(0.5)
+                            } else {
+                                image
+                                    .padding(.top, -2)
+                            }
                         }
-                    }
-                    VStack(alignment: .leading) {
-                        // Title
-                        Text(label)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: isGreyedOut == true ? .textSecondary : .textPrimary))
-                        // Subtitle
-                        if let subtitleText = subtitle {
-                            Text(subtitleText)
-                                .daxFootnoteRegular()
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                        }
-                    }.fixedSize(horizontal: false, vertical: true)
-                        .layoutPriority(0.7)
+                        VStack(alignment: .leading) {
+                            // Title
+                            Text(label)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: isGreyedOut == true ? .textSecondary : .textPrimary))
+                            // Subtitle
+                            if let subtitleText = subtitle {
+                                Text(subtitleText)
+                                    .daxFootnoteRegular()
+                                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                            }
+                        }.fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(0.7)
+                    }.scaledToFit()
                     if isNew {
                         BadgeView(text: UserText.settingsItemNewBadge)
                     }
-                }.scaledToFit()
+                }
 
                 Spacer(minLength: 8)
 

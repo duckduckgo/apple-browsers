@@ -98,14 +98,9 @@ public enum FeatureFlag: String {
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
 
-    // https://app.asana.com/1/137249556945/project/715106103902962/task/1210647253853346?focus=true
-    case june2025TabManagerLayoutChanges
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
-    case experimentalAIChat
-
     /// https://app.asana.com/1/137249556945/task/1210496258241813
-    case experimentalSwitcherBarTransition
+    case experimentalAddressBar
 
     /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
@@ -151,6 +146,13 @@ public enum FeatureFlag: String {
     case supportsAlternateStripePaymentFlow
     
     case personalInformationRemoval
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
+    /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
+    case widgetReporting
+
+    /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1210964217479369?focus=true
+    case createFireproofFaviconUpdaterSecureVaultInBackground
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -161,9 +163,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
              .removeWWWInCanonicalizationInThreatProtection,
-             .june2025TabManagerLayoutChanges,
              .supportsAlternateStripePaymentFlow,
-             .setAsDefaultBrowserPiPVideoTutorial:
+             .setAsDefaultBrowserPiPVideoTutorial,
+             .createFireproofFaviconUpdaterSecureVaultInBackground:
             true
         default:
             false
@@ -199,14 +201,14 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .experimentalSwitcherBarTransition,
              .subscriptionRebranding,
-             .june2025TabManagerLayoutChanges,
+             .widgetReporting,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
-             .personalInformationRemoval:
+             .personalInformationRemoval,
+             .createFireproofFaviconUpdaterSecureVaultInBackground:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -313,12 +315,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
-        case .june2025TabManagerLayoutChanges:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.june2025TabManagerLayoutChanges))
-        case .experimentalAIChat:
-            return .internalOnly()
-        case .experimentalSwitcherBarTransition:
-            return .internalOnly()
+        case .widgetReporting:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.widgetReporting))
+        case .experimentalAddressBar:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.experimentalAddressBar))
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .syncSetupBarcodeIsUrlBased:
@@ -349,6 +349,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .personalInformationRemoval:
             return .remoteReleasable(.feature(.dbp))
+        case .createFireproofFaviconUpdaterSecureVaultInBackground:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         }
     }
 }

@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Varsayılan olarak gizli arama yapın";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ayrıca %2$@ ve gelişmiş, özel yapay zeka ile kullanılabilen %1$@ özelliği sunmaktadır.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "isteğe bağlı ücretli abonelik";
 
@@ -2764,6 +2761,9 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai Kısayolları";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Deneysel Adres Çubuğu";
+
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Web'de arama yapın veya doğrudan Adres Çubuğundan Duck.ai'a sorun";
 
@@ -2886,6 +2886,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Şifreleri İçe Aktar";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Yeni";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klavye";

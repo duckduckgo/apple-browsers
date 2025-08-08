@@ -230,6 +230,8 @@ class MainViewController: UIViewController {
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+    
+    private let daxEasterEggImageManager: DaxEasterEggImageManaging
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -263,7 +265,8 @@ class MainViewController: UIViewController {
         keyValueStore: ThrowingKeyValueStoring,
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-        daxDialogsManager: DaxDialogsManaging
+        daxDialogsManager: DaxDialogsManaging,
+        daxEasterEggImageManager: DaxEasterEggImageManaging = DaxEasterEggImageManager()
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -300,6 +303,7 @@ class MainViewController: UIViewController {
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
+        self.daxEasterEggImageManager = daxEasterEggImageManager
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -461,7 +465,8 @@ class MainViewController: UIViewController {
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      appSettings: appSettings)
+                                                      appSettings: appSettings,
+                                                      daxEasterEggImageManager: daxEasterEggImageManager)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

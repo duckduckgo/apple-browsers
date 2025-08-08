@@ -103,7 +103,7 @@ struct Terminating: TerminatingHandling {
             mode = .immediately(message: "KeyValueFileStore init failed: \(error)")
         }
 
-        DailyPixel.fireDailyAndCount(pixel: pixel, error: errorToReport, withAdditionalParameters: additionalParams)
+        DailyPixel.fireDailyAndCount(pixel: pixel, pixelNameSuffixes: ("_daily", ""), error: errorToReport, withAdditionalParameters: additionalParams)
         switch mode {
         case .immediately(let message):
             fatalError(message)

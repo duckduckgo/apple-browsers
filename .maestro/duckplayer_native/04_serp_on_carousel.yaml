@@ -1,6 +1,7 @@
 appId: com.duckduckgo.mobile.ios
 tags:
-    - duckplayer.native
+    - iphone
+    - duckplayer_native
 
 ---
 
@@ -12,13 +13,9 @@ tags:
 - runFlow: 
     file: ../shared/setup.yaml
 
-# Navigate to a video
 # Load Site
 - runFlow: 
     file: shared/load_serp_url.yaml
-
-- assertVisible: ${output.videosTabLabel}
-- tapOn: ${output.videosTabLabel}
 
 # Open Specific Video
 - assertVisible: ${output.videoTitle}

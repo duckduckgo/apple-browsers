@@ -59,6 +59,9 @@ extension Preferences {
                                     isShowingDisableAIChatDialog = true
                                 } else {
                                     model.isAIFeaturesEnabled = true
+                                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
+                                                  frequency: .dailyAndCount,
+                                                  includeAppVersionParameter: true)
                                 }
                             }
                             .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
@@ -267,7 +270,10 @@ extension Preferences {
                 Button(UserText.cancel) { isShowingDisableAIChatDialog = false }
                 Button(action: {
                     isShowingDisableAIChatDialog = false
-                    model.isAIFeaturesEnabled.toggle()
+                    model.isAIFeaturesEnabled = false
+                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOff,
+                                  frequency: .dailyAndCount,
+                                  includeAppVersionParameter: true)
                 }, label: {
                     Text(UserText.aiChatDisableDialogConfirmButton)
                 })

@@ -33,6 +33,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
 
     case navigation
+    case navigationToExternalURL
     case serp
     case serpInitial
 
@@ -548,6 +549,9 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .navigation:
             return "m_mac_navigation"
+
+        case .navigationToExternalURL:
+            return "m_mac_navigation_url_source-external"
 
         case .serp:
             return "m_mac_navigation_search"

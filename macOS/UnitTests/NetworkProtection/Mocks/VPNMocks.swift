@@ -24,6 +24,7 @@ import NetworkProtectionUI
 
 final class MockVPNUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersisting {
     var vpnUpsellDismissed: Bool = false
+    var vpnUpsellPopoverViewed: Bool = false
     var vpnUpsellFirstPinnedDate: Date?
     var expectedUpsellTimeInterval: TimeInterval = 0
 }

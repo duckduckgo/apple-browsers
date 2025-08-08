@@ -1,6 +1,7 @@
 # tabswitcher.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---

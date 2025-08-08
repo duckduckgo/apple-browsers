@@ -36,6 +36,7 @@ final class DefaultBrowserPromptService {
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueFilesStore: ThrowingKeyValueStoring,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager,
+        isOnboardingCompletedProvider: @escaping () -> Bool
     ) {
 
 #if DEBUG || ALPHA
@@ -67,7 +68,7 @@ final class DefaultBrowserPromptService {
             checkDefaultBrowserDebugEventMapper: checkDefaultBrowserPixelHandler,
             promptUserInteractionEventMapper: promptActivityPixelHandler,
             uiProvider: DefaultBrowserPromptUIProvider(),
-            isOnboardingCompletedProvider: { !DaxDialogs.shared.isEnabled },
+            isOnboardingCompletedProvider: isOnboardingCompletedProvider,
             installDateProvider: { StatisticsUserDefaults().installDate },
             currentDateProvider: defaultBrowserDateProvider
         )

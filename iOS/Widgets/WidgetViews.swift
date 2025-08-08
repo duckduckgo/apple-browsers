@@ -138,10 +138,16 @@ struct FavoritesWidgetView: View {
             VStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
-                    Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                        CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+
+                    #warning("This is just an example, not the file design")
+                    if entry.isAiChatEnabled {
+                        Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
+                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                        }
                     }
+
                 }
+
                 if entry.favorites.isEmpty, !entry.isPreview {
                     Link(destination: DeepLinks.addFavorite) {
                         FavoritesGridView(entry: entry).accessibilityLabel(Text(UserText.noFavoritesCTA))
@@ -317,79 +323,4 @@ extension Image {
         }
     }
 
-}
-
-struct WidgetViews_Previews: PreviewProvider {
-
-    static let mockFavorites: [Favorite] = {
-        let duckDuckGoFavorite = Favorite(url: URL(string: "https://duckduckgo.com/")!,
-                                          domain: "duckduckgo.com",
-                                          title: "title",
-                                          favicon: nil)
-
-        let favorites = "abcdefghijk".map {
-            Favorite(url: URL(string: "https://\($0).com/")!, domain: "\($0).com", title: "title", favicon: nil)
-        }
-
-        return [duckDuckGoFavorite] + favorites
-    }()
-
-    static let withFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: false)
-    static let previewWithFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: true)
-    static let emptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: false)
-    static let previewEmptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: true)
-
-    static var previews: some View {
-        SearchWidgetView(entry: emptyState)
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .environment(\.colorScheme, .light)
-
-        SearchWidgetView(entry: emptyState)
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .environment(\.colorScheme, .dark)
-
-        PasswordsWidgetView(entry: emptyState)
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .environment(\.colorScheme, .light)
-
-        PasswordsWidgetView(entry: emptyState)
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .environment(\.colorScheme, .dark)
-
-        // Medium size:
-
-        FavoritesWidgetView(entry: previewWithFavorites)
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .environment(\.colorScheme, .light)
-
-        FavoritesWidgetView(entry: withFavorites)
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .environment(\.colorScheme, .light)
-
-        FavoritesWidgetView(entry: previewEmptyState)
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .environment(\.colorScheme, .dark)
-
-        FavoritesWidgetView(entry: emptyState)
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .environment(\.colorScheme, .dark)
-
-        // Large size:
-
-        FavoritesWidgetView(entry: previewWithFavorites)
-            .previewContext(WidgetPreviewContext(family: .systemLarge))
-            .environment(\.colorScheme, .light)
-
-        FavoritesWidgetView(entry: withFavorites)
-            .previewContext(WidgetPreviewContext(family: .systemLarge))
-            .environment(\.colorScheme, .light)
-
-        FavoritesWidgetView(entry: previewEmptyState)
-            .previewContext(WidgetPreviewContext(family: .systemLarge))
-            .environment(\.colorScheme, .dark)
-
-        FavoritesWidgetView(entry: emptyState)
-            .previewContext(WidgetPreviewContext(family: .systemLarge))
-            .environment(\.colorScheme, .dark)
-    }
 }

@@ -205,7 +205,7 @@ struct AIChatSettings: AIChatSettingsProvider {
 
 private extension UserDefaults {
     enum Keys {
-        static let isAIChatEnabled = "aichat.settings.isEnabled"
+        static let isAIChatEnabled = SharedUserDefaultsKeys.isAIChatEnabled
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"

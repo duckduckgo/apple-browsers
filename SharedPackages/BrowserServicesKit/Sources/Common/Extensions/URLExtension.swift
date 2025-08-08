@@ -326,17 +326,6 @@ extension URL {
         self.absoluteString.droppingHashedSuffix() == other.absoluteString.droppingHashedSuffix()
     }
 
-    /// Drops fragment (anchor, hash) from a URL.
-    public func removingTextFragment() -> URL? {
-        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
-              components.fragment?.hasPrefix(":~:") == true
-        else {
-            return self
-        }
-        components.fragment = nil
-        return components.url
-    }
-
     /// Drops text fragment from a URL.
     ///
     /// The `#:~:text=` URL fragment is used to highlight text on a website.
@@ -346,8 +335,10 @@ extension URL {
     /// > The implementation matches only the `:~:` string even though it's not a valid
     /// text fragment, but manual testing shows that it's what WebKit already considers
     /// a text fragment and decides to drop on some occasions.
-    public func removingFragment() -> URL? {
-        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false), components.fragment != nil else {
+    public func removingTextFragment() -> URL? {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+              components.fragment?.hasPrefix(":~:") == true
+        else {
             return self
         }
         components.fragment = nil

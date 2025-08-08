@@ -651,18 +651,6 @@ final class URLExtensionTests {
         #expect(emailAddresses?[1] == "user@domain.com")
     }
 
-    @Test("URL.removingFragment removes fragment if it exists", arguments: [
-        ("example.com#:~:text=abcd%20", "example.com"),
-        ("https://youtube.com/watch?v=12345#abcd", "https://youtube.com/watch?v=12345"),
-        ("https://example.com/#123", "https://example.com/"),
-        ("https://example.com/#foo", "https://example.com/"),
-        ("https://example.com/?q=123#anchor", "https://example.com/?q=123"),
-        ("https://example.com/#", "https://example.com/")
-    ])
-    func removingFragment(source: String, processed: String) throws {
-        #expect(source.url!.removingFragment() == processed.url)
-    }
-
     @Test("URL.removingTextFragment removes text fragment if it exists", arguments: [
         ("example.com#:~:text=abcd%20", "example.com"),
         ("https://youtube.com/watch?v=12345#:~:text=ab%20cd", "https://youtube.com/watch?v=12345"),

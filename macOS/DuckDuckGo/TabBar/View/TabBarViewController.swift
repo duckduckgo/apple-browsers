@@ -28,7 +28,8 @@ import RemoteMessaging
 final class TabBarViewController: NSViewController, TabBarRemoteMessagePresenting {
 
     enum HorizontalSpace: CGFloat {
-        case pinnedTabsScrollViewPadding = 88
+        case pinnedTabsScrollViewPadding = 76
+        case pinnedTabsScrollViewPaddingMacOS26 = 84
     }
 
     private let standardTabHeight: CGFloat
@@ -810,7 +811,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         if !noPinnedTabs && shouldShowSShapedTabs && isLeftScrollButtonVisible {
             leftSideStackLeadingConstraint.constant = 12
-        } else if shouldShowSShapedTabs && noPinnedTabs {
+        } else if noPinnedTabs && shouldShowSShapedTabs && !isLeftScrollButtonVisible {
             leftSideStackLeadingConstraint.constant = -12
         } else {
             leftSideStackLeadingConstraint.constant = 0

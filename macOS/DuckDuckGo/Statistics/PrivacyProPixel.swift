@@ -144,10 +144,10 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
             // KeychainManager
-        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_mac_privacy-pro_keychainmanager_data_added_to_backlog"
-        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychainmanager_deallocated_with_backlog"
-        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_mac_privacy-pro_keychainmanager_data_wrote_from_backlog"
-        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_mac_privacy-pro_keychainmanager_failed_to_write_data_from_backlog"
+        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_mac_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_mac_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_mac_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
             // Toolbar Button Upsell
         case .privacyProToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
         case .privacyProToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"

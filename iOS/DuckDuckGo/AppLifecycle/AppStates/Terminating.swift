@@ -38,7 +38,7 @@ private enum TerminationReason {
 
 private enum TerminationMode {
 
-    case immediately(message: String)
+    case immediately(debugMessage: String)
     case afterAlert(reason: TerminationReason)
 
 }
@@ -68,6 +68,7 @@ struct Terminating: TerminatingHandling {
 
         guard let error = error as? TerminationError else {
             DailyPixel.fireDailyAndCount(pixel: .appDidTerminateWithUnhandledError, error: error)
+            Thread.sleep(forTimeInterval: 1)
             fatalError("Unhandled error: \(error)")
         }
 
@@ -81,16 +82,16 @@ struct Terminating: TerminatingHandling {
             case .container(let error):
                 pixel = .dbContainerInitializationError
                 errorToReport = error
-                mode = .immediately(message: "DB container init failed: \(error.localizedDescription)")
+                mode = .immediately(debugMessage: "DB container init failed: \(error.localizedDescription)")
             case .other(let error):
                 pixel = .dbInitializationError
                 errorToReport = error
-                mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(message: "DB init failed: \(error.localizedDescription)")
+                mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "DB init failed: \(error.localizedDescription)")
             }
         case .bookmarksDatabase(let error):
             pixel = .bookmarksCouldNotLoadDatabase
             errorToReport = error
-            mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(message: "Bookmarks DB init failed: \(error.localizedDescription)")
+            mode = error.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: "Bookmarks DB init failed: \(error.localizedDescription)")
         case .historyDatabase(let error):
             pixel = .historyStoreLoadFailed
             errorToReport = error
@@ -100,7 +101,7 @@ struct Terminating: TerminatingHandling {
             case .appSupportDirAccessError: .keyValueFileStoreSupportDirAccessError
             case .kvfsInitError: .keyValueFileStoreInitError
             }
-            mode = .immediately(message: "KeyValueFileStore init failed: \(error)")
+            mode = .immediately(debugMessage: "KeyValueFileStore init failed: \(error)")
         }
 
         DailyPixel.fireDailyAndCount(pixel: pixel, pixelNameSuffixes: ("_daily", ""), error: errorToReport, withAdditionalParameters: additionalParams)

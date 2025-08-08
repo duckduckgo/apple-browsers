@@ -2,7 +2,7 @@
 {
     'm_mac_direct_privacy-pro_keychainmanager_data_added_to_backlog': {
         description: 'Fired when Privacy Pro keychain manager adds data to the backlog because keychain is unavailable (direct distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -17,7 +17,7 @@
     },
     'm_mac_store_privacy-pro_keychainmanager_data_added_to_backlog': {
         description: 'Fired when Privacy Pro keychain manager adds data to the backlog because keychain is unavailable (App Store distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -32,7 +32,7 @@
     },
     'm_mac_direct_privacy-pro_keychainmanager_deallocated_with_backlog': {
         description: 'Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog (direct distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -47,7 +47,7 @@
     },
     'm_mac_store_privacy-pro_keychainmanager_deallocated_with_backlog': {
         description: 'Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog (App Store distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -62,7 +62,7 @@
     },
     'm_mac_direct_privacy-pro_keychainmanager_data_wrote_from_backlog': {
         description: 'Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain (direct distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -77,7 +77,7 @@
     },
     'm_mac_store_privacy-pro_keychainmanager_data_wrote_from_backlog': {
         description: 'Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain (App Store distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -92,7 +92,7 @@
     },
     'm_mac_direct_privacy-pro_keychainmanager_failed_to_write_data_from_backlog': {
         description: 'Fired when Privacy Pro keychain manager fails to write data from the backlog to keychain (direct distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [
@@ -107,7 +107,7 @@
     },
     'm_mac_store_privacy-pro_keychainmanager_failed_to_write_data_from_backlog': {
         description: 'Fired when Privacy Pro keychain manager fails to write data from the backlog to keychain (App Store distribution)',
-        owners: ['fcappelli'],
+        owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['form_factor', 'first_daily_count'],
         parameters: [

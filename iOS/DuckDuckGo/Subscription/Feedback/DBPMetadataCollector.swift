@@ -28,6 +28,18 @@ struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
     enum CodingKeys: String, CodingKey {
         case vpnConnectionState = "vpn_connection_state"
     }
+    
+    func toPrettyPrintedJSON() -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        guard let encodedMetadata = try? encoder.encode(self) else {
+            assertionFailure("Failed to encode metadata")
+            return nil
+        }
+
+        return String(data: encodedMetadata, encoding: .utf8)
+    }
 }
 
 final class DefaultDBPMetadataCollector: UnifiedMetadataCollector {

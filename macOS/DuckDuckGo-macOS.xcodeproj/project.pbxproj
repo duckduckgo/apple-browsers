@@ -56,8 +56,8 @@
 		1D2DC0082901679E008083A1 /* BWResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDF076128F815AD00EDFBE3 /* BWResponse.swift */; };
 		1D2DC009290167A0008083A1 /* BWStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDF075F28F815AD00EDFBE3 /* BWStatus.swift */; };
 		1D2DC00B290167EC008083A1 /* RunningApplicationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D77921C28FFF27C00BE0210 /* RunningApplicationCheck.swift */; };
-		1D2EE7052E26626000F51C57 /* Logger+NewTabPageOmnibar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2EE7042E26625300F51C57 /* Logger+NewTabPageOmnibar.swift */; };
-		1D2EE7062E26626000F51C57 /* Logger+NewTabPageOmnibar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2EE7042E26625300F51C57 /* Logger+NewTabPageOmnibar.swift */; };
+		1D2EE7052E26626000F51C57 /* Logger+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2EE7042E26625300F51C57 /* Logger+NewTabPage.swift */; };
+		1D2EE7062E26626000F51C57 /* Logger+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2EE7042E26625300F51C57 /* Logger+NewTabPage.swift */; };
 		1D2EE7082E267D6B00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2EE7072E267D4F00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift */; };
 		1D2EE7092E267D6B00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2EE7072E267D4F00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift */; };
 		1D36E658298AA3BA00AA485D /* InternalUserDeciderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36E657298AA3BA00AA485D /* InternalUserDeciderStore.swift */; };
@@ -187,6 +187,10 @@
 		1DC9DD1F2DB041760029D4A5 /* NSAlert+Tab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */; };
 		1DCFBC8A29ADF32B00313531 /* BurnerHomePageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */; };
 		1DCFBC8B29ADF32B00313531 /* BurnerHomePageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */; };
+		1DD0DBBB2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */; };
+		1DD0DBBC2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */; };
+		1DD0DBBE2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBD2E40959400B0E5F1 /* NewTabPageLoadMetricsTests.swift */; };
+		1DD0DBBF2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD0DBBD2E40959400B0E5F1 /* NewTabPageLoadMetricsTests.swift */; };
 		1DD6A7B12D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */; };
 		1DD6A7B22D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */; };
 		1DD6A7B42D804ADA006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B32D804AD3006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift */; };
@@ -3951,7 +3955,7 @@
 		1D220BFB2B87AACF00F8BBC6 /* PrivacyProtectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyProtectionStatus.swift; sourceTree = "<group>"; };
 		1D26EBAB2B74BECB0002A93F /* NSImageSendable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageSendable.swift; sourceTree = "<group>"; };
 		1D26EBAF2B74DB600002A93F /* TabSnapshotCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSnapshotCleanupService.swift; sourceTree = "<group>"; };
-		1D2EE7042E26625300F51C57 /* Logger+NewTabPageOmnibar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+NewTabPageOmnibar.swift"; sourceTree = "<group>"; };
+		1D2EE7042E26625300F51C57 /* Logger+NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+NewTabPage.swift"; sourceTree = "<group>"; };
 		1D2EE7072E267D4F00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarConfigProviderTests.swift; sourceTree = "<group>"; };
 		1D36E657298AA3BA00AA485D /* InternalUserDeciderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalUserDeciderStore.swift; sourceTree = "<group>"; };
 		1D36E65A298ACD2900AA485D /* AppIconChanger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconChanger.swift; sourceTree = "<group>"; };
@@ -4029,6 +4033,8 @@
 		1DC6696F2B6CF0D700AA0645 /* TabSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSnapshotStore.swift; sourceTree = "<group>"; };
 		1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSAlert+Tab.swift"; sourceTree = "<group>"; };
 		1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurnerHomePageView.swift; sourceTree = "<group>"; };
+		1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageLoadMetrics.swift; sourceTree = "<group>"; };
+		1DD0DBBD2E40959400B0E5F1 /* NewTabPageLoadMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageLoadMetricsTests.swift; sourceTree = "<group>"; };
 		1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpView.swift; sourceTree = "<group>"; };
 		1DD6A7B32D804AD3006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpViewController.swift; sourceTree = "<group>"; };
 		1DD6A7B62D804B56006AE043 /* PinnedTabsDiscoveryPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopover.swift; sourceTree = "<group>"; };
@@ -6624,11 +6630,12 @@
 				379E4D5F2D4383CE00A901B1 /* NewTabPageCoordinator.swift */,
 				371BBC5A2D00C911008FA0C7 /* NewTabPageActionsManagerExtension.swift */,
 				371BBC5D2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift */,
+				1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */,
 				E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */,
 				E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */,
 				E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarConfigProvider.swift */,
 				E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionsHandler.swift */,
-				1D2EE7042E26625300F51C57 /* Logger+NewTabPageOmnibar.swift */,
+				1D2EE7042E26625300F51C57 /* Logger+NewTabPage.swift */,
 				379E4D632D439F9A00A901B1 /* Features */,
 			);
 			path = NewTabPage;
@@ -6681,6 +6688,7 @@
 				1D2EE7072E267D4F00F51C57 /* NewTabPageOmnibarConfigProviderTests.swift */,
 				370CAEC42E3134AC001844E4 /* NewTabPageAIChatShortcutSettingProviderTests.swift */,
 				1D69B7182E2E31A800258E33 /* NewTabPageSuggestionsProviderTests.swift */,
+				1DD0DBBD2E40959400B0E5F1 /* NewTabPageLoadMetricsTests.swift */,
 			);
 			path = NewTabPage;
 			sourceTree = "<group>";
@@ -12973,7 +12981,7 @@
 				BDD13E212D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift in Sources */,
 				B6BCC5502AFE4F7D002C5499 /* DataImportTypePicker.swift in Sources */,
 				7BAF9E4B2A8A3CC9002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */,
-				1D2EE7052E26626000F51C57 /* Logger+NewTabPageOmnibar.swift in Sources */,
+				1D2EE7052E26626000F51C57 /* Logger+NewTabPage.swift in Sources */,
 				B6685E3D29A602D90043D2EE /* ExternalAppSchemeHandler.swift in Sources */,
 				C1C405882C7F80E50089DE8A /* PromotionView+FreemiumDBP.swift in Sources */,
 				B6E1491029A5C30500AAFBE8 /* ContentBlockingTabExtension.swift in Sources */,
@@ -13537,6 +13545,7 @@
 				372A0FED2B2379310033BF7F /* SyncMetricsEventsHandler.swift in Sources */,
 				3706FCA4293F65D500E42796 /* RecentlyClosedMenu.swift in Sources */,
 				8400DC4C2C6E26AE006509D2 /* BookmarksBarCollectionView.swift in Sources */,
+				1DD0DBBB2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */,
 				3758A38C2D108233001CEAA1 /* NewTabPageFreemiumDBPBannerProvider.swift in Sources */,
 				379858012D72D831008773F6 /* HistoryBurning.swift in Sources */,
 				4B9DB02D2A983B24000927DB /* WaitlistKeychainStorage.swift in Sources */,
@@ -13731,6 +13740,7 @@
 				37D046A22C7DA9A200AEAA50 /* UserBackgroundImagesManagerTests.swift in Sources */,
 				37DB56F02C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift in Sources */,
 				1D8C2FEB2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,
+				1DD0DBBF2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */,
 				56A0540E2C1C375E007D8FAB /* MockWindow.swift in Sources */,
 				37A0BA2E2D747C5C00130447 /* CapturingHistoryViewBookmarksHandler.swift in Sources */,
 				3706FE2A293F661700E42796 /* SafariVersionReaderTests.swift in Sources */,
@@ -15166,7 +15176,7 @@
 				8562599A269CA0A600EE44BC /* NSRectExtension.swift in Sources */,
 				371E1D682D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */,
 				9FFBEE7E2DDF02F30058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifier.swift in Sources */,
-				1D2EE7062E26626000F51C57 /* Logger+NewTabPageOmnibar.swift in Sources */,
+				1D2EE7062E26626000F51C57 /* Logger+NewTabPage.swift in Sources */,
 				4B37EE5F2B4CFC3C00A89A61 /* HomePageRemoteMessagingStorage.swift in Sources */,
 				31F28C5128C8EEC500119F70 /* YoutubeOverlayUserScript.swift in Sources */,
 				B6ABD0CA2BC03F610000EB69 /* SecurityScopedFileURLController.swift in Sources */,
@@ -15297,6 +15307,7 @@
 				BD6367252C877BE1009DE7A8 /* UpdateUserDriver.swift in Sources */,
 				3158B1492B0BF73000AF130C /* DBPHomeViewController.swift in Sources */,
 				37F09AD32DDE433500643A1B /* FaviconManagerMock.swift in Sources */,
+				1DD0DBBC2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */,
 				9F56CFA92B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */,
 				37445F9C2A1569F00029F789 /* SyncBookmarksAdapter.swift in Sources */,
 				C1E961EF2B87AA29001760E1 /* AutofillActionBuilder.swift in Sources */,
@@ -15830,6 +15841,7 @@
 				B63ED0DA26AE7AF400A9DAD1 /* PermissionManagerMock.swift in Sources */,
 				374EF08329B751FC003D2E87 /* RecentlyClosedCoordinatorTests.swift in Sources */,
 				BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */,
+				1DD0DBBE2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */,
 				CC5B3D022E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */,
 				AA9C362825518C44004B1BA3 /* WebsiteDataStoreMock.swift in Sources */,
 				857E44652A9F70F300ED77A7 /* CampaignVariantTests.swift in Sources */,

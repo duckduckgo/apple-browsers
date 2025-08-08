@@ -1,5 +1,5 @@
 //
-//  Logger+NewTabPageOmnibar.swift
+//  Logger+NewTabPage.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,4 +21,5 @@ import os.log
 
 public extension Logger {
     static var newTabPageOmnibar = { Logger(subsystem: "newTabPageOmnibar", category: "") }()
+    static var newTabPageMetrics = { Logger(subsystem: "newTabPageMetrics", category: "") }()
 }

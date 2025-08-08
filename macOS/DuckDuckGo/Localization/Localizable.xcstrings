@@ -22579,55 +22579,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai deaktivieren"
+            "value" : "Duck.ai deaktivieren …"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Disable Duck.ai"
+            "value" : "Disable Duck.ai..."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desactivar Duck.ai"
+            "value" : "Desactivar Duck.ai..."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Désactiver Duck.ai"
+            "value" : "Désactiver Duck.ai..."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Disabilita Duck.ai"
+            "value" : "Disabilita Duck.ai..."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai uitschakelen"
+            "value" : "Duck.ai uitschakelen..."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wyłącz Duck.ai"
+            "value" : "Wyłącz Duck.ai..."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desativar Duck.ai"
+            "value" : "Desativar Duck.ai..."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отключить Duck.ai"
+            "value" : "Отключить Duck.ai…"
           }
         }
       }
@@ -22705,7 +22705,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\n Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.You can re-enable it at any time."
+            "value" : "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\nDisabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.\n\nYou can re-enable it at any time."
           }
         },
         "es" : {
@@ -22999,55 +22999,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In der Seitenleiste"
+            "value" : "Seitenleiste"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "In sidebar"
+            "value" : "Sidebar"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En la barra lateral"
+            "value" : "Barra lateral"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dans la barre latérale"
+            "value" : "Barre latérale"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nella barra laterale"
+            "value" : "Barra laterale"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In zijbalk"
+            "value" : "Zijbalk"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "W pasku bocznym"
+            "value" : "Pasek boczny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Na barra lateral"
+            "value" : "Barra lateral"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На боковой панели"
+            "value" : "Боковая панель"
           }
         }
       }
@@ -23408,6 +23408,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть настройки Search Assist"
+          }
+        }
+      }
+    },
+    "duckai.shortcuts.section.title" : {
+      "comment" : "Section title for Duck.ai shortcuts settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcuts"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Shortcuts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajos de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raccourcis Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorciatoie Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-snelkoppelingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skróty Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atalhos Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ярлыки Duck.ai"
           }
         }
       }
@@ -23834,7 +23894,7 @@
     },
     "duckai.visibility.section.title" : {
       "comment" : "Section title for Duck.ai visibility settings",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -50089,10 +50149,58 @@
       "comment" : "Popover asking user to authorize WiFi hotspot captive portal",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der WLAN-Hotspot fordert eine Autorisierung an, um auf die Anmeldeseite des Captive Portals umzuleiten."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "WiFi hotspot requesting authorization to redirect to captive portal login page."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punto de acceso WiFi que solicita autorización para redirigirte a la página de inicio de sesión del portal cautivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point d'accès Wi-Fi demandant l'autorisation de rediriger vers la page de connexion du portail captif."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotspot WiFi che richiede l'autorizzazione per reindirizzare alla pagina di accesso del captive portal."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WiFi-hotspot vraagt om toestemming om je door te sturen naar de inlogpagina van het captive portal."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotspot WiFi prosi o autoryzację na przekierowanie do strony logowania portalu przechwytującego."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O hotspot Wi-Fi está a pedir autorização para redirecionar para a página de início de sessão do portal cativo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Точка доступа Wi-Fi запрашивает разрешение на перенаправление на страницу входа на портал авторизации."
           }
         }
       }
@@ -51121,10 +51229,58 @@
       "comment" : "WiFi Hotspot permission title",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WLAN-Hotspot"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "WiFi Hotspot"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punto de acceso Wi-Fi"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point d'accès Wi-Fi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotspot Wi-Fi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wifi-hotspot"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hotspot WiFi"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponto de acesso Wi-Fi"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Точка доступа Wi-Fi"
           }
         }
       }
@@ -71315,7 +71471,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abbonati a DuckDuckGo"
+            "value" : "Iscriviti a DuckDuckGo"
           }
         },
         "nl" : {

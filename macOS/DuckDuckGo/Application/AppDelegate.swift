@@ -978,6 +978,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {
@@ -997,7 +999,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        fireAppLaunchPixel()
+        fireDailyActiveUserPixel()
 
         initializeSync()
 
@@ -1025,8 +1027,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func fireAppLaunchPixel() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
+    private func fireDailyActiveUserPixel() {
 #if SPARKLE
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
 #else

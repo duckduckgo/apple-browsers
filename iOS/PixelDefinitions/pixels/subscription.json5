@@ -5,14 +5,30 @@
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+        ],
     },
     'm_privacy-pro_keychainmanager_deallocated_with_backlog': {
         description: 'Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog',
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: ['appVersion', 'pixelSource'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+        ],
     },
     'm_privacy-pro_keychainmanager_data_wrote_from_backlog': {
         description: 'Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain',
@@ -26,6 +42,11 @@
                 key: 'itemsWritten',
                 description: 'The number of items successfully written from the backlog',
                 type: 'integer',
+            },
+            {
+                key: 'source',
+                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
             },
         ],
     },
@@ -46,6 +67,11 @@
                 key: 'attemptCount',
                 description: 'The number of attempts made before failing',
                 type: 'integer',
+            },
+            {
+                key: 'source',
+                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
             },
         ],
     },

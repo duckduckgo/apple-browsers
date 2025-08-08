@@ -62,8 +62,6 @@ protocol NewWindowPolicyDecisionMaker {
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
-        var hotspotDetectionService: HotspotDetectionServiceProtocol
-        var captivePortalPopupManager: CaptivePortalPopupManager
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
     }
 
@@ -116,8 +114,6 @@ protocol NewWindowPolicyDecisionMaker {
                      downloadManager: FileDownloadManagerProtocol = FileDownloadManager.shared,
                      permissionManager: PermissionManagerProtocol? = nil,
                      geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-                     hotspotDetectionService: HotspotDetectionServiceProtocol? = nil,
-                     captivePortalPopupManager: CaptivePortalPopupManager? = nil,
                      cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? = ContentBlockingAssetsCompilationTimeReporter.shared,
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
@@ -175,7 +171,6 @@ protocol NewWindowPolicyDecisionMaker {
                   downloadManager: downloadManager,
                   permissionManager: permissionManager ?? NSApp.delegateTyped.permissionManager,
                   geolocationService: geolocationService,
-                  hotspotDetectionService: hotspotDetectionService ?? NSApp.delegateTyped.hotspotDetectionService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
                   contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
@@ -201,8 +196,8 @@ protocol NewWindowPolicyDecisionMaker {
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
-                  captivePortalPopupManager: captivePortalPopupManager ?? NSApp.delegateTyped.captivePortalPopupManager,
-                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender)
+                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender
+        )
     }
 
     @MainActor
@@ -221,7 +216,6 @@ protocol NewWindowPolicyDecisionMaker {
          downloadManager: FileDownloadManagerProtocol,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol,
-         hotspotDetectionService: HotspotDetectionServiceProtocol,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -247,7 +241,6 @@ protocol NewWindowPolicyDecisionMaker {
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
-         captivePortalPopupManager: CaptivePortalPopupManager,
          newTabPageShownPixelSender: NewTabPageShownPixelSender
     ) {
         self._id = id
@@ -333,10 +326,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        featureFlagger: featureFlagger,
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
-                                                       hotspotDetectionService: hotspotDetectionService,
-                                                       captivePortalPopupManager: captivePortalPopupManager,
-                                                       newTabPageShownPixelSender: newTabPageShownPixelSender))
-
+                                                       newTabPageShownPixelSender: newTabPageShownPixelSender)
+            )
         super.init()
         tabGetter = { [weak self] in self }
         userContentController.map(userContentControllerPromise.fulfill)

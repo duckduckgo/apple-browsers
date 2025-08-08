@@ -2295,22 +2295,12 @@
 		843D73BC2C786E5400E4F9DC /* BookmarkListPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DA2C774CA900716446 /* BookmarkListPopover.swift */; };
 		8443DC6D2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */; };
 		8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */; };
-		8448015A2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */; };
-		8448015B2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */; };
-		8448015E2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */; };
-		8448015F2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */; };
-		844801612E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */; };
-		844801622E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */; };
-		844801642E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */; };
-		844801652E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */; };
 		844801662E3B907200E8A2C1 /* GeolocationServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB226A7F4AA0013B453 /* GeolocationServiceMock.swift */; };
 		844801672E3B907200E8A2C1 /* GeolocationServiceMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB226A7F4AA0013B453 /* GeolocationServiceMock.swift */; };
 		8448016A2E3BA41A00E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 844801692E3BA41A00E8A2C1 /* Clocks */; };
 		8448016C2E3BA41F00E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 8448016B2E3BA41F00E8A2C1 /* Clocks */; };
 		8448016E2E3BA42400E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 8448016D2E3BA42400E8A2C1 /* Clocks */; };
 		844801702E3BA42800E8A2C1 /* Clocks in Frameworks */ = {isa = PBXBuildFile; productRef = 8448016F2E3BA42800E8A2C1 /* Clocks */; };
-		844801752E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */; };
-		844801762E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */; };
 		84494D212E18211200C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84494D202E18211200C9E5E8 /* NoARCObjCTestsExtensions */; };
 		84494D232E18211500C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84494D222E18211500C9E5E8 /* NoARCObjCTestsExtensions */; };
 		84494D252E18211900C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84494D242E18211900C9E5E8 /* NoARCObjCTestsExtensions */; };
@@ -2407,8 +2397,6 @@
 		84D0B9802E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
 		84D0B9812E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
 		84D0B9822E0BD7EA00E3256A /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */; };
-		84D0B9842E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */; };
-		84D0B9852E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */; };
 		84D6780C2D842DBE0030BC82 /* InlineSnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 84D6780B2D842DBE0030BC82 /* InlineSnapshotTesting */; };
 		84DBC84E2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */; };
 		84DBC84F2DA6587100903C7B /* LinkOpenBehaviorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */; };
@@ -4896,11 +4884,6 @@
 		843965142C737022004C8899 /* NSPasteboardExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPasteboardExtension.swift; sourceTree = "<group>"; };
 		843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMLNodeExtension.swift; sourceTree = "<group>"; };
 		8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+OnboardingNavigationDelegate.swift"; sourceTree = "<group>"; };
-		844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotspotDetectionService.swift; sourceTree = "<group>"; };
-		8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotspotDetectionServiceTests.swift; sourceTree = "<group>"; };
-		844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiHotspotDetectionTabExtensionTests.swift; sourceTree = "<group>"; };
-		844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiHotspotDetectionIntegrationTests.swift; sourceTree = "<group>"; };
-		844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotspotDetectionDebugMenu.swift; sourceTree = "<group>"; };
 		84494D1F2E18207600C9E5E8 /* ObjCTestsExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = ObjCTestsExtensions; sourceTree = "<group>"; };
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
 		844DAACA2E1E823300879517 /* XCTestCaseExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTestCaseExtension.swift; sourceTree = "<group>"; };
@@ -4926,7 +4909,6 @@
 		84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareHashPrefixes.json; sourceTree = "<group>"; };
 		84CE00152DAE41EA00852AA2 /* ResizablePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizablePreviewView.swift; sourceTree = "<group>"; };
 		84D0B97D2E0BD7E500E3256A /* MockFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureFlagger.swift; sourceTree = "<group>"; };
-		84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiHotspotDetectionTabExtension.swift; sourceTree = "<group>"; };
 		84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehaviorTests.swift; sourceTree = "<group>"; };
 		84DC71582C1C1E8A00033B8C /* UserDefaultsWrapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsWrapperTests.swift; sourceTree = "<group>"; };
 		84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKVisitedLinkStoreWrapper.swift; sourceTree = "<group>"; };
@@ -8378,23 +8360,6 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		844801592E3B881200E8A2C1 /* Connectivity */ = {
-			isa = PBXGroup;
-			children = (
-				844801742E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift */,
-				844801582E3B881200E8A2C1 /* HotspotDetectionService.swift */,
-			);
-			path = Connectivity;
-			sourceTree = "<group>";
-		};
-		8448015D2E3B8AE100E8A2C1 /* Connectivity */ = {
-			isa = PBXGroup;
-			children = (
-				8448015C2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift */,
-			);
-			path = Connectivity;
-			sourceTree = "<group>";
-		};
 		84524C052D79E6A100F723D6 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
@@ -9122,7 +9087,6 @@
 				4BFD356E283ADE8B00CE9234 /* BookmarksBar */,
 				AA86491324D831B9001BABEE /* Common */,
 				85D33F1025C82E93002B91A6 /* Configuration */,
-				844801592E3B881200E8A2C1 /* Connectivity */,
 				4B6160D125B14E5E007DE5B2 /* ContentBlocker */,
 				AAC30A24268DF93500D2D9CD /* CrashReports */,
 				4B723DF826B0002B00E14D75 /* DataExport */,
@@ -9213,7 +9177,6 @@
 				AA652CAB25DD820D009059CC /* Bookmarks */,
 				85F69B3A25EDE7F800978E59 /* Common */,
 				85AC3B1525D9BBFA00C7D2AA /* Configuration */,
-				8448015D2E3B8AE100E8A2C1 /* Connectivity */,
 				4B82E9B725B6A04B00656FE7 /* ContentBlocker */,
 				4B70BFFD27B0793D000386ED /* CrashReports */,
 				4B723E0226B0003E00E14D75 /* DataExport */,
@@ -10235,7 +10198,6 @@
 				B693766D2B6B5F26005BD9D4 /* ErrorPageTests.swift */,
 				56A054322C205814007D8FAB /* OnboardingPageTests.swift */,
 				B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */,
-				844801632E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift */,
 			);
 			path = Tab;
 			sourceTree = "<group>";
@@ -10270,7 +10232,6 @@
 				B6BDDA002942389000F68088 /* TabExtensions.swift */,
 				1D9A4E592B43213B00F449E2 /* TabSnapshotExtension.swift */,
 				B626A76C29928B1600053070 /* TestsClosureNavigationResponder.swift */,
-				84D0B9832E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift */,
 				56F0CB2E2E20FBD2000FF58B /* SubscriptionTabExtension.swift */,
 			);
 			path = TabExtensions;
@@ -10541,7 +10502,6 @@
 				567A23CC2C80CE060010F66C /* SpecialErrorPageUserScriptTests.swift */,
 				37657FC32DB8D55F003D749E /* TabCrashRecoveryExtensionTests.swift */,
 				1D8C2FE42B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift */,
-				844801602E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift */,
 			);
 			path = TabExtensionsTests;
 			sourceTree = "<group>";
@@ -12706,7 +12666,6 @@
 				BB0DA4E32DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */,
 				1DDC84FC2B8356CE00670238 /* PreferencesDefaultBrowserView.swift in Sources */,
 				3706FAC8293F65D500E42796 /* AppTrackerDataSetProvider.swift in Sources */,
-				84D0B9852E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */,
 				3706FAC9293F65D500E42796 /* EncryptionKeyGeneration.swift in Sources */,
 				C1CE846A2C887CF60068913B /* FreemiumDBPScanResultPolling.swift in Sources */,
 				3706FACA293F65D500E42796 /* TabLazyLoader.swift in Sources */,
@@ -12987,7 +12946,6 @@
 				3706FB6C293F65D500E42796 /* FaviconStore.swift in Sources */,
 				3706FB6D293F65D500E42796 /* SuggestionListCharacteristics.swift in Sources */,
 				84DDB90B2C92B66E008C997B /* WKVisitedLinkStoreWrapper.swift in Sources */,
-				844801752E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */,
 				84B9BDBF2E2A94830068927C /* TabBarView.swift in Sources */,
 				F1C70D7A2BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift in Sources */,
 				377D801F2AB48191002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */,
@@ -13315,7 +13273,6 @@
 				3706FC0A293F65D500E42796 /* BookmarkManagedObject.swift in Sources */,
 				37DF37092CF38CD7005ED34B /* PrivacyStatsDatabase.swift in Sources */,
 				B6ABC5972B4861D4008343B9 /* FocusableTextField.swift in Sources */,
-				8448015A2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */,
 				3706FC0B293F65D500E42796 /* CSVLoginExporter.swift in Sources */,
 				37197EAC294244D600394917 /* FutureExtension.swift in Sources */,
 				4B9DB0452A983B24000927DB /* WaitlistModalViewController.swift in Sources */,
@@ -13615,7 +13572,6 @@
 				CD3301312C89B602009AA127 /* ErrorPageHTMLFactoryTests.swift in Sources */,
 				560C6ED12CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */,
 				3706FDDD293F661700E42796 /* StatisticsLoaderTests.swift in Sources */,
-				8448015F2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */,
 				3706FDDE293F661700E42796 /* SuggestionViewModelTests.swift in Sources */,
 				3706FDDF293F661700E42796 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				3706FDE0293F661700E42796 /* TabIndexTests.swift in Sources */,
@@ -13739,7 +13695,6 @@
 				56B234C02A84EFD800F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */,
 				3706FE19293F661700E42796 /* DeviceAuthenticatorTests.swift in Sources */,
 				3706FE1A293F661700E42796 /* BrowserProfileTests.swift in Sources */,
-				844801622E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */,
 				560C6ED72CCA5CE100D411E2 /* FindInView.swift in Sources */,
 				1D7694002BE3A1AA0016A22B /* DockCustomizerMock.swift in Sources */,
 				3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */,
@@ -14063,7 +14018,6 @@
 				560C6ED92CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8B29B1CAC0007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
 				3706FEA4293F662100E42796 /* CoreDataTestUtilities.swift in Sources */,
-				844801642E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */,
 				847873DF2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */,
 				8434E6BD2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
 				84524C092D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
@@ -14135,7 +14089,6 @@
 				845063512DB76F9E00A60B56 /* WindowManagerStateRestorationTests.swift in Sources */,
 				560C6ED82CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8A29B1CABF007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
-				844801652E3B8B2500E8A2C1 /* WiFiHotspotDetectionIntegrationTests.swift in Sources */,
 				847873DE2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */,
 				8434E6BC2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
 				84524C082D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
@@ -14890,7 +14843,6 @@
 				4B9292D42667123700AD2C21 /* BookmarkListViewController.swift in Sources */,
 				BD88A83E2C4F3E4300460A26 /* FeedbackCategoryProviding.swift in Sources */,
 				BBFD526E2E12FB930043B00C /* VisualizeFireAnimationDecider.swift in Sources */,
-				8448015B2E3B881200E8A2C1 /* HotspotDetectionService.swift in Sources */,
 				9F56CFB12B843F6C00BB7F11 /* BookmarksDialogViewFactory.swift in Sources */,
 				F1FD5B672C2B0AAA0040FA0D /* SubscriptionPagesUseSubscriptionFeature.swift in Sources */,
 				372042D42DF9B0AD00CE099A /* InternalFeedbackFormTabExtension.swift in Sources */,
@@ -15178,7 +15130,6 @@
 				B6C0B23426E71BCD0031CB7F /* Downloads.xcdatamodeld in Sources */,
 				37EE55E92D5F197300D53C7C /* BadgeAnimationView.swift in Sources */,
 				37EE55EA2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */,
-				844801762E3CBE9400E8A2C1 /* HotspotDetectionDebugMenu.swift in Sources */,
 				37EE55EB2D5F197300D53C7C /* CookieManagedNotificationContainerView.swift in Sources */,
 				37EE55EC2D5F197300D53C7C /* CookieManagedNotificationView.swift in Sources */,
 				37EE55ED2D5F197300D53C7C /* CookieNotificationAnimationModel.swift in Sources */,
@@ -15320,7 +15271,6 @@
 				B693955226F04BEB0015B914 /* LongPressButton.swift in Sources */,
 				B6085D062743905F00A9C456 /* CoreDataStore.swift in Sources */,
 				B6DB3AF6278EA0130024C5C4 /* BundleExtension.swift in Sources */,
-				84D0B9842E0BEAAC00E3256A /* WiFiHotspotDetectionTabExtension.swift in Sources */,
 				4B0511E1262CAA8600F6079C /* NSOpenPanelExtensions.swift in Sources */,
 				AAE99B8927088A19008B6BD9 /* FirePopover.swift in Sources */,
 				8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */,
@@ -15758,7 +15708,6 @@
 				56504F102E0D9A8C00333A1E /* MockSubscriptionTabsShowing.swift in Sources */,
 				37AA017F2E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
 				AAE39D1B24F44885008EF28B /* TabCollectionViewModelDelegateMock.swift in Sources */,
-				844801612E3B8B0500E8A2C1 /* WiFiHotspotDetectionTabExtensionTests.swift in Sources */,
 				9F0A2CF82B96A58600C5B8C0 /* BaseBookmarkEntityTests.swift in Sources */,
 				373A1AAA283ED86C00586521 /* BookmarksHTMLReaderTests.swift in Sources */,
 				317295D42AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */,
@@ -15830,7 +15779,6 @@
 				4BBF0925283083EC00EE1418 /* FileSystemDSLTests.swift in Sources */,
 				4B11060A25903EAC0039B979 /* CoreDataEncryptionTests.swift in Sources */,
 				3767319E2C7F416000EB097B /* CustomBackgroundTests.swift in Sources */,
-				8448015E2E3B8AE100E8A2C1 /* HotspotDetectionServiceTests.swift in Sources */,
 				B603971029B9D67E00902A34 /* PublishersExtensions.swift in Sources */,
 				9F26060E2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */,
 				37DB56F22C3B36B80093D4DC /* RemoteMessagingClientTests.swift in Sources */,

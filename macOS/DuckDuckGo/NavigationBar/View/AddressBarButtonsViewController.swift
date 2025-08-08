@@ -116,7 +116,6 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var cameraButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var popupsButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var externalSchemeButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var wifiHotspotButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet private weak var permissionButtons: NSView!
     @IBOutlet weak var cameraButton: PermissionButton! {
         didSet {
@@ -151,13 +150,6 @@ final class AddressBarButtonsViewController: NSViewController {
             externalSchemeButton.isHidden = true
             externalSchemeButton.target = self
             externalSchemeButton.action = #selector(externalSchemeButtonAction(_:))
-        }
-    }
-    @IBOutlet weak var wifiHotspotButton: PermissionButton! {
-        didSet {
-            wifiHotspotButton.isHidden = true
-            wifiHotspotButton.target = self
-            wifiHotspotButton.action = #selector(wifiHotspotButtonAction(_:))
         }
     }
 
@@ -282,7 +274,6 @@ final class AddressBarButtonsViewController: NSViewController {
             popupsButton.position = .free
             microphoneButton.position = .free
             externalSchemeButton.position = .free
-            wifiHotspotButton.position = .free
             bookmarkButton.isHidden = true
         } else {
             bookmarkButton.position = .right
@@ -308,7 +299,6 @@ final class AddressBarButtonsViewController: NSViewController {
         externalSchemeButton.sendAction(on: .leftMouseDown)
         // externalSchemeButton.accessibilityTitle is set in `updatePermissionButtons`
         externalSchemeButton.setAccessibilityIdentifier("AddressBarButtonsViewController.externalSchemeButton")
-        wifiHotspotButton.sendAction(on: .leftMouseDown)
 
         privacyDashboardButton.setAccessibilityRole(.button)
         privacyDashboardButton.setAccessibilityElement(true)
@@ -536,7 +526,6 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionButtons.setCornerRadius(cornerRadius)
         zoomButton.setCornerRadius(cornerRadius)
         privacyDashboardButton.setCornerRadius(cornerRadius)
-        wifiHotspotButton.setCornerRadius(cornerRadius)
     }
 
     private func setupButtonsSize() {
@@ -556,7 +545,6 @@ final class AddressBarButtonsViewController: NSViewController {
         cameraButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         popupsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         externalSchemeButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
-        wifiHotspotButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
     }
 
     private func setupButtonIcons() {
@@ -565,7 +553,6 @@ final class AddressBarButtonsViewController: NSViewController {
         geolocationButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.locationIcon
         externalSchemeButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.externalSchemeIcon
         popupsButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.popupsIcon
-        wifiHotspotButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.wifiIcon
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -884,9 +871,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 button = externalSchemeButton
                 query.shouldShowAlwaysAllowCheckbox = true
                 query.shouldShowCancelInsteadOfDeny = true
-            case .wifiHotspot:
-                button = wifiHotspotButton
-                query.shouldShowCancelInsteadOfDeny = true
             default:
                 assertionFailure("Unexpected permissions")
                 query.handleDecision(grant: false)
@@ -1063,26 +1047,6 @@ final class AddressBarButtonsViewController: NSViewController {
         let domain = url.isFileURL ? .localhost : (url.host ?? "")
 
         PermissionContextMenu(permissionManager: permissionManager, permissions: permissions, domain: domain, delegate: self)
-            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
-    }
-
-    @IBAction func wifiHotspotButtonAction(_ sender: NSButton) {
-        guard let tabViewModel,
-              let state = tabViewModel.usedPermissions.wifiHotspot
-        else {
-            Logger.general.error("Selected tab view model is nil or no wifiHotspot state")
-            return
-        }
-
-        if case .requested(let query) = state {
-            openPermissionAuthorizationPopover(for: query)
-            return
-        }
-
-        let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = url.isFileURL ? .localhost : (url.host ?? "")
-
-        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.wifiHotspot, state)], domain: domain, delegate: self)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
@@ -1388,7 +1352,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         permissionButtons.isShown = !isTextFieldEditorFirstResponder
         && !isAnyTrackerAnimationPlaying
-        && (!tabViewModel.isShowingErrorPage || tabViewModel.usedPermissions.wifiHotspot?.isRequested == true)
+        && !tabViewModel.isShowingErrorPage
         defer {
             showOrHidePermissionPopoverIfNeeded()
         }
@@ -1406,12 +1370,10 @@ final class AddressBarButtonsViewController: NSViewController {
         externalSchemeButton.buttonState = tabViewModel.usedPermissions.externalScheme
         let title = String(format: UserText.permissionExternalSchemeOpenFormat, tabViewModel.usedPermissions.first(where: { $0.key.isExternalScheme })?.key.localizedDescription ?? "")
         externalSchemeButton.setAccessibilityTitle(title)
-        wifiHotspotButton.buttonState = tabViewModel.usedPermissions.wifiHotspot
 
         geolocationButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         cameraButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         microphoneButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        wifiHotspotButton.normalTintColor = visualStyle.colorsProvider.iconsColor
     }
 
     private func showOrHidePermissionPopoverIfNeeded() {

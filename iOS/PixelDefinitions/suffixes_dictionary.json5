@@ -22,4 +22,9 @@
         description: 'Device form-factor',
         enum: ['phone', 'tablet'],
     },
+    platform: {
+        type: 'string',
+        description: 'Device platform',
+        enum: ['ios'],
+    },
 }

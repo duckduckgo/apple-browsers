@@ -189,6 +189,7 @@ final class NavigationBarViewController: NSViewController {
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
+                       vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -215,6 +216,7 @@ final class NavigationBarViewController: NSViewController {
                 aiChatMenuConfig: aiChatMenuConfig,
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
                 vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
+                vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 showTab: showTab
             )
         }!
@@ -239,6 +241,7 @@ final class NavigationBarViewController: NSViewController {
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -250,6 +253,7 @@ final class NavigationBarViewController: NSViewController {
             permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
+            vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
             isBurner: tabCollectionViewModel.isBurner
         )
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -1215,6 +1219,8 @@ final class NavigationBarViewController: NSViewController {
 
     private func toggleNetworkProtectionPopover() {
         guard Application.appDelegate.subscriptionAuthV1toV2Bridge.isUserAuthenticated else {
+            popovers.toggleVPNUpsellPopover(from: networkProtectionButton)
+            vpnUpsellVisibilityManager.dismissNotificationDot()
             return
         }
 
@@ -1712,10 +1718,10 @@ extension NavigationBarViewController: NSMenuDelegate {
             .store(in: &cancellables)
 
         // Show notification dot when VPN upsell should be shown
-        networkProtectionButtonModel.$shouldShowUpsell
+        networkProtectionButtonModel.$shouldShowNotificationDot
             .receive(on: RunLoop.main)
-            .sink { [weak self] shouldShowUpsell in
-                self?.networkProtectionButton.isNotificationVisible = shouldShowUpsell
+            .sink { [weak self] shouldShowNotificationDot in
+                self?.networkProtectionButton.isNotificationVisible = shouldShowNotificationDot
             }
             .store(in: &cancellables)
     }

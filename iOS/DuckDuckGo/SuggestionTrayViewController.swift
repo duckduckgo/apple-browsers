@@ -110,7 +110,7 @@ class SuggestionTrayViewController: UIViewController {
         let privacyProDataReporting: PrivacyProDataReporting?
         let variantManager: VariantManager
         let newTabDialogFactory: NewTabDaxDialogFactory
-        let newTabDaxDialogProvider: NewTabDialogSpecProvider
+        let newTabDaxDialogManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
         let messageNavigationDelegate: MessageNavigationDelegate
         let appSettings: AppSettings
@@ -255,7 +255,12 @@ class SuggestionTrayViewController: UIViewController {
     private var canDisplayFavorites: Bool {
         favoritesModel.favorites.count > 0
     }
-    
+
+    var hasRemoteMessages: Bool {
+        guard let newTabPageDependencies else { return false }
+        return !newTabPageDependencies.homePageMessagesConfiguration.homeMessages.isEmpty
+    }
+
     private func displayFavoritesIfNeeded(animated: Bool, onInstall: @escaping () -> Void = {}) {
         if isUsingSearchInputCustomStyling && newTabPage == nil {
             installNewTabPage(animated: animated, onInstall: onInstall)
@@ -280,7 +285,7 @@ class SuggestionTrayViewController: UIViewController {
             privacyProDataReporting: dependencies.privacyProDataReporting,
             variantManager: dependencies.variantManager,
             newTabDialogFactory: dependencies.newTabDialogFactory,
-            newTabDialogTypeProvider: dependencies.newTabDaxDialogProvider,
+            daxDialogsManager: dependencies.newTabDaxDialogManager,
             faviconLoader: dependencies.faviconLoader,
             messageNavigationDelegate: dependencies.messageNavigationDelegate,
             appSettings: dependencies.appSettings

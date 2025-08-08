@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "La VPN si è scollegata perché l'abbonamento è scaduto. Iscriviti a Privacy Pro per riconnettere la VPN di DuckDuckGo.";
+"network.protection.entitlement.expired.notification.body" = "La VPN si è scollegata perché l'abbonamento è scaduto. Iscriviti a DuckDuckGo per riconnettere la VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "La VPN di DuckDuckGo non è riuscita a connettersi. Riprova in seguito.";

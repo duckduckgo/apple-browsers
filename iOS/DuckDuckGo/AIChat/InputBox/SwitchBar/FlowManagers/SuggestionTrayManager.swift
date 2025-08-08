@@ -64,15 +64,23 @@ final class SuggestionTrayManager: NSObject {
 
     var shouldDisplayFavoritesOverlay: Bool {
         let canDisplayFavorites = suggestionTrayViewController?.canShow(for: .favorites) ?? false
+        let hasRemoteMessages = suggestionTrayViewController?.hasRemoteMessages ?? false
 
-        return !shouldDisplaySuggestionTray && canDisplayFavorites
+        return !shouldDisplaySuggestionTray && (canDisplayFavorites || hasRemoteMessages)
     }
 
     var shouldDisplaySuggestionTray: Bool {
         let query = switchBarHandler.currentText
-        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
+        // No text so don't show suggestins
+        guard !query.isBlank else { return false }
 
-        return !(query.isEmpty || !hasUserInteracted)
+        // For URLs, only show suggestions if the user has interacted with the text
+        if switchBarHandler.isCurrentTextValidURL {
+            return switchBarHandler.hasUserInteractedWithText
+        }
+
+        // For all other cases just show suggestions
+        return true
     }
 
     // MARK: - Initialization
@@ -177,19 +185,20 @@ final class SuggestionTrayManager: NSObject {
     }
     
     private func updateSuggestionTrayForCurrentState() {
-        let query = switchBarHandler.currentText
-
-        if !shouldDisplaySuggestionTray {
-            showSuggestionTray(.favorites)
-        } else {
+        if shouldDisplaySuggestionTray {
+            let query = switchBarHandler.currentText
             showSuggestionTray(.autocomplete(query: query))
+        } else {
+            showSuggestionTray(.favorites)
         }
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         guard let suggestionTray = suggestionTrayViewController else { return }
         
-        let canShowSuggestion = suggestionTray.canShow(for: type)
+        let canShowSuggestion =
+            suggestionTray.canShow(for: type) ||
+            (type == .favorites && suggestionTray.hasRemoteMessages)
 
         if canShowSuggestion {
             suggestionTray.fill()

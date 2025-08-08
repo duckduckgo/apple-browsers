@@ -676,6 +676,7 @@ extension AppDelegate {
 
     @objc func resetVPNUpsell() {
         // Clear VPN upsell state
+        vpnUpsellUserDefaultsPersistor.vpnUpsellPopoverViewed = false
         vpnUpsellUserDefaultsPersistor.vpnUpsellDismissed = false
         vpnUpsellUserDefaultsPersistor.vpnUpsellFirstPinnedDate = nil
         // Store a user defaults flag so that AppDelegate initializes VPNUpsellVisibilityManager with a 10 second timer instead of 10 minutes
@@ -728,7 +729,7 @@ extension MainViewController {
 
     @objc func newTab(_ sender: Any?) {
         makeKeyIfNeeded()
-        browserTabViewController.openNewTab(with: .newtab)
+        tabBarViewController.tabCollectionViewModel.insertOrAppendNewTab()
     }
 
     @objc func openLocation(_ sender: Any?) {

@@ -65,3 +65,4 @@ default.profraw
 # Claude
 .claude/settings.local.json
 
+/build-ui-tests

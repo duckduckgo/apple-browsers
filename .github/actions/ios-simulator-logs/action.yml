@@ -1,0 +1,85 @@
+name: 'iOS Simulator Logs'
+description: 'Boots iOS simulator and collects simulator logs for debugging'
+
+inputs:
+  device-name:
+    description: 'Device model (e.g. iPhone 16)'
+    required: false
+    default: 'iPhone 16'
+  ios-version:
+    description: 'iOS version (e.g. 18.4)'
+    required: false
+    default: '18.4'
+  action:
+    description: 'Action to perform: "boot" or "collect"'
+    required: true
+  device-id:
+    description: 'UUID to use when collecting logs'
+    required: false
+
+outputs:
+  device-id:
+    description: 'UDID of the booted simulator'
+    value: ${{ steps.boot-simulator.outputs.device-id }}
+  log-path:
+    description: 'Path to the collected logarchive'
+    value: ${{ steps.collect-logs.outputs.log-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Boot simulator
+      id: boot-simulator
+      if: inputs.action == 'boot'
+      shell: bash
+      run: |
+        set -euo pipefail
+        IOS_VERSION='${{ inputs.ios-version }}'
+        IOS_VERSION_HYPHENATED="${IOS_VERSION//./-}"
+
+        DEVICE_ID="$(
+          xcrun simctl list devices --json \
+          | jq -r --arg name "${{ inputs.device-name }}" --arg ver "iOS-${IOS_VERSION_HYPHENATED}" '
+            .devices
+            | to_entries[]
+            | select(.key | contains($ver))
+            | .value[]
+            | select(.name == $name and .isAvailable == true)
+            | .udid
+          ' \
+          | head -n1
+        )"
+
+        if [[ -z "${DEVICE_ID}" || "${DEVICE_ID}" == "null" ]]; then
+          echo "No exact '${{ inputs.device-name }}' on iOS ${{ inputs.ios-version }}."
+          echo "Installed iOS runtimes:"
+          xcrun simctl list runtimes | sed -n '/iOS/p'
+          echo "Available devices:"
+          xcrun simctl list devices | sed -n '/-- iOS /,/-- /p' || true
+          exit 1
+        fi
+
+        echo "device-id=${DEVICE_ID}" >> "$GITHUB_OUTPUT"
+        xcrun simctl boot "${DEVICE_ID}" || true
+        xcrun simctl bootstatus "${DEVICE_ID}" -b || true
+
+    - name: Collect simulator logs
+      id: collect-logs
+      if: inputs.action == 'collect'
+      shell: bash
+      run: |
+        set -euo pipefail
+        : "${{ inputs.device-id }}" # fail if empty
+
+        DEVICE_ID='${{ inputs.device-id }}'
+        OUT="$PWD/simulator_logs_${DEVICE_ID}.logarchive"
+
+        xcrun simctl boot "${DEVICE_ID}" || true
+        xcrun simctl bootstatus "${DEVICE_ID}" -b || true
+
+        if xcrun simctl spawn "${DEVICE_ID}" log collect --output "${OUT}"; then
+          echo "Archive written to: ${OUT}"
+          echo "log-path=${OUT}" >> "$GITHUB_OUTPUT"
+        else
+          echo "log-path=" >> "$GITHUB_OUTPUT"
+        fi

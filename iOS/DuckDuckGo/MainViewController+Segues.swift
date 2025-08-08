@@ -34,7 +34,7 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
+        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)
@@ -304,7 +304,8 @@ extension MainViewController {
                                                             websiteDataManager: websiteDataManager,
                                                             customConfigurationURLProvider: customConfigurationURLProvider,
                                                             keyValueStore: keyValueStore,
-                                                            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
+                                                            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                                                            daxDialogsManager: daxDialogsManager)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
@@ -372,7 +373,8 @@ extension MainViewController {
             fireproofing: self.fireproofing,
             customConfigurationURLProvider: customConfigurationURLProvider,
             keyValueStore: self.keyValueStore,
-            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager))
+            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
+            daxDialogManager: self.daxDialogsManager))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
@@ -383,7 +385,7 @@ extension MainViewController {
 
     private func hideAllHighlightsIfNeeded() {
         Logger.lifecycle.debug(#function)
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
     }

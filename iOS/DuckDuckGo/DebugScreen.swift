@@ -39,6 +39,7 @@ enum DebugScreen: Identifiable {
         let customConfigurationURLProvider: CustomConfigurationURLProviding
         let keyValueStore: ThrowingKeyValueStoring
         let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+        let daxDialogManager: DaxDialogsManaging
 
     }
 

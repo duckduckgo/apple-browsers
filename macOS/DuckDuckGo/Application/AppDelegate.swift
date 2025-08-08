@@ -134,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var updateProgressCancellable: AnyCancellable?
 
+    @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
@@ -169,6 +170,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
+        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        featureFlagger: featureFlagger,
+        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+    )
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
@@ -625,33 +631,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotspotDetectionService = HotspotDetectionService()
         captivePortalPopupManager = CaptivePortalPopupManager()
 
+        var appContentBlocking: AppContentBlocking?
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
-            privacyFeatures = AppPrivacyFeatures(
-                contentBlocking: AppContentBlocking(
-                    privacyConfigurationManager: privacyConfigurationManager,
-                    internalUserDecider: internalUserDecider,
-                    configurationStore: configurationStore,
-                    contentScopeExperimentsManager: self.contentScopeExperimentsManager,
-                    onboardingNavigationDelegate: windowControllersManager,
-                    appearancePreferences: appearancePreferences,
-                    startupPreferences: startupPreferences,
-                    windowControllersManager: windowControllersManager,
-                    bookmarkManager: bookmarkManager,
-                    historyCoordinator: historyCoordinator,
-                    fireproofDomains: fireproofDomains,
-                    fireCoordinator: fireCoordinator,
-                    tld: tld
-                ),
-                database: database.db
-            )
-        } else {
-            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
-            privacyFeatures = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
-        }
-#else
-        privacyFeatures = AppPrivacyFeatures(
-            contentBlocking: AppContentBlocking(
+            let contentBlocking = AppContentBlocking(
                 privacyConfigurationManager: privacyConfigurationManager,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,
@@ -665,9 +648,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
                 tld: tld
-            ),
+            )
+            privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
+            appContentBlocking = contentBlocking
+        } else {
+            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
+            privacyFeatures = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+        }
+#else
+        let contentBlocking = AppContentBlocking(
+            privacyConfigurationManager: privacyConfigurationManager,
+            internalUserDecider: internalUserDecider,
+            configurationStore: configurationStore,
+            contentScopeExperimentsManager: self.contentScopeExperimentsManager,
+            onboardingNavigationDelegate: windowControllersManager,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            windowControllersManager: windowControllersManager,
+            bookmarkManager: bookmarkManager,
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            fireCoordinator: fireCoordinator,
+            tld: tld
+        )
+        privacyFeatures = AppPrivacyFeatures(
+            contentBlocking: contentBlocking,
             database: database.db
         )
+        appContentBlocking = contentBlocking
 #endif
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage())
         configurationManager = ConfigurationManager(
@@ -790,6 +798,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if !APPSTORE
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
+
+        super.init()
+
+        appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
     }
     // swiftlint:enable cyclomatic_complexity
 
@@ -977,6 +989,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {
@@ -996,7 +1010,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        fireAppLaunchPixel()
+        fireDailyActiveUserPixel()
 
         initializeSync()
 
@@ -1024,8 +1038,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func fireAppLaunchPixel() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
+    private func fireDailyActiveUserPixel() {
 #if SPARKLE
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
 #else
@@ -1378,6 +1391,42 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         completionHandler()
     }
 
+}
+
+extension AppDelegate: UserScriptDependenciesProviding {
+    @MainActor
+    func makeNewTabPageActionsManager() -> NewTabPageActionsManager? {
+        guard let contentBlocking = privacyFeatures.contentBlocking as? AppContentBlocking else {
+            return nil
+        }
+
+        // This action manager is only used when NTP is independent per tab
+        guard featureFlagger.isFeatureOn(.newTabPagePerTab) else {
+            return nil
+        }
+
+        return NewTabPageActionsManager(
+            appearancePreferences: appearancePreferences,
+            visualizeFireAnimationDecider: visualizeFireAnimationDecider,
+            customizationModel: newTabPageCustomizationModel,
+            bookmarkManager: bookmarkManager,
+            faviconManager: faviconManager,
+            contentBlocking: contentBlocking,
+            trackerDataManager: contentBlocking.trackerDataManager,
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            privacyStats: privacyStats,
+            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
+            tld: tld,
+            fire: { @MainActor in self.fireCoordinator.fireViewModel.fire },
+            keyValueStore: keyValueStore,
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: TabsPreferences.shared,
+            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+        )
+    }
 }
 
 private extension FeatureFlagLocalOverrides {

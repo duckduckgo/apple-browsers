@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Meklēt";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Skati un pārvaldi savu VPN savienojumu. Nepieciešams Privacy Pro abonements.";
+"widget.gallery.vpn.description" = "Skati un pārvaldi savu VPN savienojumu. Nepieciešams DuckDuckGo abonements.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

@@ -50,7 +50,7 @@ extension Preferences {
                             VStack(alignment: .leading) {
                                 TextAndImageMenuItemHeader(UserText.aiChatTitle,
                                                            image: Image(nsImage: DesignSystemImages.Color.Size16.aiChatGradient),
-                                                           bottomPadding: 0)
+                                                           bottomPadding: 2)
                                 TextMenuItemCaption(UserText.aiChatDescription)
                             }
 
@@ -59,13 +59,17 @@ extension Preferences {
                                     isShowingDisableAIChatDialog = true
                                 } else {
                                     model.isAIFeaturesEnabled = true
+                                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
+                                                  frequency: .dailyAndCount,
+                                                  includeAppVersionParameter: true)
                                 }
                             }
                             .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
                         }
                     }
 
-                    PreferencePaneSection(UserText.aiChatVisibilitySectionTitle) {
+                    PreferencePaneSection(UserText.aiChatShortcutsSectionTitle,
+                                          spacing: 6) {
                         ToggleMenuItem(UserText.aiChatShowOnNewTabPageBarToggle,
                                        isOn: $model.showShortcutOnNewTabPage)
                         .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
@@ -114,7 +118,8 @@ extension Preferences {
                     }
                     .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
-                    PreferencePaneSection(UserText.aiChatOpenNewChatsSectionTitle) {
+                    PreferencePaneSection(UserText.aiChatOpenNewChatsSectionTitle,
+                                          spacing: 6) {
                         Picker(selection: $model.openAIChatInSidebar, content: {
                             Text(UserText.aiChatOpenInSidebarOption).tag(true)
                                 .padding(.bottom, 4).accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.inSidebar")
@@ -136,24 +141,25 @@ extension Preferences {
                         .padding(.bottom, 8)
 
                     PreferencePaneSection {
-                        TextAndImageMenuItemHeader(UserText.searchAssistSettings,
-                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
-                                                   bottomPadding: 0)
+                        VStack(alignment: .leading) {
+                            TextAndImageMenuItemHeader(UserText.searchAssistSettings,
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                       bottomPadding: 2)
 
-                        TextMenuItemCaption(UserText.searchAssistSettingsDescription)
-                            .padding(.top, -6)
-                            .padding(.bottom, 6)
-                        Button {
-                            model.openSearchAssistSettings()
-                        } label: {
-                            HStack {
-                                Text(UserText.searchAssistSettingsLink)
-                                Image(.externalAppScheme)
+                            TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                                .padding(.bottom, 6)
+                            Button {
+                                model.openSearchAssistSettings()
+                            } label: {
+                                HStack {
+                                    Text(UserText.searchAssistSettingsLink)
+                                    Image(.externalAppScheme)
+                                }
+                                .foregroundColor(Color.linkBlue)
+                                .cursor(.pointingHand)
                             }
-                            .foregroundColor(Color.linkBlue)
-                            .cursor(.pointingHand)
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 } else { // Legacy UI displayed when aiChatGlobalSwitch is disabled (to be removed after rollout)
                     // Duck.ai Shortcuts
@@ -264,7 +270,10 @@ extension Preferences {
                 Button(UserText.cancel) { isShowingDisableAIChatDialog = false }
                 Button(action: {
                     isShowingDisableAIChatDialog = false
-                    model.isAIFeaturesEnabled.toggle()
+                    model.isAIFeaturesEnabled = false
+                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOff,
+                                  frequency: .dailyAndCount,
+                                  includeAppVersionParameter: true)
                 }, label: {
                     Text(UserText.aiChatDisableDialogConfirmButton)
                 })

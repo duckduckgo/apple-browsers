@@ -139,6 +139,7 @@ class TabViewController: UIViewController {
 
     private static let tld = AppDependencyProvider.shared.storageCache.tld
     private let adClickAttributionDetection = ContentBlocking.shared.makeAdClickAttributionDetection(tld: tld)
+    let adClickExternalOpenDetector: AdClickExternalOpenDetector
     let adClickAttributionLogic = ContentBlocking.shared.makeAdClickAttributionLogic(tld: tld)
 
     private var httpsForced: Bool = false
@@ -375,7 +376,8 @@ class TabViewController: UIViewController {
                                    tabInteractionStateSource: TabInteractionStateSource?,
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
-                                   keyValueStore: ThrowingKeyValueStoring) -> TabViewController {
+                                   keyValueStore: ThrowingKeyValueStoring,
+                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -397,7 +399,8 @@ class TabViewController: UIViewController {
                               tabInteractionStateSource: tabInteractionStateSource,
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
-                              keyValueStore: keyValueStore
+                              keyValueStore: keyValueStore,
+                              daxDialogsManager: daxDialogsManager
             )
         })
         return controller
@@ -442,6 +445,7 @@ class TabViewController: UIViewController {
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
     let featureDiscovery: FeatureDiscovery
     let keyValueStore: ThrowingKeyValueStoring
+    let daxDialogsManager: DaxDialogsManaging
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -464,7 +468,9 @@ class TabViewController: UIViewController {
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
-                   keyValueStore: ThrowingKeyValueStoring) {
+                   keyValueStore: ThrowingKeyValueStoring,
+                   daxDialogsManager: DaxDialogsManaging,
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
 
         self.tabModel = tabModel
         self.appSettings = appSettings
@@ -487,7 +493,8 @@ class TabViewController: UIViewController {
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
-
+        self.adClickExternalOpenDetector = adClickExternalOpenDetector
+        self.daxDialogsManager = daxDialogsManager
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
@@ -500,6 +507,14 @@ class TabViewController: UIViewController {
         // Assign itself as specialErrorPageNavigationDelegate for SpecialErrorPages
         specialErrorPageNavigationHandler.delegate  = self
 
+        self.adClickExternalOpenDetector.mitigationHandler = { [weak self] in
+            guard let self else { return }
+            if self.tabModel.link?.title == nil {
+                self.closeTab()
+            } else if self.url != self.webView.url {
+                self.url = self.webView.url
+            }
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -883,17 +898,18 @@ class TabViewController: UIViewController {
             progressWorker.progressDidChange(webView.estimatedProgress)
             
         case #keyPath(WKWebView.url):
-        // A short delay is required here, because the URL takes some time
-        // to propagate to the webView.url property accessor and might not
-        // be immediately available in the observer
-        let previousURL = self.url
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.webViewUrlHasChanged(previousURL: previousURL, newURL: self?.webView.url)
-        }
-            
+            // A short delay is required here, because the URL takes some time
+            // to propagate to the webView.url property accessor and might not
+            // be immediately available in the observer
+            let previousURL = self.url
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self else { return }
+                self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
+            }
+
         case #keyPath(WKWebView.canGoBack):
             delegate?.tabLoadingStateDidChange(tab: self)
-            
+
         case #keyPath(WKWebView.canGoForward):
             delegate?.tabLoadingStateDidChange(tab: self)
 
@@ -906,16 +922,15 @@ class TabViewController: UIViewController {
     }
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
-        
         // Handle DuckPlayer Navigation URL changes
         if let currentURL = newURL ?? webView.url {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
-            
+
         if url == nil {
-            url = webView.url
-        } else if let currentHost = url?.host, let newHost = webView.url?.host, currentHost == newHost {
-            url = webView.url
+            url = newURL
+        } else if let currentHost = url?.host, let newHost = newURL?.host, currentHost == newHost {
+            url = newURL
         }
     }
     
@@ -1217,7 +1232,7 @@ class TabViewController: UIViewController {
     }
     
     func didLaunchBrowsingMenu() {
-        DaxDialogs.shared.resumeRegularFlow()
+        daxDialogsManager.resumeRegularFlow()
     }
 
     private func openExternally(url: URL) {
@@ -1551,6 +1566,7 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(webView.url)
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
+        adClickExternalOpenDetector.startNavigation()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -1558,6 +1574,7 @@ extension TabViewController: WKNavigationDelegate {
         self.currentlyLoadedURL = webView.url
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
+        adClickExternalOpenDetector.finishNavigation()
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
@@ -1653,7 +1670,7 @@ extension TabViewController: WKNavigationDelegate {
     func showDaxDialogOrStartTrackerNetworksAnimationIfNeeded() {
         guard !isLinkPreview else { return }
 
-        if DaxDialogs.shared.isAddFavoriteFlow {
+        if daxDialogsManager.isAddFavoriteFlow {
             delegate?.tabDidRequestShowingMenuHighlighter(tab: self)
             return
         }
@@ -1677,14 +1694,14 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        guard let spec = DaxDialogs.shared.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
+        guard let spec = daxDialogsManager.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
 
             // Dismiss Contextual onboarding if there's no message to show.
             contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
             // Dismiss privacy dashbooard pulse animation when no browsing dialog to show.
             delegate?.tabDidRequestPrivacyDashboardButtonPulse(tab: self, animated: false)
 
-            if DaxDialogs.shared.shouldShowFireButtonPulse {
+            if daxDialogsManager.shouldShowFireButtonPulse {
                 delegate?.tabDidRequestFireButtonPulse(tab: self)
             }
             
@@ -1700,7 +1717,7 @@ extension TabViewController: WKNavigationDelegate {
             guard let self else { return }
             // https://app.asana.com/0/414709148257752/1201620790053163/f
             if self.url != daxDialogSourceURL && self.url?.isSameDuckDuckGoSearchURL(other: daxDialogSourceURL) == false {
-                DaxDialogs.shared.overrideShownFlagFor(spec, flag: false)
+                daxDialogsManager.overrideShownFlagFor(spec, flag: false)
                 self.isShowingFullScreenDaxDialog = false
                 return
             }
@@ -1749,6 +1766,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
         webpageDidFailToLoad()
         checkForReloadOnError()
@@ -1774,6 +1792,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation(error: error)
         hideProgressIndicator()
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()

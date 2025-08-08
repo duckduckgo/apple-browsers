@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Vyhľadávať";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Zobrazenie a správa pripojenia VPN. Vyžaduje predplatné služby Privacy Pro.";
+"widget.gallery.vpn.description" = "Zobrazenie a správa pripojenia VPN. Vyžaduje predplatné DuckDuckGo.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

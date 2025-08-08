@@ -136,7 +136,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let mockRemoteKeyExchanger: MockRemoteKeyExchanging = .init()
         dependencies.createRemoteKeyExchangerStub = mockRemoteKeyExchanger
         mockRemoteKeyExchanger.code = expectedExchangeCode
-        let pairingInfo = try controller.startExchangeMode()
+        let pairingInfo = try await controller.startExchangeMode()
 
         XCTAssertEqual(pairingInfo.base64Code, expectedExchangeCode)
         XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
@@ -155,7 +155,7 @@ final class SyncConnectionControllerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        _ = try controller.startExchangeMode()
+        _ = try await controller.startExchangeMode()
 
         await fulfillment(of: [expectation], timeout: 5)
 
@@ -175,7 +175,7 @@ final class SyncConnectionControllerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        _ = try controller.startExchangeMode()
+        _ = try await controller.startExchangeMode()
 
         await fulfillment(of: [expectation], timeout: 5)
 
@@ -188,7 +188,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createRemoteKeyExchangerStub = remoteExchanger
         remoteExchanger.pollForPublicKeyError = SyncError.unableToDecodeResponse("")
 
-        _ = try controller.startExchangeMode()
+        _ = try await controller.startExchangeMode()
 
         let error = try await waitForError()
 
@@ -203,7 +203,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
         exchangeRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
 
-        _ = try controller.startExchangeMode()
+        _ = try await controller.startExchangeMode()
 
         let error = try await waitForError()
 
@@ -224,7 +224,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createRemoteConnectorStub = mockRemoteConnector
         mockRemoteConnector.code = expectedConnectorCode
 
-        let pairingInfo = try controller.startConnectMode()
+        let pairingInfo = try await controller.startConnectMode()
 
         XCTAssertEqual(pairingInfo.base64Code, expectedConnectorCode)
         XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
@@ -241,7 +241,7 @@ final class SyncConnectionControllerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        _ = try controller.startConnectMode()
+        _ = try await controller.startConnectMode()
 
         await fulfillment(of: [expectation], timeout: 5)
     }
@@ -261,7 +261,7 @@ final class SyncConnectionControllerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        _ = try controller.startConnectMode()
+        _ = try await controller.startConnectMode()
 
         await fulfillment(of: [expectation], timeout: 5)
 
@@ -273,7 +273,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         remoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
         dependencies.createRemoteConnectorStub = remoteConnector
 
-        _ = try controller.startConnectMode()
+        _ = try await controller.startConnectMode()
 
         let error = try await waitForError()
 
@@ -289,7 +289,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.account = mockAccountManager
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
 
-        _ = try controller.startConnectMode()
+        _ = try await controller.startConnectMode()
 
         let error = try await waitForError()
 

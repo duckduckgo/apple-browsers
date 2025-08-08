@@ -33,6 +33,7 @@ public enum DefaultBrowserPromptFactory {
         defaultBrowserSettingsNavigator: DefaultBrowserPromptSettingsNavigating,
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
+        uiProvider: any DefaultBrowserPromptUIProviding,
         isOnboardingCompletedProvider: @escaping () -> Bool,
         installDateProvider: @escaping () -> Date?,
         currentDateProvider: @escaping () -> Date
@@ -68,7 +69,7 @@ public enum DefaultBrowserPromptFactory {
             dateProvider: currentDateProvider
         )
 
-        return DefaultBrowserModalPresenter(coordinator: coordinator)
+        return DefaultBrowserModalPresenter(coordinator: coordinator, uiProvider: uiProvider)
     }
 
 }

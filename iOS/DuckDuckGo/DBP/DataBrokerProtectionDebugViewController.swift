@@ -360,6 +360,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         return section.title
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let section = Sections(rawValue: indexPath.section) else {
             fatalError("Failed to create a Section from index '\(indexPath.section)'")

@@ -61,6 +61,9 @@ class DuckPlayerTests: UITestCase {
     private func openDuckPlayerSettings() {
         openBrowserSettings()
 
+        let scrollView = app.scrollViews.element(boundBy: 0)
+        scrollView.swipeUp()
+
         let duckPlayerButton = app.buttons["PreferencesSidebar.duckplayerButton"]
         XCTAssertTrue(
             duckPlayerButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),

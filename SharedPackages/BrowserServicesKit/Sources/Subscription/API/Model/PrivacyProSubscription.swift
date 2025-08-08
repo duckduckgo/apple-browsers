@@ -131,6 +131,6 @@ public struct PrivacyProSubscription: Codable, Equatable, CustomDebugStringConve
         lhs.platform == rhs.platform &&
         lhs.status == rhs.status &&
         Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
-        Set(arrayLiteral: lhs.features) == Set(arrayLiteral: rhs.features)
+        Set(lhs.features ?? []) == Set(rhs.features ?? [])
     }
 }

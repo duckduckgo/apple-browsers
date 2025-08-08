@@ -37,8 +37,6 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
     private let dateProvider: () -> Date
     private let calendar: Calendar
 
-    private var notificationCancellable: AnyCancellable?
-
     /// Creates a new activity monitor with the specified configuration.
     ///
     /// The monitor immediately begins observing application lifecycle notifications to measure user activity. 

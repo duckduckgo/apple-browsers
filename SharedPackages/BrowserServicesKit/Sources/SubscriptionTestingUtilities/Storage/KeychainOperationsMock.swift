@@ -19,7 +19,7 @@
 import Foundation
 @testable import Subscription
 
-public final class KeychainOperationsMock: KeychainOperationsProtocol {
+public final class KeychainOperationsMock: KeychainOperationsProviding {
 
     private var storage: [String: Data] = [:]
     private let queue = DispatchQueue(label: "mock.keychain.queue", attributes: .concurrent)

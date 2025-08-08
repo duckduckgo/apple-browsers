@@ -90,7 +90,7 @@ public final class KeychainManager: KeychainManaging {
 
     // MARK: - Properties
 
-    private let keychainOperations: KeychainOperationsProtocol
+    private let keychainOperations: KeychainOperationsProviding
     private let attributes: KeychainAttributes
     private var writingBacklog: [String: Data] = [:]
     private var cancellables = Set<AnyCancellable>()
@@ -104,7 +104,7 @@ public final class KeychainManager: KeychainManaging {
     /// - Parameters:
     ///   - keychainOperations: The keychain operations provider (defaults to system keychain)
     ///   - attributes: Base keychain query attributes for all operations
-    public init(keychainOperations: KeychainOperationsProtocol = DefaultKeychainOperations(),
+    public init(keychainOperations: KeychainOperationsProviding = DefaultKeychainOperations(),
                 attributes: KeychainAttributes,
                 pixelHandler: SubscriptionPixelHandling) {
         self.keychainOperations = keychainOperations
@@ -272,7 +272,7 @@ public final class KeychainManager: KeychainManaging {
     /// 
     /// This enables automatic retry of operations that were queued when the keychain was unavailable.
     private func setupKeychainAvailabilityNotifications() {
-        #if os(iOS)
+        #if canImport(UIKit)
         // On iOS, listen for app becoming active and protected data becoming available
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .receive(on: accessQueue)
@@ -290,7 +290,7 @@ public final class KeychainManager: KeychainManaging {
 
         Logger.keychainManager.debug("Set up iOS keychain availability notifications")
 
-        #elseif os(macOS)
+        #elseif canImport(APPKit)
         // On macOS, listen for app becoming active and workspace session becoming active
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
             .receive(on: accessQueue)

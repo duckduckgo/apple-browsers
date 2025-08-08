@@ -1400,6 +1400,11 @@ extension AppDelegate: UserScriptDependenciesProviding {
             return nil
         }
 
+        // This action manager is only used when NTP is independent per tab
+        guard featureFlagger.isFeatureOn(.newTabPagePerTab) else {
+            return nil
+        }
+
         return NewTabPageActionsManager(
             appearancePreferences: appearancePreferences,
             visualizeFireAnimationDecider: visualizeFireAnimationDecider,

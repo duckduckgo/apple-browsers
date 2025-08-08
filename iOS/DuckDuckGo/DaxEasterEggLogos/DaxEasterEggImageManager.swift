@@ -103,9 +103,17 @@ public class DaxEasterEggImageManager: DaxEasterEggImageManaging {
             return
         }
         
+        
+        // For smooth animations, we need to call completion quickly
+        // Use a timeout to ensure completion is always called within a reasonable time
+        var hasCompleted = false
+        
         // Try disk cache with dedicated image cache
         imageCache.retrieveImage(forKey: resource.cacheKey, options: [.onlyFromCache]) { result in
             DispatchQueue.main.async {
+                guard !hasCompleted else { return }
+                hasCompleted = true
+                
                 switch result {
                 case .success(let value):
                     completion(value.image)
@@ -113,6 +121,13 @@ public class DaxEasterEggImageManager: DaxEasterEggImageManaging {
                     completion(fallbackImage)
                 }
             }
+        }
+        
+        // Fallback timeout to ensure completion is called even if retrieveImage fails
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            guard !hasCompleted else { return }
+            hasCompleted = true
+            completion(fallbackImage)
         }
     }
     

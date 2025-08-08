@@ -78,7 +78,7 @@ class TabsModelPersistence: TabsModelPersisting {
             return model
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreReadError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyPixelSuffixesForExistingPixels,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                          error: error)
             Logger.general.error("Something went wrong unarchiving TabsModel \(error.localizedDescription, privacy: .public)")
         }
@@ -120,7 +120,7 @@ class TabsModelPersistence: TabsModelPersisting {
             try store.set(data, forKey: Constants.storageKey)
         } catch {
             DailyPixel.fireDailyAndCount(pixel: .tabsStoreSaveError,
-                                         pixelNameSuffixes: DailyPixel.Constant.dailyPixelSuffixesForExistingPixels,
+                                         pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                          error: error)
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
         }

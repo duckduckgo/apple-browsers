@@ -112,7 +112,7 @@ struct Terminating: TerminatingHandling {
         }
 
         DailyPixel.fireDailyAndCount(pixel: pixel,
-                                     pixelNameSuffixes: DailyPixel.Constant.dailyPixelSuffixesForExistingPixels,
+                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                      error: errorToReport,
                                      withAdditionalParameters: additionalParams)
         switch mode {

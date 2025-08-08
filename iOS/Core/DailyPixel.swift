@@ -46,7 +46,7 @@ public final class DailyPixel {
 
         // Can be used when an existing pixel is already sent, and only a daily version needs to be added.
         // Prevents adding a count suffix to the original pixel name for backward compatibility.
-        public static let dailyPixelSuffixesForExistingPixels = (dailySuffix: "_daily", countSuffix: "")
+        public static let dailyAndStandardSuffixes = (dailySuffix: "_daily", countSuffix: "")
 
     }
 

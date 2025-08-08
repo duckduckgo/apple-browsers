@@ -139,6 +139,10 @@ struct Launching: LaunchingHandling {
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
 
+        // MARK: - Migrations
+        // Perform synchronous migrations that must happen before further bootstrapping
+        AIChatSettingsMigration().migrateTo(AppUserDefaults())
+
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
         // 1. Respond to lifecycle events

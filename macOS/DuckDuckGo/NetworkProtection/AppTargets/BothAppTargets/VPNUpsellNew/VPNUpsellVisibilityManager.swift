@@ -100,7 +100,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
 
         updateState(.notEligible)
 
-        guard isUserEligible, isFeatureOn else {
+        guard isUserEligible else {
             return
         }
 
@@ -312,27 +312,29 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     // MARK: - Upsell Visibility
 
     private func updateState(_ newState: State) {
-        guard isFeatureOn, isUserEligible else {
-            state = .notEligible
-            return
-        }
-
         guard !shouldDismiss else {
             state = .dismissed
             return
         }
 
+        guard newState == .visible else {
+            state = newState
+            return
+        }
+
+        guard isFeatureOn, isUserEligible else {
+            state = .notEligible
+            return
+        }
+
         let previousState = state
-        state = newState
 
         // Fire pixel when transitioning to visible state
-        if previousState != .visible && newState == .visible {
+        if previousState != .visible {
             pixelHandler(.privacyProToolbarButtonShown)
         }
 
-        guard newState == .visible else {
-            return
-        }
+        state = newState
 
         shouldShowNotificationDot = !persistor.vpnUpsellPopoverViewed
     }

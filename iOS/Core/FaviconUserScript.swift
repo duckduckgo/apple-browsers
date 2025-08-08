@@ -22,6 +22,7 @@ import UserScript
 
 public protocol FaviconUserScriptDelegate: NSObjectProtocol {
 
+    @MainActor
     func faviconUserScript(_ script: FaviconUserScript, didRequestUpdateFaviconForHost host: String, withUrl url: URL?)
 
 }

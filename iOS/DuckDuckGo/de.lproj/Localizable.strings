@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Standardmäßig privat suchen";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo bietet auch ein %1$@, das mit einem %2$@ und fortschrittlicher, privater KI verfügbar ist.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "optionales kostenpflichtiges Abonnement";
 
@@ -2690,10 +2687,10 @@
 "Reset" = "Zurücksetzen";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Pillen-Verwerfen-Zähler zurücksetzen";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Priming-Modalzustand zurücksetzen";
 
 /* No comment provided by engineer. */
 "Results" = "Ergebnisse";
@@ -2763,6 +2760,9 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-Shortcuts";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Experimentelle Adressleiste";
 
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Suche im Web oder frag Duck.ai direkt über die Adressleiste";
@@ -2886,6 +2886,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Passwörter importieren";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Neu";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";

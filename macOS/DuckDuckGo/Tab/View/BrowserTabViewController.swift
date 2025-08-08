@@ -48,7 +48,7 @@ final class BrowserTabViewController: NSViewController {
     private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: .browserTabBackground, borderWidth: 0)
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
-    private let newTabPageActionsManager: NewTabPageActionsManager
+    private let newTabPageActionsManager: () -> NewTabPageActionsManager
 
     private var _newTabPageWebViewModel: NewTabPageWebViewModel?
     var newTabPageWebViewModel: NewTabPageWebViewModel {
@@ -58,12 +58,14 @@ final class BrowserTabViewController: NSViewController {
 
         let newTabPageWebViewModel = NewTabPageWebViewModel(
             featureFlagger: featureFlagger,
-            actionsManager: newTabPageActionsManager,
-            activeRemoteMessageModel: activeRemoteMessageModel
+            actionsManager: newTabPageActionsManager(),
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            newTabPageLoadMetrics: newTabPageLoadMetrics
         )
         _newTabPageWebViewModel = newTabPageWebViewModel
         return newTabPageWebViewModel
     }
+    let newTabPageLoadMetrics = NewTabPageLoadMetrics()
 
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -125,7 +127,7 @@ final class BrowserTabViewController: NSViewController {
          onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          windowControllersManager: WindowControllersManagerProtocol = NSApp.delegateTyped.windowControllersManager,
-         newTabPageActionsManager: NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
+         newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -645,7 +647,7 @@ final class BrowserTabViewController: NSViewController {
         let tabContent = tabContent ?? tabViewModel.tabContent
         switch tabContent {
         case .newtab:
-            return newTabPageWebViewModel.webView
+            return featureFlagger.isFeatureOn(.newTabPagePerTab) ? tabViewModel.tab.webView : newTabPageWebViewModel.webView
         default:
             return tabViewModel.tab.webView
         }
@@ -978,8 +980,21 @@ final class BrowserTabViewController: NSViewController {
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {
         if shouldReplaceWebView(for: tabViewModel) {
+            if tabViewModel?.tabContent == .newtab {
+                newTabPageLoadMetrics.onNTPWillPresent()
+            }
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
+            if tabViewModel?.tabContent == .newtab {
+                if !newTabPageWebViewModel.webView.isLoading {
+                    // New Tab Page is presented, but still loading
+                    newTabPageLoadMetrics.onNTPDidPresent()
+                }
+            }
+        } else {
+            if tabViewModel?.tabContent == .newtab {
+                newTabPageLoadMetrics.onNTPAlreadyPresented()
+            }
         }
     }
 

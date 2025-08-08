@@ -1076,7 +1076,7 @@
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Huidig aantal afwijzingen: %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Standaard privé zoeken";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo heeft ook een %1$@, beschikbaar met een %2$@ en geavanceerde, privé AI.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
 
@@ -2764,6 +2761,9 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-snelkoppelingen";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Experimentele adresbalk";
+
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Zoeken op het web of direct een vraag stellen aan Duck.ai vanuit de adresbalk";
 
@@ -2886,6 +2886,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Wachtwoorden importeren";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Nieuw";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Toetsenbord";

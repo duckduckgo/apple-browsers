@@ -38,10 +38,11 @@ struct BrokerProfileScanSubJob {
 
     // MARK: - Scan Jobs
 
+    /// Returns: `true` if the scan was executed, `false` if it was skipped
     public func runScan(brokerProfileQueryData: BrokerProfileQueryData,
                         showWebView: Bool,
                         isManual: Bool,
-                        shouldRunNextStep: @escaping () -> Bool) async throws {
+                        shouldRunNextStep: @escaping () -> Bool) async throws -> Bool {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 1. Validate that the broker and profile query data objects each have an ID:
@@ -159,6 +160,8 @@ struct BrokerProfileScanSubJob {
                                  schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig)
             throw error
         }
+
+        return true
     }
 
     private func scheduleOptOutsForExtractedProfiles(extractedProfiles: [ExtractedProfile],

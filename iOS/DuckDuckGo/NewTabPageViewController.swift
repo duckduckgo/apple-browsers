@@ -33,7 +33,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private let variantManager: VariantManager
     private let newTabDialogFactory: any NewTabDaxDialogProvider
-    private let newTabDialogTypeProvider: NewTabDialogSpecProvider
+    private let daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
@@ -47,7 +47,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private let messageNavigationDelegate: MessageNavigationDelegate
 
-    private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
 
@@ -58,8 +57,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          privacyProDataReporting: PrivacyProDataReporting? = nil,
          variantManager: VariantManager,
          newTabDialogFactory: any NewTabDaxDialogProvider,
-         newTabDialogTypeProvider: NewTabDialogSpecProvider,
-         privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
+         daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
@@ -68,8 +66,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.associatedTab = tab
         self.variantManager = variantManager
         self.newTabDialogFactory = newTabDialogFactory
-        self.newTabDialogTypeProvider = newTabDialogTypeProvider
-        self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
+        self.daxDialogsManager = daxDialogsManager
         self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
@@ -227,7 +224,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     func launchNewSearch() {
         // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
-        guard !privacyProPromotionCoordinating.isShowingPrivacyProPromotion else { return }
+        guard !daxDialogsManager.isShowingPrivacyProPromotion else { return }
         chromeDelegate?.omniBar.beginEditing()
     }
 
@@ -262,7 +259,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
-        showNextDaxDialogNew(dialogProvider: newTabDialogTypeProvider, factory: newTabDialogFactory)
+        showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 
     // MARK: -

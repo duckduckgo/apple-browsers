@@ -29,8 +29,6 @@ extension PermissionType {
             return UserText.permissionGeolocation
         case .popups:
             return UserText.permissionPopups
-        case .wifiHotspot:
-            return UserText.permissionWifiHotspot
         case .externalScheme(scheme: let scheme):
             guard let url = URL(string: scheme + URL.NavigationalScheme.separator),
                   let app = NSWorkspace.shared.application(toOpen: url)
@@ -103,8 +101,6 @@ final class PermissionAuthorizationViewController: NSViewController {
             descriptionLabel.stringValue = String(format: UserText.popupWindowsPermissionAuthorizationFormat,
                                                   query.domain,
                                                   query.permissions.localizedDescription.lowercased())
-        case .wifiHotspot:
-            descriptionLabel.stringValue = UserText.wifiHotspotPermissionAuthorizationFormat
         case .externalScheme where query.domain.isEmpty:
             descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat,
                                                   query.permissions.localizedDescription)

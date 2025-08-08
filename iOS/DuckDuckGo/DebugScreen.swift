@@ -37,6 +37,7 @@ enum DebugScreen: Identifiable {
         let fireproofing: Fireproofing
         let keyValueStore: ThrowingKeyValueStoring
         let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+        let daxDialogManager: DaxDialogsManaging
 
     }
 

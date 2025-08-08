@@ -27,6 +27,64 @@ import PrivacyStats
 
 extension NewTabPageActionsManager {
 
+    @MainActor
+    convenience init(
+        appearancePreferences: AppearancePreferences,
+        visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
+        customizationModel: NewTabPageCustomizationModel,
+        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
+        faviconManager: FaviconManagement,
+        duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
+        contentBlocking: ContentBlockingProtocol,
+        trackerDataManager: TrackerDataManager,
+        activeRemoteMessageModel: ActiveRemoteMessageModel,
+        historyCoordinator: HistoryProviderCoordinating,
+        fireproofDomains: URLFireproofStatusProviding,
+        privacyStats: PrivacyStatsCollecting,
+        freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
+        tld: TLD,
+        fire: @escaping () async -> Fire,
+        keyValueStore: ThrowingKeyValueStoring,
+        legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
+        featureFlagger: FeatureFlagger,
+        windowControllersManager: WindowControllersManagerProtocol,
+        tabsPreferences: TabsPreferences,
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
+    ) {
+        let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
+        let protectionsReportModel = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            keyValueStore: keyValueStore,
+            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
+            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
+            getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed,
+        )
+
+        self.init(
+            appearancePreferences: appearancePreferences,
+            customizationModel: customizationModel,
+            bookmarkManager: bookmarkManager,
+            faviconManager: faviconManager,
+            contentBlocking: contentBlocking,
+            trackerDataManager: trackerDataManager,
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            privacyStats: privacyStats,
+            protectionsReportModel: protectionsReportModel,
+            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
+            tld: tld,
+            fire: fire,
+            keyValueStore: keyValueStore,
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: tabsPreferences,
+            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
+        )
+    }
+
+    @MainActor
     convenience init(
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
@@ -34,6 +92,7 @@ extension NewTabPageActionsManager {
         faviconManager: FaviconManagement,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol,
+        trackerDataManager: TrackerDataManager,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryProviderCoordinating,
         fireproofDomains: URLFireproofStatusProviding,

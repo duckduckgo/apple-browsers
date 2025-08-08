@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Yksityinen selaus oletuksena";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo:lla on myös %1$@, joka on saatavilla %2$@:n kanssa ja edistyneellä, yksityisellä tekoälyllä.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valinnainen maksullinen tilaus";
 
@@ -2764,6 +2761,9 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-pikakuvakkeet";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Kokeellinen osoitekenttä";
+
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Hae verkosta tai kysy Duck.ai:lta kirjoittamalla suoraan osoiteriville";
 
@@ -2886,6 +2886,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Tuo salasanat";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Uusi";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Näppäimistö";

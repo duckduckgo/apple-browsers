@@ -76,6 +76,11 @@ extension XCUIApplication {
          typeKey("t", modifierFlags: .command)
      }
 
+    /// Closes current tab via keyboard shortcut
+    func closeCurrentTab() {
+         typeKey("w", modifierFlags: .command)
+     }
+
     // MARK: - Bookmarks
 
     /// Reset the bookmarks so we can rely on a single bookmark's existence

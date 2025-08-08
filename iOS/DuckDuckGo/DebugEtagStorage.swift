@@ -25,7 +25,7 @@ import os.log
 /// Only intended for use via Debug screens.
 class DebugEtagStorage {
 
-    lazy var defaults = UserDefaults(suiteName: "com.duckduckgo.blocker-list.etags")
+    private let defaults = UserDefaults(suiteName: "\(Global.groupIdPrefix).app-configuration")
 
     func loadEtag(for storeKey: String) -> String? {
         let etag = defaults?.string(forKey: storeKey)

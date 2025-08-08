@@ -1556,7 +1556,7 @@
 "Enrolled: %@" = "Inscritos: %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Píldora de entrada";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Iniciar sesión";
@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Búsqueda privada por defecto";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo también cuenta con una %1$@, disponible con una %2$@ e IA avanzada y privada.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "suscripción de pago opcional";
 
@@ -2764,6 +2761,9 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Atajos de Duck.ai";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Barra de direcciones experimental";
+
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Busca en la web o pregúntale a Duck.ai directamente desde la barra de direcciones";
 
@@ -2886,6 +2886,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importar contraseñas";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Nuevo";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Teclado";

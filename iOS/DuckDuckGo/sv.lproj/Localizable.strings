@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Sök privat som standard";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo har också ett %1$@ där det ingår ett %2$@ och avancerad, privat AI.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valfri betald prenumeration";
 
@@ -2764,6 +2761,9 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-genvägar";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Experimentell adressfält";
+
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Sök på webben eller fråga Duck.ai direkt i adressfältet";
 
@@ -2886,6 +2886,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importera lösenord";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Ny";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";

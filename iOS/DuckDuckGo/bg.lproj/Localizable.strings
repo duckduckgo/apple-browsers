@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Поверително търсене по подразбиране";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo има и %1$@, заедно с %2$@ и поверителен чат с усъвършенстван AI.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "незадължителен платен абонамент";
 
@@ -2764,6 +2761,9 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Преки пътища за Duck.ai";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Експериментална адресна лента";
+
 /* Settings screen footer text for showing AI Chat in the input box */
 "settings.aichat.shortcuts.input.footer" = "Потърсете в мрежата или попитайте Duck.ai директно от адресната лента";
 
@@ -2886,6 +2886,9 @@
 
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Импортиране на пароли";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "Нов";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";

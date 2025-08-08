@@ -20,8 +20,18 @@
 import Foundation
 
 enum UserText {
-    static let title = NSLocalizedString("setDefaultBrowser.modal.title", bundle: Bundle.module, value: "Let DuckDuckGo protect more of what you do online", comment: "Set Default Browser Modal Sheet Title.")
-    static let message = NSLocalizedString("setDefaultBrowser.modal.message", bundle: Bundle.module, value: "Make us your default browser so all site links open in DuckDuckGo.", comment: "Set Default Browser Modal Sheet Message.")
-    static let setDefaultBrowserCTA = NSLocalizedString("setDefaultBrowser.cta.primary.title", bundle: Bundle.module, value: "Set As Default Browser", comment: "The tile of the CTA to set the browser as default.")
-    static let doNotAskAgainCTA = NSLocalizedString("setDefaultBrowser.cta.secondary.title", bundle: Bundle.module, value: "Don’t Ask Again", comment: "The title of the CTA to permanently dismiss the modal sheet.")
+
+    enum ActiveUserModal {
+        static let title = NSLocalizedString("setDefaultBrowser.modal.title", bundle: Bundle.module, value: "Let DuckDuckGo protect more of what you do online", comment: "Set Default Browser Modal Sheet Title.")
+        static let message = NSLocalizedString("setDefaultBrowser.modal.message", bundle: Bundle.module, value: "Make us your default browser so all site links open in DuckDuckGo.", comment: "Set Default Browser Modal Sheet Message.")
+        static let setDefaultBrowserCTA = NSLocalizedString("setDefaultBrowser.cta.primary.title", bundle: Bundle.module, value: "Set As Default Browser", comment: "The tile of the CTA to set the browser as default.")
+        static let doNotAskAgainCTA = NSLocalizedString("setDefaultBrowser.cta.secondary.title", bundle: Bundle.module, value: "Don’t Ask Again", comment: "The title of the CTA to permanently dismiss the modal sheet.")
+    }
+
+    enum InactiveUserModal {
+        static let title = NSLocalizedString("setDefaultBrowser.modal.inactive-user.title", bundle: Bundle.module, value: "DuckDuckGo has protections other browsers don’t.", comment: "Title of the a page inviting the inactive user to use the DuckDuckGo browser as default browser")
+        static let moreProtections = NSLocalizedString("setDefaultBrowser.modal.inactive-user.more-protections.title", bundle: .module, value: "[Plus even more protections...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)", comment: "Title of the button explaining of other browser protections that link to a web page. (do not remove the link)")
+        static let setDefaultBrowserCTA = NSLocalizedString("setDefaultBrowser.inactive-user.cta.primary.title", bundle: Bundle.module, value: "Open Links with DuckDuckGo", comment: "The tile of the button the user can use to set the browser as default.")
+        static let continueBrowsingCTA = NSLocalizedString("setDefaultBrowser.inactive-user.cta.secondary.title", bundle: Bundle.module, value: "Maybe Later", comment: "The title of the button to dismiss the prompt.")
+    }
 }

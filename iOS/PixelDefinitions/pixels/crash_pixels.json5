@@ -1,4 +1,3 @@
-// See https://app.asana.com/1/137249556945/project/481882893211075/task/1203870891005114.
 {
     m_d_bookmarks_could_not_load_database: {
         description: 'Fires when bookmarks database failed to load.',
@@ -110,19 +109,5 @@
         triggers: ['exception'],
         suffixes: ['platform', 'form_factor', 'first_daily_count'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
-    },
-    'm_debug_app-did-show-ui-time-2-': {
-        description: 'Fires when app failed to handle crash on launch.',
-        owners: ['jaceklyp', 'bwaresiak'],
-        triggers: ['exception'],
-        suffixes: ['time_bucket', 'platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            {
-                key: 'time',
-                description: 'Duration time',
-                type: 'number',
-            },
-        ],
     },
 }

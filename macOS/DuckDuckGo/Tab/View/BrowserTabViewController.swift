@@ -981,21 +981,44 @@ final class BrowserTabViewController: NSViewController {
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {
         if shouldReplaceWebView(for: tabViewModel) {
             if tabViewModel?.tabContent == .newtab {
-                newTabPageLoadMetrics.onNTPWillPresent()
+                reportNewTabPageLoadStart()
             }
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
             if tabViewModel?.tabContent == .newtab {
-                if !newTabPageWebViewModel.webView.isLoading {
-                    // New Tab Page is presented, but still loading
-                    newTabPageLoadMetrics.onNTPDidPresent()
-                }
+                reportNewTabPageLoadEnd()
             }
         } else {
             if tabViewModel?.tabContent == .newtab {
-                newTabPageLoadMetrics.onNTPAlreadyPresented()
+                reportNewTabPageAlreadyPresented()
             }
         }
+    }
+
+    func reportNewTabPageLoadStart() {
+        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            tabViewModel?.tab.newTabPage?.newTabPageWillBeShown()
+        } else {
+            newTabPageLoadMetrics.onNTPWillPresent()
+        }
+    }
+
+    func reportNewTabPageLoadEnd() {
+        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            tabViewModel?.tab.newTabPage?.newTabPageShown()
+        } else {
+            if !newTabPageWebViewModel.webView.isLoading {
+                // New Tab Page is presented, but still loading
+                newTabPageLoadMetrics.onNTPDidPresent()
+            }
+        }
+
+    }
+
+    func reportNewTabPageAlreadyPresented() {
+        guard !featureFlagger.isFeatureOn(.newTabPagePerTab) else { return }
+
+        newTabPageLoadMetrics.onNTPAlreadyPresented()
     }
 
     func showTabContentForSettings(pane: PreferencePaneIdentifier?) {

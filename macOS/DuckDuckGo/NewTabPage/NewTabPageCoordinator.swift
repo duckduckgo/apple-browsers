@@ -104,6 +104,6 @@ final class NewTabPageCoordinator {
             .store(in: &cancellables)
     }
 
-    private let newTabPageShownPixelSender: NewTabPageShownPixelSender
+    private(set) var newTabPageShownPixelSender: NewTabPageShownPixelSender
     private var cancellables: Set<AnyCancellable> = []
 }

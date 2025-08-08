@@ -82,6 +82,7 @@ protocol TabExtensionDependencies {
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
     var hotspotDetectionService: HotspotDetectionServiceProtocol { get }
     var captivePortalPopupManager: CaptivePortalPopupManager { get }
+    var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -204,7 +205,8 @@ extension TabExtensionsBuilder {
         }
         add {
             NewTabPageTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
-                                   webViewPublisher: args.webViewFuture)
+                                   webViewPublisher: args.webViewFuture,
+                                   pixelSender: dependencies.newTabPageShownPixelSender)
         }
 
         add {

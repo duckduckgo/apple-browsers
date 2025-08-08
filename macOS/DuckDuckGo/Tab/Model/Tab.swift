@@ -64,6 +64,7 @@ protocol NewWindowPolicyDecisionMaker {
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
         var hotspotDetectionService: HotspotDetectionServiceProtocol
         var captivePortalPopupManager: CaptivePortalPopupManager
+        var newTabPageShownPixelSender: NewTabPageShownPixelSender
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -140,7 +141,8 @@ protocol NewWindowPolicyDecisionMaker {
                      tabsPreferences: TabsPreferences = TabsPreferences.shared,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
-                     aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil
+                     aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
+                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -199,7 +201,8 @@ protocol NewWindowPolicyDecisionMaker {
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
-                  captivePortalPopupManager: captivePortalPopupManager ?? NSApp.delegateTyped.captivePortalPopupManager)
+                  captivePortalPopupManager: captivePortalPopupManager ?? NSApp.delegateTyped.captivePortalPopupManager,
+                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender)
     }
 
     @MainActor
@@ -244,7 +247,8 @@ protocol NewWindowPolicyDecisionMaker {
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
-         captivePortalPopupManager: CaptivePortalPopupManager
+         captivePortalPopupManager: CaptivePortalPopupManager,
+         newTabPageShownPixelSender: NewTabPageShownPixelSender
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -330,7 +334,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                        hotspotDetectionService: hotspotDetectionService,
-                                                       captivePortalPopupManager: captivePortalPopupManager))
+                                                       captivePortalPopupManager: captivePortalPopupManager,
+                                                       newTabPageShownPixelSender: newTabPageShownPixelSender))
 
         super.init()
         tabGetter = { [weak self] in self }

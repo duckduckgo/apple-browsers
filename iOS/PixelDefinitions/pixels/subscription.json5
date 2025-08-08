@@ -5,49 +5,21 @@
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'source',
-                description: 'The source component that triggered the keychain operation',
-                type: 'string',
-            },
-        ],
+        parameters: ['appVersion', 'pixelSource'],
     },
     'm_privacy-pro_keychainmanager_deallocated_with_backlog': {
         description: 'Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog',
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'source',
-                description: 'The source component that triggered the keychain operation',
-                type: 'string',
-            },
-            {
-                key: 'backlogCount',
-                description: 'The number of items remaining in the backlog when deallocated',
-                type: 'integer',
-            },
-        ],
+        parameters: ['appVersion', 'pixelSource'],
     },
     'm_privacy-pro_keychainmanager_data_wrote_from_backlog': {
         description: 'Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain',
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'source',
-                description: 'The source component that triggered the keychain operation',
-                type: 'string',
-            },
+        parameters: parameters: ['appVersion', 'pixelSource',
             {
                 key: 'itemsWritten',
                 description: 'The number of items successfully written from the backlog',
@@ -60,14 +32,7 @@
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'source',
-                description: 'The source component that triggered the keychain operation',
-                type: 'string',
-            },
+        parameters: ['appVersion', 'pixelSource',
             {
                 key: 'error',
                 description: 'The error code or description for the failed write operation',

@@ -26,6 +26,7 @@ enum TerminationError: Error {
     case bookmarksDatabase(Error)
     case historyDatabase(Error)
     case keyValueFileStore(AppKeyValueFileStoreService.Error)
+    case tabsPersistence(TabsPersistenceError)
 
 }
 
@@ -102,9 +103,18 @@ struct Terminating: TerminatingHandling {
             case .kvfsInitError: .keyValueFileStoreInitError
             }
             mode = .immediately(debugMessage: "KeyValueFileStore init failed: \(error)")
+        case .tabsPersistence(let error):
+            pixel = switch error {
+            case .appSupportDirAccess: .tabsStoreSupportDirAccessError
+            case .storeInit: .tabsStoreInitError
+            }
+            mode = .immediately(debugMessage: "TabsModelPersistence init failed: \(error)")
         }
 
-        DailyPixel.fireDailyAndCount(pixel: pixel, pixelNameSuffixes: ("_daily", ""), error: errorToReport, withAdditionalParameters: additionalParams)
+        DailyPixel.fireDailyAndCount(pixel: pixel,
+                                     pixelNameSuffixes: (dailySuffix: "_daily", countSuffix: ""),
+                                     error: errorToReport,
+                                     withAdditionalParameters: additionalParams)
         switch mode {
         case .immediately(let message):
             Thread.sleep(forTimeInterval: 1)

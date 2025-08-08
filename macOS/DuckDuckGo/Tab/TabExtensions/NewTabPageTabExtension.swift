@@ -60,11 +60,11 @@ final class NewTabPageTabExtension {
 
     }
 
-    func newTabPageWillBeShown() {
+    func onNewTabPageWillPresent() {
         loadMetrics.onNTPWillPresent()
     }
 
-    func newTabPageShown() {
+    func onNewTabPageDidPresent() {
         assert(webView?.superview != nil)
 
         pixelSender.firePixel()
@@ -92,8 +92,8 @@ extension NewTabPageTabExtension: NavigationResponder {
 
 protocol NewTabPageTabExtensionProtocol: AnyObject, NavigationResponder {
 
-    func newTabPageWillBeShown()
-    func newTabPageShown()
+    func onNewTabPageWillPresent()
+    func onNewTabPageDidPresent()
 
 }
 

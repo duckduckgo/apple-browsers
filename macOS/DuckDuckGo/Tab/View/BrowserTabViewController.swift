@@ -981,31 +981,31 @@ final class BrowserTabViewController: NSViewController {
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {
         if shouldReplaceWebView(for: tabViewModel) {
             if tabViewModel?.tabContent == .newtab {
-                reportNewTabPageLoadStart()
+                onNewTabPageWillPresent()
             }
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
             if tabViewModel?.tabContent == .newtab {
-                reportNewTabPageLoadEnd()
+                onNewTabPageDidPresent()
             }
         } else {
             if tabViewModel?.tabContent == .newtab {
-                reportNewTabPageAlreadyPresented()
+                onNewTabPageAlreadyPresented()
             }
         }
     }
 
-    func reportNewTabPageLoadStart() {
+    func onNewTabPageWillPresent() {
         if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            tabViewModel?.tab.newTabPage?.newTabPageWillBeShown()
+            tabViewModel?.tab.newTabPage?.onNewTabPageWillPresent()
         } else {
             newTabPageLoadMetrics.onNTPWillPresent()
         }
     }
 
-    func reportNewTabPageLoadEnd() {
+    func onNewTabPageDidPresent() {
         if featureFlagger.isFeatureOn(.newTabPagePerTab) {
-            tabViewModel?.tab.newTabPage?.newTabPageShown()
+            tabViewModel?.tab.newTabPage?.onNewTabPageDidPresent()
         } else {
             if !newTabPageWebViewModel.webView.isLoading {
                 // New Tab Page is presented, but still loading
@@ -1015,7 +1015,7 @@ final class BrowserTabViewController: NSViewController {
 
     }
 
-    func reportNewTabPageAlreadyPresented() {
+    func onNewTabPageAlreadyPresented() {
         guard !featureFlagger.isFeatureOn(.newTabPagePerTab) else { return }
 
         newTabPageLoadMetrics.onNTPAlreadyPresented()

@@ -6,7 +6,7 @@
         suffixes: ['platform', 'form_factor', 'daily_standard'],
         parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
-    'm_d_bookmarks_could_not_migrate_database': {
+    m_d_bookmarks_could_not_migrate_database: {
         description: 'Fires when bookmarks database failed to migrate.',
         owners: ['jaceklyp', 'bwaresiak'],
         triggers: ['exception'],

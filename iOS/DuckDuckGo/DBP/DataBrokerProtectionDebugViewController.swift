@@ -56,11 +56,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .healthOverview:
                 return .rightDetail
             case .database:
-                if row == DatabaseRows.deviceIdentifier.rawValue {
-                    return .subtitle
-                } else {
-                    return .rightDetail
-                }
+                return .rightDetail
             case .debugActions:
                 return .rightDetail
             case .environment:
@@ -74,7 +70,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case saveProfile
         case pendingScanJobs
         case pendingOptOutJobs
-        case deviceIdentifier
         case deleteAllData
 
         var title: String {
@@ -87,12 +82,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Pending Scans"
             case .pendingOptOutJobs:
                 return "Pending Opt Outs"
-            case .deviceIdentifier:
-#if DEBUG || ALPHA
-                return "UUID"
-#else
-                return "No UUID due to wrong build type"
-#endif
             case .deleteAllData:
                 return "Delete All Data"
             }
@@ -379,9 +368,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 cell.detailTextLabel?.text = "\(jobCounts.pendingScans)"
             case .pendingOptOutJobs:
                 cell.detailTextLabel?.text = "\(jobCounts.pendingOptOuts)"
-            case .deviceIdentifier:
-                cell.detailTextLabel?.font = UIFont.monospacedSystemFont(ofSize: 17, weight: .regular)
-                cell.detailTextLabel?.text = DataBrokerProtectionSettings.deviceIdentifier
             case .deleteAllData:
                 cell.textLabel?.textColor = .systemRed
             }
@@ -518,20 +504,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
-    override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard let section = Sections(rawValue: indexPath.section), section == .database,
-              let row = DatabaseRows(rawValue: indexPath.row), row == .deviceIdentifier else {
-            return nil
-        }
-
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
-            let copyAction = UIAction(title: "Copy", image: UIImage(systemName: "doc.on.doc")) { _ in
-                UIPasteboard.general.string = DataBrokerProtectionSettings.deviceIdentifier
-            }
-
-            return UIMenu(title: "", children: [copyAction])
-        }
-    }
 
     // MARK: - Debug Action Rows
 
@@ -661,7 +633,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             self.navigationController?.pushViewController(saveProfileViewController, animated: true)
         case .deleteAllData:
             presentDeleteAllDataAlertController()
-        case .deviceIdentifier, .pendingScanJobs, .pendingOptOutJobs:
+        case .pendingScanJobs, .pendingOptOutJobs:
             break
         }
     }
@@ -670,7 +642,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         let alert = UIAlertController(title: "Delete All PIR Data?", message: "This will remove all data and statistics from the PIR database, and give you a new tester ID.", preferredStyle: .alert)
         alert.addAction(title: "Delete All Data", style: .destructive) { [weak self] in
             try? self?.manager.deleteAllData()
-            DataBrokerProtectionSettings.incrementDeviceIdentifier()
             self?.loadJobCounts()
             self?.tableView.reloadData()
         }

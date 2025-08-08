@@ -283,20 +283,8 @@ struct BrokerProfileScanSubJob {
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                     let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
-
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker,
-                                                     attemptId: attemptUUID,
-                                                     duration: calculateDurationSinceStart,
-                                                     brokerType: brokerProfileQueryData.dataBroker.type,
-                                                     vpnConnectionState: vpnConnectionState,
-                                                     vpnBypassStatus: vpnBypassStatus,
-                                                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#else
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
-#endif
                 }
             }
         }

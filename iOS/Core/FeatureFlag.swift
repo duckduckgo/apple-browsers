@@ -144,6 +144,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
+    
+    case personalInformationRemoval
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
@@ -205,6 +207,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
+             .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground:
             return true
         case .showSettingsCompleteSetupSection:
@@ -344,6 +347,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+        case .personalInformationRemoval:
+            return .remoteReleasable(.feature(.dbp))
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         }

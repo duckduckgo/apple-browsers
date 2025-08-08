@@ -19,7 +19,7 @@
         owners: ['federicocappelli'],
         triggers: ['other'],
         suffixes: ['first_daily_count'],
-        parameters: parameters: ['appVersion', 'pixelSource',
+        parameters: ['appVersion', 'pixelSource',
             {
                 key: 'itemsWritten',
                 description: 'The number of items successfully written from the backlog',

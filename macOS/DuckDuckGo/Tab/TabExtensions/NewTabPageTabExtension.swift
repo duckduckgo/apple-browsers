@@ -65,7 +65,10 @@ final class NewTabPageTabExtension {
     }
 
     func onNewTabPageDidPresent() {
-        assert(webView?.superview != nil)
+        guard webView?.superview != nil else {
+            assertionFailure("Webview not yet added to the view hierarchy")
+            return
+        }
 
         pixelSender.firePixel()
         if webView?.isLoading == true {
@@ -82,9 +85,10 @@ extension NewTabPageTabExtension: NavigationResponder {
     func navigationDidFinish(_ navigation: Navigation) {
         if sendPixelOnFinish {
             sendPixelOnFinish = false
-            if webView?.superview != nil {
-                loadMetrics.onNTPDidPresent()
+            guard webView?.superview != nil else {
+                return
             }
+            loadMetrics.onNTPDidPresent()
         }
     }
 

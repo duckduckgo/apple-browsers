@@ -196,6 +196,7 @@ class MainViewController: UIViewController {
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
     let experimentalAIChatManager: ExperimentalAIChatManager
+    let daxDialogsManager: DaxDialogsManaging
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -259,7 +260,8 @@ class MainViewController: UIViewController {
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
         themeManager: ThemeManaging,
         keyValueStore: ThrowingKeyValueStoring,
-        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+        daxDialogsManager: DaxDialogsManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -296,6 +298,7 @@ class MainViewController: UIViewController {
         self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
+        self.daxDialogsManager = daxDialogsManager
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -330,14 +333,14 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
 
         let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
                                                                                          homePageMessagesConfiguration: homePageConfiguration,
                                                                                          privacyProDataReporting: privacyProDataReporter,
                                                                                          variantManager: variantManager,
                                                                                          newTabDialogFactory: newTabDaxDialogFactory,
-                                                                                         newTabDaxDialogProvider: DaxDialogs.shared,
+                                                                                         newTabDaxDialogManager: daxDialogsManager,
                                                                                          faviconLoader: faviconLoader,
                                                                                          messageNavigationDelegate: self,
                                                                                          appSettings: appSettings)
@@ -432,7 +435,7 @@ class MainViewController: UIViewController {
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
         applyWidth()
 
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
 
@@ -965,7 +968,7 @@ class MainViewController: UIViewController {
             fatalError("No tab model")
         }
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
                                                   isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
                                                   interactionModel: favoritesViewModel,
@@ -973,7 +976,7 @@ class MainViewController: UIViewController {
                                                   privacyProDataReporting: privacyProDataReporter,
                                                   variantManager: variantManager,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
-                                                  newTabDialogTypeProvider: DaxDialogs.shared,
+                                                  daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
                                                   appSettings: appSettings)
@@ -1077,7 +1080,7 @@ class MainViewController: UIViewController {
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
-        if DaxDialogs.shared.shouldShowFireButtonPulse && !DaxDialogs.shared.shouldShowPrivacyButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse && !daxDialogsManager.shouldShowPrivacyButtonPulse {
             showFireButtonPulse()
         }
     }
@@ -1244,7 +1247,7 @@ class MainViewController: UIViewController {
         themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
     }
@@ -1472,7 +1475,7 @@ class MainViewController: UIViewController {
         suggestionTrayController?.show(for: type)
         applyWidthToTrayController()
         if !AppWidthObserver.shared.isLargeWidth {
-            if !DaxDialogs.shared.shouldShowFireButtonPulse {
+            if !daxDialogsManager.shouldShowFireButtonPulse {
                 ViewHighlighter.hideAll()
             }
             if type.hideOmnibarSeparator() && appSettings.currentAddressBarPosition != .bottom {
@@ -1625,7 +1628,7 @@ class MainViewController: UIViewController {
             notificationView == nil,
             !isPad,
             DefaultTutorialSettings().hasSeenOnboarding,
-            !DaxDialogs.shared.isStillOnboarding(),
+            !daxDialogsManager.isStillOnboarding(),
             isPortrait else { return }
         // We're using async to ensure the view dismissal happens on the first runloop after a refresh. This prevents the scenario where the view briefly appears and then immediately disappears after a refresh.
         brokenSitePromptLimiter.didShowToast()
@@ -1669,10 +1672,10 @@ class MainViewController: UIViewController {
     }
 
     func newTab(reuseExisting: Bool = false, allowingKeyboard: Bool = true) {
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
-        DaxDialogs.shared.fireButtonPulseCancelled()
+        daxDialogsManager.fireButtonPulseCancelled()
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
@@ -2206,7 +2209,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     var canHideBars: Bool {
-        return !DaxDialogs.shared.shouldShowFireButtonPulse
+        return !daxDialogsManager.shouldShowFireButtonPulse
     }
 
     var isToolbarHidden: Bool {
@@ -2347,7 +2350,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         omniBar.cancel()
@@ -2368,7 +2371,7 @@ extension MainViewController: OmniBarDelegate {
         // Dismiss privacy icon animation when showing privacy dashboard
         dismissPrivacyDashboardButtonPulse()
 
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         hideSuggestionTray()
@@ -2380,11 +2383,11 @@ extension MainViewController: OmniBarDelegate {
         omniBar.cancel()
 
         // Dismiss privacy icon animation when showing menu
-        if !DaxDialogs.shared.shouldShowPrivacyButtonPulse {
+        if !daxDialogsManager.shouldShowPrivacyButtonPulse {
             dismissPrivacyDashboardButtonPulse()
         }
 
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         performCancel()
@@ -2409,7 +2412,8 @@ extension MainViewController: OmniBarDelegate {
         }
 
         let controller = BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                                                menuEntries: menuEntries)
+                                                                menuEntries: menuEntries,
+                                                                daxDialogsManager: daxDialogsManager)
 
         controller.modalPresentationStyle = .custom
         controller.onDismiss = {
@@ -2432,7 +2436,7 @@ extension MainViewController: OmniBarDelegate {
     }
     
     @objc func onBookmarksPressed() {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         performCancel()
@@ -2476,7 +2480,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onSettingsPressed() {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         segueToSettings()
@@ -2554,7 +2558,7 @@ extension MainViewController: OmniBarDelegate {
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
         skipSERPFlow = false
         
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         guard let newTabPageViewController = newTabPageViewController else {
@@ -3055,7 +3059,7 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab) {
         selectTab(tab)
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
         themeColorManager.updateThemeColor()
@@ -3086,7 +3090,7 @@ extension MainViewController: TabSwitcherDelegate {
         }
         closeTab(tab)
         
-        if DaxDialogs.shared.shouldShowFireButtonPulse {
+        if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
     }
@@ -3271,7 +3275,7 @@ extension MainViewController: AutoClearWorker {
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
         AutoconsentManagement.shared.clearCache()
-        DaxDialogs.shared.clearHeldURLData()
+        daxDialogsManager.clearHeldURLData()
 
         if self.syncService.authState == .inactive {
             self.bookmarksDatabaseCleaner?.cleanUpDatabaseNow()
@@ -3302,7 +3306,7 @@ extension MainViewController: AutoClearWorker {
             self.forgetTabs()
             await self.forgetData()
             Instruments.shared.endTimedEvent(for: spid)
-            DaxDialogs.shared.resumeRegularFlow()
+            self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: {
             ActionMessageView.present(message: UserText.actionForgetAllDone,
                                       presentationLocation: .withBottomBar(andAddressBarBottom: self.appSettings.currentAddressBarPosition.isBottom))
@@ -3322,13 +3326,13 @@ extension MainViewController: AutoClearWorker {
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
             }
 
-            DaxDialogs.shared.clearedBrowserData()
+            self.daxDialogsManager.clearedBrowserData()
 
         }
     }
     
     private func showFireButtonPulse() {
-        DaxDialogs.shared.fireButtonPulseStarted()
+        daxDialogsManager.fireButtonPulseStarted()
         guard let window = view.window else { return }
         
         let fireButtonView: UIView?
@@ -3350,7 +3354,7 @@ extension MainViewController: AutoClearWorker {
     }
 
     private func dismissPrivacyDashboardButtonPulse() {
-        DaxDialogs.shared.setPrivacyButtonPulseSeen()
+        daxDialogsManager.setPrivacyButtonPulseSeen()
         viewCoordinator.omniBar.dismissOnboardingPrivacyIconAnimation()
     }
 

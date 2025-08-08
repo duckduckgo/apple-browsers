@@ -121,14 +121,6 @@ extension TabSwitcherViewController {
         presentForgetDataAlert()
     }
 
-    func addNewTab() {
-        guard !isProcessingUpdates else { return }
-
-        Pixel.fire(pixel: .tabSwitcherNewTab)
-        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
-        dismiss()
-    }
-
     func transitionToMultiSelect() {
         self.isEditing = true
         collectionView.reloadData()

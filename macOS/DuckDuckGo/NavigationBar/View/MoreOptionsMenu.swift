@@ -282,7 +282,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     @objc func newTab(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.newTabActionClicked, frequency: .daily)
-        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.insertOrAppendNewTab()
     }
 
     @MainActor

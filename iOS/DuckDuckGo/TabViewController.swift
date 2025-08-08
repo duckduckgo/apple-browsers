@@ -376,7 +376,8 @@ class TabViewController: UIViewController {
                                    tabInteractionStateSource: TabInteractionStateSource?,
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
-                                   keyValueStore: ThrowingKeyValueStoring) -> TabViewController {
+                                   keyValueStore: ThrowingKeyValueStoring,
+                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -398,7 +399,8 @@ class TabViewController: UIViewController {
                               tabInteractionStateSource: tabInteractionStateSource,
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
-                              keyValueStore: keyValueStore
+                              keyValueStore: keyValueStore,
+                              daxDialogsManager: daxDialogsManager
             )
         })
         return controller
@@ -443,6 +445,7 @@ class TabViewController: UIViewController {
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
     let featureDiscovery: FeatureDiscovery
     let keyValueStore: ThrowingKeyValueStoring
+    let daxDialogsManager: DaxDialogsManaging
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -466,6 +469,7 @@ class TabViewController: UIViewController {
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
                    keyValueStore: ThrowingKeyValueStoring,
+                   daxDialogsManager: DaxDialogsManaging,
                    adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
 
         self.tabModel = tabModel
@@ -490,6 +494,7 @@ class TabViewController: UIViewController {
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
+        self.daxDialogsManager = daxDialogsManager
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
@@ -1227,7 +1232,7 @@ class TabViewController: UIViewController {
     }
     
     func didLaunchBrowsingMenu() {
-        DaxDialogs.shared.resumeRegularFlow()
+        daxDialogsManager.resumeRegularFlow()
     }
 
     private func openExternally(url: URL) {
@@ -1665,7 +1670,7 @@ extension TabViewController: WKNavigationDelegate {
     func showDaxDialogOrStartTrackerNetworksAnimationIfNeeded() {
         guard !isLinkPreview else { return }
 
-        if DaxDialogs.shared.isAddFavoriteFlow {
+        if daxDialogsManager.isAddFavoriteFlow {
             delegate?.tabDidRequestShowingMenuHighlighter(tab: self)
             return
         }
@@ -1689,14 +1694,14 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        guard let spec = DaxDialogs.shared.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
+        guard let spec = daxDialogsManager.nextBrowsingMessageIfShouldShow(for: privacyInfo) else {
 
             // Dismiss Contextual onboarding if there's no message to show.
             contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: self)
             // Dismiss privacy dashbooard pulse animation when no browsing dialog to show.
             delegate?.tabDidRequestPrivacyDashboardButtonPulse(tab: self, animated: false)
 
-            if DaxDialogs.shared.shouldShowFireButtonPulse {
+            if daxDialogsManager.shouldShowFireButtonPulse {
                 delegate?.tabDidRequestFireButtonPulse(tab: self)
             }
             
@@ -1712,7 +1717,7 @@ extension TabViewController: WKNavigationDelegate {
             guard let self else { return }
             // https://app.asana.com/0/414709148257752/1201620790053163/f
             if self.url != daxDialogSourceURL && self.url?.isSameDuckDuckGoSearchURL(other: daxDialogSourceURL) == false {
-                DaxDialogs.shared.overrideShownFlagFor(spec, flag: false)
+                daxDialogsManager.overrideShownFlagFor(spec, flag: false)
                 self.isShowingFullScreenDaxDialog = false
                 return
             }

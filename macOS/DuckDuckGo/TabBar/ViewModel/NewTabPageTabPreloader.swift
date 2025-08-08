@@ -27,6 +27,8 @@ protocol NewTabPageTabPreloading: AnyObject {
 
 }
 
+/// Preloads a tab with the New Tab Page to improve the speed of opening new tabs
+/// Holds a preloaded tab and reloads it when reloadTab() is called. This is used in case the main view size changes or appearance mode changes
 final class NewTabPageTabPreloader: NewTabPageTabPreloading {
 
     private var getViewSize: () -> CGSize?

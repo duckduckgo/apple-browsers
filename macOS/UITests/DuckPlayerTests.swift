@@ -116,7 +116,6 @@ class DuckPlayerTests: UITestCase {
     }
 
     private func verifyYoutubeLoads() {
-
         // Give the page time to load
         sleep(5)
 
@@ -140,7 +139,7 @@ class DuckPlayerTests: UITestCase {
 
     // MARK:  Always Mode - Serp
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPCarousel() throws {
-        XCTSkip() // Disabled temporarily
+        throw XCTSkip()
 
         // Settings
         openDuckPlayerSettings()
@@ -187,6 +186,8 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPVideos() throws {
+        throw XCTSkip()
+
         // Settings
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
@@ -215,7 +216,7 @@ class DuckPlayerTests: UITestCase {
 
     // MARK:  Disabled Mode - Serp
     func test_DuckPlayer_Disabled_DoesNotOpen_FromSERPCarousel() throws {
-        XCTSkip() // Disabled temporarily
+        throw XCTSkip()
 
         // Settings
         openDuckPlayerSettings()
@@ -286,7 +287,7 @@ class DuckPlayerTests: UITestCase {
 
     // MARK:  Ask Mode - Serp
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInDuckPlayer() throws {
-        XCTSkip() // Disabled temporarily
+        throw XCTSkip()
 
         // Settings
         openDuckPlayerSettings()
@@ -312,6 +313,8 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInYouTube() throws {
+        throw XCTSkip()
+
         // Settings
         openDuckPlayerSettings()
         selectAskOpenInDuckPlayer()
@@ -347,7 +350,7 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AlwaysEnabled_WatchOnYouTubeButton_OpensVideoOnYouTube() throws {
-        XCTSkip() // Disabled temporarily
+        throw XCTSkip()
 
         // Settings
         openDuckPlayerSettings()

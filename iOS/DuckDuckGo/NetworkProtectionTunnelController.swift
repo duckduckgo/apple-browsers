@@ -296,6 +296,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         options[NetworkProtectionOptionKey.selectedEnvironment] = settings.selectedEnvironment.rawValue as NSString
 
         ensureRiskyDomainsEnabledIfNeeded()
+        ensureIncludeIPv6RoutesEnabledIfNeeded()
+
         var dnsSettings = settings.dnsSettings
         if dnsSettings == .ddg(blockRiskyDomains: true) && !featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {
             dnsSettings = .ddg(blockRiskyDomains: false)
@@ -329,6 +331,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             settings.dnsSettings = .ddg(blockRiskyDomains: true)
             settings.didBlockRiskyDomainsDefaultToTrue = true
         }
+    }
+
+    private func ensureIncludeIPv6RoutesEnabledIfNeeded() {
+        settings.includeIPv6Routes = featureFlagger.isFeatureOn(.networkProtectionIncludeIPv6Routes)
     }
 
     private func loadOrMakeTunnelManager() async throws -> NETunnelProviderManager {

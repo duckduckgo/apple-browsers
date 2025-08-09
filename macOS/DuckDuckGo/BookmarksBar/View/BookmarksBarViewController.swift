@@ -21,6 +21,7 @@ import Combine
 import Common
 import Foundation
 import os.log
+import DesignResourcesKitIcons
 
 final class BookmarksBarViewController: NSViewController {
 
@@ -32,6 +33,14 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet private var clippedItemsIndicator: MouseOverButton!
     @IBOutlet private var promptAnchor: NSView!
     @IBOutlet var backgroundColorView: ColorView!
+
+    @IBOutlet weak var syncButton: NSView!
+    @IBOutlet weak var syncMouseOverView: MouseOverView!
+    @IBOutlet weak var syncButtonIcon: NSImageView!
+    @IBOutlet weak var syncButtonDivider: NSBox!
+
+    @IBOutlet weak var syncButtonLabel: NSTextField!
+    @IBOutlet weak var syncDismissButton: MouseOverButton!
 
     private var bookmarkMenuPopover: BookmarksBarMenuPopover?
 
@@ -119,6 +128,17 @@ final class BookmarksBarViewController: NSViewController {
         bookmarksBarCollectionView.dataSource = viewModel
 
         view.postsFrameChangedNotifications = true
+
+        syncButton.isHidden = !importBookmarksButton.isHidden
+        syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
+        syncButtonIcon.contentTintColor = .textPrimary
+        syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
+        syncButtonDivider.boxType = .separator
+        syncButtonDivider.fillColor = .textPrimary
+        syncButtonDivider.isHidden = true
+        syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
+        syncDismissButton.isHidden = true
+        syncMouseOverView.delegate = self
     }
 
     private func setUpImportBookmarksButton() {
@@ -204,6 +224,7 @@ final class BookmarksBarViewController: NSViewController {
             .sink { [weak self] items in
                 if self?.bookmarkManager.list != nil {
                     self?.importBookmarksButton.isHidden = !items.isEmpty
+                    self?.syncButton.isHidden = items.isEmpty
                 }
             }
             .store(in: &cancellables)
@@ -274,7 +295,23 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     @IBAction func importBookmarksClicked(_ sender: Any) {
-        DataImportView(isDataTypePickerExpanded: true).show(in: view.window)
+        if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
+            let syncDeviceFlowController = SyncDialogController(syncService: syncService, syncPausedStateManager: syncDataProviders.syncErrorHandler)
+            DataImportView(isDataTypePickerExpanded: true, syncLauncher: syncDeviceFlowController).show(in: view.window)
+        }
+    }
+
+    var showSync = true
+    @IBOutlet weak var syncButtonZeroWidthConstraint: NSLayoutConstraint!
+
+    @IBAction func syncClicked(_ sender: Any) {
+
+    }
+
+    @IBAction func dismissSyncClicked(_ sender: Any) {
+        showSync = false
+        syncButton.isHidden = true
+        syncButtonZeroWidthConstraint.priority = .required
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {
@@ -586,6 +623,15 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
         }
     }
 
+}
+
+extension BookmarksBarViewController: MouseOverViewDelegate {
+
+    @objc @MainActor func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool) {
+        guard mouseOverView === self.syncMouseOverView else { return }
+        syncDismissButton.isHidden = !isMouseOver
+        syncButtonDivider.isHidden = !isMouseOver
+    }
 }
 
 extension Notification.Name {

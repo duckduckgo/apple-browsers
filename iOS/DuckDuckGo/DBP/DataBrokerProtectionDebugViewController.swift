@@ -37,6 +37,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case database
         case debugActions
         case environment
+        case dbpMetadata
 
         var title: String {
             switch self {
@@ -48,6 +49,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Debug Actions"
             case .environment:
                 return "Environment"
+            case .dbpMetadata:
+                return "DBP Metadata"
             }
         }
 
@@ -60,6 +63,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .debugActions:
                 return .rightDetail
             case .environment:
+                return .subtitle
+            case .dbpMetadata:
                 return .subtitle
             }
         }
@@ -147,10 +152,21 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             }
         }
     }
+    
+    enum DBPMetadataRows: Int, CaseIterable {
+        case refreshMetadata
+        case metadataDisplay
+    }
 
     private var manager: DataBrokerProtectionIOSManager
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
+    
+    @MainActor private var dbpMetadata: String? {
+        didSet {
+            tableView.reloadSections(IndexSet(integer: Sections.dbpMetadata.rawValue), with: .none)
+        }
+    }
 
 
     @MainActor private var healthOverview: HealthOverviewRows = .loading {
@@ -200,6 +216,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         super.viewWillAppear(animated)
         loadHealthOverview()
         loadJobCounts()
+        refreshMetadata()
 
         // Check the manager state when entering the debug screen, since PIR could already be running
         if manager.isRunningJobs && jobExecutionState == .idle {
@@ -343,6 +360,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         return section.title
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let section = Sections(rawValue: indexPath.section) else {
             fatalError("Failed to create a Section from index '\(indexPath.section)'")
@@ -461,6 +479,18 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 cell.detailTextLabel?.text = detailText
             default: break
             }
+            
+        case .dbpMetadata:
+            guard let row = DBPMetadataRows(rawValue: indexPath.row) else { return cell }
+            switch row {
+            case .refreshMetadata:
+                cell.textLabel?.text = "Refresh Metadata"
+                cell.textLabel?.textColor = .systemBlue
+            case .metadataDisplay:
+                cell.textLabel?.font = .monospacedSystemFont(ofSize: 13.0, weight: .regular)
+                cell.textLabel?.text = dbpMetadata ?? "Loading..."
+                cell.textLabel?.numberOfLines = 0
+            }
         }
 
         return cell
@@ -472,6 +502,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .database: return DatabaseRows.allCases.count
         case .debugActions: return DebugActionRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
+        case .dbpMetadata: return DBPMetadataRows.allCases.count
         case .none: return 0
         }
     }
@@ -499,6 +530,14 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             handleEnvironmentAction(for: row)
         case .healthOverview:
             break
+        case .dbpMetadata:
+            guard let row = DBPMetadataRows(rawValue: indexPath.row) else { return }
+            switch row {
+            case .refreshMetadata:
+                refreshMetadata()
+            case .metadataDisplay:
+                break
+            }
         }
 
         tableView.deselectRow(at: indexPath, animated: true)
@@ -789,6 +828,14 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             } catch {
                 Logger.dataBrokerProtection.error("Failed to check for broker updates: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    // MARK: - DBP Metadata
+    
+    private func refreshMetadata() {
+        Task { @MainActor in
+            self.dbpMetadata = await DefaultDBPMetadataCollector().collectMetadata()?.toPrettyPrintedJSON()
         }
     }
 }

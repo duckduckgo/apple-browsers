@@ -266,7 +266,9 @@ public extension SubJobWebRunning {
     func conditionSuccess(actions: [Action]) async {
         if actions.isEmpty {
             Logger.action.log("Condition action completed with no follow-up actions")
-            stageCalculator.fireOptOutConditionNotFound()
+            if actionsHandler?.stepType == .optOut {
+                stageCalculator.fireOptOutConditionNotFound()
+            }
         } else {
             Logger.action.log("Condition action met its expectation, with follow-up actions: \(actions)")
             if actionsHandler?.stepType == .optOut {

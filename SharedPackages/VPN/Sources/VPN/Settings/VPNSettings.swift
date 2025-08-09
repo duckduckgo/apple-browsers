@@ -33,6 +33,7 @@ public final class VPNSettings {
         case setIncludeAllNetworks(_ includeAllNetworks: Bool)
         case setEnforceRoutes(_ enforceRoutes: Bool)
         case setExcludeLocalNetworks(_ excludeLocalNetworks: Bool)
+        case setIncludeIPv6Routes(_ includeIPv6Routes: Bool)
         case setNotifyStatusChanges(_ notifyStatusChanges: Bool)
         case setRegistrationKeyValidity(_ validity: RegistrationKeyValidity)
         case setSelectedServer(_ selectedServer: SelectedServer)
@@ -120,6 +121,13 @@ public final class VPNSettings {
                 Change.setExcludeLocalNetworks(excludeLocalNetworks)
             }.eraseToAnyPublisher()
 
+        let includeIPv6RoutesPublisher = includeIPv6RoutesPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { includeIPv6Routes in
+                Change.setIncludeIPv6Routes(includeIPv6Routes)
+            }.eraseToAnyPublisher()
+
         let notifyStatusChangesPublisher = notifyStatusChangesPublisher
             .dropFirst()
             .removeDuplicates()
@@ -181,6 +189,7 @@ public final class VPNSettings {
             includeAllNetworksPublisher,
             enforceRoutesPublisher,
             excludeLocalNetworksPublisher,
+            includeIPv6RoutesPublisher,
             notifyStatusChangesPublisher,
             serverChangePublisher,
             locationChangePublisher,
@@ -201,6 +210,7 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
         defaults.resetNetworkProtectionSettingIncludeAllNetworks()
+        defaults.resetNetworkProtectionSettingIncludeIPv6Routes()
         defaults.resetNetworkProtectionSettingNotifyStatusChanges()
         defaults.resetNetworkProtectionSettingRegistrationKeyValidity()
         defaults.resetNetworkProtectionSettingSelectedServer()
@@ -220,6 +230,8 @@ public final class VPNSettings {
             self.excludeLocalNetworks = excludeLocalNetworks
         case .setIncludeAllNetworks(let includeAllNetworks):
             self.includeAllNetworks = includeAllNetworks
+        case .setIncludeIPv6Routes(let includeIPv6Routes):
+            self.includeIPv6Routes = includeIPv6Routes
         case .setNotifyStatusChanges(let notifyStatusChanges):
             self.notifyStatusChanges = notifyStatusChanges
         case .setRegistrationKeyValidity(let registrationKeyValidity):
@@ -300,6 +312,22 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingExcludeLocalNetworks = newValue
+        }
+    }
+
+    // MARK: - Include IPv6 Routes
+
+    public var includeIPv6RoutesPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingIncludeIPv6RoutesPublisher
+    }
+
+    public var includeIPv6Routes: Bool {
+        get {
+            defaults.networkProtectionSettingIncludeIPv6Routes
+        }
+
+        set {
+            defaults.networkProtectionSettingIncludeIPv6Routes = newValue
         }
     }
 

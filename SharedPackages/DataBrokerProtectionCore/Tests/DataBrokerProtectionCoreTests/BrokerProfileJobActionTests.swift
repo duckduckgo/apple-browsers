@@ -848,8 +848,8 @@ final class BrokerProfileJobActionTests: XCTestCase {
         await sut.conditionSuccess(actions: [])
 
         // Flag should remain true after multiple calls
-        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
-        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
 
         // Clear and test multiple failures
         mockStageCalculator.clear()

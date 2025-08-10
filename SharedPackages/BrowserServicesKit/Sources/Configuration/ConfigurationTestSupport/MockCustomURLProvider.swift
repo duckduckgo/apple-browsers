@@ -20,6 +20,7 @@
 import Foundation
 
 final class MockCustomURLProvider: CustomConfigurationURLProviding {
+
     var isCustomURLEnabled: Bool = true
     var url: URL = URL(string: "https://duckduckgo.com")!
     var capturedURL: URL?
@@ -38,9 +39,14 @@ final class MockCustomURLProvider: CustomConfigurationURLProviding {
         capturedConfigurations.append(configuration)
         capturedURL = url
     }
+
+    func isURLOverridden(for configuration: Configuration) -> Bool {
+        return capturedConfigurations.contains(configuration)
+    }
 }
 
 final class MockConfigurationURLProvider: ConfigurationURLProviding {
+
     var url: URL = URL(string: "duckduckgo.com")!
     var capturedConfiguration: Configuration?
     var capturedConfigurations: [Configuration] = []

@@ -158,4 +158,8 @@ class DebugScreensViewModel: ObservableObject {
         dependencies.customConfigurationURLProvider.url(for: configuration).absoluteString
     }
 
+    func isURLOverridden(for configuration: Configuration) -> Bool {
+        dependencies.customConfigurationURLProvider.isURLOverridden(for: configuration)
+    }
+
 }

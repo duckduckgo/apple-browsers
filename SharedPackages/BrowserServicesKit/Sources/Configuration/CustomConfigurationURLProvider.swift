@@ -26,6 +26,7 @@ public protocol ConfigurationURLProviding {
 public protocol CustomConfigurationURLSetting {
     func setCustomURL(_ url: URL?, for configuration: Configuration)
     var isCustomURLEnabled: Bool { get }
+    func isURLOverridden(for configuration: Configuration) -> Bool
 }
 
 public typealias CustomConfigurationURLProviding = ConfigurationURLProviding & CustomConfigurationURLSetting
@@ -80,6 +81,25 @@ public class ConfigurationURLProvider: CustomConfigurationURLProviding {
             store.customTrackerDataSetURL = url
         case .remoteMessagingConfig:
             store.customRemoteMessagingConfigURL = url
+        }
+    }
+
+    public func isURLOverridden(for configuration: Configuration) -> Bool {
+        switch configuration {
+        case .bloomFilterSpec:
+            return store.customBloomFilterSpecURL != nil
+        case .bloomFilterBinary:
+            return store.customBloomFilterBinaryURL != nil
+        case .bloomFilterExcludedDomains:
+            return store.customBloomFilterExcludedDomainsURL != nil
+        case .privacyConfiguration:
+            return store.customPrivacyConfigurationURL != nil
+        case .surrogates:
+            return store.customSurrogatesURL != nil
+        case .trackerDataSet:
+            return store.customTrackerDataSetURL != nil
+        case .remoteMessagingConfig:
+            return store.customRemoteMessagingConfigURL != nil
         }
     }
 }

@@ -60,16 +60,22 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     private var lastConfigurationUpdateDate: Date?
 
     private var privacyConfigCustomURL: String? {
-        didSet {
-            let customPrivacyConfigurationURL = privacyConfigCustomURL.flatMap { URL(string: $0) }
+        get {
+            viewModel?.urlString(for: .privacyConfiguration)
+        }
+        set {
+            let customPrivacyConfigurationURL = newValue.flatMap { URL(string: $0) }
             viewModel?.setCustomURL(customPrivacyConfigurationURL, for: .privacyConfiguration)
             fetchPrivacyConfig()
         }
     }
 
     private var remoteMessagingConfigURL: String? {
-        didSet {
-            let customRemoteMessagingConfigURL = remoteMessagingConfigURL.flatMap { URL(string: $0) }
+        get {
+            viewModel?.urlString(for: .remoteMessagingConfig)
+        }
+        set {
+            let customRemoteMessagingConfigURL = newValue.flatMap { URL(string: $0) }
             viewModel?.setCustomURL(customRemoteMessagingConfigURL, for: .remoteMessagingConfig)
             fetchRemoteMessagingConfig()
         }
@@ -188,7 +194,8 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
         if customURL(for: row) != nil {
             let resetToDefaultAction = UIAlertAction(title: "Reset to default URL", style: .default) { _ in
-                self.privacyConfigCustomURL = nil
+                self.setCustomURL(nil, for: row)
+                self.tableView?.reloadData()
             }
             alert.addAction(resetToDefaultAction)
         }

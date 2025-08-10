@@ -93,7 +93,7 @@ final class ConfigurationManagerTests: XCTestCase {
         testConfiguration.protocolClasses = [MockURLProtocol.self]
         return ConfigurationFetcher(store: store,
                                     validator: validator,
-                                    sessionProvider: URLSession(configuration: testConfiguration),
+                                    sessionProvider: { URLSession(configuration: testConfiguration) },
                                     configurationURLProvider: MockConfigurationURLProvider())
     }
 

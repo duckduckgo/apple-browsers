@@ -48,12 +48,12 @@ public final class ConfigurationFetcher: ConfigurationFetching {
                             configurationURLProvider: ConfigurationURLProviding,
                             eventMapping: EventMapping<ConfigurationDebugEvents>? = nil) {
         let validator = ConfigurationValidator(eventMapping: eventMapping)
-        self.init(store: store, validator: validator, sessionProvider: urlSession(), configurationURLProvider: configurationURLProvider)
+        self.init(store: store, validator: validator, sessionProvider: urlSession, configurationURLProvider: configurationURLProvider)
     }
 
     init(store: ConfigurationStoring,
          validator: ConfigurationValidating,
-         sessionProvider: @autoclosure @escaping () -> URLSession = URLSession.shared,
+         sessionProvider: @escaping () -> URLSession,
          configurationURLProvider: ConfigurationURLProviding) {
         self.store = store
         self.validator = validator

@@ -29,7 +29,7 @@ final class ConfigurationURLProviderTests {
     var mockInternalUserDecider: MockInternalUserDecider!
     var mockStore: MockCustomConfigurationURLStore!
 
-    func setUp() {
+    init() {
         mockDefaultProvider = MockConfigurationURLProvider()
         mockInternalUserDecider = MockInternalUserDecider()
         mockStore = MockCustomConfigurationURLStore()
@@ -41,17 +41,8 @@ final class ConfigurationURLProviderTests {
         )
     }
 
-    func tearDown() {
-        sut = nil
-        mockDefaultProvider = nil
-        mockInternalUserDecider = nil
-        mockStore = nil
-    }
-
     @Test("Check Default URL Is Returned When No Internal User", arguments: Configuration.allCases)
-    func testWhenIsNotInternalUserThenReturnDefaultURL(config: Configuration) {
-        setUp()
-        defer { tearDown() }
+    func whenIsNotInternalUserThenReturnDefaultURL(config: Configuration) {
         // Given
         mockInternalUserDecider.isInternalUser = false
         let defaultURL = URL(string: "https://default.example.com")!
@@ -83,26 +74,30 @@ final class ConfigurationURLProviderTests {
     ]
 
     @Test("Custom URL is returned when set", arguments: customURLCases)
-    func testCustomURLIsReturnedWhenSet(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
-        setUp()
-        defer { tearDown() }
+    func customURLIsReturnedWhenSet(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
+        // Given
         mockInternalUserDecider.isInternalUser = true
         let customURL = URL(string: urlString)!
+
+        // When
         setCustomURL(mockStore, customURL)
         let result = sut.url(for: config)
+
+        // Then
         #expect(result == customURL)
     }
 
     @Test("Custom URL is not set when not internal user", arguments: customURLCases)
-    func testSetCustomURL_WhenCustomURLsDisabled_DoesNotUpdateStore(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
-        setUp()
-        defer { tearDown() }
+    func setCustomURL_WhenCustomURLsDisabled_DoesNotUpdateStore(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
+        // Given
         mockInternalUserDecider.isInternalUser = false
+
+        // When
         let customURL = URL(string: urlString)!
         sut.setCustomURL(customURL, for: config)
-        // Should not update the store
+
+        // Then
         var value: URL?
-        setCustomURL(mockStore, nil) // Reset
         switch config {
         case .bloomFilterSpec: value = mockStore.customBloomFilterSpecURL
         case .bloomFilterBinary: value = mockStore.customBloomFilterBinaryURL
@@ -116,12 +111,15 @@ final class ConfigurationURLProviderTests {
     }
 
     @Test("setCustomURL updates store when enabled", arguments: customURLCases)
-    func testSetCustomURL_WhenCustomURLsEnabled_UpdatesStore(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
-        setUp()
-        defer { tearDown() }
+    func setCustomURL_WhenCustomURLsEnabled_UpdatesStore(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
+        // Given
         mockInternalUserDecider.isInternalUser = true
         let customURL = URL(string: urlString)!
+
+        // When
         sut.setCustomURL(customURL, for: config)
+
+        // Then
         var value: URL?
         switch config {
         case .bloomFilterSpec: value = mockStore.customBloomFilterSpecURL
@@ -136,13 +134,16 @@ final class ConfigurationURLProviderTests {
     }
 
     @Test("setCustomURL to nil clears store when enabled", arguments: customURLCases)
-    func testSetCustomURLToNil_WhenCustomURLsEnabled_ClearsStoreValue(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
-        setUp()
-        defer { tearDown() }
+    func setCustomURLToNil_WhenCustomURLsEnabled_ClearsStoreValue(config: Configuration, setCustomURL: (MockCustomConfigurationURLStore, URL?) -> Void, urlString: String) {
+        // Given
         mockInternalUserDecider.isInternalUser = true
         let customURL = URL(string: urlString)!
         setCustomURL(mockStore, customURL)
+
+        // When
         sut.setCustomURL(nil, for: config)
+
+        // Then
         var value: URL?
         switch config {
         case .bloomFilterSpec: value = mockStore.customBloomFilterSpecURL

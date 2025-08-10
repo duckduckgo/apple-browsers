@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import Persistence
 @testable import Configuration
+import PersistenceTestingUtils
 
 final class ConfigurationManagerIntegrationTests: XCTestCase {
 
@@ -70,16 +71,4 @@ final class ConfigurationManagerIntegrationTests: XCTestCase {
         XCTAssertNotEqual(newEtag, resetEtag)
     }
 
-}
-
-private class MockKeyValueStore: KeyValueStoring {
-    func object(forKey defaultName: String) -> Any? {
-        return nil
-    }
-
-    func set(_ value: Any?, forKey defaultName: String) {
-    }
-
-    func removeObject(forKey defaultName: String) {
-    }
 }

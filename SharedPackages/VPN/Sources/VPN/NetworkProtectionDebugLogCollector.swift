@@ -94,7 +94,7 @@ final class NetworkProtectionDebugLogCollector {
             throw LogCollectionError.logStoreCreationFailed
         }
 
-        let predicate = NSPredicate(format: "subsystem CONTAINS[c] 'duckduckgo' OR subsystem CONTAINS[c] 'netp' OR subsystem CONTAINS[c] 'vpn' OR subsystem CONTAINS[c] 'network' OR process CONTAINS[c] 'DuckDuckGoVPN' OR process CONTAINS[c] 'PacketTunnelProvider'")
+        let predicate = NSPredicate(format: "process == 'PacketTunnelProvider'")
         let position = logStore.position(timeIntervalSinceLatestBoot: 0)
 
         guard let enumerator = try? logStore.getEntries(at: position, matching: predicate) else {
@@ -109,13 +109,11 @@ final class NetworkProtectionDebugLogCollector {
         for entry in enumerator {
             if let logEntry = entry as? OSLogEntryLog {
                 let timestamp = dateFormatter.string(from: logEntry.date)
-                let level = "Test" // logLevelString(for: logEntry)
-                let process = logEntry.process
                 let subsystem = logEntry.subsystem
                 let category = logEntry.category
                 let message = logEntry.composedMessage
 
-                let logLine = "[\(timestamp)] [\(level)] [\(process)] [\(subsystem)/\(category)] \(message)"
+                let logLine = "[\(timestamp)] [\(subsystem)/\(category)] \(message)"
                 logEntries.append(logLine)
             }
         }
@@ -126,23 +124,6 @@ final class NetworkProtectionDebugLogCollector {
 
         return logEntries.joined(separator: "\n")
     }
-
-//    private func logLevelString(for entry: OSLogEntry) -> String {
-//        switch entry.level {
-//        case .debug:
-//            return "DEBUG"
-//        case .info:
-//            return "INFO"
-//        case .notice:
-//            return "NOTICE"
-//        case .error:
-//            return "ERROR"
-//        case .fault:
-//            return "FAULT"
-//        default:
-//            return "UNKNOWN"
-//        }
-//    }
 
     private func cleanupOldLogs(in directory: URL) {
         do {

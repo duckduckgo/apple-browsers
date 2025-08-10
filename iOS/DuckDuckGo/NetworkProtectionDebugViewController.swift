@@ -719,25 +719,22 @@ shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "
     
     @MainActor
     private func createLogSnapshot() async {
-        let alert = UIAlertController(title: "Creating Log Snapshot", message: "Please wait...", preferredStyle: .alert)
-        present(alert, animated: true)
-        
-        do {
-            let logFileURL = try await NetworkProtectionDebugUtilities().createLogSnapshot()
-            alert.dismiss(animated: true) {
-                self.showSuccessAlert(message: "Log snapshot created: \(logFileURL.lastPathComponent)")
-            }
-        } catch {
-            alert.dismiss(animated: true) {
-                self.showErrorAlert(message: "Failed to create log snapshot: \(error.localizedDescription)")
-            }
+        Task {
+            try? await NetworkProtectionDebugUtilities().createLogSnapshot()
         }
+        
+        let alert = UIAlertController(
+            title: "Log Collection Started",
+            message: "Log collection is running in the background and may take up to a minute to complete. Check 'View Log Snapshots' to see when it's ready.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
     private func showLogSnapshotsViewer() {
         let logViewer = NetworkProtectionLogViewerViewController()
-        let navController = UINavigationController(rootViewController: logViewer)
-        present(navController, animated: true)
+        self.navigationController?.pushViewController(logViewer, animated: true)
     }
     
     private func showSuccessAlert(message: String) {

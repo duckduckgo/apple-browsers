@@ -65,7 +65,7 @@ final class NetworkProtectionLogViewerViewController: UITableViewController {
         if logFiles.isEmpty {
             let cell = tableView.dequeueReusableCell(withIdentifier: "NoLogsCell", for: indexPath)
             cell.textLabel?.text = "No log snapshots available"
-            cell.textLabel?.font = .systemFont(ofSize: 11)
+            cell.textLabel?.font = .systemFont(ofSize: 13)
             cell.textLabel?.textColor = UIColor(designSystemColor: .textSecondary)
             cell.selectionStyle = .none
             return cell
@@ -75,7 +75,7 @@ final class NetworkProtectionLogViewerViewController: UITableViewController {
         let logFile = logFiles[indexPath.row]
         
         cell.textLabel?.text = logFile.lastPathComponent
-        cell.textLabel?.font = .systemFont(ofSize: 11)
+        cell.textLabel?.font = .systemFont(ofSize: 13)
         cell.textLabel?.textColor = UIColor(designSystemColor: .textPrimary)
         cell.accessoryType = .disclosureIndicator
         
@@ -150,21 +150,33 @@ final class NetworkProtectionLogContentViewController: UIViewController {
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(shareLogFile))
         
+        scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsHorizontalScrollIndicator = true
+        scrollView.showsVerticalScrollIndicator = true
+        
         textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.backgroundColor = UIColor(designSystemColor: .surface)
         textView.textColor = UIColor(designSystemColor: .textPrimary)
-        textView.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        textView.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
         textView.isEditable = false
         textView.isSelectable = true
+        textView.isScrollEnabled = false
         
-        view.addSubview(textView)
+        view.addSubview(scrollView)
+        scrollView.addSubview(textView)
         
         NSLayoutConstraint.activate([
-            textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            textView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            textView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            textView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            textView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            textView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor)
         ])
     }
     
@@ -172,9 +184,17 @@ final class NetworkProtectionLogContentViewController: UIViewController {
         do {
             let logContent = try logManager.readLogFile(at: logFile)
             textView.text = logContent
+            
+            let size = textView.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+            textView.frame = CGRect(origin: .zero, size: size)
+            scrollView.contentSize = size
         } catch {
             textView.text = "Failed to load log content: \(error.localizedDescription)"
             textView.textColor = UIColor(designSystemColor: .textSecondary)
+            
+            let size = textView.sizeThatFits(CGSize(width: scrollView.frame.width, height: CGFloat.greatestFiniteMagnitude))
+            textView.frame = CGRect(origin: .zero, size: size)
+            scrollView.contentSize = size
         }
     }
     

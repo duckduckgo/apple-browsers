@@ -35,7 +35,7 @@ final class NetworkProtectionDebugLogCollector {
     private let fileManager = FileManager.default
 
     init() {
-        self.appGroupIdentifier = "group.com.duckduckgo.alpha.netp"
+        self.appGroupIdentifier = Bundle.main.vpnAppGroupName
     }
 
     func createLogSnapshot() async throws -> URL {
@@ -48,11 +48,9 @@ final class NetworkProtectionDebugLogCollector {
             $0.dateFormat = "yyyy-MM-dd-HH-mm-ss"
         }.string(from: Date())
 
-        let logFileURL = logsDirectory.appendingPathComponent("vpn-logs-\(timestamp).txt")
+        let logFileURL = logsDirectory.appendingPathComponent("iOS-VPN-logs-\(timestamp).txt")
         let logContent = try await collectLogs()
         try logContent.write(to: logFileURL, atomically: true, encoding: .utf8)
-
-        cleanupOldLogs(in: logsDirectory)
 
         return logFileURL
     }
@@ -66,7 +64,7 @@ final class NetworkProtectionDebugLogCollector {
         }
 
         let logFiles = try fileManager.contentsOfDirectory(at: logsDirectory, includingPropertiesForKeys: [.creationDateKey], options: [])
-            .filter { $0.pathExtension == "txt" && $0.lastPathComponent.hasPrefix("vpn-logs-") }
+            .filter { $0.pathExtension == "txt" && $0.lastPathComponent.hasPrefix("iOS-VPN-logs-") }
             .sorted { url1, url2 in
                 let date1 = (try? url1.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
                 let date2 = (try? url2.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
@@ -125,31 +123,21 @@ final class NetworkProtectionDebugLogCollector {
         return logEntries.joined(separator: "\n")
     }
 
-    private func cleanupOldLogs(in directory: URL) {
-        do {
-            let logFiles = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.creationDateKey], options: [])
-                .filter { $0.pathExtension == "txt" && $0.lastPathComponent.hasPrefix("vpn-logs-") }
-                .sorted { url1, url2 in
-                    let date1 = (try? url1.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
-                    let date2 = (try? url2.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
-                    return date1 > date2
-                }
-
-            if logFiles.count > 5 {
-                let filesToDelete = Array(logFiles.dropFirst(5))
-                for file in filesToDelete {
-                    try? fileManager.removeItem(at: file)
-                }
-            }
-        } catch {
-            Logger.networkProtection.error("Failed to cleanup old logs: \(error.localizedDescription, privacy: .public)")
-        }
-    }
 }
 
 private extension DateFormatter {
     func apply(_ configuration: (DateFormatter) -> Void) -> DateFormatter {
         configuration(self)
         return self
+    }
+}
+
+public extension Bundle {
+    var vpnAppGroupName: String {
+        guard let appGroup = object(forInfoDictionaryKey: "VPN_APP_GROUP") as? String else {
+            assertionFailure("Failed to get app group key")
+            return ""
+        }
+        return appGroup
     }
 }

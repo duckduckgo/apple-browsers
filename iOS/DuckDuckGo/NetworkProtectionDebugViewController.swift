@@ -271,9 +271,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     private func configure(_ cell: UITableViewCell, forSimulateFailureAtRow row: Int) {
         switch SimulateFailureRows(rawValue: row) {
         case .controllerFailure:
-            cell.textLabel?.text = "Enable NetP > Controller Failure"
+            cell.textLabel?.text = "Enable VPN > Controller Failure"
         case .tunnelFailure:
-            cell.textLabel?.text = "Enable NetP > Tunnel Failure"
+            cell.textLabel?.text = "Enable VPN > Tunnel Failure"
         case .crashFatalError:
             cell.textLabel?.text = "Tunnel: Crash (Fatal Error)"
         case .crashMemory:

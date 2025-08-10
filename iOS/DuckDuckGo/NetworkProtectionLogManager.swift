@@ -32,7 +32,7 @@ final class NetworkProtectionLogManager {
     private let fileManager = FileManager.default
     
     init() {
-        self.appGroupIdentifier = "group.com.duckduckgo.alpha.netp"
+        self.appGroupIdentifier = Bundle.main.vpnAppGroupName
     }
     
     func getExistingLogFiles() throws -> [URL] {
@@ -44,7 +44,7 @@ final class NetworkProtectionLogManager {
         }
         
         let logFiles = try fileManager.contentsOfDirectory(at: logsDirectory, includingPropertiesForKeys: [.creationDateKey], options: [])
-            .filter { $0.pathExtension == "txt" && $0.lastPathComponent.hasPrefix("vpn-logs-") }
+            .filter { $0.pathExtension == "txt" && $0.lastPathComponent.hasPrefix("iOS-VPN-logs-") }
             .sorted { url1, url2 in
                 let date1 = (try? url1.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
                 let date2 = (try? url2.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast

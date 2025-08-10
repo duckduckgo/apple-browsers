@@ -84,6 +84,8 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         case showEntitlementMessaging
         case resetEntitlementMessaging
         case startSnooze
+        case createLogSnapshot
+        case viewLogSnapshots
     }
 
     enum NetworkPathRows: Int, CaseIterable {
@@ -380,6 +382,10 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             cell.textLabel?.text = "Reset Entitlement Messaging"
         case .startSnooze:
             cell.textLabel?.text = "Snooze For 30 Seconds"
+        case .createLogSnapshot:
+            cell.textLabel?.text = "Create Log Snapshot"
+        case .viewLogSnapshots:
+            cell.textLabel?.text = "View Log Snapshots"
         case .none:
             break
         }
@@ -403,6 +409,12 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             Task {
                 await NetworkProtectionDebugUtilities().startSnooze(duration: .seconds(30))
             }
+        case .createLogSnapshot:
+            Task {
+                await createLogSnapshot()
+            }
+        case .viewLogSnapshots:
+            showLogSnapshotsViewer()
         case .none:
             break
         }
@@ -703,6 +715,41 @@ shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "
             await AppDependencyProvider.shared.networkProtectionTunnelController.stop()
             await AppDependencyProvider.shared.networkProtectionTunnelController.removeVPN(reason: .debugMenu)
         }
+    }
+    
+    @MainActor
+    private func createLogSnapshot() async {
+        let alert = UIAlertController(title: "Creating Log Snapshot", message: "Please wait...", preferredStyle: .alert)
+        present(alert, animated: true)
+        
+        do {
+            let logFileURL = try await NetworkProtectionDebugUtilities().createLogSnapshot()
+            alert.dismiss(animated: true) {
+                self.showSuccessAlert(message: "Log snapshot created: \(logFileURL.lastPathComponent)")
+            }
+        } catch {
+            alert.dismiss(animated: true) {
+                self.showErrorAlert(message: "Failed to create log snapshot: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func showLogSnapshotsViewer() {
+        let logViewer = NetworkProtectionLogViewerViewController()
+        let navController = UINavigationController(rootViewController: logViewer)
+        present(navController, animated: true)
+    }
+    
+    private func showSuccessAlert(message: String) {
+        let alert = UIAlertController(title: "Success", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 

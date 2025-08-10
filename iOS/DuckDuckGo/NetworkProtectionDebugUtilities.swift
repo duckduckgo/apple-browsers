@@ -79,7 +79,7 @@ final class NetworkProtectionDebugUtilities {
         try? await activeSession.sendProviderMessage(.startSnooze(duration))
     }
     
-    func createLogSnapshot() async throws -> URL {
+    func createLogSnapshot() async throws {
         guard let activeSession = await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession() else {
             throw NSError(domain: "NetworkProtectionDebugUtilities", code: 1, userInfo: [NSLocalizedDescriptionKey: "No active VPN session"])
         }
@@ -94,8 +94,6 @@ final class NetworkProtectionDebugUtilities {
             let errorMessage = String(responseString.dropFirst("Error: ".count))
             throw NSError(domain: "NetworkProtectionDebugUtilities", code: 3, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
-        
-        return URL(fileURLWithPath: responseString)
     }
 }
 

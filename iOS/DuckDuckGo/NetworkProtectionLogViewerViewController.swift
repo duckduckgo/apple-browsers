@@ -41,7 +41,7 @@ final class NetworkProtectionLogViewerViewController: UITableViewController {
     }
     
     @objc private func dismissViewController() {
-        dismiss(animated: true)
+        navigationController?.popViewController(animated: true)
     }
     
     private func loadLogFiles() {

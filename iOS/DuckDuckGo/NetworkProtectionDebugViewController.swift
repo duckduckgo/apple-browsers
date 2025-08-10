@@ -719,17 +719,25 @@ shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "
     
     @MainActor
     private func createLogSnapshot() async {
-        Task {
-            try? await NetworkProtectionDebugUtilities().createLogSnapshot()
+        do {
+            try await NetworkProtectionDebugUtilities().createLogSnapshot()
+            
+            let alert = UIAlertController(
+                title: "Log Collection Started",
+                message: "Log collection is running in the background and may take up to a minute to complete. Check 'View Log Snapshots' to see when it's ready.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        } catch {
+            let alert = UIAlertController(
+                title: "Log Collection Failed",
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
         }
-        
-        let alert = UIAlertController(
-            title: "Log Collection Started",
-            message: "Log collection is running in the background and may take up to a minute to complete. Check 'View Log Snapshots' to see when it's ready.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
     }
     
     private func showLogSnapshotsViewer() {

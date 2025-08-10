@@ -92,10 +92,7 @@ final class NetworkProtectionDebugLogCollector {
             throw LogCollectionError.logStoreCreationFailed
         }
 
-        let predicate = NSPredicate(format: "process == 'PacketTunnelProvider'")
-        let position = logStore.position(timeIntervalSinceLatestBoot: 0)
-
-        guard let enumerator = try? logStore.getEntries(at: position, matching: predicate) else {
+        guard let enumerator = try? logStore.getEntries() else {
             throw LogCollectionError.logEnumerationFailed
         }
 

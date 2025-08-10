@@ -30,7 +30,7 @@ final class DBPService: NSObject {
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
 
     init(appDependencies: DependencyProvider) {
-        guard DataBrokerProtectionIOSManager.isDBPStaticallyEnabled else {
+        guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
             return
@@ -59,6 +59,7 @@ final class DBPService: NSObject {
                         subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                         apiService: DefaultAPIService(),
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                        dbpMetadataCollector: DefaultDBPMetadataCollector(),
                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
                         source: .pir)
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
@@ -91,16 +92,5 @@ final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
 
     init(appDependencies: DependencyProvider) {
         self.appDependencies = appDependencies
-    }
-}
-
-extension DataBrokerProtectionIOSManager {
-
-    public static var isDBPStaticallyEnabled: Bool {
-#if DEBUG || ALPHA
-        return true
-#else
-        return false
-#endif
     }
 }

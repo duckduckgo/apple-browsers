@@ -49,6 +49,7 @@ struct SettingsOthersView: View {
                 let formViewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                  apiService: DefaultAPIService(),
                                                                  vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                 dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                  isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
                                                                  source: .settings)
                 NavigationLink {

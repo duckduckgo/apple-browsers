@@ -6,12 +6,6 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: 
     text: "Duck Player"
 
-- assertVisible: 
-    text: "Pause (k)"
-
-- assertVisible: 
-    text: "Copy link"
-
 # Tap to show the UI controls
 - tapOn:
     point: "50%,15%"

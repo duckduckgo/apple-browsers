@@ -1,6 +1,7 @@
 appId: com.duckduckgo.mobile.ios
 tags:
-    - duckplayer.native
+    - iphone
+    - duckplayer_native
 
 ---
 

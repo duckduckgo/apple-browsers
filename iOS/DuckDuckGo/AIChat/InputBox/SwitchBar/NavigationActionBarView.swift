@@ -160,7 +160,6 @@ final class NavigationActionBarView: UIView {
     }
     
     private func setupBindings() {
-        // Observe view model changes
         viewModel.$isSearchMode
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -183,6 +182,13 @@ final class NavigationActionBarView: UIView {
             .store(in: &cancellables)
         
         viewModel.$isCurrentTextValidURL
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateUI()
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$isKeyboardVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateUI()
@@ -225,7 +231,6 @@ final class NavigationActionBarView: UIView {
         let isValidURL = viewModel.isCurrentTextValidURL
         let isSearchMode = viewModel.isSearchMode
         
-        // Determine icon
         let icon: UIImage? = {
             if isSearchMode && !isValidURL {
                 return DesignSystemImages.Glyphs.Size24.searchFind
@@ -241,18 +246,18 @@ final class NavigationActionBarView: UIView {
         )
         searchButton.isEnabled = hasText
         
-        // Animate changes
         UIView.animate(withDuration: 0.2) {
             self.searchButton.alpha = hasText ? 1.0 : 0.5
         }
     }
     
     private func updateButtonVisibility() {
-        // Update microphone button visibility
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
         
-        // Update search button visibility
+        let shouldShowNewLineButton = viewModel.isKeyboardVisible
+        newLineButton.isHidden = !shouldShowNewLineButton
+        
         let shouldShowSearchButton = viewModel.hasText
         searchButton.isHidden = !shouldShowSearchButton
     }

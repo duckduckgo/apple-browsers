@@ -139,6 +139,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let apiService: any Networking.APIService
     private let vpnMetadataCollector: any UnifiedMetadataCollector
+    private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
     private let isPaidAIChatFeatureEnabled: () -> Bool
@@ -150,6 +151,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          apiService: any Networking.APIService,
          vpnMetadataCollector: any UnifiedMetadataCollector,
+         dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadatCollector: any UnifiedMetadataCollector = DefaultMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
          isPaidAIChatFeatureEnabled: @escaping () -> Bool,
@@ -158,6 +160,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.apiService = apiService
         self.vpnMetadataCollector = vpnMetadataCollector
+        self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadatCollector
         self.feedbackSender = feedbackSender
         self.isPaidAIChatFeatureEnabled = isPaidAIChatFeatureEnabled
@@ -280,6 +283,14 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                           subcategory: selectedSubcategory,
                                                           description: feedbackFormText,
                                                           metadata: metadata as? VPNMetadata)
+        case .pir:
+            let metadata = await dbpMetadataCollector.collectMetadata()
+            try await submitIssue(metadata: metadata)
+            try await feedbackSender.sendReportIssuePixel(source: source,
+                                                          category: selectedCategory,
+                                                          subcategory: selectedSubcategory,
+                                                          description: feedbackFormText,
+                                                          metadata: metadata as? DBPFeedbackMetadata)
         default:
             let metadata = await defaultMetadataCollector.collectMetadata()
             try await submitIssue(metadata: metadata)

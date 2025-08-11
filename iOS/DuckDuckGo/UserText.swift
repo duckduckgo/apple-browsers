@@ -1985,11 +1985,17 @@ public struct UserText {
                     comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
                 )
 
+                let privateAIBold = NSLocalizedString(
+                    "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold",
+                    value: "advanced, private AI",
+                    comment: "Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message."
+                )
+
                 // Localized full message with numbered placeholders
                 let fullText = String(format: NSLocalizedString(
                     "onboarding.duckduckgo.subscription.promo.message",
-                    value: "DuckDuckGo also has an %1$@, available with a %2$@ and advanced, private AI.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold)."), optionalSubscriptionBold, vpnBold)
+                    value: "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.",
+                    comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."), optionalSubscriptionBold, vpnBold, privateAIBold)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -2004,6 +2010,11 @@ public struct UserText {
 
                 // Apply bold formatting
                 if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
+                }
+
+                // Apply bold formatting
+                if let optionalSubscriptionRange = fullText.range(of: privateAIBold) {
                     attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
                 }
 

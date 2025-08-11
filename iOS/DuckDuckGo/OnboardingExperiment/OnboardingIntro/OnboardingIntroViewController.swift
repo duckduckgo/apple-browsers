@@ -24,8 +24,8 @@ final class OnboardingIntroViewController: UIHostingController<OnboardingView>, 
     weak var delegate: OnboardingDelegate?
     private let viewModel: OnboardingIntroViewModel
 
-    init(onboardingPixelReporter: OnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging) {
-        viewModel = OnboardingIntroViewModel(pixelReporter: onboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
+    init(onboardingPixelReporter: OnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling) {
+        viewModel = OnboardingIntroViewModel(pixelReporter: onboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
         let rootView = OnboardingView(model: viewModel)
         super.init(rootView: rootView)
         

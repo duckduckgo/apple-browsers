@@ -1,0 +1,31 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    'm_mac_aichat_settings_global-toggle_on': {
+        description: 'Fired when the global toggle for all AI Chat features is turned on',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    'm_mac_aichat_settings_global-toggle_off': {
+        description: 'Fired when the global toggle for all AI Chat features is turned off',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    'm_mac_aichat_settings_new-tab-page_on': {
+        description: 'Fired when the New Tab Page shortcut for AI Chat is turned on',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    'm_mac_aichat_settings_new-tab-page_off': {
+        description: 'Fired when the New Tab Page shortcut for AI Chat is turned off',
+        owners: ['miasma13'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

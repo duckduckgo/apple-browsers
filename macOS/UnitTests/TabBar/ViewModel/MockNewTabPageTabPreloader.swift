@@ -1,5 +1,5 @@
 //
-//  Logger+NewTabPageOmnibar.swift
+//  MockNewTabPageTabPreloader.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,9 +16,24 @@
 //  limitations under the License.
 //
 
-import Foundation
-import os.log
+import XCTest
+@testable import DuckDuckGo_Privacy_Browser
 
-public extension Logger {
-    static var newTabPageOmnibar = { Logger(subsystem: "newTabPageOmnibar", category: "") }()
+final class MockNewTabPageTabPreloader: NewTabPageTabPreloading {
+
+    var didCallNewTab = false
+    let tabToReturn = Tab(content: .newtab, shouldLoadInBackground: true, burnerMode: .regular)
+
+    @MainActor
+    func newTab() -> Tab? {
+        didCallNewTab = true
+        return tabToReturn
+    }
+
+    // satisfy the protocol
+    @MainActor
+    func reloadTab() { }
+
+    @MainActor
+    func reloadTab(force: Bool) { }
 }

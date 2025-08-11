@@ -45,6 +45,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let websiteDataManager: WebsiteDataManaging
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+    let daxDialogsManager: DaxDialogsManaging
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -55,7 +56,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          fireproofing: Fireproofing,
          websiteDataManager: WebsiteDataManaging,
          keyValueStore: ThrowingKeyValueStoring,
-         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging) {
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+         daxDialogsManager: DaxDialogsManaging) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -66,6 +68,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.websiteDataManager = websiteDataManager
         self.keyValueStore = keyValueStore
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
+        self.daxDialogsManager = daxDialogsManager
     }
     
     enum LegacyView {
@@ -119,7 +122,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
             fireproofing: self.fireproofing,
             keyValueStore: self.keyValueStore,
-            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager))
+            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
+            daxDialogManager: self.daxDialogsManager))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

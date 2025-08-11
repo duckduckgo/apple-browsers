@@ -59,6 +59,9 @@ extension Preferences {
                                     isShowingDisableAIChatDialog = true
                                 } else {
                                     model.isAIFeaturesEnabled = true
+                                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOn,
+                                                  frequency: .dailyAndCount,
+                                                  includeAppVersionParameter: true)
                                 }
                             }
                             .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
@@ -114,25 +117,6 @@ extension Preferences {
                         }
                     }
                     .visibility(model.shouldShowAIFeatures ? .visible : .gone)
-
-                    PreferencePaneSection(UserText.aiChatOpenNewChatsSectionTitle,
-                                          spacing: 6) {
-                        Picker(selection: $model.openAIChatInSidebar, content: {
-                            Text(UserText.aiChatOpenInSidebarOption).tag(true)
-                                .padding(.bottom, 4).accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.inSidebar")
-                            Text(UserText.aiChatOpenInFullPageOption).tag(false)
-                                .accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.fullPage")
-                        }, label: {})
-                        .pickerStyle(.radioGroup)
-                        .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
-                        .accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker")
-                        .onChange(of: model.openAIChatInSidebar) { _ in
-                            PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
-                                          frequency: .uniqueByName,
-                                          includeAppVersionParameter: true)
-                        }
-                    }
-                    .visibility(model.shouldShowAIFeatures && model.shouldShowOpenAIChatInSidebarToggle ? .visible : .gone)
 
                     Divider()
                         .padding(.bottom, 8)
@@ -267,7 +251,10 @@ extension Preferences {
                 Button(UserText.cancel) { isShowingDisableAIChatDialog = false }
                 Button(action: {
                     isShowingDisableAIChatDialog = false
-                    model.isAIFeaturesEnabled.toggle()
+                    model.isAIFeaturesEnabled = false
+                    PixelKit.fire(AIChatPixel.aiChatSettingsGlobalToggleTurnedOff,
+                                  frequency: .dailyAndCount,
+                                  includeAppVersionParameter: true)
                 }, label: {
                     Text(UserText.aiChatDisableDialogConfirmButton)
                 })

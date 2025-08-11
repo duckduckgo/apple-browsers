@@ -131,7 +131,7 @@ jobs:
             exclude-tags: iphone
             device-model: iPad-10th-generation 
           - test-tag: duckplayer_classic
-            exclude-tags: ipad
+            exclude-tags: iphone
             device-model: iPad-10th-generation 
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false

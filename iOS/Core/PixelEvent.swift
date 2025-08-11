@@ -984,6 +984,15 @@ extension Pixel {
         /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalDoNotAskAgainButtonTapped
 
+        /// Fired when the SAD modal sheet for inactive users appears on screen.
+        case defaultBrowserPromptInactiveUserModalShown
+        /// Fired when the “Close” button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalClosedButtonTapped
+        /// Fired when the “Set As Default Browser" button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped
+        /// Fired when "Plus even more protections..." button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped
+
         // MARK: History
         case historyStoreLoadFailed
         case historyRemoveFailed
@@ -2045,6 +2054,11 @@ extension Pixel.Event {
         case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
         case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
         case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
+
+        case .defaultBrowserPromptInactiveUserModalShown: return "m_set-as-default-prompt_inactive-user-modal-shown"
+        case .defaultBrowserPromptInactiveUserModalClosedButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-closed-button-action"
+        case .defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-set-as-default-browser-button-action"
+        case .defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-more-protections-button-action"
 
             // MARK: Debug Web View
 

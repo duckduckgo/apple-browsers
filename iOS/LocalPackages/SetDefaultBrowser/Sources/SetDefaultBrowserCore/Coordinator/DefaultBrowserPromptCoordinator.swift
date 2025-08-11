@@ -41,6 +41,7 @@ package protocol DefaultBrowserPromptCoordinating: AnyObject {
 
     func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType)
     func dismissAction(forPrompt prompt: DefaultBrowserPromptPresentationType, shouldDismissPromptPermanently: Bool)
+    func moreProtectionsAction()
 }
 
 @MainActor
@@ -105,6 +106,10 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
             promptStore.isPromptPermanentlyDismissed = shouldDismissPromptPermanently
         }
         fireDismissedPromptEvent(prompt: prompt, shouldDismissPromptPermanently: shouldDismissPromptPermanently)
+    }
+
+    package func moreProtectionsAction() {
+        eventMapper.fire(.inactiveModalMoreProtectionsAction)
     }
 }
 

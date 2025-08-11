@@ -39,11 +39,13 @@ final class DefaultBrowserPromptPixelHandler: EventMapping<DefaultBrowserPromptE
             case let .activeModalActioned(numberOfModalShown):
                 pixelFiring.fire(.defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped, withAdditionalParameters: Self.parameters(forNumberOfModalsShown: numberOfModalShown))
             case .inactiveModalShown:
-                break
+                pixelFiring.fire(.defaultBrowserPromptInactiveUserModalShown, withAdditionalParameters: [:])
             case .inactiveModalDismissed:
-                break
+                pixelFiring.fire(.defaultBrowserPromptInactiveUserModalClosedButtonTapped, withAdditionalParameters: [:])
             case .inactiveModalActioned:
-                break
+                pixelFiring.fire(.defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped, withAdditionalParameters: [:])
+            case .inactiveModalMoreProtectionsAction:
+                pixelFiring.fire(.defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped, withAdditionalParameters: [:])
             }
         }
     }

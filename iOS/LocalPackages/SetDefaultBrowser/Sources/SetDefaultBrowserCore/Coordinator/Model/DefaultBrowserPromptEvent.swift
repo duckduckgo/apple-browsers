@@ -26,4 +26,5 @@ public enum DefaultBrowserPromptEvent: Equatable {
     case inactiveModalShown
     case inactiveModalDismissed
     case inactiveModalActioned
+    case inactiveModalMoreProtectionsAction
 }

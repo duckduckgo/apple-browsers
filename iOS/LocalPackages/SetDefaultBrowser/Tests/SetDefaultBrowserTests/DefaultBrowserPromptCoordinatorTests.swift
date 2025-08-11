@@ -364,6 +364,20 @@ final class DefaultBrowserPromptCoordinatorTests {
         #expect(eventMapperMock.capturedEvent == .inactiveModalDismissed)
     }
 
+    @Test("Check Inactive User Modal More Protection Event Is Sent Correctly For Inactive Modal")
+    func whenMoreProtectionActionIsCalledForInactiveUserModalThenMoreProtectionActionEventIsSent() {
+        // GIVEN
+        #expect(!eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == nil)
+
+        // WHEN
+        sut.moreProtectionsAction()
+
+        // THEN
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .inactiveModalMoreProtectionsAction)
+    }
+
 }
 
 private extension DefaultBrowserPromptType {

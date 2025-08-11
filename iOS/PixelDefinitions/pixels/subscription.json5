@@ -10,7 +10,7 @@
             'pixelSource',
             {
                 key: 'source',
-                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
                 type: 'string',
             },
         ],
@@ -25,7 +25,7 @@
             'pixelSource',
             {
                 key: 'source',
-                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
                 type: 'string',
             },
         ],
@@ -45,7 +45,7 @@
             },
             {
                 key: 'source',
-                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
                 type: 'string',
             },
         ],
@@ -70,7 +70,7 @@
             },
             {
                 key: 'source',
-                description: 'The app component that generated teh pixel, liek MainApp, SysExt, VPNApp or DBP',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
                 type: 'string',
             },
         ],

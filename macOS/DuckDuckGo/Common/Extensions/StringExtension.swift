@@ -88,6 +88,26 @@ extension String {
         self.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// Used to cut string contents including and after a detected file path. Used to sanitize a string that may have a file path in it but should be excluded.
+    /// This function will cut all content including and after the first file path, so shouldn't be used if you need to include content between multiple file paths.
+    ///
+    /// The intended use case for this function is to sanitize an error message that may contain a trailing file path, but the initial string contents are still valuable
+    /// for debugging the issue.
+    func strippingFilePaths() -> String {
+        let pattern = #"(^|[\s\(\[\{:])(file://\S+|~(?=/)\S*|/\S+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return self
+        }
+
+        let nsRange = NSRange(startIndex..<endIndex, in: self)
+        let matches = regex.matches(in: self, range: nsRange)
+
+        guard let first = matches.first, let pathRange = Range(first.range(at: 2), in: self) else { return self }
+
+        let head = self[..<pathRange.lowerBound]
+        return head.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     // MARK: - URL
 
     var url: URL? {

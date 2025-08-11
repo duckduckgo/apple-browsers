@@ -39,4 +39,15 @@ class StringExtensionTests: XCTestCase {
         XCTAssertEqual(URLError(URLError.Code.cannotConnectToHost, userInfo: [NSLocalizedDescriptionKey: "Could not connect to the server."]).localizedDescription.escapedUnicodeHtmlString(), "Could not connect to the server.")
     }
 
+    func testStrippingFilePaths() {
+        XCTAssertEqual("Simple error without path".strippingFilePaths(), "Simple error without path")
+        XCTAssertEqual("Error with home directory path: ~/Library/Application Support/app".strippingFilePaths(), "Error with home directory path:")
+        XCTAssertEqual("Error with temp path /tmp/sparkle_update".strippingFilePaths(), "Error with temp path")
+        XCTAssertEqual("Multiple paths: /var/log/system.log and ~/Documents/file.txt".strippingFilePaths(), "Multiple paths:")
+        XCTAssertEqual("Error with app path: /Applications/MyApp.app".strippingFilePaths(), "Error with app path:")
+        XCTAssertEqual("Error with /path/to/file and more text".strippingFilePaths(), "Error with")
+        XCTAssertEqual("Error with file path: /Users/user/Desktop/installer.dmg".strippingFilePaths(), "Error with file path:")
+        XCTAssertEqual("Error with file URL: file:///Users/user/Downloads/update.zip".strippingFilePaths(), "Error with file URL:")
+    }
+
 }

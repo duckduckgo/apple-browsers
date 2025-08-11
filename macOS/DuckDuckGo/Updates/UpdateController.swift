@@ -486,7 +486,10 @@ extension UpdateController: SPUUpdaterDelegate {
             return
         }
 
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterAborted(reason: error.localizedDescription), error: error))
+        PixelKit.fire(DebugEvent(
+            GeneralPixel.updaterAborted(reason: error.localizedDescription.strippingFilePaths()),
+            error: error
+        ))
     }
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {

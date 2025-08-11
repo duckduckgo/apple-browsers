@@ -78,6 +78,23 @@ final class NetworkProtectionDebugUtilities {
 
         try? await activeSession.sendProviderMessage(.startSnooze(duration))
     }
+    
+    func createLogSnapshot() async throws {
+        guard let activeSession = await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession() else {
+            throw NSError(domain: "NetworkProtectionDebugUtilities", code: 1, userInfo: [NSLocalizedDescriptionKey: "No active VPN session"])
+        }
+
+        let responseData: ExtensionMessageString? = try await activeSession.sendProviderRequest(.command(.createLogSnapshot))
+
+        guard let responseString = responseData?.value else {
+            throw NSError(domain: "NetworkProtectionDebugUtilities", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid response from VPN extension"])
+        }
+        
+        if responseString.hasPrefix("Error: ") {
+            let errorMessage = String(responseString.dropFirst("Error: ".count))
+            throw NSError(domain: "NetworkProtectionDebugUtilities", code: 3, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+    }
 }
 
 private extension NetworkProtectionSimulationOption {

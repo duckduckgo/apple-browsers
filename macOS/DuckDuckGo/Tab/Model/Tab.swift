@@ -62,6 +62,7 @@ protocol NewWindowPolicyDecisionMaker {
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+        var newTabPageShownPixelSender: NewTabPageShownPixelSender
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -136,7 +137,8 @@ protocol NewWindowPolicyDecisionMaker {
                      tabsPreferences: TabsPreferences = TabsPreferences.shared,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
-                     aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil
+                     aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
+                     newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -193,7 +195,9 @@ protocol NewWindowPolicyDecisionMaker {
                   tabsPreferences: tabsPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
-                  aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration)
+                  aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
+                  newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender
+        )
     }
 
     @MainActor
@@ -236,7 +240,8 @@ protocol NewWindowPolicyDecisionMaker {
          tabsPreferences: TabsPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+         newTabPageShownPixelSender: NewTabPageShownPixelSender
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -320,8 +325,9 @@ protocol NewWindowPolicyDecisionMaker {
                                                        faviconManagement: faviconManagement,
                                                        featureFlagger: featureFlagger,
                                                        contentScopeExperimentsManager: contentScopeExperimentsManager,
-                                                       aiChatMenuConfiguration: aiChatMenuConfiguration))
-
+                                                       aiChatMenuConfiguration: aiChatMenuConfiguration,
+                                                       newTabPageShownPixelSender: newTabPageShownPixelSender)
+            )
         super.init()
         tabGetter = { [weak self] in self }
         userContentController.map(userContentControllerPromise.fulfill)

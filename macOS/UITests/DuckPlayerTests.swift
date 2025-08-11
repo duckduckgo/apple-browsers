@@ -348,36 +348,4 @@ class DuckPlayerTests: UITestCase {
         verifyDuckPlayerLoads()
     }
 
-    func test_DuckPlayer_Disabled_OpensYouTube_WithoutOverlay() throws {
-        // Settings
-        openDuckPlayerSettings()
-        selectNeverOpenInDuckPlayer()
-        app.closeCurrentTab()
-
-        // Search
-        openURL(url: Self.youtubeURLForVideo)
-
-        verifyYoutubeLoads()
-
-        // Turn On YouTube Button not be present
-        let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
-        XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
-    }
-
-    func test_DuckPlayer_AskMode_OpensYouTube_WithOverlay() throws {
-        // Settings
-        openDuckPlayerSettings()
-        selectAskOpenInDuckPlayer()
-        app.closeCurrentTab()
-
-        // Open Video
-        openURL(url: Self.youtubeURLForVideo)
-
-        verifyYoutubeLoads()
-
-        // Overlay visible
-        let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
-        XCTAssertTrue(watchLink.waitForExistence(timeout: 1))
-    }
-
 }

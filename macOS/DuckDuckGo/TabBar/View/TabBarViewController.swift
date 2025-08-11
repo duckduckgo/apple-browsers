@@ -588,7 +588,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let plusButtonWidth = footerCurrentWidthDimension
 
         // Window dragging
-        let leadingSpace = min(totalTabWidth + plusButtonWidth, scrollView.frame.size.width)
+        let leadingSpace = min(totalTabWidth, scrollView.frame.size.width)
         windowDraggingViewLeadingConstraint.constant = leadingSpace
     }
 

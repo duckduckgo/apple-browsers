@@ -125,6 +125,7 @@ extension Preferences {
                                               frequency: .uniqueByName,
                                               includeAppVersionParameter: true)
                             }
+                            .disabled(!model.showShortcutInAddressBar)
                             .padding(.leading, 19)
                         }
                     }

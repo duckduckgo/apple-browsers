@@ -194,11 +194,11 @@ public final class KeychainManager: KeychainManaging {
     // MARK: - Private Helpers
 
     private var isKeychainAvailable: Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "non existent",
-            kSecReturnData as String: true
-        ]
+        var query = attributes
+        query[kSecAttrService] = "non existent"
+        query[kSecMatchLimit] = kSecMatchLimitOne
+        query[kSecReturnData] = true
+
         var item: CFTypeRef?
         let status = keychainOperations.copyMatching(query as CFDictionary, &item)
         return status == errSecItemNotFound

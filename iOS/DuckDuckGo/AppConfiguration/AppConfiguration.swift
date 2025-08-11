@@ -50,6 +50,10 @@ struct AppConfiguration {
         try persistentStoresConfiguration.configure()
         setConfigurationURLProvider()
 
+        // Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
+        //  and the widgets needs to be reloaded after.
+        AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: UserDefaults.app)
+
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
     }

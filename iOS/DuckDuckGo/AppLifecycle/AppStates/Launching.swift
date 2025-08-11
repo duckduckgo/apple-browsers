@@ -43,7 +43,7 @@ struct Launching: LaunchingHandling {
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
-    private let aiChatSettings = AIChatSettings()
+    private let aiChatSettings: AIChatSettings
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
@@ -101,6 +101,9 @@ struct Launching: LaunchingHandling {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
 
+        // Has to be intialised after configuration.start in case values need to be migrated
+        aiChatSettings = AIChatSettings()
+
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
@@ -138,10 +141,6 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
-
-        // MARK: - Migrations
-        // Perform synchronous migrations that must happen before further bootstrapping
-        AIChatSettingsMigration().migrateTo(AppUserDefaults())
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

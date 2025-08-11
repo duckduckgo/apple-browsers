@@ -203,9 +203,10 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 }
 
-private extension UserDefaults {
-    enum Keys {
-        static let isAIChatEnabled = SharedUserDefaultsKeys.isAIChatEnabled
+extension AIChatSettings {
+
+    enum StoreKeys {
+        static let isAIChatEnabled = "aichat.settings.isEnabled"
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
@@ -213,78 +214,6 @@ private extension UserDefaults {
         static let showAIChatExperimentalSearchInput = "aichat.settings.showAIChatExperimentalSearchInput"
     }
 
-    static let isAIChatEnabledDefaultValue = true
-    static let showAIChatBrowsingMenuDefaultValue = true
-    static let showAIChatAddressBarDefaultValue = true
-    static let showAIChatVoiceSearchDefaultValue = true
-    static let showAIChatTabSwitcherDefaultValue = true
-    static let showAIChatExperimentalSearchInputDefaultValue = false
-
-    @objc dynamic var isAIChatEnabled: Bool {
-        get {
-            value(forKey: Keys.isAIChatEnabled) as? Bool ?? Self.isAIChatEnabledDefaultValue
-        }
-
-        set {
-            guard newValue != isAIChatEnabled else { return }
-            set(newValue, forKey: Keys.isAIChatEnabled)
-        }
-    }
-
-    @objc dynamic var showAIChatBrowsingMenu: Bool {
-        get {
-            value(forKey: Keys.showAIChatBrowsingMenu) as? Bool ?? Self.showAIChatBrowsingMenuDefaultValue
-        }
-
-        set {
-            guard newValue != showAIChatBrowsingMenu else { return }
-            set(newValue, forKey: Keys.showAIChatBrowsingMenu)
-        }
-    }
-
-    @objc dynamic var showAIChatVoiceSearch: Bool {
-        get {
-            value(forKey: Keys.showAIChatVoiceSearch) as? Bool ?? Self.showAIChatVoiceSearchDefaultValue
-        }
-
-        set {
-            guard newValue != showAIChatVoiceSearch else { return }
-            set(newValue, forKey: Keys.showAIChatVoiceSearch)
-        }
-    }
-
-    @objc dynamic var showAIChatAddressBar: Bool {
-        get {
-            value(forKey: Keys.showAIChatAddressBar) as? Bool ?? Self.showAIChatAddressBarDefaultValue
-        }
-
-        set {
-            guard newValue != showAIChatAddressBar else { return }
-            set(newValue, forKey: Keys.showAIChatAddressBar)
-        }
-    }
-
-    @objc dynamic var showAIChatExperimentalSearchInput: Bool {
-        get {
-            value(forKey: Keys.showAIChatExperimentalSearchInput) as? Bool ?? Self.showAIChatExperimentalSearchInputDefaultValue
-        }
-
-        set {
-            guard newValue != showAIChatExperimentalSearchInput else { return }
-            set(newValue, forKey: Keys.showAIChatExperimentalSearchInput)
-        }
-    }
-
-    @objc dynamic var showAIChatTabSwitcher: Bool {
-        get {
-            value(forKey: Keys.showAIChatTabSwitcher) as? Bool ?? Self.showAIChatTabSwitcherDefaultValue
-        }
-
-        set {
-            guard newValue != showAIChatTabSwitcher else { return }
-            set(newValue, forKey: Keys.showAIChatTabSwitcher)
-        }
-    }
 }
 
 public extension NSNotification.Name {

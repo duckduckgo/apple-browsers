@@ -133,7 +133,10 @@ public final class KeychainManager: KeychainManaging {
     public func retrieveData(forKey key: String) throws -> Data? {
         return try accessQueue.sync {
 
-            if let dataFromBacklog = self.writingBacklog[key] {
+            if isKeychainAvailable {
+                // Trigger backlog processing for that contexts that can't rely on notifications for detecting keychain availability
+                self.processWritingBacklog()
+            } else if let dataFromBacklog = self.writingBacklog[key] {
                 Logger.keychainManager.debug("Data for key \(key) retrieved from writing backlog")
                 return dataFromBacklog
             }
@@ -162,15 +165,8 @@ public final class KeychainManager: KeychainManaging {
     }
 
     public func store(data: Data, forKey key: String) throws {
-        let writingResultStatus = try accessQueue.sync {
+        _ = try accessQueue.sync {
             try internalStore(data: data, forKey: key)
-        }
-
-        if writingResultStatus == errSecSuccess {
-            // Trigger backlog processing for that contexts that can't rely on notifications for detecting keychain availability (SysExt)
-            accessQueue.async {
-                self.processWritingBacklog()
-            }
         }
     }
 
@@ -196,6 +192,17 @@ public final class KeychainManager: KeychainManaging {
     }
 
     // MARK: - Private Helpers
+
+    private var isKeychainAvailable: Bool {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "non existent",
+            kSecReturnData as String: true
+        ]
+        var item: CFTypeRef?
+        let status = keychainOperations.copyMatching(query as CFDictionary, &item)
+        return status == errSecItemNotFound
+    }
 
     private func addToWritingBacklog(_ data: Data, forKey key: String) {
         writingBacklog[key] = data
@@ -290,7 +297,7 @@ public final class KeychainManager: KeychainManaging {
 
         Logger.keychainManager.debug("Set up iOS keychain availability notifications")
 
-        #elseif canImport(APPKit)
+        #elseif canImport(AppKit)
         // On macOS, listen for app becoming active and workspace session becoming active
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
             .receive(on: accessQueue)

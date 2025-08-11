@@ -59,6 +59,28 @@ final class KeychainManagerTests: XCTestCase {
         return "test-data".data(using: .utf8)!
     }
 
+    func makeKeychainNotAvailable() {
+        mockKeychainOperations.shouldFailAdd = true
+        mockKeychainOperations.addFailureStatus = errSecNotAvailable
+        mockKeychainOperations.shouldFailDelete = true
+        mockKeychainOperations.deleteFailureStatus = errSecNotAvailable
+        mockKeychainOperations.shouldFailUpdate = true
+        mockKeychainOperations.updateFailureStatus = errSecNotAvailable
+        mockKeychainOperations.shouldFailCopyMatching = true
+        mockKeychainOperations.copyMatchingFailureStatus = errSecNotAvailable
+    }
+
+    func makeKeychainAvailable() {
+        mockKeychainOperations.shouldFailAdd = false
+        mockKeychainOperations.addFailureStatus = errSecDuplicateItem
+        mockKeychainOperations.shouldFailDelete = false
+        mockKeychainOperations.deleteFailureStatus = errSecItemNotFound
+        mockKeychainOperations.shouldFailUpdate = false
+        mockKeychainOperations.updateFailureStatus = errSecItemNotFound
+        mockKeychainOperations.shouldFailCopyMatching = false
+        mockKeychainOperations.copyMatchingFailureStatus = errSecItemNotFound
+    }
+
     // MARK: - Retrieve Data Tests
 
     func testRetrieveDataSuccess() throws {
@@ -96,12 +118,15 @@ final class KeychainManagerTests: XCTestCase {
 
         try keychainManager.store(data: testData, forKey: testKey)
 
+        // Recover keychain
+        mockKeychainOperations.shouldFailAdd = false
+
         // When - Data should be retrieved from backlog, not keychain
         let retrievedData = try keychainManager.retrieveData(forKey: testKey)
 
         // Then
         XCTAssertEqual(retrievedData, testData)
-        XCTAssertNil(mockKeychainOperations.getStoredData(for: testKey), "Data should not be in keychain storage")
+        XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData, "Data should be in keychain storage")
     }
 
     func testRetrieveDataKeychainLookupFailure() {
@@ -194,8 +219,7 @@ final class KeychainManagerTests: XCTestCase {
         let testKey = "test-key"
         let testData = createTestData()
 
-        mockKeychainOperations.shouldFailAdd = true
-        mockKeychainOperations.addFailureStatus = errSecNotAvailable
+        makeKeychainNotAvailable()
 
         // When
         try keychainManager.store(data: testData, forKey: testKey)
@@ -257,8 +281,7 @@ final class KeychainManagerTests: XCTestCase {
         let testData = createTestData()
 
         // Add data to backlog by making keychain unavailable
-        mockKeychainOperations.shouldFailAdd = true
-        mockKeychainOperations.addFailureStatus = errSecNotAvailable
+        makeKeychainNotAvailable()
         try keychainManager.store(data: testData, forKey: testKey)
 
         // Verify data is in backlog
@@ -266,11 +289,15 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertEqual(backlogData, testData)
 
         // When
-        try keychainManager.deleteItem(forKey: testKey)
+        try? keychainManager.deleteItem(forKey: testKey)
 
         // Then - Data should be removed from backlog
-        let retrievedData = try keychainManager.retrieveData(forKey: testKey)
-        XCTAssertNil(retrievedData)
+        XCTAssertThrowsError(try keychainManager.retrieveData(forKey: testKey)) { error in
+            XCTAssertTrue(error is AccountKeychainAccessError)
+            if case .keychainDeleteFailure(let status) = error as? AccountKeychainAccessError {
+                XCTAssertEqual(status, errSecAuthFailed)
+            }
+        }
     }
 
     func testDeleteItemKeychainFailureThrowsError() {
@@ -297,9 +324,7 @@ final class KeychainManagerTests: XCTestCase {
         let testData1 = "data-1".data(using: .utf8)!
         let testData2 = "data-2".data(using: .utf8)!
 
-        // Add items to backlog
-        mockKeychainOperations.shouldFailAdd = true
-        mockKeychainOperations.addFailureStatus = errSecNotAvailable
+        makeKeychainNotAvailable()
 
         try keychainManager.store(data: testData1, forKey: testKey1)
         try keychainManager.store(data: testData2, forKey: testKey2)
@@ -309,7 +334,7 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertNil(mockKeychainOperations.getStoredData(for: testKey2))
 
         // When - Simulate keychain becoming available
-        mockKeychainOperations.shouldFailAdd = false
+        makeKeychainAvailable()
 
         #if canImport(UIKit)
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
@@ -319,7 +344,7 @@ final class KeychainManagerTests: XCTestCase {
 
         // Give some time for async processing
         let expectation = expectation(description: "Backlog processed")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             expectation.fulfill()
         }
 

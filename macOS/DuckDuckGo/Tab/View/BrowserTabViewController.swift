@@ -980,22 +980,18 @@ final class BrowserTabViewController: NSViewController {
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {
         if shouldReplaceWebView(for: tabViewModel) {
-            if tabViewModel?.tabContent == .newtab {
-                onNewTabPageWillPresent()
-            }
+            onNewTabPageWillPresent()
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
-            if tabViewModel?.tabContent == .newtab {
-                onNewTabPageDidPresent()
-            }
+            onNewTabPageDidPresent()
         } else {
-            if tabViewModel?.tabContent == .newtab {
-                onNewTabPageAlreadyPresented()
-            }
+            onNewTabPageAlreadyPresented()
         }
     }
 
     func onNewTabPageWillPresent() {
+        guard tabViewModel?.tabContent == .newtab else { return }
+
         if featureFlagger.isFeatureOn(.newTabPagePerTab) {
             tabViewModel?.tab.newTabPage?.onNewTabPageWillPresent()
         } else {
@@ -1004,19 +1000,21 @@ final class BrowserTabViewController: NSViewController {
     }
 
     func onNewTabPageDidPresent() {
+        guard tabViewModel?.tabContent == .newtab else { return }
+
         if featureFlagger.isFeatureOn(.newTabPagePerTab) {
             tabViewModel?.tab.newTabPage?.onNewTabPageDidPresent()
         } else {
+            // If web view is loaded, update load metrics.
+            // Otherwise NewTabPageWebViewModel's delegate callback will update load metrics when loading is finished.
             if !newTabPageWebViewModel.webView.isLoading {
-                // New Tab Page is presented, but still loading
                 newTabPageLoadMetrics.onNTPDidPresent()
             }
         }
-
     }
 
     func onNewTabPageAlreadyPresented() {
-        guard !featureFlagger.isFeatureOn(.newTabPagePerTab) else { return }
+        guard !featureFlagger.isFeatureOn(.newTabPagePerTab), tabViewModel?.tabContent == .newtab else { return }
 
         newTabPageLoadMetrics.onNTPAlreadyPresented()
     }

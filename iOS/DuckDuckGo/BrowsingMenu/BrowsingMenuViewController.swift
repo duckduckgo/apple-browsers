@@ -58,19 +58,21 @@ final class BrowsingMenuViewController: UIViewController {
     private var headerButtons: [BrowsingMenuButton] = []
     private let headerEntries: [BrowsingMenuEntry]
     private let menuEntries: [BrowsingMenuEntry]
+    private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
 
     var onDismiss: (() -> Void)?
 
-    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
+    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
-            BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, appSettings: appSettings, coder: coder)
+            BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, coder: coder)
         }!
     }
 
-    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], appSettings: AppSettings, coder: NSCoder) {
+    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings, coder: NSCoder) {
         self.headerEntries = headerEntries
         self.menuEntries = menuEntries
+        self.daxDialogsManager = daxDialogsManager
         self.appSettings = appSettings
         super.init(coder: coder)
         self.transitioningDelegate = self
@@ -188,7 +190,7 @@ final class BrowsingMenuViewController: UIViewController {
     }
 
     @IBAction func backgroundTapped(_ sender: Any) {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         dismiss(animated: true)

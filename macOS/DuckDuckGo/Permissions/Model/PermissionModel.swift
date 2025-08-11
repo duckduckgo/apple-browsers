@@ -121,7 +121,7 @@ final class PermissionModel {
                 } else {
                     permissions.geolocation.update(with: webView.geolocationState)
                 }
-            case .popups, .externalScheme, .wifiHotspot:
+            case .popups, .externalScheme:
                 continue
             }
         }
@@ -221,7 +221,7 @@ final class PermissionModel {
             self.permissions[permission].revoke() // await deactivation
             webView?.revokePermissions([permission])
 
-        case .popups, .externalScheme, .wifiHotspot:
+        case .popups, .externalScheme:
             self.permissions[permission].denied()
         }
     }
@@ -344,7 +344,7 @@ final class PermissionModel {
             self.permissions[permission].externalSchemeOpened()
         case .popups:
             self.permissions[permission].popupOpened(nextQuery: authorizationQueries.first(where: { $0.permissions.contains(.popups) }))
-        case .camera, .microphone, .geolocation, .wifiHotspot:
+        case .camera, .microphone, .geolocation:
             // permission usage activated
             break
         }

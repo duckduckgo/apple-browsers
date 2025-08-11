@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Otsi vaikimisi privaatselt";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo pakub ka %1$@, mis on saadaval koos %2$@-ga ja täiustatud privaatse AI-ga.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valikuline tasuline tellimus";
 
@@ -2700,15 +2697,6 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Otsi või sisesta aadress";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Küsi Duck.ai käest";
-
-/* Search input toggle button title for asking AI Chat */
-"search.input.toggle.aichat.button.title" = "Duck.ai";
-
-/* Search input toggle button title for searching on the web */
-"search.input.toggle.search.button.title" = "Otsi";
 
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Teisene/teine tegevus";

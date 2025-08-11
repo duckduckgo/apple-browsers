@@ -23,6 +23,7 @@ import UIKit
 import WebKit
 import BareBonesBrowserKit
 import Core
+import DataBrokerProtection_iOS
 
 extension DebugScreensViewModel {
 
@@ -154,12 +155,12 @@ extension DebugScreensViewModel {
                     NetworkProtectionDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "PIR", { _ in
+            AppDependencyProvider.shared.featureFlagger.isFeatureOn(.personalInformationRemoval) ? .controller(title: "PIR", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "DataBrokerProtectionDebugViewController") { coder in
                     DataBrokerProtectionDebugViewController(coder: coder)
                 }
-            }),
+            }) : nil,
             .controller(title: "File Size Inspector", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
@@ -208,7 +209,7 @@ extension DebugScreensViewModel {
                 weak var capturedController: OnboardingDebugViewController?
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager)
+                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager, daxDialogsManager: d.daxDialogManager)
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
@@ -216,7 +217,7 @@ extension DebugScreensViewModel {
                 capturedController = onboardingController
                 return onboardingController
             }),
-        ]
+        ].compactMap { $0 }
     }
 
 }

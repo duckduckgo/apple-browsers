@@ -36,10 +36,8 @@ final class TestSettingSyncHandler: SettingSyncHandler {
     }
 
     override func setValue(_ value: String?, shouldDetectOverride: Bool) throws {
-        DispatchQueue.main.async {
-            self.notifyValueDidChange = false
-            self.syncedValue = value
-        }
+        notifyValueDidChange = false
+        syncedValue = value
     }
 
     override var valueDidChangePublisher: AnyPublisher<Void, Never> {

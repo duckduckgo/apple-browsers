@@ -93,12 +93,15 @@ struct Launching: LaunchingHandling {
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
 
+        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+
         // Service to display the Default Browser prompt.
         let defaultBrowserPromptService = DefaultBrowserPromptService(
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
+            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
         )
 
         // MARK: - Main Coordinator Setup
@@ -121,8 +124,8 @@ struct Launching: LaunchingHandling {
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
-                                              systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
-        )
+                                              systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
+                                              daxDialogsManager: daxDialogs)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

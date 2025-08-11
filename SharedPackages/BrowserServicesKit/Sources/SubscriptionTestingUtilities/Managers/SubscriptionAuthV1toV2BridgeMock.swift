@@ -45,7 +45,8 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     }
 
     public var canPurchase: Bool = true
-    public var canPurchasePublisher: AnyPublisher<Bool, Never> = .init(Empty())
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
+    public var canPurchaseSubject: PassthroughSubject<Bool, Never> = .init()
     public var returnSubscription: Result<PrivacyProSubscription, Error>!
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
         switch returnSubscription! {

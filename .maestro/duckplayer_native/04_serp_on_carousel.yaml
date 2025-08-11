@@ -1,33 +1,35 @@
-appId: com.duckduckgo.mobile.ios
-tags:
-    - iphone
-    - duckplayer_native
+# appId: com.duckduckgo.mobile.ios
+# tags:
+#     - iphone
+#     - duckplayer_native
 
----
+# ---
 
-# Load constants
-- runFlow:
-    file: shared/constants.yaml
+# # Test temporariy disabled as carousel is not present in SERP
 
-# Set up 
-- runFlow: 
-    file: ../shared/setup.yaml
+# # Load constants
+# - runFlow:
+#     file: shared/constants.yaml
 
-# Load Site
-- runFlow: 
-    file: shared/load_serp_url.yaml
+# # Set up 
+# - runFlow: 
+#     file: ../shared/setup.yaml
 
-- runFlow:
-    file: shared/tap_serp_title.yaml
+# # Load Site
+# - runFlow: 
+#     file: shared/load_serp_url.yaml
 
-# Validate Duck Player is Visible
-- runFlow: 
-    file: shared/duckplayer_is_visible.yaml
+# - runFlow:
+#     file: shared/tap_serp_title.yaml
 
-# Validate this is SERP View
-- assertVisible:
-    id: ${output.watchOnYoutubeLabel}
+# # Validate Duck Player is Visible
+# - runFlow: 
+#     file: shared/duckplayer_is_visible.yaml
 
-# Validate Duck Player Closes
-- runFlow: 
-    file: shared/close_player.yaml
+# # Validate this is SERP View
+# - assertVisible:
+#     id: ${output.watchOnYoutubeLabel}
+
+# # Validate Duck Player Closes
+# - runFlow: 
+#     file: shared/close_player.yaml

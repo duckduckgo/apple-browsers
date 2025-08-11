@@ -316,13 +316,13 @@ class SwitchBarTextEntryView: UIView {
 extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
+        hasBeenInteractedWith = true
+        
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
         handler.markUserInteraction()
-
-        hasBeenInteractedWith = true
 
         textView.reloadInputViews()
     }

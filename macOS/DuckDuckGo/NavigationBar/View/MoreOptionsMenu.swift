@@ -40,6 +40,7 @@ protocol OptionsButtonMenuDelegate: AnyObject {
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu)
     func optionsButtonMenuRequestedBookmarkExportInterface(_ menu: NSMenu)
     func optionsButtonMenuRequestedLoginsPopover(_ menu: NSMenu, selectedCategory: SecureVaultSorting.Category)
+    func optionsButtonMenuRequestedStartSync(_ menu: NSMenu)
     func optionsButtonMenuRequestedOpenExternalPasswordManager(_ menu: NSMenu)
     func optionsButtonMenuRequestedNetworkProtectionPopover(_ menu: NSMenu)
     func optionsButtonMenuRequestedDownloadsPopover(_ menu: NSMenu)
@@ -345,6 +346,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         actionDelegate?.optionsButtonMenuRequestedDownloadsPopover(self)
     }
 
+    @objc func startSync(_ sender: NSMenuItem) {
+        // TODO: Present sync
+    }
+
     @objc func openAutofillWithAllItems(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.passwordsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedLoginsPopover(self, selectedCategory: .allItems)
@@ -544,6 +549,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withImage(moreOptionsMenuIconsProvider.passwordsIcon)
             .withSubmenu(loginsSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
+
+        addItem(withTitle: "Sync & Backup", action: #selector(startSync), keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.syncIcon)
 
         addItem(NSMenuItem.separator())
     }

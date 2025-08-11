@@ -305,7 +305,7 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet weak var syncButtonZeroWidthConstraint: NSLayoutConstraint!
 
     @IBAction func syncClicked(_ sender: Any) {
-
+        // TODO: Present sync
     }
 
     @IBAction func dismissSyncClicked(_ sender: Any) {

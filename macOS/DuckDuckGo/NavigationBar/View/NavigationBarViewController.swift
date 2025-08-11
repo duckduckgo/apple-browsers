@@ -1769,6 +1769,10 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
         popovers.showPasswordManagementPopover(selectedCategory: selectedCategory, from: passwordManagementButton, withDelegate: self, source: .overflow)
     }
 
+    func optionsButtonMenuRequestedStartSync(_ menu: NSMenu) {
+
+    }
+
     func optionsButtonMenuRequestedNetworkProtectionPopover(_ menu: NSMenu) {
         toggleNetworkProtectionPopover()
     }

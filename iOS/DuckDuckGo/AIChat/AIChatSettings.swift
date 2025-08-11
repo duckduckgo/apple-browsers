@@ -49,12 +49,12 @@ final class AIChatSettings: AIChatSettingsProvider {
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
-    private var keyValueStore: KeyValueStoring
+    private let keyValueStore: KeyValueStoring
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         keyValueStore: KeyValueStoring = UserDefaults.app,
+         keyValueStore: KeyValueStoring = UserDefaults(suiteName: UserDefaults.groupName) ?? .app,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager

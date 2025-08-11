@@ -50,12 +50,23 @@ struct AppConfiguration {
         try persistentStoresConfiguration.configure()
         setConfigurationURLProvider()
 
-        // Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
-        //  and the widgets needs to be reloaded after.
-        AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: UserDefaults.app)
+        try migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
+    }
+
+    /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
+    ///  and the widgets needs to be reloaded after.
+    /// Moves settings from `UserDefaults.standard` to the shared container.
+    private func migrateAIChatSettings() throws {
+        enum Error: Swift.Error {
+            case unableToCreatedSharedUserDefaults
+        }
+        guard let sharedUserDefaults = UserDefaults(suiteName: UserDefaults.groupName) else {
+            throw Error.unableToCreatedSharedUserDefaults
+        }
+        AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: sharedUserDefaults)
     }
 
     private func configureAPIRequestUserAgent() {

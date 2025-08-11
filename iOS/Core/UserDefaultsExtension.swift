@@ -20,6 +20,8 @@
 import Foundation
 
 extension UserDefaults {
+    public static var groupName = "group.com.duckduckgo.app"
+
     public static var app = UserDefaults.standard
 
     public func bool(forKey key: String, defaultValue: Bool) -> Bool {

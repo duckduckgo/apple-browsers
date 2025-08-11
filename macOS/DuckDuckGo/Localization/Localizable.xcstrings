@@ -50205,66 +50205,6 @@
         }
       }
     },
-    "permission.authorization.wifihotspot.format" : {
-      "comment" : "Popover asking user to authorize WiFi hotspot captive portal",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Der WLAN-Hotspot fordert eine Autorisierung an, um auf die Anmeldeseite des Captive Portals umzuleiten."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "WiFi hotspot requesting authorization to redirect to captive portal login page."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Punto de acceso WiFi que solicita autorización para redirigirte a la página de inicio de sesión del portal cautivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Point d'accès Wi-Fi demandant l'autorisation de rediriger vers la page de connexion du portail captif."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hotspot WiFi che richiede l'autorizzazione per reindirizzare alla pagina di accesso del captive portal."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WiFi-hotspot vraagt om toestemming om je door te sturen naar de inlogpagina van het captive portal."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hotspot WiFi prosi o autoryzację na przekierowanie do strony logowania portalu przechwytującego."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O hotspot Wi-Fi está a pedir autorização para redirecionar para a página de início de sessão do portal cativo."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Точка доступа Wi-Fi запрашивает разрешение на перенаправление на страницу входа на портал авторизации."
-          }
-        }
-      }
-    },
     "permission.camera" : {
       "comment" : "Camera input media device name",
       "extractionState" : "extracted_with_value",
@@ -51281,66 +51221,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перезагрузите страницу, чтобы снова увидеть запрос"
-          }
-        }
-      }
-    },
-    "permission.title.wifihotspot" : {
-      "comment" : "WiFi Hotspot permission title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WLAN-Hotspot"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "WiFi Hotspot"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Punto de acceso Wi-Fi"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Point d'accès Wi-Fi"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hotspot Wi-Fi"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wifi-hotspot"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hotspot WiFi"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ponto de acesso Wi-Fi"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Точка доступа Wi-Fi"
           }
         }
       }

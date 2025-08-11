@@ -260,7 +260,7 @@ extension WKWebView {
                 self.setMicrophoneCaptureState(muted ? .muted : .active, completionHandler: {})
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.isPaused = muted
-            case .popups, .externalScheme, .wifiHotspot:
+            case .popups, .externalScheme:
                 assertionFailure("The permission don't support pausing")
             }
         }
@@ -283,7 +283,7 @@ extension WKWebView {
                 }
             case .geolocation:
                 self.configuration.processPool.geolocationProvider?.revoke()
-            case .popups, .externalScheme, .wifiHotspot:
+            case .popups, .externalScheme:
                 continue
             }
         }

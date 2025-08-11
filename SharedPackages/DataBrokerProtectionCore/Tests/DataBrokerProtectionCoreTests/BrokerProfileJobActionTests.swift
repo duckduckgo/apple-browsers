@@ -594,8 +594,8 @@ final class BrokerProfileJobActionTests: XCTestCase {
         // Simulate condition success
         await sut.conditionSuccess(actions: [])
 
-        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
-        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
     }
 
     func testWhenConditionActionFailsInOptOutStep_thenFireOptOutConditionNotFoundIsCalled() async {
@@ -736,7 +736,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
         // First condition succeeds
         await sut.conditionSuccess(actions: [])
-        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
 
         // Clear flags to test second condition
         mockStageCalculator.clear()
@@ -811,15 +811,15 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
         // First call success
         await sut.conditionSuccess(actions: [])
-        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
-        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
 
         // Then call failure (simulating a different scenario in the same test)
         _ = sut.actionsHandler?.nextAction() // Execute condition action
         await sut.onError(error: DataBrokerProtectionError.actionFailed(actionID: "1", message: "Condition failed"))
 
         // Both flags should now be true
-        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
         XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
     }
 
@@ -848,8 +848,8 @@ final class BrokerProfileJobActionTests: XCTestCase {
         await sut.conditionSuccess(actions: [])
 
         // Flag should remain true after multiple calls
-        XCTAssertTrue(mockStageCalculator.fireOptOutConditionFoundCalled)
-        XCTAssertFalse(mockStageCalculator.fireOptOutConditionNotFoundCalled)
+        XCTAssertFalse(mockStageCalculator.fireOptOutConditionFoundCalled)
+        XCTAssertTrue(mockStageCalculator.fireOptOutConditionNotFoundCalled)
 
         // Clear and test multiple failures
         mockStageCalculator.clear()

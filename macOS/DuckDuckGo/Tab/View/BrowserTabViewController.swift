@@ -980,22 +980,43 @@ final class BrowserTabViewController: NSViewController {
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {
         if shouldReplaceWebView(for: tabViewModel) {
-            if tabViewModel?.tabContent == .newtab {
-                newTabPageLoadMetrics.onNTPWillPresent()
-            }
+            onNewTabPageWillPresent()
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
-            if tabViewModel?.tabContent == .newtab {
-                if !newTabPageWebViewModel.webView.isLoading {
-                    // New Tab Page is presented, but still loading
-                    newTabPageLoadMetrics.onNTPDidPresent()
-                }
-            }
+            onNewTabPageDidPresent()
         } else {
-            if tabViewModel?.tabContent == .newtab {
-                newTabPageLoadMetrics.onNTPAlreadyPresented()
+            onNewTabPageAlreadyPresented()
+        }
+    }
+
+    func onNewTabPageWillPresent() {
+        guard tabViewModel?.tabContent == .newtab else { return }
+
+        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            tabViewModel?.tab.newTabPage?.onNewTabPageWillPresent()
+        } else {
+            newTabPageLoadMetrics.onNTPWillPresent()
+        }
+    }
+
+    func onNewTabPageDidPresent() {
+        guard tabViewModel?.tabContent == .newtab else { return }
+
+        if featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            tabViewModel?.tab.newTabPage?.onNewTabPageDidPresent()
+        } else {
+            // If web view is loaded, update load metrics.
+            // Otherwise NewTabPageWebViewModel's delegate callback will update load metrics when loading is finished.
+            if !newTabPageWebViewModel.webView.isLoading {
+                newTabPageLoadMetrics.onNTPDidPresent()
             }
         }
+    }
+
+    func onNewTabPageAlreadyPresented() {
+        guard !featureFlagger.isFeatureOn(.newTabPagePerTab), tabViewModel?.tabContent == .newtab else { return }
+
+        newTabPageLoadMetrics.onNTPAlreadyPresented()
     }
 
     func showTabContentForSettings(pane: PreferencePaneIdentifier?) {

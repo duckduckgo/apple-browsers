@@ -31,6 +31,9 @@ final class NewTabPageTabExtension {
     private var cancellables = Set<AnyCancellable>()
     private weak var newTabPageUserScript: NewTabPageUserScript?
     private var content: Tab.TabContent?
+    private let pixelSender: NewTabPageShownPixelSender
+    private let loadMetrics = NewTabPageLoadMetrics()
+    private var sendPixelOnFinish = false
     private weak var webView: WKWebView? {
         didSet {
             newTabPageUserScript?.webView = webView
@@ -39,8 +42,11 @@ final class NewTabPageTabExtension {
 
     init(
         scriptsPublisher: some Publisher<some NewTabPageUserScriptProvider, Never>,
-        webViewPublisher: some Publisher<WKWebView, Never>
+        webViewPublisher: some Publisher<WKWebView, Never>,
+        pixelSender: NewTabPageShownPixelSender
     ) {
+        self.pixelSender = pixelSender
+
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
                 self?.newTabPageUserScript = scripts.newTabPageUserScript
@@ -51,13 +57,48 @@ final class NewTabPageTabExtension {
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
         }.store(in: &cancellables)
+
     }
+
+    func onNewTabPageWillPresent() {
+        loadMetrics.onNTPWillPresent()
+    }
+
+    func onNewTabPageDidPresent() {
+        guard webView?.superview != nil else {
+            assertionFailure("Webview not yet added to the view hierarchy")
+            return
+        }
+
+        pixelSender.firePixel()
+        if webView?.isLoading == true {
+            sendPixelOnFinish = true
+        } else {
+            loadMetrics.onNTPDidPresent()
+        }
+    }
+
 }
 
 extension NewTabPageTabExtension: NavigationResponder {
+
+    func navigationDidFinish(_ navigation: Navigation) {
+        if sendPixelOnFinish {
+            sendPixelOnFinish = false
+            guard webView?.superview != nil else {
+                return
+            }
+            loadMetrics.onNTPDidPresent()
+        }
+    }
+
 }
 
 protocol NewTabPageTabExtensionProtocol: AnyObject, NavigationResponder {
+
+    func onNewTabPageWillPresent()
+    func onNewTabPageDidPresent()
+
 }
 
 extension NewTabPageTabExtension: NewTabPageTabExtensionProtocol, TabExtension {

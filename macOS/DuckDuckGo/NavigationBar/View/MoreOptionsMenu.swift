@@ -459,6 +459,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         updateMenuItem = menuItem
         addItem(menuItem)
 
+        if let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
+            addItem(releaseNotes)
+        }
+
         addItem(NSMenuItem.separator())
 #endif
     }

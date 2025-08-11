@@ -55,6 +55,7 @@ struct UnifiedFeedbackFormViewModelTests {
             subscriptionManager: subscriptionManager,
             apiService: apiService,
             vpnMetadataCollector: MockUnifiedMetadataCollector(),
+            dbpMetadataCollector: MockUnifiedMetadataCollector(),
             defaultMetadatCollector: MockUnifiedMetadataCollector(),
             feedbackSender: feedbackSender,
             isPaidAIChatFeatureEnabled: { isPaidAIChatFeatureEnabled },

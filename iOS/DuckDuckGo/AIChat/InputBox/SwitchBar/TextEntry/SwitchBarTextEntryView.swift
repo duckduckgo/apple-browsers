@@ -319,6 +319,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 handler.submitText(currentText)
             }
+            /// Prevent adding newline when there's no content or just whitespace
+            /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210989002857245?focus=true
+            return false
         }
         return true
     }

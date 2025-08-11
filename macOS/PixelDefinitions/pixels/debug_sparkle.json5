@@ -9,27 +9,27 @@
             'pixelSource',
             {
                 key: 'd',
-                description: 'The error domain provided by the error; typically a string reprenting the type of error, e.g. SUSparkleErrorDomain',
+                description: 'The error domain, representing the type of erro, e.g. SUSparkleErrorDomain',
                 type: 'string',
             },
             {
                 key: 'e',
-                description: 'The error code provided by the error; typically an integer representing the exact error, e.g. 4005',
+                description: 'The error code representing the exact error, e.g. 4005',
                 type: 'number',
             },
             {
                 key: 'ud',
-                description: 'The underlying error domain provided by the error; typically a string reprenting the type of error, e.g. SUSparkleErrorDomain',
+                description: 'The underlying error domain, representing the type of error, e.g. SUSparkleErrorDomain',
                 type: 'string',
             },
             {
                 key: 'ue',
-                description: 'The error code provided by the error; typically an integer representing the exact error, e.g. 10',
+                description: 'The underlying error code representing the exact error, e.g. 10',
                 type: 'number',
             },
             {
                 key: 'reason',
-                description: 'The reason string provided by the Sparkle framework',
+                description: 'The reason string provided by the Sparkle framework, e.g. "The update is improperly signed and could not be validated."',
                 type: 'string',
             },
         ],

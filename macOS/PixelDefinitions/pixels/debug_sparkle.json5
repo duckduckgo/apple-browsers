@@ -9,7 +9,7 @@
             'pixelSource',
             {
                 key: 'd',
-                description: 'The error domain, representing the type of erro, e.g. SUSparkleErrorDomain',
+                description: 'The error domain, representing the type of error, e.g. SUSparkleErrorDomain',
                 type: 'string',
             },
             {

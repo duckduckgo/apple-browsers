@@ -22,10 +22,12 @@ import SwiftUIExtensions
 struct AddBookmarkPopoverView: View {
 
     @ObservedObject private var model: AddBookmarkPopoverViewModel
+    @ObservedObject private var syncButtonModel: SyncFromFeatureButtonModel
     @Environment(\.dismiss) private var dismiss
 
-    init(model: AddBookmarkPopoverViewModel) {
+    init(model: AddBookmarkPopoverViewModel, syncButtonModel: SyncFromFeatureButtonModel) {
         self.model = model
+        self.syncButtonModel = syncButtonModel
     }
 
     var body: some View {
@@ -48,6 +50,9 @@ struct AddBookmarkPopoverView: View {
             selectedFolder: $model.selectedFolder,
             isURLFieldHidden: true,
             addFolderAction: model.addFolderButtonAction,
+            shouldShowSyncButton: $syncButtonModel.shouldShowSyncButton,
+            syncButtonAction: syncButtonModel.syncButtonAction,
+            dismissSyncButtonAction: syncButtonModel.dismissSyncButtonAction,
             otherActionTitle: UserText.delete,
             isOtherActionDisabled: false,
             otherAction: { _ in model.removeButtonAction() },
@@ -85,7 +90,7 @@ struct AddBookmarkPopoverView: View {
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman))
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: SyncFromFeatureButtonModel())
         .preferredColorScheme(.light)
 }
 
@@ -100,7 +105,7 @@ struct AddBookmarkPopoverView: View {
     )
     bkman.loadBookmarks()
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman))
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: SyncFromFeatureButtonModel())
         .preferredColorScheme(.dark)
 }
 #endif

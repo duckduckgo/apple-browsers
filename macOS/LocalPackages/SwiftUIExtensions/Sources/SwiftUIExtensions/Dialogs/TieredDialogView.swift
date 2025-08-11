@@ -61,7 +61,7 @@ public struct TieredDialogView<Top: View, Center: View, Bottom: View>: View {
             center()
                 .padding(.horizontal, horizontalPadding)
 
-            Divider()
+//            Divider() TODO: Check we really want to do this
 
             bottom()
                 .padding(.horizontal, horizontalPadding)

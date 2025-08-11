@@ -38,7 +38,6 @@ runs:
           PUBLIC_VERSION="${TAG}"
         fi
 
-        # Build public tag for URL as major.minor.patch+platform (always include platform)
         PUBLIC_TAG="${PUBLIC_VERSION}+${PLATFORM}"
 
         if [[ "${PLATFORM}" != "ios" && "${PLATFORM}" != "macos" ]]; then

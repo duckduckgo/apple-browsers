@@ -1,7 +1,7 @@
 {
     m_mac_debug_updater_aborted: {
         description: 'Fired when the Sparkle update framework aborts its update due to an error',
-        owners: ['dreymendez', 'quanganhdo'],
+        owners: ['diegoreymendez', 'quanganhdo'],
         triggers: ['other'],
         suffixes: [],
         parameters: [

@@ -22,6 +22,8 @@ tags:
     text: ${output.serpToggleOn}
     index: 0
 
+- waitForAnimationToEnd
+
 # Close Settings
 - runFlow: 
     file: shared/close_settings.yaml
@@ -31,13 +33,12 @@ tags:
 - runFlow: 
     file: shared/load_serp_url.yaml
 
-  # Assert Youtube Search Page opens and open the video
-- assertVisible: ${output.videoTitle}
-- tapOn: ${output.videoTitle}
+- runFlow:
+    file: shared/tap_serp_title.yaml
 
 # Validate YouTube opens
 - assertVisible: ${output.youtubeMobileDomain}
 
 # Assert Duck Player Welcome Pill is present
-- assertVisible:
-    id: duckPlayerWelcomePill
+- runFlow: 
+    file: shared/pill_is_visible.yaml

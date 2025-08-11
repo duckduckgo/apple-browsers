@@ -1,0 +1,28 @@
+appId: com.duckduckgo.mobile.ios
+---
+# Verify Duck Player Classic is visible - wait for iframe to load
+- waitForAnimationToEnd
+
+- assertVisible: 
+    text: "Duck Player"
+
+- assertVisible: 
+    text: "Pause (k)"
+
+- assertVisible: 
+    text: "Copy link"
+
+# Tap to show the UI controls
+- tapOn:
+    point: "50%,15%"
+
+- assertVisible: 
+    text: ${output.watchOnYoutubeLabel}
+
+- tapOn:
+    point: "50%,15%"
+
+- assertVisible: 
+    text: ${output.openInfoLabel}
+
+

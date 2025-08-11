@@ -89,7 +89,7 @@ extension DefaultBrowserPromptTypeDecider {
         }
 
         // If the user has seen the last modal and they have been active for `subsequentModalRepeatIntervalDays`, show the subsequentModalRepeatIntervalDays modal.
-        func shouldShowSubsequentModal(for user: DefaultBrowserPromptUserType) -> Bool {
+        private func shouldShowSubsequentModal(for user: DefaultBrowserPromptUserType) -> Bool {
             let modalSeenCondition = user.isNewOrReturningUser ? store.hasSeenSecondModal : store.hasSeenFirstModal
 
             return modalSeenCondition &&

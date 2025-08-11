@@ -3,6 +3,8 @@
 appId: com.duckduckgo.mobile.ios
 ---
 
+- waitForAnimationToEnd
+
 - runFlow:
     when:
       visible: ${output.videoTitle}

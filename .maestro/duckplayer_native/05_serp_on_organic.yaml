@@ -25,7 +25,6 @@ tags:
 - runFlow: 
     file: shared/duckplayer_is_visible.yaml
 
-# Validate this is SERP View
 - assertVisible:
     id: ${output.watchOnYoutubeLabel}
 

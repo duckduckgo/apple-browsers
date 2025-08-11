@@ -1247,7 +1247,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             // No-op since this is intended for the agent app
             break
         case .createLogSnapshot:
-            handleCreateLogSnapshot(completionHandler: completionHandler)
+            if #available(macOS 12.0, iOS 15.0, *) {
+                handleCreateLogSnapshot(completionHandler: completionHandler)
+            }
         }
     }
 
@@ -1379,6 +1381,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     // Used for the iOS debug menu by DuckDuckGo VPN developers
+    @available(macOS 12.0, iOS 15.0, *)
     private func handleCreateLogSnapshot(completionHandler: ((Data?) -> Void)? = nil) {
         Task {
             do {

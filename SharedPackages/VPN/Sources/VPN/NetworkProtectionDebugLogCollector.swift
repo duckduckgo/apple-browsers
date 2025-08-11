@@ -33,6 +33,11 @@ final class NetworkProtectionDebugLogCollector {
 
     private let appGroupIdentifier: String
     private let fileManager = FileManager.default
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        return formatter
+    }()
 
     init() {
         self.appGroupIdentifier = Bundle.main.vpnAppGroupName
@@ -44,10 +49,7 @@ final class NetworkProtectionDebugLogCollector {
 
         try createDirectoryIfNeeded(logsDirectory)
 
-        let timestamp = DateFormatter().apply {
-            $0.dateFormat = "yyyy-MM-dd-HH-mm-ss"
-        }.string(from: Date())
-
+        let timestamp = dateFormatter.string(from: Date())
         let logFileURL = logsDirectory.appendingPathComponent("iOS-VPN-logs-\(timestamp).txt")
         let logContent = try await collectLogs()
         try logContent.write(to: logFileURL, atomically: true, encoding: .utf8)
@@ -97,9 +99,6 @@ final class NetworkProtectionDebugLogCollector {
         }
 
         var logEntries: [String] = []
-        let dateFormatter = DateFormatter().apply {
-            $0.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        }
 
         for entry in enumerator {
             if let logEntry = entry as? OSLogEntryLog {
@@ -120,13 +119,6 @@ final class NetworkProtectionDebugLogCollector {
         return logEntries.joined(separator: "\n")
     }
 
-}
-
-private extension DateFormatter {
-    func apply(_ configuration: (DateFormatter) -> Void) -> DateFormatter {
-        configuration(self)
-        return self
-    }
 }
 
 public extension Bundle {

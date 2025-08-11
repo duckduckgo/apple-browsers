@@ -1,0 +1,37 @@
+{
+    m_mac_debug_updater_aborted: {
+        description: 'Fired when the Sparkle update framework aborts its update due to an error',
+        owners: ['dreymendez', 'quanganhdo'],
+        triggers: ['other'],
+        suffixes: [],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'd',
+                description: 'The error domain provided by the error; typically a string reprenting the type of error, e.g. SUSparkleErrorDomain',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                description: 'The error code provided by the error; typically an integer representing the exact error, e.g. 4005',
+                type: 'number',
+            },
+            {
+                key: 'ud',
+                description: 'The underlying error domain provided by the error; typically a string reprenting the type of error, e.g. SUSparkleErrorDomain',
+                type: 'string',
+            },
+            {
+                key: 'ue',
+                description: 'The error code provided by the error; typically an integer representing the exact error, e.g. 10',
+                type: 'number',
+            },
+            {
+                key: 'reason',
+                description: 'The reason string provided by the Sparkle framework',
+                type: 'string',
+            },
+        ],
+    },
+}

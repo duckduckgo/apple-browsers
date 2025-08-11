@@ -31,6 +31,7 @@ struct DefaultBrowserPromptInactiveUserView: View {
     let browserComparisonChart: AnyView
     let closeAction: () -> Void
     let setAsDefaultAction: () -> Void
+    let onMoreProtectionsTapped: () -> Void
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -67,7 +68,7 @@ struct DefaultBrowserPromptInactiveUserView: View {
                 }
             }
             VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
-                PlusMoreButton()
+                PlusMoreButton(action: onMoreProtectionsTapped)
                     .frame(height: Metrics.PlusMoreButton.height)
 
                 Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
@@ -84,16 +85,18 @@ struct DefaultBrowserPromptInactiveUserView: View {
 }
 
 struct PlusMoreButton: View {
+    let action: () -> Void
 
     var body: some View {
-        Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
-            .font(.system(size: Metrics.PlusMoreButton.moreProtectionsFontSize))
-            .underline(true)
-            .multilineTextAlignment(.leading)
-            .lineLimit(2)
-            .tint(Color(designSystemColor: .accent))
+        Button(action: action) {
+            Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
+                .font(.system(size: Metrics.PlusMoreButton.moreProtectionsFontSize))
+                .underline(true)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .foregroundStyle(Color(designSystemColor: .accent))
+        }
     }
-
 }
 
 struct DismissButton: View {
@@ -174,5 +177,5 @@ private enum Metrics {
 }
 
 #Preview {
-    DefaultBrowserPromptInactiveUserView(background: AnyView(Color.blue), browserComparisonChart: AnyView(EmptyView()), closeAction: {}, setAsDefaultAction: {})
+    DefaultBrowserPromptInactiveUserView(background: AnyView(Color.blue), browserComparisonChart: AnyView(EmptyView()), closeAction: {}, setAsDefaultAction: {}, onMoreProtectionsTapped: {})
 }

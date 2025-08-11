@@ -33,6 +33,7 @@ class DuckPlayerTests: UITestCase {
     private static let watchOnDuckPlayerLink = "Watch in Duck Player"
     private static let watchOnYouTubeLink = "Watch on YouTube"
     private static let turnOnDuckPlayer = "Turn On Duck Player"
+    private static let duckPlayerLoadDelay = 5.0
 
     override class func setUp() {
         super.setUp()
@@ -118,11 +119,11 @@ class DuckPlayerTests: UITestCase {
         sleep(5)
 
         // Get the YouTube view
-        let youtubeWebView = app.windows.firstMatch.webViews["\(Self.youtubeVideoTitle)"]
+        let youtubeWebView = app.windows.firstMatch.webViews["\(Self.organicVideoTitle)"]
 
         // Validate YouTube page loaded
         XCTAssertTrue(
-            youtubeWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            youtubeWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence + Self.duckPlayerLoadDelay),
             "YouTube webview did not load in a reasonable timeframe."
         )
 

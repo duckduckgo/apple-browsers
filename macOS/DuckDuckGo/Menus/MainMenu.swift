@@ -872,10 +872,8 @@ final class MainMenu: NSMenu {
             dateString = "Last Update Time: -"
         }
         configurationDateAndTimeMenuItem.title = dateString
-        let urlProvider = AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
+
+        let urlProvider = Application.appDelegate.configurationURLProvider
 
         customConfigurationUrlMenuItem.title = "Configuration URL:  \(urlProvider.url(for: .privacyConfiguration).absoluteString)"
     }

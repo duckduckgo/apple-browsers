@@ -25,23 +25,22 @@ import SubscriptionTestingUtilities
 final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
 
     private var storage: SubscriptionTokenKeychainStorageV2!
-    private var mockKeychain: MockKeychainOperations!
+    private var mockKeychain: KeychainOperationsMock!
     private var errorEvents: [(AccountKeychainAccessType, AccountKeychainAccessError)] = []
     private let errorEventsQueue = DispatchQueue(label: "test.error.events", attributes: .concurrent)
 
     override func setUp() {
         super.setUp()
         errorEvents = []
-        mockKeychain = MockKeychainOperations()
-        storage = SubscriptionTokenKeychainStorageV2(
-            keychainType: .dataProtection(.unspecified),
-            errorEventsHandler: { [weak self] type, error in
-                self?.errorEventsQueue.async(flags: .barrier) {
-                    self?.errorEvents.append((type, error))
-                }
-            },
-            keychainOperations: mockKeychain
-        )
+        mockKeychain = KeychainOperationsMock()
+        let keychainManager = KeychainManager(keychainOperations: mockKeychain,
+                                              attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+                                              pixelHandler: MockPixelHandler())
+        storage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager, errorEventsHandler: { [weak self] type, error in
+            self?.errorEventsQueue.async(flags: .barrier) {
+                self?.errorEvents.append((type, error))
+            }
+        })
     }
 
     override func tearDown() {
@@ -220,22 +219,19 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
     }
 
     func testMultipleStorageInstancesConcurrency() throws {
-        let mockKeychain1 = MockKeychainOperations()
-        let mockKeychain2 = MockKeychainOperations()
-        let mockKeychain3 = MockKeychainOperations()
+        let mockKeychain1 = KeychainOperationsMock()
+        let mockKeychain2 = KeychainOperationsMock()
+        let mockKeychain3 = KeychainOperationsMock()
 
-        let storage1 = SubscriptionTokenKeychainStorageV2(
-            errorEventsHandler: { _, _ in },
-            keychainOperations: mockKeychain1
-        )
-        let storage2 = SubscriptionTokenKeychainStorageV2(
-            errorEventsHandler: { _, _ in },
-            keychainOperations: mockKeychain2
-        )
-        let storage3 = SubscriptionTokenKeychainStorageV2(
-            errorEventsHandler: { _, _ in },
-            keychainOperations: mockKeychain3
-        )
+        let storage1 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain1,
+                                                                                           attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+                                                                                           pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in })
+        let storage2 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain2,
+                                                                                           attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+                                                                                           pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in })
+        let storage3 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain3,
+                                                                                           attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+                                                                                           pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in })
 
         let expectation = XCTestExpectation(description: "Multiple instances complete")
         expectation.expectedFulfillmentCount = 60
@@ -438,13 +434,13 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         var errorCount = 0
         let errorCountQueue = DispatchQueue(label: "test.error.count")
 
-        let storage = SubscriptionTokenKeychainStorageV2(
-            errorEventsHandler: { _, _ in
-                errorCountQueue.sync {
-                    errorCount += 1
-                }
-            },
-            keychainOperations: mockKeychain
+        let storage = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain,
+                                                                                          attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
+                                                                                          pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in
+            errorCountQueue.sync {
+                errorCount += 1
+            }
+        }
         )
 
         // Make operations fail

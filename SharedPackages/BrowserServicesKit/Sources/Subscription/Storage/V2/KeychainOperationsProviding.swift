@@ -1,5 +1,5 @@
 //
-//  KeychainOperationsProtocol.swift
+//  KeychainOperationsProviding.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import Security
 
 // MARK: - Keychain Operations Protocol
 
-public protocol KeychainOperationsProtocol {
+public protocol KeychainOperationsProviding {
     func add(_ query: CFDictionary, _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
     func copyMatching(_ query: CFDictionary, _ result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
     func update(_ query: CFDictionary, _ attributesToUpdate: CFDictionary) -> OSStatus
@@ -30,7 +30,7 @@ public protocol KeychainOperationsProtocol {
 
 // MARK: - Real Keychain Operations
 
-public final class DefaultKeychainOperations: KeychainOperationsProtocol {
+public final class DefaultKeychainOperations: KeychainOperationsProviding {
 
     public init() {}
 

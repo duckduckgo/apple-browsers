@@ -1,5 +1,5 @@
 //
-//  MockKeychainOperations.swift
+//  KeychainOperationsMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 @testable import Subscription
 
-public final class MockKeychainOperations: KeychainOperationsProtocol {
+public final class KeychainOperationsMock: KeychainOperationsProviding {
 
     private var storage: [String: Data] = [:]
     private let queue = DispatchQueue(label: "mock.keychain.queue", attributes: .concurrent)

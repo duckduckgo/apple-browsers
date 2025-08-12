@@ -40,6 +40,10 @@ struct AIChatSettingsMigration {
 
         guard settings.count > 0 else { return }
 
+        if settings.first(where: { store.object(forKey: $0.key) != nil }) != nil {
+            assertionFailure("Secondary migration of AIChatSettings has ocurred")
+        }
+
         // Write to the new store
         settings.forEach {
             store.set($0.value, forKey: $0.key)

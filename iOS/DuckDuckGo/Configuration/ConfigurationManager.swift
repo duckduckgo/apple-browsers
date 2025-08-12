@@ -76,7 +76,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
     init(fetcher: ConfigurationFetching = ConfigurationFetcher(store: ConfigurationStore(), eventMapping: configurationDebugEvents),
          store: ConfigurationStoring = AppDependencyProvider.shared.configurationStore,
-         defaults: KeyValueStoring = UserDefaults(suiteName: "\(Global.groupIdPrefix).app-configuration") ?? UserDefaults(),
+         defaults: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          trackerDataManager: TrackerDataManager = ContentBlocking.shared.trackerDataManager,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
         self.trackerDataManager = trackerDataManager

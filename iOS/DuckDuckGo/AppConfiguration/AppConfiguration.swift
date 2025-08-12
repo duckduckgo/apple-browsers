@@ -63,7 +63,7 @@ struct AppConfiguration {
         enum Error: Swift.Error {
             case unableToCreatedSharedUserDefaults
         }
-        guard let sharedUserDefaults = UserDefaults(suiteName: UserDefaults.groupName) else {
+        guard let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) else {
             throw Error.unableToCreatedSharedUserDefaults
         }
         AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: sharedUserDefaults)

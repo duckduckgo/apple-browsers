@@ -349,7 +349,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .scheduledSetDefaultBrowserPrompts:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
         case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
+            return .internalOnly()
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .supportsAlternateStripePaymentFlow:

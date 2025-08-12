@@ -47,7 +47,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 return nil
             },
             showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.legacy
+            visualStyle: VisualStyle.current
         )
 
         provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)

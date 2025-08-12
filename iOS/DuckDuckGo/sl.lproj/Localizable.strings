@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Privzeto išče zasebno";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ima tudi 1$@, ki je na voljo z 2$@ in napredno zasebno umetno inteligenco.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "neobvezno plačljivo naročnino";
 
@@ -2700,15 +2697,6 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Poišči ali vnesi naslov";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Vprašajte Duck.ai";
-
-/* Search input toggle button title for asking AI Chat */
-"search.input.toggle.aichat.button.title" = "Duck.ai";
-
-/* Search input toggle button title for searching on the web */
-"search.input.toggle.search.button.title" = "Iskanje";
 
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundarni/drugi ukrep";

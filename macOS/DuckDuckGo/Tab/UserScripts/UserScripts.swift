@@ -20,6 +20,7 @@ import AIChat
 import BrowserServicesKit
 import Foundation
 import HistoryView
+import NewTabPage
 import PixelKit
 import SpecialErrorPages
 import Subscription
@@ -55,6 +56,7 @@ final class UserScripts: UserScriptsProvider {
     let aiChatUserScript: AIChatUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript?
+    let newTabPageUserScript: NewTabPageUserScript?
     let faviconScript = FaviconUserScript()
 
     // swiftlint:disable:next cyclomatic_complexity
@@ -110,6 +112,14 @@ final class UserScripts: UserScriptsProvider {
             historyViewUserScript = nil
         }
 
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.newTabPagePerTab) {
+            let newTabPageUserScript = NewTabPageUserScript()
+            sourceProvider.newTabPageActionsManager?.registerUserScript(newTabPageUserScript)
+            self.newTabPageUserScript = newTabPageUserScript
+        } else {
+            newTabPageUserScript = nil
+        }
+
         specialPages = SpecialPagesUserScript()
 
         if DuckPlayer.shared.isAvailable {
@@ -160,6 +170,10 @@ final class UserScripts: UserScriptsProvider {
 
             if let historyViewUserScript {
                 specialPages.registerSubfeature(delegate: historyViewUserScript)
+            }
+
+            if let newTabPageUserScript {
+                specialPages.registerSubfeature(delegate: newTabPageUserScript)
             }
             userScripts.append(specialPages)
         }

@@ -32,7 +32,9 @@ typealias HistoryProviderCoordinating = HistoryCoordinating & SuggestionContaine
 
 final class NewTabPageCoordinator {
     let actionsManager: NewTabPageActionsManager
+    let newTabPageShownPixelSender: NewTabPageShownPixelSender
 
+    @MainActor
     init(
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
@@ -73,6 +75,7 @@ final class NewTabPageCoordinator {
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,
             contentBlocking: contentBlocking,
+            trackerDataManager: contentBlocking.trackerDataManager,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
@@ -102,6 +105,5 @@ final class NewTabPageCoordinator {
             .store(in: &cancellables)
     }
 
-    private let newTabPageShownPixelSender: NewTabPageShownPixelSender
     private var cancellables: Set<AnyCancellable> = []
 }

@@ -64,6 +64,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
 
     private let urlSession: URLSession
 
+    @MainActor
     init(
         openTabsProvider: OpenTabsProvider? = nil,
         suggestionLoading: SuggestionLoading? = nil,

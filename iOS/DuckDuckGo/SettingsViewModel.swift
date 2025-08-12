@@ -119,6 +119,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.subscriptionRebranding)
     }
 
+    var isPIREnabled: Bool {
+        featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 

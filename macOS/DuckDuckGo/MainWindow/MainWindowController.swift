@@ -30,6 +30,7 @@ final class MainWindowController: NSWindowController {
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
+    private let visualStyle: VisualStyleProviding
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -46,7 +47,8 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          popUp: Bool,
          fireWindowSession: FireWindowSession? = nil,
-         fireViewModel: FireViewModel) {
+         fireViewModel: FireViewModel,
+         visualStyle: VisualStyleProviding) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -63,6 +65,8 @@ final class MainWindowController: NSWindowController {
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession
         fireWindowSession?.addWindow(window)
+
+        self.visualStyle = visualStyle
 
         super.init(window: window)
 
@@ -111,6 +115,9 @@ final class MainWindowController: NSWindowController {
 
     private func setupWindow(_ window: NSWindow) {
         window.delegate = self
+
+        // Prevent a 2px white line from appearing above the tab bar on macOS 26
+        window.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
 
         if shouldShowOnboarding {
             mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.startOnboarding()
@@ -175,7 +182,13 @@ final class MainWindowController: NSWindowController {
         // slide tabs to the left in full screen
         trafficLightsAlphaCancellable = window?.standardWindowButton(.closeButton)?
             .publisher(for: \.alphaValue)
-            .map { alphaValue in TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPadding.rawValue * alphaValue }
+            .map { alphaValue in
+                if #available(macOS 26, *) {
+                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPaddingMacOS26.rawValue * alphaValue
+                } else {
+                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPadding.rawValue * alphaValue
+                }
+            }
             .assign(to: \.constant, onWeaklyHeld: tabBarViewController.pinnedTabsViewLeadingConstraint)
     }
 
@@ -219,8 +232,8 @@ final class MainWindowController: NSWindowController {
             return
         }
         let tabBarViewController = mainViewController.tabBarViewController
-
         tabBarViewController.view.removeFromSuperview()
+
         if toTitlebarView {
             // Prevent 1px line from appearing below Tab Bar when hiding and subsequently showing it in fullscreen mode
             // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209999815083499?focus=true
@@ -328,6 +341,10 @@ extension MainWindowController: NSWindowDelegate {
         }
 
         fullscreenController.resetFullscreenExitFlag()
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) {
+        mainViewController.windowDidEndLiveResize()
     }
 
     private func hideTabBarAndBookmarksBar() {

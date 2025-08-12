@@ -58,15 +58,6 @@ extension Dictionary where Key == PermissionType, Value == PermissionState {
         }
     }
 
-    var wifiHotspot: PermissionState? {
-        get {
-            self[.wifiHotspot]
-        }
-        set {
-            self[.wifiHotspot] = newValue
-        }
-    }
-
     var externalScheme: PermissionState? {
         return self.first(where: { $0.key.isExternalScheme })?.value
     }

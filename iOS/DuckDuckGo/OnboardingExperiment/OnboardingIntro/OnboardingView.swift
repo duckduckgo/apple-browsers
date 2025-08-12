@@ -303,30 +303,25 @@ private extension View {
 
 // MARK: - Preview
 
-#Preview("Onboarding - Light") {
-    OnboardingView(
-        model: .init(
-            pixelReporter: OnboardingPixelReporter(),
-            systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager(
-                playerView: UIView(),
-                videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
-                eventMapper: SystemSettingsPiPTutorialPixelHandler()
-            )
-        )
-    )
-    .preferredColorScheme(.light)
-}
+struct OnboardingView_Previews: PreviewProvider {
+    class MockDaxDialogDisabling: ContextualDaxDialogDisabling {
+        func disableContextualDaxDialogs() {}
+    }
 
-#Preview("Onboarding - Dark") {
-    OnboardingView(
-        model: .init(
-            pixelReporter: OnboardingPixelReporter(),
-            systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager(
-                playerView: UIView(),
-                videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
-                eventMapper: SystemSettingsPiPTutorialPixelHandler()
+    static var previews: some View  {
+        ForEach(ColorScheme.allCases, id: \.self) {
+            OnboardingView(
+                model: .init(
+                    pixelReporter: OnboardingPixelReporter(),
+                    systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager(
+                        playerView: UIView(),
+                        videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
+                        eventMapper: SystemSettingsPiPTutorialPixelHandler(),
+                    ),
+                    daxDialogsManager: MockDaxDialogDisabling()
+                )
             )
-        )
-    )
-    .preferredColorScheme(.dark)
+            .preferredColorScheme($0)
+        }
+    }
 }

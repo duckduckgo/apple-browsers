@@ -282,7 +282,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     @objc func newTab(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.newTabActionClicked, frequency: .daily)
-        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.insertOrAppendNewTab()
     }
 
     @MainActor
@@ -458,6 +458,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         updateMenuItem = menuItem
         addItem(menuItem)
+
+        if let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
+            addItem(releaseNotes)
+        }
 
         addItem(NSMenuItem.separator())
 #endif

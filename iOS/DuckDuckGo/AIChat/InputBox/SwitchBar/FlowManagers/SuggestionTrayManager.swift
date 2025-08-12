@@ -26,6 +26,7 @@ import Persistence
 import History
 import Suggestions
 import Core
+import AIChat
 
 /// Dependencies required for the suggestion tray
 struct SuggestionTrayDependencies {
@@ -35,6 +36,7 @@ struct SuggestionTrayDependencies {
     let tabsModel: TabsModel
     let featureFlagger: FeatureFlagger
     let appSettings: AppSettings
+    let aiChatSettings: AIChatSettingsProvider
     let newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies
 }
 
@@ -109,6 +111,7 @@ final class SuggestionTrayManager: NSObject {
                 tabsModel: self.dependencies.tabsModel,
                 featureFlagger: self.dependencies.featureFlagger,
                 appSettings: self.dependencies.appSettings,
+                aiChatSettings: self.dependencies.aiChatSettings,
                 newTabPageDependencies: self.dependencies.newTabPageDependencies
             )
         }) else {

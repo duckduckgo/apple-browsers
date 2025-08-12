@@ -1,5 +1,5 @@
 //
-//  AuthV2PixelHandler.swift
+//  SubscriptionPixelHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 import Subscription
 import PixelKit
 
-public struct AuthV2PixelHandler: SubscriptionPixelHandler {
+public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
 
     public enum Source {
         case mainApp
@@ -44,8 +44,8 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
 
     let source: Source
 
-    public func handle(pixelType: Subscription.SubscriptionPixelType) {
-        switch pixelType {
+    public func handle(pixel: Subscription.SubscriptionPixelType) {
+        switch pixel {
         case .invalidRefreshToken:
             PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
         case .subscriptionIsActive:
@@ -63,4 +63,16 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         }
     }
 
+    public func handle(pixel: Subscription.KeychainManager.Pixel) {
+        switch pixel {
+        case .deallocatedWithBacklog:
+            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)
+        case .dataAddedToTheBacklog:
+            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerDataAddedToTheBacklog(source), frequency: .dailyAndCount)
+        case .dataWroteFromBacklog:
+            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
+        case .failedToWriteDataFromBacklog:
+            PixelKit.fire(PrivacyProPixel.privacyProKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
+        }
+    }
 }

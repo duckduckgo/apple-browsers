@@ -116,8 +116,9 @@ final class SwitchBarHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String) {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        textSubmissionSubject.send((text: text, mode: currentToggleState))
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        textSubmissionSubject.send((text: trimmed, mode: currentToggleState))
     }
 
     func setToggleState(_ state: TextEntryMode) {

@@ -69,6 +69,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
                                        fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
+        /// Set it to any value to trigger `didSet` that unblocks updates stream
+        updating.userScriptDependenciesProvider = nil
     }
 
     override func tearDown() {
@@ -96,7 +98,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         }
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
@@ -123,7 +125,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         rulesManager.updatesSubject.send(Self.testUpdate())
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
@@ -146,7 +148,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         preferences.isGPCEnabled = !preferences.isGPCEnabled
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
     }
 
@@ -168,10 +170,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         rulesManager.updatesSubject.send(update1)
         rulesManager.updatesSubject.send(update2)
 
-        c.cancel()
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 0, handler: nil)
+            waitForExpectations(timeout: 1, handler: nil)
         }
+        c.cancel()
     }
 
     // MARK: - Test data

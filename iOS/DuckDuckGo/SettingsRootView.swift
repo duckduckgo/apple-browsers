@@ -201,8 +201,9 @@ struct SettingsRootView: View {
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
         case .dbp:
-            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)
+            if viewModel.isPIREnabled,
+               let dbpManager = DataBrokerProtectionIOSManager.shared {
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)
             } else {
                 SubscriptionPIRMoveToDesktopView()
             }

@@ -315,13 +315,15 @@ final class PreferencesSidebarModel: ObservableObject {
         // https://app.asana.com/1/137249556945/task/1210799126744217
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
         let isIdentityTheftRestorationAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestoration)) ?? false
+        let isIdentityTheftRestorationEnabled = await (try? subscriptionManager.isFeatureEnabled(.identityTheftRestoration)) ?? false
+        let isIdentityTheftRestorationGlobalEnabled = await (try? subscriptionManager.isFeatureEnabled(.identityTheftRestorationGlobal)) ?? false
         let isIdentityTheftRestorationGlobalAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestorationGlobal)) ?? false
         let isPaidAIChatAvailable = (try? await subscriptionManager.isFeatureIncludedInSubscription(.paidAIChat)) ?? false
         return await PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isSubscriptionPresent(),
                                                          shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                          isNetworkProtectionRemovalEnabled: (try? subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false,
                                                          isPersonalInformationRemovalEnabled: (try? subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false,
-                                                         isIdentityTheftRestorationEnabled: (try? subscriptionManager.isFeatureEnabled(.identityTheftRestoration)) ?? false,
+                                                         isIdentityTheftRestorationEnabled: isIdentityTheftRestorationEnabled || isIdentityTheftRestorationGlobalEnabled,
                                                          isPaidAIChatEnabled: (try? subscriptionManager.isFeatureEnabled(.paidAIChat)) ?? false,
                                                          isNetworkProtectionRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false,
                                                          isPersonalInformationRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false,

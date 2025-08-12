@@ -143,7 +143,10 @@ final class PreferencesSectionTests: XCTestCase {
         // Given
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
                                                                     shouldHideSubscriptionPurchase: false,
-                                                                    isPaidAIChatEnable: true,
+                                                                    isNetworkProtectionRemovalEnabled: true,
+                                                                    isPersonalInformationRemovalEnabled: true,
+                                                                    isIdentityTheftRestorationEnabled: true,
+                                                                    isPaidAIChatEnabled: true,
                                                                     isNetworkProtectionRemovalAvailable: true,
                                                                     isPersonalInformationRemovalAvailable: true,
                                                                     isIdentityTheftRestorationAvailable: true,

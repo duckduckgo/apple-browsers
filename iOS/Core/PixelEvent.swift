@@ -976,6 +976,10 @@ extension Pixel {
         case debugDefaultBrowserPromptFailedToRetrieveUserType
         /// Fired when it is not possible to save from the persistence store the type of user.
         case debugDefaultBrowserPromptFailedToSaveUserType
+        /// Fired when it is not possible to retrieve from the persistence store whether the inactive user modal was shown.
+        case debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown
+        /// Fired when it is not possible to save from the persistence store that the inactive user modal was shown.
+        case  debugDefaultBrowserPromptFailedToSaveInactiveModalShown
 
         /// Fired when the SAD modal sheet appears on screen.
         case defaultBrowserPromptModalShown
@@ -2065,6 +2069,9 @@ extension Pixel.Event {
 
         case .debugDefaultBrowserPromptFailedToRetrieveUserType: return "m_debug_set-as-default-prompt_failed-to-retrieve-user-type"
         case .debugDefaultBrowserPromptFailedToSaveUserType: return "m_debug_set-as-default-prompt_failed-to-save-user-type"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-retrieve-inactive-modal-shown"
+        case .debugDefaultBrowserPromptFailedToSaveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-save-inactive-modal-shown"
 
         case .defaultBrowserPromptModalShown: return "m_set-as-default-prompt_modal-shown"
         case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"

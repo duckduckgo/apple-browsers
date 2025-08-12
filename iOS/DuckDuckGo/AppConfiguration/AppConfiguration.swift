@@ -62,13 +62,8 @@ struct AppConfiguration {
     /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
     ///  and the widgets needs to be reloaded after.
     /// Moves settings from `UserDefaults.standard` to the shared container.
-    private func migrateAIChatSettings() throws {
-        enum Error: Swift.Error {
-            case unableToCreatedSharedUserDefaults
-        }
-        guard let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) else {
-            throw Error.unableToCreatedSharedUserDefaults
-        }
+    private func migrateAIChatSettings() throws {        
+        let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()
         AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: sharedUserDefaults)
     }
 

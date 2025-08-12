@@ -25,11 +25,13 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
     public let hasSubscription: Bool
     public let shouldHideSubscriptionPurchase: Bool
 
+    // If the menu item is clickable of greyed out
     public let isNetworkProtectionRemovalEnabled: Bool
     public let isPersonalInformationRemovalEnabled: Bool
     public let isIdentityTheftRestorationEnabled: Bool
     public let isPaidAIChatEnabled: Bool
 
+    // If the menu item is visible or not
     public let isNetworkProtectionRemovalAvailable: Bool
     public let isPersonalInformationRemovalAvailable: Bool
     public let isIdentityTheftRestorationAvailable: Bool

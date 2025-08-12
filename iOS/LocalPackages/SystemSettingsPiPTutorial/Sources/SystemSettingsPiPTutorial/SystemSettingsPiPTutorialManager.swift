@@ -28,8 +28,12 @@ import Combine
 public final class SystemSettingsPiPTutorialManager {
     weak var presenter: SystemSettingsPiPTutorialPresenting?
 
-    private let playerView: () -> UIView
-    private let videoPlayer: () -> SystemSettingsPiPTutorialPlayer
+    private let playerViewProvider: () -> UIView
+    private let videoPlayerProvider: () -> SystemSettingsPiPTutorialPlayer
+
+    private lazy var playerView: UIView = playerViewProvider()
+    private lazy var videoPlayer: SystemSettingsPiPTutorialPlayer = videoPlayerProvider()
+
     private let pipTutorialURLProvider: SystemSettingsPiPTutorialURLManaging
     private let urlOpener: SystemSettingsPiPURLOpener
     private let eventMapper: SystemSettingsPiPTutorialEventMapper
@@ -62,8 +66,8 @@ public final class SystemSettingsPiPTutorialManager {
         eventMapper: SystemSettingsPiPTutorialEventMapper,
         urlOpener: SystemSettingsPiPURLOpener
     ) {
-        self.playerView = playerView
-        self.videoPlayer = videoPlayer
+        self.playerViewProvider = playerView
+        self.videoPlayerProvider = videoPlayer
         self.pipTutorialURLProvider = pipTutorialURLProvider
         self.urlOpener = urlOpener
         self.eventMapper = eventMapper
@@ -76,7 +80,7 @@ private extension SystemSettingsPiPTutorialManager {
 
     func loadAndPlayPiPTutorialIfEnabled(for destination: SystemSettingsPiPTutorialDestination) {
         // If PiP is supported, otherwise load the URL without loading the video.
-        guard videoPlayer().isPictureInPictureSupported() else {
+        guard videoPlayer.isPictureInPictureSupported() else {
             urlOpener.open(destination.url)
             return
         }
@@ -85,7 +89,7 @@ private extension SystemSettingsPiPTutorialManager {
             let pipTutorialURL = try pipTutorialURLProvider.url(for: destination)
 
             // Observe status before loading
-            playerItemStatusCancellable = videoPlayer().playerItemStatusPublisher
+            playerItemStatusCancellable = videoPlayer.playerItemStatusPublisher
                 .receive(on: DispatchQueue.main)
                 .filter { $0 == .readyToPlay || $0 == .failed } // We're only interested if the item is ready to play or can't be played.
                 .prefix(1) // If video loops `.readyToPlay` is emitted multiple times. We're only interested in the first event when the asset finished loading.
@@ -93,12 +97,12 @@ private extension SystemSettingsPiPTutorialManager {
                     guard let self else { return }
                     switch status {
                     case .readyToPlay:
-                        self.videoPlayer().play()
+                        self.videoPlayer.play()
                         Logger.pipTutorial.debug("[PiP Tutorial Video] Opening Default Browser Settings")
                         self.urlOpener.open(destination.url)
                     case .failed:
                         Logger.pipTutorial.error("[PiP Tutorial Video] Could not play PiP video. Opening Default Browser Settings")
-                        eventMapper.fireFailedToLoadPiPTutorialEvent(error: videoPlayer().currentItemError, urlPath: videoPlayer().currentItemURL?.absoluteString)
+                        eventMapper.fireFailedToLoadPiPTutorialEvent(error: videoPlayer.currentItemError, urlPath: videoPlayer.currentItemURL?.absoluteString)
                         self.urlOpener.open(destination.url)
                     default:
                         break
@@ -108,8 +112,8 @@ private extension SystemSettingsPiPTutorialManager {
             // Attach the player before call loading.
             // The player view is removed when the app comes to foreground so there's no need to remove it if the player fails to load the asset.
             // There are intermittent issues when attaching the player view just before playing causing PiP not to show. This ensure PiP will be always visible when we play the video.
-            presenter?.attachPlayerView(playerView())
-            videoPlayer().load(url: pipTutorialURL)
+            presenter?.attachPlayerView(playerView)
+            videoPlayer.load(url: pipTutorialURL)
 
         } catch {
             logError(error)
@@ -125,7 +129,7 @@ private extension SystemSettingsPiPTutorialManager {
             Logger.pipTutorial.error("Provider failed to resolve URL. Error: \(error.localizedDescription)")
         default:
             Logger.pipTutorial.error("An unexpected error occurred: \(error.localizedDescription)")
-            eventMapper.fireFailedToLoadPiPTutorialEvent(error: error, urlPath: videoPlayer().currentItemURL?.absoluteString)
+            eventMapper.fireFailedToLoadPiPTutorialEvent(error: error, urlPath: videoPlayer.currentItemURL?.absoluteString)
         }
     }
 
@@ -150,8 +154,8 @@ extension SystemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging {
 
     public func stopPiPTutorialIfNeeded() {
         // Do not check for feature enabled here as it may be turned off when the video is already playing and we may never stop the video.
-        videoPlayer().stop()
-        presenter?.detachPlayerView(playerView())
+        videoPlayer.stop()
+        presenter?.detachPlayerView(playerView)
     }
 
     public func playPiPTutorialAndNavigateTo(destination: SystemSettingsPiPTutorialDestination) {

@@ -225,7 +225,7 @@ final class PreferencesSidebarModel: ObservableObject {
         case .vpn:
             return vpnProtectionStatus()
         case .personalInformationRemoval:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPersonalInformationRemovalEnabled ? .on : .off)
+            return PrivacyProtectionStatus(statusIndicator: LoginItem.dbpBackgroundAgent.isRunning ? .on : .off)
         case .paidAIChat:
             return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.isPaidAIChatEnabled ? .on : .off)
         case .identityTheftRestoration:
@@ -314,11 +314,14 @@ final class PreferencesSidebarModel: ObservableObject {
         // This requires follow-up work:
         // https://app.asana.com/1/137249556945/task/1210799126744217
         let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
+
         let isIdentityTheftRestorationAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestoration)) ?? false
         let isIdentityTheftRestorationEnabled = await (try? subscriptionManager.isFeatureEnabled(.identityTheftRestoration)) ?? false
         let isIdentityTheftRestorationGlobalEnabled = await (try? subscriptionManager.isFeatureEnabled(.identityTheftRestorationGlobal)) ?? false
         let isIdentityTheftRestorationGlobalAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestorationGlobal)) ?? false
+
         let isPaidAIChatAvailable = (try? await subscriptionManager.isFeatureIncludedInSubscription(.paidAIChat)) ?? false
+
         return await PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isSubscriptionPresent(),
                                                          shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                          isNetworkProtectionRemovalEnabled: (try? subscriptionManager.isFeatureEnabled(.networkProtection)) ?? false,

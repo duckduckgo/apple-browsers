@@ -436,6 +436,7 @@ struct ProblemDetailFormView: View {
                     Text(UserText.submit)
                         .frame(maxWidth: .infinity)
                 }
+                .disabled(!viewModel.shouldEnableSubmit)
                 .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
             }
             .padding([.leading, .trailing], 24)

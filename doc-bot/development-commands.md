@@ -2,41 +2,157 @@
 title: "Development Commands & Build Instructions"
 description: "Essential commands for building, testing, and developing the DuckDuckGo browser applications"
 keywords: ["build", "development", "commands", "Xcode", "simulator", "testing", "debugging"]
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Development Commands & Build Instructions
 
-## Build Commands
+## Build Commands Overview
 
-### iOS Build
+### Build Command Structure
+All build commands follow this pattern with configurable variables:
 ```bash
-# Build iOS Browser in Xcode
-xcodebuild ONLY_ACTIVE_ARCH=YES DEBUG_INFORMATION_FORMAT=dwarf COMPILER_INDEX_STORE_ENABLE=NO \
-  -scheme "iOS Browser" \
-  -configuration Debug \
-  -workspace DuckDuckGo.xcworkspace \
-  -destination "platform=iOS Simulator,name=iPhone 15 Pro" \
-  -allowProvisioningUpdates \
-  -disableAutomaticPackageResolution \
-  -parallelizeTargets \
-  -jobs 14 \
-  build | xcbeautify
+/bin/sh -c 'set -e -o pipefail && xcodebuild <BUILD_FLAGS> <OPTIONS> | xcbeautify'
 ```
 
-### macOS Build
+### Standard Build Flags
+These flags are used across all builds for optimal performance:
+- `ONLY_ACTIVE_ARCH=YES` - Build only for active architecture (speeds up debug builds)
+- `DEBUG_INFORMATION_FORMAT=dwarf` - Use DWARF debug format
+- `COMPILER_INDEX_STORE_ENABLE=NO` - Disable index store for faster builds
+- `-allowProvisioningUpdates` - Allow automatic provisioning profile updates
+- `-disableAutomaticPackageResolution` - Disable automatic Swift package resolution
+- `-parallelizeTargets` - Build targets in parallel when possible
+
+## iOS Build Commands
+
+### Full iOS Build Command Template
 ```bash
-# Build macOS Browser in Xcode
-xcodebuild ONLY_ACTIVE_ARCH=YES DEBUG_INFORMATION_FORMAT=dwarf COMPILER_INDEX_STORE_ENABLE=NO \
-  -scheme "DuckDuckGo" \
+/bin/sh -c 'set -e -o pipefail && xcodebuild \
+  ONLY_ACTIVE_ARCH=YES \
+  DEBUG_INFORMATION_FORMAT=dwarf \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -scheme "iOS Browser" \
   -configuration Debug \
-  -workspace DuckDuckGo.xcworkspace \
-  -destination "platform=macOS" \
+  -workspace <WORKSPACE_PATH> \
+  -destination "platform=iOS Simulator,id=<SIMULATOR_ID>" \
+  -allowProvisioningUpdates \
+  -parallelizeTargets \
+  -jobs <CPU_CORES> \
+  build | xcbeautify'
+```
+
+### iOS Build Variables
+| Variable | Description | How to Obtain | Example |
+|----------|-------------|---------------|---------|
+| `WORKSPACE_PATH` | Path to DuckDuckGo.xcworkspace | Find workspace: `find . -name "*.xcworkspace"` | `/Users/daniel/Developer/browser/apple-browsers/DuckDuckGo.xcworkspace` |
+| `SIMULATOR_ID` | UUID of iOS simulator | `xcrun simctl list devices \| grep Booted` | `224A5BC3-3638-4B14-9203-1D6CC434ECAD` |
+| `CPU_CORES` | Number of parallel jobs | `sysctl -n hw.ncpu` | `12` |
+
+### Example iOS Build (Concrete Values)
+```bash
+/bin/sh -c 'set -e -o pipefail && xcodebuild \
+  ONLY_ACTIVE_ARCH=YES \
+  DEBUG_INFORMATION_FORMAT=dwarf \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -scheme "iOS Browser" \
+  -configuration Debug \
+  -workspace /Users/daniel/Developer/browser/apple-browsers/DuckDuckGo.xcworkspace \
+  -destination "platform=iOS Simulator,id=224A5BC3-3638-4B14-9203-1D6CC434ECAD" \
+  -allowProvisioningUpdates \
+  -parallelizeTargets \
+  -jobs 12 \
+  build | xcbeautify'
+```
+
+## macOS Build Commands
+
+### Full macOS Build Command Template
+```bash
+/bin/sh -c 'set -e -o pipefail && xcodebuild \
+  ONLY_ACTIVE_ARCH=YES \
+  DEBUG_INFORMATION_FORMAT=dwarf \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -scheme "macOS Browser" \
+  -configuration Debug \
+  -workspace <WORKSPACE_PATH> \
+  -destination "platform=macOS,arch=<ARCHITECTURE>" \
   -allowProvisioningUpdates \
   -disableAutomaticPackageResolution \
   -parallelizeTargets \
-  -jobs 14 \
-  build | xcbeautify
+  -jobs <CPU_CORES> \
+  build | xcbeautify'
+```
+
+### macOS Build Variables
+| Variable | Description | How to Obtain | Example |
+|----------|-------------|---------------|---------|
+| `WORKSPACE_PATH` | Path to DuckDuckGo.xcworkspace | Find workspace: `find . -name "*.xcworkspace"` | `/Users/daniel/Developer/browser/apple-browsers/DuckDuckGo.xcworkspace` |
+| `ARCHITECTURE` | Target architecture | `uname -m` | `arm64` (Apple Silicon) or `x86_64` (Intel) |
+| `CPU_CORES` | Number of parallel jobs | `sysctl -n hw.ncpu` | `12` |
+
+### Example macOS Build (Concrete Values)
+```bash
+/bin/sh -c 'set -e -o pipefail && xcodebuild \
+  ONLY_ACTIVE_ARCH=YES \
+  DEBUG_INFORMATION_FORMAT=dwarf \
+  COMPILER_INDEX_STORE_ENABLE=NO \
+  -scheme "macOS Browser" \
+  -configuration Debug \
+  -workspace /Users/daniel/Developer/browser/apple-browsers/DuckDuckGo.xcworkspace \
+  -destination "platform=macOS,arch=arm64" \
+  -allowProvisioningUpdates \
+  -disableAutomaticPackageResolution \
+  -parallelizeTargets \
+  -jobs 12 \
+  build | xcbeautify'
+```
+
+## Available Schemes
+- `iOS Browser` - Main iOS browser app
+- `macOS Browser` - Main macOS browser app (also referenced as "DuckDuckGo" in some contexts)
+- `iOS Unit Tests` - iOS test suite
+- `macOS Unit Tests` - macOS test suite
+
+## Environment Detection Script
+Use this script to automatically detect your build environment:
+```bash
+#!/bin/bash
+# Auto-detect build environment variables
+
+# Find workspace
+WORKSPACE=$(find . -name "DuckDuckGo.xcworkspace" | head -1)
+echo "Workspace: ${WORKSPACE}"
+
+# Get CPU cores
+CORES=$(sysctl -n hw.ncpu)
+echo "CPU Cores: ${CORES}"
+
+# Get architecture
+ARCH=$(uname -m)
+echo "Architecture: ${ARCH}"
+
+# Find booted iOS simulator
+SIMULATOR_ID=$(xcrun simctl list devices | grep -E "iPhone.*Booted" | head -1 | grep -oE "[A-F0-9-]{36}")
+if [ -z "$SIMULATOR_ID" ]; then
+    # Find any available simulator if none booted
+    SIMULATOR_ID=$(xcrun simctl list devices | grep -E "iPhone" | head -1 | grep -oE "[A-F0-9-]{36}")
+fi
+echo "Simulator ID: ${SIMULATOR_ID:-none found}"
+
+# Generate iOS build command
+if [ -n "$WORKSPACE" ] && [ -n "$SIMULATOR_ID" ]; then
+    echo ""
+    echo "Generated iOS Build Command:"
+    echo "/bin/sh -c 'set -e -o pipefail && xcodebuild ONLY_ACTIVE_ARCH=YES DEBUG_INFORMATION_FORMAT=dwarf COMPILER_INDEX_STORE_ENABLE=NO -scheme \"iOS Browser\" -configuration Debug -workspace ${WORKSPACE} -destination \"platform=iOS Simulator,id=${SIMULATOR_ID}\" -allowProvisioningUpdates -parallelizeTargets -jobs ${CORES} build | xcbeautify'"
+fi
+
+# Generate macOS build command
+if [ -n "$WORKSPACE" ]; then
+    echo ""
+    echo "Generated macOS Build Command:"
+    echo "/bin/sh -c 'set -e -o pipefail && xcodebuild ONLY_ACTIVE_ARCH=YES DEBUG_INFORMATION_FORMAT=dwarf COMPILER_INDEX_STORE_ENABLE=NO -scheme \"macOS Browser\" -configuration Debug -workspace ${WORKSPACE} -destination \"platform=macOS,arch=${ARCH}\" -allowProvisioningUpdates -disableAutomaticPackageResolution -parallelizeTargets -jobs ${CORES} build | xcbeautify'"
+fi
 ```
 
 ## Simulator Management
@@ -242,5 +358,3 @@ export FASTLANE_SKIP_UPDATE_CHECK=1
 export FASTLANE_HIDE_CHANGELOG=1
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 ```
-
-This guide provides the essential commands needed for efficient development of the DuckDuckGo browser applications. 

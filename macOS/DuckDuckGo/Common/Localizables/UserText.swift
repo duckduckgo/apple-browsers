@@ -730,7 +730,7 @@ struct UserText {
 
     // Incognito info box
     static let incognitoInfoBoxTitle = NSLocalizedString("feedback.incognito-info.title", value: "Have you tried our Fire Window?", comment: "Title for incognito feature information box")
-    static let incognitoInfoBoxDescription = NSLocalizedString("feedback.incognito-info.description", value: "Open the browser menu and select **New Fire Window** to browse without saving local history, and automatically burn data when you close the window.", comment: "Description text for incognito feature information box")
+    static let incognitoInfoBoxDescription = NSLocalizedString("feedback.incognito-info.description", value: "Open the browser menu and select New Fire Window to browse without saving local history, and automatically burn data when you close the window.", comment: "Description text for incognito feature information box")
 
     // MARK: - Thank You View
     static let thankYouTitle = NSLocalizedString("feedback.thank-you.title", value: "Thanks for your feedback!", comment: "Title for thank you screen after feedback submission")

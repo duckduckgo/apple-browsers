@@ -27027,55 +27027,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffne das Browser-Menü und wähle **Neues Fire Window**, um zu surfen, ohne den lokalen Verlauf zu speichern und Daten beim Schließen des Fensters automatisch zu löschen."
+            "value" : "Öffne das Browser-Menü und wähle Neues Fire Window, um zu surfen, ohne den lokalen Verlauf zu speichern und Daten beim Schließen des Fensters automatisch zu löschen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open the browser menu and select **New Fire Window** to browse without saving local history, and automatically burn data when you close the window."
+            "value" : "Open the browser menu and select New Fire Window to browse without saving local history, and automatically burn data when you close the window."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abre el menú del navegador y selecciona **Nueva Fire Window** para navegar sin guardar el historial local y eliminar automáticamente los datos al cerrar la ventana."
+            "value" : "Abre el menú del navegador y selecciona Nueva Fire Window para navegar sin guardar el historial local y eliminar automáticamente los datos al cerrar la ventana."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrez le menu du navigateur et sélectionnez **Nouvelle Fire Window** pour naviguer sans enregistrer l’historique local et effacer automatiquement les données lorsque vous fermez la fenêtre."
+            "value" : "Ouvrez le menu du navigateur et sélectionnez Nouvelle Fire Window pour naviguer sans enregistrer l’historique local et effacer automatiquement les données lorsque vous fermez la fenêtre."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri il menu del browser e seleziona **Nuova Fire Window** per navigare senza salvare la cronologia locale e cancellare automaticamente i dati quando chiudi la finestra."
+            "value" : "Apri il menu del browser e seleziona Nuova Fire Window per navigare senza salvare la cronologia locale e cancellare automaticamente i dati quando chiudi la finestra."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open het browsermenu en selecteer **Nieuw Fire Window** om te browsen zonder je lokale geschiedenis op te slaan en gegevens automatisch te wissen wanneer je het venster sluit."
+            "value" : "Open het browsermenu en selecteer Nieuw Fire Window om te browsen zonder je lokale geschiedenis op te slaan en gegevens automatisch te wissen wanneer je het venster sluit."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otwórz menu przeglądarki i wybierz opcję **Nowe okno Fire Window**, aby przeglądać strony bez zapisywania historii lokalnej i automatycznie usuwać dane po zamknięciu okna."
+            "value" : "Otwórz menu przeglądarki i wybierz opcję Nowe okno Fire Window, aby przeglądać strony bez zapisywania historii lokalnej i automatycznie usuwać dane po zamknięciu okna."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abre o menu do navegador e seleciona **Nova Fire Window** para navegar sem guardar o histórico local e eliminar automaticamente os dados quando fechares a janela."
+            "value" : "Abre o menu do navegador e seleciona Nova Fire Window para navegar sem guardar o histórico local e eliminar automaticamente os dados quando fechares a janela."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Чтобы просматривать сайты без сохранения локальной истории и автоматически стереть данные после закрытия окна, откройте меню браузера и выберите пункт **Новое окно Fire Window**."
+            "value" : "Чтобы просматривать сайты без сохранения локальной истории и автоматически стереть данные после закрытия окна, откройте меню браузера и выберите пункт Новое окно Fire Window."
           }
         }
       }

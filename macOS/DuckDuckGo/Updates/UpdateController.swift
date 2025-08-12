@@ -487,9 +487,37 @@ extension UpdateController: SPUUpdaterDelegate {
         }
 
         PixelKit.fire(DebugEvent(
-            GeneralPixel.updaterAborted(reason: error.localizedDescription.strippingFilePaths()),
+            GeneralPixel.updaterAborted(reason: sparkleUpdaterErrorReason(from: error.localizedDescription)),
             error: error
         ))
+    }
+
+    internal func sparkleUpdaterErrorReason(from errorDescription: String) -> String {
+        let knownErrorPrefixes = [
+            "Package installer failed to launch.",
+            "Guided package installer failed to launch",
+            "Guided package installer returned non-zero exit status",
+            "Failed to perform installation because the paths to install at and from are not valid",
+            "Failed to recursively update new application's modification time before moving into temporary directory",
+            "Failed to perform installation because a path could not be constructed for the old installation",
+            "Failed to move the new app from",
+            "Failed to perform installation because the last path component of the old installation URL could not be constructed.",
+            "The update is improperly signed and could not be validated. Please try again later or contact the app developer.",
+            "An error occurred while running the updater. Please try again later.",
+            "An error occurred while encoding the installer parameters. Please try again later.",
+            "An error occurred while starting the installer. Please try again later.",
+            "An error occurred while connecting to the installer. Please try again later.",
+            "An error occurred while launching the installer. Please try again later.",
+            "Found regular application update but expected"
+        ]
+
+        for prefix in knownErrorPrefixes {
+            if errorDescription.hasPrefix(prefix) {
+                return prefix
+            }
+        }
+
+        return "unknown"
     }
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {

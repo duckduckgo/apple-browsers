@@ -86,6 +86,7 @@ protocol TabExtensionDependencies {
 // swiftlint:disable:next large_tuple
 typealias TabExtensionsBuilderArguments = (
     tabIdentifier: UInt64,
+    tabID: String,
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
     isTabLoadedInSidebar: Bool,
@@ -241,6 +242,14 @@ extension TabExtensionsBuilder {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
                                isLoadedInSidebar: args.isTabLoadedInSidebar)
+        }
+
+        add {
+            PageContextTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                    webViewPublisher: args.webViewFuture,
+                                    tabID: args.tabID,
+                                    aiChatSidebarProvider: Application.appDelegate.aiChatSidebarProvider,
+                                    isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 
         add {

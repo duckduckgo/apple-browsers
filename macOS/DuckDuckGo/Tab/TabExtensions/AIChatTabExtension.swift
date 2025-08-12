@@ -65,6 +65,12 @@ final class AIChatTabExtension {
                     self?.aiChatUserScript?.handler.submitAIChatNativePrompt(prompt)
                     self?.temporaryAIChatNativePrompt = nil
                 }
+
+                if let pageContext = self?.temporaryPageContext {
+                    self?.aiChatUserScript?.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
+                    self?.aiChatUserScript?.handler.submitPageContext(pageContext)
+                    self?.temporaryPageContext = nil
+                }
             }
         }.store(in: &cancellables)
     }
@@ -101,6 +107,18 @@ final class AIChatTabExtension {
 
         aiChatUserScript.handler.submitAIChatNativePrompt(prompt)
     }
+
+    private var temporaryPageContext: AIChatPageContextData?
+    func submitPageContext(_ pageContext: AIChatPageContextData) {
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the payload and set when ready
+            temporaryPageContext = pageContext
+            return
+        }
+
+        aiChatUserScript.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
+        aiChatUserScript.handler.submitPageContext(pageContext)
+    }
 }
 
 extension AIChatTabExtension: NavigationResponder {
@@ -125,6 +143,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatNativeHandoffData(payload: AIChatPayload)
     func setAIChatRestorationData(data: AIChatRestorationData)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
+    func submitPageContext(_ pageContext: AIChatPageContextData)
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

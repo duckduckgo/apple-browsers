@@ -54,6 +54,7 @@ final class UserScripts: UserScriptsProvider {
     let releaseNotesUserScript: ReleaseNotesUserScript?
 #endif
     let aiChatUserScript: AIChatUserScript?
+    let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript?
     let newTabPageUserScript: NewTabPageUserScript?
@@ -65,14 +66,13 @@ final class UserScripts: UserScriptsProvider {
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         let aiChatDebugURLSettings = AIChatDebugURLSettings()
-        aiChatUserScript = AIChatUserScript(
-            handler: AIChatUserScriptHandler(
-                storage: DefaultAIChatPreferencesStorage(),
-                windowControllersManager: sourceProvider.windowControllersManager,
-                pixelFiring: PixelKit.shared
-            ),
-            urlSettings: aiChatDebugURLSettings
+        let aiChatHandler = AIChatUserScriptHandler(
+            storage: DefaultAIChatPreferencesStorage(),
+            windowControllersManager: sourceProvider.windowControllersManager,
+            pixelFiring: PixelKit.shared
         )
+        aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        pageContextUserScript = PageContextUserScript()
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
@@ -141,6 +141,10 @@ final class UserScripts: UserScriptsProvider {
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
+        }
+
+        if let pageContextUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: pageContextUserScript)
         }
 
         if let subscriptionUserScript {

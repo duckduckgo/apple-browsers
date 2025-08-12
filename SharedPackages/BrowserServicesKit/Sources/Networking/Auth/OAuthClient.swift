@@ -109,7 +109,7 @@ public protocol OAuthClient {
     func migrateV1Token() async throws
 
     /// Use the TokenContainer provided
-    func adopt(tokenContainer: TokenContainer)
+    func adopt(tokenContainer: TokenContainer) throws
 
     // Creates a TokenContainer with the provided access token and refresh token, decodes them and returns the container
     func decode(accessToken: String, refreshToken: String) async throws -> TokenContainer
@@ -130,7 +130,7 @@ public protocol OAuthClient {
     func logout() async throws
 
     /// Remove the tokens container stored locally
-    func removeLocalAccount()
+    func removeLocalAccount() throws
 }
 
 final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
@@ -335,9 +335,9 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         return try await task.value
     }
 
-    public func adopt(tokenContainer: TokenContainer) {
+    public func adopt(tokenContainer: TokenContainer) throws {
         Logger.OAuthClient.log("Adopting TokenContainer")
-        try? tokenStorage.saveTokenContainer(tokenContainer)
+        try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
     // MARK: Create
@@ -380,7 +380,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     public func logout() async throws {
         let existingToken = try tokenStorage.getTokenContainer()?.accessToken
-        removeLocalAccount()
+        try removeLocalAccount()
 
         // Also removing V1
         Logger.OAuthClient.log("Removing V1 token")
@@ -394,8 +394,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    public func removeLocalAccount() {
+    public func removeLocalAccount() throws {
         Logger.OAuthClient.log("Removing local account")
-        try? tokenStorage.saveTokenContainer(nil)
+        try tokenStorage.saveTokenContainer(nil)
     }
 }

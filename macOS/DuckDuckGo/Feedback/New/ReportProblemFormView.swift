@@ -25,7 +25,7 @@ final class ReportProblemFormViewController: NSHostingController<ReportProblemFo
 
     enum Constants {
         static let width: CGFloat = 448
-        static let height: CGFloat = 515
+        static let height: CGFloat = 560
 
         // Constants for the sub-categories screen
         static let detailsFormHeight: CGFloat = 356

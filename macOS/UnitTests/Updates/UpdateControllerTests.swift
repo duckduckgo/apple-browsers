@@ -31,7 +31,7 @@ final class UpdateControllerTests: XCTestCase {
 
         XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "Package installer failed to launch."), "Package installer failed to launch." )
         XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "Guided package installer failed to launch"), "Guided package installer failed to launch")
-        XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "An error occurred while running the updater. Please try again later."), "An error occurred while running the updater. Please try again later.")
+        XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "An error occurred while running the updater. Please try again later."), "An error occurred while running the updater.")
 
         XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "Guided package installer failed to launch with additional error details"), "Guided package installer failed to launch")
         XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "Failed to move the new app from /path/to/source to /path/to/destination"), "Failed to move the new app")

@@ -20,7 +20,8 @@
         "Bash(true)",
         "Bash(touch:*)",
         "Bash(git fetch:*)",
-        "set -e -o pipefail && xcodebuild*",
+        "set -e -o pipefail && xcodebuild **",
+        "xcodebuild **",
         "xcrun simctl*"
       ],
       "deny": []

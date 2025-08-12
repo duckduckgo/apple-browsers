@@ -137,6 +137,13 @@ private extension DefaultBrowserModalPresenter {
 
 final class PortraitHostingController<Content: View>: UIHostingController<Content> {
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        return .portrait
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            return .portrait
+        case .pad:
+            return .all
+        default:
+            return .all
+        }
     }
 }

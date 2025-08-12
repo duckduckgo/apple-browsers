@@ -15,10 +15,11 @@
         "Bash(gh pr diff:*)",
         "Bash(git check-ignore:*)",
         "Bash(git sparse-checkout:*)",
-         "Bash(git update-index:*)",
+        "Bash(git update-index:*)",
         "Bash(true)",
         "Bash(touch:*)",
-        "Bash(git fetch:*)"
+        "Bash(git fetch:*)",
+        "Bash(xcodebuild:*)"
       ],
       "deny": []
     },

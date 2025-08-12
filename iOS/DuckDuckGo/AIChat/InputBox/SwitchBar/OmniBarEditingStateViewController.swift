@@ -166,7 +166,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, belowView: switchBarVC.view)
+        if let view = switchBarVC.segmentedPickerView {
+            daxLogoManager.installInViewController(self, belowView: view)
+        }
     }
     
     private func installNavigationActionBar() {

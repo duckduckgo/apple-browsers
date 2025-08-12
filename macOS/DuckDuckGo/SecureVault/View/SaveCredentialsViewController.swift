@@ -22,6 +22,7 @@ import Combine
 import Common
 import PixelKit
 import os.log
+import DesignResourcesKitIcons
 
 protocol SaveCredentialsDelegate: AnyObject {
 
@@ -112,6 +113,10 @@ final class SaveCredentialsViewController: NSViewController {
     @IBOutlet weak var fireproofCheckDescription: NSTextFieldCell!
     @IBOutlet weak var tooltipView: MouseOverView!
     @IBOutlet weak var lockImageBackgroundView: NSBox!
+    @IBOutlet weak var syncView: NSView!
+    @IBOutlet weak var syncViewHeight: NSLayoutConstraint!
+    @IBOutlet weak var syncDismissButton: NSButton!
+    @IBOutlet weak var syncButton: NSButton!
 
     private var infoViewController: PopoverInfoViewController? {
         presentedViewControllers?.first {
@@ -137,7 +142,11 @@ final class SaveCredentialsViewController: NSViewController {
 
     private var autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences()
 
+    private var syncButtonModel: SyncFromFeatureButtonModel = SyncFromFeatureButtonModel()
+
     private var passwordManagerStateCancellable: AnyCancellable?
+
+    private var cancellables: Set<AnyCancellable> = []
 
     private var saveButtonAction: (() -> Void)?
 
@@ -156,6 +165,7 @@ final class SaveCredentialsViewController: NSViewController {
         updateSaveSegmentedControl()
         setUpStrings()
         setUpSecurityInfoViews()
+        setUpSyncView()
     }
 
     override func viewWillAppear() {
@@ -198,6 +208,16 @@ final class SaveCredentialsViewController: NSViewController {
         lockImageBackgroundView.cornerRadius = lockImageBackgroundView.bounds.height / 2
         lockImageBackgroundView.fillColor = NSColor.infoHoverButton
         lockImageBackgroundView.boxType = .custom
+    }
+
+    private func setUpSyncView() {
+        syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
+        syncButton.title = "Sync Passwords Across Devices"
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] shouldShow in
+            self?.syncViewHeight.priority = shouldShow ? .defaultLow : .required
+            self?.syncView.isHidden = !shouldShow
+        }
+        .store(in: &cancellables)
     }
 
     /// Note that if the credentials.account.id is not nil, then we consider this an update rather than a save.
@@ -432,6 +452,14 @@ final class SaveCredentialsViewController: NSViewController {
 
     @IBAction func onTogglePasswordVisibility(sender: Any?) {
         updatePasswordFieldVisibility(visible: !hiddenPasswordField.isHidden)
+    }
+
+    @IBAction func onSyncButtonClicked(_ sender: Any) {
+        syncButtonModel.syncButtonAction()
+    }
+
+    @IBAction func onDismissSyncButtonClicked(_ sender: Any) {
+        syncButtonModel.dismissSyncButtonAction()
     }
 
     func loadFaviconForDomain(_ domain: String?) {

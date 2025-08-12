@@ -54,6 +54,7 @@ class TabManager {
     private let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private let featureDiscovery: FeatureDiscovery
     private let keyValueStore: ThrowingKeyValueStoring
+    private let daxDialogsManager: DaxDialogsManaging
 
     weak var delegate: TabDelegate?
 
@@ -82,7 +83,8 @@ class TabManager {
          maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          featureDiscovery: FeatureDiscovery,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         daxDialogsManager: DaxDialogsManaging
     ) {
         self.model = model
         self.persistence = persistence
@@ -106,6 +108,7 @@ class TabManager {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
+        self.daxDialogsManager = daxDialogsManager
         registerForNotifications()
     }
 
@@ -145,7 +148,8 @@ class TabManager {
                                                               tabInteractionStateSource: interactionStateSource,
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
-                                                              keyValueStore: keyValueStore)
+                                                              keyValueStore: keyValueStore,
+                                                              daxDialogsManager: daxDialogsManager)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -238,7 +242,8 @@ class TabManager {
                                                               tabInteractionStateSource: interactionStateSource,
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
-                                                              keyValueStore: keyValueStore)
+                                                              keyValueStore: keyValueStore,
+                                                              daxDialogsManager: daxDialogsManager)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

@@ -253,6 +253,8 @@ extension TunnelControllerIPCService: XPCServerInterface {
             break
         case .quitAgent:
             quitAgent()
+        case .createLogSnapshot:
+            assertionFailure("Unsupported on macOS")
         }
     }
 

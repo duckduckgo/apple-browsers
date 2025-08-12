@@ -102,7 +102,37 @@ jobs:
 
     strategy:
       matrix:
-        test-tag: [release, privacy, securityTest, adClick]
+        include:
+          # iPhone tests - exclude iPad tagged tests
+          - test-tag: release
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: privacy 
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: securityTest
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: adClick
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: duckplayer_native
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: device_info
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
+          - test-tag: device_info
+            exclude-tags: iphone
+            device-model: iPad-10th-generation
+            device-name: iPad
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 
@@ -123,20 +153,22 @@ jobs:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
-    - name: End to End tests
+    - name: End to End tests (${{ matrix.device-name }})
       id: upload
       uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
-        name: ${{ matrix.test-tag }}_${{ github.sha }}
+        name: ${{ matrix.test-tag }}_${{ matrix.device-name }}_${{ github.sha }}
         timeout: 300
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
+        exclude-tags: ${{ matrix.exclude-tags }}
         env: ONBOARDING_COMPLETED=true
         device-os: iOS-18-2
-        device-model: iPhone-16
+        device-model: ${{ matrix.device-model }}
+        device-name: ${{ matrix.device-name }}
 
     - name: Report job duration
       uses: ./.github/actions/measure-duration

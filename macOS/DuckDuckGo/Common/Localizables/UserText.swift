@@ -471,17 +471,17 @@ struct UserText {
     static let aiChatTitle = NSLocalizedString("duckai.title", value: "Duck.ai", comment: "Title for Duck.ai feature")
     static let aiChatDescription = NSLocalizedString("duckai.description", value: "Chat privately with popular 3rd-party AI models", comment: "Description of Duck.ai feature in settings")
     static let aiChatEnableButton = NSLocalizedString("duckai.enable.button", value: "Enable Duck.ai", comment: "Button to enable Duck.ai feature")
-    static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai", comment: "Button to disable Duck.ai feature")
-    static let aiChatVisibilitySectionTitle = NSLocalizedString("duckai.visibility.section.title", value: "Visibility", comment: "Section title for Duck.ai visibility settings")
+    static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai...", comment: "Button to disable Duck.ai feature")
+    static let aiChatShortcutsSectionTitle = NSLocalizedString("duckai.shortcuts.section.title", value: "Duck.ai Shortcuts", comment: "Section title for Duck.ai shortcuts settings")
     static let aiChatShowInBrowserMenusToggle = NSLocalizedString("duckai.show-in-browser-menus.toggle", value: "Show in browser menus", comment: "Toggle for showing Duck.ai in browser menus")
     static let aiChatShowInAddressBarLabel = NSLocalizedString("duckai.show-in-address-bar.label", value: "Show in address bar", comment: "Label for showing Duck.ai in address bar")
     static let aiChatOpenNewChatsSectionTitle = NSLocalizedString("duckai.open-new-chats.section.title", value: "Open New Chats", comment: "Section title for Duck.ai new chat location settings")
-    static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "In sidebar", comment: "Option to open Duck.ai chats in sidebar")
+    static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "Sidebar", comment: "Option to open Duck.ai chats in sidebar")
     static let aiChatOpenInFullPageOption = NSLocalizedString("duckai.open-in-full-page.option", value: "Full page", comment: "Option to open Duck.ai chats in full page")
 
     // Duck.ai Disable Dialog
     static let aiChatDisableDialogTitle = NSLocalizedString("duckai.disable.dialog.title", value: "Disable Duck.ai?", comment: "Title for dialog asking to disable Duck.ai")
-    static let aiChatDisableDialogMessage = NSLocalizedString("duckai.disable.dialog.message", value: "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\n Disabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.You can re-enable it at any time.", comment: "Message explaining consequences of disabling Duck.ai")
+    static let aiChatDisableDialogMessage = NSLocalizedString("duckai.disable.dialog.message", value: "Duck.ai is private by design. Chats are anonymized by us and never used to train AI.\n\nDisabling Duck.ai will remove access from the New Tab Page, address bar, and browser menus.\n\nYou can re-enable it at any time.", comment: "Message explaining consequences of disabling Duck.ai")
     static let aiChatDisableDialogConfirmButton = NSLocalizedString("duckai.disable.dialog.confirm", value: "Disable Duck.ai", comment: "Button to confirm disabling Duck.ai")
 
     // Duck Player Preferences
@@ -628,6 +628,8 @@ struct UserText {
         return NSLocalizedString("send.ppro.feedback", value: "Send Privacy Pro Feedback", comment: "Menu with feedback commands")
     }
     static let reportBrokenSite = NSLocalizedString("report.broken.site", value: "Report Broken Site", comment: "Menu with feedback commands")
+    static let reportBrowserProblem = NSLocalizedString("report.browser.problem", value: "Report a Browser Problem", comment: "Menu with feedback commands")
+    static let requestNewFeature = NSLocalizedString("request.new.feature", value: "Request a New Feature", comment: "Menu with feedback commands")
     static let browserFeedback = NSLocalizedString("send.browser.feedback", value: "Send Browser Feedback", comment: "Menu with feedback commands")
     static let browserFeedbackTitle = NSLocalizedString("send.browser.feedback.title", value: "Help Improve the DuckDuckGo Browser", comment: "Title of the interface to send feedback on the browser")
     static let browserFeedbackReportProblem = NSLocalizedString("send.browser.feedback.report-problem", value: "Report a problem", comment: "Name of the option the user can chose to give browser feedback about a problem they enountered")
@@ -636,6 +638,108 @@ struct UserText {
     static let browserFeedbackSelectCategory = NSLocalizedString("send.browser.feedback.select-category", value: "Select a category", comment: "Title of the picker where the user can chose the category of the feedback they want ot send.")
     static let browserFeedbackThankYou = NSLocalizedString("send.browser.feedback.thankyou", value: "Thank you!", comment: "Thanks the user for sending feedback")
     static let browserFeedbackFeedbackHelps = NSLocalizedString("send.browser.feedback.feedback-helps", value: "Your feedback will help us improve the DuckDuckGo browser.", comment: "Text shown to the user when they provide feedback.")
+
+    // MARK: - Report Problem Form
+    static let reportProblemFormTitle = NSLocalizedString("feedback.report-problem.title", value: "Report a Problem", comment: "Title for the report problem feedback form")
+    static let reportProblemFormSubtitle = NSLocalizedString("feedback.report-problem.subtitle", value: "Select the issue you want to report", comment: "Subtitle for the report problem feedback form")
+    static let reportProblemFormSelectAllThatApply = NSLocalizedString("feedback.report-problem.select-all", value: "Select all that apply", comment: "Instruction text for problem detail form")
+    static let reportProblemFormTellUsMore = NSLocalizedString("feedback.report-problem.tell-us-more", value: "Tell us more (optional)", comment: "Optional text input section title")
+    static let reportProblemFormPlaceholder = NSLocalizedString("feedback.report-problem.placeholder", value: "The more details you share, the better!", comment: "Placeholder text for additional feedback input")
+
+    // Problem categories
+    static let problemCategoryBrowserTooSlow = NSLocalizedString("feedback.problem-category.browser-too-slow", value: "Computer or browser is too slow", comment: "Problem category for performance issues")
+    static let problemCategoryBrowserDoesntWork = NSLocalizedString("feedback.problem-category.browser-doesnt-work", value: "Browser doesn't work as expected", comment: "Problem category for functionality issues")
+    static let problemCategoryInstallUpdates = NSLocalizedString("feedback.problem-category.install-updates", value: "Browser install & updates", comment: "Problem category for installation and update issues")
+    static let problemCategoryBrokenWebsite = NSLocalizedString("feedback.problem-category.broken-website", value: "Report broken website", comment: "Problem category for broken website reports")
+    static let problemCategoryAdsIssues = NSLocalizedString("feedback.problem-category.ads-issues", value: "Ads causing issues", comment: "Problem category for advertising-related problems")
+    static let problemCategoryPasswordIssues = NSLocalizedString("feedback.problem-category.password-issues", value: "Password issues", comment: "Problem category for password-related problems")
+    static let problemCategorySomethingElse = NSLocalizedString("feedback.problem-category.something-else", value: "Something else", comment: "Problem category for other issues")
+
+    // Problem subcategories - Performance
+    static let problemSubcategoryBrowserStartsSlowly = NSLocalizedString("feedback.problem-subcategory.browser-starts-slowly", value: "Browser starts slowly", comment: "Problem subcategory for slow browser startup")
+    static let problemSubcategoryBrowserUsesTooMuchMemory = NSLocalizedString("feedback.problem-subcategory.browser-uses-too-much-memory", value: "Browser uses too much memory", comment: "Problem subcategory for memory usage issues")
+    static let problemSubcategoryChangingTabsTakesTooLong = NSLocalizedString("feedback.problem-subcategory.changing-tabs-takes-too-long", value: "Changing tabs takes too long", comment: "Problem subcategory for slow tab switching")
+    static let problemSubcategoryNewTabsOpenSlowly = NSLocalizedString("feedback.problem-subcategory.new-tabs-open-slowly", value: "New tabs open slowly", comment: "Problem subcategory for slow new tab creation")
+    static let problemSubcategoryWebsitesLoadSlowly = NSLocalizedString("feedback.problem-subcategory.websites-load-slowly", value: "Websites load slowly", comment: "Problem subcategory for slow website loading")
+
+    // Problem subcategories - Functionality
+    static let problemSubcategoryCameraAudioPermissions = NSLocalizedString("feedback.problem-subcategory.camera-audio-permissions", value: "Camera/audio permissions", comment: "Problem subcategory for media permissions issues")
+    static let problemSubcategoryCantRestartFailedDownloads = NSLocalizedString("feedback.problem-subcategory.cant-restart-failed-downloads", value: "Can't restart failed downloads", comment: "Problem subcategory for download restart issues")
+    static let problemSubcategoryConfusingOrMissingSettings = NSLocalizedString("feedback.problem-subcategory.confusing-or-missing-settings", value: "Confusing or missing settings", comment: "Problem subcategory for settings issues")
+    static let problemSubcategoryLoggedOutUnexpectedly = NSLocalizedString("feedback.problem-subcategory.logged-out-unexpectedly", value: "Logged out unexpectedly", comment: "Problem subcategory for unexpected logout issues")
+    static let problemSubcategoryLostTabsOrHistory = NSLocalizedString("feedback.problem-subcategory.lost-tabs-or-history", value: "Lost tabs or history", comment: "Problem subcategory for data loss issues")
+    static let problemSubcategoryNoDownloadHistory = NSLocalizedString("feedback.problem-subcategory.no-download-history", value: "No download history", comment: "Problem subcategory for missing download history")
+    static let problemSubcategoryTooManyCaptchas = NSLocalizedString("feedback.problem-subcategory.too-many-captchas", value: "Too many CAPTCHAs", comment: "Problem subcategory for excessive CAPTCHA prompts")
+    static let problemSubcategoryVideoAudioPlaysAutomatically = NSLocalizedString("feedback.problem-subcategory.video-audio-plays-automatically", value: "Video/audio plays automatically", comment: "Problem subcategory for unwanted autoplay")
+    static let problemSubcategoryVideoDoesntPlay = NSLocalizedString("feedback.problem-subcategory.video-doesnt-play", value: "Video doesn't play", comment: "Problem subcategory for video playback issues")
+
+    // Problem subcategories - Install & Updates
+    static let problemSubcategoryBrowserVersionIssues = NSLocalizedString("feedback.problem-subcategory.browser-version-issues", value: "Browser version issues", comment: "Problem subcategory for version-related problems")
+    static let problemSubcategoryCantControlUpdates = NSLocalizedString("feedback.problem-subcategory.cant-control-updates", value: "Can't control updates", comment: "Problem subcategory for update control issues")
+    static let problemSubcategoryInstalling = NSLocalizedString("feedback.problem-subcategory.installing", value: "Installing", comment: "Problem subcategory for installation issues")
+    static let problemSubcategoryUninstalling = NSLocalizedString("feedback.problem-subcategory.uninstalling", value: "Uninstalling", comment: "Problem subcategory for uninstallation issues")
+    static let problemSubcategoryTooManyUpdates = NSLocalizedString("feedback.problem-subcategory.too-many-updates", value: "Too many updates", comment: "Problem subcategory for excessive updates")
+
+    // Problem subcategories - Broken Websites
+    static let problemSubcategorySiteWontLoad = NSLocalizedString("feedback.problem-subcategory.site-wont-load", value: "Site won't load", comment: "Problem subcategory for website loading failures")
+    static let problemSubcategorySiteLooksBroken = NSLocalizedString("feedback.problem-subcategory.site-looks-broken", value: "Site looks broken", comment: "Problem subcategory for website display issues")
+    static let problemSubcategoryFeaturesDontWork = NSLocalizedString("feedback.problem-subcategory.features-dont-work", value: "Features don't work", comment: "Problem subcategory for website functionality issues")
+    static let problemSubcategorySomethingElse = NSLocalizedString("feedback.problem-subcategory.something-else", value: "Something else", comment: "Problem subcategory for other website issues")
+
+    // Problem subcategories - Ads Issues
+    static let problemSubcategoryBannerAdsBlockingContent = NSLocalizedString("feedback.problem-subcategory.banner-ads-blocking-content", value: "Banner ads blocking content", comment: "Problem subcategory for intrusive banner ads")
+    static let problemSubcategoryDistractingAnimationsOnAds = NSLocalizedString("feedback.problem-subcategory.distracting-animations-on-ads", value: "Distracting animations on ads", comment: "Problem subcategory for animated advertising")
+    static let problemSubcategoryInterruptingPopups = NSLocalizedString("feedback.problem-subcategory.interrupting-popups", value: "Interrupting pop-ups", comment: "Problem subcategory for disruptive popup ads")
+    static let problemSubcategoryLargeBannerAds = NSLocalizedString("feedback.problem-subcategory.large-banner-ads", value: "Large banner ads", comment: "Problem subcategory for oversized banner advertisements")
+    static let problemSubcategorySiteAsksToTurnOffAdBlocker = NSLocalizedString("feedback.problem-subcategory.site-asks-to-turn-off-ad-blocker", value: "Site asks to turn off ad blocker", comment: "Problem subcategory for ad blocker detection messages")
+
+    // Problem subcategories - Password Issues
+    static let problemSubcategoryCantSyncPasswords = NSLocalizedString("feedback.problem-subcategory.cant-sync-passwords", value: "Can't sync passwords", comment: "Problem subcategory for password synchronization issues")
+    static let problemSubcategoryExportingPasswords = NSLocalizedString("feedback.problem-subcategory.exporting-passwords", value: "Exporting passwords", comment: "Problem subcategory for password export issues")
+    static let problemSubcategoryImportingPasswords = NSLocalizedString("feedback.problem-subcategory.importing-passwords", value: "Importing passwords", comment: "Problem subcategory for password import issues")
+    static let problemSubcategoryPasswordsManagement = NSLocalizedString("feedback.problem-subcategory.passwords-management", value: "Passwords management", comment: "Problem subcategory for general password management issues")
+
+    // Problem subcategories - Something Else
+    static let problemSubcategoryCantCompleteAPurchase = NSLocalizedString("feedback.problem-subcategory.cant-complete-a-purchase", value: "Can't complete a purchase", comment: "Problem subcategory for e-commerce transaction issues")
+    static let problemSubcategoryNoDownloadsHistory = NSLocalizedString("feedback.problem-subcategory.no-downloads-history", value: "No downloads history", comment: "Problem subcategory for missing downloads history")
+
+    // MARK: - Request New Feature Form
+    static let requestNewFeatureFormTitle = NSLocalizedString("feedback.request-feature.title", value: "Request a New Feature", comment: "Title for the request new feature feedback form")
+    static let requestNewFeatureFormSelectAllThatApply = NSLocalizedString("feedback.request-feature.select-all", value: "Select all that apply", comment: "Instruction text for feature request form")
+    static let requestNewFeatureFormCustomIdea = NSLocalizedString("feedback.request-feature.custom-idea", value: "Or share your own feature idea", comment: "Text input section title for custom feature ideas")
+    static let requestNewFeatureFormPlaceholder = NSLocalizedString("feedback.request-feature.placeholder", value: "The more details you share, the better!", comment: "Placeholder text for custom feature input")
+
+    // Feature options
+    static let featureAdvancedAdBlocking = NSLocalizedString("feedback.feature.advanced-ad-blocking", value: "Advanced ad blocking", comment: "Feature request option")
+    static let featureAISupport = NSLocalizedString("feedback.feature.ai-support", value: "AI support", comment: "Feature request option")
+    static let featureCastVideo = NSLocalizedString("feedback.feature.cast-video", value: "Cast video/audio", comment: "Feature request option")
+    static let featureCustomizeTheme = NSLocalizedString("feedback.feature.customize-theme", value: "Customize browser theme", comment: "Feature request option")
+    static let featureDarkModeAllSites = NSLocalizedString("feedback.feature.dark-mode-all-sites", value: "Dark mode on all sites", comment: "Feature request option")
+    static let featureImportBookmarkFolders = NSLocalizedString("feedback.feature.import-bookmark-folders", value: "Import bookmarks folders", comment: "Feature request option")
+    static let featureImportHistory = NSLocalizedString("feedback.feature.import-history", value: "Import history", comment: "Feature request option")
+    static let featureIncognito = NSLocalizedString("feedback.feature.incognito", value: "Incognito", comment: "Feature request option")
+    static let featureMoveBrowserButtons = NSLocalizedString("feedback.feature.move-browser-buttons", value: "Move browser buttons", comment: "Feature request option")
+    static let featureNewTabPageWidgets = NSLocalizedString("feedback.feature.new-tab-widgets", value: "New tab page widgets", comment: "Feature request option")
+    static let featurePasswordManagerExtensions = NSLocalizedString("feedback.feature.password-manager-extensions", value: "Password manager extensions", comment: "Feature request option")
+    static let featurePictureInPicture = NSLocalizedString("feedback.feature.picture-in-picture", value: "Picture-in-picture", comment: "Feature request option")
+    static let featureReaderMode = NSLocalizedString("feedback.feature.reader-mode", value: "Reader mode", comment: "Feature request option")
+    static let featureTabGroups = NSLocalizedString("feedback.feature.tab-groups", value: "Tab groups", comment: "Feature request option")
+    static let featureUserProfiles = NSLocalizedString("feedback.feature.user-profiles", value: "User profiles", comment: "Feature request option")
+    static let featureVerticalTabs = NSLocalizedString("feedback.feature.vertical-tabs", value: "Vertical tabs", comment: "Feature request option")
+    static let featureWebsiteTranslation = NSLocalizedString("feedback.feature.website-translation", value: "Website translation", comment: "Feature request option")
+
+    // Incognito info box
+    static let incognitoInfoBoxTitle = NSLocalizedString("feedback.incognito-info.title", value: "Have you tried our Fire Window?", comment: "Title for incognito feature information box")
+    static let incognitoInfoBoxDescription = NSLocalizedString("feedback.incognito-info.description", value: "Open the browser menu and select New Fire Window to browse without saving local history, and automatically burn data when you close the window.", comment: "Description text for incognito feature information box")
+
+    // MARK: - Thank You View
+    static let thankYouTitle = NSLocalizedString("feedback.thank-you.title", value: "Thanks for your feedback!", comment: "Title for thank you screen after feedback submission")
+    static let thankYouMessage = NSLocalizedString("feedback.thank-you.message", value: "Feedback like yours directly influences our product updates and improvements.", comment: "Message for thank you screen after feedback submission")
+    static let thankYouSeeWhatsNew = NSLocalizedString("feedback.thank-you.see-whats-new", value: "See what's new in DuckDuckGo", comment: "Link text to see product updates")
+
+    // MARK: - Common Elements
+    static let feedbackFormClose = NSLocalizedString("feedback.form.close", value: "Close", comment: "Close button for feedback forms")
+    static let feedbackSomethingElse = NSLocalizedString("feedback.something-else", value: "Something else", comment: "Generic option for other feedback items")
 
     static let otherBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.other.folder.title", value: "Other bookmarks", comment: "Name of the \"Other bookmarks\" folder imported from other browser")
     static let mobileBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.mobile.folder.title", value: "Mobile bookmarks", comment: "Name of the \"Mobile bookmarks\" folder imported from other browser")
@@ -680,9 +784,6 @@ struct UserText {
     static let externalSchemePermissionAuthorizationNoDomainFormat = NSLocalizedString("permission.authorization.externalScheme.empty.format",
                                                                                        value: "Open this link in %@?",
                                                                                        comment: "Popover asking to open link in External App (%@)")
-    static let wifiHotspotPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.wifihotspot.format",
-                                                                            value: "WiFi hotspot requesting authorization to redirect to captive portal login page.",
-                                                                            comment: "Popover asking user to authorize WiFi hotspot captive portal")
 
     static let permissionAlwaysAllowOnDomainCheckbox = NSLocalizedString("dashboard.permission.allow.on", value: "Always allow on", comment: "Permission Popover 'Always allow on' (for domainName) checkbox")
 
@@ -691,7 +792,6 @@ struct UserText {
     static let permissionCameraAndMicrophone = NSLocalizedString("permission.cameraAndmicrophone", value: "Camera and Microphone", comment: "camera and microphone input media devices name")
     static let permissionGeolocation = NSLocalizedString("permission.geolocation", value: "Location", comment: "User's Geolocation permission access name")
     static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open Pop Up Windows permission access name")
-    static let permissionWifiHotspot = NSLocalizedString("permission.title.wifihotspot", value: "WiFi Hotspot", comment: "WiFi Hotspot permission title")
 
     static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
     static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")

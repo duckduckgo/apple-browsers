@@ -329,6 +329,16 @@ class TabSwitcherViewController: UIViewController {
         delegate?.tabSwitcher(self, editBookmarkForUrl: url)
     }
 
+    func addNewTab() {
+        guard !isProcessingUpdates else { return }
+        // Will be dismissed, so no need to process incoming updates
+        canUpdateCollection = false
+
+        Pixel.fire(pixel: .tabSwitcherNewTab)
+        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
+        dismiss()
+    }
+
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
         let tabs = self.tabsModel.tabs
         var newCount = 0

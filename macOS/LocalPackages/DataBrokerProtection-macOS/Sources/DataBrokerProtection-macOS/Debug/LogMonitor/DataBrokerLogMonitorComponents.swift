@@ -40,7 +40,7 @@ struct LogMonitorToolbarView: View {
                 Button("Clear") {
                     onClear()
                 }
-                .disabled(logCount > 0)
+                .disabled(logCount == 0)
             }
 
             Divider()

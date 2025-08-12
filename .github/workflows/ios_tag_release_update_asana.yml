@@ -200,3 +200,14 @@ jobs:
         with:
           version: ${{ env.TAG }}
           platform: "ios"
+
+      - name: Create Asana notification task
+        if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
+        continue-on-error: true
+        uses: ./.github/actions/send-release-notification-task
+        with:
+          platform: ios
+          tag: ${{ env.TAG }}
+          asana-project: ${{ vars.APPLE_DEPLOYMENTS_ASANA_PROJECT_ID }}
+          asana-section: ${{ vars.APPLE_DEPLOYMENTS_SECTION_ID }}
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}

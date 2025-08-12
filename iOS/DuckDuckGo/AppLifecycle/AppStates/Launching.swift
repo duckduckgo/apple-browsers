@@ -47,6 +47,7 @@ struct Launching: LaunchingHandling {
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
+    private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
     private let configuration = AppConfiguration()
@@ -93,12 +94,15 @@ struct Launching: LaunchingHandling {
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
 
+        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+
         // Service to display the Default Browser prompt.
         let defaultBrowserPromptService = DefaultBrowserPromptService(
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
+            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
         )
 
         // MARK: - Main Coordinator Setup
@@ -118,11 +122,11 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime,
+                                              didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
-                                              systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
-        )
+                                              systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
+                                              daxDialogsManager: daxDialogs)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

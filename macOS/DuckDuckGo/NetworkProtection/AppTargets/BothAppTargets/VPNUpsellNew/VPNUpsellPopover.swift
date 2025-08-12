@@ -27,12 +27,14 @@ import SwiftUIExtensions
 // MARK: - Constants
 
 private enum Constants {
+    static let popoverWidth: CGFloat = 320
     static let outerVerticalSpacing: CGFloat = 16
     static let innerVerticalSpacing: CGFloat = 28
-    static let headerHorizontalPadding: CGFloat = 48
+    static let headerHorizontalPadding: CGFloat = 36
     static let titleAndSubtitleHorizontalPadding: CGFloat = 36
+    static let titleAndSubtitleMaxWidth: CGFloat = 280
     static let titleAndSubtitleVerticalSpacing: CGFloat = 8
-    static let featuresHorizontalPadding: CGFloat = 48
+    static let featuresHorizontalPadding: CGFloat = 24
     static let featuresVerticalSpacing: CGFloat = 12
     static let actionButtonsTopPadding: CGFloat = 12
     static let topPadding: CGFloat = 28
@@ -69,6 +71,7 @@ struct VPNUpsellPopoverView: View {
 
             VStack(spacing: Constants.innerVerticalSpacing) {
                 titleAndSubtitle
+                    .frame(width: Constants.titleAndSubtitleMaxWidth)
                     .padding(.horizontal, Constants.titleAndSubtitleHorizontalPadding)
                 features
                     .padding(.horizontal, Constants.featuresHorizontalPadding)
@@ -77,6 +80,7 @@ struct VPNUpsellPopoverView: View {
             actionButtons
                 .padding(.top, Constants.actionButtonsTopPadding)
         }
+        .frame(width: Constants.popoverWidth)
         .padding(.top, Constants.topPadding)
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.bottom, Constants.bottomPadding)
@@ -98,7 +102,7 @@ struct VPNUpsellPopoverView: View {
     private var titleAndSubtitle: some View {
         VStack(spacing: Constants.titleAndSubtitleVerticalSpacing) {
             Text(UserText.vpnUpsellPopoverTitle)
-                .font(.title3.weight(.semibold))
+                .font(.title2.weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
@@ -143,7 +147,7 @@ struct VPNUpsellPopoverView: View {
             Button {
                 viewModel.showSubscriptionLandingPage()
             } label: {
-                Text(viewModel.featureSet.mainCTATitle)
+                Text(viewModel.featureSet.mainCTATitle.capitalized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true, shouldBeFixedVertical: false))
@@ -176,7 +180,7 @@ private struct FeatureRow: View {
         HStack(alignment: .top, spacing: Constants.featureRowHorizontalSpacing) {
             Image(systemName: "checkmark")
                 .font(.system(size: Constants.featureRowImageFontSize, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .accent))
+                .foregroundColor(Color(designSystemColor: .icons))
                 .frame(width: Constants.featureRowImageSize.width, height: Constants.featureRowImageSize.height)
                 .padding(.top, Constants.featureRowImageTopPadding)
 

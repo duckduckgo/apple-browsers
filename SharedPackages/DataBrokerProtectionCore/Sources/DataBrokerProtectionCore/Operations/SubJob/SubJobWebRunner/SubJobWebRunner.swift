@@ -264,13 +264,20 @@ public extension SubJobWebRunning {
     }
 
     func conditionSuccess(actions: [Action]) async {
-        Logger.action.log("Condition action met its expectation, pushing new actions: \(actions, privacy: .public)")
+        if actions.isEmpty {
+            Logger.action.log(loggerContext(), message: "Condition action completed with no follow-up actions")
+            if actionsHandler?.stepType == .optOut {
+                stageCalculator.fireOptOutConditionNotFound()
+            }
+        } else {
+            Logger.action.log(loggerContext(), message: "Condition action met its expectation, queuing follow-up actions: \(actions)")
+            if actionsHandler?.stepType == .optOut {
+                stageCalculator.fireOptOutConditionFound()
+            }
 
-        if actionsHandler?.stepType == .optOut {
-            stageCalculator.fireOptOutConditionFound()
+            actionsHandler?.insert(actions: actions)
         }
 
-        actionsHandler?.insert(actions: actions)
         await self.executeNextStep()
     }
 
@@ -305,7 +312,8 @@ public extension SubJobWebRunning {
 
     func onError(error: Error) async {
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
-            Logger.action.log("Condition action did NOT meet its expectation, continuing with regular action execution")
+            Logger.action.log(loggerContext(for: currentAction),
+                              message: "Condition action did NOT meet its expectation, continuing with regular action execution")
 
             if actionsHandler?.stepType == .optOut {
                 stageCalculator.fireOptOutConditionNotFound()
@@ -352,6 +360,10 @@ public extension SubJobWebRunning {
                                      tries: stageCalculator.tries,
                                      actionId: action.id,
                                      actionType: action.actionType.rawValue))
+    }
+
+    private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
+        .init(stepType: actionsHandler?.stepType, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }
 

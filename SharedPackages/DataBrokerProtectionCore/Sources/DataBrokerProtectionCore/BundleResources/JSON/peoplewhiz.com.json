@@ -1,7 +1,7 @@
 {
   "name": "PeopleWhiz.com",
   "url": "peoplewhiz.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "addedDatetime": 1676160000000,
   "optOutUrl": "https://www.peoplewhiz.com/remove-my-info",
   "steps": [
@@ -90,48 +90,17 @@
         },
         {
           "actionType": "click",
+          "elements": [
+            {
+              "type": "checkbox",
+              "selector": "#altcha_checkbox"
+            }
+          ],
+          "id": "d04e9122-30e1-49fa-b684-2398b4f96213"
+        },
+        {
+          "actionType": "click",
           "id": "0d61b830-c740-4d55-a32e-dcc370ff0cdc",
-          "elements": [
-            {
-              "type": "button",
-              "selector": "button[type='submit']"
-            }
-          ]
-        },
-        {
-          "actionType": "click",
-          "id": "617dd625-36bb-4111-83f2-9e2a94beed7d",
-          "elements": [
-            {
-              "type": "button",
-              "selector": "//button[normalize-space()='Upload image of ID']"
-            }
-          ]
-        },
-        {
-          "actionType": "fillForm",
-          "id": "271cfc3e-deb7-4da5-8e2a-c866d28cde02",
-          "selector": "form",
-          "elements": [
-            {
-              "type": "$file_id$",
-              "selector": "input[type='file']"
-            }
-          ]
-        },
-        {
-          "actionType": "getCaptchaInfo",
-          "id": "d5316049-1a13-4a51-b5fc-bf1607c0d6e9",
-          "selector": "[class^='Confirm__ReCaptchaContainer-sc']"
-        },
-        {
-          "actionType": "solveCaptcha",
-          "id": "a93d0de2-fc52-4c32-8b7e-74b7a5dc078e",
-          "selector": "[class^='Confirm__ReCaptchaContainer-sc']"
-        },
-        {
-          "actionType": "click",
-          "id": "e0b1077d-4a8b-4d30-ba21-550367363d00",
           "elements": [
             {
               "type": "button",

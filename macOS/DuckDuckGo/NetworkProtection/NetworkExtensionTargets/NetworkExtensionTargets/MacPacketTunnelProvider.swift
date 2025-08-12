@@ -465,7 +465,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
+        let pixelHandler = SubscriptionPixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,

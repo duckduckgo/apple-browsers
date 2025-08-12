@@ -2350,9 +2350,6 @@
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Caută implicit în mod privat";
 
-/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold). */
-"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo are, de asemenea, un %1$@, disponibil cu un %2$@ și IA avansată și privată.";
-
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "abonament opțional cu plată";
 
@@ -2700,15 +2697,6 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Întreabă Duck.ai";
-
-/* Search input toggle button title for asking AI Chat */
-"search.input.toggle.aichat.button.title" = "Duck.ai";
-
-/* Search input toggle button title for searching on the web */
-"search.input.toggle.search.button.title" = "Caută";
 
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Acțiune secundară/a doua acțiune";

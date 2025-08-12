@@ -107,9 +107,9 @@ final class MainMenu: NSMenu {
     let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser + "…", action: #selector(AppDelegate.setAsDefault))
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
-#if FEEDBACK
+
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
-#endif
+
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let featureFlagger: FeatureFlagger
@@ -448,10 +448,7 @@ final class MainMenu: NSMenu {
                 releaseNotesMenuItem
                 whatIsNewMenuItem
 #endif
-
-#if FEEDBACK
                 sendFeedbackMenuItem
-#endif
             })
     }
 
@@ -748,11 +745,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "VPN")
                     .submenu(NetworkProtectionDebugMenu())
             }
-
-#if DEBUG && !APPSTORE
-            NSMenuItem(title: "WiFi Hotspot Detection")
-                .submenu(HotspotDetectionDebugMenu())
-#endif
 
             if #available(macOS 13.5, *) {
                 NSMenuItem(title: "Autofill") {

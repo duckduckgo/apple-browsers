@@ -39,6 +39,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
         mockFeatureFlagger = MockFeatureFlagger()
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
@@ -356,6 +357,74 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .notEligible)
+    }
+
+    func testWhenShowingTheUpsell_AndFeatureFlagIsDisabledAtInitialSetup_ButBecomesEnabledBeforeTheTrigger_ItShowsTheUpsell() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        let onboardingSubject = PassthroughSubject<Bool, Never>()
+        mockDefaultBrowserProvider.isDefault = true
+
+        sut = VPNUpsellVisibilityManager(
+            isFirstLaunch: true,
+            isNewUser: true,
+            subscriptionManager: mockSubscriptionManager,
+            defaultBrowserProvider: mockDefaultBrowserProvider,
+            contextualOnboardingPublisher: onboardingSubject.eraseToAnyPublisher(),
+            featureFlagger: mockFeatureFlagger,
+            persistor: mockPersistor,
+            timerDuration: 0.1,
+            pixelHandler: { _ in }
+        )
+
+        sut.setup(isFirstLaunch: true)
+
+        let expectation = XCTestExpectation(description: "State should transition to visible")
+
+        sut.$state
+            .sink { state in
+                if state == .visible {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When
+        mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
+        onboardingSubject.send(true)
+        NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
+
+        // Then
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertEqual(sut.state, .visible)
+    }
+
+    // MARK: - Purchase Eligibility Tests
+
+    func testWhenUserCannotPurchaseSubscription_ItDoesNotShowTheUpsell() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        XCTAssertEqual(sut.state, .notEligible)
+
+        // When
+        mockSubscriptionManager.canPurchaseSubject.send(false)
+
+        // Then
+        XCTAssertEqual(sut.state, .notEligible)
+    }
+
+    func testWhenUserCanPurchaseSubscription_ItShowsTheUpsell() {
+        // Given
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        sut = createUpsellManager(isFirstLaunch: false, isNewUser: true)
+        XCTAssertEqual(sut.state, .notEligible)
+
+        // When
+        mockSubscriptionManager.canPurchaseSubject.send(true)
+
+        // Then
+        XCTAssertEqual(sut.state, .visible)
     }
 }
 

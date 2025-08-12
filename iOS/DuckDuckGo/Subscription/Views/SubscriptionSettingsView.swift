@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import Networking
+import VPN
 
 enum SubscriptionSettingsViewConfiguration {
     case subscribed
@@ -301,10 +302,11 @@ struct SubscriptionSettingsView: View {
         }.hidden()
 
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                                                apiService: DefaultAPIService(),
-                                                                                                vpnMetadataCollector: DefaultVPNMetadataCollector(),
-                                                                                                isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
-                                                                                                source: .ppro)),
+                                                                                                    apiService: DefaultAPIService(),
+                                                                                                    vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                                                    dbpMetadataCollector: DefaultDBPMetadataCollector(),
+                                                                                                    isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
+                                                                                                    source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()
         }.hidden()
@@ -729,7 +731,7 @@ struct SubscriptionSettingsViewV2: View {
         
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                     apiService: DefaultAPIService(),
-                                                                                                    vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                                                    vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {

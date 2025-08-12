@@ -98,11 +98,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
 
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-        public static let deviceIdentifier = "testerId"
-        public static let deviceModel = "deviceModel"
-#endif
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
@@ -119,23 +114,6 @@ public enum DataBrokerProtectionSharedPixels {
     case failedToOpenDatabase(error: Error)
     case parentChildMatches(parent: String, child: String, value: Int)
 
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-#if os(iOS)
-    // Stage Pixels
-    case optOutStart(dataBroker: String, attemptId: UUID, deviceID: String)
-
-    // Process Pixels
-    case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, tries: Int, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String, deviceID: String)
-    case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String, deviceID: String)
-    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, stage: String, tries: Int, emailPattern: String?, actionID: String?, vpnConnectionState: String, vpnBypassStatus: String, deviceID: String)
-
-    // Scan/Search pixels
-    case scanStarted(dataBroker: String, deviceID: String)
-    case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, deviceID: String)
-    case scanFailed(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, deviceID: String)
-    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, deviceID: String)
-    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, actionId: String, actionType: String)
-#else
     // Stage Pixels
     case optOutStart(dataBroker: String, attemptId: UUID)
 
@@ -145,11 +123,13 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, stage: String, tries: Int, emailPattern: String?, actionID: String?, vpnConnectionState: String, vpnBypassStatus: String)
 
     // Scan/Search pixels
+#if os(iOS)
+    case scanStarted(dataBroker: String)
+#endif
     case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
     case scanFailed(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
     case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
     case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, actionId: String, actionType: String)
-#endif
 
     // Stage Pixels
     case optOutEmailGenerate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
@@ -327,14 +307,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return ["functionOccurredIn": functionOccurredIn]
         case .parentChildMatches(let parent, let child, let value):
             return ["parent": parent, "child": child, "value": String(value)]
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-#if os(iOS)
-        case .optOutStart(let dataBroker, let attemptId, let deviceID):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-#else
         case .optOutStart(let dataBroker, let attemptId):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString]
-#endif
         case .optOutEmailGenerate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
              .optOutCaptchaParse(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
              .optOutCaptchaSend(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
@@ -356,42 +330,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.durationParamKey: String(duration)]
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-#if os(iOS)
-        case .optOutSubmitSuccess(let dataBroker, let attemptId, let duration, let tries, let pattern, let vpnConnectionState, let vpnBypassStatus, let deviceID):
-            var params = [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-            if let pattern = pattern {
-                params[Consts.pattern] = pattern
-            }
-            return params
-        case .optOutSuccess(let dataBroker, let attemptId, let duration, let type, let vpnConnectionState, let vpnBypassStatus, let deviceID):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.isParent: String(type.rawValue), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let stage, let tries, let pattern, let actionID, let vpnConnectionState, let vpnBypassStatus, let deviceID):
-            var params = [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.stageKey: stage, Consts.triesKey: String(tries), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-            if let pattern = pattern {
-                params[Consts.pattern] = pattern
-            }
-
-            if let actionID = actionID {
-                params[Consts.actionIDKey] = actionID
-            }
-
-            return params
-        case .scanStarted(let dataBroker, let deviceID):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let deviceID):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-        case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let deviceID):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let deviceID):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.errorCategoryKey: category, Consts.errorDetailsKey: details, Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
-        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let actionId, let actionType):
-            return [Consts.dataBrokerParamKey: dataBroker,
-                    Consts.dataBrokerVersionKey: dataBrokerVersion,
-                    Consts.triesKey: String(tries),
-                    Consts.actionIDKey: actionId,
-                    Consts.actionTypeKey: actionType]
-#else
         case .optOutSubmitSuccess(let dataBroker, let attemptId, let duration, let tries, let pattern, let vpnConnectionState, let vpnBypassStatus):
             var params = [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
             if let pattern = pattern {
@@ -411,6 +349,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             }
 
             return params
+#if os(iOS)
+        case .scanStarted(let dataBroker):
+            return [Consts.dataBrokerParamKey: dataBroker]
+#endif
         case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
         case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
@@ -423,7 +365,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.triesKey: String(tries),
                     Consts.actionIDKey: actionId,
                     Consts.actionTypeKey: actionType]
-#endif
         case .weeklyReportScanning(let hadNewMatch, let hadReAppereance, let scanCoverage):
             return [Consts.hadNewMatch: hadNewMatch ? "1" : "0", Consts.hadReAppereance: hadReAppereance ? "1" : "0", Consts.scanCoverage: scanCoverage.description]
         case .weeklyReportRemovals(let removals):
@@ -456,7 +397,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .dailyActiveUser,
                 .weeklyActiveUser,
                 .monthlyActiveUser,
-
                 .scanningEventNewMatch,
                 .scanningEventReAppearance,
                 .secureVaultInitError,

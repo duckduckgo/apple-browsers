@@ -493,6 +493,9 @@ extension UpdateController: SPUUpdaterDelegate {
     }
 
     internal func sparkleUpdaterErrorReason(from errorDescription: String) -> String {
+        // Hardcodes known Sparkle failures to ensure that no file paths are ever included.
+        // Any unrecognized strings will be sent with "unknown", and will need to be debugged further as it means there
+        // is a Sparkle error that isn't being accounted for in this list.
         let knownErrorPrefixes = [
             "Package installer failed to launch.",
             "Guided package installer failed to launch",

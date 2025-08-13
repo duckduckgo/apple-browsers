@@ -29,6 +29,8 @@ enum OmniBarEditingEndResult {
 
 protocol OmniBarDelegate: AnyObject {
 
+    var isDaxLogoVisible: Bool { get }
+
     func onOmniQueryUpdated(_ query: String)
     
     func onOmniQuerySubmitted(_ query: String)

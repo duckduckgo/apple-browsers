@@ -115,6 +115,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
     }
 
+    func setLogoYOffset(_ offset: CGFloat) {
+        daxLogoManager.containerYCenterConstraint?.constant = offset
+    }
+
     // MARK: - Private Methods
     
     private func setupView() {

@@ -22,15 +22,45 @@ import UIKit
 class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
     private let isPresenting: Bool
     private let isTopBarPosition: Bool
+    private let isShowingLogo: Bool
 
-    private var yOffsetFactor: CGFloat {
-        // We want bigger offset and move upwards while transitioning from bottom
-        isTopBarPosition ? 1 : -2
+    private struct TransitionOffsets {
+        let switcherYOffset: CGFloat
+        let contentYOffset: CGFloat
+        let barYOffset: CGFloat
+        let logoYOffset: CGFloat
     }
 
-    init(isPresenting: Bool, addressBarPosition: AddressBarPosition) {
+    private func calculateOffsets(switchBarTextViewMinY: CGFloat) -> TransitionOffsets {
+        let switcherMultiplier: CGFloat = isTopBarPosition ? 1 : -1
+
+        let switcherYOffset = switchBarTextViewMinY * switcherMultiplier
+
+        let contentYOffset: CGFloat
+        if isShowingLogo {
+            contentYOffset = 0
+        } else {
+            contentYOffset = switchBarTextViewMinY * switcherMultiplier
+        }
+
+        let barYOffset: CGFloat = (isShowingLogo && isTopBarPosition) ? (switchBarTextViewMinY * 1) : 0
+
+        let toolbarHeight: CGFloat = 49
+        let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -(DefaultOmniBarView.expectedHeight + toolbarHeight)
+        let logoYOffsetWithSwitcher = baseLogoOffset + switcherYOffset
+
+        return TransitionOffsets(
+            switcherYOffset: switcherYOffset,
+            contentYOffset: contentYOffset,
+            barYOffset: barYOffset,
+            logoYOffset: logoYOffsetWithSwitcher
+        )
+    }
+
+    init(isPresenting: Bool, addressBarPosition: AddressBarPosition, isShowingLogo: Bool) {
         self.isPresenting = isPresenting
         self.isTopBarPosition = addressBarPosition == .top
+        self.isShowingLogo = isShowingLogo
         super.init()
     }
 
@@ -47,9 +77,9 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         transitionContext.containerView.backgroundColor = .clear
 
         if isPresenting {
-            animateAppear(transitionContext: transitionContext, isTopBarPosition: isTopBarPosition)
+            animateAppear(transitionContext: transitionContext)
         } else {
-            animateDismiss(transitionContext: transitionContext, isTopBarPosition: isTopBarPosition)
+            animateDismiss(transitionContext: transitionContext)
         }
     }
 
@@ -61,7 +91,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         }
     }
 
-    private func animateAppear(transitionContext: UIViewControllerContextTransitioning, isTopBarPosition: Bool) {
+    private func animateAppear(transitionContext: UIViewControllerContextTransitioning) {
         guard let fromVC = transitionContext.viewController(forKey: .from) as? (UIViewController & MainViewEditingStateTransitioning),
               let toVC = transitionContext.viewController(forKey: .to) as? (UIViewController & OmniBarEditingStateTransitioning) else {
             transitionContext.completeTransition(false)
@@ -72,12 +102,14 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
         containerView.addSubview(toVC.view)
 
-        let yOffset = toVC.switchBarVC.textEntryViewController.view.frame.minY * yOffsetFactor
+        let switchBarTextViewMinY = toVC.switchBarVC.textEntryViewController.view.frame.minY
+        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY)
 
-        toVC.view.frame = containerView.bounds.offsetBy(dx: 0, dy: -yOffset)
+        toVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
         toVC.view.alpha = 0
         toVC.actionBarView?.alpha = 0
         toVC.switchBarVC.textEntryViewController.isExpandable = false
+        toVC.setLogoYOffset(offsets.logoYOffset)
 
         toVC.view.layoutIfNeeded()
 
@@ -85,12 +117,12 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
                                               dampingRatio: dampingRatio()) {
 
             toVC.view.alpha = 1.0
-            toVC.view.frame = containerView.bounds
+            toVC.view.layer.sublayerTransform = CATransform3DIdentity
             toVC.switchBarVC.textEntryViewController.isExpandable = true
+            toVC.setLogoYOffset(0)
             toVC.view.layoutIfNeeded()
 
-            // Move source content only half way when transitioning from bottom position
-            fromVC.hide(with: isTopBarPosition ? yOffset : yOffset/2)
+            fromVC.hide(with: offsets.barYOffset, contentYOffset: offsets.contentYOffset)
             fromVC.view.layoutIfNeeded()
         }
 
@@ -105,7 +137,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         animator.startAnimation()
     }
 
-    private func animateDismiss(transitionContext: UIViewControllerContextTransitioning, isTopBarPosition: Bool) {
+    private func animateDismiss(transitionContext: UIViewControllerContextTransitioning) {
 
         guard let fromVC = transitionContext.viewController(forKey: .from) as? (UIViewController & OmniBarEditingStateTransitioning),
               let toVC = transitionContext.viewController(forKey: .to) as? (UIViewController & MainViewEditingStateTransitioning) else {
@@ -113,14 +145,16 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
             return
         }
 
-        let yOffset = fromVC.switchBarVC.textEntryViewController.view.frame.minY * yOffsetFactor
+        let switchBarTextViewMinY = fromVC.switchBarVC.textEntryViewController.view.frame.minY
+        let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY)
 
         // Dismissing animation
         let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
                                               dampingRatio: dampingRatio()) {
 
-            fromVC.view.frame = fromVC.view.frame.offsetBy(dx: 0, dy: -yOffset)
+            fromVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
             fromVC.switchBarVC.textEntryViewController.isExpandable = false
+            fromVC.setLogoYOffset(offsets.logoYOffset)
             fromVC.view.alpha = 0
             fromVC.view.layoutIfNeeded()
 

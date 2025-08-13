@@ -77,25 +77,29 @@ private extension DefaultBrowserModalPresenter {
     }
 
     func presentDefaultBrowserPromptForInactiveUser(from viewController: UIViewController) {
+        // Present the full screen from the root controller or from the presented screen if any. (E.g. settings)
+        let presentingViewController = viewController.presentedViewController ?? viewController
+
         let rootView = DefaultBrowserPromptInactiveUserView(
             background: AnyView(uiProvider.makeBackground()),
             browserComparisonChart: AnyView(uiProvider.makeBrowserComparisonChart()),
-            closeAction: { [weak viewController, weak coordinator] in
+            closeAction: { [weak presentingViewController, weak coordinator] in
                 coordinator?.dismissAction(forPrompt: .inactiveUserModal, shouldDismissPromptPermanently: false)
-                viewController?.dismiss(animated: true)
+                presentingViewController?.dismiss(animated: true)
             },
-            setAsDefaultAction: { [weak viewController, weak coordinator] in
+            setAsDefaultAction: { [weak presentingViewController, weak coordinator] in
                 coordinator?.setDefaultBrowserAction(forPrompt: .inactiveUserModal)
-                viewController?.dismiss(animated: false)
+                presentingViewController?.dismiss(animated: false)
             },
-            onMoreProtectionsTapped: { [weak viewController, weak coordinator] in
+            onMoreProtectionsTapped: { [weak presentingViewController, weak coordinator] in
                 coordinator?.moreProtectionsAction()
-                viewController?.presentedViewController?.present(UINavigationController(rootViewController: MoreProtectionsViewController()), animated: true)
+                presentingViewController?.presentedViewController?.present(UINavigationController(rootViewController: MoreProtectionsViewController()), animated: true)
             }
         )
         let hostingController = PortraitHostingController(rootView: rootView)
         hostingController.modalPresentationStyle = .overFullScreen
-        viewController.present(hostingController, animated: true)
+
+        presentingViewController.present(hostingController, animated: true)
     }
 
     func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptActiveUserView>, presentingController: UIViewController) {

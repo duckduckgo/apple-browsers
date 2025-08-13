@@ -212,7 +212,7 @@ final class AIChatSettings: AIChatSettingsProvider {
 // MARK: - Keys for storage
 
 private extension String {
-    static let isAIChatEnabledKey = "aichat.settings.isEnabled"
+    static let isAIChatEnabledKey = AppConfigurationKeyNames.isAIChatEnabled
     static let showAIChatBrowsingMenuKey = "aichat.settings.showAIChatBrowsingMenu"
     static let showAIChatAddressBarKey = "aichat.settings.showAIChatAddressBar"
     static let showAIChatVoiceSearchKey = "aichat.settings.showAIChatVoiceSearch"

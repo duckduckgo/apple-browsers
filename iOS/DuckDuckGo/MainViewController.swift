@@ -1817,6 +1817,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
+                WidgetCenter.shared.reloadAllTimelines()
             }
             .store(in: &aiChatCancellables)
     }

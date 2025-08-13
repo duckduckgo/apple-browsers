@@ -138,8 +138,10 @@ struct FavoritesWidgetView: View {
             VStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
-                    Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                        CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                    if entry.isAIChatEnabled {
+                        Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
+                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                        }
                     }
                 }
                 if entry.favorites.isEmpty, !entry.isPreview {
@@ -334,10 +336,10 @@ struct WidgetViews_Previews: PreviewProvider {
         return [duckDuckGoFavorite] + favorites
     }()
 
-    static let withFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: false, isAiChatEnabled: true)
-    static let previewWithFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: true, isAiChatEnabled: true)
-    static let emptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: false, isAiChatEnabled: true)
-    static let previewEmptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: true, isAiChatEnabled: true)
+    static let withFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: false)
+    static let previewWithFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: true)
+    static let emptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: false)
+    static let previewEmptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: true)
 
     static var previews: some View {
         SearchWidgetView(entry: emptyState)

@@ -80,14 +80,13 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
                     guard let status else { return nil }
                     return status != .expired && status != .inactive
                 }()
-                let hasAnyEntitlement = !state.userEntitlements.isEmpty
 
                 // Check for free trial first
                 if hasTrialOffer && isSubscriptionActive == true {
                     return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
                 }
 
-                switch (isSubscriptionActive, hasAnyEntitlement) {
+                switch (isSubscriptionActive, state.hasAnyEntitlement) {
                 case (.some(false), _): return PreferencesSubscriptionSettingsState.subscriptionExpired
                 case (nil, _): return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
                 case (.some(true), false): return PreferencesSubscriptionSettingsState.subscriptionPendingActivation

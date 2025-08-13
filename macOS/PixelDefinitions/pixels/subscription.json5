@@ -60,4 +60,284 @@
             },
         ],
     },
+    'm_mac_store_privacy-pro_app_subscription-purchase_failure_store': {
+        description: 'The error encountered when an App Store subscription purchase fails due to StoreKit',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
+    'm_mac_store_privacy-pro_app_subscription-purchase_failure_backend': {
+        description: 'The error encountered when an App Store subscription purchase fails due to the backend call failing',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
+    'm_mac_store_privacy-pro_app_subscription-purchase_failure_account-creation': {
+        description: 'The error encountered when an App Store subscription purchase fails due to account creation failing',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
+    'm_mac_store_privacy-pro_app_subscription-purchase_failure_other': {
+        description: 'The error encountered when an App Store subscription purchase fails due to a reason other than StoreKit or backend call failure',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
+    'm_mac_direct_privacy-pro_app_subscription-purchase_failure_store': {
+        description: 'The error encountered when a Stripe subscription purchase fails due to StoreKit',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
+    'm_mac_direct_privacy-pro_app_subscription-purchase_failure_backend': {
+        description: 'The error encountered when a Stripe subscription purchase fails due to the backend call failing',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
+    'm_mac_direct_privacy-pro_app_subscription-purchase_failure_account-creation': {
+        description: 'The error encountered when a Stripe subscription purchase fails due to account creation failing',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
+    'm_mac_direct_privacy-pro_app_subscription-purchase_failure_other': {
+        description: 'The error encountered when an App Store subscription purchase fails due to a reason other than Stripe or backend call failure',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: ['first_daily_count'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'source',
+                description: 'The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP',
+                type: 'string',
+            },
+            {
+                key: 'e',
+                type: 'string',
+                description: 'Error code',
+            },
+            {
+                key: 'd',
+                type: 'string',
+                description: 'Error domain',
+            },
+            {
+                key: 'ueX',
+                type: 'string',
+                description: 'Underlying error code (x is depth)',
+            },
+            {
+                key: 'udX',
+                type: 'string',
+                description: 'Underlying error domain (x is depth)',
+            },
+        ],
+    },
 }

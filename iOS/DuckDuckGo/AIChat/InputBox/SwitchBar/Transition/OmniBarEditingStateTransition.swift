@@ -83,7 +83,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         }
     }
 
-    private func dampingRatio() -> CGFloat {
+    private var dampingRatio: CGFloat {
         if isPresenting {
             return isTopBarPosition ? Constants.TopTransition.expandDampingRatio : Constants.BottomTransition.expandDampingRatio
         } else {
@@ -114,7 +114,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         toVC.view.layoutIfNeeded()
 
         let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
-                                              dampingRatio: dampingRatio()) {
+                                              dampingRatio: dampingRatio) {
 
             toVC.view.alpha = 1.0
             toVC.view.layer.sublayerTransform = CATransform3DIdentity
@@ -150,7 +150,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
         // Dismissing animation
         let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
-                                              dampingRatio: dampingRatio()) {
+                                              dampingRatio: dampingRatio) {
 
             fromVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
             fromVC.switchBarVC.textEntryViewController.isExpandable = false

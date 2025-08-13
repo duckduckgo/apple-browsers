@@ -2309,9 +2309,6 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
-    var isDaxLogoVisible: Bool {
-        newTabPageViewController?.isShowingLogo == true
-    }
 
     func isSuggestionTrayVisible() -> Bool {
         suggestionTrayController?.isShowing == true
@@ -3598,11 +3595,15 @@ extension MainViewController: MessageNavigationDelegate { }
 
 extension MainViewController: MainViewEditingStateTransitioning {
 
+    private var isDaxLogoVisible: Bool {
+        newTabPageViewController?.isShowingLogo == true
+    }
+
     func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {
-        if newTabPageViewController == nil || newTabPageViewController?.isShowingLogo == false {
-            additionalSafeAreaInsets.top = contentYOffset
-        } else {
+        if isDaxLogoVisible {
             omniBar.barView.layer.sublayerTransform = CATransform3DMakeTranslation(0, barYOffset, 0)
+        } else {
+            additionalSafeAreaInsets.top = contentYOffset
         }
         omniBar.barView.hideButtons()
     }

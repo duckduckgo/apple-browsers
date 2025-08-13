@@ -60,7 +60,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     enum Constants {
         static let internalChannelName = "internal-channel"
-        static let pendingUpdateInfoKey = "pendingUpdateInfo"
+        static let pendingUpdateInfoKey = "com.duckduckgo.updateController.pendingUpdateInfo"
     }
 
     lazy var notificationPresenter = UpdateNotificationPresenter()
@@ -485,11 +485,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
 
-        // Cache release notes when user clicks restart for manual update
-        if !areAutomaticUpdatesEnabled, let cachedUpdateResult {
-            cachePendingUpdate(from: cachedUpdateResult.item)
-        }
-
         guard useLegacyAutoRestartLogic else {
             userDriver.resume()
             return
@@ -543,6 +538,8 @@ extension UpdateController: SPUUpdaterDelegate {
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
         updateValidityStartDate = Date()
+
+        cachePendingUpdate(from: item)
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
@@ -558,16 +555,13 @@ extension UpdateController: SPUUpdaterDelegate {
             return reason == Int(Sparkle.SPUNoUpdateFoundReason.onNewerThanLatestVersion.rawValue)
         }()
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true, needsLatestReleaseNote: needsLatestReleaseNote)
+
+        cachePendingUpdate(from: item)
     }
 
     func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
         Logger.updates.log("Updater did download update: \(item.displayVersionString, privacy: .public)(\(item.versionString, privacy: .public))")
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidDownloadUpdate))
-
-        // Cache release notes when automatic update is downloaded and ready
-        if areAutomaticUpdatesEnabled {
-            cachePendingUpdate(from: item)
-        }
 
         if !useLegacyAutoRestartLogic,
            let userDriver {

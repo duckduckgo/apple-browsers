@@ -157,9 +157,7 @@ extension ReleaseNotesValues {
         guard let latestUpdate = updateController.latestUpdate else {
             let keyValueStore = Application.appDelegate.keyValueStore
             if let data = try? keyValueStore.object(forKey: UpdateController.Constants.pendingUpdateInfoKey) as? Data,
-               let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data),
-               AppVersion().buildNumber == cached.build,
-               AppVersion().versionNumber == cached.version {
+               let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data) {
                 let formatter = DateFormatter()
                 formatter.dateFormat = "MMMM dd yyyy"
                 let releaseTitle = formatter.string(from: cached.date)

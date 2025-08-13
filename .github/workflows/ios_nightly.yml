@@ -48,7 +48,7 @@ jobs:
       with:
         action: boot
         device-name: iPhone 16
-        ios-version: 18.4
+        ios-version: 18.6
 
     - name: Build and test
       run: |
@@ -106,7 +106,7 @@ jobs:
       with:
         action: boot
         device-name: iPhone 16
-        ios-version: 18.4
+        ios-version: 18.6
 
     - name: Build and test
       run: |

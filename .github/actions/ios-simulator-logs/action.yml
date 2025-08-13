@@ -9,7 +9,7 @@ inputs:
   ios-version:
     description: 'iOS version (e.g. 18.4)'
     required: false
-    default: '18.4'
+    default: '18.6'
   action:
     description: 'Action to perform: "boot" or "collect"'
     required: true

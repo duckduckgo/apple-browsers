@@ -5,6 +5,6 @@
         owners: ['brindy'],
         triggers: ['startup'],
         suffixes: ['platform', 'form_factor'],
-        parameters: [ 'appVersion' ],
+        parameters: ['appVersion'],
     },
 }

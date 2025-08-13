@@ -25,7 +25,8 @@ struct AIChatSettingsMigration {
 
     typealias Keys = LegacyAiChatUserDefaultsKeys
 
-    static func migrate(from userDefaults: UserDefaults, to store: KeyValueStoring) {
+    /// Migrate the settings from user defaults to the store created by the store factory, if any settings exist, and only create target store if we need it.
+    static func migrate(from userDefaults: UserDefaults, to storeFactory: () -> KeyValueStoring) {
 
         let settings = [
             Keys.isAIChatEnabledKey: userDefaults.value(forKey: Keys.isAIChatEnabledKey),
@@ -40,6 +41,7 @@ struct AIChatSettingsMigration {
 
         guard settings.count > 0 else { return }
 
+        let store = storeFactory()
         if settings.first(where: { store.object(forKey: $0.key) != nil }) != nil {
             assertionFailure("Secondary migration of AIChatSettings has ocurred")
         }

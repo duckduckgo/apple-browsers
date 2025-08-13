@@ -77,19 +77,17 @@ struct PreferencesSection: Hashable, Identifiable {
         if subscriptionState.hasSubscription {
             var subscriptionPanes: [PreferencePaneIdentifier] = []
 
-            if let currentSubscriptionFeatures = subscriptionState.subscriptionFeatures {
-                if currentSubscriptionFeatures.contains(.networkProtection) {
-                    subscriptionPanes.append(.vpn)
-                }
-                if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
-                    subscriptionPanes.append(.personalInformationRemoval)
-                }
-                if currentSubscriptionFeatures.contains(.paidAIChat) && subscriptionState.isPaidAIChatEnabled {
-                    subscriptionPanes.append(.paidAIChat)
-                }
-                if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {
-                    subscriptionPanes.append(.identityTheftRestoration)
-                }
+            if subscriptionState.isNetworkProtectionRemovalAvailable {
+                subscriptionPanes.append(.vpn)
+            }
+            if subscriptionState.isPersonalInformationRemovalAvailable {
+                subscriptionPanes.append(.personalInformationRemoval)
+            }
+            if subscriptionState.isPaidAIChatAvailable {
+                subscriptionPanes.append(.paidAIChat)
+            }
+            if subscriptionState.isIdentityTheftRestorationAvailable {
+                subscriptionPanes.append(.identityTheftRestoration)
             }
 
             subscriptionPanes.append(.subscriptionSettings)

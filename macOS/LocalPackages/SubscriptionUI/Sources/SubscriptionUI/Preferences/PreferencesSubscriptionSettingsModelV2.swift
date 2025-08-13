@@ -101,13 +101,9 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         Publishers.CombineLatest3($subscriptionStatus, $hasActiveTrialOffer, subscriptionStateUpdate)
             .map { status, hasTrialOffer, state in
 
-                let hasAnyEntitlement = !state.userEntitlements.isEmpty
-
                 Logger.subscription.debug("""
-Update subscription state:
-subscriptionStatus: \(status.rawValue)
-hasActiveTrialOffer: \(hasTrialOffer)
-hasAnyEntitlement: \(hasAnyEntitlement)
+Update subscription state: \(state.debugDescription, privacy: .public)
+hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 """)
 
                 switch status {
@@ -117,7 +113,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
                     // Check for free trial first
                     if hasTrialOffer {
                         return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
-                    } else if hasAnyEntitlement {
+                    } else if state.hasAnyEntitlement {
                         return PreferencesSubscriptionSettingsState.subscriptionActive
                     } else {
                         return PreferencesSubscriptionSettingsState.subscriptionPendingActivation

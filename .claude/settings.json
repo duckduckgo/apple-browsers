@@ -8,6 +8,7 @@
         "mcp__doc-bot__get_document_index",
         "mcp__doc-bot__explore_api",
         "mcp__doc-bot__get_global_rules",
+        "mcp__doc-bot__doc_bot",
         "Bash(gh pr view:*)",
         "Bash(xcodebuild:*)",
         "Bash(grep:*)",
@@ -15,10 +16,13 @@
         "Bash(gh pr diff:*)",
         "Bash(git check-ignore:*)",
         "Bash(git sparse-checkout:*)",
-         "Bash(git update-index:*)",
+        "Bash(git update-index:*)",
         "Bash(true)",
         "Bash(touch:*)",
-        "Bash(git fetch:*)"
+        "Bash(git fetch:*)",
+        "set -e -o pipefail && xcodebuild **",
+        "xcodebuild **",
+        "xcrun simctl*"
       ],
       "deny": []
     },

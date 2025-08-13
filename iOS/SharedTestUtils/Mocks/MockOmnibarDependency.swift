@@ -20,22 +20,36 @@
 import AIChat
 import Foundation
 import BrowserServicesKit
+import UIKit
 @testable import DuckDuckGo
 
 struct MockOmnibarDependency: OmnibarDependencyProvider {
+    
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
     var aiChatSettings: AIChatSettingsProvider
     var appSettings: any AppSettings
+    var daxEasterEggImageManager: DaxEasterEggImageManaging
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
-         appSettings: AppSettings = AppSettingsMock()) {
+         appSettings: AppSettings = AppSettingsMock(), daxEasterEggImageManager: DaxEasterEggImageManaging = MockDaxEasterEggImageManager()) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
+        self.daxEasterEggImageManager = daxEasterEggImageManager
     }
+}
+
+final class MockDaxEasterEggImageManager: DaxEasterEggImageManaging {
+    func getBestImageForFullScreen(url: URL, fallbackImage: UIImage?, completion: @escaping (UIImage?) -> Void) { }
+    
+    func getHighResImageFromMemoryCache(for url: URL) -> UIImage? { nil }
+    
+    func preloadFullResolutionImage(for url: URL) { }
+    
+    func clearExpiredImages() { }
 }

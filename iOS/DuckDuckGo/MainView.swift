@@ -49,14 +49,14 @@ class MainViewFactory {
                                     featureFlagger: FeatureFlagger,
                                     suggestionTrayDependencies: SuggestionTrayDependencies? = nil,
                                     appSettings: AppSettings,
-                                    daxEasterEggImageManager: DaxEasterEggImageManaging = DaxEasterEggImageManager()) -> MainViewCoordinator {
+                                    daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()) -> MainViewCoordinator {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
                                                       appSettings: appSettings,
-                                                      daxEasterEggImageManager: daxEasterEggImageManager)
+                                                      daxEasterEggPresenter: daxEasterEggPresenter)
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,

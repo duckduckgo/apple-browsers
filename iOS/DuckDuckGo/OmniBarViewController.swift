@@ -20,6 +20,7 @@
 import UIKit
 import PrivacyDashboard
 import Core
+import Kingfisher
 
 class OmniBarViewController: UIViewController, OmniBar {
 
@@ -374,6 +375,22 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.privacyInfoContainer.privacyIcon.isHidden = false
         barView.customIconView.isHidden = true
     }
+    
+    func setDaxEasterEggLogoURL(_ logoURL: String?) {
+        let url = logoURL.flatMap { URL(string: $0) }
+        
+        barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url)
+        
+        // Pre-load full resolution image for smoother transition
+        if let url = url {
+            dependencies.daxEasterEggPresenter.preloadFullResolutionImage(for: url)
+        }
+        
+        // Set up delegate if not already done
+        if barView.privacyInfoContainer.delegate == nil {
+            barView.privacyInfoContainer.delegate = self
+        }
+    }
 
     func hidePrivacyIcon() {
         barView.privacyInfoContainer.privacyIcon.isHidden = true
@@ -703,5 +720,18 @@ extension OmniBarViewController {
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             privacyIconAndTrackersAnimator.resetImageProvider()
         }
+    }
+}
+
+// MARK: - PrivacyInfoContainerViewDelegate
+extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
+    
+    func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
+        dependencies.daxEasterEggPresenter.presentFullScreen(
+            from: self,
+            logoURL: logoURL,
+            currentImage: currentImage,
+            sourceFrame: sourceFrame
+        )
     }
 }

@@ -231,7 +231,7 @@ class MainViewController: UIViewController {
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
     
-    private let daxEasterEggImageManager: DaxEasterEggImageManaging
+    private let daxEasterEggPresenter: DaxEasterEggPresenting
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -266,7 +266,7 @@ class MainViewController: UIViewController {
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
-        daxEasterEggImageManager: DaxEasterEggImageManaging = DaxEasterEggImageManager()
+        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -303,7 +303,7 @@ class MainViewController: UIViewController {
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
-        self.daxEasterEggImageManager = daxEasterEggImageManager
+        self.daxEasterEggPresenter = daxEasterEggPresenter
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -466,7 +466,7 @@ class MainViewController: UIViewController {
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
                                                       appSettings: appSettings,
-                                                      daxEasterEggImageManager: daxEasterEggImageManager)
+                                                      daxEasterEggPresenter: daxEasterEggPresenter)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -1324,6 +1324,8 @@ class MainViewController: UIViewController {
 
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
+            // Clear Dax Easter Egg logo when no tab is active
+            viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             return
         }
 
@@ -1336,6 +1338,9 @@ class MainViewController: UIViewController {
         } else {
             viewCoordinator.omniBar.resetPrivacyIcon(for: tab.url)
         }
+
+        // Restore the Dax Easter Egg logo URL for the current tab
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
         viewCoordinator.omniBar.startBrowsing()
     }
@@ -2881,6 +2886,9 @@ extension MainViewController: TabDelegate {
     }
     
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
+        // Store the logo URL in the tab model
+        tab.tabModel.daxEasterEggLogoURL = logoURL
+        
         if currentTab == tab {
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
         }

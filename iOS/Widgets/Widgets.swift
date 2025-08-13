@@ -54,6 +54,10 @@ class Provider: TimelineProvider {
     
     var bookmarksDB: CoreDataDatabase?
 
+    var isAIChatEnabled: Bool {
+        return true
+    }
+
     func getSnapshot(in context: Context, completion: @escaping (FavoritesEntry) -> Void) {
         createEntry(in: context) { entry in
             completion(entry)
@@ -61,7 +65,7 @@ class Provider: TimelineProvider {
     }
 
     func placeholder(in context: Context) -> FavoritesEntry {
-        return FavoritesEntry(date: Date(), favorites: [], isPreview: context.isPreview)
+        return FavoritesEntry(date: Date(), favorites: [], isPreview: context.isPreview, isAiChatEnabled: true)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<FavoritesEntry>) -> Void) {
@@ -121,11 +125,11 @@ class Provider: TimelineProvider {
             Logger.general.debug("dbFavorites loaded \(dbFavorites.count)")
             let favorites = coreDataFavoritesToFavorites(dbFavorites, returningNoMoreThan: maxFavorites)
             Logger.general.debug("favorites converted \(favorites.count)")
-            let entry = FavoritesEntry(date: Date(), favorites: favorites, isPreview: favorites.isEmpty && context.isPreview)
+            let entry = FavoritesEntry(date: Date(), favorites: favorites, isPreview: favorites.isEmpty && context.isPreview, isAiChatEnabled: true)
             Logger.general.debug("entry created")
             completion(entry)
         } else {
-            let entry = FavoritesEntry(date: Date(), favorites: [], isPreview: context.isPreview)
+            let entry = FavoritesEntry(date: Date(), favorites: [], isPreview: context.isPreview, isAiChatEnabled: true)
             completion(entry)
         }
     }
@@ -162,6 +166,7 @@ struct FavoritesEntry: TimelineEntry {
     let date: Date
     let favorites: [Favorite]
     let isPreview: Bool
+    let isAiChatEnabled: Bool
 
     func favoriteAt(index: Int) -> Favorite? {
         guard index < favorites.count else { return nil }

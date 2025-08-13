@@ -334,10 +334,10 @@ struct WidgetViews_Previews: PreviewProvider {
         return [duckDuckGoFavorite] + favorites
     }()
 
-    static let withFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: false)
-    static let previewWithFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: true)
-    static let emptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: false)
-    static let previewEmptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: true)
+    static let withFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: false, isAiChatEnabled: true)
+    static let previewWithFavorites = FavoritesEntry(date: Date(), favorites: mockFavorites, isPreview: true, isAiChatEnabled: true)
+    static let emptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: false, isAiChatEnabled: true)
+    static let previewEmptyState = FavoritesEntry(date: Date(), favorites: [], isPreview: true, isAiChatEnabled: true)
 
     static var previews: some View {
         SearchWidgetView(entry: emptyState)

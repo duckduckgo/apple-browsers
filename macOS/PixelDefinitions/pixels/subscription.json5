@@ -69,7 +69,7 @@
                 description: 'The type of purchase failure',
                 enum: ['store', 'backend', 'account-creation', 'other'],
             },
-            'first_daily_count',
+            'legacy_daily_count',
         ],
         parameters: [
             'appVersion',
@@ -105,7 +105,7 @@
                 description: 'The type of purchase failure',
                 enum: ['store', 'backend', 'account-creation', 'other'],
             },
-            'first_daily_count',
+            'legacy_daily_count',
         ],
         parameters: [
             'appVersion',

@@ -73,8 +73,8 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c"])
+        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError(errorToBeHandled).name + "_d",
+                                     PrivacyProPixel.privacyProPurchaseFailureStoreError(errorToBeHandled).name + "_c"])
     }
 
     func testReporterForMissingEntitlementsError() async throws {
@@ -165,8 +165,8 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_c"])
+        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(errorToBeHandled).name + "_d",
+                                     PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated(errorToBeHandled).name + "_c"])
     }
 
     func testReporterForActiveSubscriptionAlreadyPresentError() async throws {

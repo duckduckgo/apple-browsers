@@ -3599,10 +3599,11 @@ extension MainViewController: MessageNavigationDelegate { }
 extension MainViewController: MainViewEditingStateTransitioning {
 
     func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {
-        if newTabPageViewController == nil || newTabPageViewController?.isShowingLogo == false {
-            additionalSafeAreaInsets.top = contentYOffset
-        } else {
+        let isNTPLogoVisible = newTabPageViewController?.isShowingLogo == true
+        if isNTPLogoVisible {
             omniBar.barView.layer.sublayerTransform = CATransform3DMakeTranslation(0, barYOffset, 0)
+        } else {
+            additionalSafeAreaInsets.top = contentYOffset
         }
         omniBar.barView.hideButtons()
     }

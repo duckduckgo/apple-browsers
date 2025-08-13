@@ -19,7 +19,7 @@
 
 import UIKit
 
-class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
+final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
     private let isPresenting: Bool
     private let isTopBarPosition: Bool
 
@@ -37,10 +37,9 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
         let contentYOffset: CGFloat = switchBarTextViewMinY * switcherMultiplier
 
-        let barYOffset: CGFloat = isTopBarPosition ? (switchBarTextViewMinY * 1) : 0
+        let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewMinY : 0
 
-        let toolbarHeight: CGFloat = 49
-        let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -(DefaultOmniBarView.expectedHeight + toolbarHeight)
+        let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -(DefaultOmniBarView.expectedHeight + Constants.toolbarHeight)
         let logoYOffsetWithSwitcher = baseLogoOffset + switcherYOffset
 
         return TransitionOffsets(
@@ -106,8 +105,8 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
         toVC.view.layoutIfNeeded()
 
-        let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
-                                              dampingRatio: dampingRatio) {
+        let duration = transitionDuration(using: transitionContext)
+        let animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio) {
 
             toVC.view.alpha = 1.0
             toVC.view.layer.sublayerTransform = CATransform3DIdentity
@@ -142,8 +141,8 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY)
 
         // Dismissing animation
-        let animator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext),
-                                              dampingRatio: dampingRatio) {
+        let duration = transitionDuration(using: transitionContext)
+        let animator = UIViewPropertyAnimator(duration: duration, dampingRatio: dampingRatio) {
 
             fromVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
             fromVC.switchBarVC.textEntryViewController.isExpandable = false
@@ -159,7 +158,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
             transitionContext.completeTransition(position == .end)
         }
 
-        let actionBarAnimator = UIViewPropertyAnimator(duration: transitionDuration(using: transitionContext) / 3.0, curve: .easeIn) {
+        let actionBarAnimator = UIViewPropertyAnimator(duration: duration / 3.0, curve: .easeIn) {
             fromVC.actionBarView?.alpha = 0
         }
 
@@ -170,6 +169,7 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
     private struct Constants {
         static let expandDuration: TimeInterval = 0.6
         static let collapseDuration: TimeInterval = 0.5
+        static let toolbarHeight: CGFloat = 49
 
         struct BottomTransition {
             static let collapseDampingRatio: CGFloat = 0.75

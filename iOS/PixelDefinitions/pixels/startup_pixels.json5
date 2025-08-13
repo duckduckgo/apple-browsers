@@ -1,0 +1,16 @@
+{
+    'm_debug_app-did-show-ui-time-2-': {
+        description: 'Fires on app launch with the duration it took for the UI to become visible.',
+        owners: ['jaceklyp', 'bwaresiak'],
+        triggers: ['startup'],
+        suffixes: ['time_bucket', 'platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'time',
+                description: 'Duration time',
+                type: 'number',
+            },
+        ],
+    },
+}

@@ -47,6 +47,7 @@ struct Launching: LaunchingHandling {
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
+    private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
     private let configuration = AppConfiguration()
@@ -121,7 +122,7 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime,
+                                              didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,

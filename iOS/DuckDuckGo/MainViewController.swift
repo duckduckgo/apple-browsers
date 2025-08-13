@@ -351,6 +351,7 @@ class MainViewController: UIViewController {
                                                                     tabsModel: tabManager.model,
                                                                     featureFlagger: featureFlagger,
                                                                     appSettings: appSettings,
+                                                                    aiChatSettings: aiChatSettings,
                                                                     newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
@@ -526,7 +527,8 @@ class MainViewController: UIViewController {
                                          historyManager: self.historyManager,
                                          tabsModel: self.tabManager.model,
                                          featureFlagger: self.featureFlagger,
-                                         appSettings: self.appSettings)
+                                         appSettings: self.appSettings,
+                                         aiChatSettings: self.aiChatSettings)
         }) else {
             assertionFailure()
             return

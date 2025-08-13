@@ -22,7 +22,12 @@ import Networking
 import PixelKit
 import os.log
 
-final class FeedbackSender {
+protocol FeedbackSenderImplementing {
+    func sendFeedback(_ feedback: Feedback)
+    func sendDataImportReport(_ report: DataImportReportModel)
+}
+
+final class FeedbackSender: FeedbackSenderImplementing {
 
     static let feedbackURL = URL(string: "https://duckduckgo.com/feedback.js")!
 
@@ -32,13 +37,17 @@ final class FeedbackSender {
 #else
         let appVersion = feedback.appVersion
 #endif
-        let parameters = [
+        var parameters = [
             "type": "app-feedback",
             "comment": feedback.comment,
             "category": feedback.category.asanaId,
             "osversion": feedback.osVersion,
-            "appversion": appVersion
+            "appversion": appVersion,
         ]
+
+        if !feedback.subcategory.isBlank {
+            parameters["subcategory"] = feedback.subcategory
+        }
 
         let configuration = APIRequest.Configuration(url: Self.feedbackURL, method: .post, queryParameters: parameters)
         let request = APIRequest(configuration: configuration, urlSession: URLSession.session())

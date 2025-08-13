@@ -39,7 +39,8 @@ class NewTabPageTabExtensionTests: XCTestCase {
         webViewSubject = .init()
         extensionUnderTest = NewTabPageTabExtension(
             scriptsPublisher: scriptsSubject.eraseToAnyPublisher(),
-            webViewPublisher: webViewSubject.eraseToAnyPublisher()
+            webViewPublisher: webViewSubject.eraseToAnyPublisher(),
+            pixelSender: NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender
         )
     }
 

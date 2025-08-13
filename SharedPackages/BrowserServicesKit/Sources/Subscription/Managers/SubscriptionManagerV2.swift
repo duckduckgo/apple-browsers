@@ -85,8 +85,9 @@ public enum SubscriptionPixelType: Equatable {
 }
 
 /// Pixels handler
-public protocol SubscriptionPixelHandler {
-    func handle(pixelType: SubscriptionPixelType)
+public protocol SubscriptionPixelHandling {
+    func handle(pixel: SubscriptionPixelType)
+    func handle(pixel: KeychainManager.Pixel)
 }
 
 public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
@@ -185,7 +186,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     var oAuthClient: any OAuthClient
     private let _storePurchaseManager: StorePurchaseManagerV2?
     private let subscriptionEndpointService: SubscriptionEndpointServiceV2
-    private let pixelHandler: SubscriptionPixelHandler
+    private let pixelHandler: SubscriptionPixelHandling
     public var tokenRecoveryHandler: TokenRecoveryHandler?
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
@@ -199,7 +200,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 userDefaults: UserDefaults,
                 subscriptionEndpointService: SubscriptionEndpointServiceV2,
                 subscriptionEnvironment: SubscriptionEnvironment,
-                pixelHandler: SubscriptionPixelHandler,
+                pixelHandler: SubscriptionPixelHandling,
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 legacyAccountStorage: AccountKeychainStorage? = nil,
@@ -327,7 +328,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         }
 
         if subscription.isActive {
-            pixelHandler.handle(pixelType: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .subscriptionIsActive)
         }
 
         return subscription
@@ -469,7 +470,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             cachedUserEntitlements = []
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
-            pixelHandler.handle(pixelType: .getTokensError(policy, error))
+            pixelHandler.handle(pixel: .getTokensError(policy, error))
 
             switch error {
 
@@ -481,15 +482,15 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
             case OAuthClientError.invalidTokenRequest:
 
-                pixelHandler.handle(pixelType: .invalidRefreshToken)
+                pixelHandler.handle(pixel: .invalidRefreshToken)
                 Logger.subscription.error("Refresh failed, invalid token request")
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
-                    pixelHandler.handle(pixelType: .invalidRefreshTokenRecovered)
+                    pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     return recoveredTokenContainer
                 } catch {
                     await signOut(notifyUI: false)
-                    pixelHandler.handle(pixelType: .invalidRefreshTokenSignedOut)
+                    pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
 

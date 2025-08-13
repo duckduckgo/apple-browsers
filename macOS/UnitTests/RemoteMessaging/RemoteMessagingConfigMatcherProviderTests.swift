@@ -110,7 +110,7 @@ final class RemoteMessagingConfigMatcherProviderTests: XCTestCase {
             internalUserDecider: MockInternalUserDecider(),
             statisticsStore: MockStatisticsStore(),
             variantManager: MockVariantManager(),
-            subscriptionManager: DefaultSubscriptionManager(),
+            subscriptionManager: DefaultSubscriptionManager(pixelHandlingSource: SubscriptionPixelHandler.Source.mainApp),
             featureFlagger: featureFlagger,
             visualStyle: visualStyle
         )

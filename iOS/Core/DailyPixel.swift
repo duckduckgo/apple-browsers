@@ -44,6 +44,10 @@ public final class DailyPixel {
         public static let dailyPixelSuffixes = (dailySuffix: "_daily", countSuffix: "_count")
         public static let legacyDailyPixelSuffixes = (dailySuffix: "_d", countSuffix: "_c")
 
+        // Can be used when an existing pixel is already sent, and only a daily version needs to be added.
+        // Prevents adding a count suffix to the original pixel name for backward compatibility.
+        public static let dailyAndStandardSuffixes = (dailySuffix: "_daily", countSuffix: "")
+
     }
 
     public static let storage: UserDefaults = UserDefaults(suiteName: Constant.dailyPixelStorageIdentifier)!

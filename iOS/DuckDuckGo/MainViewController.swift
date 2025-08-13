@@ -3322,7 +3322,9 @@ extension MainViewController: AutoClearWorker {
                 self.newTabPageViewController?.showNextDaxDialog()
             } else if KeyboardSettings().onNewTab {
                 let showKeyboardAfterFireButton = DispatchWorkItem {
-                    self.enterSearch()
+                    if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+                        self.enterSearch()
+                    }
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton

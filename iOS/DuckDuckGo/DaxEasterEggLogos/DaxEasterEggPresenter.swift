@@ -27,9 +27,9 @@ protocol DaxEasterEggPresenting {
     /// Presents the logo in full-screen mode with a custom zoom transition.
     /// Automatically handles image preloading and caching for smooth animations.
     func presentFullScreen(from presentingViewController: UIViewController,
-                          logoURL: URL?,
-                          currentImage: UIImage?,
-                          sourceFrame: CGRect)
+                           logoURL: URL?,
+                           currentImage: UIImage?,
+                           sourceFrame: CGRect)
 }
 
 /// Presents Dax Easter Egg logos in full-screen mode with image caching and zoom transitions.

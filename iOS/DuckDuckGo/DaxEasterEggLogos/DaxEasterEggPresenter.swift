@@ -46,9 +46,9 @@ final class DaxEasterEggPresenter: DaxEasterEggPresenting {
     }
     
     func presentFullScreen(from presentingViewController: UIViewController,
-                          logoURL: URL?,
-                          currentImage: UIImage?,
-                          sourceFrame: CGRect) {
+                           logoURL: URL?,
+                           currentImage: UIImage?,
+                           sourceFrame: CGRect) {
         
         if let url = logoURL {
             imageManager.getBestImageForFullScreen(url: url, fallbackImage: currentImage) { [weak presentingViewController] _ in
@@ -72,10 +72,10 @@ final class DaxEasterEggPresenter: DaxEasterEggPresenting {
     }
     
     private func presentFullScreenViewController(from presentingViewController: UIViewController?,
-                                               logoURL: URL?,
-                                               placeholderImage: UIImage?,
-                                               sourceFrame: CGRect,
-                                               transitionImage: UIImage?) {
+                                                 logoURL: URL?,
+                                                 placeholderImage: UIImage?,
+                                                 sourceFrame: CGRect,
+                                                 transitionImage: UIImage?) {
         guard let presentingViewController = presentingViewController else { return }
         
         let fullScreenController = DaxEasterEggFullScreenViewController(

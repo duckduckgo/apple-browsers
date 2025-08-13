@@ -197,7 +197,6 @@ public struct UserDefaultsWrapper<T> {
         case automaticUpdates = "updates.automatic"
         case pendingUpdateShown = "pending.update.shown"
         case pendingUpdateSince = "pending.update.since"
-        case pendingUpdateInfo = "pending.update.info"
         case updateValidityStartDate = "update.validity.start.date"
 
         // Experiments

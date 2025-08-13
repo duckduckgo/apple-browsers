@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
@@ -154,7 +155,8 @@ extension ReleaseNotesValues {
         // This happens when there's no connectivity,
         // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
-            if let data = updateController.pendingUpdateInfo,
+            let keyValueStore = Application.appDelegate.keyValueStore
+            if let data = try? keyValueStore.object(forKey: UpdateController.Constants.pendingUpdateInfoKey) as? Data,
                let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data),
                AppVersion().buildNumber == cached.build,
                AppVersion().versionNumber == cached.version {
@@ -174,8 +176,6 @@ extension ReleaseNotesValues {
                 return
             }
 
-            // Show an empty box in place of the release notes
-            // This should be replaced with a proper design for errors
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,

@@ -21,6 +21,7 @@ import Common
 import Combine
 import Sparkle
 import BrowserServicesKit
+import Persistence
 import SwiftUIExtensions
 import PixelKit
 import SwiftUI
@@ -59,6 +60,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     enum Constants {
         static let internalChannelName = "internal-channel"
+        static let pendingUpdateInfoKey = "pendingUpdateInfo"
     }
 
     lazy var notificationPresenter = UpdateNotificationPresenter()
@@ -121,8 +123,16 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
 
-    @UserDefaultsWrapper(key: .pendingUpdateInfo, defaultValue: nil)
-    var pendingUpdateInfo: Data?
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    private var pendingUpdateInfo: Data? {
+        get {
+            try? keyValueStore.object(forKey: Constants.pendingUpdateInfoKey) as? Data
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Constants.pendingUpdateInfoKey)
+        }
+    }
 
     var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     var lastUpdateNotificationShownDate: Date = .distantPast
@@ -199,12 +209,14 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         updateCheckState: UpdateCheckState = UpdateCheckState()) {
+         updateCheckState: UpdateCheckState = UpdateCheckState(),
+         keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.updateCheckState = updateCheckState
+        self.keyValueStore = keyValueStore
         super.init()
 
         _ = try? configureUpdater()
@@ -384,12 +396,12 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     //     Set to `true` if the pending update might be obsolete.
     //     Defaults to `false`
     private func configureUpdater(needsUpdateCheck: Bool = false) throws -> SPUUpdater? {
-        resetCachedReleaseNotes()
+        // Workaround to reset the updater state
+        cachedUpdateResult = nil
+        latestUpdate = nil
 
         userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                      areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled) { [weak self] in
-            self?.resetCachedReleaseNotes()
-        }
+                                      areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
         guard let userDriver else { return nil }
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
@@ -417,11 +429,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         self.updater = updater
 
         return updater
-    }
-
-    private func resetCachedReleaseNotes() {
-        cachedUpdateResult = nil
-        latestUpdate = nil
     }
 
     private func showUpdateNotificationIfNeeded() {

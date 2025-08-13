@@ -31,7 +31,7 @@ enum UserText {
     enum InactiveUserModal {
         static let title = NSLocalizedString("setDefaultBrowser.modal.inactive-user.title", bundle: Bundle.module, value: "DuckDuckGo has protections other browsers don’t.", comment: "Title of the a page inviting the inactive user to use the DuckDuckGo browser as default browser")
         static let moreProtections = NSLocalizedString("setDefaultBrowser.modal.inactive-user.cta.more-protections.title", bundle: .module, value: "Plus even more protections...", comment: "Title of the button explaining of other browser protections that link to a web page.")
-        static let setDefaultBrowserCTA = NSLocalizedString("setDefaultBrowser.modal.inactive-user.cta.primary.title", bundle: Bundle.module, value: "Open Links with DuckDuckGo", comment: "The tile of the button the user can use to set the browser as default.")
+        static let setDefaultBrowserCTA = NSLocalizedString("setDefaultBrowser.modal.inactive-user.cta.primary.title", bundle: Bundle.module, value: "Open Links With DuckDuckGo", comment: "The tile of the button the user can use to set the browser as default.")
         static let continueBrowsingCTA = NSLocalizedString("setDefaultBrowser.modal.inactive-user.cta.secondary.title", bundle: Bundle.module, value: "Continue Browsing", comment: "The title of the button to dismiss the prompt.")
     }
 

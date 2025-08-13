@@ -164,7 +164,7 @@ extension ReleaseNotesValues {
 
                 self.init(status: .loaded,
                           currentVersion: currentVersion,
-                          latestVersion: currentVersion,
+                          latestVersion: "\(cached.version) \(cached.build)",
                           lastUpdate: lastUpdate,
                           releaseTitle: releaseTitle,
                           releaseNotes: cached.releaseNotes,

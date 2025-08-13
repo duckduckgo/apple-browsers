@@ -265,11 +265,12 @@ body {
   --focus-ring-primary: 0px 0px 0px 1px var(--color-white), 0px 0px 0px 3px var(--ntp-color-primary);
   --ntp-selection-color: var(--color-white);
   --ntp-selection-background-color: #3A69EF;
-  --ntp-surface-tertiary: rgba(255, 255, 255, 0.88);
+  --ntp-surface-tertiary: #FFFFFF;
   --ntp-text-primary: rgba(0, 0, 0, 0.96);
   --ntp-text-tertiary: rgba(0, 0, 0, 0.42);
   --ntp-icons-primary: rgba(0, 0, 0, 0.84);
   --ntp-icons-tertiary: rgba(0, 0, 0, 0.36);
+  --ntp-tone-tint: rgba(255, 255, 255, 0.48);
   --ntp-accent-primary: var(--color-blue-50);
   --ntp-accent-secondary: var(--color-blue-60);
   --ntp-accent-tertiary: var(--color-blue-70);
@@ -277,8 +278,8 @@ body {
   --ntp-accent-content-primary: #FFFFFF;
   --ntp-controls-fill-primary: rgba(31, 31, 31, 0.09);
   --ntp-controls-fill-secondary: rgba(31, 31, 31, 0.12);
-  --ntp-controls-raised-backdrop: rgba(0, 0, 0, 0.09);
   --ntp-controls-raised-fill-primary: #FFFFFF;
+  --ntp-controls-raised-backdrop: rgba(0, 0, 0, 0.09);
   --ntp-decoration-tertiary: rgba(0, 0, 0, 0.09);
   --ntp-shadow-primary: rgba(0, 0, 0, 0.05);
   --ntp-shadow-secondary: rgba(0, 0, 0, 0.08);
@@ -297,11 +298,12 @@ body {
   --focus-ring-primary: 0px 0px 0px 1px var(--default-dark-background-color), 0px 0px 0px 3px var(--ntp-color-primary);
   --ntp-selection-color: var(--color-white);
   --ntp-selection-background-color: var(--color-blue-30);
-  --ntp-surface-tertiary: rgba(0, 0, 0, 0.72);
+  --ntp-surface-tertiary: #474747;
   --ntp-text-primary: rgba(255, 255, 255, 0.96);
   --ntp-text-tertiary: rgba(255, 255, 255, 0.36);
   --ntp-icons-primary: rgba(255, 255, 255, 0.78);
   --ntp-icons-tertiary: rgba(255, 255, 255, 0.24);
+  --ntp-tone-tint: rgba(249, 249, 249, 0.12);
   --ntp-accent-primary: var(--color-blue-20);
   --ntp-accent-secondary: var(--color-blue-30);
   --ntp-accent-tertiary: var(--color-blue-40);
@@ -309,8 +311,8 @@ body {
   --ntp-accent-content-primary: var(--color-blue-80);
   --ntp-controls-fill-primary: rgba(249, 249, 249, 0.12);
   --ntp-controls-fill-secondary: rgba(249, 249, 249, 0.18);
-  --ntp-controls-raised-backdrop: rgba(0, 0, 0, 0.6);
   --ntp-controls-raised-fill-primary: rgba(255, 255, 255, 0.18);
+  --ntp-controls-raised-backdrop: rgba(255, 255, 255, 0.12);
   --ntp-decoration-tertiary: rgba(255, 255, 255, 0.12);
   --ntp-shadow-primary: rgba(0, 0, 0, 0.16);
   --ntp-shadow-secondary: rgba(0, 0, 0, 0.24);
@@ -1584,13 +1586,19 @@ body:not([data-platform-name]) .Button_button:active {
   gap: 10px;
   padding-bottom: var(--sp-15);
 }
+[data-theme=light] .Omnibar_root {
+  --omnibar-translucent-background-color: rgba(255, 255, 255, 0.54);
+}
+[data-theme=dark] .Omnibar_root {
+  --omnibar-translucent-background-color: rgba(0, 0, 0, 0.3);
+}
 .Omnibar_logo {
   margin-bottom: var(--sp-4);
   width: 164px;
 }
 .Omnibar_spacer {
   align-self: stretch;
-  transition: height 200ms ease;
+  height: calc(var(--sp-16) + 3px * 2);
   z-index: 1;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1598,17 +1606,38 @@ body:not([data-platform-name]) .Button_button:active {
     transition: none;
   }
 }
-[data-mode=search] .Omnibar_spacer {
-  height: calc(var(--sp-10) + 3px * 2);
-}
-[data-mode=ai] .Omnibar_spacer {
-  height: calc(var(--sp-20) + 3px * 2);
-}
 .Omnibar_popup {
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
   background: var(--ntp-surface-tertiary);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 8px 0 rgba(0, 0, 0, 0.08);
   display: flow-root;
+  margin: 3px;
+  outline: 1px solid var(--ntp-controls-raised-backdrop);
+}
+body:not([data-background-kind=default]) .Omnibar_popup {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
+  background: var(--omnibar-translucent-background-color);
+}
+.Omnibar_root:focus-within .Omnibar_popup {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
+}
+.Omnibar_root:focus-within:has(input:placeholder-shown, textarea:placeholder-shown) .Omnibar_popup {
+  border-radius: 15px;
+  border: 2px solid var(--ntp-accent-primary);
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
+  margin: 0;
+  outline: 2px solid var(--ntp-accent-glow);
+}
+.Omnibar_root:focus-within:has(input:placeholder-shown, textarea:placeholder-shown) .Omnibar_popup .Omnibar_field {
+  margin: 1px;
+}
+.Omnibar_root:has([role=listbox]) .Omnibar_popup {
+  border-radius: 15px;
+  margin: 0;
+}
+.Omnibar_root:has([role=listbox]) .Omnibar_popup .Omnibar_field {
+  margin: 3px;
 }
 .Omnibar_field {
   box-sizing: content-box;
@@ -1621,30 +1650,6 @@ body:not([data-platform-name]) .Button_button:active {
     transition: none;
   }
 }
-.Omnibar_root:not(:has([role=listbox])) .Omnibar_popup {
-  border-radius: 12px;
-  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 8px 0 rgba(0, 0, 0, 0.08);
-  margin: 3px;
-}
-.Omnibar_root:not(:has([role=listbox])):focus-within:not([data-focus-ring=false]) .Omnibar_popup,
-.Omnibar_root:not(:has([role=listbox]))[data-focus-ring=true] .Omnibar_popup {
-  border-radius: 15px;
-  border: 2px solid var(--ntp-accent-primary);
-  box-shadow: none;
-  margin: 0;
-  outline: 2px solid var(--ntp-accent-glow);
-}
-:is(.Omnibar_root:not(:has([role=listbox])):focus-within:not([data-focus-ring=false]) .Omnibar_popup, .Omnibar_root:not(:has([role=listbox]))[data-focus-ring=true] .Omnibar_popup) .Omnibar_field {
-  margin: 1px;
-}
-.Omnibar_root:has([role=listbox]) .Omnibar_popup {
-  border-radius: 15px;
-  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
-  margin: 0;
-}
-.Omnibar_root:has([role=listbox]) .Omnibar_popup .Omnibar_field {
-  margin: 3px;
-}
 
 /* pages/new-tab/app/omnibar/components/SearchForm.module.css */
 .SearchForm_form {
@@ -1652,6 +1657,7 @@ body:not([data-platform-name]) .Button_button:active {
   display: flex;
   height: var(--sp-10);
   padding: var(--sp-3);
+  padding-right: var(--sp-1);
 }
 .SearchForm_input {
   background: none;
@@ -1660,7 +1666,7 @@ body:not([data-platform-name]) .Button_button:active {
   font: var(--input-font);
   left: 0;
   padding: var(--sp-3);
-  padding-right: calc(var(--suffix-text-width) + var(--sp-1) + var(--sp-8) + var(--sp-3));
+  padding-right: calc(var(--suffix-text-width) + var(--sp-1) + var(--sp-8) + var(--sp-1));
   position: absolute;
   right: 0;
 }
@@ -1793,17 +1799,18 @@ body:not([data-platform-name]) .Button_button:active {
 
 /* pages/new-tab/app/omnibar/components/TabSwitcher.module.css */
 .TabSwitcher_tabSwitcher {
-  -webkit-backdrop-filter: blur(48px);
-  backdrop-filter: blur(48px);
   background: var(--ntp-controls-raised-backdrop);
   border-radius: 99px;
-  box-shadow: 0px 1px 0px 0px var(--ntp-shadow-primary) inset;
   display: grid;
   gap: var(--sp-0_5);
   grid-template-columns: repeat(var(--tab-count), 1fr);
   overflow: hidden;
   padding: var(--sp-0_5);
   position: relative;
+}
+body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
 }
 .TabSwitcher_tab {
   align-items: center;
@@ -1837,9 +1844,9 @@ body:not([data-platform-name]) .Button_button:active {
   background-color: var(--ntp-controls-raised-fill-primary);
   border-radius: 18px;
   box-shadow:
-    0 4px 4px var(--ntp-shadow-secondary),
-    0 1px 2px var(--ntp-shadow-secondary),
-    inset 0 1px 0 rgba(255, 255, 255, 0.48);
+    0 1px 0 0 var(--ntp-tone-tint) inset,
+    0 1px 4px 0 var(--ntp-shadow-secondary),
+    0 4px 8px 0 var(--ntp-shadow-secondary);
   height: var(--sp-8);
   left: 0;
   position: absolute;

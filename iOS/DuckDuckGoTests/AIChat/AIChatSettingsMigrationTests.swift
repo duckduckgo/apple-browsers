@@ -52,8 +52,10 @@ final class AIChatSettingsMigrationTests: XCTestCase {
         }
 
         let keyValueStore = MockKeyValueStore()
-        AIChatSettingsMigration.migrate(from: userDefaults, to: keyValueStore)
-        
+        AIChatSettingsMigration.migrate(from: userDefaults, to: {
+            keyValueStore
+        })
+
         keys.forEach {
             XCTAssertNil(userDefaults.object(forKey: $0))
             XCTAssertEqual(keyValueStore.object(forKey: $0) as? Bool, true)
@@ -70,7 +72,9 @@ final class AIChatSettingsMigrationTests: XCTestCase {
             userDefaults.set(true, forKey: key)
 
             let keyValueStore = MockKeyValueStore()
-            AIChatSettingsMigration.migrate(from: userDefaults, to: keyValueStore)
+            AIChatSettingsMigration.migrate(from: userDefaults, to: {
+                keyValueStore
+            })
 
             for checkKey in Self.allKeys {
                 if checkKey == key {

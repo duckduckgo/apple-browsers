@@ -235,7 +235,7 @@ jobs:
         run: |
           while xcodebuild -resolvePackageDependencies \
             -scheme BrowserServicesKit-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -derivedDataPath DerivedData \
             2>&1 | grep Error; do :; done
 
@@ -249,7 +249,7 @@ jobs:
         run: |
           set -o pipefail && xcodebuild test \
             -scheme BrowserServicesKit \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -derivedDataPath DerivedData \
             -skipPackagePluginValidation \
             -skipMacroValidation \

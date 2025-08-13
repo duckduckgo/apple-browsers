@@ -25,6 +25,7 @@ import Persistence
 import History
 import BrowserServicesKit
 import UIComponents
+import AIChat
 
 class SuggestionTrayViewController: UIViewController {
     
@@ -71,6 +72,7 @@ class SuggestionTrayViewController: UIViewController {
     private let tabsModel: TabsModel
     private let featureFlagger: FeatureFlagger
     private let appSettings: AppSettings
+    private let aiChatSettings: AIChatSettingsProvider
 
     var coversFullScreen: Bool = false
 
@@ -123,6 +125,7 @@ class SuggestionTrayViewController: UIViewController {
                    tabsModel: TabsModel,
                    featureFlagger: FeatureFlagger,
                    appSettings: AppSettings,
+                   aiChatSettings: AIChatSettingsProvider,
                    newTabPageDependencies: NewTabPageDependencies? = nil) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
@@ -130,6 +133,7 @@ class SuggestionTrayViewController: UIViewController {
         self.tabsModel = tabsModel
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
+        self.aiChatSettings = aiChatSettings
         self.newTabPageDependencies = newTabPageDependencies
         super.init(coder: coder)
     }
@@ -331,7 +335,8 @@ class SuggestionTrayViewController: UIViewController {
                                                     bookmarksDatabase: bookmarksDatabase,
                                                     appSettings: appSettings,
                                                     tabsModel: tabsModel,
-                                                    featureFlagger: featureFlagger)
+                                                    featureFlagger: featureFlagger,
+                                                    aiChatSettings: aiChatSettings)
         install(controller: controller, animated: animated)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self

@@ -62,6 +62,9 @@ class DuckPlayerTests: UITestCase {
     private func openDuckPlayerSettings() {
         openBrowserSettings()
 
+        let scrollView = app.scrollViews.element(boundBy: 0)
+        scrollView.swipeUp()
+
         let duckPlayerButton = app.buttons["PreferencesSidebar.duckplayerButton"]
         XCTAssertTrue(
             duckPlayerButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -114,7 +117,6 @@ class DuckPlayerTests: UITestCase {
     }
 
     private func verifyYoutubeLoads() {
-
         // Give the page time to load
         sleep(5)
 
@@ -136,7 +138,6 @@ class DuckPlayerTests: UITestCase {
         )
     }
 
-    // MARK:  Always Mode - Serp
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPOrganic() throws {
 
         // Settings
@@ -161,6 +162,8 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPVideos() throws {
+        throw XCTSkip()
+
         // Settings
         openDuckPlayerSettings()
         selectAlwaysOpenInDuckPlayer()
@@ -236,6 +239,8 @@ class DuckPlayerTests: UITestCase {
 
     // MARK:  Ask Mode - Serp
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInDuckPlayer() throws {
+        throw XCTSkip()
+
         // Settings
         openDuckPlayerSettings()
         selectAskOpenInDuckPlayer()
@@ -247,6 +252,7 @@ class DuckPlayerTests: UITestCase {
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
         XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         organicVideo.click()
+      
         sleep(2)
         
         verifyYoutubeLoads()

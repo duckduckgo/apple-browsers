@@ -22,6 +22,6 @@ import Foundation
 public struct ContentBlockerStoreConstants {
 
     public static let groupName = "\(Global.groupIdPrefix).contentblocker"
-    public static let configurationGroupName = "\(Global.groupIdPrefix).app-configuration"
+    public static let configurationGroupName = Global.appConfigurationGroupName
 
 }

@@ -158,7 +158,7 @@ public struct ImageSegmentedPickerView: View {
                     .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
                     .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
-                    .animation(.easeInOut(duration: 0.2), value: currentOffset)
+                    .animation(viewModel.scrollProgress == nil ? .easeInOut(duration: 0.2) : nil, value: currentOffset)
 
                 HStack(spacing: 0) {
                     ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
@@ -178,11 +178,6 @@ public struct ImageSegmentedPickerView: View {
                 var transaction = Transaction()
                 transaction.disablesAnimations = true
                 withTransaction(transaction) {
-                    currentOffset = calculateCurrentOffset(geometry: geo)
-                }
-            }
-            .onChange(of: viewModel.selectedItem.id) { _ in
-                if viewModel.scrollProgress == nil {
                     currentOffset = calculateCurrentOffset(geometry: geo)
                 }
             }

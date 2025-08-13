@@ -16,12 +16,15 @@
         "Bash(gh pr diff:*)",
         "Bash(git check-ignore:*)",
         "Bash(git sparse-checkout:*)",
-         "Bash(git update-index:*)",
+        "Bash(git update-index:*)",
         "Bash(true)",
         "Bash(touch:*)",
         "Bash(git fetch:*)",
         "Bash(domain:github.com)",
         "WebFetch(domain:raw.githubusercontent.com)"
+        "set -e -o pipefail && xcodebuild **",
+        "xcodebuild **",
+        "xcrun simctl*"
       ],
       "deny": []
     },

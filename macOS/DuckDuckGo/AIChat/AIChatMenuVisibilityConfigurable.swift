@@ -111,15 +111,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var shouldOpenAIChatInSidebar: Bool {
-        // Can be removed after `.aiChatGlobalSwitch` is fully rolled out.
-        // Additionally all current `shouldOpenAIChatInSidebar` calls should be reviewed cleaning up obsolete code paths.
-        guard featureFlagger.isFeatureOn(.aiChatGlobalSwitch) else {
-            return shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
-        }
-
-        // When using global AI Chat switch is enabled there is no separate setting for the sidebar and sidebar use is made a new defult
-        // so we ignore previous setting value.
-        return true
+        shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
     }
 
     init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {

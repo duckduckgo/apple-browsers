@@ -24,7 +24,7 @@ extension UserDefaults {
         "networkProtectionSettingIncludeIPv6Routes"
     }
 
-    static let includeIPv6RoutesDefaultValue = true
+    static let includeIPv6RoutesDefaultValue = false
 
     @objc
     dynamic var networkProtectionSettingIncludeIPv6Routes: Bool {

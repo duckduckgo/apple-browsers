@@ -425,7 +425,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case bitwardenSendingOfMessageFailed
     case bitwardenSharedKeyInjectionFailed
 
-    case updaterAborted
+    case updaterAborted(reason: String)
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
@@ -1412,6 +1412,8 @@ enum GeneralPixel: PixelKitEventV2 {
                 .autocompleteClickOpenTab(from: let source):
             return ["source": source.rawValue]
 
+        case .updaterAborted(let reason):
+            return ["reason": reason]
         default: return nil
         }
     }

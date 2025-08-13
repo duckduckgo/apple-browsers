@@ -258,13 +258,11 @@ extension DefaultOmniBarViewController: UIViewControllerTransitioningDelegate {
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         return OmniBarEditingStateTransition(isPresenting: true,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition,
-                                             isShowingLogo: omniDelegate?.isDaxLogoVisible == true)
+                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         return OmniBarEditingStateTransition(isPresenting: false,
-                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition,
-                                             isShowingLogo: omniDelegate?.isDaxLogoVisible == true)
+                                             addressBarPosition: dependencies.appSettings.currentAddressBarPosition)
     }
 }

@@ -22,7 +22,6 @@ import UIKit
 class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitioning {
     private let isPresenting: Bool
     private let isTopBarPosition: Bool
-    private let isShowingLogo: Bool
 
     private struct TransitionOffsets {
         let switcherYOffset: CGFloat
@@ -36,14 +35,9 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
 
         let switcherYOffset = switchBarTextViewMinY * switcherMultiplier
 
-        let contentYOffset: CGFloat
-        if isShowingLogo {
-            contentYOffset = 0
-        } else {
-            contentYOffset = switchBarTextViewMinY * switcherMultiplier
-        }
+        let contentYOffset: CGFloat = switchBarTextViewMinY * switcherMultiplier
 
-        let barYOffset: CGFloat = (isShowingLogo && isTopBarPosition) ? (switchBarTextViewMinY * 1) : 0
+        let barYOffset: CGFloat = isTopBarPosition ? (switchBarTextViewMinY * 1) : 0
 
         let toolbarHeight: CGFloat = 49
         let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -(DefaultOmniBarView.expectedHeight + toolbarHeight)
@@ -57,10 +51,9 @@ class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTransitio
         )
     }
 
-    init(isPresenting: Bool, addressBarPosition: AddressBarPosition, isShowingLogo: Bool) {
+    init(isPresenting: Bool, addressBarPosition: AddressBarPosition) {
         self.isPresenting = isPresenting
         self.isTopBarPosition = addressBarPosition == .top
-        self.isShowingLogo = isShowingLogo
         super.init()
     }
 

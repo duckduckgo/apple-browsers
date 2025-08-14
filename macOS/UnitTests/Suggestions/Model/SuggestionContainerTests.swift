@@ -567,7 +567,7 @@ private extension URLSession {
 private extension Suggestion {
 
     func expectedSuggestion(query: String) -> SuggestionContainerTests.TestExpectations.ExpectedSuggestion? {
-        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, visualStyle: VisualStyle.legacy)
+        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, visualStyle: VisualStyle.current)
         switch self {
         case .phrase(phrase: let phrase):
             return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: URL.makeSearchUrl(from: phrase)?.absoluteString, tabId: nil, score: 0)

@@ -176,7 +176,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
-    private let visualStyleDecider: VisualStyleDecider
 
     let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -593,8 +592,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
-        visualStyle = visualStyleDecider.style
+        visualStyle = VisualStyle.current
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

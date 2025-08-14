@@ -34,23 +34,25 @@ struct DefaultBrowserPromptInactiveUserView: View {
     let onMoreProtectionsTapped: () -> Void
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Image(.daxmag)
+        GeometryReader { proxy in
+            ZStack(alignment: .top) {
+                Image(.daxmag)
 
-            content
+                content(proxy: proxy)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .background(background.ignoresSafeArea())
+            .overlay(alignment: .topTrailing) {
+                DismissButton(action: closeAction)
+                    .padding(.top, Metrics.DismissButton.closeButtonTopPadding)
+                    .padding(.trailing, Metrics.DismissButton.horizontalPadding)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .background(background.ignoresSafeArea())
-        .overlay(alignment: .topTrailing) {
-            DismissButton(action: closeAction)
-                .padding(.top, Metrics.DismissButton.closeButtonTopPadding)
-                .padding(.trailing, Metrics.DismissButton.horizontalPadding)
-        }
-
     }
 
     @ViewBuilder
-    private var content: some View {
+    private func content(proxy: GeometryProxy) -> some View {
         let innerSectionsVerticalSpacing: CGFloat = Metrics.Content.innerSectionsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)
 
         VStack(alignment: .leading, spacing: Metrics.Content.sectionsSpacing) {
@@ -79,8 +81,10 @@ struct DefaultBrowserPromptInactiveUserView: View {
         .frame(maxWidth: Metrics.Content.maxWidth, alignment: .bottom)
         .cornerRadius(Metrics.Content.cornerRadius)
         .padding(.horizontal, Metrics.Content.outerHorizontalPadding)
-        .padding(.bottom, Metrics.Content.bottomPadding)
         .padding(.top, Metrics.Content.topPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
+        .if(proxy.safeAreaInsets.bottom == 0) { view in // Adds bottom padding only to devices with physical home button
+            view.padding(.bottom, Metrics.Content.bottomPadding)
+        }
     }
 }
 
@@ -143,8 +147,8 @@ private enum Metrics {
     enum Content {
         static let maxWidth = MetricBuilder<CGFloat?>(iPhone: nil, iPad: 542).build()
         static let topPadding = MetricBuilder(iPhone: 158.0, iPad: 198.0).iPad(landscape: 158.0)
-        static let outerHorizontalPadding: CGFloat = 16
         static let bottomPadding: CGFloat = 12
+        static let outerHorizontalPadding: CGFloat = 16
         static let innerPadding: CGFloat = 24
         static let cornerRadius: CGFloat = 24
         static let sectionsSpacing: CGFloat = 0

@@ -177,12 +177,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
-            switch flag {
-            case .visualUpdates:
-                /// For visual updates we need to make sure the user is seeing the new style in order to show the remote message.
-                return visualStyle.isNewStyle
-            default: return flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
-            }
+            flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
 
         return RemoteMessagingConfigMatcher(

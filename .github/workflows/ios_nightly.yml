@@ -1,4 +1,4 @@
-name: iOS - Nightly Test and Deploy
+name: iOS - Nightly Tests
 
 defaults:
   run:

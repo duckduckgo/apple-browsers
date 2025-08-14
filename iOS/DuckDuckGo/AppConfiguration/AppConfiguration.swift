@@ -53,8 +53,23 @@ struct AppConfiguration {
 
         setConfigurationURLProvider()
 
+        migrateAIChatSettings()
+
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
+    }
+
+    /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
+    ///  and the widgets needs to be reloaded after.
+    /// Moves settings from `UserDefaults.standard` to the shared container.
+    private func migrateAIChatSettings() {
+        AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: {
+            let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName)
+            if sharedUserDefaults == nil {
+                Pixel.fire(pixel: .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration)
+            }
+            return sharedUserDefaults ?? UserDefaults()
+        })
     }
 
     private func clearTemporaryDirectory() {

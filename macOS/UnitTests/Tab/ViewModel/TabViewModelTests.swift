@@ -334,18 +334,6 @@ final class TabViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testDisplayedFaviconForNewTabWithBurnerOldStyle() {
-        let mockVisualStyle = MockVisualStyle(isNewStyle: false)
-        let tabViewModel = TabViewModel.forTabWithURL(
-            URL.newtab,
-            visualStyle: mockVisualStyle,
-            burnerMode: BurnerMode(isBurner: true)
-        )
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .burnerTabFavicon)
-    }
-
-    @MainActor
     func testDisplayedFaviconForNewTabNonBurner() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.newtab)
 

@@ -58,7 +58,7 @@ struct DefaultBrowserPromptInactiveUserView: View {
                 Text(UserText.InactiveUserModal.title)
                     .titleStyle(alignment: .leading)
 
-                ScrollView {
+                ScrollView(showsIndicators: false) {
                     browserComparisonChart
                         .frame(height: Metrics.Chart.maxHeight)
                 }

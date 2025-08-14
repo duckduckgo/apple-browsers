@@ -833,14 +833,14 @@ extension SettingsViewModel {
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
-        let url = URL.searchSettings.appendingParameter(name: "return", value: "privateSearch")
-        urlOpener.open(url)
+//        let url = URL.searchSettings.appendingParameter(name: "return", value: "privateSearch")
+        urlOpener.open(URL(string: "ddgQuickLink://bhall.duck.co/settings?return=privateSearch#general")!)
     }
 
     func openAssistSettings() {
         Pixel.fire(pixel: .settingsOpenAssistSettings)
         let url = URL.assistSettings.appendingParameter(name: "return", value: "duckai")
-        urlOpener.open(URL.assistSettings)
+        urlOpener.open(url)
     }
 
     func openAIChat() {

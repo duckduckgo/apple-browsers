@@ -3739,14 +3739,19 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
+
     func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = view.window?.rootViewController as? MainViewController else { return } // todo: ugly
+        guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsPrivateSearch()
+        mainVC.closeTab(tabModel, andOpenEmptyOneAtSamePosition: true)
+//        showBars()
     }
     
     func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = view.window?.rootViewController as? MainViewController else { return } // todo: ugly
+        guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat()
+        mainVC.closeTab(tabModel, andOpenEmptyOneAtSamePosition: true)
+        showBars()
     }
 
 }

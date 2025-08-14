@@ -259,17 +259,13 @@ extension MainViewController {
     func segueToSettingsAIChat() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .aiChat)
-        }
+        launchSettings(deepLinkTarget: .aiChat)
     }
 
     func segueToSettingsPrivateSearch() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .privateSearch)
-        }
+        launchSettings(deepLinkTarget: .privateSearch)
     }
 
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {

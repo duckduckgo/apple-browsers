@@ -2,7 +2,7 @@ name: 'Select iOS Simulator Version'
 description: 'Selects the first available iOS simulator version from a list of preferred versions'
 inputs:
   preferred-versions:
-    description: 'Comma-separated list of preferred iOS versions (e.g., "18.6,18.2,18.4")'
+    description: 'Comma-separated list of preferred iOS versions (e.g., "18.6,18.2")'
     required: true
   device-name:
     description: 'iOS simulator device name'
@@ -34,14 +34,11 @@ runs:
         echo "Available iOS runtimes:"
         echo "$available_runtimes"
         
-        # Try each preferred version in order
         for version in "${PREFERRED_VERSIONS[@]}"; do
           version=$(echo "$version" | xargs)
           echo "Checking for iOS $version..."
           
-          # Check if this version is available
           if echo "$available_runtimes" | grep -q "iOS $version"; then
-            # Extract the exact version string
             exact_version=$(echo "$available_runtimes" | grep "iOS $version" | head -1 | sed -n 's/.*(\([0-9.]*\) - .*/\1/p')
             
             if [[ -n "$exact_version" ]]; then
@@ -54,8 +51,7 @@ runs:
           fi
         done
         
-        # Final fallback - use device without specific OS
-        echo "⚠️ No preferred versions found, using default OS for device"
+        echo "⚠️ No preferred iOS version found, using default OS for device"
         destination="platform=iOS Simulator,name=$DEVICE_NAME"
         echo "destination=$destination" >> $GITHUB_OUTPUT
         echo "ios-version=default" >> $GITHUB_OUTPUT

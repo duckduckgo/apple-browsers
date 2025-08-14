@@ -815,7 +815,9 @@ class MainViewController: UIViewController {
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                if let ntp = self.newTabPageViewController, ntp.isShowingLogo {
+
+                // In case `isAIChatSearchInputUserSettings` is enabled prevent adjusting the bottom containers along with the keyboard to prevent logo on NTP from transitioning too far
+                if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled, let ntp = self.newTabPageViewController, ntp.isShowingLogo {
                     self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
                 } else {
                     self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
@@ -2306,6 +2308,7 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+
     func isSuggestionTrayVisible() -> Bool {
         suggestionTrayController?.isShowing == true
     }
@@ -3592,12 +3595,22 @@ private extension UIBarButtonItem {
 extension MainViewController: MessageNavigationDelegate { }
 
 extension MainViewController: MainViewEditingStateTransitioning {
-    func hide(with yOffset: CGFloat) {
-        additionalSafeAreaInsets.top = yOffset
+
+    private var isDaxLogoVisible: Bool {
+        newTabPageViewController?.isShowingLogo == true
+    }
+
+    func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {
+        if isDaxLogoVisible {
+            omniBar.barView.layer.sublayerTransform = CATransform3DMakeTranslation(0, barYOffset, 0)
+        } else {
+            additionalSafeAreaInsets.top = contentYOffset
+        }
         omniBar.barView.hideButtons()
     }
 
     func show() {
+        omniBar.barView.layer.sublayerTransform = CATransform3DIdentity
         additionalSafeAreaInsets.top = 0
         omniBar.barView.revealButtons()
     }

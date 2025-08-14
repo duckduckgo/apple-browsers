@@ -162,7 +162,6 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPVideos() throws {
-        throw XCTSkip()
 
         // Settings
         openDuckPlayerSettings()
@@ -239,7 +238,6 @@ class DuckPlayerTests: UITestCase {
 
     // MARK:  Ask Mode - Serp
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInDuckPlayer() throws {
-        throw XCTSkip()
 
         // Settings
         openDuckPlayerSettings()
@@ -252,11 +250,11 @@ class DuckPlayerTests: UITestCase {
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
         XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         organicVideo.click()
-      
+
         sleep(2)
-        
+
         verifyYoutubeLoads()
-        
+
     }
 
     func test_DuckPlayer_AskMode_Opens_FromDirectNavigation() throws {
@@ -269,7 +267,6 @@ class DuckPlayerTests: UITestCase {
 
         verifyDuckPlayerLoads()
     }
-
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromDirectYouTubeNavigation() throws {
         // Settings

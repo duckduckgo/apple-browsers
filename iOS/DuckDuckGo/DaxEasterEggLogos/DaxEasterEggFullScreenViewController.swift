@@ -20,11 +20,10 @@
 import UIKit
 import Kingfisher
 
-/// Full-screen viewer for Dax Easter Egg logos with zoom and custom transition support.
-/// Provides smooth zoom animations and pinch-to-zoom functionality.
+/// Full-screen viewer for Dax Easter Egg logos with custom transition support.
+/// Displays logos in a centered, appropriately sized view with safe area padding.
 class DaxEasterEggFullScreenViewController: UIViewController {
     
-    private let scrollView = UIScrollView()
     private let imageView = UIImageView()
     
     private let imageURL: URL?
@@ -63,36 +62,22 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .clear
         
-        // Configure scroll view for zoom (1x-3x)
-        scrollView.delegate = self
-        scrollView.minimumZoomScale = 1.0
-        scrollView.maximumZoomScale = 3.0
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.showsHorizontalScrollIndicator = false
-        
         // Configure image view
         imageView.contentMode = .scaleAspectFit
         
         // Setup view hierarchy and constraints
-        view.addSubview(scrollView)
-        scrollView.addSubview(imageView)
+        view.addSubview(imageView)
+        imageView.translatesAutoresizingMaskIntoConstraints = false
         
-        [scrollView, imageView].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
+        // Add padding around the safe area
+        let padding: CGFloat = 60.0
         
         NSLayoutConstraint.activate([
-            // ScrollView fills entire view
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
-            // ImageView fills scrollView
-            imageView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            imageView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            imageView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
+            // ImageView respects safe area with additional padding
+            imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: padding),
+            imageView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: padding),
+            imageView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -padding),
+            imageView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -padding)
         ])
     }
     
@@ -121,48 +106,12 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         imageView.image
     }
     
-    /// Returns current image frame adjusted for zoom and scroll offset
+    /// Returns current image frame for transition animation
     func getCurrentImageFrame() -> CGRect {
-        let zoomScale = scrollView.zoomScale
-        let adjustedFrame = CGRect(
-            x: (imageView.frame.origin.x - scrollView.contentOffset.x) / zoomScale,
-            y: (imageView.frame.origin.y - scrollView.contentOffset.y) / zoomScale,
-            width: imageView.frame.width / zoomScale,
-            height: imageView.frame.height / zoomScale
-        )
-        return scrollView.convert(adjustedFrame, to: view)
+        return imageView.frame
     }
 }
 
-// MARK: - UIScrollViewDelegate
-extension DaxEasterEggFullScreenViewController: UIScrollViewDelegate {
-    
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-        imageView
-    }
-    
-    func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        centerImageViewInScrollView()
-    }
-    
-    /// Centers the image view when it's smaller than the scroll view bounds
-    private func centerImageViewInScrollView() {
-        let boundsSize = scrollView.bounds.size
-        var frameToCenter = imageView.frame
-        
-        // Center horizontally if image is narrower than bounds
-        frameToCenter.origin.x = frameToCenter.size.width < boundsSize.width
-            ? (boundsSize.width - frameToCenter.size.width) / 2
-            : 0
-        
-        // Center vertically if image is shorter than bounds
-        frameToCenter.origin.y = frameToCenter.size.height < boundsSize.height
-            ? (boundsSize.height - frameToCenter.size.height) / 2
-            : 0
-        
-        imageView.frame = frameToCenter
-    }
-}
 
 // MARK: - UIViewControllerTransitioningDelegate
 extension DaxEasterEggFullScreenViewController: UIViewControllerTransitioningDelegate {

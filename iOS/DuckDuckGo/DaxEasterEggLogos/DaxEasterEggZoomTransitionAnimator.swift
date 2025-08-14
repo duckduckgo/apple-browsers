@@ -74,8 +74,9 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         tempImageView.layer.magnificationFilter = .trilinear
         containerView.addSubview(tempImageView)
         
-        // Calculate the final frame for the image (centered and scaled to fit)
-        let finalImageFrame = calculateFinalImageFrame(for: finalFrame, imageSize: sourceImage?.size ?? CGSize(width: 100, height: 100))
+        // Calculate the final frame for the image (centered and scaled to fit with safe area + padding)
+        let adjustedFrame = calculateAdjustedFrame(for: finalFrame, viewController: toViewController)
+        let finalImageFrame = calculateFinalImageFrame(for: adjustedFrame, imageSize: sourceImage?.size ?? CGSize(width: 100, height: 100))
         
         // Animate the transition
         UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
@@ -119,6 +120,19 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
             tempImageView.removeFromSuperview()
             transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
         }
+    }
+    
+    private func calculateAdjustedFrame(for viewFrame: CGRect, viewController: UIViewController) -> CGRect {
+        let safeAreaInsets = viewController.view.safeAreaInsets
+        let padding: CGFloat = 60.0
+        
+        // Calculate the available frame within safe area + padding
+        return CGRect(
+            x: viewFrame.origin.x + safeAreaInsets.left + padding,
+            y: viewFrame.origin.y + safeAreaInsets.top + padding,
+            width: viewFrame.width - safeAreaInsets.left - safeAreaInsets.right - (padding * 2),
+            height: viewFrame.height - safeAreaInsets.top - safeAreaInsets.bottom - (padding * 2)
+        )
     }
     
     private func calculateFinalImageFrame(for containerFrame: CGRect, imageSize: CGSize) -> CGRect {

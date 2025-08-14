@@ -268,7 +268,7 @@ private struct SuggestionView: View {
                 .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
 
             case .openTab(title: let title, url: let url, _, _):
-                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabMobile),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabsMobile),
                                    title: title,
                                    subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())")
                 .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.OpenTab-\(url.formattedForSuggestion())")

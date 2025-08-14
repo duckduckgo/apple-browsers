@@ -173,7 +173,7 @@ public final class DataBrokerProtectionIOSManager {
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
-    private let queueManager: BrokerProfileJobQueueManaging
+    private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -196,11 +196,13 @@ public final class DataBrokerProtectionIOSManager {
         guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
             return nil
         }
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,
                                        vault: vault,
                                        authenticationManager: authenticationManager,
-                                       localBrokerProvider: nil)
+                                       localBrokerProvider: localBrokerService)
     }()
 
     public var hasScheduledBackgroundJob: Bool {
@@ -241,6 +243,8 @@ public final class DataBrokerProtectionIOSManager {
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.subscriptionManager = subscriptionManager
+
+        self.queueManager.delegate = self
 
         registerBackgroundTaskHandler()
     }
@@ -284,8 +288,7 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-                self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error, deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+                self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error))
             }
 #endif
         }
@@ -293,8 +296,7 @@ public final class DataBrokerProtectionIOSManager {
 
     private func handleBGProcessingTask(task: BGTask) {
         Logger.dataBrokerProtection.log("Background task started")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-        iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+        iOSPixelsHandler.fire(.backgroundTaskStarted)
         let startDate = Date.now
         let sessionId = UUID().uuidString
         
@@ -316,10 +318,8 @@ public final class DataBrokerProtectionIOSManager {
 
             let timeTaken = Date.now.timeIntervalSince(startDate)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
-                                                              deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-            
+            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0))
+
             // Record terminated event
             let duration = Date.now.timeIntervalSince(startDate) * 1000.0
             do {
@@ -348,10 +348,8 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 let timeTaken = Date.now.timeIntervalSince(startDate)
                 Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
-// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
                 self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
-                    duration: timeTaken * 1000.0,
-                    deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+                    duration: timeTaken * 1000.0))
 
                 // Record completed event
                 let duration = Date.now.timeIntervalSince(startDate) * 1000.0
@@ -535,5 +533,15 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     
     public func matchRemovedByUser(with id: Int64) throws {
         try database.matchRemovedByUser(id)
+    }
+}
+
+extension DataBrokerProtectionIOSManager: BrokerProfileJobQueueManagerDelegate {
+    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+        Task {
+            do {
+                try await brokerUpdater?.checkForUpdates()
+            }
+        }
     }
 }

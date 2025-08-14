@@ -28,7 +28,7 @@ final class DaxDialogsOnboardingMigrator {
         self.daxDialogsSettings = daxDialogsSettings
     }
 
-    func migrateFromOldToNewOboarding() {
+    func migrateFromOldToNewOnboarding() {
         // Check if `homeScreenMessagesSeen` is not 0.
         // In that case we consider the old onboarding flow completed and hide the dax dialogs.
         if daxDialogsSettings.homeScreenMessagesSeen > 0 {

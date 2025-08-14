@@ -43,10 +43,11 @@ struct Launching: LaunchingHandling {
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
-    private let aiChatSettings = AIChatSettings()
+    private let aiChatSettings: AIChatSettings
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
+    private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
     private let configuration = AppConfiguration()
@@ -78,7 +79,7 @@ struct Launching: LaunchingHandling {
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
-        let reportingService = ReportingService(fireproofing: fireproofing)
+        let reportingService = ReportingService(fireproofing: fireproofing, featureFlagging: featureFlagger)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
@@ -93,13 +94,19 @@ struct Launching: LaunchingHandling {
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
 
+        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+
         // Service to display the Default Browser prompt.
         let defaultBrowserPromptService = DefaultBrowserPromptService(
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
+            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
         )
+
+        // Has to be intialised after configuration.start in case values need to be migrated
+        aiChatSettings = AIChatSettings()
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -118,11 +125,11 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime,
+                                              didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
-                                              systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
-        )
+                                              systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
+                                              daxDialogsManager: daxDialogs)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

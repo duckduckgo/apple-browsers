@@ -29,6 +29,7 @@ import History
 import Combine
 import BrowserServicesKit
 import SwiftUI
+import AIChat
 
 class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
@@ -53,6 +54,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private let historyManager: HistoryManaging
     private let bookmarksDatabase: CoreDataDatabase
     private let tabsModel: TabsModel
+    private let aiChatSettings: AIChatSettingsProvider
 
     private var task: URLSessionDataTask?
 
@@ -74,7 +76,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
          appSettings: AppSettings,
          historyMessageManager: HistoryMessageManager = HistoryMessageManager(),
          tabsModel: TabsModel,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         aiChatSettings: AIChatSettingsProvider) {
 
         self.tabsModel = tabsModel
         self.historyManager = historyManager
@@ -83,9 +86,16 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.appSettings = appSettings
         self.historyMessageManager = historyMessageManager
         self.featureFlagger = featureFlagger
+        self.aiChatSettings = aiChatSettings
 
-        self.model = AutocompleteViewModel(isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
+
+        /// When the experimental address bar is enabled, the bar is always at the top.
+        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975623943806?focus=true
+        let isExperimentalAddressBarEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+        let isAddressBarAtBottom = !isExperimentalAddressBarEnabled && appSettings.currentAddressBarPosition == .bottom
+        self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
                                            showMessage: historyManager.isHistoryFeatureEnabled() && historyMessageManager.shouldShow())
+
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
         self.model.isPad = isPad

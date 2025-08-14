@@ -119,6 +119,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.subscriptionRebranding)
     }
 
+    var isPIREnabled: Bool {
+        featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
@@ -570,7 +574,6 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
-            isExperimentalAIChatTransitionEnabled: experimentalAIChatManager.isExperimentalTransitionEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -1302,15 +1305,6 @@ extension SettingsViewModel {
             set: { _ in
                 self.experimentalAIChatManager.toggleExperimentalTheming()
                 self.state.isExperimentalAIChatEnabled = self.experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
-            })
-    }
-
-    var aiChatExperimentalTransitionBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.isExperimentalAIChatTransitionEnabled },
-            set: { _ in
-                self.experimentalAIChatManager.toggleExperimentalTransition()
-                self.state.isExperimentalAIChatTransitionEnabled = self.experimentalAIChatManager.isExperimentalTransitionEnabled
             })
     }
 

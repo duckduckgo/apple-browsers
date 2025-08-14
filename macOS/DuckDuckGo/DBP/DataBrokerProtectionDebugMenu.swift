@@ -46,6 +46,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
+    private var logMonitorWindowController: NSWindowController?
     private let customURLLabelMenuItem = NSMenuItem(title: "")
     private let customServiceRootLabelMenuItem = NSMenuItem(title: "")
 
@@ -183,6 +184,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             statusMenuIconMenu.targetting(self)
 
             NSMenuItem(title: "Show DB Browser", action: #selector(DataBrokerProtectionDebugMenu.showDatabaseBrowser))
+                .targetting(self)
+            NSMenuItem(title: "Log Monitor", action: #selector(DataBrokerProtectionDebugMenu.openLogMonitor))
                 .targetting(self)
             NSMenuItem(title: "Force Profile Removal", action: #selector(DataBrokerProtectionDebugMenu.showForceOptOutWindow))
                 .targetting(self)
@@ -344,6 +347,28 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         window.delegate = self
     }
 
+    @objc private func openLogMonitor() {
+        if logMonitorWindowController == nil {
+            let viewController = DataBrokerLogMonitorViewController()
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 900),
+                                  styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                                  backing: .buffered,
+                                  defer: false)
+
+            window.contentViewController = viewController
+            window.title = "DataBrokerProtection Log Monitor"
+            window.minSize = NSSize(width: 1000, height: 650)
+            logMonitorWindowController = NSWindowController(window: window)
+            window.delegate = self
+
+            // Center after setting up the controller to ensure proper sizing
+            window.center()
+        }
+
+        logMonitorWindowController?.showWindow(self)
+        logMonitorWindowController?.window?.makeKeyAndOrderFront(self)
+    }
+
     @objc private func runCustomJSON() {
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager)
@@ -489,5 +514,6 @@ extension DataBrokerProtectionDebugMenu: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         databaseBrowserWindowController = nil
         dataBrokerForceOptOutWindowController = nil
+        logMonitorWindowController = nil
     }
 }

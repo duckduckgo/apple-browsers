@@ -90,13 +90,13 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
 
-    convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging) {
+    convenience init(pixelReporter: LinearOnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling) {
         let onboardingManager = OnboardingManager()
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
         self.init(
             defaultBrowserManager: DefaultBrowserManager(defaultBrowserInfoStore: defaultBrowserInfoStore, defaultBrowserEventMapper: defaultBrowserEventMapper),
-            contextualDaxDialogs: DaxDialogs.shared,
+            contextualDaxDialogs: daxDialogsManager,
             pixelReporter: pixelReporter,
             onboardingManager: onboardingManager,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
@@ -151,6 +151,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func setDefaultBrowserAction() {
+        pixelReporter.measureChooseBrowserCTAAction()
         systemSettingsPiPTutorialManager.playPiPTutorialAndNavigateTo(destination: .defaultBrowser)
         makeNextViewState()
     }

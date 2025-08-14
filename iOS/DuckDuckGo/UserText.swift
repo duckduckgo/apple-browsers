@@ -1760,6 +1760,10 @@ public struct UserText {
     public static let voiceSearchToggleSearch = NSLocalizedString("voice-search-toggle-serp-option", value: "Search", comment: "Voice search toggle option for searching on the web")
     public static let voiceSearchToggleAIChat = NotLocalizedString("voice-search-toggle-aichat-option", value: "Duck.ai", comment: "Voice search toggle option for searching on the AI Chat. Feature name. Not translated")
 
+    public static let searchInputToggleSearchButtonTitle = NSLocalizedString("search.input.toggle.search.button.title", value: "Search", comment: "Search input toggle button title for searching on the web")
+
+    public static let searchInputToggleAIChatButtonTitle = NSLocalizedString("search.input.toggle.aichat.button.title", value: "Duck.ai", comment: "Search input toggle button title for asking AI Chat")
+
     // This is used for accessibility labels so leaving in place to avoid confusing translation memory.
     public static let duckAiFeatureName = NSLocalizedString("duckai.settings.title", value: "Duck.ai", comment: "Accessibility label for Duck.ai")
 
@@ -1777,9 +1781,7 @@ public struct UserText {
 
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
-    public static let searchInputFieldPlaceholderSearchWeb = NotLocalizedString("search.input.field.placeholder.search.web", value: "Search or enter address", comment: "Placeholder text for the search input field when searching the web")
-
-    public static let searchInputFieldPlaceholderDuckAI = NotLocalizedString("search.input.field.placeholder.search.duckai", value: "Ask Duck.ai", comment: "Placeholder text for the search input field when searching Duck.ai")
+    public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("search.input.field.placeholder.search.duckai", value: "Ask Duck.ai", comment: "Placeholder text for the search input field when searching Duck.ai")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")
@@ -1983,11 +1985,17 @@ public struct UserText {
                     comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
                 )
 
+                let privateAIBold = NSLocalizedString(
+                    "onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold",
+                    value: "advanced, private AI",
+                    comment: "Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message."
+                )
+
                 // Localized full message with numbered placeholders
                 let fullText = String(format: NSLocalizedString(
                     "onboarding.duckduckgo.subscription.promo.message",
-                    value: "DuckDuckGo also has an %1$@, available with a %2$@ and advanced, private AI.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold)."), optionalSubscriptionBold, vpnBold)
+                    value: "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.",
+                    comment: "Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold)."), optionalSubscriptionBold, vpnBold, privateAIBold)
 
                 let attributedString = NSMutableAttributedString(string: fullText)
 
@@ -2002,6 +2010,11 @@ public struct UserText {
 
                 // Apply bold formatting
                 if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
+                }
+
+                // Apply bold formatting
+                if let optionalSubscriptionRange = fullText.range(of: privateAIBold) {
                     attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
                 }
 

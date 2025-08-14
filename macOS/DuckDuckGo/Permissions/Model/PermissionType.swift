@@ -27,7 +27,6 @@ enum PermissionType: Hashable {
         case geolocation
         case popups
         case external = "external_"
-        case wifiHotspot = "wifi_hotspot"
     }
 
     case camera
@@ -35,7 +34,6 @@ enum PermissionType: Hashable {
     case geolocation
     case popups
     case externalScheme(scheme: String)
-    case wifiHotspot
 
     var rawValue: String {
         switch self {
@@ -44,7 +42,6 @@ enum PermissionType: Hashable {
         case .geolocation: return Constants.geolocation.rawValue
         case .popups: return Constants.popups.rawValue
         case .externalScheme(scheme: let scheme): return Constants.external.rawValue + scheme
-        case .wifiHotspot: return Constants.wifiHotspot.rawValue
         }
     }
 
@@ -54,7 +51,6 @@ enum PermissionType: Hashable {
         case Constants.microphone.rawValue: self = .microphone
         case Constants.geolocation.rawValue: self = .geolocation
         case Constants.popups.rawValue: self = .popups
-        case Constants.wifiHotspot.rawValue: self = .wifiHotspot
         default:
             if rawValue.hasPrefix(Constants.external.rawValue) {
                 let scheme = rawValue.dropping(prefix: Constants.external.rawValue)
@@ -81,8 +77,6 @@ extension PermissionType {
             return false
         case .popups:
             return true
-        case .wifiHotspot:
-            return false // One-shot permission
         }
     }
     var canPersistDeniedDecision: Bool {
@@ -91,8 +85,6 @@ extension PermissionType {
             return true
         case .popups, .externalScheme:
             return false
-        case .wifiHotspot:
-            return false // One-shot permission
         }
     }
 
@@ -142,6 +134,5 @@ extension Array where Element == PermissionType {
     static var geolocation: Self { [.geolocation] }
     static var popups: Self { [.popups] }
     static func externalScheme(_ scheme: String) -> Self { return [.externalScheme(scheme: scheme)] }
-    static var wifiHotspot: Self { [.wifiHotspot] }
 
 }

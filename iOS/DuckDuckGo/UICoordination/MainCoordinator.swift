@@ -67,10 +67,11 @@ final class MainCoordinator {
          fireproofing: Fireproofing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
-         didFinishLaunchingStartTime: CFAbsoluteTime,
+         didFinishLaunchingStartTime: CFAbsoluteTime?,
          keyValueStore: ThrowingKeyValueStoring,
          defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
-         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+         daxDialogsManager: DaxDialogsManaging
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -78,7 +79,8 @@ final class MainCoordinator {
 
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
-                                                          privacyProDataReporter: reportingService.privacyProDataReporter)
+                                                          privacyProDataReporter: reportingService.privacyProDataReporter,
+                                                          isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
         let historyManager = try Self.makeHistoryManager()
         let tabsPersistence = try TabsModelPersistence()
@@ -110,7 +112,8 @@ final class MainCoordinator {
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-                                keyValueStore: keyValueStore)
+                                keyValueStore: keyValueStore,
+                                daxDialogsManager: daxDialogsManager)
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
@@ -137,8 +140,8 @@ final class MainCoordinator {
                                         aiChatSettings: aiChatSettings,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,
-                                        systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager
-        )
+                                        systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                                        daxDialogsManager: daxDialogsManager)
     }
 
     func start() {
@@ -152,12 +155,7 @@ final class MainCoordinator {
                                    privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                    tld: provider.storageCache.tld) {
         case .failure(let error):
-            Pixel.fire(pixel: .historyStoreLoadFailed, error: error)
-            if error.isDiskFull {
-                throw UIApplication.TerminationError.insufficientDiskSpace
-            } else {
-                throw UIApplication.TerminationError.unrecoverableState
-            }
+            throw TerminationError.historyDatabase(error)
         case .success(let historyManager):
             return historyManager
         }

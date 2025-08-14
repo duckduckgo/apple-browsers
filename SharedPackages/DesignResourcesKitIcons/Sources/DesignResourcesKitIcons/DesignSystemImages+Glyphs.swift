@@ -112,6 +112,7 @@ public extension DesignSystemImages {
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle16) }
             public static var checkGray: DesignSystemImage { .init(resource: .checkGray16) }
             public static var chevronDoubleRight: DesignSystemImage { .init(resource: .chevronDoubleRight16) }
+            public static var chevronRight: DesignSystemImage { .init(resource: .chevronRight16) }
             public static var clear: DesignSystemImage { .init(resource: .clear16) }
             public static var clearSolid: DesignSystemImage { .init(resource: .clearSolid16) }
             public static var close: DesignSystemImage { .init(resource: .close16) }
@@ -436,6 +437,7 @@ public extension DesignSystemImages {
             public static var support: DesignSystemImage { .init(resource: .support24) }
             public static var syncCloud: DesignSystemImage { .init(resource: .syncCloud24) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile24) }
+            public static var tabsMobile: DesignSystemImage { .init(resource: .tabsMobile24) }
             public static var tabMobileAlert: DesignSystemImage { .init(resource: .tabMobileAlert24) }
             public static var tabMobileAlertDot: DesignSystemImage { .init(resource: .tabMobileAlertDot24) }
             public static var tabNew: DesignSystemImage { .init(resource: .tabNew24) }

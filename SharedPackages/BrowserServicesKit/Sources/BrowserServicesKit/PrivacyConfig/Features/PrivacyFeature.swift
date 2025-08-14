@@ -81,6 +81,7 @@ public enum PrivacyFeature: String {
     case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
+    case feedbackForm
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -108,9 +109,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
     case updateFirefoxBookmarksImport
-
-    // WiFi hotspot detection and captive portal handling
-    case hotspotDetection
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -121,12 +119,11 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
-    // This is fairly temporary and will likely be removed in a release or two one way or another
-    case june2025TabManagerLayoutChanges
-
     // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
     case defaultBrowserTutorial
+
+    case widgetReporting
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -159,6 +156,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case inputFocusApi
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
+    case createFireproofFaviconUpdaterSecureVaultInBackground
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -192,8 +190,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Adds context menu action for summarizing text selected on a website.
     case textSummarization
 
-    // Adds capability to load AI Chat in a sidebar
+    /// Adds capability to load AI Chat in a sidebar
     case sidebar
+
+    /// Experimental address bar with duck.ai
+    case experimentalAddressBar
+
+    /// Global switch to disable all AI Chat related functionality
+    case globalToggle
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

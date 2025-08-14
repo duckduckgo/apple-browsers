@@ -235,13 +235,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         if let lastPixelFired = mockPixelHandler.lastFiredEvent {
             switch lastPixelFired {
-#if os(iOS)
-            case .optOutSubmitSuccess(_, _, _, let tries, _, _, _, _):
-                XCTAssertEqual(tries, 3)
-#else
             case .optOutSubmitSuccess(_, _, _, let tries, _, _, _):
                 XCTAssertEqual(tries, 3)
-#endif
             default: XCTFail("We should be firing the opt-out submit-success pixel last")
             }
         } else {
@@ -258,13 +253,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         } catch {
             if let lastPixelFired = mockPixelHandler.lastFiredEvent {
                 switch lastPixelFired {
-#if os(iOS)
-                case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _, _):
-                    XCTAssertEqual(tries, 3)
-#else
                 case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _):
                     XCTAssertEqual(tries, 3)
-#endif
                 default: XCTFail("We should be firing the opt-out submit-success pixel last")
                 }
             } else {
@@ -337,6 +327,45 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(config.hoursUntilNextOptOutAttempt.hoursToSeconds)))
+    }
+
+    func testOptOutSubJob_whenExecutedSuccessfully_returnsTrue() async throws {
+        // When
+        let result = try await sut.runOptOut(
+            for: .mockWithoutRemovedDate,
+            brokerProfileQueryData: .init(
+                dataBroker: .mock,
+                profileQuery: .mock,
+                scanJobData: .mock,
+                optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
+            ),
+            showWebView: false,
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testOptOutSubJob_whenProfileAlreadyRemoved_returnsFalse() async throws {
+        // Given
+        let removedProfile = ExtractedProfile(id: 1, name: "Test", profileUrl: "test.com", removedDate: Date())
+
+        // When
+        let result = try await sut.runOptOut(
+            for: removedProfile,
+            brokerProfileQueryData: .init(
+                dataBroker: .mock,
+                profileQuery: .mock,
+                scanJobData: .mock,
+                optOutJobData: [OptOutJobData.mock(with: removedProfile)]
+            ),
+            showWebView: false,
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        XCTAssertFalse(result)
     }
 
 }

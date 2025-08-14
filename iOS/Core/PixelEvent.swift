@@ -42,6 +42,10 @@ extension Pixel {
         case refreshPressed
         case pullToRefresh
 
+        // https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
+        case widgetReport
+        case widgetReportFailure
+
         case deviceOrientationLandscape
 
         case keyboardGoWhileOnNTP
@@ -78,6 +82,7 @@ extension Pixel {
         case tabsStoreSupportDirAccessError
         case tabsStoreInitError
         case tabsStoreSaveError
+        case tabsStoreReadError
 
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
@@ -811,6 +816,7 @@ extension Pixel {
         
         case bookmarksCouldNotLoadDatabase
         case bookmarksCouldNotPrepareDatabase
+        case bookmarksCouldNotMigrateDatabase
         case bookmarksMigrationAlreadyPerformed
         case bookmarksMigrationFailed
         case bookmarksMigrationCouldNotPrepareDatabase
@@ -980,6 +986,9 @@ extension Pixel {
         /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalDoNotAskAgainButtonTapped
 
+        /// Fired when creating the app configurationuser defaults in ai chat settings migration failed.
+        case debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration
+
         // MARK: History
         case historyStoreLoadFailed
         case historyRemoveFailed
@@ -1023,13 +1032,20 @@ extension Pixel {
         case privacyProSubscriptionManagementRemoval
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
+        // Subscription KeychainManager
+        case privacyProKeychainManagerDataAddedToTheBacklog
+        case privacyProKeychainManagerDeallocatedWithBacklog
+        case privacyProKeychainManagerDataWroteFromBacklog
+        case privacyProKeychainManagerFailedToWriteDataFromBacklog
         // AUth V2
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
         case privacyProAuthV2MigrationFailed
+        case privacyProAuthV2MigrationFailed2
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
+        case privacyProAuthV2GetTokensError2
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -1263,6 +1279,7 @@ extension Pixel {
         case aiChatMetricOpenMostRecentHistoryChat
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
+        case aiChatExperimentalAddressBarIsEnabledDaily
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1320,6 +1337,8 @@ extension Pixel {
 
         // MARK: - System Settings Picture-in-Picture Video Tutorial
         case systemSettingsPiPTutorialFailedToLoadVideo
+
+        case appDidTerminateWithUnhandledError
     }
 
 }
@@ -1336,6 +1355,8 @@ extension Pixel.Event {
         case .appLaunchFromShareExtension: return "m_app-launch_shared-link"
         case .refreshPressed: return "m_r"
         case .pullToRefresh: return "m_pull-to-reload"
+        case .widgetReport: return "m_widget-report"
+        case .widgetReportFailure: return "m_widget-report-failure"
 
         case .deviceOrientationLandscape: return "m_device_orientation_landscape"
 
@@ -1362,6 +1383,7 @@ extension Pixel.Event {
         case .tabsStoreSupportDirAccessError: return "m_debug_tabs_store_support_dir_access_error"
         case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
         case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
+        case .tabsStoreReadError: return "m_debug_tabs_store_read_error"
 
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
@@ -2002,6 +2024,8 @@ extension Pixel.Event {
         case .debugWebsiteDataStoresNotClearedOne: return "m_d_wkwebsitedatastoresnotcleared_one"
         case .debugWebsiteDataStoresCleared: return "m_d_wkwebsitedatastorescleared"
 
+        case .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration: return "m_debug_failed-to-create-app-configuration-during-aichat-settings-migration"
+
             // MARK: Tab interaction state debug pixels
 
         case .tabInteractionStateSourceMissingRootDirectory:
@@ -2069,6 +2093,7 @@ extension Pixel.Event {
             
         case .bookmarksCouldNotLoadDatabase: return "m_d_bookmarks_could_not_load_database"
         case .bookmarksCouldNotPrepareDatabase: return "m_d_bookmarks_could_not_prepare_database"
+        case .bookmarksCouldNotMigrateDatabase: return "m_d_bookmarks_could_not_migrate_database"
         case .bookmarksMigrationAlreadyPerformed: return "m_d_bookmarks_migration_already_performed"
         case .bookmarksMigrationFailed: return "m_d_bookmarks_migration_failed"
         case .bookmarksMigrationCouldNotPrepareDatabase: return "m_d_bookmarks_migration_could_not_prepare_database"
@@ -2239,13 +2264,20 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-        // AUth V2
+            // Subscription KeychainManager
+        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
+            // Auth V2
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
+        case .privacyProAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -2440,7 +2472,7 @@ extension Pixel.Event {
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
-        case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-\(time)"
+        case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-2-\(time)"
 
         // MARK: AI Chat
         case .aiChatNoRemoteSettingsFound(let settings):
@@ -2475,6 +2507,7 @@ extension Pixel.Event {
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
+        case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2581,6 +2614,8 @@ extension Pixel.Event {
 
         // MARK: System Settings PiP Video Tutorial
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
+
+        case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
         }
     }
 }

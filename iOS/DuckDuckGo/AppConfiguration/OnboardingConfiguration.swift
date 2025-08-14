@@ -22,11 +22,11 @@ import Core
 
 final class OnboardingConfiguration {
 
-    lazy var daxDialogs = DaxDialogs.shared
+    lazy var daxDialogs = DaxDialogs(entityProviding: ContentBlocking.shared.contentBlockingManager)
 
     func migrateToNewOnboarding() {
         // Hide Dax Dialogs if users already completed old onboarding.
-        DaxDialogsOnboardingMigrator().migrateFromOldToNewOboarding()
+        DaxDialogsOnboardingMigrator().migrateFromOldToNewOnboarding()
     }
 
     // assign it here, because "did become active" is already too late and "viewWillAppear"

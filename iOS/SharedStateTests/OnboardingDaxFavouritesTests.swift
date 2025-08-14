@@ -68,7 +68,7 @@ import SystemSettingsPiPTutorialTestSupport
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
             duckPlayerStorage: MockDuckPlayerStorage()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -105,7 +105,9 @@ import SystemSettingsPiPTutorialTestSupport
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-                                    keyValueStore: try! MockKeyValueFileStore())
+                                    keyValueStore: try! MockKeyValueFileStore(),
+                                    daxDialogsManager: DummyDaxDialogsManager()
+        )
         sut = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
@@ -135,6 +137,7 @@ import SystemSettingsPiPTutorialTestSupport
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
+            daxDialogsManager: DummyDaxDialogsManager(),
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

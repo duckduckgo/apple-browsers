@@ -486,7 +486,43 @@ extension UpdateController: SPUUpdaterDelegate {
             return
         }
 
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterAborted, error: error))
+        PixelKit.fire(DebugEvent(
+            GeneralPixel.updaterAborted(reason: sparkleUpdaterErrorReason(from: error.localizedDescription)),
+            error: error
+        ))
+    }
+
+    internal func sparkleUpdaterErrorReason(from errorDescription: String) -> String {
+        // Hardcodes known Sparkle failures to ensure that no file paths are ever included.
+        // Any unrecognized strings will be sent with "unknown", and will need to be debugged further as it means there
+        // is a Sparkle error that isn't being accounted for in this list.
+        let knownErrorPrefixes = [
+            "Package installer failed to launch.",
+            "Guided package installer failed to launch",
+            "Guided package installer returned non-zero exit status",
+            "Failed to perform installation because the paths to install at and from are not valid",
+            "Failed to recursively update new application's modification time before moving into temporary directory",
+            "Failed to perform installation because a path could not be constructed for the old installation",
+            "Failed to move the new app",
+            "Failed to perform installation because the last path component of the old installation URL could not be constructed.",
+            "The update is improperly signed and could not be validated.",
+            "Found regular application update",
+            "An error occurred while running the updater.",
+            "An error occurred while encoding the installer parameters.",
+            "An error occurred while starting the installer.",
+            "An error occurred while connecting to the installer.",
+            "An error occurred while launching the installer.",
+            "An error occurred while extracting the archive",
+            "An error occurred while downloading the update",
+            "An error occurred in retrieving update information",
+            "An error occurred while parsing the update feed"
+        ]
+
+        for prefix in knownErrorPrefixes where errorDescription.hasPrefix(prefix) {
+            return prefix
+        }
+
+        return "unknown"
     }
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {

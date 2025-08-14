@@ -21,6 +21,13 @@ import Foundation
 import Core
 import Persistence
 
+enum DatabaseError {
+
+    case container(Error)
+    case other(Error)
+
+}
+
 final class PersistentStoresConfiguration {
 
     let database = Database.shared
@@ -32,86 +39,30 @@ final class PersistentStoresConfiguration {
     }
 
     func configure() throws {
-        clearTemporaryDirectory()
         try loadDatabase()
         try loadAndMigrateBookmarksDatabase()
     }
 
-    private func clearTemporaryDirectory() {
-        let tmp = FileManager.default.temporaryDirectory
-        do {
-            try FileManager.default.removeItem(at: tmp)
-        } catch {
-            Logger.general.error("Failed to delete tmp dir")
-        }
-    }
-
     private func loadDatabase() throws {
-        var thrownError: Error?
-        database.loadStore { [application] context, error in
-            do {
-                guard let context = context else {
-                    let parameters = [PixelParameters.applicationState: "\(application.applicationState.rawValue)",
-                                      PixelParameters.dataAvailability: "\(application.isProtectedDataAvailable)"]
-                    switch error {
-                    case .none:
-                        fatalError("Could not create database stack: Unknown Error")
-                    case .some(CoreDataDatabase.Error.containerLocationCouldNotBePrepared(let underlyingError)):
-                        Pixel.fire(pixel: .dbContainerInitializationError,
-                                   error: underlyingError,
-                                   withAdditionalParameters: parameters)
-                        Thread.sleep(forTimeInterval: 1)
-                        fatalError("Could not create database stack: \(underlyingError.localizedDescription)")
-                    case .some(let error):
-                        Pixel.fire(pixel: .dbInitializationError,
-                                   error: error,
-                                   withAdditionalParameters: parameters)
-                        if error.isDiskFull {
-                            throw UIApplication.TerminationError.insufficientDiskSpace
-                        } else {
-                            Thread.sleep(forTimeInterval: 1)
-                            fatalError("Could not create database stack: \(error.localizedDescription)")
-                        }
-                    }
-                }
-            } catch {
-                thrownError = error
-            }
+        var dbError: Error?
+        database.loadStore { _, error in
+            dbError = error
         }
-
-        if let thrownError {
-            throw thrownError
+        if let dbError {
+            if let containerError = dbError as? CoreDataDatabase.Error,
+               case .containerLocationCouldNotBePrepared(let underlyingError) = containerError {
+                throw TerminationError.database(.container(underlyingError))
+            } else {
+                throw TerminationError.database(.other(dbError))
+            }
         }
     }
 
     private func loadAndMigrateBookmarksDatabase() throws {
-        switch BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase) {
-        case .success:
-            break
-        case .failure(let error):
-            Pixel.fire(pixel: .bookmarksCouldNotLoadDatabase,
-                       error: error)
-            if error.isDiskFull {
-                throw UIApplication.TerminationError.insufficientDiskSpace
-            } else {
-                Thread.sleep(forTimeInterval: 1)
-                fatalError("Could not create database stack: \(error.localizedDescription)")
-            }
+        let result = BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase)
+        if case .failure(let error) = result {
+            throw TerminationError.bookmarksDatabase(error)
         }
-    }
-
-}
-
-extension Error {
-
-    var isDiskFull: Bool {
-        let nsError = self as NSError
-        if let underlyingError = nsError.userInfo["NSUnderlyingError"] as? NSError, underlyingError.code == 13 {
-            return true
-        } else if nsError.userInfo["NSSQLiteErrorDomain"] as? Int == 13 {
-            return true
-        }
-        return false
     }
 
 }

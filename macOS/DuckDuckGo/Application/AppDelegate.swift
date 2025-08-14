@@ -128,12 +128,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
-    let hotspotDetectionService: HotspotDetectionServiceProtocol
-    let captivePortalPopupManager: CaptivePortalPopupManager
     let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
 
+    @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
@@ -169,10 +168,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
+        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        featureFlagger: featureFlagger,
+        vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
+    )
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
-    private let visualStyleDecider: VisualStyleDecider
 
     let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -470,10 +473,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         // Configuring V2 for migration
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
             PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
                                                                              source: KeychainErrorSource.shared,
@@ -484,7 +489,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService)
-        let pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: .mainApp)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,
@@ -561,7 +565,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionAuthV1toV2Bridge = subscriptionManager
         } else {
             Logger.general.log("Configuring Subscription V1")
-            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
+            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger, pixelHandlingSource: .mainApp)
             subscriptionManagerV1 = subscriptionManager
             subscriptionManagerV2 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
@@ -588,8 +592,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
-        visualStyle = visualStyleDecider.style
+        visualStyle = VisualStyle.current
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -621,36 +624,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
-        hotspotDetectionService = HotspotDetectionService()
-        captivePortalPopupManager = CaptivePortalPopupManager()
 
+        var appContentBlocking: AppContentBlocking?
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
-            privacyFeatures = AppPrivacyFeatures(
-                contentBlocking: AppContentBlocking(
-                    privacyConfigurationManager: privacyConfigurationManager,
-                    internalUserDecider: internalUserDecider,
-                    configurationStore: configurationStore,
-                    contentScopeExperimentsManager: self.contentScopeExperimentsManager,
-                    onboardingNavigationDelegate: windowControllersManager,
-                    appearancePreferences: appearancePreferences,
-                    startupPreferences: startupPreferences,
-                    windowControllersManager: windowControllersManager,
-                    bookmarkManager: bookmarkManager,
-                    historyCoordinator: historyCoordinator,
-                    fireproofDomains: fireproofDomains,
-                    fireCoordinator: fireCoordinator,
-                    tld: tld
-                ),
-                database: database.db
-            )
-        } else {
-            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
-            privacyFeatures = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
-        }
-#else
-        privacyFeatures = AppPrivacyFeatures(
-            contentBlocking: AppContentBlocking(
+            let contentBlocking = AppContentBlocking(
                 privacyConfigurationManager: privacyConfigurationManager,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,
@@ -664,9 +642,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
                 tld: tld
-            ),
+            )
+            privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
+            appContentBlocking = contentBlocking
+        } else {
+            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
+            privacyFeatures = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+        }
+#else
+        let contentBlocking = AppContentBlocking(
+            privacyConfigurationManager: privacyConfigurationManager,
+            internalUserDecider: internalUserDecider,
+            configurationStore: configurationStore,
+            contentScopeExperimentsManager: self.contentScopeExperimentsManager,
+            onboardingNavigationDelegate: windowControllersManager,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            windowControllersManager: windowControllersManager,
+            bookmarkManager: bookmarkManager,
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            fireCoordinator: fireCoordinator,
+            tld: tld
+        )
+        privacyFeatures = AppPrivacyFeatures(
+            contentBlocking: contentBlocking,
             database: database.db
         )
+        appContentBlocking = contentBlocking
 #endif
 
         configurationManager = ConfigurationManager(
@@ -787,6 +790,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if !APPSTORE
         crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
+
+        super.init()
+
+        appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
     }
     // swiftlint:enable cyclomatic_complexity
 
@@ -978,6 +985,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {
@@ -997,7 +1006,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        fireAppLaunchPixel()
+        fireDailyActiveUserPixel()
 
         initializeSync()
 
@@ -1025,8 +1034,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func fireAppLaunchPixel() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
+    private func fireDailyActiveUserPixel() {
 #if SPARKLE
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
 #else
@@ -1379,6 +1387,42 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         completionHandler()
     }
 
+}
+
+extension AppDelegate: UserScriptDependenciesProviding {
+    @MainActor
+    func makeNewTabPageActionsManager() -> NewTabPageActionsManager? {
+        guard let contentBlocking = privacyFeatures.contentBlocking as? AppContentBlocking else {
+            return nil
+        }
+
+        // This action manager is only used when NTP is independent per tab
+        guard featureFlagger.isFeatureOn(.newTabPagePerTab) else {
+            return nil
+        }
+
+        return NewTabPageActionsManager(
+            appearancePreferences: appearancePreferences,
+            visualizeFireAnimationDecider: visualizeFireAnimationDecider,
+            customizationModel: newTabPageCustomizationModel,
+            bookmarkManager: bookmarkManager,
+            faviconManager: faviconManager,
+            contentBlocking: contentBlocking,
+            trackerDataManager: contentBlocking.trackerDataManager,
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            privacyStats: privacyStats,
+            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
+            tld: tld,
+            fire: { @MainActor in self.fireCoordinator.fireViewModel.fire },
+            keyValueStore: keyValueStore,
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: TabsPreferences.shared,
+            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+        )
+    }
 }
 
 private extension FeatureFlagLocalOverrides {

@@ -74,12 +74,17 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAddEmailSuccess
     case privacyProWelcomeFAQClick
     // Auth v2
-    case privacyProInvalidRefreshTokenDetected(AuthV2PixelHandler.Source)
+    case privacyProInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case privacyProInvalidRefreshTokenSignedOut
     case privacyProInvalidRefreshTokenRecovered
-    case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
-    case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
-    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
+    case privacyProAuthV2MigrationFailed(SubscriptionPixelHandler.Source, Error)
+    case privacyProAuthV2MigrationSucceeded(SubscriptionPixelHandler.Source)
+    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
+    // KeychainManager
+    case privacyProKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
+    case privacyProKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
+    case privacyProKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
+    case privacyProKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
     // Toolbar Button Upsell
     case privacyProToolbarButtonShown
     case privacyProToolbarButtonPopoverShown
@@ -138,6 +143,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+            // KeychainManager
+        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_mac_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_mac_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_mac_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_mac_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
             // Toolbar Button Upsell
         case .privacyProToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
         case .privacyProToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
@@ -159,7 +169,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
     var parameters: [String: String]? {
         switch self {
         case .privacyProInvalidRefreshTokenDetected(let source),
-                .privacyProAuthV2MigrationSucceeded(let source):
+                .privacyProAuthV2MigrationSucceeded(let source),
+                .privacyProKeychainManagerDataAddedToTheBacklog(let source),
+                .privacyProKeychainManagerDeallocatedWithBacklog(let source),
+                .privacyProKeychainManagerDataWroteFromBacklog(let source),
+                .privacyProKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [PrivacyProPixelsDefaults.sourceKey: source.description]
         case .privacyProAuthV2GetTokensError(let policy, let source, let error):
             return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,

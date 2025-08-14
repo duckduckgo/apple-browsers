@@ -45,17 +45,44 @@ struct AppConfiguration {
         NewTabPageIntroMessageConfiguration().disableIntroMessageForReturningUsers()
 
         contentBlockingConfiguration.prepareContentBlocking()
-        configureAPIRequestUserAgent()
+        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+
         onboardingConfiguration.migrateToNewOnboarding()
+        clearTemporaryDirectory()
         try persistentStoresConfiguration.configure()
+
         setConfigurationURLProvider()
+
+        migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
     }
 
-    private func configureAPIRequestUserAgent() {
-        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+    /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
+    ///  and the widgets needs to be reloaded after.
+    /// Moves settings from `UserDefaults.standard` to the shared container.
+    private func migrateAIChatSettings() {
+        AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: {
+            let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName)
+            if sharedUserDefaults == nil {
+                Pixel.fire(pixel: .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration)
+            }
+            return sharedUserDefaults ?? UserDefaults()
+        })
+    }
+
+    private func clearTemporaryDirectory() {
+        let tmp = FileManager.default.temporaryDirectory
+        do {
+            try FileManager.default.removeItem(at: tmp)
+            Logger.general.info("🧹 Removed temp directory at: \(tmp.path)")
+            // https://app.asana.com/1/137249556945/project/1201392122292466/task/1210925187026095?focus=true
+            try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true, attributes: nil)
+            Logger.general.info("📁 Recreated temp directory at: \(tmp.path)")
+        } catch {
+            Logger.general.error("❌ Failed to reset tmp dir: \(error.localizedDescription)")
+        }
     }
 
     private func setConfigurationURLProvider() {

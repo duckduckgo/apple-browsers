@@ -22,6 +22,7 @@ import UserScript
 import Combine
 import Core
 import Subscription
+import BrowserServicesKit
 
 final class SubscriptionFlowViewModel: ObservableObject {
     
@@ -32,6 +33,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let purchaseURL: URL
 
     private let urlOpener: URLOpener
+    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
     private var urlCancellable: AnyCancellable?
@@ -61,6 +63,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state = State()
 
+    var isPIREnabled: Bool {
+        featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
     init(purchaseURL: URL,
@@ -69,12 +75,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: SubscriptionAuthV1toV2Bridge,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
-         urlOpener: URLOpener = UIApplication.shared) {
+         urlOpener: URLOpener = UIApplication.shared,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
+        self.featureFlagger = featureFlagger
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 

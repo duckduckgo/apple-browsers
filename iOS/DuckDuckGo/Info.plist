@@ -260,6 +260,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>VPN_APP_GROUP</key>
+	<string>$(VPN_APP_GROUP)</string>
 	<key>VAULT_APP_GROUP</key>
 	<string>$(AppIdentifierPrefix)$(VAULT_APP_GROUP)</string>
 </dict>

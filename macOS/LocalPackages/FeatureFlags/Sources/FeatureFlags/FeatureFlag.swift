@@ -149,12 +149,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
     case vpnToolbarUpsell
 
+    /// Loading New Tab Page in regular browsing webview
+    case newTabPagePerTab
+
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
-    /// WiFi hotspot detection and captive portal handling
-    case hotspotDetection
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -222,10 +223,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateFirefoxBookmarksImport,
                 .disableFireAnimation,
                 .newTabPageOmnibar,
+                .newTabPagePerTab,
                 .newFeedbackForm,
                 .vpnToolbarUpsell,
-                .supportsAlternateStripePaymentFlow,
-                .hotspotDetection:
+                .supportsAlternateStripePaymentFlow:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -313,7 +314,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatGlobalSwitch:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.globalToggle))
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
@@ -339,13 +340,14 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
-            return .disabled
+            return .enabled
+//            return .remoteReleasable(.feature(.feedbackForm))
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
+        case .newTabPagePerTab:
+            return .internalOnly()
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
-        case .hotspotDetection:
-            return .internalOnly()
         }
     }
 }

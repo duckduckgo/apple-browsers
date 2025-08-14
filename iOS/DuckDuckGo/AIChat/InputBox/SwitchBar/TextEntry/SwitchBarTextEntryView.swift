@@ -56,7 +56,7 @@ class SwitchBarTextEntryView: UIView {
 
     private var heightConstraint: NSLayoutConstraint?
 
-    var hasBeenTouched = false
+    var hasBeenInteractedWith = false
     var isURL: Bool {
         // TODO some kind of text length check?
         URL(string: textView.text)?.navigationalScheme != nil
@@ -124,7 +124,7 @@ class SwitchBarTextEntryView: UIView {
 
     private func onTextViewTouchesBegan() {
         textView.onTouchesBeganHandler = nil
-        hasBeenTouched = true
+        hasBeenInteractedWith = true
         updateTextViewHeight()
     }
 
@@ -156,7 +156,7 @@ class SwitchBarTextEntryView: UIView {
     private func updateForCurrentMode() {
         switch currentMode {
         case .search:
-            placeholderLabel.text = UserText.searchInputFieldPlaceholderSearchWeb
+            placeholderLabel.text = UserText.searchDuckDuckGo
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none
@@ -169,6 +169,12 @@ class SwitchBarTextEntryView: UIView {
             textView.autocapitalizationType = .sentences
             textView.autocorrectionType = .default
             textView.spellCheckingType = .default
+            
+            /// Auto-focus the text field when switching to duck.ai mode
+            /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975209610640?focus=true
+            DispatchQueue.main.async { [weak self] in
+                self?.textView.becomeFirstResponder()
+            }
         }
 
         updatePlaceholderVisibility()
@@ -214,6 +220,9 @@ class SwitchBarTextEntryView: UIView {
         super.layoutSubviews()
 
         adjustTextViewContentInset()
+        if !hasBeenInteractedWith {
+            updateTextViewHeight()
+        }
     }
 
     private func updateTextViewHeight() {
@@ -224,7 +233,7 @@ class SwitchBarTextEntryView: UIView {
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
 
-        if !hasBeenTouched && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
+        if !hasBeenInteractedWith && isURL { // https://app.asana.com/1/137249556945/project/392891325557410/task/1210835160047733?focus=true
             heightConstraint?.constant = Constants.minHeight
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
@@ -243,13 +252,23 @@ class SwitchBarTextEntryView: UIView {
             return
         }
 
-        if contentExceedsMaxHeight {
-            let range: NSRange
-            if textView.selectedRange.length > 0 && isExpandable {
-                range = NSRange(location: textView.text.count, length: 0)
-            } else {
-                range = NSRange(location: 0, length: 0)
-            }
+        adjustScrollPosition()
+    }
+
+    private func adjustScrollPosition() {
+
+        guard !hasBeenInteractedWith, !textView.text.isEmpty else {
+            return
+        }
+
+        var range: NSRange?
+        if isURL {
+            range = NSRange(location: 0, length: 0)
+        } else {
+            range = NSRange(location: textView.text.count, length: 0)
+        }
+
+        if let range {
             textView.scrollRangeToVisible(range)
         }
     }
@@ -297,6 +316,8 @@ class SwitchBarTextEntryView: UIView {
 extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
+        hasBeenInteractedWith = true
+        
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
@@ -313,6 +334,9 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 handler.submitText(currentText)
             }
+            /// Prevent adding newline when there's no content or just whitespace
+            /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210989002857245?focus=true
+            return false
         }
         return true
     }

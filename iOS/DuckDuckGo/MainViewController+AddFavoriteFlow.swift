@@ -27,14 +27,14 @@ extension MainViewController {
         _ = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification,
                                                    object: nil,
                                                    queue: .main) { [weak self] _ in
-            DaxDialogs.shared.resumeRegularFlow()
+            self?.daxDialogsManager.resumeRegularFlow()
             self?.hideMenuHighlighter()
         }
     }
     
     var canDisplayAddFavoriteVisualIndicator: Bool {
         
-        guard DaxDialogs.shared.isAddFavoriteFlow,
+        guard daxDialogsManager.isAddFavoriteFlow,
               let tab = currentTab, !tab.isError, let url = tab.url else { return false }
         
         return !url.isDuckDuckGo

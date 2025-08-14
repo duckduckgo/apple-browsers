@@ -220,6 +220,8 @@ struct SettingsRootView: View {
             NetworkProtectionRootView()
         case .aiChat:
             SettingsAIFeaturesView().environmentObject(viewModel)
+        case .privateSearch:
+            PrivateSearchView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
                 SubscriptionSettingsViewV2(configuration: configuration, settingsViewModel: viewModel)

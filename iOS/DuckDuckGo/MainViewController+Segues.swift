@@ -264,6 +264,14 @@ extension MainViewController {
         }
     }
 
+    func segueToSettingsPrivateSearch() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .privateSearch)
+        }
+    }
+
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()

@@ -2735,6 +2735,8 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
+        userScripts.serpSettingsUserScript.delegate = self
+        userScripts.serpSettingsUserScript.webView = webView
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
@@ -3734,4 +3736,17 @@ extension TabViewController {
             }
             .store(in: &cancellables)
     }
+}
+
+extension TabViewController: SERPSettingsUserScriptDelegate {
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = view.window?.rootViewController as? MainViewController else { return } // todo: ugly
+        mainVC.segueToSettingsPrivateSearch()
+    }
+    
+    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = view.window?.rootViewController as? MainViewController else { return } // todo: ugly
+        mainVC.segueToSettingsAIChat()
+    }
+
 }

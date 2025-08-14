@@ -833,11 +833,13 @@ extension SettingsViewModel {
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
-        urlOpener.open(URL.searchSettings)
+        let url = URL.searchSettings.appendingParameter(name: "return", value: "privateSearch")
+        urlOpener.open(url)
     }
 
     func openAssistSettings() {
         Pixel.fire(pixel: .settingsOpenAssistSettings)
+        let url = URL.assistSettings.appendingParameter(name: "return", value: "duckai")
         urlOpener.open(URL.assistSettings)
     }
 
@@ -957,6 +959,7 @@ extension SettingsViewModel {
         case restoreFlow
         case duckPlayer
         case aiChat
+        case privateSearch
         case subscriptionSettings
         // Add other cases as needed
 
@@ -969,6 +972,7 @@ extension SettingsViewModel {
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
+            case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
             // Ensure all cases are covered
             }
@@ -978,7 +982,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .subscriptionSettings:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings:
                 return .navigationLink
             }
         }

@@ -392,7 +392,6 @@ public final class VPNSettings {
         defaults.isBlockRiskyDomainsOn
     }
 
-
     public var customDnsServers: [String] {
         defaults.customDnsServers
     }

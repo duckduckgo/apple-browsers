@@ -74,17 +74,7 @@ extension UserDefaults {
     }
 
     var isBlockRiskyDomainsOn: Bool {
-//        get {
             dnsSettingStorageValue.isBlockRiskyDomainsOn
-//        }
-//        set {
-//            let current = dnsSettingStorageValue
-//            dnsSettingStorageValue = StorableDNSSettings(
-//                usesCustomDNS: current.usesCustomDNS,
-//                dnsServers: current.dnsServers,
-//                isBlockRiskyDomainsOn: newValue
-//            )
-//        }
     }
 
     var customDnsServers: [String] {

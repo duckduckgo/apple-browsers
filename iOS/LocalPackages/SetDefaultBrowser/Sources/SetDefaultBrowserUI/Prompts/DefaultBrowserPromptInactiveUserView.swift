@@ -60,14 +60,7 @@ struct DefaultBrowserPromptInactiveUserView: View {
                 Text(UserText.InactiveUserModal.title)
                     .titleStyle(alignment: .leading)
 
-                ScrollView(showsIndicators: false) {
-                    browserComparisonChart
-                        .frame(height: Metrics.Chart.maxHeight)
-                }
-                .frame(maxHeight: Metrics.Chart.maxHeight)
-                .overlay(alignment: .bottom) {
-                    Divider()
-                }
+                browserComparisonChart
             }
             VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
                 PlusMoreButton(action: onMoreProtectionsTapped)

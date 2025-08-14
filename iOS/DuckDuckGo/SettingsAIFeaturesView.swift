@@ -29,9 +29,13 @@ struct SettingsAIFeaturesView: View {
         List {
 
             VStack(alignment: .center) {
-                Image(.settingsAIChatHero)
-                    .padding(.top, -20)
-
+                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
+                    Image(.settingAIFeaturesHero)
+                        .padding(.top, -30)
+                } else {
+                    Image(.settingsAIChatHero)
+                        .padding(.top, -20)
+                }
                 Text(UserText.settingsAiFeatures)
                     .daxTitle3()
 
@@ -72,18 +76,24 @@ struct SettingsAIFeaturesView: View {
                     }
                 }
 
-                Section(header: Text(UserText.settingsAiChatShortcuts)) {
-                    SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
+                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
+                    NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
+                        SettingsCellView(label: "Managed Duck.ai Shortcuts", isButton: true)
+                    }
+                } else {
+                    Section(header: Text(UserText.settingsAiChatShortcuts)) {
+                        SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
-                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                        SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
 
-                    SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                        SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
 
-                    SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                        SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                    }
                 }
             }
 

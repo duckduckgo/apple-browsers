@@ -153,6 +153,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1210964217479369?focus=true
     case createFireproofFaviconUpdaterSecureVaultInBackground
+
+    /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
+    case aiFeaturesSettingsUpdate
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -351,6 +354,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.dbp))
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
+        case .aiFeaturesSettingsUpdate:
+            return .internalOnly()
         }
     }
 }

@@ -1684,7 +1684,8 @@ extension TabViewController: WKNavigationDelegate {
     
     /// Trigger DaxEasterEgg extraction only on DuckDuckGo search pages
     private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
-        guard let url = webView.url, url.isDuckDuckGoSearch else { return }
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos),
+              let url = webView.url, url.isDuckDuckGoSearch else { return }
         daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 

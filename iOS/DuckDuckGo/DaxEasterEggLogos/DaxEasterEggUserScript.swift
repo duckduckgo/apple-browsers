@@ -42,43 +42,31 @@ public class DaxEasterEggUserScript: NSObject, UserScript {
     
     // Expose global function for manual triggering by native code
     window.extractDaxEasterEggLogo = function() {
-        console.log('DaxEasterEgg: Function called successfully');
-        console.log('DaxEasterEgg: Starting extraction on', window.location.href);
-        
         function findLogo() {
-            console.log('DaxEasterEgg: Looking for logo elements');
             var ddgLogo = document.querySelector('.js-logo-ddg');
-            console.log('DaxEasterEgg: Found .js-logo-ddg:', ddgLogo);
             
             if (!ddgLogo) {
                 ddgLogo = document.querySelector('.logo-dynamic');
-                console.log('DaxEasterEgg: Found .logo-dynamic:', ddgLogo);
             }
             if (!ddgLogo) {
                 ddgLogo = document.querySelector('[data-dynamic-logo]');
-                console.log('DaxEasterEgg: Found [data-dynamic-logo]:', ddgLogo);
             }
             
             if (!ddgLogo) {
-                console.log('DaxEasterEgg: No logo element found');
                 return null;
             }
             
             if (ddgLogo.dataset && ddgLogo.dataset.dynamicLogo) {
-                console.log('DaxEasterEgg: Found dynamic logo:', ddgLogo.dataset.dynamicLogo);
                 return 'themed|' + ddgLogo.dataset.dynamicLogo;
             }
             
-            console.log('DaxEasterEgg: No data-dynamic-logo attribute found');
             return null;
         }
         
         var logoURL = findLogo();
-        console.log('DaxEasterEgg: Extracted logoURL:', logoURL);
         
         // Always send message to native, even when no logo is found
         // This allows the UI to reset to default icon when needed
-        console.log('DaxEasterEgg: Sending message to native');
         webkit.messageHandlers.daxEasterEggHandler.postMessage({
             logoURL: logoURL, // will be null if no logo found
             url: window.location.href

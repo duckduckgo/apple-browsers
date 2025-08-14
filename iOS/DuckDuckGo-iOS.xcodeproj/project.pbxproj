@@ -1329,6 +1329,7 @@
 		C106BAC52E4628DD00DDF54A /* DaxEasterEggZoomTransitionAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C106BAC42E4628DD00DDF54A /* DaxEasterEggZoomTransitionAnimator.swift */; };
 		C10C39952E44E1B7001410EA /* DaxEasterEggHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10C39942E44E1B7001410EA /* DaxEasterEggHandlerTests.swift */; };
 		C10C39972E44E1EA001410EA /* DaxEasterEggUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10C39962E44E1EA001410EA /* DaxEasterEggUserScriptTests.swift */; };
+		C10C4FF72E4E23160002368B /* UserScriptsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10C4FF62E4E23160002368B /* UserScriptsTests.swift */; };
 		C10CB5F32A1A5BDF0048E503 /* AutofillViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10CB5F22A1A5BDF0048E503 /* AutofillViews.swift */; };
 		C10E0A362E5CB1E4009CAE1B /* URL+QueryParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10E0A352E5CB1E4009CAE1B /* URL+QueryParameters.swift */; };
 		C10E0A382E5CB269009CAE1B /* URL+QueryParametersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10E0A372E5CB269009CAE1B /* URL+QueryParametersTests.swift */; };
@@ -3458,6 +3459,7 @@
 		C106BAC42E4628DD00DDF54A /* DaxEasterEggZoomTransitionAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggZoomTransitionAnimator.swift; sourceTree = "<group>"; };
 		C10C39942E44E1B7001410EA /* DaxEasterEggHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggHandlerTests.swift; sourceTree = "<group>"; };
 		C10C39962E44E1EA001410EA /* DaxEasterEggUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggUserScriptTests.swift; sourceTree = "<group>"; };
+		C10C4FF62E4E23160002368B /* UserScriptsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserScriptsTests.swift; sourceTree = "<group>"; };
 		C10CB5F22A1A5BDF0048E503 /* AutofillViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillViews.swift; sourceTree = "<group>"; };
 		C10E0A352E5CB1E4009CAE1B /* URL+QueryParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+QueryParameters.swift"; sourceTree = "<group>"; };
 		C10E0A372E5CB269009CAE1B /* URL+QueryParametersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+QueryParametersTests.swift"; sourceTree = "<group>"; };
@@ -8040,6 +8042,7 @@
 				F13B4BF81F18CA0600814661 /* TabsModelTests.swift */,
 				F189AED61F18F6DE001EBAE1 /* TabTests.swift */,
 				D625AAEA2BBEEFC900BC189A /* TabURLInterceptorTests.swift */,
+				C10C4FF62E4E23160002368B /* UserScriptsTests.swift */,
 			);
 			name = Tabs;
 			sourceTree = "<group>";
@@ -10549,6 +10552,7 @@
 				F1134ECE1F40EA9C00B73467 /* AtbParserTests.swift in Sources */,
 				F189AEE41F18FDAF001EBAE1 /* LinkTests.swift in Sources */,
 				C1E2C2272D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift in Sources */,
+				C10C4FF72E4E23160002368B /* UserScriptsTests.swift in Sources */,
 				C1056A562E253D98003220BA /* AutofillCredentialsImportPresentationManagerTests.swift in Sources */,
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,
 				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,

@@ -63,6 +63,8 @@ final class UserScripts: UserScriptsProvider {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+        
+        self.featureFlagger = featureFlagger
 
         contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
@@ -106,22 +108,30 @@ final class UserScripts: UserScriptsProvider {
         specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
     }
 
-    lazy var userScripts: [UserScript] = [
-        debugScript,
-        autoconsentUserScript,
-        findInPageScript,
-        daxEasterEggScript,
-        navigatorPatchScript,
-        surrogatesScript,
-        contentBlockerUserScript,
-        faviconScript,
-        fullScreenVideoScript,
-        autofillUserScript,
-        printingUserScript,
-        loginFormDetectionScript,
-        contentScopeUserScript,
-        contentScopeUserScriptIsolated
-    ].compactMap({ $0 })
+    lazy var userScripts: [UserScript] = {
+        var scripts: [UserScript?] = [
+            debugScript,
+            autoconsentUserScript,
+            findInPageScript,
+            navigatorPatchScript,
+            surrogatesScript,
+            contentBlockerUserScript,
+            faviconScript,
+            fullScreenVideoScript,
+            autofillUserScript,
+            printingUserScript,
+            loginFormDetectionScript,
+            contentScopeUserScript,
+            contentScopeUserScriptIsolated
+        ]
+        
+        // Only include daxEasterEggScript if feature flag is enabled
+        if featureFlagger.isFeatureOn(.daxEasterEggLogos) {
+            scripts.append(daxEasterEggScript)
+        }
+        
+        return scripts.compactMap { $0 }
+    }()
     
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {

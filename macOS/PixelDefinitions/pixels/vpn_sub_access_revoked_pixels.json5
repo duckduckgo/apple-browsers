@@ -34,28 +34,6 @@
         owners: ['diegoreymendez'],
         triggers: ['other'],
         suffixes: ['legacy_daily_count'],
-        parameters: [
-            {
-                key: 'e',
-                type: 'string',
-                description: 'Error code',
-            },
-            {
-                key: 'd',
-                type: 'string',
-                description: 'Error domain',
-            },
-            {
-                key: 'ueX',
-                type: 'string',
-                description: 'Underlying error code (x is depth)',
-            },
-            {
-                key: 'udX',
-                type: 'string',
-                description: 'Underlying error domain (x is depth)',
-            },
-            'appVersion',
-        ],
+        parameters: ['appVersion', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 }

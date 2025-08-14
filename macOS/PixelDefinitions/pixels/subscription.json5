@@ -71,34 +71,7 @@
             },
             'legacy_daily_count',
         ],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'e',
-                type: 'string',
-                description: 'Error code',
-                pattern: '^-?\d+$',
-            },
-            {
-                key: 'd',
-                type: 'string',
-                description: 'Error domain',
-                examples: ['SubscriptionPurchaseError', 'SKErrorDomain'],
-            },
-            {
-                keyPattern: '^ue[0-5]$',
-                type: 'string',
-                description: 'Underlying error code',
-                pattern: '^-?\d+$',
-            },
-            {
-                keyPattern: '^ud[0-5]$',
-                type: 'string',
-                description: 'Underlying error domain',
-                examples: ['SubscriptionPurchaseError', 'SKErrorDomain'],
-            },
-        ],
+        parameters: ['appVersion', 'pixelSource', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
     'm_mac_direct_privacy-pro_app_subscription-purchase_failure': {
         description: 'The error encountered when a Stripe subscription purchase fails',
@@ -111,33 +84,6 @@
             },
             'legacy_daily_count',
         ],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'e',
-                type: 'string',
-                description: 'Error code',
-                pattern: '^-?\d+$',
-            },
-            {
-                key: 'd',
-                type: 'string',
-                description: 'Error domain',
-                examples: ['SubscriptionPurchaseError'],
-            },
-            {
-                keyPattern: '^ue[0-5]$',
-                type: 'string',
-                description: 'Underlying error code',
-                pattern: '^-?\d+$',
-            },
-            {
-                keyPattern: '^ud[0-5]$',
-                type: 'string',
-                description: 'Underlying error domain',
-                examples: ['SubscriptionPurchaseError'],
-            },
-        ],
+        parameters: ['appVersion', 'pixelSource', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
     },
 }

@@ -77,9 +77,12 @@ struct SettingsAIFeaturesView: View {
                 }
 
                 if viewModel.isUpdatedAIFeaturesSettingsEnabled {
-                    NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
-                        SettingsCellView(label: "Managed Duck.ai Shortcuts", isButton: true)
+                    Section {
+                        NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
+                            SettingsCellView(label: UserText.settingsManageAIChatShortcuts)
+                        }
                     }
+                    .listRowBackground(Color(designSystemColor: .surface))
                 } else {
                     Section(header: Text(UserText.settingsAiChatShortcuts)) {
                         SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
@@ -108,6 +111,7 @@ struct SettingsAIFeaturesView: View {
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+
 
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,

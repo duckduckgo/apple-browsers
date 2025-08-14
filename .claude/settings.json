@@ -20,6 +20,8 @@
         "Bash(true)",
         "Bash(touch:*)",
         "Bash(git fetch:*)",
+        "Bash(domain:github.com)",
+        "WebFetch(domain:raw.githubusercontent.com)"
         "set -e -o pipefail && xcodebuild **",
         "xcodebuild **",
         "xcrun simctl*"

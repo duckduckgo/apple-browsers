@@ -54,4 +54,4 @@ runs:
         echo "⚠️ No preferred iOS version found, using default OS for device"
         destination="platform=iOS Simulator,name=$DEVICE_NAME"
         echo "destination=$destination" >> $GITHUB_OUTPUT
-        echo "ios-version=default" >> $GITHUB_OUTPUT
+        echo "ios-version=18.6" >> $GITHUB_OUTPUT # Use 18.6 as a default, just in case

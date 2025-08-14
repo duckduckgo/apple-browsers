@@ -38,8 +38,8 @@ runs:
           version=$(echo "$version" | xargs)
           echo "Checking for iOS $version..."
           
-          if echo "$available_runtimes" | grep -q "iOS $version"; then
-            exact_version=$(echo "$available_runtimes" | grep "iOS $version" | head -1 | sed -n 's/.*(\([0-9.]*\) - .*/\1/p')
+          if echo "$available_runtimes" | grep -q "iOS $version\b"; then
+            exact_version=$(echo "$available_runtimes" | grep "iOS $version\b" | head -1 | sed -n 's/.*(\([0-9.]*\) - .*/\1/p')
             
             if [[ -n "$exact_version" ]]; then
               destination="platform=iOS Simulator,name=$DEVICE_NAME,OS=$exact_version"

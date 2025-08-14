@@ -24,16 +24,18 @@ enum DefaultBrowserPrompt {
     struct TitleStyle: ViewModifier {
 
         let alignment: TextAlignment
+        let fontSize: CGFloat
+        let kerning: CGFloat
 
         func body(content: Content) -> some View {
             let view = content
-                .font(.system(size: 28.0, weight: .bold))
+                .font(.system(size: fontSize, weight: .bold))
                 .foregroundStyle(Color.primary)
                 .minimumScaleFactor(0.7)
                 .multilineTextAlignment(alignment)
 
             if #available(iOS 16, *) {
-                return view.kerning(0.38)
+                return view.kerning(kerning)
             } else {
                 return view
             }
@@ -45,8 +47,8 @@ enum DefaultBrowserPrompt {
 
 extension View {
 
-    func titleStyle(alignment: TextAlignment) -> some View {
-        modifier(DefaultBrowserPrompt.TitleStyle(alignment: alignment))
+    func titleStyle(alignment: TextAlignment, fontSize: CGFloat = 28.0, kerning: CGFloat = 0.38) -> some View {
+        modifier(DefaultBrowserPrompt.TitleStyle(alignment: alignment, fontSize: fontSize, kerning: kerning))
     }
     
 }

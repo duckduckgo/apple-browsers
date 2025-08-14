@@ -45,9 +45,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1203108348835387/1209710972679271/f
     case networkProtectionAppStoreSysexMessage
 
-    /// https://app.asana.com/0/1204186595873227/1206489252288889
-    case networkProtectionRiskyDomainsProtection
-
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
@@ -188,7 +185,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autocompleteTabs,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .networkProtectionRiskyDomainsProtection,
                 .syncSeamlessAccountSwitching,
                 .historyView,
                 .webExtensions,
@@ -279,8 +275,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .networkProtectionRiskyDomainsProtection:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:

@@ -138,12 +138,21 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.2"
+
     - name: Build and test
       id: run-unit-tests
       run: |
+        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+        
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
-          -destination "platform=iOS Simulator,name=iPhone 16" \
+          -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -267,6 +276,12 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.2"
+
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
       with:
@@ -280,11 +295,14 @@ jobs:
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       run: |
+        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+        
         bundle exec fastlane sync_signing
 
         set -o pipefail && xcodebuild \
         -scheme "iOS Browser" \
-        -destination "platform=iOS Simulator,name=iPhone 16" \
+        -destination "${{ steps.select-simulator.outputs.destination }}" \
         -derivedDataPath "DerivedData" \
         -configuration "Release" \
         -skipPackagePluginValidation \

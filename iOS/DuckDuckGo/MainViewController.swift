@@ -439,8 +439,6 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
-
-        fireExperimentalAddressBarPixel()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -1079,6 +1077,7 @@ class MainViewController: UIViewController {
     }
     
     func onForeground() {
+        fireExperimentalAddressBarPixel()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.

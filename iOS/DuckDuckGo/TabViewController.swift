@@ -3743,15 +3743,13 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
     func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsPrivateSearch()
-        mainVC.closeTab(tabModel, andOpenEmptyOneAtSamePosition: true)
-//        showBars()
+        mainVC.newTab()
     }
     
     func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat()
-        mainVC.closeTab(tabModel, andOpenEmptyOneAtSamePosition: true)
-        showBars()
+        mainVC.newTab()
     }
 
 }

@@ -22,36 +22,38 @@ runs:
       id: select-version
       shell: bash
       run: |
-        # Parse preferred versions from input
-        IFS=',' read -ra PREFERRED_VERSIONS <<< "${{ inputs.preferred-versions }}"
-        DEVICE_NAME="${{ inputs.device-name }}"
-        
-        echo "Looking for iOS simulator with device: $DEVICE_NAME"
-        echo "Preferred versions: ${{ inputs.preferred-versions }}"
-        
-        # Get list of available iOS runtimes
-        available_runtimes=$(xcrun simctl list runtimes | grep "iOS")
-        echo "Available iOS runtimes:"
-        echo "$available_runtimes"
-        
-        for version in "${PREFERRED_VERSIONS[@]}"; do
-          version=$(echo "$version" | xargs)
-          echo "Checking for iOS $version..."
-          
-          if echo "$available_runtimes" | grep -q "iOS $version"; then
-            exact_version=$(echo "$available_runtimes" | grep "iOS $version" | head -1 | sed -n 's/.*(\([0-9.]*\) - .*/\1/p')
-            
-            if [[ -n "$exact_version" ]]; then
-              destination="platform=iOS Simulator,name=$DEVICE_NAME,OS=$exact_version"
-              echo "✅ Selected iOS $version (exact: $exact_version)"
-              echo "destination=$destination" >> $GITHUB_OUTPUT
-              echo "ios-version=$version" >> $GITHUB_OUTPUT
-              exit 0
-            fi
+        IFS=',' read -r -a PREFERRED_VERSIONS <<< "${{ inputs.preferred-versions }}"
+        DEVICE_NAME='${{ inputs.device-name }}'
+
+        runtimes_json="$(xcrun simctl list runtimes --json)"
+
+        pick_exact_version() {
+          local pref="$1"
+          jq -r --arg pref "$pref" '
+            .runtimes
+            | map(select(
+              .isAvailable == true and
+              (.name | startswith("iOS ")) and
+              (.version | startswith($pref))
+            ))
+            | sort_by(.version)
+          | .[-1].version
+          ' <<< "$runtimes_json"
+        }
+
+        for v in "${PREFERRED_VERSIONS[@]}"; do
+          v="$(echo "$v" | xargs)"
+          [[ -z "$v" ]] && continue
+          exact="$(pick_exact_version "$v")"
+          if [[ -n "$exact" ]]; then
+            dest="platform=iOS Simulator,name=${DEVICE_NAME},OS=${exact}"
+            echo "✅ Selected iOS $v (exact: $exact)"
+            echo "destination=$dest" >> "$GITHUB_OUTPUT"
+            echo "ios-version=$exact" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
         done
-        
+
         echo "⚠️ No preferred iOS version found, using default OS for device"
-        destination="platform=iOS Simulator,name=$DEVICE_NAME"
-        echo "destination=$destination" >> $GITHUB_OUTPUT
-        echo "ios-version=default" >> $GITHUB_OUTPUT
+        echo "destination=platform=iOS Simulator,name=${DEVICE_NAME}" >> "$GITHUB_OUTPUT"
+        echo "ios-version=default" >> "$GITHUB_OUTPUT"

@@ -37,8 +37,8 @@ struct SettingsAIExperimentalPickerView: View {
                         .resizable()
                         .scaledToFit()
                     VStack(spacing: 0) {
-                        Text("Search Only")
-                        Text("(Default)")
+                        Text(UserText.settingsAiExperimentalPickerSearchOnly)
+                        Text(UserText.settingsAiExperimentalPickerDefault)
                     }
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -65,8 +65,8 @@ struct SettingsAIExperimentalPickerView: View {
                         .resizable()
                         .scaledToFit()
                     VStack(spacing: 0) {
-                        Text("Search & Duck.ai")
-                        Text("(Experimental)")
+                        Text(UserText.settingsAiExperimentalPickerSearchAndDuckAI)
+                        Text(UserText.settingsAiExperimentalPickerExperimental)
                     }
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))

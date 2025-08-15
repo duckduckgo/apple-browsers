@@ -1785,6 +1785,12 @@ public struct UserText {
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("search.input.field.placeholder.search.duckai", value: "Ask Duck.ai", comment: "Placeholder text for the search input field when searching Duck.ai")
 
+    // MARK: - AI Experimental Picker
+    public static let settingsAiExperimentalPickerSearchOnly = NSLocalizedString("settings.ai.experimental.picker.search_only", value: "Search Only", comment: "Title for the 'Search Only' option in the AI experimental picker")
+    public static let settingsAiExperimentalPickerDefault = NSLocalizedString("settings.ai.experimental.picker.default", value: "(Default)", comment: "Caption indicating the default option in the AI experimental picker")
+    public static let settingsAiExperimentalPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
+    public static let settingsAiExperimentalPickerExperimental = NSLocalizedString("settings.ai.experimental.picker.experimental", value: "(Experimental)", comment: "Caption indicating the experimental option in the AI experimental picker")
+
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")
         public static let toggleMessageDeprecated = NSLocalizedString("malicious-site-protection.settings.toggle.message", value: "Warn me on sites flagged for phishing or malware", comment: "Text explaining what happens when Malicious Site Protection is enabled")

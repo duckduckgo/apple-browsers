@@ -142,7 +142,7 @@ private enum Metrics {
 
     @MainActor
     enum Content {
-        static let titleSize = MetricBuilder<CGFloat>(default: 28.0).iPhoneSmallScreen(22.0)
+        static let titleSize = MetricBuilder<CGFloat>(iPhone: 24.0, iPad: 28.0).iPhoneSmallScreen(22.0)
         static let titleKerning = MetricBuilder<CGFloat>(default: 0.38).iPhoneSmallScreen(0.35)
 
         static let maxWidth = MetricBuilder<CGFloat?>(iPhone: nil, iPad: 542).build()

@@ -100,7 +100,7 @@ struct SettingsAIExperimentalPickerView: View {
         Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
             .resizable()
             .renderingMode(.template)
-            .foregroundStyle(Color(designSystemColor: .textSecondary))
+            .foregroundStyle(Color(designSystemColor: .iconsTertitary))
 
     }
 }

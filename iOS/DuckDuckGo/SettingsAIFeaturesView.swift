@@ -72,6 +72,8 @@ struct SettingsAIFeaturesView: View {
                     if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                         Section {
                             SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                        } footer: {
+                            Text("Search the web or ask Duck.ai directly from the Address Bar. Share Feedback")
                         }
                         .listRowBackground(Color(designSystemColor: .surface))
                     } else {

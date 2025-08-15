@@ -1280,6 +1280,7 @@ extension SettingsViewModel {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
             set: { newValue in
+                self.objectWillChange.send()
                 self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
             }
         )

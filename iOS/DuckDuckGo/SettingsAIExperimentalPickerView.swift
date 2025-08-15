@@ -18,6 +18,9 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
+
 
 struct SettingsAIExperimentalPickerView: View {
     // isDuckAISelected maps to AI Chat enabled state
@@ -30,40 +33,61 @@ struct SettingsAIExperimentalPickerView: View {
                 isDuckAISelected = false
             } label: {
                 VStack(spacing: 8) {
-                    Image(isDuckAISelected ? "SearchExperimentalOff" : "SearchExperimentalOn")
+                    Image(isDuckAISelected ? .searchExperimentalOff : .searchExperimentalOn)
                         .resizable()
                         .scaledToFit()
                     Text("Search Only\n(Default)")
                         .multilineTextAlignment(.center)
                         .foregroundColor(.primary)
-                    Image(isDuckAISelected ? "AIExperimentalCheckOff" : "AIExperimentalCheckOn")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 20)
+                    Group {
+                        if isDuckAISelected {
+                            checkmarkOff
+                        } else {
+                            checkmarkOn
+                        }
+                    }
+                    .scaledToFit()
+                    .frame(height: 20)
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
 
-            // Search & Duck.ai (Experimental)
             Button {
                 isDuckAISelected = true
             } label: {
                 VStack(spacing: 8) {
-                    Image(isDuckAISelected ? "AIExperimentalOn" : "AIExperimentalOff")
+                    Image(isDuckAISelected ? .aiExperimentalOn : .aiExperimentalOff)
                         .resizable()
                         .scaledToFit()
                     Text("Search & Duck.ai\n(Experimental)")
                         .multilineTextAlignment(.center)
                         .foregroundColor(.primary)
-                    Image(isDuckAISelected ? "AIExperimentalCheckOn" : "AIExperimentalCheckOff")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 20)
+
+                    Group {
+                        if isDuckAISelected {
+                            checkmarkOn
+                        } else {
+                            checkmarkOff
+                        }
+                    }
+                    .scaledToFit()
+                    .frame(height: 20)
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var checkmarkOn: some View {
+        Image(uiImage: DesignSystemImages.Recolorable.Size24.check)
+            .resizable()
+            .tint(Color(designSystemColor: .accent))
+    }
+
+    private var checkmarkOff: some View {
+        Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
+            .resizable()
     }
 }

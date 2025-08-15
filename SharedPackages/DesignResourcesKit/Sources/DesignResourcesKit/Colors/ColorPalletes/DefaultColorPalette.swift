@@ -65,7 +65,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Icons
     private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
     private static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
-    private static let iconsTertitary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
+    private static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
 
     // Text
     private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
@@ -155,7 +155,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surface: return surface
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
-        case .iconsTertitary: return iconsTertitary
+        case .iconsTertiary: return iconsTertiary
         case .textPrimary: return textPrimary
         case .lines: return lines
         case .shadowPrimary: return shadowPrimary

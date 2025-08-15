@@ -67,7 +67,7 @@ public enum DesignSystemColor {
     // Icons
     case icons
     case iconsSecondary
-    case iconsTertitary
+    case iconsTertiary
 
     // Buttons/Primary
     case buttonsPrimaryDefault

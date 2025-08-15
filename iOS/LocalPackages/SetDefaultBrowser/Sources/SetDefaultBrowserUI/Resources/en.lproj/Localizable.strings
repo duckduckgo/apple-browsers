@@ -5,8 +5,5 @@
 "setDefaultBrowser.cta.secondary.title" = "Don’t Ask Again";
 
 "setDefaultBrowser.modal.inactive-user.title" = "DuckDuckGo has protections other browsers don’t.";
-"setDefaultBrowser.modal.inactive-user.cta.more-protections.title" = "Plus even more protections...";
 "setDefaultBrowser.modal.inactive-user.cta.primary.title" = "Open Links With DuckDuckGo";
 "setDefaultBrowser.modal.inactive-user.cta.secondary.title" = "Continue Browsing";
-
-"setDefaultBrowser.modal.more-protections.cta.close" = "Close";

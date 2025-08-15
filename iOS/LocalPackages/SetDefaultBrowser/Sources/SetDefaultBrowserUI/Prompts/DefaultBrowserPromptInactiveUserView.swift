@@ -31,7 +31,6 @@ struct DefaultBrowserPromptInactiveUserView: View {
     let browserComparisonChart: AnyView
     let closeAction: () -> Void
     let setAsDefaultAction: () -> Void
-    let onMoreProtectionsTapped: () -> Void
 
     var body: some View {
         GeometryReader { proxy in
@@ -53,25 +52,17 @@ struct DefaultBrowserPromptInactiveUserView: View {
 
     @ViewBuilder
     private func content(proxy: GeometryProxy) -> some View {
-        let innerSectionsVerticalSpacing: CGFloat = Metrics.Content.innerSectionsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)
-
-        VStack(alignment: .leading, spacing: Metrics.Content.sectionsSpacing) {
-            VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
-                Text(UserText.InactiveUserModal.title)
-                    .titleStyle(
-                        alignment: .leading,
-                        fontSize: Metrics.Content.titleSize.build(v: verticalSizeClass, h: horizontalSizeClass),
-                        kerning: Metrics.Content.titleKerning.build(v: verticalSizeClass, h: horizontalSizeClass)
-                    )
-
-                browserComparisonChart
-            }
-            VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
-                PlusMoreButton(action: onMoreProtectionsTapped)
-                    .frame(height: Metrics.PlusMoreButton.height)
-
-                Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
-            }
+        VStack(alignment: .leading, spacing: Metrics.Content.innerSectionsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
+            Text(UserText.InactiveUserModal.title)
+                .titleStyle(
+                    alignment: .leading,
+                    fontSize: Metrics.Content.titleSize.build(v: verticalSizeClass, h: horizontalSizeClass),
+                    kerning: Metrics.Content.titleKerning.build(v: verticalSizeClass, h: horizontalSizeClass)
+                )
+            
+            browserComparisonChart
+            
+            Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
         }
         .padding(Metrics.Content.innerPadding)
         .background(Color(designSystemColor: .surface))
@@ -85,21 +76,6 @@ struct DefaultBrowserPromptInactiveUserView: View {
     }
 }
 
-struct PlusMoreButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
-                .font(.system(size: Metrics.PlusMoreButton.moreProtectionsFontSize))
-                .underline(true)
-                .multilineTextAlignment(.leading)
-                .lineLimit(2)
-                .foregroundStyle(Color(designSystemColor: .accent))
-        }
-    }
-}
-
 struct DismissButton: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -109,7 +85,7 @@ struct DismissButton: View {
         Button(action: action) {
             Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                 .foregroundColor(.primary)
-                .padding(Metrics.PlusMoreButton.padding)
+                .padding(Metrics.DismissButton.contentPadding)
                 .background(Color(designSystemColor: .textSelectionFill))
                 .clipShape(RoundedRectangle(cornerRadius: Metrics.DismissButton.cornerRadius))
         }
@@ -151,7 +127,6 @@ private enum Metrics {
         static let outerHorizontalPadding: CGFloat = 16
         static let innerPadding: CGFloat = 24
         static let cornerRadius: CGFloat = 24
-        static let sectionsSpacing: CGFloat = 0
         static let innerSectionsVerticalSpacing = MetricBuilder(default: 24.0).iPhoneSmallScreen(16.0)
     }
 
@@ -159,14 +134,9 @@ private enum Metrics {
         static let maxHeight: CGFloat = 260.0
     }
 
-    enum PlusMoreButton {
-        static let height: CGFloat = 48.0
-        static let padding: CGFloat = 12.0
-        static let moreProtectionsFontSize: CGFloat = 15
-    }
-
     @MainActor
     enum DismissButton {
+        static let contentPadding: CGFloat = 12.0
         static let closeButtonTopPadding: CGFloat = MetricBuilder(iPhone: 30.0, iPad: 60.0).build()
         static let size: CGFloat = 44.0
         static let horizontalPadding =  MetricBuilder(iPhone: 16.0, iPad: 24.0).build()
@@ -181,5 +151,5 @@ private enum Metrics {
 }
 
 #Preview {
-    DefaultBrowserPromptInactiveUserView(background: AnyView(Color.blue), browserComparisonChart: AnyView(EmptyView()), closeAction: {}, setAsDefaultAction: {}, onMoreProtectionsTapped: {})
+    DefaultBrowserPromptInactiveUserView(background: AnyView(Color.blue), browserComparisonChart: AnyView(EmptyView()), closeAction: {}, setAsDefaultAction: {})
 }

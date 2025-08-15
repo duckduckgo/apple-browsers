@@ -1464,8 +1464,6 @@
 		C1CAAAAC2CFCC91D00C37EE6 /* EmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAAAB2CFCC91D00C37EE6 /* EmptyView.swift */; };
 		C1CDA3162AFB9C7F006D1476 /* AutofillNeverPromptWebsitesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CDA3152AFB9C7F006D1476 /* AutofillNeverPromptWebsitesManager.swift */; };
 		C1CDA31E2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CDA31D2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift */; };
-		C1D00FC42E4500A800958443 /* DaxEasterEggImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D00FC32E4500A800958443 /* DaxEasterEggImageManager.swift */; };
-		C1D00FC62E45012A00958443 /* DaxEasterEggImageManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D00FC52E45012A00958443 /* DaxEasterEggImageManagerTests.swift */; };
 		C1D21E2D293A5965006E5A05 /* AutofillLoginSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */; };
 		C1D21E2F293A599C006E5A05 /* AutofillLoginSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */; };
 		C1D7F3F42D5F6D7B0029B213 /* BookmarksEmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */; };
@@ -3628,8 +3626,6 @@
 		C1CB0AA62D08629800335287 /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C1CDA3152AFB9C7F006D1476 /* AutofillNeverPromptWebsitesManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillNeverPromptWebsitesManager.swift; sourceTree = "<group>"; };
 		C1CDA31D2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillNeverPromptWebsitesManagerTests.swift; sourceTree = "<group>"; };
-		C1D00FC32E4500A800958443 /* DaxEasterEggImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggImageManager.swift; sourceTree = "<group>"; };
-		C1D00FC52E45012A00958443 /* DaxEasterEggImageManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggImageManagerTests.swift; sourceTree = "<group>"; };
 		C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginSession.swift; sourceTree = "<group>"; };
 		C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginSessionTests.swift; sourceTree = "<group>"; };
 		C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyView.swift; sourceTree = "<group>"; };
@@ -6811,7 +6807,6 @@
 			children = (
 				C10C39942E44E1B7001410EA /* DaxEasterEggHandlerTests.swift */,
 				C10C39962E44E1EA001410EA /* DaxEasterEggUserScriptTests.swift */,
-				C1D00FC52E45012A00958443 /* DaxEasterEggImageManagerTests.swift */,
 			);
 			path = DaxEasterEggLogos;
 			sourceTree = "<group>";
@@ -7297,7 +7292,6 @@
 				C11D666A2E48BD4300934CB5 /* DaxEasterEggPresenter.swift */,
 				C106BAC42E4628DD00DDF54A /* DaxEasterEggZoomTransitionAnimator.swift */,
 				C106BAC22E4627E000DDF54A /* DaxEasterEggFullScreenViewController.swift */,
-				C1D00FC32E4500A800958443 /* DaxEasterEggImageManager.swift */,
 				C1ED4DAB2E44B0B8003298A5 /* DaxEasterEggHandler.swift */,
 				C1ED4DAC2E44B0B8003298A5 /* DaxEasterEggUserScript.swift */,
 				C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */,
@@ -10335,7 +10329,6 @@
 				310D091D2799F57200DC0060 /* Download.swift in Sources */,
 				B39FB0F42E25368100DF2C4E /* AutoconsentPixels.swift in Sources */,
 				65F4CB462D7A0EFF00E89416 /* DuckPlayerWebView.swift in Sources */,
-				C1D00FC42E4500A800958443 /* DaxEasterEggImageManager.swift in Sources */,
 				56038D5F2E0E97B20001419D /* SubscriptionURLNavigationHandler.swift in Sources */,
 				6F4BFD3E2DE06F1F00E754EB /* StyledTopBottomBorderView.swift in Sources */,
 				BDE91CDA2C62A70B0005CB74 /* UnifiedMetadataCollector.swift in Sources */,
@@ -10746,7 +10739,6 @@
 				3170048227A9504F00C03F35 /* DownloadMocks.swift in Sources */,
 				317045C02858C6B90016ED1F /* AutofillInterfaceEmailTruncatorTests.swift in Sources */,
 				65D748412D9D34C900554B1D /* DuckPlayerNativeUIPresenterTests.swift in Sources */,
-				C1D00FC62E45012A00958443 /* DaxEasterEggImageManagerTests.swift in Sources */,
 				987130C6294AAB9F00AB05E0 /* BookmarkListViewModelTests.swift in Sources */,
 				6F03CB022C32ED47004179A8 /* NewTabPageMessagesModelTests.swift in Sources */,
 				850250B520D80419002199C7 /* AtbAndVariantCleanupTests.swift in Sources */,

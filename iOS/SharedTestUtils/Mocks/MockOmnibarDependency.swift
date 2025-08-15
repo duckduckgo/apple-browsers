@@ -43,12 +43,3 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
         self.daxEasterEggPresenter = daxEasterEggPresenter
     }
 }
-
-final class MockDaxEasterEggImageManager: DaxEasterEggImageManaging {
-    func getBestImageForFullScreen(url: URL, fallbackImage: UIImage?, completion: @escaping (UIImage?) -> Void) { }
-    
-    func getHighResImageFromMemoryCache(for url: URL) -> UIImage? { nil }
-    
-    
-    func clearExpiredImages() { }
-}

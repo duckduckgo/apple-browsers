@@ -49,7 +49,6 @@ final class MockDaxEasterEggImageManager: DaxEasterEggImageManaging {
     
     func getHighResImageFromMemoryCache(for url: URL) -> UIImage? { nil }
     
-    func preloadFullResolutionImage(for url: URL) { }
     
     func clearExpiredImages() { }
 }

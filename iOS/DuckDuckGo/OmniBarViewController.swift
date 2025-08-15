@@ -381,11 +381,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         
         barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url)
         
-        // Pre-load full resolution image for smoother transition
-        if let url = url {
-            dependencies.daxEasterEggPresenter.preloadFullResolutionImage(for: url)
-        }
-        
         // Set up delegate if not already done
         if barView.privacyInfoContainer.delegate == nil {
             barView.privacyInfoContainer.delegate = self

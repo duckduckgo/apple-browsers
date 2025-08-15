@@ -78,8 +78,8 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         let adjustedFrame = calculateAdjustedFrame(for: finalFrame, viewController: toViewController)
         let finalImageFrame = calculateFinalImageFrame(for: adjustedFrame, imageSize: sourceImage?.size ?? CGSize(width: 100, height: 100))
         
-        // Animate the transition
-        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
+        // Animate the transition using spring with high damping to prevent overshoot
+        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
             tempImageView.frame = finalImageFrame
             toViewController.view.alpha = 1
         } completion: { _ in
@@ -97,24 +97,27 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         }
         
         let containerView = transitionContext.containerView
+        let finalFrame = transitionContext.finalFrame(for: fromViewController)
         
         // Get the current image from the full-screen view controller
         let currentImage = fromViewController.getCurrentImage()
-        let currentImageFrame = fromViewController.getCurrentImageFrame()
         
-        // Create a temporary image view for animation
+        // Use the same frame calculation as presentation to ensure consistency
+        let adjustedFrame = calculateAdjustedFrame(for: finalFrame, viewController: fromViewController)
+        let calculatedImageFrame = calculateFinalImageFrame(for: adjustedFrame, imageSize: currentImage?.size ?? CGSize(width: 100, height: 100))
+        
+        // Create a temporary image view for animation, starting from the calculated frame
         let tempImageView = UIImageView(image: currentImage)
         tempImageView.contentMode = .scaleAspectFit
-        tempImageView.frame = currentImageFrame
+        tempImageView.frame = calculatedImageFrame
         tempImageView.clipsToBounds = true
         containerView.addSubview(tempImageView)
         
         // Hide the original view
         fromViewController.view.alpha = 0
         
-        // Animate back to exact source frame - no aspect ratio calculation needed
-        // since the display image is already properly sized to match the original
-        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: [.curveEaseInOut]) {
+        // Animate back to source frame using spring with high damping to prevent overshoot
+        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0, options: [.curveEaseInOut]) {
             tempImageView.frame = self.sourceFrame
         } completion: { _ in
             tempImageView.removeFromSuperview()

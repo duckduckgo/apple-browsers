@@ -106,10 +106,6 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         imageView.image
     }
     
-    /// Returns current image frame for transition animation
-    func getCurrentImageFrame() -> CGRect {
-        return imageView.frame
-    }
 }
 
 

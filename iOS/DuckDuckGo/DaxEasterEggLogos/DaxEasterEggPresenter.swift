@@ -21,68 +21,26 @@ import UIKit
 
 /// Presents Dax Easter Egg logos in full-screen mode with zoom transitions.
 protocol DaxEasterEggPresenting {
-    /// Pre-loads the full resolution image for smoother transitions when presented.
-    func preloadFullResolutionImage(for url: URL)
-    
     /// Presents the logo in full-screen mode with a custom zoom transition.
-    /// Automatically handles image preloading and caching for smooth animations.
     func presentFullScreen(from presentingViewController: UIViewController,
                            logoURL: URL?,
                            currentImage: UIImage?,
                            sourceFrame: CGRect)
 }
 
-/// Presents Dax Easter Egg logos in full-screen mode with image caching and zoom transitions.
+/// Presents Dax Easter Egg logos in full-screen mode with zoom transitions.
 final class DaxEasterEggPresenter: DaxEasterEggPresenting {
-    
-    private let imageManager: DaxEasterEggImageManaging
-    
-    init(imageManager: DaxEasterEggImageManaging = DaxEasterEggImageManager()) {
-        self.imageManager = imageManager
-    }
-    
-    func preloadFullResolutionImage(for url: URL) {
-        imageManager.preloadFullResolutionImage(for: url)
-    }
     
     func presentFullScreen(from presentingViewController: UIViewController,
                            logoURL: URL?,
                            currentImage: UIImage?,
                            sourceFrame: CGRect) {
         
-        if let url = logoURL {
-            imageManager.getBestImageForFullScreen(url: url, fallbackImage: currentImage) { [weak presentingViewController] _ in
-                self.presentFullScreenViewController(
-                    from: presentingViewController,
-                    logoURL: url,
-                    placeholderImage: currentImage,
-                    sourceFrame: sourceFrame,
-                    transitionImage: currentImage
-                )
-            }
-        } else {
-            presentFullScreenViewController(
-                from: presentingViewController,
-                logoURL: nil,
-                placeholderImage: currentImage,
-                sourceFrame: sourceFrame,
-                transitionImage: currentImage
-            )
-        }
-    }
-    
-    private func presentFullScreenViewController(from presentingViewController: UIViewController?,
-                                                 logoURL: URL?,
-                                                 placeholderImage: UIImage?,
-                                                 sourceFrame: CGRect,
-                                                 transitionImage: UIImage?) {
-        guard let presentingViewController = presentingViewController else { return }
-        
         let fullScreenController = DaxEasterEggFullScreenViewController(
             imageURL: logoURL,
-            placeholderImage: placeholderImage,
+            placeholderImage: currentImage,
             sourceFrame: sourceFrame,
-            sourceImage: transitionImage
+            sourceImage: currentImage
         )
         presentingViewController.present(fullScreenController, animated: true)
     }

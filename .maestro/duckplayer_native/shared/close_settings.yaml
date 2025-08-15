@@ -6,4 +6,9 @@ appId: com.duckduckgo.mobile.ios
     file: constants.yaml
 
 - tapOn: ${output.settingsLabel}
+
+- waitForAnimationToEnd
+
 - tapOn: ${output.doneLabel}
+
+- waitForAnimationToEnd

@@ -110,12 +110,14 @@ final class NavigationActionBarView: UIView {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
         
+        let mainStackMinHeightConstraint = mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize)
         NSLayoutConstraint.activate([
             // Main stack view constraints
             mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Constants.padding),
             mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Constants.padding),
             mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: Constants.padding),
             mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -Constants.padding),
+            mainStackMinHeightConstraint,
 
             // Background gradient should align with the keyboard (or bottom safe area)
             backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -255,7 +257,7 @@ final class NavigationActionBarView: UIView {
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
         
-        let shouldShowNewLineButton = viewModel.isKeyboardVisible
+        let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText
         newLineButton.isHidden = !shouldShowNewLineButton
         
         let shouldShowSearchButton = viewModel.hasText

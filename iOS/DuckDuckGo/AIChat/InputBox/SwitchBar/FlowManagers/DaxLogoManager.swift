@@ -37,6 +37,8 @@ final class DaxLogoManager {
 
     private var progress: CGFloat = 0
 
+    private(set) var containerYCenterConstraint: NSLayoutConstraint?
+
     // MARK: - Public Methods
     
     func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
@@ -57,6 +59,8 @@ final class DaxLogoManager {
         centeringGuide.identifier = "DaxLogoCenteringGuide"
         viewController.view.addLayoutGuide(centeringGuide)
 
+        containerYCenterConstraint = logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
+
         NSLayoutConstraint.activate([
 
             // Position layout centering guide vertically between top view and keyboard
@@ -71,7 +75,7 @@ final class DaxLogoManager {
             logoContainerView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
             logoContainerView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
             logoContainerView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
-            logoContainerView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor),
+            containerYCenterConstraint!,
 
             homeDaxLogoView.leadingAnchor.constraint(equalTo: logoContainerView.leadingAnchor),
             homeDaxLogoView.trailingAnchor.constraint(equalTo: logoContainerView.trailingAnchor),

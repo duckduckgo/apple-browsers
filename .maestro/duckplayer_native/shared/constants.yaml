@@ -3,6 +3,7 @@ appId: com.duckduckgo.mobile.ios
 ---
 # Define variables that can be used across tests
 - evalScript: "${output.videoTitle = 'DuckDuckGo vs Google: 5 Reasons You Should Switch'}"
+- evalScript: "${output.videoTitle2 = 'DuckDuckGo vs Google: 5 Reasons You Should Switch - YouTube'}"
 - evalScript: "${output.videoSearchUrl = 'https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web'}"
 - evalScript: "${output.youtubeSearchUrl = 'https://www.youtube.com/results?search_query=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%22&sp=EgIQAQ%253D%253D'}"
 - evalScript: "${output.searchEntryId = 'searchEntry'}"

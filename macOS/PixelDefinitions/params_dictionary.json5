@@ -21,4 +21,30 @@
         description: 'The channel the user is on',
         enum: ['browser-dmg', 'browser-appstore'],
     },
+    errorDomain: {
+        key: 'd',
+        type: 'string',
+        description: 'NSError code domain',
+        examples: ['NSURLErrorDomain'],
+    },
+    errorCode: {
+        key: 'e',
+        type: 'string',
+        description: 'NSError code',
+        pattern: '^-?\\d+$',
+        examples: ['-1009', '42'],
+    },
+    underlyingErrorCode: {
+        keyPattern: '^ue[0-9]$',
+        type: 'string',
+        description: 'Underlying NSError code',
+        pattern: '^-?\\d+$',
+        examples: ['-1009', '42'],
+    },
+    underlyingErrorDomain: {
+        keyPattern: '^ud[0-9]$',
+        type: 'string',
+        description: 'Underlying NSError code domain',
+        examples: ['NSURLErrorDomain'],
+    },
 }

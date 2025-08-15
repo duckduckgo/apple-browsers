@@ -629,7 +629,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         storePurchaseManager.hasActiveSubscriptionResult = false
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseFailed)
+        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseFailed(NSError(domain: "test", code: 1)))
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]

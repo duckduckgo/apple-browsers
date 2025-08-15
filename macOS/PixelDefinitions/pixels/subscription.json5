@@ -60,4 +60,30 @@
             },
         ],
     },
+    'm_mac_store_privacy-pro_app_subscription-purchase_failure': {
+        description: 'The error encountered when an App Store subscription purchase fails',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: [
+            {
+                description: 'The type of purchase failure',
+                enum: ['store', 'backend', 'account-creation', 'other'],
+            },
+            'legacy_daily_count',
+        ],
+        parameters: ['appVersion', 'pixelSource', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
+    'm_mac_direct_privacy-pro_app_subscription-purchase_failure': {
+        description: 'The error encountered when a Stripe subscription purchase fails',
+        owners: ['federicocappelli'],
+        triggers: ['other'],
+        suffixes: [
+            {
+                description: 'The type of purchase failure',
+                enum: ['store', 'backend', 'account-creation', 'other'],
+            },
+            'legacy_daily_count',
+        ],
+        parameters: ['appVersion', 'pixelSource', 'errorCode', 'errorDomain', 'underlyingErrorCode', 'underlyingErrorDomain'],
+    },
 }

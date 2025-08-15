@@ -80,7 +80,7 @@ struct SettingsAIFeaturesView: View {
                                 .environment(\.openURL, OpenURLAction { url in
                                     switch FooterAction.from(url) {
                                     case .shareFeedback?:
-                                        viewModel.shareFeedback()
+                                        viewModel.presentLegacyView(.feedback)
                                         return .handled
                                     case nil:
                                         return .systemAction

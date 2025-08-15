@@ -21,6 +21,9 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import DesignResourcesKitIcons
+import BrowserServicesKit
+import Common
+import Networking
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -73,7 +76,16 @@ struct SettingsAIFeaturesView: View {
                         Section {
                             SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
                         } footer: {
-                            Text("Search the web or ask Duck.ai directly from the Address Bar. Share Feedback")
+                            Text(footerAttributedString)
+                                .environment(\.openURL, OpenURLAction { url in
+                                    switch FooterAction.from(url) {
+                                    case .shareFeedback?:
+                                        viewModel.shareFeedback()
+                                        return .handled
+                                    case nil:
+                                        return .systemAction
+                                    }
+                                })
                         }
                         .listRowBackground(Color(designSystemColor: .surface))
                     } else {
@@ -126,6 +138,41 @@ struct SettingsAIFeaturesView: View {
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
+        }
+    }
+}
+
+private extension SettingsAIFeaturesView {
+    var footerAttributedString: AttributedString {
+        var base = AttributedString(UserText.settingsAiExperimentalPickerFooterDescription + " ")
+        var link = AttributedString(UserText.subscriptionFeedback)
+        link.foregroundColor = Color(designSystemColor: .accent)
+        link.link = FooterAction.shareFeedback.url
+        base.append(link)
+        return base
+    }
+}
+
+private enum FooterAction {
+    static let scheme = "action"
+
+    case shareFeedback
+
+    var url: URL {
+        URL(string: "\(Self.scheme)://\(host)")!
+    }
+
+    private var host: String {
+        switch self {
+        case .shareFeedback: return "share-feedback"
+        }
+    }
+
+    static func from(_ url: URL) -> FooterAction? {
+        guard url.scheme == Self.scheme else { return nil }
+        switch url.host {
+        case "share-feedback": return .shareFeedback
+        default: return nil
         }
     }
 }

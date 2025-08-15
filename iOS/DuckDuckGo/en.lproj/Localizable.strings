@@ -2677,6 +2677,9 @@ Take back control of your personal information with the browser designed for dat
 /* Caption indicating the experimental option in the AI experimental picker */
 "settings.ai.experimental.picker.experimental" = "(Experimental)";
 
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer.description" = "Search the web or ask Duck.ai directly from the Address Bar.";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
 
@@ -3115,8 +3118,8 @@ Take back control of your personal information with the browser designed for dat
 /* FAQ Description */
 "subscription.faq.description" = "Get answers to frequently asked questions or contact Privacy Pro support from our help pages.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Send Feedback";
+/* Share Feedback Button */
+"subscription.feedback" = "Share Feedback";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Cancel";

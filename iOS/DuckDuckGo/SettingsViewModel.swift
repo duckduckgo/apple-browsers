@@ -175,6 +175,12 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    // MARK: - Actions
+
+    func shareFeedback() {
+        print("shareFeedback tapped from SettingsAIFeaturesView")
+    }
+
     var addressBarPositionBinding: Binding<AddressBarPosition> {
         Binding<AddressBarPosition>(
             get: {

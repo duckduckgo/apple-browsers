@@ -4363,7 +4363,6 @@
 				1DEAADEB2BA45B4400E25A97 /* SettingsAccessibilityView.swift */,
 				1DEAADED2BA45DFE00E25A97 /* SettingsDataClearingView.swift */,
 				D65625A02C232F5E006EF297 /* SettingsDuckPlayerView.swift */,
-				31A968142E4E6E1300F4305E /* SettingsAIChatShortcutsView.swift */,
 				31A968182E4F692200F4305E /* SettingsAIExperimentalPickerView.swift */,
 				317CA3422CFF82DB00F88848 /* SettingsAIFeaturesView.swift */,
 			);
@@ -6580,6 +6579,7 @@
 		9F7ED8122D52EEBA00CCF4F5 /* Sub Sections */ = {
 			isa = PBXGroup;
 			children = (
+				31A968142E4E6E1300F4305E /* SettingsAIChatShortcutsView.swift */,
 			);
 			name = "Sub Sections";
 			sourceTree = "<group>";

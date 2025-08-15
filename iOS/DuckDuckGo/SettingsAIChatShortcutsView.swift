@@ -26,7 +26,7 @@ struct SettingsAIChatShortcutsView: View {
 
     var body: some View {
         List {
-            Section(header: Text(UserText.settingsAiChatShortcuts)) {
+            Section {
                 SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                  accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 

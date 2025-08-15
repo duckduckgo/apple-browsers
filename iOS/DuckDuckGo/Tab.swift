@@ -73,7 +73,11 @@ public class Tab: NSObject, NSCoding {
     }
     
     /// URL of the Dax Easter Egg logo for this tab, displayed in the privacy icon and used for full-screen presentation.
-    var daxEasterEggLogoURL: String?
+    var daxEasterEggLogoURL: String? {
+        didSet {
+            Logger.daxEasterEgg.debug("Tab model - Setting logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
+        }
+    }
 
     public init(uid: String? = nil,
                 link: Link? = nil,
@@ -96,10 +100,15 @@ public class Tab: NSObject, NSCoding {
         let desktop = decoder.containsValue(forKey: NSCodingKeys.desktop) ? decoder.decodeBool(forKey: NSCodingKeys.desktop) : false
         let lastViewedDate = decoder.containsValue(forKey: NSCodingKeys.lastViewedDate) ? decoder.decodeObject(forKey: NSCodingKeys.lastViewedDate) as? Date : nil
         let daxEasterEggLogoURL = decoder.decodeObject(forKey: NSCodingKeys.daxEasterEggLogoURL) as? String
+        
+        Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
+        
         self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL)
     }
 
     public func encode(with coder: NSCoder) {
+        Logger.daxEasterEgg.debug("Tab encode - Saving logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
+        
         coder.encode(uid, forKey: NSCodingKeys.uid)
         coder.encode(link, forKey: NSCodingKeys.link)
         coder.encode(viewed, forKey: NSCodingKeys.viewed)

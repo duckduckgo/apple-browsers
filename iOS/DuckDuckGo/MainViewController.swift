@@ -1340,6 +1340,7 @@ class MainViewController: UIViewController {
         }
 
         // Restore the Dax Easter Egg logo URL for the current tab
+        Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
         viewCoordinator.omniBar.startBrowsing()
@@ -2886,12 +2887,16 @@ extension MainViewController: TabDelegate {
     }
     
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
-        // Store the logo URL in the tab model
+        Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
+        
         tab.tabModel.daxEasterEggLogoURL = logoURL
         
+        // Only update omnibar if this is the currently active tab
         if currentTab == tab {
+            Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
         }
+        // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
     }
 
     func tabDidRequestReportBrokenSite(tab: TabViewController) {

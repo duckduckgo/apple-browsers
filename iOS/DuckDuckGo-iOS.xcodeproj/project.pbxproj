@@ -1388,6 +1388,7 @@
 		C1836CE12C359EC90016D057 /* AutofillBreakageReportCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1836CE02C359EC90016D057 /* AutofillBreakageReportCellContentView.swift */; };
 		C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */; };
 		C185ED672BD43DA100BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */; };
+		C189966E2E4F45A200246F22 /* Logger+DaxEasterEgg.swift in Sources */ = {isa = PBXBuildFile; fileRef = C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */; };
 		C18ED43C2AB8364400BF3805 /* FileTextPreviewDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18ED43B2AB8364400BF3805 /* FileTextPreviewDebugViewController.swift */; };
 		C1935A0E2C88D11D001AD72D /* AutofillSurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A0D2C88D11D001AD72D /* AutofillSurveyView.swift */; };
 		C1935A102C88D131001AD72D /* AutofillSurveyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A0F2C88D131001AD72D /* AutofillSurveyManager.swift */; };
@@ -3543,6 +3544,7 @@
 		C1836CE42C35A0EA0016D057 /* AutofillBreakageReportTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillBreakageReportTableViewCell.swift; sourceTree = "<group>"; };
 		C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandler.swift; sourceTree = "<group>"; };
 		C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandlerTests.swift; sourceTree = "<group>"; };
+		C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DaxEasterEgg.swift"; sourceTree = "<group>"; };
 		C18D7C412D08620D00FB3F87 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C18D7C422D08620D00FB3F87 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C18ED43B2AB8364400BF3805 /* FileTextPreviewDebugViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileTextPreviewDebugViewController.swift; sourceTree = "<group>"; };
@@ -7298,6 +7300,7 @@
 				C1D00FC32E4500A800958443 /* DaxEasterEggImageManager.swift */,
 				C1ED4DAB2E44B0B8003298A5 /* DaxEasterEggHandler.swift */,
 				C1ED4DAC2E44B0B8003298A5 /* DaxEasterEggUserScript.swift */,
+				C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */,
 			);
 			path = DaxEasterEggLogos;
 			sourceTree = "<group>";
@@ -10319,6 +10322,7 @@
 				9FDEC7B82C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift in Sources */,
 				859DB8162CE6263C001F7210 /* TextZoomEditorView.swift in Sources */,
 				CB7E0A232D5E1E55002A7C0C /* LaunchActionHandler.swift in Sources */,
+				C189966E2E4F45A200246F22 /* Logger+DaxEasterEgg.swift in Sources */,
 				858566FB252E55D6007501B8 /* ImageCacheDebugViewController.swift in Sources */,
 				D6E0C1832B7A2B1E00D5E1E9 /* DesktopDownloadView.swift in Sources */,
 				1E7A71172934EB6400B7EA19 /* OmniBarNotificationAnimator.swift in Sources */,

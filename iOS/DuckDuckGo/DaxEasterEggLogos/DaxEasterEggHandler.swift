@@ -83,9 +83,12 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
     }
     
     public func didExtractLogo(_ logoURL: String?, from pageURL: String) {
+        Logger.daxEasterEgg.debug("didExtractLogo - Raw: \(logoURL ?? "nil"), Page: \(pageURL)")
+        
         // Process the logo URL (convert relative to absolute, handle "themed|" prefix)
         let processedURL = processLogoURL(logoURL)
         
+        Logger.daxEasterEgg.debug("didExtractLogo - Processed: \(processedURL ?? "nil")")
         delegate?.daxEasterEggHandler(self, didFindLogoURL: processedURL, for: pageURL)
     }
     

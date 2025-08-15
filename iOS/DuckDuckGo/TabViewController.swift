@@ -1686,6 +1686,8 @@ extension TabViewController: WKNavigationDelegate {
     private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
         guard featureFlagger.isFeatureOn(.daxEasterEggLogos),
               let url = webView.url, url.isDuckDuckGoSearch else { return }
+        
+        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
         daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 
@@ -2736,6 +2738,7 @@ extension TabViewController: DaxEasterEggDelegate {
     func daxEasterEggHandler(_ handler: DaxEasterEggHandling, didFindLogoURL logoURL: String?, for pageURL: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            Logger.daxEasterEgg.debug("Handler found logo - Page: \(pageURL), Logo: \(logoURL ?? "nil")")
             self.delegate?.tab(self, didExtractDaxEasterEggLogoURL: logoURL)
         }
     }

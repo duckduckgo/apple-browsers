@@ -1,8 +1,8 @@
 //
-//  AIExperimentalPickerView.swift
+//  SettingsAIExperimentalPickerView.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,86 +21,80 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-
 struct SettingsAIExperimentalPickerView: View {
-    // isDuckAISelected maps to AI Chat enabled state
     @Binding var isDuckAISelected: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            // Search Only (Default)
-            Button {
+            PickerOptionView(
+                isSelected: !isDuckAISelected,
+                selectedImage: .searchExperimentalOn,
+                unselectedImage: .searchExperimentalOff,
+                title: UserText.settingsAiExperimentalPickerSearchOnly,
+                subtitle: UserText.settingsAiExperimentalPickerDefault
+            ) {
                 isDuckAISelected = false
-            } label: {
-                VStack(spacing: 8) {
-                    Image(isDuckAISelected ? .searchExperimentalOff : .searchExperimentalOn)
-                        .resizable()
-                        .scaledToFit()
-                    VStack(spacing: 0) {
-                        Text(UserText.settingsAiExperimentalPickerSearchOnly)
-                        Text(UserText.settingsAiExperimentalPickerDefault)
-                    }
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                    Group {
-                        if isDuckAISelected {
-                            checkmarkOff
-                        } else {
-                            checkmarkOn
-                        }
-                    }
-                    .scaledToFit()
-                    .frame(height: 20)
-                }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.plain)
 
-            Button {
+            PickerOptionView(
+                isSelected: isDuckAISelected,
+                selectedImage: .aiExperimentalOn,
+                unselectedImage: .aiExperimentalOff,
+                title: UserText.settingsAiExperimentalPickerSearchAndDuckAI,
+                subtitle: UserText.settingsAiExperimentalPickerExperimental
+            ) {
                 isDuckAISelected = true
-            } label: {
-                VStack(spacing: 8) {
-                    Image(isDuckAISelected ? .aiExperimentalOn : .aiExperimentalOff)
-                        .resizable()
-                        .scaledToFit()
-                    VStack(spacing: 0) {
-                        Text(UserText.settingsAiExperimentalPickerSearchAndDuckAI)
-                        Text(UserText.settingsAiExperimentalPickerExperimental)
-                    }
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-
-                    Group {
-                        if isDuckAISelected {
-                            checkmarkOn
-                        } else {
-                            checkmarkOff
-                        }
-                    }
-                    .scaledToFit()
-                    .frame(height: 20)
-                }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.plain)
         }
     }
+}
 
-    private var checkmarkOn: some View {
-        let colored = DesignSystemImages.Recolorable.Size24.check
+private struct PickerOptionView: View {
+    let isSelected: Bool
+    let selectedImage: ImageResource
+    let unselectedImage: ImageResource
+    let title: String
+    let subtitle: String
+    let action: () -> Void
 
-        return Image(uiImage: colored)
-            .resizable()
-            .renderingMode(.template)
-            .foregroundStyle(Color(designSystemColor: .accent))
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(isSelected ? selectedImage : unselectedImage)
+                    .resizable()
+                    .scaledToFit()
+
+                VStack(spacing: 0) {
+                    Text(title)
+                    Text(subtitle)
+                }
+                .daxFootnoteRegular()
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                CheckmarkView(isSelected: isSelected)
+                    .scaledToFit()
+                    .frame(height: 20)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
+}
 
-    private var checkmarkOff: some View {
-        Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
-            .resizable()
-            .renderingMode(.template)
-            .foregroundStyle(Color(designSystemColor: .iconsTertiary))
+private struct CheckmarkView: View {
+    let isSelected: Bool
 
+    var body: some View {
+        if isSelected {
+            Image(uiImage: DesignSystemImages.Recolorable.Size24.check)
+                .resizable()
+                .renderingMode(.template)
+                .foregroundStyle(Color(designSystemColor: .accent))
+        } else {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
+                .resizable()
+                .renderingMode(.template)
+                .foregroundStyle(Color(designSystemColor: .iconsTertiary))
+        }
     }
 }

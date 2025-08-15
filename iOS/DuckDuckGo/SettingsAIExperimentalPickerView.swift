@@ -36,9 +36,13 @@ struct SettingsAIExperimentalPickerView: View {
                     Image(isDuckAISelected ? .searchExperimentalOff : .searchExperimentalOn)
                         .resizable()
                         .scaledToFit()
-                    Text("Search Only\n(Default)")
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.primary)
+                    VStack(spacing: 0) {
+                        Text("Search Only")
+                        Text("(Default)")
+                    }
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
                     Group {
                         if isDuckAISelected {
                             checkmarkOff
@@ -60,9 +64,12 @@ struct SettingsAIExperimentalPickerView: View {
                     Image(isDuckAISelected ? .aiExperimentalOn : .aiExperimentalOff)
                         .resizable()
                         .scaledToFit()
-                    Text("Search & Duck.ai\n(Experimental)")
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.primary)
+                    VStack(spacing: 0) {
+                        Text("Search & Duck.ai")
+                        Text("(Experimental)")
+                    }
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
 
                     Group {
                         if isDuckAISelected {
@@ -81,9 +88,13 @@ struct SettingsAIExperimentalPickerView: View {
     }
 
     private var checkmarkOn: some View {
-        Image(uiImage: DesignSystemImages.Recolorable.Size24.check)
+        let colored = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
+            foreground: UIColor(designSystemColor: .accentContentPrimary),
+            background: UIColor(designSystemColor: .accent)
+        )
+        return Image(uiImage: colored)
             .resizable()
-            .tint(Color(designSystemColor: .accent))
+            .symbolRenderingMode(.palette)
     }
 
     private var checkmarkOff: some View {

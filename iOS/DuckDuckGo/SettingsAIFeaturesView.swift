@@ -68,11 +68,19 @@ struct SettingsAIFeaturesView: View {
 
             if viewModel.isAiChatEnabledBinding.wrappedValue {
                 if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-                    Section {
-                        SettingsCellView(label: UserText.settingsAiChatSearchInput,
-                                         accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
-                    } footer: {
-                        Text(UserText.settingsAiChatSearchInputFooter)
+
+                    if viewModel.isUpdatedAIFeaturesSettingsEnabled {
+                        Section {
+                            SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
+                    } else {
+                        Section {
+                            SettingsCellView(label: UserText.settingsAiChatSearchInput,
+                                             accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
+                        } footer: {
+                            Text(UserText.settingsAiChatSearchInputFooter)
+                        }
                     }
                 }
 

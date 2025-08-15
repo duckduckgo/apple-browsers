@@ -2887,16 +2887,19 @@ extension MainViewController: TabDelegate {
     }
     
     func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
-        Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
-        
-        tab.tabModel.daxEasterEggLogoURL = logoURL
-        
-        // Only update omnibar if this is the currently active tab
-        if currentTab == tab {
-            Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
-            viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
+            
+            tab.tabModel.daxEasterEggLogoURL = logoURL
+            
+            // Only update omnibar if this is the currently active tab
+            if self.currentTab == tab {
+                Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
+                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+            }
+            // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
         }
-        // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
     }
 
     func tabDidRequestReportBrokenSite(tab: TabViewController) {

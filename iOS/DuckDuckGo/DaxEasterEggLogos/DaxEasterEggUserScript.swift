@@ -38,39 +38,55 @@ public class DaxEasterEggUserScript: NSObject, UserScript {
 
     public var source: String = """
 (function() {
-    console.log('DaxEasterEgg: UserScript loaded');
+    console.log('DaxEasterEgg: UserScript loaded at', new Date().toISOString());
+    console.log('DaxEasterEgg: Document ready state:', document.readyState);
+    console.log('DaxEasterEgg: URL:', window.location.href);
     
     // Expose global function for manual triggering by native code
     window.extractDaxEasterEggLogo = function() {
-        function findLogo() {
-            var ddgLogo = document.querySelector('.js-logo-ddg');
-            
-            if (!ddgLogo) {
-                ddgLogo = document.querySelector('.logo-dynamic');
-            }
-            if (!ddgLogo) {
-                ddgLogo = document.querySelector('[data-dynamic-logo]');
-            }
-            
-            if (!ddgLogo) {
+        try {
+            function findLogo() {
+                var ddgLogo = document.querySelector('.js-logo-ddg');
+                
+                if (!ddgLogo) {
+                    ddgLogo = document.querySelector('.logo-dynamic');
+                }
+                if (!ddgLogo) {
+                    ddgLogo = document.querySelector('[data-dynamic-logo]');
+                }
+                
+                if (!ddgLogo) {
+                    return null;
+                }
+                
+                if (ddgLogo.dataset && ddgLogo.dataset.dynamicLogo) {
+                    return 'themed|' + ddgLogo.dataset.dynamicLogo;
+                }
+                
                 return null;
             }
             
-            if (ddgLogo.dataset && ddgLogo.dataset.dynamicLogo) {
-                return 'themed|' + ddgLogo.dataset.dynamicLogo;
-            }
+            var logoURL = findLogo();
             
-            return null;
+            // Always send message to native, even when no logo is found
+            // This allows the UI to reset to default icon when needed
+            webkit.messageHandlers.daxEasterEggHandler.postMessage({
+                logoURL: logoURL, // will be null if no logo found
+                url: window.location.href
+            });
+        } catch (error) {
+            console.error('DaxEasterEgg: Error in extractDaxEasterEggLogo:', error);
+            // Always notify native even on error
+            try {
+                webkit.messageHandlers.daxEasterEggHandler.postMessage({
+                    logoURL: null,
+                    url: window.location.href,
+                    error: error.message
+                });
+            } catch (fallbackError) {
+                console.error('DaxEasterEgg: Failed to send error message:', fallbackError);
+            }
         }
-        
-        var logoURL = findLogo();
-        
-        // Always send message to native, even when no logo is found
-        // This allows the UI to reset to default icon when needed
-        webkit.messageHandlers.daxEasterEggHandler.postMessage({
-            logoURL: logoURL, // will be null if no logo found
-            url: window.location.href
-        });
     };
     
     console.log('DaxEasterEgg: Function defined, typeof:', typeof window.extractDaxEasterEggLogo);

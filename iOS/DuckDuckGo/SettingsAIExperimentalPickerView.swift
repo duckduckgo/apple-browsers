@@ -88,17 +88,19 @@ struct SettingsAIExperimentalPickerView: View {
     }
 
     private var checkmarkOn: some View {
-        let colored = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
-            foreground: UIColor(designSystemColor: .accentContentPrimary),
-            background: UIColor(designSystemColor: .accent)
-        )
+        let colored = DesignSystemImages.Recolorable.Size24.check
+
         return Image(uiImage: colored)
             .resizable()
-            .symbolRenderingMode(.palette)
+            .renderingMode(.template)
+            .foregroundStyle(Color(designSystemColor: .accent))
     }
 
     private var checkmarkOff: some View {
         Image(uiImage: DesignSystemImages.Glyphs.Size24.shapeCircle)
             .resizable()
+            .renderingMode(.template)
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
+
     }
 }

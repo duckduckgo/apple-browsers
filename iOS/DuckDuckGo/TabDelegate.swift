@@ -50,7 +50,7 @@ protocol TabDelegate: AnyObject {
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?)
     
     /// Called when a tab extracts a Dax Easter Egg logo URL from the current page.
-    /// This occurs when the DaxEasterEggUserScript finds a dynamic logo on search result pages.
+    /// This occurs when the DaxEasterEggHandler finds a dynamic logo on search result pages.
     ///
     /// - Parameters:
     ///   - tab: The tab that extracted the logo URL

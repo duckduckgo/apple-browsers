@@ -114,10 +114,7 @@ class TabViewController: UIViewController {
         set { findInPageScript?.findInPage = newValue }
     }
     
-    var daxEasterEggHandler: DaxEasterEggHandling? {
-        get { return daxEasterEggScript?.daxEasterEggHandler }
-        set { daxEasterEggScript?.daxEasterEggHandler = newValue }
-    }
+    var daxEasterEggHandler: DaxEasterEggHandling?
 
     let favicons = Favicons.shared
     let progressWorker = WebProgressWorker()
@@ -2742,6 +2739,7 @@ extension TabViewController: DaxEasterEggDelegate {
     func daxEasterEggHandler(_ handler: DaxEasterEggHandling, didFindLogoURL logoURL: String?, for pageURL: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            
             Logger.daxEasterEgg.debug("Handler found logo - Page: \(pageURL), Logo: \(logoURL ?? "nil")")
             self.delegate?.tab(self, didExtractDaxEasterEggLogoURL: logoURL)
         }
@@ -2755,9 +2753,6 @@ extension TabViewController: UserContentControllerDelegate {
     }
     private var findInPageScript: FindInPageUserScript? {
         userScripts?.findInPageScript
-    }
-    private var daxEasterEggScript: DaxEasterEggUserScript? {
-        userScripts?.daxEasterEggScript
     }
     private var contentBlockerUserScript: ContentBlockerRulesUserScript? {
         userScripts?.contentBlockerUserScript

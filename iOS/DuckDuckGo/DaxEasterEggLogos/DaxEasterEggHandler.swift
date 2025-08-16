@@ -58,12 +58,11 @@ public protocol DaxEasterEggHandling: AnyObject {
 
 /// Handler that manages extraction and processing of dynamic logos from DuckDuckGo search pages.
 ///
-/// This class coordinates between the DaxEasterEggUserScript (which runs JavaScript to find logos)
-/// and the native UI (which displays the logos). It processes raw logo URLs by converting
-/// relative paths to absolute URLs and handling DuckDuckGo's "themed|" URL format.
+/// This class executes JavaScript directly to find logos and processes the results for the native UI.
+/// It processes raw logo URLs by converting relative paths to absolute URLs and handling 
+/// DuckDuckGo's "themed|" URL format.
 ///
-/// The handler follows the same pattern as FindInPage: it's created on-demand and connected
-/// to the UserScript via a property in TabViewController.
+/// The handler is created on-demand when navigating to DuckDuckGo search pages.
 public class DaxEasterEggHandler: DaxEasterEggHandling {
     
     public weak var delegate: DaxEasterEggDelegate?
@@ -79,48 +78,57 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
             return
         }
         
-        Logger.daxEasterEgg.debug("extractLogosForCurrentPage - calling JavaScript on URL: \(webView.url?.absoluteString ?? "no-url")")
+        Logger.daxEasterEgg.debug("extractLogosForCurrentPage - executing JavaScript directly on URL: \(webView.url?.absoluteString ?? "no-url")")
         
-        // Check if function is available with retry mechanism for back/forward navigation
-        checkFunctionAvailability(webView: webView, retryCount: 0)
+        // Execute logo extraction JavaScript directly without UserScript dependency
+        executeLogoExtraction(webView: webView)
     }
     
-    private func checkFunctionAvailability(webView: WKWebView, retryCount: Int) {
-        let maxRetries = 10
-        let baseDelay: TimeInterval = 0.2 // 200ms base delay
+    private func executeLogoExtraction(webView: WKWebView) {
+        let extractionJS = """
+        (function() {
+            try {
+                function findLogo() {
+                    var ddgLogo = document.querySelector('.js-logo-ddg');
+                    
+                    if (!ddgLogo) {
+                        ddgLogo = document.querySelector('.logo-dynamic');
+                    }
+                    if (!ddgLogo) {
+                        ddgLogo = document.querySelector('[data-dynamic-logo]');
+                    }
+                    
+                    if (!ddgLogo) {
+                        return null;
+                    }
+                    
+                    if (ddgLogo.dataset && ddgLogo.dataset.dynamicLogo) {
+                        return 'themed|' + ddgLogo.dataset.dynamicLogo;
+                    }
+                    
+                    return null;
+                }
+                
+                return findLogo();
+            } catch (error) {
+                console.error('DaxEasterEgg: Error in logo extraction:', error);
+                return null;
+            }
+        })();
+        """
         
-        webView.evaluateJavaScript("typeof window.extractDaxEasterEggLogo") { [weak self] result, error in
+        webView.evaluateJavaScript(extractionJS) { [weak self] result, error in
             guard let self = self else { return }
             
-            let resultString = result as? String
-            Logger.daxEasterEgg.debug("checkFunctionAvailability - typeof result: \(resultString ?? "nil"), error: \(error?.localizedDescription ?? "none")")
-            
-            if let functionType = resultString, functionType == "function" {
-                Logger.daxEasterEgg.debug("checkFunctionAvailability - function ready after \(retryCount) retries")
-                self.callExtractionFunction(webView)
-            } else if retryCount < maxRetries {
-                Logger.daxEasterEgg.debug("checkFunctionAvailability - function not ready, retry \(retryCount + 1)/\(maxRetries) in \(Int(baseDelay * 1000))ms")
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + baseDelay) {
-                    self.checkFunctionAvailability(webView: webView, retryCount: retryCount + 1)
-                }
-            } else {
-                Logger.daxEasterEgg.error("checkFunctionAvailability - function not available after \(maxRetries) retries, giving up")
-                // Send nil to clear any stale logo
-                self.didExtractLogo(nil, from: webView.url?.absoluteString ?? "")
-            }
-        }
-    }
-    
-    private func callExtractionFunction(_ webView: WKWebView) {
-        webView.evaluateJavaScript("window.extractDaxEasterEggLogo()") { [weak self] _, error in
             if let error = error {
-                Logger.daxEasterEgg.error("callExtractionFunction - JavaScript error: \(error)")
-                // Notify delegate with nil to clear logo on error
-                self?.didExtractLogo(nil, from: webView.url?.absoluteString ?? "")
-            } else {
-                Logger.daxEasterEgg.debug("callExtractionFunction - JavaScript completed successfully")
+                Logger.daxEasterEgg.error("executeLogoExtraction - JavaScript error: \(error)")
+                self.didExtractLogo(nil, from: webView.url?.absoluteString ?? "")
+                return
             }
+            
+            let logoURL = result as? String
+            Logger.daxEasterEgg.debug("executeLogoExtraction - extracted logo: \(logoURL ?? "nil")")
+            self.didExtractLogo(logoURL, from: webView.url?.absoluteString ?? "")
         }
     }
     

@@ -57,7 +57,6 @@ final class UserScripts: UserScriptsProvider {
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var printingUserScript = PrintingUserScript()
     private(set) var debugScript = DebugUserScript()
-    private(set) var daxEasterEggScript = DaxEasterEggUserScript()
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -124,11 +123,6 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScript,
             contentScopeUserScriptIsolated
         ]
-        
-        // Only include daxEasterEggScript if feature flag is enabled
-        if featureFlagger.isFeatureOn(.daxEasterEggLogos) {
-            scripts.append(daxEasterEggScript)
-        }
         
         return scripts.compactMap { $0 }
     }()

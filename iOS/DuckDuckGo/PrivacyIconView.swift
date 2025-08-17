@@ -24,6 +24,13 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Kingfisher
 
+// MARK: - Dax Easter Egg Logo Constants
+
+private extension PrivacyIconView {
+    /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size
+    static let daxLogoScaleFactor: CGFloat = 0.6
+}
+
 enum PrivacyIcon {
     case daxLogo, shield, shieldWithDot, alert
 
@@ -143,8 +150,7 @@ class PrivacyIconView: UIView {
                 staticImageView.contentMode = .scaleAspectFit
                 
                 // Apply a stronger transform since PDF has significant built-in padding
-                let scale: CGFloat = 0.6 // Scale down to 60% to better match PDF's visual size
-                staticImageView.transform = CGAffineTransform(scaleX: scale, y: scale)
+                staticImageView.transform = CGAffineTransform(scaleX: Self.daxLogoScaleFactor, y: Self.daxLogoScaleFactor)
                 
                 staticImageView.kf.setImage(with: url, placeholder: icon.staticImage) { _ in }
             } else {

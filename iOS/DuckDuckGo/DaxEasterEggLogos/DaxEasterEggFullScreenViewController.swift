@@ -20,6 +20,13 @@
 import UIKit
 import Kingfisher
 
+// MARK: - Layout Constants
+
+private extension DaxEasterEggFullScreenViewController {
+    /// Padding around safe area for full-screen logo display
+    static let safeAreaPadding: CGFloat = 60.0
+}
+
 /// Full-screen viewer for Dax Easter Egg logos with custom transition support.
 /// Displays logos in a centered, appropriately sized view with safe area padding.
 class DaxEasterEggFullScreenViewController: UIViewController {
@@ -70,7 +77,7 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         
         // Add padding around the safe area
-        let padding: CGFloat = 60.0
+        let padding = Self.safeAreaPadding
         
         NSLayoutConstraint.activate([
             // ImageView respects safe area with additional padding

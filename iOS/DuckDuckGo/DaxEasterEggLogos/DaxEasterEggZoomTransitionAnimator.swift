@@ -17,13 +17,21 @@
 //  limitations under the License.
 //
 
+// MARK: - Animation Constants
+
+private extension DaxEasterEggZoomTransitionAnimator {
+    /// Duration for zoom transition animations
+    static let animationDuration: TimeInterval = 0.4
+    /// Padding around safe area for full-screen logo display
+    static let safeAreaPadding: CGFloat = 60.0
+}
+
 import UIKit
 
 /// Custom transition animator for Dax Easter Egg logo zoom animations.
 /// Provides smooth spring-damped transitions between omnibar logo and full-screen view.
 class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioning {
     
-    private let duration: TimeInterval = 0.4
     private let sourceFrame: CGRect
     private let sourceImage: UIImage?
     private let isPresenting: Bool
@@ -36,7 +44,7 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
     }
     
     func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-        return duration
+        return Self.animationDuration
     }
     
     func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
@@ -79,7 +87,7 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         let finalImageFrame = calculateFinalImageFrame(for: adjustedFrame, imageSize: sourceImage?.size ?? CGSize(width: 100, height: 100))
         
         // Animate the transition using spring with high damping to prevent overshoot
-        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
+        UIView.animate(withDuration: Self.animationDuration, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
             tempImageView.frame = finalImageFrame
             toViewController.view.alpha = 1
         } completion: { _ in
@@ -117,7 +125,7 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         fromViewController.view.alpha = 0
         
         // Animate back to source frame using spring with high damping to prevent overshoot
-        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0, options: [.curveEaseInOut]) {
+        UIView.animate(withDuration: Self.animationDuration, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0, options: [.curveEaseInOut]) {
             tempImageView.frame = self.sourceFrame
         } completion: { _ in
             tempImageView.removeFromSuperview()
@@ -127,7 +135,7 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
     
     private func calculateAdjustedFrame(for viewFrame: CGRect, viewController: UIViewController) -> CGRect {
         let safeAreaInsets = viewController.view.safeAreaInsets
-        let padding: CGFloat = 60.0
+        let padding = Self.safeAreaPadding
         
         // Calculate the available frame within safe area + padding
         return CGRect(

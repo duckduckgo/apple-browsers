@@ -35,6 +35,9 @@ extension UserText {
                                                                              comment: "Label for default empty state description when the autolock feature is off")
     static let pmEmptyStateLearnMoreLink = NSLocalizedString("pm.empty.learn.more.link", value: "Learn more", comment: "Text for link to learn more about DuckDuckGo password manager")
     static let pmEmptyStateDefaultButtonTitle = NSLocalizedString("pm.empty.default.button.title", value: "Import Passwords", comment: "Import passwords button title for default empty state")
+    static let pmEmptyStateSecondaryButtonTitle = NSLocalizedString("pm.empty.secondary.button.title", value: "Sync Passwords", comment: "Sync passwords button title for default empty state")
+    static let pmEmptyStateDefaultButtonTitleAllItems = NSLocalizedString("pm.empty.default.button.title", value: "Import From Another Browser", comment: "Import passwords button title for default empty state")
+    static let pmEmptyStateSecondaryButtonTitleAllItems = NSLocalizedString("pm.empty.secondary.button.title", value: "Sync up Sync", comment: "Import passwords button title for default empty state")
 
     static let pmEmptyStateLoginsTitle = NSLocalizedString("pm.empty.logins.title", value: "No passwords saved yet", comment: "Label for logins empty state title")
     static let pmEmptyStateIdentitiesTitle = NSLocalizedString("pm.empty.identities.title", value: "No Identities", comment: "Label for identities empty state title")

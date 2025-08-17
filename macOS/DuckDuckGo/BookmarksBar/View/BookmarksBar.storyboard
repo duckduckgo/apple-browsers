@@ -90,7 +90,7 @@
                                             <imageReference key="image" image="square.and.arrow.down" catalog="system" symbolScale="medium"/>
                                         </imageCell>
                                     </imageView>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jeg-Iv-FxB">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jeg-Iv-FxB">
                                         <rect key="frame" x="22" y="5" width="37" height="15"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="15" id="L4P-aC-UPW"/>
@@ -145,7 +145,7 @@
                                             <imageReference key="image" image="Sync-16" symbolScale="medium"/>
                                         </imageCell>
                                     </imageView>
-                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="q2n-v7-67h">
+                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="q2n-v7-67h">
                                         <rect key="frame" x="22" y="4" width="117" height="16"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Sync Bookmarks..." id="OG3-9a-y7F">
                                             <font key="font" metaFont="system"/>

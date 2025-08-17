@@ -19,7 +19,7 @@
 import Foundation
 
 public struct XPCErrorSanitizer {
-    
+
     public static func sanitize(_ error: Error) -> Error {
         let nsError = error as NSError
         return isXPCSafe(nsError) ? error : PacketTunnelProvider.TunnelError.xpcIncompatibleError(underlyingError: error)

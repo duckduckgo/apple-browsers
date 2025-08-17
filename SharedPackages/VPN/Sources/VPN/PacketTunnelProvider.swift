@@ -104,6 +104,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case simulateTunnelFailureError
         case simulateSubscriptionExpiration
         case tokenReset
+        case xpcIncompatibleError(underlyingError: Error)
 
         // Subscription Errors - 100+
         case vpnAccessRevoked(_ underlyingError: Error)
@@ -128,6 +129,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return "Abnormal situation caused the token to be reset"
             case .appRequestedCancellation:
                 return nil
+            case .xpcIncompatibleError(let underlyingError):
+                return "Error contained XPC-incompatible data: \(underlyingError.localizedDescription)"
             }
         }
 
@@ -139,6 +142,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .simulateTunnelFailureError: return 2
             case .simulateSubscriptionExpiration: return 3
             case .tokenReset: return 4
+            case .xpcIncompatibleError: return 5
                 // Subscription Errors - 100+
             case .vpnAccessRevoked: return 100
             case .vpnAccessRevokedDetectedByMonitorCheck: return 101
@@ -164,6 +168,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 } else {
                     return [:]
                 }
+            case .xpcIncompatibleError(let underlyingError):
+                let ns = underlyingError as NSError
+                return [
+                    "OriginalErrorDomain": ns.domain,
+                    "OriginalErrorCode": ns.code,
+                    "OriginalErrorDescription": ns.localizedDescription
+                ]
             }
         }
 
@@ -724,6 +735,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     open override func startTunnel(options: [String: NSObject]? = nil) async throws {
+        do {
+            try await startTunnelInternal(options: options)
+        } catch {
+            throw error.sanitizedForXPC()
+        }
+    }
+
+    @MainActor
+    private func startTunnelInternal(options: [String: NSObject]? = nil) async throws {
         Logger.networkProtection.log("🚀 Starting tunnel")
 
         // It's important to have this as soon as possible since it helps setup PixelKit

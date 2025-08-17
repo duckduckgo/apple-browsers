@@ -62,8 +62,6 @@ final class UserScripts: UserScriptsProvider {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
-        
-        self.featureFlagger = featureFlagger
 
         contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
@@ -107,25 +105,21 @@ final class UserScripts: UserScriptsProvider {
         specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
     }
 
-    lazy var userScripts: [UserScript] = {
-        var scripts: [UserScript?] = [
-            debugScript,
-            autoconsentUserScript,
-            findInPageScript,
-            navigatorPatchScript,
-            surrogatesScript,
-            contentBlockerUserScript,
-            faviconScript,
-            fullScreenVideoScript,
-            autofillUserScript,
-            printingUserScript,
-            loginFormDetectionScript,
-            contentScopeUserScript,
-            contentScopeUserScriptIsolated
-        ]
-        
-        return scripts.compactMap { $0 }
-    }()
+    lazy var userScripts: [UserScript] = [
+        debugScript,
+        autoconsentUserScript,
+        findInPageScript,
+        navigatorPatchScript,
+        surrogatesScript,
+        contentBlockerUserScript,
+        faviconScript,
+        fullScreenVideoScript,
+        autofillUserScript,
+        printingUserScript,
+        loginFormDetectionScript,
+        contentScopeUserScript,
+        contentScopeUserScriptIsolated
+    ].compactMap({ $0 })
     
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {

@@ -29,6 +29,9 @@ import Kingfisher
 private extension PrivacyIconView {
     /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size
     static let daxLogoScaleFactor: CGFloat = 0.6
+    
+    /// Horizontal offset to compensate for PDF logo's uneven padding (positive = move right)
+    static let pdfLogoOffsetX: CGFloat = 2.0
 }
 
 enum PrivacyIcon {
@@ -146,18 +149,27 @@ class PrivacyIconView: UIView {
             staticShieldDotAnimationView.isHidden = true
             
             if let url = daxLogoURL {
-                // Dynamic images: use scaleAspectFit to fit in frame, then scale down more to match PDF
+                // Dynamic images: use scaleAspectFit to maintain aspect ratio and fit in bounds
                 staticImageView.contentMode = .scaleAspectFit
                 
-                // Apply a stronger transform since PDF has significant built-in padding
-                staticImageView.transform = CGAffineTransform(scaleX: Self.daxLogoScaleFactor, y: Self.daxLogoScaleFactor)
+                // Apply a scale transform anchored to center to avoid frame shifting
+                let scaleTransform = CGAffineTransform(scaleX: Self.daxLogoScaleFactor, y: Self.daxLogoScaleFactor)
+                staticImageView.transform = scaleTransform
                 
-                staticImageView.kf.setImage(with: url, placeholder: icon.staticImage) { _ in }
+                // Ensure the transform is applied from the center to prevent repositioning
+                staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                
+                // Load original high-quality image for both display and full-screen
+                staticImageView.kf.setImage(with: url, placeholder: icon.staticImage)
             } else {
                 // PDF image (24x24) doesn't need scaleAspectFit - use natural size
                 staticImageView.contentMode = .center
-                staticImageView.transform = .identity // Reset any transform
+                staticImageView.transform = .identity
+                staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                 staticImageView.image = icon.staticImage
+                
+                // Apply offset to compensate for PDF's uneven padding
+                 applyPdfLogoOffset()
             }
         case .alert:
             staticImageView.isHidden = false
@@ -244,4 +256,15 @@ extension PrivacyIconView: UIPointerInteractionDelegate {
             UIPointerStyle(effect: .automatic(.init(view: self)), shape: .roundedRect(frame, radius: 12))
     }
     
+}
+
+private extension PrivacyIconView {
+    /// Apply visual centering offset to PDF logo to align with dynamic logos
+    func applyPdfLogoOffset() {
+        guard daxLogoURL == nil else { return } // Only apply to PDF logo
+        
+        // Apply a small horizontal translation to compensate for PDF's uneven padding
+        let offsetTransform = CGAffineTransform(translationX: Self.pdfLogoOffsetX, y: 0)
+        staticImageView.transform = offsetTransform
+    }
 }

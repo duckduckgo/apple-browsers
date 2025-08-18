@@ -34,10 +34,6 @@ final class TabWKUIDelegateTests: XCTestCase {
         originatingURL = URL(string: "https://www.duckduckgo.com")!
     }
 
-    override var allowedNonNilVariables: Set<String> {
-        ["fileManager"]
-    }
-
     override func tearDown() {
         testData = nil
         originatingURL = nil

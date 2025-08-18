@@ -21,15 +21,6 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-private enum SettingsAIExperimentalPickerViewLayout {
-    static let optionsHorizontalSpacing: CGFloat = 16
-    static let optionContentVerticalSpacing: CGFloat = 8
-    static let textStackSpacing: CGFloat = 0
-    static let viewHeight: CGFloat = 152
-    static let maxViewWidth: CGFloat = 380
-    static let checkmarkHeight: CGFloat = 20
-}
-
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
 
@@ -108,4 +99,13 @@ private struct CheckmarkView: View {
                 .foregroundStyle(Color(designSystemColor: .iconsTertiary))
         }
     }
+}
+
+private enum SettingsAIExperimentalPickerViewLayout {
+    static let optionsHorizontalSpacing: CGFloat = 20
+    static let optionContentVerticalSpacing: CGFloat = 8
+    static let textStackSpacing: CGFloat = 0
+    static let viewHeight: CGFloat = 152
+    static let maxViewWidth: CGFloat = 380
+    static let checkmarkHeight: CGFloat = 20
 }

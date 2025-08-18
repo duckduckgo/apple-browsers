@@ -77,6 +77,7 @@ struct SettingsAIFeaturesView: View {
                             HStack {
                                 Spacer()
                                 SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                                    .padding(.vertical, 8)
                                 Spacer()
                             }
                         } footer: {

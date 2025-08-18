@@ -37,12 +37,12 @@ private enum Layout {
         static let iconCircle: CGFloat = 32
         static let iconImage: CGFloat = 16
     }
-    
+
     enum BorderStyle {
         static let cornerRadius: CGFloat = 8
         static let lineWidth: CGFloat = 1
     }
-    
+
     enum Grid {
         static let defaultColumns: Int = 2
         static let defaultCellMinHeight: CGFloat = 90

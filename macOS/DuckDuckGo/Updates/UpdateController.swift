@@ -21,6 +21,7 @@ import Common
 import Combine
 import Sparkle
 import BrowserServicesKit
+import Persistence
 import SwiftUIExtensions
 import PixelKit
 import SwiftUI
@@ -59,6 +60,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     enum Constants {
         static let internalChannelName = "internal-channel"
+        static let pendingUpdateInfoKey = "com.duckduckgo.updateController.pendingUpdateInfo"
     }
 
     lazy var notificationPresenter = UpdateNotificationPresenter()
@@ -77,6 +79,26 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
     }
     private var cachedUpdateResult: UpdateCheckResult?
+
+    // Struct used to persist pending update info across app restarts
+    struct PendingUpdateInfo: Codable {
+        let version: String
+        let build: String
+        let date: Date
+        let releaseNotes: [String]
+        let releaseNotesPrivacyPro: [String]
+        let isCritical: Bool
+
+        init(from item: SUAppcastItem) {
+            self.version = item.displayVersionString
+            self.build = item.versionString
+            self.date = item.date ?? Date()
+            let (notes, notesPro) = ReleaseNotesParser.parseReleaseNotes(from: item.itemDescription)
+            self.releaseNotes = notes
+            self.releaseNotesPrivacyPro = notesPro
+            self.isCritical = item.isCriticalUpdate
+        }
+    }
 
     @Published private(set) var updateProgress = UpdateCycleProgress.default {
         didSet {
@@ -100,6 +122,17 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
     var updateValidityStartDate: Date?
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    private var pendingUpdateInfo: Data? {
+        get {
+            try? keyValueStore.object(forKey: Constants.pendingUpdateInfoKey) as? Data
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Constants.pendingUpdateInfoKey)
+        }
+    }
 
     var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
     var lastUpdateNotificationShownDate: Date = .distantPast
@@ -176,12 +209,14 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     init(internalUserDecider: InternalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         updateCheckState: UpdateCheckState = UpdateCheckState()) {
+         updateCheckState: UpdateCheckState = UpdateCheckState(),
+         keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore) {
 
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.updateCheckState = updateCheckState
+        self.keyValueStore = keyValueStore
         super.init()
 
         _ = try? configureUpdater()
@@ -331,6 +366,15 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     }
 
     // MARK: - Private
+
+    // Cache the pending update info to persist across app restarts
+    private func cachePendingUpdate(from item: SUAppcastItem) {
+        let info = PendingUpdateInfo(from: item)
+        if let encoded = try? JSONEncoder().encode(info) {
+            pendingUpdateInfo = encoded
+            Logger.updates.log("Cached pending update info for version \(info.version) build \(info.build)")
+        }
+    }
 
     // Determines if a forced update check is necessary
     //
@@ -530,6 +574,8 @@ extension UpdateController: SPUUpdaterDelegate {
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidFindUpdate))
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: false)
         updateValidityStartDate = Date()
+
+        cachePendingUpdate(from: item)
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
@@ -545,6 +591,8 @@ extension UpdateController: SPUUpdaterDelegate {
             return reason == Int(Sparkle.SPUNoUpdateFoundReason.onNewerThanLatestVersion.rawValue)
         }()
         cachedUpdateResult = UpdateCheckResult(item: item, isInstalled: true, needsLatestReleaseNote: needsLatestReleaseNote)
+
+        cachePendingUpdate(from: item)
     }
 
     func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {

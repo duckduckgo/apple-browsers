@@ -439,8 +439,6 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
-
-        fireExperimentalAddressBarPixel()
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -817,7 +815,9 @@ class MainViewController: UIViewController {
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                if let ntp = self.newTabPageViewController, ntp.isShowingLogo {
+
+                // In case `isAIChatSearchInputUserSettings` is enabled prevent adjusting the bottom containers along with the keyboard to prevent logo on NTP from transitioning too far
+                if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled, let ntp = self.newTabPageViewController, ntp.isShowingLogo {
                     self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
                 } else {
                     self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
@@ -1079,6 +1079,7 @@ class MainViewController: UIViewController {
     }
     
     func onForeground() {
+        fireExperimentalAddressBarPixel()
         skipSERPFlow = true
         
         // Show Fire Pulse only if Privacy button pulse should not be shown. In control group onboarding `shouldShowPrivacyButtonPulse` is always false.
@@ -1818,6 +1819,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
+                WidgetCenter.shared.reloadAllTimelines()
             }
             .store(in: &aiChatCancellables)
     }
@@ -2308,6 +2310,7 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+
     func isSuggestionTrayVisible() -> Bool {
         suggestionTrayController?.isShowing == true
     }
@@ -3324,7 +3327,9 @@ extension MainViewController: AutoClearWorker {
                 self.newTabPageViewController?.showNextDaxDialog()
             } else if KeyboardSettings().onNewTab {
                 let showKeyboardAfterFireButton = DispatchWorkItem {
-                    self.enterSearch()
+                    if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+                        self.enterSearch()
+                    }
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: showKeyboardAfterFireButton)
                 self.showKeyboardAfterFireButton = showKeyboardAfterFireButton
@@ -3593,12 +3598,22 @@ private extension UIBarButtonItem {
 extension MainViewController: MessageNavigationDelegate { }
 
 extension MainViewController: MainViewEditingStateTransitioning {
-    func hide(with yOffset: CGFloat) {
-        additionalSafeAreaInsets.top = yOffset
+
+    private var isDaxLogoVisible: Bool {
+        newTabPageViewController?.isShowingLogo == true
+    }
+
+    func hide(with barYOffset: CGFloat, contentYOffset: CGFloat) {
+        if isDaxLogoVisible {
+            omniBar.barView.layer.sublayerTransform = CATransform3DMakeTranslation(0, barYOffset, 0)
+        } else {
+            additionalSafeAreaInsets.top = contentYOffset
+        }
         omniBar.barView.hideButtons()
     }
 
     func show() {
+        omniBar.barView.layer.sublayerTransform = CATransform3DIdentity
         additionalSafeAreaInsets.top = 0
         omniBar.barView.revealButtons()
     }

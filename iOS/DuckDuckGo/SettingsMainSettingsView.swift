@@ -49,7 +49,7 @@ struct SettingsMainSettingsView: View {
         SettingsEntry(label: UserText.accessibility, build: Self.viewBuilder.buildAccessibility),
         SettingsEntry(label: UserText.dataClearing, build: Self.viewBuilder.buildDataClearing),
         SettingsEntry(label: UserText.duckPlayerFeatureName, build: Self.viewBuilder.buildDuckPlayer),
-    ].sorted(by: { $0.label < $1.label })
+    ].sorted(by: { $0.label.localizedCaseInsensitiveCompare($1.label) == .orderedAscending })
 
     var body: some View {
         Section(header: Text(UserText.mainSettings)) {

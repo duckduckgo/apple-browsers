@@ -22,4 +22,5 @@ import UIKit
 protocol OmniBarEditingStateTransitioning: AnyObject {
     var switchBarVC: SwitchBarViewController { get }
     var actionBarView: UIView? { get }
+    func setLogoYOffset(_ offset: CGFloat)
 }

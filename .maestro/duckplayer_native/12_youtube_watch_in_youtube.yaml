@@ -32,8 +32,8 @@ tags:
     file: shared/load_youtube_url.yaml
 
   # Assert Youtube Search Page opens and open the video
-- assertVisible: ${output.videoTitle}
-- tapOn: ${output.videoTitle}
+- runFlow:
+    file: shared/tap_serp_title.yaml
 
 # Validate YouTube opens
 - assertVisible: ${output.youtubeMobileDomain}

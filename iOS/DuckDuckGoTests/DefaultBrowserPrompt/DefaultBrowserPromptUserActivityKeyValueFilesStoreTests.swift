@@ -30,8 +30,9 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
     func whenActivityIsSavedThenStoreItInStorage() throws {
         // GIVEN
         let now = Date(timeIntervalSince1970: 1751005822) // 27 June 2025 6:30:22 AM GMT
+        let yesterday = now.daysAgo(1)
         let storageMock = try MockKeyValueFileStore()
-        let activity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 2, lastActiveDate: now)
+        let activity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 2, lastActiveDate: now, secondLastActiveDate: yesterday)
         let sut = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
 
         // WHEN
@@ -49,7 +50,8 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
     func whenActivityIsRetrievedThenItIsRetrievedFromStorage() throws {
         // GIVEN
         let now = Date(timeIntervalSince1970: 1751005822) // 27 June 2025 6:30:22 AM GMT
-        let activity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 2, lastActiveDate: now)
+        let yesterday = now.daysAgo(1)
+        let activity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 2, lastActiveDate: now, secondLastActiveDate: yesterday)
         let encodedActivity = try encodeActivity(activity)
         let storageMock = try MockKeyValueFileStore()
         storageMock.underlyingDict = [DefaultBrowserPromptUserActivityKeyValueFilesStore.StorageKey.userActivity: encodedActivity]
@@ -74,6 +76,7 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
         // THEN
         #expect(result.numberOfActiveDays == 0)
         #expect(result.lastActiveDate == nil)
+        #expect(result.secondLastActiveDate == nil)
     }
 
     @Test("Check Saving Activity Send The Right Event When Fail")

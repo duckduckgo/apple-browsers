@@ -35,9 +35,9 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProOfferScreenImpression
     case privacyProPurchaseAttempt
     case privacyProPurchaseFailureOther
-    case privacyProPurchaseFailureStoreError
+    case privacyProPurchaseFailureStoreError(Error)
     case privacyProPurchaseFailureBackendError
-    case privacyProPurchaseFailureAccountNotCreated
+    case privacyProPurchaseFailureAccountNotCreated(Error)
     case privacyProPurchaseSuccess
     case privacyProRestorePurchaseOfferPageEntry
     case privacyProRestorePurchaseClick
@@ -157,7 +157,13 @@ enum PrivacyProPixel: PixelKitEventV2 {
     }
 
     var error: (any Error)? {
-        return nil
+        switch self {
+        case .privacyProPurchaseFailureStoreError(let error): return error
+        case .privacyProPurchaseFailureAccountNotCreated(let error): return error
+        case .privacyProAuthV2MigrationFailed(_, let error): return error
+        case .privacyProAuthV2GetTokensError(_, _, let error): return error
+        default: return nil
+        }
     }
 
     private struct PrivacyProPixelsDefaults {

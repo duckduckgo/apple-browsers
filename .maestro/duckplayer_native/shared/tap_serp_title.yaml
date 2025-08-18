@@ -1,0 +1,17 @@
+# tap_serp_title.yaml
+
+appId: com.duckduckgo.mobile.ios
+---
+
+- waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible: ${output.videoTitle}
+    commands:
+      - tapOn: ${output.videoTitle}
+- runFlow:
+    when:
+        visible: ${output.videoTitle2}
+    commands:
+      - tapOn: ${output.videoTitle2}

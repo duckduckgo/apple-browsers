@@ -52,7 +52,7 @@ extension TabContent {
             return .personalInformationRemovalMulticolor16
 
         case .newtab where isBurner:
-            return visualStyle.isNewStyle ? DesignSystemImages.Glyphs.Size16.fireTab : .burnerTabFavicon
+            return DesignSystemImages.Glyphs.Size16.fireTab
 
         case .newtab:
             return .homeFavicon

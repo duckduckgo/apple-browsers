@@ -435,7 +435,7 @@ final class TabCollectionViewModel: NSObject {
     }
 
     private func makeTab(for content: Tab.TabContent) -> Tab {
-        if content == .newtab, let preloaded = newTabPageTabPreloader?.newTab() {
+        if !isBurner, content == .newtab, let preloaded = newTabPageTabPreloader?.newTab() {
             return preloaded
         }
         return Tab(content: content, shouldLoadInBackground: true, burnerMode: burnerMode)

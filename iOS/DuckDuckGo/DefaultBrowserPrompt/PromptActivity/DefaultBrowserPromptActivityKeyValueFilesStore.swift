@@ -30,6 +30,7 @@ final class DefaultBrowserPromptActivityKeyValueFilesStore: DefaultBrowserPrompt
         case lastModalShownDate = "com.duckduckgo.defaultBrowserPrompt.lastModalShownDate"
         case modalShownOccurrences = "com.duckduckgo.defaultBrowserPrompt.modalShownOccurrences"
         case promptPermanentlyDismissed = "com.duckduckgo.defaultBrowserPrompt.modalPermanentlyDismissed"
+        case inactiveModalShown = "com.duckduckgo.defaultBrowserPrompt.inactiveModalShown"
     }
 
     private let keyValueFilesStore: ThrowingKeyValueStoring
@@ -70,6 +71,15 @@ final class DefaultBrowserPromptActivityKeyValueFilesStore: DefaultBrowserPrompt
         }
     }
 
+    var hasInactiveModalShown: Bool {
+        get {
+            getValue(forKey: .inactiveModalShown) ?? false
+        }
+        set {
+            write(value: newValue, forKey: .inactiveModalShown)
+        }
+    }
+
     private func getValue<T>(forKey key: StorageKey) -> T? {
         do {
             return try keyValueFilesStore.object(forKey: key.rawValue) as? T
@@ -98,6 +108,7 @@ extension DefaultBrowserPromptActivityKeyValueFilesStore {
             case lastModalShownDate(Error)
             case modalShownOccurrences(Error)
             case permanentlyDismissPrompt(Error)
+            case inactiveModalShown(Error)
         }
 
         case failedToRetrieveValue(Value)
@@ -118,6 +129,8 @@ private extension DefaultBrowserPromptActivityKeyValueFilesStore.DebugEvent.Valu
             self = .modalShownOccurrences(error)
         case .promptPermanentlyDismissed:
             self = .permanentlyDismissPrompt(error)
+        case .inactiveModalShown:
+            self = .inactiveModalShown(error)
         }
     }
 

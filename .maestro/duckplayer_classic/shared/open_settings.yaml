@@ -1,0 +1,23 @@
+appId: com.duckduckgo.mobile.ios
+---
+# Open Settings - Works on both iPhone and iPad
+- tapOn:
+    id: "Browser.OmniBar.Button.BrowsingMenu"
+    
+- waitForAnimationToEnd:
+    timeout: 1000
+    
+- tapOn: Settings    
+
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element: 
+      text: "Duck Player"
+    direction: DOWN
+    centerElement: true
+    
+- tapOn: 
+    text: "Duck Player"
+    
+- waitForAnimationToEnd

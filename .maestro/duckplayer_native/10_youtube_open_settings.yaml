@@ -32,8 +32,8 @@ tags:
     file: shared/load_youtube_url.yaml
 
 # Tap on the video
-- assertVisible: ${output.videoTitle}
-- tapOn: ${output.videoTitle}
+- runFlow:
+    file: shared/tap_serp_title.yaml
 
 # Assert Duck Player is Visible
 - runFlow: 

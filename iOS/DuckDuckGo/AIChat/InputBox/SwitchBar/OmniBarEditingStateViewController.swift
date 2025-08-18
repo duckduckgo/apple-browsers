@@ -115,6 +115,10 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         }
     }
 
+    func setLogoYOffset(_ offset: CGFloat) {
+        daxLogoManager.containerYCenterConstraint?.constant = offset
+    }
+
     // MARK: - Private Methods
     
     private func setupView() {
@@ -166,7 +170,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self, belowView: switchBarVC.view)
+        if let view = switchBarVC.segmentedPickerView {
+            daxLogoManager.installInViewController(self, belowView: view)
+        }
     }
     
     private func installNavigationActionBar() {

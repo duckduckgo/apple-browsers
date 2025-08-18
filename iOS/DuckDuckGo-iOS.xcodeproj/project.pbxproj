@@ -13,7 +13,6 @@
 		021440782C7FB21C00426724 /* VPNPrivacyConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440772C7FB21C00426724 /* VPNPrivacyConfigurationManager.swift */; };
 		0214407A2C7FB28F00426724 /* VPNAgentConfigurationURLProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021440792C7FB28F00426724 /* VPNAgentConfigurationURLProvider.swift */; };
 		0238E44F29C0FAA100615E30 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */; };
-		025CD01025826035001CD5BB /* FingerprintUITest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 025CCF75257EAFAF001CD5BB /* FingerprintUITest.swift */; };
 		0283A1FC2C6E3D8100508FBD /* BrokenSitePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0283A1FA2C6E3D8100508FBD /* BrokenSitePromptView.swift */; };
 		0283A1FE2C6E3E1B00508FBD /* BrokenSitePromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0283A1FB2C6E3D8100508FBD /* BrokenSitePromptViewModel.swift */; };
 		0283A2012C6E46E300508FBD /* BrokenSitePromptLimiterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0283A2002C6E46E300508FBD /* BrokenSitePromptLimiterStore.swift */; };
@@ -1810,13 +1809,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		025CCFE72582601C001CD5BB /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 84E3418A1E2F7EFB00BDBA6F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 84E341911E2F7EFB00BDBA6F;
-			remoteInfo = DuckDuckGo;
-		};
 		02FFD7BB2A1FC8BE007BD7D1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 84E3418A1E2F7EFB00BDBA6F /* Project object */;
@@ -1978,9 +1970,6 @@
 		021440752C7FAB4100426724 /* ConfigurationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationStore.swift; sourceTree = "<group>"; };
 		021440772C7FB21C00426724 /* VPNPrivacyConfigurationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNPrivacyConfigurationManager.swift; sourceTree = "<group>"; };
 		021440792C7FB28F00426724 /* VPNAgentConfigurationURLProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAgentConfigurationURLProvider.swift; sourceTree = "<group>"; };
-		025CCF75257EAFAF001CD5BB /* FingerprintUITest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerprintUITest.swift; sourceTree = "<group>"; };
-		025CCFE22582601C001CD5BB /* FingerprintingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FingerprintingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		025CCFE62582601C001CD5BB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0283A1FA2C6E3D8100508FBD /* BrokenSitePromptView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptView.swift; sourceTree = "<group>"; };
 		0283A1FB2C6E3D8100508FBD /* BrokenSitePromptViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptViewModel.swift; sourceTree = "<group>"; };
 		0283A2002C6E46E300508FBD /* BrokenSitePromptLimiterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptLimiterStore.swift; sourceTree = "<group>"; };
@@ -4070,13 +4059,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		025CCFDF2582601C001CD5BB /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8390446920BDCE10006461CD /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -4300,15 +4282,6 @@
 				4BCBE45F2BA7E87100FC75A1 /* PrivacyInfo.xcprivacy */,
 			);
 			path = PacketTunnelProvider;
-			sourceTree = "<group>";
-		};
-		025CCFE32582601C001CD5BB /* FingerprintingUITests */ = {
-			isa = PBXGroup;
-			children = (
-				025CCF75257EAFAF001CD5BB /* FingerprintUITest.swift */,
-				025CCFE62582601C001CD5BB /* Info.plist */,
-			);
-			path = FingerprintingUITests;
 			sourceTree = "<group>";
 		};
 		0283A1F92C6E3D4200508FBD /* BrokenSitePrompt */ = {
@@ -5635,7 +5608,6 @@
 				85482D892462DCD100EDEDD1 /* OpenAction */,
 				8512EA5224ED30D20073EE19 /* Widgets */,
 				02025665298818B200E694E7 /* PacketTunnelProvider */,
-				025CCFE32582601C001CD5BB /* FingerprintingUITests */,
 				84E341A91E2F7EFB00BDBA6F /* UnitTests */,
 				983D88E62CED4B1600E99B46 /* WebViewUnitTests */,
 				98E5644A2DE8DDC900E6E75F /* SharedStateTests */,
@@ -5662,7 +5634,6 @@
 				98A54A8122AFCB2C00E541F4 /* Instruments.instrdst */,
 				85482D882462DCD100EDEDD1 /* OpenAction.appex */,
 				8512EA4D24ED30D20073EE19 /* WidgetsExtension.appex */,
-				025CCFE22582601C001CD5BB /* FingerprintingUITests.xctest */,
 				85D33FCB25C97B6E002B91A6 /* IntegrationTests.xctest */,
 				9825F9D7293F2DE900F220F2 /* PerformanceTests.xctest */,
 				02025662298818B100E694E7 /* PacketTunnelProvider.appex */,
@@ -8820,26 +8791,6 @@
 			productReference = 02025662298818B100E694E7 /* PacketTunnelProvider.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		025CCFE12582601C001CD5BB /* FingerprintingUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 025CCFEB2582601C001CD5BB /* Build configuration list for PBXNativeTarget "FingerprintingUITests" */;
-			buildPhases = (
-				025CCFDE2582601C001CD5BB /* Sources */,
-				025CCFDF2582601C001CD5BB /* Frameworks */,
-				025CCFE02582601C001CD5BB /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				025CCFE82582601C001CD5BB /* PBXTargetDependency */,
-			);
-			name = FingerprintingUITests;
-			packageProductDependencies = (
-			);
-			productName = FingerprintingUITests;
-			productReference = 025CCFE22582601C001CD5BB /* FingerprintingUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 		8390446B20BDCE10006461CD /* ShareExtension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8390447720BDCE10006461CD /* Build configuration list for PBXNativeTarget "ShareExtension" */;
@@ -9233,10 +9184,6 @@
 					02025661298818B100E694E7 = {
 						CreatedOnToolsVersion = 14.2;
 					};
-					025CCFE12582601C001CD5BB = {
-						CreatedOnToolsVersion = 12.2;
-						TestTargetID = 84E341911E2F7EFB00BDBA6F;
-					};
 					8390446B20BDCE10006461CD = {
 						CreatedOnToolsVersion = 9.3.1;
 						LastSwiftMigration = 1020;
@@ -9366,7 +9313,6 @@
 				98A54A8022AFCB2C00E541F4 /* Instruments */,
 				85F21DAC210F5E32002631A6 /* AtbUITests */,
 				84E341A51E2F7EFB00BDBA6F /* UnitTests */,
-				025CCFE12582601C001CD5BB /* FingerprintingUITests */,
 				85D33FCA25C97B6E002B91A6 /* IntegrationTests */,
 				9825F9CB293F2DE900F220F2 /* PerformanceTests */,
 				B6DFE6CE2BC7E47500A9CE59 /* SwiftLintToolBundle */,
@@ -9384,13 +9330,6 @@
 				CB1143DE2AF6D4B600C1CCD3 /* InfoPlist.strings in Resources */,
 				4BCBE4602BA7E87100FC75A1 /* PrivacyInfo.xcprivacy in Resources */,
 				EEDFE2DA2AC6ED4F00F0E19C /* Localizable.strings in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		025CCFE02582601C001CD5BB /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9783,14 +9722,6 @@
 				EEFC6A602AC0F2F80065027D /* UserText.swift in Sources */,
 				7B4DC5C42CB2B1D000EE5CC2 /* WidgetKind.swift in Sources */,
 				7BC571212BDBB977003B0CCE /* VPNActivationDateStore.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		025CCFDE2582601C001CD5BB /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				025CD01025826035001CD5BB /* FingerprintUITest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -11428,11 +11359,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		025CCFE82582601C001CD5BB /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 84E341911E2F7EFB00BDBA6F /* DuckDuckGo */;
-			targetProxy = 025CCFE72582601C001CD5BB /* PBXContainerItemProxy */;
-		};
 		02FFD7BC2A1FC8BE007BD7D1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 02025661298818B100E694E7 /* PacketTunnelProvider */;
@@ -12355,59 +12281,6 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		025CCFE92582601C001CD5BB /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = FingerprintingUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.FingerprintingUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = DuckDuckGo;
-			};
-			name = Debug;
-		};
-		025CCFEA2582601C001CD5BB /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = FingerprintingUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.FingerprintingUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = DuckDuckGo;
 			};
 			name = Release;
 		};
@@ -13677,33 +13550,6 @@
 			};
 			name = "Alpha Debug";
 		};
-		D664C7E82B28A0FD00CBFA76 /* Alpha Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = FingerprintingUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.FingerprintingUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = DuckDuckGo;
-			};
-			name = "Alpha Debug";
-		};
 		D664C7E92B28A0FD00CBFA76 /* Alpha Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -14078,33 +13924,6 @@
 			};
 			name = Alpha;
 		};
-		EE5A7C502A82BBB700387C84 /* Alpha */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = FingerprintingUITests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.duckduckgo.FingerprintingUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = DuckDuckGo;
-			};
-			name = Alpha;
-		};
 		EE5A7C512A82BBB700387C84 /* Alpha */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -14236,17 +14055,6 @@
 				D664C7E32B28A0FD00CBFA76 /* Alpha Debug */,
 				EE5A7C4B2A82BBB700387C84 /* Alpha */,
 				0202566E298818B200E694E7 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		025CCFEB2582601C001CD5BB /* Build configuration list for PBXNativeTarget "FingerprintingUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				025CCFE92582601C001CD5BB /* Debug */,
-				D664C7E82B28A0FD00CBFA76 /* Alpha Debug */,
-				EE5A7C502A82BBB700387C84 /* Alpha */,
-				025CCFEA2582601C001CD5BB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

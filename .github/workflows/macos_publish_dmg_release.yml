@@ -106,10 +106,11 @@ jobs:
 
     needs: [stop-workflow-if-needed]
 
-    # Allow to run even if the tag-public-release job was skipped (e.g. for internal releases)
-    # or failed (for public releases or hotfixes), because tagging doesn't block publishing the release
-    # but still allow the workflow to be cancelled
-    if: needs.stop-workflow-if-needed.outputs.stop_workflow == 'false'
+    # Run always, except for the case when stop-workflow-if-needed was not skipped and produced a non-true output
+    # For internal releases, that job isn't run at all, so it doesn't produce an output. We want to publish the release then.
+    # For public/hotfix releases, we want to publish the release unless the workflow should be stopped here, as indicated
+    # by the stop_workflow flag.
+    if: needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
 
     runs-on: macos-15-xlarge
     timeout-minutes: 10

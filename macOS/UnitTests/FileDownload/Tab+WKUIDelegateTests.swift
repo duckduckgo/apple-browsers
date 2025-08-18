@@ -26,13 +26,11 @@ final class TabWKUIDelegateTests: XCTestCase {
     private var testData: Data!
     private var originatingURL: URL!
     private let filename = "Document.pdf"
-    private let fileManager = FileManager.default
     private var testDirectory: URL!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         testData = try XCTUnwrap("test".data(using: .utf8))
-        testDirectory = fileManager.temporaryDirectory
         originatingURL = URL(string: "https://www.duckduckgo.com")!
     }
 
@@ -42,7 +40,6 @@ final class TabWKUIDelegateTests: XCTestCase {
 
     override func tearDown() {
         testData = nil
-        testDirectory = nil
         originatingURL = nil
     }
 
@@ -74,7 +71,7 @@ final class TabWKUIDelegateTests: XCTestCase {
         // THEN
         waitForExpectations(timeout: 1)
         XCTAssertEqual(downloadExtensionMock.capturedSavedDownloadData, testData)
-        XCTAssertNotNil(downloadExtensionMock.capturedMimeType, "application/pdf")
+        XCTAssertEqual(downloadExtensionMock.capturedMimeType, "application/pdf")
 
         withExtendedLifetime(c) {}
     }

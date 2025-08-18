@@ -3,7 +3,7 @@
         description: 'Sent as part of a regular latency check in the iOS VPN',
         owners: ['diegoreymendez', 'samsymons'],
         triggers: ['scheduled'],
-        suffixes: ['platform', 'form_factor', 'legacy_daily_count'],
+        suffixes: ['legacy_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             {
@@ -18,7 +18,7 @@
         description: 'Sent as part of a regular latency check in the iOS VPN',
         owners: ['diegoreymendez', 'samsymons'],
         triggers: ['scheduled'],
-        suffixes: ['platform', 'form_factor', 'legacy_daily_count'],
+        suffixes: ['legacy_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             {
@@ -33,7 +33,7 @@
         description: 'Sent as part of a regular latency check in the iOS VPN',
         owners: ['diegoreymendez', 'samsymons'],
         triggers: ['scheduled'],
-        suffixes: ['platform', 'form_factor', 'legacy_daily_count'],
+        suffixes: ['legacy_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             {
@@ -48,7 +48,7 @@
         description: 'Sent as part of a regular latency check in the iOS VPN',
         owners: ['diegoreymendez', 'samsymons'],
         triggers: ['scheduled'],
-        suffixes: ['platform', 'form_factor', 'legacy_daily_count'],
+        suffixes: ['legacy_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             {
@@ -63,7 +63,7 @@
         description: 'Sent as part of a regular latency check in the iOS VPN',
         owners: ['diegoreymendez', 'samsymons'],
         triggers: ['scheduled'],
-        suffixes: ['platform', 'form_factor', 'legacy_daily_count'],
+        suffixes: ['legacy_daily_count', 'platform', 'form_factor'],
         parameters: [
             'appVersion',
             {

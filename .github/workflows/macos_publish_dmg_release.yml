@@ -13,7 +13,6 @@ on:
         type: string
       base-branch:
         description: "Base branch name (defaults to main, only override for testing)"
-        required: true
         default: main
         type: string
       tag:
@@ -30,7 +29,6 @@ on:
         - hotfix
       ignore-unreleased-changes:
         description: "Ignore unreleased changes when making a public release?"
-        required: true
         type: boolean
         default: false
   workflow_call:

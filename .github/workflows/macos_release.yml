@@ -17,7 +17,6 @@ on:
         type: boolean
       destination:
         description: "Upload destination (TestFlight or App Store)"
-        required: false
         default: testflight
         type: string
   workflow_call:
@@ -36,7 +35,6 @@ on:
         type: boolean
       destination:
         description: "Upload destination (TestFlight or App Store)"
-        required: false
         default: testflight
         type: string
     secrets:

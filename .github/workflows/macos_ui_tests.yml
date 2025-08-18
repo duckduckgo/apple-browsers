@@ -11,7 +11,6 @@ on:
         description: "Whether to test all OS versions or only the latest"
         type: boolean
         default: true
-        required: true
       single_test_class:
         description: "Run only a specific UITestCase (optional, e.g. 'AutocompleteTests')"
         type: string

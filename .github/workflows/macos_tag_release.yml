@@ -25,7 +25,6 @@ on:
         type: boolean
       ignore-unreleased-changes:
         description: "Whether to ignore unreleased changes when tagging a public release"
-        required: true
         type: boolean
         default: false
   workflow_call:
@@ -48,12 +47,10 @@ on:
         type: boolean
       internal-release-bump:
         description: "Is this an internal release bump? (the subsequent internal release of the current week)"
-        required: false
         default: false
         type: boolean
       ignore-unreleased-changes:
         description: "Whether to ignore unreleased changes when tagging a public release"
-        required: true
         type: boolean
         default: false
     secrets:

@@ -424,8 +424,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 
-        Configuration.setURLProvider(VPNAgentConfigurationURLProvider())
-        configurationManager = ConfigurationManager(store: configurationStore)
+        configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         configurationManager.start()
         let privacyConfigurationManager = VPNPrivacyConfigurationManager.shared
         // Load cached config (if any)

@@ -1,7 +1,7 @@
 {
   "name": "PrivateReports",
   "url": "privatereports.com",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "optOutUrl": "https://www.privatereports.com/optOut/name/landingPage",
   "steps": [
     {
@@ -273,7 +273,7 @@
 
         {
           "actionType": "condition",
-          "--": "captcha is not always present at this stage",
+          "_comment": "captcha is not always present at this stage",
           "expectations": [
             {
               "type": "element",
@@ -311,7 +311,7 @@
 
         {
           "actionType": "condition",
-          "--": "Handle captcha failure modal - retries captcha process if initial attempt failed",
+          "_comment": "Handle captcha failure modal - retries captcha process if initial attempt failed",
           "expectations": [
             {
               "type": "element",
@@ -627,5 +627,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 240
   },
-  "addedDatetime": 1737035696264
+  "addedDatetime": 1737035696264,
+  "removedAt": null
 }

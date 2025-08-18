@@ -1,7 +1,7 @@
 {
   "name": "USA People Search",
   "url": "usa-people-search.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "peoplefinders.com",
   "addedDatetime": 1678082400000,
   "optOutUrl": "https://www.usa-people-search.com/manage",
@@ -67,5 +67,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

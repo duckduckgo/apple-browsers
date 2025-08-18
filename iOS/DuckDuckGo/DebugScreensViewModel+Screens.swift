@@ -196,7 +196,9 @@ extension DebugScreensViewModel {
             .controller(title: "Configuration URLs", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "ConfigurationURLDebugViewController") { coder in
-                    ConfigurationURLDebugViewController(coder: coder)
+                    let viewController = ConfigurationURLDebugViewController(coder: coder)
+                    viewController?.viewModel = self
+                    return viewController
                 }
             }),
             .controller(title: "Onboarding", { d in

@@ -1,7 +1,7 @@
 {
   "name": "FreePeopleDirectory",
   "url": "freepeopledirectory.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "spokeo.com",
   "addedDatetime": 1674540000000,
   "optOutUrl": "https://freepeopledirectory.com/contact",
@@ -58,5 +58,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

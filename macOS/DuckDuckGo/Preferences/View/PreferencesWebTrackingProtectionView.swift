@@ -31,7 +31,7 @@ private enum Layout {
         static let caption: CGFloat = 1
         static let section: CGFloat = 0
     }
-    
+
     enum Grid {
         static let columns: Int = 2
         static let cellMinHeight: CGFloat = 90

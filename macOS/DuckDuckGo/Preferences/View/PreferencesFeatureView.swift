@@ -27,12 +27,12 @@ private enum Layout {
         static let textVertical: CGFloat = 6
         static let gridCell: CGFloat = 12
     }
-    
+
     enum Padding {
         static let featureBox: CGFloat = 12
         static let gridTop: CGFloat = 12
     }
-    
+
     enum Size {
         static let iconCircle: CGFloat = 32
         static let iconImage: CGFloat = 16

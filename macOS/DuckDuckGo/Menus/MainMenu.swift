@@ -120,6 +120,7 @@ final class MainMenu: NSMenu {
     private let appearancePreferences: AppearancePreferences
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let appVersion: AppVersion
+    private let configurationURLProvider: CustomConfigurationURLProviding
 
     // MARK: - Initialization
 
@@ -134,7 +135,8 @@ final class MainMenu: NSMenu {
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         appVersion: AppVersion = .shared) {
+         appVersion: AppVersion = .shared,
+         configurationURLProvider: CustomConfigurationURLProviding) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -145,6 +147,7 @@ final class MainMenu: NSMenu {
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
+        self.configurationURLProvider = configurationURLProvider
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -865,9 +868,7 @@ final class MainMenu: NSMenu {
         }
         configurationDateAndTimeMenuItem.title = dateString
 
-        let urlProvider = Application.appDelegate.configurationURLProvider
-
-        customConfigurationUrlMenuItem.title = "Configuration URL:  \(urlProvider.url(for: .privacyConfiguration).absoluteString)"
+        customConfigurationUrlMenuItem.title = "Configuration URL:  \(configurationURLProvider.url(for: .privacyConfiguration).absoluteString)"
     }
 
     @objc private func toggleAutofillScriptDebugSettingsAction(_ sender: NSMenuItem) {

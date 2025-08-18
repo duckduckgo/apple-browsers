@@ -33,7 +33,7 @@ public final class CustomConfigurationURLStorage: CustomConfigurationURLStoring 
     private let defaults: UserDefaults
     private let keyPrefix: String
 
-    public init(defaults: UserDefaults = .standard,
+    public init(defaults: UserDefaults,
                 keyPrefix: String = "CustomConfigurationURL") {
         self.defaults = defaults
         self.keyPrefix = keyPrefix

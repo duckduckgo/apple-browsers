@@ -47,8 +47,8 @@ on:
         type: boolean
       ignore-unreleased-changes:
         description: "Whether to ignore unreleased changes when tagging a public release"
-        required: true
         type: boolean
+        default: false
       internal-release-bump:
         description: "Is this an internal release bump? (the subsequent internal release of the current week)"
         default: false

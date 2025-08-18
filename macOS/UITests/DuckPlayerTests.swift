@@ -22,7 +22,7 @@ class DuckPlayerTests: UITestCase {
     private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement!
 
-    private static let searchURL = "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web"
+    private static let searchURL = "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch+videos%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web"
     private static let youtubeVideoTitle = "DuckDuckGo vs Google: 5 Reasons You Should Switch"
     private static let organicVideoTitle = "DuckDuckGo vs Google: 5 Reasons You Should Switch - YouTube"
     private static let duckPlayerTabPreffix = "Duck Player - "
@@ -137,6 +137,7 @@ class DuckPlayerTests: UITestCase {
             "URL should contain youtube.com, but was: \(urlValue)"
         )
     }
+    
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPOrganic() throws {
 

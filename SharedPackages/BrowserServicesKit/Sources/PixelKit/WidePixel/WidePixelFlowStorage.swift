@@ -22,7 +22,7 @@ import Foundation
 
 public protocol WidePixelStoring {
     func save<T: WidePixelData>(_ data: T) throws
-    func load<T: WidePixelData>(contextID: UUID, as type: T.Type) throws -> T
+    func load<T: WidePixelData>(contextID: UUID) throws -> T
     func update<T: WidePixelData>(_ data: T) throws
     func clearContext(_ contextID: UUID)
     func removeAll()
@@ -57,7 +57,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         }
     }
 
-    public func load<T: WidePixelData>(contextID: UUID, as type: T.Type) throws -> T {
+    public func load<T: WidePixelData>(contextID: UUID) throws -> T {
         let key = storageKey(T.self, contextID: contextID)
         guard let data = defaults.data(forKey: key) else {
             throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with context ID \(contextID)")
@@ -124,7 +124,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         for key in allKeys {
             let parts = key.components(separatedBy: ".")
             if parts.count == 2 && parts[0] == T.pixelName, let uuid = UUID(uuidString: parts[1]),
-               let decoded: T = (try? load(contextID: uuid, as: T.self)) {
+               let decoded: T = try? load(contextID: uuid) {
                 results.append(decoded)
             }
         }

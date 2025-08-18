@@ -123,22 +123,33 @@ final class PacketTunnelSettingsGenerator {
         ipv4Settings.excludedRoutes = excludedRoutes.ipv4
         networkSettings.ipv4Settings = ipv4Settings
 
-        let includedRoutesDesc = includedRoutes.ipv4.reduce("") { result, route in
+        let includedRoutesDescIPv4 = includedRoutes.ipv4.reduce("") { result, route in
             "\(result), \(route.destinationAddress)/\(route.destinationSubnetMask)"
         }
 
-        let excludedRoutesDesc = excludedRoutes.ipv4.reduce("") { result, route in
+        let excludedRoutesDescIPv4 = excludedRoutes.ipv4.reduce("") { result, route in
             "\(result), \(route.destinationAddress)/\(route.destinationSubnetMask)"
         }
 
-        Logger.networkProtection.log("[GEN] Routing table information - Included Routes: \(includedRoutesDesc, privacy: .public)")
-        Logger.networkProtection.log("[GEN] Routing table information - Excluded Routes: \(excludedRoutesDesc, privacy: .public)")
+        Logger.networkProtection.log("[GEN] Routing table information - Included Routes (IPv4): \(includedRoutesDescIPv4, privacy: .public)")
+        Logger.networkProtection.log("[GEN] Routing table information - Excluded Routes (IPv4): \(excludedRoutesDescIPv4, privacy: .public)")
 
         let ipv6Settings = NEIPv6Settings(addresses: addresses.ipv6.map { $0.destinationAddress },
                                           networkPrefixLengths: addresses.ipv6.map { $0.destinationNetworkPrefixLength })
         ipv6Settings.includedRoutes = includedRoutes.ipv6
         ipv6Settings.excludedRoutes = excludedRoutes.ipv6
         networkSettings.ipv6Settings = ipv6Settings
+
+        let includedRoutesDescIPv6 = includedRoutes.ipv6.reduce("") { result, route in
+            "\(result), \(route.destinationAddress)/\(route.destinationNetworkPrefixLength)"
+        }
+
+        let excludedRoutesDescIPv6 = excludedRoutes.ipv6.reduce("") { result, route in
+            "\(result), \(route.destinationAddress)/\(route.destinationNetworkPrefixLength)"
+        }
+
+        Logger.networkProtection.log("[GEN] Routing table information - Included Routes (IPv6): \(includedRoutesDescIPv6, privacy: .public)")
+        Logger.networkProtection.log("[GEN] Routing table information - Excluded Routes (IPv6): \(excludedRoutesDescIPv6, privacy: .public)")
 
         return networkSettings
     }

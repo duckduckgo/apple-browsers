@@ -839,8 +839,8 @@ extension SettingsViewModel {
 
     func openAssistSettings() {
         Pixel.fire(pixel: .settingsOpenAssistSettings)
-        let url = URL.assistSettings.appendingParameter(name: "return", value: "duckai")
-        urlOpener.open(url)
+//        let url = URL.assistSettings.appendingParameter(name: "return", value: "aiFeatures")
+        urlOpener.open(URL(string: "ddgQuickLink://bhall.duck.co/settings?return=aiFeatures#aifeatures")!)
     }
 
     func openAIChat() {

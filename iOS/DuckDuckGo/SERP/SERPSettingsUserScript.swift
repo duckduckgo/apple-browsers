@@ -93,7 +93,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         guard let parameters = params as? [String: String] else { return nil }
         if parameters["return"] == "privateSearch" {
             delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
-        } else if parameters["return"] == "duckai" {
+        } else if parameters["return"] == "aiFeatures" {
             delegate?.serpSettingsUserScriptDidRequestToOpenDuckAISettings(self)
         }
         return nil

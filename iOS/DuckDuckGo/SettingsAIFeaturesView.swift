@@ -74,7 +74,12 @@ struct SettingsAIFeaturesView: View {
 
                     if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                         Section {
-                            SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                            HStack {
+                                Spacer()
+                                SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                                    .padding(.vertical, 8)
+                                Spacer()
+                            }
                         } footer: {
                             Text(footerAttributedString)
                                 .environment(\.openURL, OpenURLAction { url in

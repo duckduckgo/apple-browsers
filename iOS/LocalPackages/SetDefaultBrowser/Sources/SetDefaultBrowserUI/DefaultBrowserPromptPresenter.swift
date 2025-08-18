@@ -90,10 +90,6 @@ private extension DefaultBrowserModalPresenter {
             setAsDefaultAction: { [weak presentingViewController, weak coordinator] in
                 coordinator?.setDefaultBrowserAction(forPrompt: .inactiveUserModal)
                 presentingViewController?.dismiss(animated: false)
-            },
-            onMoreProtectionsTapped: { [weak presentingViewController, weak coordinator] in
-                coordinator?.moreProtectionsAction()
-                presentingViewController?.presentedViewController?.present(UINavigationController(rootViewController: MoreProtectionsViewController()), animated: true)
             }
         )
         let hostingController = PortraitHostingController(rootView: rootView)

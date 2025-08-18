@@ -1,7 +1,7 @@
 {
   "name": "InmatesSearcher",
   "url": "inmatessearcher.com",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.inmatessearcher.com/optOut/name/landing",
   "steps": [
@@ -203,5 +203,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1738338641033
+  "addedDatetime": 1738338641033,
+  "removedAt": null
 }

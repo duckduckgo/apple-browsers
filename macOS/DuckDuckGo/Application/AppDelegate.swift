@@ -193,6 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     var configurationStore = ConfigurationStore()
     var configurationManager: ConfigurationManager
+    var configurationURLProvider: CustomConfigurationURLProviding
 
     // MARK: - VPN
 
@@ -671,8 +672,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         appContentBlocking = contentBlocking
 #endif
-
+        configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults.appConfiguration))
         configurationManager = ConfigurationManager(
+            fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents),
             store: configurationStore,
             trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
             privacyConfigurationManager: privacyConfigurationManager,
@@ -727,6 +729,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
+                configurationURLProvider: configurationURLProvider,
                 visualStyle: self.visualStyle
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
@@ -805,10 +808,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
-        Configuration.setURLProvider(AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        ))
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore, startupPreferences: startupPreferences)
 

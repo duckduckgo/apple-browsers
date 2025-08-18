@@ -1,7 +1,7 @@
 {
   "name": "People Background Check",
   "url": "people-background-check.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1702965600000,
   "optOutUrl": "https://people-background-check.com/ng/control/privacy",
   "steps": [
@@ -121,5 +121,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

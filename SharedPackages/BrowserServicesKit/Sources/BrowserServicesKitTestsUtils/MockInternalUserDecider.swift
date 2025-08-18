@@ -1,7 +1,7 @@
 //
-//  Configuration.swift
+//  MockInternalUserDecider.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,17 @@
 //
 
 import Foundation
+import BrowserServicesKit
+import Combine
 
-public enum Configuration: String, CaseIterable, Sendable {
+public class MockInternalUserDecider: InternalUserDecider {
+    public var isInternalUserPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
 
-    case bloomFilterBinary
-    case bloomFilterSpec
-    case bloomFilterExcludedDomains
-    case privacyConfiguration
-    case surrogates
-    case trackerDataSet
-    case remoteMessagingConfig
+    public func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
+        return true
+    }
+
+    public var isInternalUser: Bool = false
+
+    public init() {}
 }

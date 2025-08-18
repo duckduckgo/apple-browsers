@@ -24,7 +24,7 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
-import Configuration
+@testable import Configuration
 import Core
 import SubscriptionTestingUtilities
 import Common
@@ -66,7 +66,8 @@ import SystemSettingsPiPTutorialTestSupport
             database: db,
             errorEvents: nil,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage()
+            duckPlayerStorage: MockDuckPlayerStorage(),
+            configurationURLProvider: MockCustomURLProvider()
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
@@ -136,6 +137,7 @@ import SystemSettingsPiPTutorialTestSupport
             aiChatSettings: MockAIChatSettingsProvider(),
             themeManager: MockThemeManager(),
             keyValueStore: keyValueStore,
+            customConfigurationURLProvider: MockCustomURLProvider(),
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
             daxDialogsManager: DummyDaxDialogsManager(),
         )

@@ -34,7 +34,8 @@ final class RemoteMessagingService {
          appSettings: AppSettings,
          internalUserDecider: InternalUserDecider,
          configurationStore: ConfigurationStore,
-         privacyConfigurationManager: PrivacyConfigurationManaging) {
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         configurationURLProvider: ConfigurationURLProviding) {
         remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: bookmarksDatabase,
             appSettings: appSettings,
@@ -45,7 +46,8 @@ final class RemoteMessagingService {
             remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                 privacyConfigurationManager: privacyConfigurationManager
             ),
-            duckPlayerStorage: DefaultDuckPlayerStorage()
+            duckPlayerStorage: DefaultDuckPlayerStorage(),
+            configurationURLProvider: configurationURLProvider
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
 

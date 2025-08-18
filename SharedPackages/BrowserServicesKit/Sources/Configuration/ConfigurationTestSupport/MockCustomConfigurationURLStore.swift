@@ -1,7 +1,7 @@
 //
-//  Configuration.swift
+//  MockCustomConfigurationURLStore.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,15 +16,16 @@
 //  limitations under the License.
 //
 
+#if !RELEASE
 import Foundation
 
-public enum Configuration: String, CaseIterable, Sendable {
-
-    case bloomFilterBinary
-    case bloomFilterSpec
-    case bloomFilterExcludedDomains
-    case privacyConfiguration
-    case surrogates
-    case trackerDataSet
-    case remoteMessagingConfig
+final class MockCustomConfigurationURLStore: CustomConfigurationURLStoring {
+    var customBloomFilterSpecURL: URL?
+    var customBloomFilterBinaryURL: URL?
+    var customBloomFilterExcludedDomainsURL: URL?
+    var customPrivacyConfigurationURL: URL?
+    var customTrackerDataSetURL: URL?
+    var customSurrogatesURL: URL?
+    var customRemoteMessagingConfigURL: URL?
 }
+#endif

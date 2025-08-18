@@ -53,7 +53,8 @@ final class Application: NSApplication {
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             internalUserDecider: delegate.internalUserDecider,
             appearancePreferences: delegate.appearancePreferences,
-            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager
+            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+            configurationURLProvider: delegate.configurationURLProvider
         )
         self.mainMenu = mainMenu
 

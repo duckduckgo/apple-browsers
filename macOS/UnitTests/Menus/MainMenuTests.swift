@@ -20,6 +20,7 @@ import XCTest
 import Combine
 import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Configuration
 
 class MainMenuTests: XCTestCase {
 
@@ -118,7 +119,8 @@ class MainMenuTests: XCTestCase {
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -188,7 +190,8 @@ class MainMenuTests: XCTestCase {
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -213,7 +216,8 @@ class MainMenuTests: XCTestCase {
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -237,7 +241,8 @@ class MainMenuTests: XCTestCase {
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            configurationURLProvider: MockCustomURLProvider()
         )
         let bookmarksMenu = try XCTUnwrap(sut.item(withTitle: UserText.bookmarks))
 
@@ -263,7 +268,8 @@ class MainMenuTests: XCTestCase {
             aiChatMenuConfig: aiChatConfig,
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -291,7 +297,8 @@ class MainMenuTests: XCTestCase {
             aiChatMenuConfig: aiChatConfig,
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))

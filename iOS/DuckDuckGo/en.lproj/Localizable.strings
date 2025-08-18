@@ -2824,6 +2824,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Learn More";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Let DuckDuckGo manage cookie consent pop-ups";
 
@@ -2974,6 +2977,60 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the Settings View */
 "settings.title" = "Settings";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Detect trackers disguised as first-party resources";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "CNAME Cloaking";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Protect against techniques that uniquely identify your device";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Fingerprinting";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Block cookies from third-party trackers";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "3rd-Party Cookie Loading";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Skip Google's AMP pages and load original sites";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Google AMP";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Block Google's sign-in prompts on other sites";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Google Sign-in Pop-ups";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Remove tracking parameters from URLs automatically";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Link Tracking";
+
+/* Description for referrer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Hide which sites you came from to protect privacy";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Referrer Tracking";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Prevent advertisers from tracking you across sites";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Targeted Ads";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Block trackers that monitor your browsing activity";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "3rd-Party Tracker Loading";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Unprotected Sites";
 
@@ -2986,8 +3043,14 @@ Take back control of your personal information with the browser designed for dat
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web Tracking Protection";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web tracking protections are always on";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo automatically blocks hidden trackers as you browse the web.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active. ";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Select the option that best describes the problem you experienced.";

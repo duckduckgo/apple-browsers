@@ -19,31 +19,88 @@
 
 import Core
 import SwiftUI
+import UIKit
 import DesignResourcesKit
 
 struct WebTrackingProtectionView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
+    
+    // Define all tracking protection features
+    private let trackingProtectionFeatures = [
+        SettingsFeature(
+            title: UserText.trackingProtectionThirdPartyTrackersTitle,
+            description: UserText.trackingProtectionThirdPartyTrackersDescription,
+            iconImage: UIImage(systemName: "shield.fill")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionTargetedAdsTitle,
+            description: UserText.trackingProtectionTargetedAdsDescription,
+            iconImage: UIImage(systemName: "eye.slash.fill")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionLinkTrackingTitle,
+            description: UserText.trackingProtectionLinkTrackingDescription,
+            iconImage: UIImage(systemName: "link.badge.plus")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionFingerprintingTitle,
+            description: UserText.trackingProtectionFingerprintingDescription,
+            iconImage: UIImage(systemName: "touchid")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionReferrerTitle,
+            description: UserText.trackingProtectionReferrerDescription,
+            iconImage: UIImage(systemName: "person.crop.circle.badge.xmark")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionFirstPartyCookiesTitle,
+            description: UserText.trackingProtectionFirstPartyCookiesDescription,
+            iconImage: UIImage(systemName: "xmark.circle.fill")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionCNAMECloakingTitle,
+            description: UserText.trackingProtectionCNAMECloakingDescription,
+            iconImage: UIImage(systemName: "eye.trianglebadge.exclamationmark")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionGoogleAMPTitle,
+            description: UserText.trackingProtectionGoogleAMPDescription,
+            iconImage: UIImage(systemName: "bolt.slash.fill")
+        ),
+        SettingsFeature(
+            title: UserText.trackingProtectionGoogleSignInTitle,
+            description: UserText.trackingProtectionGoogleSignInDescription,
+            iconImage: UIImage(systemName: "rectangle.badge.xmark")
+        )
+    ]
 
     var description: SettingsDescription {
         SettingsDescription(imageName: "SettingsWebTrackingProtectionContent",
                                      title: UserText.webTrackingProtection,
                                      status: .alwaysOn,
-                                     explanation: UserText.webTrackingProtectionExplanation)
+                                     explanation: nil)
     }
 
     var body: some View {
-        List {
-            SettingsDescriptionView(content: description)
-            WebTrackingProtectionViewSettings()
+        Group {
+            VStack(alignment: .leading, spacing: 16) {
+                List {
+                    SettingsDescriptionView(content: description)
+                    WebTrackingProtectionViewSettings()
+                    WebTrackingProtectionFeatureGrid(features: trackingProtectionFeatures)
+                }
+                .applySettingsListModifiers(title: UserText.webTrackingProtection,
+                                            displayMode: .inline,
+                                            viewModel: viewModel)
+                
+            }
         }
-        .applySettingsListModifiers(title: UserText.webTrackingProtection,
-                                    displayMode: .inline,
-                                    viewModel: viewModel)
         .onForwardNavigationAppear {
             Pixel.fire(pixel: .settingsWebTrackingProtectionOpen)
         }
     }
+
 }
 
 struct WebTrackingProtectionViewSettings: View {
@@ -51,16 +108,61 @@ struct WebTrackingProtectionViewSettings: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {
+        // Single section for GPC and Unprotected Sites
         Section {
             // Global Privacy Control
             SettingsCellView(label: UserText.settingsGPC,
                              accessory: .toggle(isOn: viewModel.gpcBinding))
 
-            // Unprotected Sites
+            // Unprotected Sites in same section
             SettingsCellView(label: UserText.settingsUnprotectedSites,
                               action: { viewModel.presentLegacyView(.unprotectedSites) },
                               disclosureIndicator: true,
                               isButton: true)
         }
+    }
+}
+
+struct WebTrackingProtectionFeatureGrid: View {
+
+    @EnvironmentObject var viewModel: SettingsViewModel
+    let features: [SettingsFeature]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("ALWAYS ON")
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(UserText.webTrackingProtectionUpdatedDescription)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    Button(UserText.learnMore) {
+                        viewModel.openWebTrackingProtectionLearnMore()
+                    }.buttonStyle(LinkButtonStyle())
+                }
+            }
+            .padding(.horizontal, 20)
+            .daxBodyRegular()
+
+            // Feature grid with masonry layout
+            SettingsFeatureMasonryView(
+                features: features,
+                columns: 2,
+                spacing: 12
+            )
+        }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+}
+
+// Link button style for Learn More buttons
+struct LinkButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.footnote)
+            .foregroundColor(Color(designSystemColor: .accent))
+            .opacity(configuration.isPressed ? 0.5 : 1.0)
     }
 }

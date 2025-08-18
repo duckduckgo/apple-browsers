@@ -1264,6 +1264,39 @@ public struct UserText {
     public static let moreSearchSettingsExplanation = NSLocalizedString("settings.more.search.settings.explanation", value: "Customize your language, region, and more", comment: "Subtitle of the 'More Search Settings' button")
 
     public static let webTrackingProtection = NSLocalizedString("settings.web.tracking.protection", value: "Web Tracking Protection", comment: "The name of Settings category in Privacy Features related to configuration of the web tracking protection feature")
+    public static let webTrackingProtectionAlwaysOn = NSLocalizedString("settings.web.tracking.protection.always.on", value: "Web tracking protections are always on", comment: "Header text explaining that web tracking protections are always enabled")
+    public static let webTrackingProtectionUpdatedDescription = NSLocalizedString("settings.web.tracking.protection.updated.description", value: "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active. ", comment: "Updated description for web tracking protection settings")
+    
+    // Web Tracking Protection Features
+    public static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("settings.tracking.protection.third.party.trackers.title", value: "3rd-Party Tracker Loading", comment: "Title for third-party tracker blocking feature")
+    public static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("settings.tracking.protection.third.party.trackers.description", value: "Block trackers that monitor your browsing activity", comment: "Description for third-party tracker blocking feature")
+    
+    public static let trackingProtectionTargetedAdsTitle = NSLocalizedString("settings.tracking.protection.targeted.ads.title", value: "Targeted Ads", comment: "Title for targeted ads blocking feature")
+    public static let trackingProtectionTargetedAdsDescription = NSLocalizedString("settings.tracking.protection.targeted.ads.description", value: "Prevent advertisers from tracking you across sites", comment: "Description for targeted ads blocking feature")
+    
+    public static let trackingProtectionLinkTrackingTitle = NSLocalizedString("settings.tracking.protection.link.tracking.title", value: "Link Tracking", comment: "Title for link tracking removal feature")
+    public static let trackingProtectionLinkTrackingDescription = NSLocalizedString("settings.tracking.protection.link.tracking.description", value: "Remove tracking parameters from URLs automatically", comment: "Description for link tracking removal feature")
+    
+    public static let trackingProtectionFingerprintingTitle = NSLocalizedString("settings.tracking.protection.fingerprinting.title", value: "Fingerprinting", comment: "Title for fingerprinting protection feature")
+    public static let trackingProtectionFingerprintingDescription = NSLocalizedString("settings.tracking.protection.fingerprinting.description", value: "Protect against techniques that uniquely identify your device", comment: "Description for fingerprinting protection feature")
+    
+    public static let trackingProtectionReferrerTitle = NSLocalizedString("settings.tracking.protection.referrer.title", value: "Referrer Tracking", comment: "Title for referrer tracking protection feature")
+    public static let trackingProtectionReferrerDescription = NSLocalizedString("settings.tracking.protection.referrer.description", value: "Hide which sites you came from to protect privacy", comment: "Description for referrer tracking protection feature")
+    
+    public static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("settings.tracking.protection.first.party.cookies.title", value: "3rd-Party Cookie Loading", comment: "Title for third-party cookie blocking feature")
+    public static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("settings.tracking.protection.first.party.cookies.description", value: "Block cookies from third-party trackers", comment: "Description for third-party cookie blocking feature")
+    
+    public static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("settings.tracking.protection.cname.cloaking.title", value: "CNAME Cloaking", comment: "Title for CNAME cloaking protection feature")
+    public static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("settings.tracking.protection.cname.cloaking.description", value: "Detect trackers disguised as first-party resources", comment: "Description for CNAME cloaking protection feature")
+    
+    public static let trackingProtectionGoogleAMPTitle = NSLocalizedString("settings.tracking.protection.google.amp.title", value: "Google AMP", comment: "Title for Google AMP protection feature")
+    public static let trackingProtectionGoogleAMPDescription = NSLocalizedString("settings.tracking.protection.google.amp.description", value: "Skip Google's AMP pages and load original sites", comment: "Description for Google AMP protection feature")
+    
+    public static let trackingProtectionGoogleSignInTitle = NSLocalizedString("settings.tracking.protection.google.signin.title", value: "Google Sign-in Pop-ups", comment: "Title for Google Sign-in pop-up blocking feature")
+    public static let trackingProtectionGoogleSignInDescription = NSLocalizedString("settings.tracking.protection.google.signin.description", value: "Block Google's sign-in prompts on other sites", comment: "Description for Google Sign-in pop-up blocking feature")
+    
+    public static let learnMore = NSLocalizedString("settings.learn.more", value: "Learn More", comment: "Link text for learning more about a feature")
+    
     public static let cookiePopUpProtection = NSLocalizedString("settings.cookie.pop-up-protection.protection", value: "Cookie Pop-Up Protection", comment: "The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups")
     public static let letDuckDuckGoManageCookieConsentPopups = NSLocalizedString("settings.let.duckduckgo.manage.cookie.consent.popups", value: "Let DuckDuckGo manage cookie consent pop-ups", comment: "Switch button label.")
 

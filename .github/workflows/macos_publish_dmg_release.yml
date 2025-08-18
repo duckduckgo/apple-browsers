@@ -106,7 +106,7 @@ jobs:
 
     needs: [stop-workflow-if-needed]
 
-    # Run always, except for the case when stop-workflow-if-needed was not skipped and produced a non-true output
+    # Run always, except for the case when stop-workflow-if-needed was not skipped and produced a non-true output.
     # For internal releases, that job isn't run at all, so it doesn't produce an output. We want to publish the release then.
     # For public/hotfix releases, we want to publish the release unless the workflow should be stopped here, as indicated
     # by the stop_workflow flag.

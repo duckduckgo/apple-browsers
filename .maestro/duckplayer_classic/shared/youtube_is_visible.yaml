@@ -1,0 +1,13 @@
+appId: com.duckduckgo.mobile.ios
+---
+# Verify Duck Player Classic is visible - wait for iframe to load
+- waitForAnimationToEnd
+
+- assertVisible: 
+    text: ${output.youtubeDomain}
+
+- assertVisible: 
+    text: ${output.youtubeSignIn}
+
+- assertVisible: 
+    text: ${output.youtubeLogo}

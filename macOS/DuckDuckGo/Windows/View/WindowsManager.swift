@@ -211,7 +211,8 @@ final class WindowsManager {
             mainViewController: mainViewController,
             popUp: popUp,
             fireWindowSession: fireWindowSession,
-            fireViewModel: fireCoordinator.fireViewModel
+            fireViewModel: fireCoordinator.fireViewModel,
+            visualStyle: NSApp.delegateTyped.visualStyle
         )
     }
 

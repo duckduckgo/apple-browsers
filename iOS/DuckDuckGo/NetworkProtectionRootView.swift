@@ -41,6 +41,7 @@ struct NetworkProtectionRootView: View {
         feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                          apiService: DefaultAPIService(),
                                                          vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                          isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
                                                          source: .vpn)
     }

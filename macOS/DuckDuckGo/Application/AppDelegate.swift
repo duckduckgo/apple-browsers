@@ -128,8 +128,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
-    let hotspotDetectionService: HotspotDetectionServiceProtocol
-    let captivePortalPopupManager: CaptivePortalPopupManager
     let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
@@ -178,7 +176,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
-    private let visualStyleDecider: VisualStyleDecider
 
     let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -477,10 +474,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         // Configuring V2 for migration
+        let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: .mainApp)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
             PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
                                                                              source: KeychainErrorSource.shared,
@@ -491,7 +490,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService)
-        let pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: .mainApp)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,
@@ -568,7 +566,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionAuthV1toV2Bridge = subscriptionManager
         } else {
             Logger.general.log("Configuring Subscription V1")
-            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
+            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger, pixelHandlingSource: .mainApp)
             subscriptionManagerV1 = subscriptionManager
             subscriptionManagerV2 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
@@ -595,8 +593,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
-        visualStyle = visualStyleDecider.style
+        visualStyle = VisualStyle.current
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -628,8 +625,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
-        hotspotDetectionService = HotspotDetectionService()
-        captivePortalPopupManager = CaptivePortalPopupManager()
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG

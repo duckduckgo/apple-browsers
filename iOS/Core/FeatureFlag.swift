@@ -135,6 +135,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
 
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
+    case scheduledSetDefaultBrowserPromptsForInactiveUsers
+
     case subscriptionRebranding
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210259429792293?focus=true
@@ -144,6 +147,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
+    
+    case personalInformationRemoval
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210882421460693?focus=true
     /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
@@ -151,6 +156,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1210964217479369?focus=true
     case createFireproofFaviconUpdaterSecureVaultInBackground
+
+    /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
+    case aiFeaturesSettingsUpdate
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -205,7 +213,10 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
-             .createFireproofFaviconUpdaterSecureVaultInBackground:
+             .personalInformationRemoval,
+             .createFireproofFaviconUpdaterSecureVaultInBackground,
+             .scheduledSetDefaultBrowserPrompts,
+             .scheduledSetDefaultBrowserPromptsForInactiveUsers:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -340,12 +351,18 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         case .scheduledSetDefaultBrowserPrompts:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
+        case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+        case .personalInformationRemoval:
+            return .remoteReleasable(.feature(.dbp))
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
+        case .aiFeaturesSettingsUpdate:
+            return .internalOnly()
         }
     }
 }

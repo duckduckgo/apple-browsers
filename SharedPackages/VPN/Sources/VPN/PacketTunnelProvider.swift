@@ -1246,6 +1246,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case .quitAgent:
             // No-op since this is intended for the agent app
             break
+        case .createLogSnapshot:
+            if #available(macOS 12.0, iOS 15.0, *) {
+                handleCreateLogSnapshot(completionHandler: completionHandler)
+            }
         }
     }
 
@@ -1374,6 +1378,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private func handleSendTestNotification(completionHandler: ((Data?) -> Void)? = nil) {
         notificationsPresenter.showTestNotification()
         completionHandler?(nil)
+    }
+
+    // Used for the iOS debug menu by DuckDuckGo VPN developers
+    @available(macOS 12.0, iOS 15.0, *)
+    private func handleCreateLogSnapshot(completionHandler: ((Data?) -> Void)? = nil) {
+        Task {
+            do {
+                let logCollector = NetworkProtectionDebugLogCollector()
+                let logFileURL = try await logCollector.createLogSnapshot()
+                let response = ExtensionMessageString(logFileURL.path)
+                completionHandler?(response.rawValue)
+            } catch {
+                let errorResponse = ExtensionMessageString("Error: \(error.localizedDescription)")
+                completionHandler?(errorResponse.rawValue)
+            }
+        }
     }
 
     /// Disables on-demand if the OS supports it.

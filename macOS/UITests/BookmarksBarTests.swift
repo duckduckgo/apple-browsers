@@ -171,7 +171,8 @@ private extension BookmarksBarTests {
             "The user settings appearance section button didn't become available in a reasonable timeframe."
         )
         // This should just be a click(), but there are states for this test where the first few clicks don't register here.
-        settingsAppearanceButton.click(forDuration: UITests.Timeouts.elementExistence, thenDragTo: settingsAppearanceButton)
+        // Xcode 26: When we transition to Xcode 26, we will need to use `click()` instead of `click(forDuration:thenDragTo:)`.
+        settingsAppearanceButton.click(forDuration: 0.5, thenDragTo: settingsAppearanceButton)
 
         XCTAssertTrue(
             showBookmarksBarPreferenceToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),

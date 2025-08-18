@@ -37,12 +37,6 @@ protocol VisualStyleProviding {
     var tabStyleProvider: TabStyleProviding { get }
     var colorsProvider: ColorsProviding { get }
     var iconsProvider: IconsProviding { get }
-
-    var isNewStyle: Bool { get }
-}
-
-protocol VisualStyleDecider {
-    var style: any VisualStyleProviding { get }
 }
 
 enum AddressBarSizeClass {
@@ -78,22 +72,6 @@ struct VisualStyle: VisualStyleProviding {
     let navigationToolbarButtonsSpacing: CGFloat
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
-    let isNewStyle: Bool
-
-    static var legacy: VisualStyleProviding {
-        return VisualStyle(toolbarButtonsCornerRadius: 4,
-                           fireWindowGraphic: .burnerWindowGraphic,
-                           areNavigationBarCornersRound: false,
-                           addressBarStyleProvider: LegacyAddressBarStyleProvider(),
-                           tabStyleProvider: LegacyTabStyleProvider(),
-                           colorsProvider: LegacyColorsProviding(),
-                           iconsProvider: LegacyIconsProvider(),
-                           fireButtonSize: 28,
-                           navigationToolbarButtonsSpacing: 0,
-                           tabBarButtonSize: 28,
-                           addToolbarShadow: false,
-                           isNewStyle: false)
-    }
 
     static var current: VisualStyleProviding {
         let palette = NewColorPalette()
@@ -107,27 +85,6 @@ struct VisualStyle: VisualStyleProviding {
                            fireButtonSize: 32,
                            navigationToolbarButtonsSpacing: 2,
                            tabBarButtonSize: 28,
-                           addToolbarShadow: true,
-                           isNewStyle: true)
-    }
-}
-
-final class DefaultVisualStyleDecider: VisualStyleDecider {
-    private let featureFlagger: FeatureFlagger
-    private let internalUserDecider: InternalUserDecider
-
-    init(featureFlagger: FeatureFlagger, internalUserDecider: InternalUserDecider) {
-        self.featureFlagger = featureFlagger
-        self.internalUserDecider = internalUserDecider
-    }
-
-    var style: any VisualStyleProviding {
-        var isVisualRefreshEnabled: Bool = featureFlagger.isFeatureOn(.visualUpdates)
-
-        if internalUserDecider.isInternalUser {
-            isVisualRefreshEnabled = featureFlagger.isFeatureOn(.visualUpdatesInternalOnly)
-        }
-
-        return isVisualRefreshEnabled ? VisualStyle.current : VisualStyle.legacy
+                           addToolbarShadow: true)
     }
 }

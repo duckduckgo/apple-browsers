@@ -43,10 +43,11 @@ struct Launching: LaunchingHandling {
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
-    private let aiChatSettings = AIChatSettings()
+    private let aiChatSettings: AIChatSettings
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
+    private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
     private let configuration = AppConfiguration()
@@ -105,6 +106,9 @@ struct Launching: LaunchingHandling {
             isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
         )
 
+        // Has to be intialised after configuration.start in case values need to be migrated
+        aiChatSettings = AIChatSettings()
+
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
@@ -122,8 +126,8 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
+                                              didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,

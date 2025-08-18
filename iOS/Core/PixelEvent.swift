@@ -82,6 +82,7 @@ extension Pixel {
         case tabsStoreSupportDirAccessError
         case tabsStoreInitError
         case tabsStoreSaveError
+        case tabsStoreReadError
 
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
@@ -815,6 +816,7 @@ extension Pixel {
         
         case bookmarksCouldNotLoadDatabase
         case bookmarksCouldNotPrepareDatabase
+        case bookmarksCouldNotMigrateDatabase
         case bookmarksMigrationAlreadyPerformed
         case bookmarksMigrationFailed
         case bookmarksMigrationCouldNotPrepareDatabase
@@ -974,6 +976,10 @@ extension Pixel {
         case debugDefaultBrowserPromptFailedToRetrieveUserType
         /// Fired when it is not possible to save from the persistence store the type of user.
         case debugDefaultBrowserPromptFailedToSaveUserType
+        /// Fired when it is not possible to retrieve from the persistence store whether the inactive user modal was shown.
+        case debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown
+        /// Fired when it is not possible to save from the persistence store that the inactive user modal was shown.
+        case  debugDefaultBrowserPromptFailedToSaveInactiveModalShown
 
         /// Fired when the SAD modal sheet appears on screen.
         case defaultBrowserPromptModalShown
@@ -983,6 +989,17 @@ extension Pixel {
         case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
         /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalDoNotAskAgainButtonTapped
+        /// Fired when the SAD modal sheet for inactive users appears on screen.
+        case defaultBrowserPromptInactiveUserModalShown
+        /// Fired when the “Close” button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalClosedButtonTapped
+        /// Fired when the “Set As Default Browser" button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped
+        /// Fired when "Plus even more protections..." button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped
+
+        /// Fired when creating the app configurationuser defaults in ai chat settings migration failed.
+        case debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration
 
         // MARK: History
         case historyStoreLoadFailed
@@ -1027,13 +1044,20 @@ extension Pixel {
         case privacyProSubscriptionManagementRemoval
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
+        // Subscription KeychainManager
+        case privacyProKeychainManagerDataAddedToTheBacklog
+        case privacyProKeychainManagerDeallocatedWithBacklog
+        case privacyProKeychainManagerDataWroteFromBacklog
+        case privacyProKeychainManagerFailedToWriteDataFromBacklog
         // AUth V2
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
         case privacyProAuthV2MigrationFailed
+        case privacyProAuthV2MigrationFailed2
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
+        case privacyProAuthV2GetTokensError2
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -1325,6 +1349,8 @@ extension Pixel {
 
         // MARK: - System Settings Picture-in-Picture Video Tutorial
         case systemSettingsPiPTutorialFailedToLoadVideo
+
+        case appDidTerminateWithUnhandledError
     }
 
 }
@@ -1369,6 +1395,7 @@ extension Pixel.Event {
         case .tabsStoreSupportDirAccessError: return "m_debug_tabs_store_support_dir_access_error"
         case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
         case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
+        case .tabsStoreReadError: return "m_debug_tabs_store_read_error"
 
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
@@ -2009,6 +2036,8 @@ extension Pixel.Event {
         case .debugWebsiteDataStoresNotClearedOne: return "m_d_wkwebsitedatastoresnotcleared_one"
         case .debugWebsiteDataStoresCleared: return "m_d_wkwebsitedatastorescleared"
 
+        case .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration: return "m_debug_failed-to-create-app-configuration-during-aichat-settings-migration"
+
             // MARK: Tab interaction state debug pixels
 
         case .tabInteractionStateSourceMissingRootDirectory:
@@ -2041,10 +2070,18 @@ extension Pixel.Event {
         case .debugDefaultBrowserPromptFailedToRetrieveUserType: return "m_debug_set-as-default-prompt_failed-to-retrieve-user-type"
         case .debugDefaultBrowserPromptFailedToSaveUserType: return "m_debug_set-as-default-prompt_failed-to-save-user-type"
 
+        case .debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-retrieve-inactive-modal-shown"
+        case .debugDefaultBrowserPromptFailedToSaveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-save-inactive-modal-shown"
+
         case .defaultBrowserPromptModalShown: return "m_set-as-default-prompt_modal-shown"
         case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
         case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
         case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
+
+        case .defaultBrowserPromptInactiveUserModalShown: return "m_set-as-default-prompt_inactive-user-modal-shown"
+        case .defaultBrowserPromptInactiveUserModalClosedButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-closed-button-action"
+        case .defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-set-as-default-browser-button-action"
+        case .defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-more-protections-button-action"
 
             // MARK: Debug Web View
 
@@ -2076,6 +2113,7 @@ extension Pixel.Event {
             
         case .bookmarksCouldNotLoadDatabase: return "m_d_bookmarks_could_not_load_database"
         case .bookmarksCouldNotPrepareDatabase: return "m_d_bookmarks_could_not_prepare_database"
+        case .bookmarksCouldNotMigrateDatabase: return "m_d_bookmarks_could_not_migrate_database"
         case .bookmarksMigrationAlreadyPerformed: return "m_d_bookmarks_migration_already_performed"
         case .bookmarksMigrationFailed: return "m_d_bookmarks_migration_failed"
         case .bookmarksMigrationCouldNotPrepareDatabase: return "m_d_bookmarks_migration_could_not_prepare_database"
@@ -2246,13 +2284,20 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
-        // AUth V2
+            // Subscription KeychainManager
+        case .privacyProKeychainManagerDataAddedToTheBacklog: return "m_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .privacyProKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .privacyProKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .privacyProKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
+            // Auth V2
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
+        case .privacyProAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -2447,7 +2492,7 @@ extension Pixel.Event {
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
-        case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-\(time)"
+        case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-2-\(time)"
 
         // MARK: AI Chat
         case .aiChatNoRemoteSettingsFound(let settings):
@@ -2589,6 +2634,8 @@ extension Pixel.Event {
 
         // MARK: System Settings PiP Video Tutorial
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
+
+        case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
         }
     }
 }

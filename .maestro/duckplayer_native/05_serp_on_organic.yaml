@@ -18,17 +18,13 @@ tags:
 - runFlow: 
     file: shared/load_serp_url.yaml
 
-- scroll
-
-# Open Specific Video
-- assertVisible: ${output.videoTitle}
-- tapOn: ${output.videoTitle}
+- runFlow:
+    file: shared/tap_serp_title.yaml
 
 # Validate Duck Player is Visible
 - runFlow: 
     file: shared/duckplayer_is_visible.yaml
 
-# Validate this is SERP View
 - assertVisible:
     id: ${output.watchOnYoutubeLabel}
 

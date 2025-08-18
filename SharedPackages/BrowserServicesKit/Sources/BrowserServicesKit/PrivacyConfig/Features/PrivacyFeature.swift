@@ -81,6 +81,7 @@ public enum PrivacyFeature: String {
     case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
+    case feedbackForm
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -108,9 +109,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
     case updateFirefoxBookmarksImport
-
-    // WiFi hotspot detection and captive portal handling
-    case hotspotDetection
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -360,6 +358,9 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
 
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
     case scheduledDefaultBrowserPrompts // iOS
+
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
+    case scheduledDefaultBrowserPromptsInactiveUser // iOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {

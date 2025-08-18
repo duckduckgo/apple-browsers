@@ -144,14 +144,16 @@ final class AppDependencyProvider: DependencyProvider {
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 
         // Configure Subscription
-
+        let pixelHandler = SubscriptionPixelHandler(source: .mainApp)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling
         var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+        let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
 
             let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
                               PixelParameters.privacyProKeychainError: error.localizedDescription,
@@ -170,7 +172,6 @@ final class AppDependencyProvider: DependencyProvider {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             legacyTokenStorage: legacyAccountStorage,
                                             authService: authService)
-        let pixelHandler = AuthV2PixelHandler(source: .mainApp)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,

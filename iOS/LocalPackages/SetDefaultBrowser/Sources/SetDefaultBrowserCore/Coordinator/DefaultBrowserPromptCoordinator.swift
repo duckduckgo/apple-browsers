@@ -20,15 +20,16 @@
 import Foundation
 import class UIKit.UIApplication
 
-// Represent the type of the modal to display for active/inactive user. Currently only active.
-// More info for inactive users: https://app.asana.com/1/137249556945/project/492600419927320/task/1210568683672934?focus=true
+// Represent the type of the modal to display for active/inactive user.
 package enum DefaultBrowserPromptPresentationType {
     case activeUserModal
     case inactiveUserModal
 
     init(_ prompt: DefaultBrowserPromptType) {
         switch prompt {
-        case .firstModal, .secondModal, .subsequentModal:
+        case .inactive:
+            self = .inactiveUserModal
+        case .active:
             self = .activeUserModal
         }
     }
@@ -38,8 +39,9 @@ package enum DefaultBrowserPromptPresentationType {
 package protocol DefaultBrowserPromptCoordinating: AnyObject {
     func getPrompt() -> DefaultBrowserPromptPresentationType?
 
-    func setDefaultBrowserAction()
-    func dismissAction(shouldDismissPromptPermanently: Bool)
+    func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType)
+    func dismissAction(forPrompt prompt: DefaultBrowserPromptPresentationType, shouldDismissPromptPermanently: Bool)
+    func moreProtectionsAction()
 }
 
 @MainActor
@@ -85,23 +87,29 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
         // Set prompt seen
         guard let prompt = promptTypeDecider.promptType() else { return nil }
 
-        setPromptSeen()
+        setPromptSeen(prompt: prompt)
         resetUserActivity()
 
         return DefaultBrowserPromptPresentationType(prompt)
     }
 
-    package func setDefaultBrowserAction() {
+    package func setDefaultBrowserAction(forPrompt prompt: DefaultBrowserPromptPresentationType) {
         // Navigate To Settings
         defaultBrowserSettingsNavigator.navigateToSetDefaultBrowserSettings()
 
         // Send event
-        fireSetUserDefaultEvent()
+        fireSetUserDefaultEvent(prompt: prompt)
     }
     
-    package func dismissAction(shouldDismissPromptPermanently: Bool) {
-        promptStore.isPromptPermanentlyDismissed = shouldDismissPromptPermanently
-        fireDismissedPromptEvent(shouldDismissPromptPermanently: shouldDismissPromptPermanently)
+    package func dismissAction(forPrompt prompt: DefaultBrowserPromptPresentationType, shouldDismissPromptPermanently: Bool) {
+        if case .activeUserModal = prompt, shouldDismissPromptPermanently {
+            promptStore.isPromptPermanentlyDismissed = shouldDismissPromptPermanently
+        }
+        fireDismissedPromptEvent(prompt: prompt, shouldDismissPromptPermanently: shouldDismissPromptPermanently)
+    }
+
+    package func moreProtectionsAction() {
+        eventMapper.fire(.inactiveModalMoreProtectionsAction)
     }
 }
 
@@ -110,12 +118,20 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
 
 private extension DefaultBrowserPromptCoordinator {
 
-    func setPromptSeen() {
+    func setPromptSeen(prompt: DefaultBrowserPromptType) {
         let now = dateProvider()
+        // The last shown date is stored regardless of the prompt type.
+        // When displaying a prompt, we calculate the number of active days to determine if an active user prompt should be shown based on the last prompt (active/inactive) the user has seen.
+        // We increment the prompt counter only for active prompts, as this counter helps decide whether to show the first or second prompt.
+        // For inactive prompts, we set a flag instead, since they are only displayed once.
         promptStore.lastModalShownDate = now.timeIntervalSince1970
-        promptStore.modalShownOccurrences += 1
+        if prompt == .inactive {
+            promptStore.hasInactiveModalShown = true
+        } else {
+            promptStore.modalShownOccurrences += 1
+        }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Set Prompt Seen \(now).")
-        firePromptSeenEvent()
+        firePromptSeenEvent(prompt: prompt)
     }
 
     func resetUserActivity() {
@@ -123,19 +139,34 @@ private extension DefaultBrowserPromptCoordinator {
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - User Activity Reset.")
     }
 
-    func firePromptSeenEvent() {
-        eventMapper.fire(.modalShown(numberOfModalShown: promptStore.modalShownOccurrences))
-    }
-
-    func fireDismissedPromptEvent(shouldDismissPromptPermanently: Bool) {
-        if shouldDismissPromptPermanently {
-            eventMapper.fire(.modalDismissedPermanently)
-        } else {
-            eventMapper.fire(.modalDismissed)
+    func firePromptSeenEvent(prompt: DefaultBrowserPromptType) {
+        switch prompt {
+        case .active:
+            eventMapper.fire(.activeModalShown(numberOfModalShown: promptStore.modalShownOccurrences))
+        case .inactive:
+            eventMapper.fire(.inactiveModalShown)
         }
     }
 
-    func fireSetUserDefaultEvent() {
-        eventMapper.fire(.modalActioned(numberOfModalShown: promptStore.modalShownOccurrences))
+    func fireDismissedPromptEvent(prompt: DefaultBrowserPromptPresentationType, shouldDismissPromptPermanently: Bool) {
+        switch prompt {
+        case .activeUserModal:
+            if shouldDismissPromptPermanently {
+                eventMapper.fire(.activeModalDismissedPermanently)
+            } else {
+                eventMapper.fire(.activeModalDismissed)
+            }
+        case .inactiveUserModal:
+            eventMapper.fire(.inactiveModalDismissed)
+        }
+    }
+
+    func fireSetUserDefaultEvent(prompt: DefaultBrowserPromptPresentationType) {
+        switch prompt {
+        case .activeUserModal:
+            eventMapper.fire(.activeModalActioned(numberOfModalShown: promptStore.modalShownOccurrences))
+        case .inactiveUserModal:
+            eventMapper.fire(.inactiveModalActioned)
+        }
     }
 }

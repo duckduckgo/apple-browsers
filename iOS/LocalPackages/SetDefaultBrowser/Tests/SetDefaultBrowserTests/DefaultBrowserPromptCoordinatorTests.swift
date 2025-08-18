@@ -85,9 +85,9 @@ final class DefaultBrowserPromptCoordinatorTests {
     @Test(
         "Check Prompt Return the Correct Prompt When Prompt Decider Returns Prompt",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal)
         ]
     )
     func whenPromptDeciderReturnsPromptThenPromptIsReturned(promptType: DefaultBrowserPromptType) {
@@ -106,9 +106,10 @@ final class DefaultBrowserPromptCoordinatorTests {
     @Test(
         "Check Prompt Is Set Seen When Prompt Is Not Nil",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal),
+            .inactive
         ]
     )
     func whenPromptIsNotNilThenPromptIsSetSeen(promptType: DefaultBrowserPromptType) {
@@ -126,11 +127,12 @@ final class DefaultBrowserPromptCoordinatorTests {
     }
 
     @Test(
-        "Check Prompt Occurrence Is Incremented When Prompt Is Not Nil",
+        "Check Prompt Occurrence Is Incremented For Active Modals When Prompt Is Not Nil",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal),
+            .inactive
         ],
         [
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10
@@ -147,15 +149,44 @@ final class DefaultBrowserPromptCoordinatorTests {
         _ = sut.getPrompt()
 
         // THEN
-        #expect(promptStoreMock.modalShownOccurrences == numberOfModalShown + 1)
+        let expectedNumberOfModalShown = promptType.isActiveModal ? numberOfModalShown + 1 : numberOfModalShown
+        #expect(promptStoreMock.modalShownOccurrences == expectedNumberOfModalShown)
+    }
+
+    @Test(
+        "Check Inactive Modal Flag Is Set When Prompt Is Inactive",
+        arguments: zip(
+            [
+                DefaultBrowserPromptType.active(.firstModal),
+                .active(.secondModal),
+                .active(.subsequentModal),
+                .inactive
+            ],
+            [
+                false,
+                false,
+                false,
+                true
+            ]
+        )
+    )
+    func whenPromptIsNotNilThenI(promptType: DefaultBrowserPromptType, expectedHasInactiveModalShownFlag: Bool) {
+        // GIVEN
+        promptTypeDeciderMock.promptToReturn = promptType
+
+        // WHEN
+        _ = sut.getPrompt()
+
+        // THEN
+        #expect(promptStoreMock.hasInactiveModalShown == expectedHasInactiveModalShownFlag)
     }
 
     @Test(
         "Check User Activity Is Reset Once The Prompt Is Shown",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal)
         ]
     )
     func whenPromptIsShownThenUserActivityIsReset(promptType: DefaultBrowserPromptType) {
@@ -172,13 +203,13 @@ final class DefaultBrowserPromptCoordinatorTests {
 
     // MARK: - Actions
 
-    @Test("Check Set Default Browser Action Navigate To Default Browser Settings")
-    func whenSetDefaultBrowserActionIsCalledThenAskNavigatorToNavigateToDefaultBrowser() {
+    @Test("Check Set Default Browser Action Navigate To Default Browser Settings", arguments: [DefaultBrowserPromptPresentationType.activeUserModal, .inactiveUserModal])
+    func whenSetDefaultBrowserActionIsCalledThenAskNavigatorToNavigateToDefaultBrowser(promptType: DefaultBrowserPromptPresentationType) {
         // GIVEN
         #expect(!defaultBrowserSettingsNavigator.didCallNavigateToSetDefaultBrowserSettings)
 
         // WHEN
-        sut.setDefaultBrowserAction()
+        sut.setDefaultBrowserAction(forPrompt: promptType)
 
         // THEN
         #expect(defaultBrowserSettingsNavigator.didCallNavigateToSetDefaultBrowserSettings)
@@ -187,29 +218,34 @@ final class DefaultBrowserPromptCoordinatorTests {
     @Test(
         "Check Dismiss Action Set Permanently Dismissed Only When Action Is To Dismiss Modal Permanently",
         arguments: [
+            DefaultBrowserPromptPresentationType.activeUserModal,
+            .inactiveUserModal
+        ],
+        [
             false,
             true
         ]
     )
-    func whenDismissActionIsCalledThenPermanentlyDismissedIsSetOnlyWhenNeeded(shouldDismissPromptPermanently: Bool) {
+    func whenDismissActionIsCalledThenPermanentlyDismissedIsSetOnlyWhenNeeded(prompt: DefaultBrowserPromptPresentationType, shouldDismissPromptPermanently: Bool) {
         // GIVEN
         #expect(!promptStoreMock.isPromptPermanentlyDismissed)
 
         // WHEN
-        sut.dismissAction(shouldDismissPromptPermanently: shouldDismissPromptPermanently)
+        sut.dismissAction(forPrompt: prompt, shouldDismissPromptPermanently: shouldDismissPromptPermanently)
 
         // THEN
-        #expect(promptStoreMock.isPromptPermanentlyDismissed == shouldDismissPromptPermanently)
+        let expectedDismissPermanently = prompt == .inactiveUserModal ? false : shouldDismissPromptPermanently
+        #expect(promptStoreMock.isPromptPermanentlyDismissed == expectedDismissPermanently)
     }
 
     // MARK: - Events
 
     @Test(
-        "Check Modal Shown Event Is Sent Along With Number Of Modal Shown",
+        "Check Active User Modal Shown Event Is Sent Along With Number Of Modal Shown",
         arguments: [
-            DefaultBrowserPromptType.firstModal,
-            .secondModal,
-            .subsequentModal
+            DefaultBrowserPromptType.active(.firstModal),
+            .active(.secondModal),
+            .active(.subsequentModal)
         ],
         [
             0,
@@ -219,7 +255,7 @@ final class DefaultBrowserPromptCoordinatorTests {
             15
         ]
     )
-    func whenModalShownThenModalShownEventIsSent(promptType: DefaultBrowserPromptType, numberOfModalAlreadyShown: Int) async throws {
+    func whenActiveUserModalShownThenActiveModalShownEventIsSent(promptType: DefaultBrowserPromptType, numberOfModalAlreadyShown: Int) async throws {
         // GIVEN
         promptStoreMock.modalShownOccurrences = numberOfModalAlreadyShown
         promptTypeDeciderMock.promptToReturn = promptType
@@ -231,11 +267,26 @@ final class DefaultBrowserPromptCoordinatorTests {
 
         // THEN
         #expect(eventMapperMock.didCallFireEvent)
-        #expect(eventMapperMock.capturedEvent == .modalShown(numberOfModalShown: numberOfModalAlreadyShown+1))
+        #expect(eventMapperMock.capturedEvent == .activeModalShown(numberOfModalShown: numberOfModalAlreadyShown+1))
+    }
+
+    @Test("Check Inactive User Modal Shown Event Is Sent")
+    func whenInactiveUserModalShownThenInactiveModalShownEventIsSent() {
+        // GIVEN
+        promptTypeDeciderMock.promptToReturn = .inactive
+        #expect(!eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == nil)
+
+        // WHEN
+        _ = sut.getPrompt()
+
+        // THEN
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .inactiveModalShown)
     }
 
     @Test(
-        "Check Modal Actioned Event is Sent Along With Number Of Modal Shown",
+        "Check Active User Modal Actioned Event is Sent Along With Number Of Modal Shown",
           arguments: [
               0,
               1,
@@ -244,39 +295,100 @@ final class DefaultBrowserPromptCoordinatorTests {
               15
           ]
     )
-    func whenSetDefaultBrowserActionThenModalActionedEventIsSent(numberOfModalAlreadyShown: Int) {
+    func whenSetDefaultBrowserActionForActiveUserModalThenActiveModalActionedEventIsSent(numberOfModalAlreadyShown: Int) {
         // GIVEN
         promptStoreMock.modalShownOccurrences = numberOfModalAlreadyShown
         #expect(!eventMapperMock.didCallFireEvent)
         #expect(eventMapperMock.capturedEvent == nil)
 
         // WHEN
-        sut.setDefaultBrowserAction()
+        sut.setDefaultBrowserAction(forPrompt: .activeUserModal)
 
         // THEN
         #expect(eventMapperMock.didCallFireEvent)
-        #expect(eventMapperMock.capturedEvent == .modalActioned(numberOfModalShown: numberOfModalAlreadyShown))
+        #expect(eventMapperMock.capturedEvent == .activeModalActioned(numberOfModalShown: numberOfModalAlreadyShown))
+    }
+
+    @Test("Check Inactive User Modal Actioned Event is Sent")
+    func whenSetDefaultBrowserActionForInactiveUserModalThenInactiveModalActionedEventIsSent() {
+        // GIVEN
+        #expect(!eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == nil)
+
+        // WHEN
+        sut.setDefaultBrowserAction(forPrompt: .inactiveUserModal)
+
+        // THEN
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .inactiveModalActioned)
     }
 
     @Test(
-        "Check Modal Dismissed Event Is Sent Correctly",
+        "Check Active Modal Dismissed Event Is Sent Correctly For Active Modal",
         arguments: [
             false,
             true
         ]
     )
-    func whenDismissActionIsCalledThenModalDismissedEventIsSent(shouldDismissPromptPermanently: Bool) {
+    func whenDismissActionForActiveUserModalThenActiveModalDismissedEventIsSent(shouldDismissPromptPermanently: Bool) {
         // GIVEN
-        let expectedEvent: DefaultBrowserPromptEvent = shouldDismissPromptPermanently ? .modalDismissedPermanently : .modalDismissed
+        let expectedEvent: DefaultBrowserPromptEvent = shouldDismissPromptPermanently ? .activeModalDismissedPermanently : .activeModalDismissed
         #expect(!eventMapperMock.didCallFireEvent)
         #expect(eventMapperMock.capturedEvent == nil)
 
         // WHEN
-        sut.dismissAction(shouldDismissPromptPermanently: shouldDismissPromptPermanently)
+        sut.dismissAction(forPrompt: .activeUserModal, shouldDismissPromptPermanently: shouldDismissPromptPermanently)
 
         // THEN
         #expect(eventMapperMock.didCallFireEvent)
         #expect(eventMapperMock.capturedEvent == expectedEvent)
+    }
+
+    @Test(
+        "Check Inactive User Modal Dismissed Event Is Sent Correctly For Inactive Modal",
+        arguments: [
+            false,
+            true
+        ]
+    )
+    func whenDismissActionIsCalledForInactiveUserModalThenInactiveModalDismissedEventIsSent(shouldDismissPromptPermanently: Bool) {
+        // GIVEN
+        #expect(!eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == nil)
+
+        // WHEN
+        sut.dismissAction(forPrompt: .inactiveUserModal, shouldDismissPromptPermanently: shouldDismissPromptPermanently)
+
+        // THEN
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .inactiveModalDismissed)
+    }
+
+    @Test("Check Inactive User Modal More Protection Event Is Sent Correctly For Inactive Modal")
+    func whenMoreProtectionActionIsCalledForInactiveUserModalThenMoreProtectionActionEventIsSent() {
+        // GIVEN
+        #expect(!eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == nil)
+
+        // WHEN
+        sut.moreProtectionsAction()
+
+        // THEN
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .inactiveModalMoreProtectionsAction)
+    }
+
+}
+
+private extension DefaultBrowserPromptType {
+
+    var isActiveModal: Bool {
+        switch self {
+        case .active:
+            return true
+        case .inactive:
+            return false
+        }
     }
 
 }

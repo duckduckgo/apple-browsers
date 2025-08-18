@@ -1,0 +1,57 @@
+name: 'Select iOS Simulator Version'
+description: 'Selects the first available iOS simulator version from a list of preferred versions'
+inputs:
+  preferred-versions:
+    description: 'Comma-separated list of preferred iOS versions (e.g., "18.6,18.2")'
+    required: true
+  device-name:
+    description: 'iOS simulator device name'
+    required: false
+    default: 'iPhone 16'
+outputs:
+  destination:
+    description: 'Complete xcodebuild destination string'
+    value: ${{ steps.select-version.outputs.destination }}
+  ios-version:
+    description: 'Selected iOS version'
+    value: ${{ steps.select-version.outputs.ios-version }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Select iOS simulator version
+      id: select-version
+      shell: bash
+      run: |
+        # Parse preferred versions from input
+        IFS=',' read -ra PREFERRED_VERSIONS <<< "${{ inputs.preferred-versions }}"
+        DEVICE_NAME="${{ inputs.device-name }}"
+        
+        echo "Looking for iOS simulator with device: $DEVICE_NAME"
+        echo "Preferred versions: ${{ inputs.preferred-versions }}"
+        
+        # Get list of available iOS runtimes
+        available_runtimes=$(xcrun simctl list runtimes | grep "iOS")
+        echo "Available iOS runtimes:"
+        echo "$available_runtimes"
+        
+        for version in "${PREFERRED_VERSIONS[@]}"; do
+          version=$(echo "$version" | xargs)
+          echo "Checking for iOS $version..."
+          
+          if echo "$available_runtimes" | grep -q "iOS $version\b"; then
+            exact_version=$(echo "$available_runtimes" | grep "iOS $version\b" | head -1 | sed -n 's/.*(\([0-9.]*\) - .*/\1/p')
+            
+            if [[ -n "$exact_version" ]]; then
+              destination="platform=iOS Simulator,name=$DEVICE_NAME,OS=$exact_version"
+              echo "✅ Selected iOS $version (exact: $exact_version)"
+              echo "destination=$destination" >> $GITHUB_OUTPUT
+              echo "ios-version=$version" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+        done
+        
+        echo "⚠️ No preferred iOS version found, using default iOS 18.6 with iPhone 16"
+        destination="platform=iOS Simulator,name=iPhone 16,OS=18.6"
+        echo "destination=$destination" >> $GITHUB_OUTPUT
+        echo "ios-version=18.6" >> $GITHUB_OUTPUT

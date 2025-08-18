@@ -115,27 +115,21 @@ extension Preferences {
                                               includeAppVersionParameter: true)
                             }
                         }
-                    }
-                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
-                    PreferencePaneSection(UserText.aiChatOpenNewChatsSectionTitle,
-                                          spacing: 6) {
-                        Picker(selection: $model.openAIChatInSidebar, content: {
-                            Text(UserText.aiChatOpenInSidebarOption).tag(true)
-                                .padding(.bottom, 4).accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.inSidebar")
-                            Text(UserText.aiChatOpenInFullPageOption).tag(false)
-                                .accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker.fullPage")
-                        }, label: {})
-                        .pickerStyle(.radioGroup)
-                        .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
-                        .accessibilityIdentifier("Preferences.AIChat.openNewChatsPicker")
-                        .onChange(of: model.openAIChatInSidebar) { _ in
-                            PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
-                                          frequency: .uniqueByName,
-                                          includeAppVersionParameter: true)
+                        if model.shouldShowOpenAIChatInSidebarToggle {
+                            ToggleMenuItem(UserText.aiChatOpenInSidebarToggle,
+                                           isOn: $model.openAIChatInSidebar)
+                            .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
+                            .onChange(of: model.openAIChatInSidebar) { _ in
+                                PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
+                                              frequency: .uniqueByName,
+                                              includeAppVersionParameter: true)
+                            }
+                            .disabled(!model.showShortcutInAddressBar)
+                            .padding(.leading, 19)
                         }
                     }
-                    .visibility(model.shouldShowAIFeatures && model.shouldShowOpenAIChatInSidebarToggle ? .visible : .gone)
+                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
                     Divider()
                         .padding(.bottom, 8)

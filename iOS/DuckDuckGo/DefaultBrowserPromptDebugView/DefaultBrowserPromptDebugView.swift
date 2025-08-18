@@ -50,6 +50,7 @@ struct DefaultBrowserPromptDebugView: View {
                     Text(log.activity)
                     Text(log.modal)
                     Text(log.numberOfModalShown)
+                    Text(log.inactiveUserModalShown)
                 }
             } header: {
                 Text(verbatim: "Activity Log")
@@ -109,6 +110,7 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         private(set) var activity: String = ""
         private(set) var modal: String = ""
         private(set) var numberOfModalShown: String = ""
+        private(set) var inactiveUserModalShown: String = ""
     }
 
     private static let dateFormatter: DateFormatter = {
@@ -153,7 +155,7 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         currentDate = currentDateDebugStore.simulatedTodayDate
         formattedCurrentDate = Self.dateFormatter.string(from: currentDateDebugStore.simulatedTodayDate)
         activeDaysCount = userActivityStore.currentActivity().numberOfActiveDays
-        isFeatureEnabled = self.featureFlagger.isDefaultBrowserPromptsFeatureEnabled
+        isFeatureEnabled = self.featureFlagger.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
         makeDebugLog()
     }
 
@@ -170,6 +172,7 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         promptActivityStore.isPromptPermanentlyDismissed = false
         promptActivityStore.lastModalShownDate = nil
         promptActivityStore.modalShownOccurrences = 0
+        promptActivityStore.hasInactiveModalShown = false
         userActivityStore.save(DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentDateDebugStore.simulatedTodayDate))
         updateUI()
     }
@@ -178,7 +181,7 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         defaultBrowserPromptUserType = userTypeDebugStore.userType()
         currentDate = currentDateDebugStore.simulatedTodayDate
         activeDaysCount = userActivityStore.currentActivity().numberOfActiveDays
-        isFeatureEnabled = self.featureFlagger.isDefaultBrowserPromptsFeatureEnabled
+        isFeatureEnabled = self.featureFlagger.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
         makeDebugLog()
     }
 
@@ -192,17 +195,17 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
             let message: String
             if promptActivityStore.hasSeenFirstModal {
                 if userTypeDebugStore.userType()?.isNewOrReturningUser == true && !promptActivityStore.hasSeenSecondModal {
-                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.secondModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.secondModalDelayDays.defaultValue
+                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.secondActiveModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.secondActiveModalDelayDays.defaultValue
                     message = "Next Modal Will Show After \(numberOfActiveDays) Active Days"
                 } else if userTypeDebugStore.userType()?.isNewOrReturningUser == true && promptActivityStore.hasSeenSecondModal {
-                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.defaultValue
+                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.subsequentActiveModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentActiveModalRepeatIntervalDays.defaultValue
                     message = "Next Modal Will Show After \(numberOfActiveDays) Active Days"
                 } else {
-                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.defaultValue
+                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.subsequentActiveModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentActiveModalRepeatIntervalDays.defaultValue
                     message = "Next Modal Will Show After \(numberOfActiveDays) Active Days"
                 }
             } else {
-                let setting = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.firstModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.firstModalDelayDays.defaultValue
+                let setting = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.firstActiveModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.firstActiveModalDelayDays.defaultValue
                 let firstModalWillShowDate = localStatisticsStore.installDate.flatMap { $0.addingTimeInterval(.days(setting)) }
                 let formattedWillShowDate = firstModalWillShowDate.flatMap { Self.dateFormatter.string(from: $0) } ?? "N/A"
                 message = "First Modal Will Show: \(formattedWillShowDate)"
@@ -226,12 +229,14 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         let activityMessage = currentActivityMessage()
         let modalMessage = nextModalMessage()
         let numberOfModalShownMessage = numberOfModalShownMessage()
+        let inactiveUserModalShown = "Inactive User Modal Shown: \(promptActivityStore.hasInactiveModalShown)"
 
         debugLog = DebugLog(
             installation: installationMessage,
             activity: activityMessage,
             modal: modalMessage,
-            numberOfModalShown: numberOfModalShownMessage
+            numberOfModalShown: numberOfModalShownMessage,
+            inactiveUserModalShown: inactiveUserModalShown
         )
     }
 }

@@ -28,8 +28,12 @@ import Combine
 public final class SystemSettingsPiPTutorialManager {
     weak var presenter: SystemSettingsPiPTutorialPresenting?
 
-    private let playerView: UIView
-    private let videoPlayer: SystemSettingsPiPTutorialPlayer
+    private let playerViewProvider: () -> UIView
+    private let videoPlayerProvider: () -> SystemSettingsPiPTutorialPlayer
+
+    private lazy var playerView: UIView = playerViewProvider()
+    private lazy var videoPlayer: SystemSettingsPiPTutorialPlayer = videoPlayerProvider()
+
     private let pipTutorialURLProvider: SystemSettingsPiPTutorialURLManaging
     private let urlOpener: SystemSettingsPiPURLOpener
     private let eventMapper: SystemSettingsPiPTutorialEventMapper
@@ -42,8 +46,8 @@ public final class SystemSettingsPiPTutorialManager {
     ///   - playerView: The view that will display the video content.
     ///   - videoPlayer: The player responsible for video playback and PiP functionality.
     public convenience init(
-        playerView: UIView,
-        videoPlayer: SystemSettingsPiPTutorialPlayer,
+        playerView: @escaping @autoclosure () -> UIView,
+        videoPlayer: @escaping @autoclosure () -> SystemSettingsPiPTutorialPlayer,
         eventMapper: SystemSettingsPiPTutorialEventMapper
     ) {
         self.init(
@@ -56,14 +60,14 @@ public final class SystemSettingsPiPTutorialManager {
     }
 
     init(
-        playerView: UIView,
-        videoPlayer: SystemSettingsPiPTutorialPlayer,
+        playerView: @escaping () -> UIView,
+        videoPlayer: @escaping () -> SystemSettingsPiPTutorialPlayer,
         pipTutorialURLProvider: SystemSettingsPiPTutorialURLManaging,
         eventMapper: SystemSettingsPiPTutorialEventMapper,
         urlOpener: SystemSettingsPiPURLOpener
     ) {
-        self.playerView = playerView
-        self.videoPlayer = videoPlayer
+        self.playerViewProvider = playerView
+        self.videoPlayerProvider = videoPlayer
         self.pipTutorialURLProvider = pipTutorialURLProvider
         self.urlOpener = urlOpener
         self.eventMapper = eventMapper

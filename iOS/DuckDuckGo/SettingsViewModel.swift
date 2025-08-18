@@ -119,6 +119,14 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.subscriptionRebranding)
     }
 
+    var isPIREnabled: Bool {
+        featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
+    var isUpdatedAIFeaturesSettingsEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
@@ -166,6 +174,8 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
+
+    // MARK: - Actions
 
     var addressBarPositionBinding: Binding<AddressBarPosition> {
         Binding<AddressBarPosition>(
@@ -1272,6 +1282,7 @@ extension SettingsViewModel {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
             set: { newValue in
+                self.objectWillChange.send()
                 self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
             }
         )

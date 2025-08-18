@@ -75,6 +75,7 @@ public extension DesignSystemImages {
             public static var identityBlockedPIR: DesignSystemImage { .init(resource: .identityBlockedPIRColor16) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestorationColor16) }
             public static var `import`: DesignSystemImage { .init(resource: .importColor16) }
+            public static var infoFeedback: DesignSystemImage { .init(resource: .infoFeedbackColor16) }
             public static var key: DesignSystemImage { .init(resource: .keyColor16) }
             public static var linkSecure: DesignSystemImage { .init(resource: .linkSecureColor16) }
             public static var lock: DesignSystemImage { .init(resource: .lockColor16) }

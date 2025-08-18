@@ -29,6 +29,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     enum HorizontalSpace: CGFloat {
         case pinnedTabsScrollViewPadding = 76
+        case pinnedTabsScrollViewPaddingMacOS26 = 84
     }
 
     private let standardTabHeight: CGFloat
@@ -584,7 +585,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func updateEmptyTabArea() {
         let totalTabWidth = self.totalTabWidth
-        let plusButtonWidth = footerCurrentWidthDimension
+        let plusButtonWidth: CGFloat = 44
 
         // Window dragging
         let leadingSpace = min(totalTabWidth + plusButtonWidth, scrollView.frame.size.width)
@@ -810,7 +811,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         if !noPinnedTabs && shouldShowSShapedTabs && isLeftScrollButtonVisible {
             leftSideStackLeadingConstraint.constant = 12
-        } else if shouldShowSShapedTabs && noPinnedTabs {
+        } else if noPinnedTabs && shouldShowSShapedTabs && !isLeftScrollButtonVisible {
             leftSideStackLeadingConstraint.constant = -12
         } else {
             leftSideStackLeadingConstraint.constant = 0

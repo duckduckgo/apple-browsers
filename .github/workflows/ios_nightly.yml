@@ -1,4 +1,4 @@
-name: iOS - Nightly Test and Deploy
+name: iOS - Nightly Tests
 
 defaults:
   run:
@@ -42,13 +42,19 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.4,18.2"
+
     - name: Boot iOS Simulator for log collection
       id: boot-simulator
       uses: ./.github/actions/ios-simulator-logs
       with:
         action: boot
         device-name: iPhone 16
-        ios-version: 18.4
+        ios-version: ${{ steps.select-simulator.outputs.ios-version }}
 
     - name: Build and test
       run: |
@@ -86,68 +92,10 @@ jobs:
         report_paths: iOS/unittests.xml
         check_retries: true
 
-  fingerprinting-ui-tests:
-    name: Fingerprinting UI Tests
-    runs-on: macos-15-xlarge
-    timeout-minutes: 30
-
-    steps:
-    - name: Check out the code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-
-    - name: Select Xcode
-      uses: ./.github/actions/select-xcode-version
-
-    - name: Boot iOS Simulator for log collection
-      id: boot-simulator-fingerprinting
-      uses: ./.github/actions/ios-simulator-logs
-      with:
-        action: boot
-        device-name: iPhone 16
-        ios-version: 18.4
-
-    - name: Build and test
-      run: |
-        set -o pipefail && xcodebuild test \
-          -scheme "iOS Fingerprinting UI Tests" \
-          -destination "platform=iOS Simulator,id=${{ steps.boot-simulator-fingerprinting.outputs.device-id }}" \
-          -derivedDataPath "DerivedData" \
-          -skipPackagePluginValidation \
-          -skipMacroValidation \
-          | tee xcodebuild.log \
-          | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
-
-    - name: Collect simulator logs
-      id: collect-logs-fingerprinting
-      if: always()
-      uses: ./.github/actions/ios-simulator-logs
-      with:
-        action: collect
-        device-id: ${{ steps.boot-simulator-fingerprinting.outputs.device-id }}
-
-    - name: Upload logs if workflow failed
-      uses: actions/upload-artifact@v4
-      if: failure() || cancelled()
-      with:
-        name: FingerprintingBuildLogs
-        path: |
-          iOS/xcodebuild.log
-          iOS/DerivedData/Logs/Test/*.xcresult
-          ${{ steps.collect-logs-fingerprinting.outputs.log-path }}
-        retention-days: 7
-
-    - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v3
-      with:
-        report_paths: iOS/unittests.xml
-        check_retries: true
-
   notify-failure:
     name: Notify on failure
-    if: ${{ always() && github.ref_name == 'main' && (needs.atb-ui-tests.result == 'failure' || needs.atb-ui-tests.result == 'cancelled' || needs.fingerprinting-ui-tests.result == 'failure' || needs.fingerprinting-ui-tests.result == 'cancelled') }}
-    needs: [atb-ui-tests, fingerprinting-ui-tests]
+    if: ${{ always() && github.ref_name == 'main' && (needs.atb-ui-tests.result == 'failure' || needs.atb-ui-tests.result == 'cancelled') }}
+    needs: [atb-ui-tests]
     runs-on: ubuntu-latest
 
     steps:

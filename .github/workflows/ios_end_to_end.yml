@@ -55,11 +55,20 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.2"
+
     - name: Build for tests
       run: |
+        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+        
         set -o pipefail && xcodebuild \
           -scheme "iOS Browser" \
-          -destination "platform=iOS Simulator,name=iPhone 16" \
+          -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -123,16 +132,16 @@ jobs:
           - test-tag: duckplayer_native
             exclude-tags: ipad
             device-model: iPhone-16
-            device-name: iPhone
           - test-tag: device_info
             exclude-tags: ipad
-            device-model: iPhone-16
-            device-name: iPhone
+            device-model: iPhone-16 
           # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
           - test-tag: device_info
             exclude-tags: iphone
-            device-model: iPad-10th-generation
-            device-name: iPad
+            device-model: iPad-10th-generation 
+          - test-tag: duckplayer_classic
+            exclude-tags: iphone
+            device-model: iPad-10th-generation 
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 

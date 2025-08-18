@@ -1,4 +1,4 @@
-name: iOS - Nightly Test and Deploy
+name: iOS - Nightly Tests
 
 defaults:
   run:
@@ -42,13 +42,19 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.4,18.2"
+
     - name: Boot iOS Simulator for log collection
       id: boot-simulator
       uses: ./.github/actions/ios-simulator-logs
       with:
         action: boot
         device-name: iPhone 16
-        ios-version: 18.4
+        ios-version: ${{ steps.select-simulator.outputs.ios-version }}
 
     - name: Build and test
       run: |
@@ -100,13 +106,19 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator-fingerprinting
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.4,18.2"
+
     - name: Boot iOS Simulator for log collection
       id: boot-simulator-fingerprinting
       uses: ./.github/actions/ios-simulator-logs
       with:
         action: boot
         device-name: iPhone 16
-        ios-version: 18.4
+        ios-version: ${{ steps.select-simulator-fingerprinting.outputs.ios-version }}
 
     - name: Build and test
       run: |

@@ -23,7 +23,7 @@ import Networking
 
 public enum StripePurchaseFlowError: Swift.Error {
     case noProductsFound
-    case accountCreationFailed
+    case accountCreationFailed(Error)
 }
 
 public protocol StripePurchaseFlowV2 {
@@ -93,7 +93,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
                 return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
             } catch {
                 Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(error.localizedDescription, privacy: .public)")
-                return .failure(.accountCreationFailed)
+                return .failure(.accountCreationFailed(error))
             }
         }
     }

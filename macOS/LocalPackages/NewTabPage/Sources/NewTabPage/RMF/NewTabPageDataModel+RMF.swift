@@ -117,6 +117,7 @@ extension NewTabPageDataModel {
         case criticalUpdate = "CriticalUpdate"
         case appUpdate = "AppUpdate"
         case privacyPro = "PrivacyPro"
+        case duckai = "DuckAi"
 
         init(_ placeholder: RemotePlaceholder) {
             switch placeholder {
@@ -130,6 +131,8 @@ extension NewTabPageDataModel {
                 self = .appUpdate
             case .privacyShield:
                 self = .privacyPro
+            case .aiChat:
+                self = .duckai
             default:
                 self = .ddgAnnounce
             }

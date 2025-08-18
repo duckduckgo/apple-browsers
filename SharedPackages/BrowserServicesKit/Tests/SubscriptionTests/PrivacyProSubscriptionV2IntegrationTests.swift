@@ -286,7 +286,10 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, StripePurchaseFlowError.accountCreationFailed)
+            switch error {
+            case .accountCreationFailed: break
+            default: XCTFail("Expected accountCreationFailed")
+            }
         }
     }
 
@@ -304,7 +307,10 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, StripePurchaseFlowError.accountCreationFailed)
+            switch error {
+            case .accountCreationFailed: break
+            default: XCTFail("Expected accountCreationFailed")
+            }
         }
     }
 
@@ -323,7 +329,10 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, StripePurchaseFlowError.accountCreationFailed)
+            switch error {
+            case .accountCreationFailed: break
+            default: XCTFail("Expected accountCreationFailed")
+            }
         }
     }
 }

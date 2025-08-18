@@ -22,8 +22,8 @@ tags:
 - tapOn: ${output.videosTabLabel}
 
 # Open Specific Video
-- assertVisible: ${output.videoTitle}
-- tapOn: ${output.videoTitle}
+- runFlow:
+    file: shared/tap_serp_title.yaml
 
 # Validate Duck Player is Visible
 - runFlow: 

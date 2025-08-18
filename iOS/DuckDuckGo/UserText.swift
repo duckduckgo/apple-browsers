@@ -1551,7 +1551,7 @@ public struct UserText {
     public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
     public static let subscriptionHelpAndSupport = NSLocalizedString("subscription.help", value: "Help and support", comment: "Help and support Section header")
     public static let subscriptionFAQ = NSLocalizedString("subscription.faq", value: "FAQs and Support", comment: "FAQ Button")
-    public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Send Feedback", comment: "Send Feedback Button")
+    public static let subscriptionFeedback = NSLocalizedString("subscription.feedback", value: "Share Feedback", comment: "Share Feedback Button")
     public static func subscriptionFAQFooter(isRebrandingOn: Bool) -> String {
         if isRebrandingOn {
             return NSLocalizedString("duckduckgo.subscription.faq.description", value: "Get answers to frequently asked questions or contact subscription support from our help pages.", comment: "FAQ Description")
@@ -1752,6 +1752,8 @@ public struct UserText {
 
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
+    public static let settingsManageAIChatShortcuts = NSLocalizedString("settings.aichat.manage.shortcuts", value: "Manage Duck.ai Shortcuts", comment: "Top level settings for managing AI Chat shortcuts")
+
     public static let settingsAiChatSearchInputFooter = NSLocalizedString("settings.aichat.shortcuts.input.footer", value: "Search the web or ask Duck.ai directly from the Address Bar", comment: "Settings screen footer text for showing AI Chat in the input box")
 
     public static let settingsAiChatSearchInput = NSLocalizedString("settings.aichat.shortcuts.input", value: "Experimental Address Bar", comment: "Settings screen text for showing AI Chat in the input box")
@@ -1782,6 +1784,19 @@ public struct UserText {
     public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
     public static let searchInputFieldPlaceholderDuckAI = NSLocalizedString("search.input.field.placeholder.search.duckai", value: "Ask Duck.ai", comment: "Placeholder text for the search input field when searching Duck.ai")
+
+    // MARK: - AI Features Experimental Picker Footer
+    public static let settingsAiExperimentalPickerFooterDescription = NSLocalizedString(
+        "settings.ai.experimental.picker.footer.description",
+        value: "Search the web or ask Duck.ai directly from the Address Bar.",
+        comment: "Footer under the AI experimental picker, descriptive sentence without link"
+    )
+
+    // MARK: - AI Experimental Picker
+    public static let settingsAiExperimentalPickerSearchOnly = NSLocalizedString("settings.ai.experimental.picker.search_only", value: "Search Only", comment: "Title for the 'Search Only' option in the AI experimental picker")
+    public static let settingsAiExperimentalPickerDefault = NSLocalizedString("settings.ai.experimental.picker.default", value: "(Default)", comment: "Caption indicating the default option in the AI experimental picker")
+    public static let settingsAiExperimentalPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
+    public static let settingsAiExperimentalPickerExperimental = NSLocalizedString("settings.ai.experimental.picker.experimental", value: "(Experimental)", comment: "Caption indicating the experimental option in the AI experimental picker")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

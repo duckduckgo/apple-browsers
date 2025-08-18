@@ -29,6 +29,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let xE0E0E0 = Color(0xE0E0E0)
     private static let xF2F2F2 = Color(0xF2F2F2)
     private static let xF9F9F9 = Color(0xF9F9F9)
+    private static let x000000 = Color(0x000000)
+    private static let xFFFFFF = Color(0xFFFFFF)
 
     // New dark mode colors
     private static let x080808 = Color(0x080808)
@@ -63,6 +65,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Icons
     private static let icons = DynamicColor(lightColor: x1F1F1F.opacity(0.84), darkColor: .tint(0.78))
     private static let iconsSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.6), darkColor: .tint(0.48))
+    private static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
 
     // Text
     private static let textPrimary = DynamicColor(lightColor: x1F1F1F, darkColor: .tint(0.9))
@@ -152,6 +155,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .surface: return surface
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
+        case .iconsTertiary: return iconsTertiary
         case .textPrimary: return textPrimary
         case .lines: return lines
         case .shadowPrimary: return shadowPrimary

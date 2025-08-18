@@ -34,8 +34,8 @@ struct SystemSettingsPiPTutorialManagerTests {
     func checkRegisteringProviderForDestinationAsksURLProviderToRegisterProvider() async throws {
         // GIVEN
         let sut = SystemSettingsPiPTutorialManager(
-            playerView: UIView(),
-            videoPlayer: videoPlayerMock,
+            playerView: { UIView() },
+            videoPlayer: { videoPlayerMock },
             pipTutorialURLProvider: urlProviderMock,
             eventMapper: eventMapperMock,
             urlOpener: urlOpenerMock
@@ -60,8 +60,8 @@ struct SystemSettingsPiPTutorialManagerTests {
         // GIVEN
         let playerView = UIView()
         let sut = SystemSettingsPiPTutorialManager(
-            playerView: playerView,
-            videoPlayer: videoPlayerMock,
+            playerView: { playerView },
+            videoPlayer: { videoPlayerMock },
             pipTutorialURLProvider: urlProviderMock,
             eventMapper: eventMapperMock,
             urlOpener: urlOpenerMock
@@ -87,8 +87,8 @@ struct SystemSettingsPiPTutorialManagerTests {
         // GIVEN
         videoPlayerMock.isPiPSupported = false
         let sut = SystemSettingsPiPTutorialManager(
-            playerView: UIView(),
-            videoPlayer: videoPlayerMock,
+            playerView: { UIView() },
+            videoPlayer: { videoPlayerMock },
             pipTutorialURLProvider: urlProviderMock,
             eventMapper: eventMapperMock,
             urlOpener: urlOpenerMock
@@ -111,8 +111,8 @@ struct SystemSettingsPiPTutorialManagerTests {
         // GIVEN
         urlProviderMock.urlForDestinationResult = .failure(.noProviderAvailable(destination: .mock))
         let sut = SystemSettingsPiPTutorialManager(
-            playerView: UIView(),
-            videoPlayer: videoPlayerMock,
+            playerView: { UIView() },
+            videoPlayer: { videoPlayerMock },
             pipTutorialURLProvider: urlProviderMock,
             eventMapper: eventMapperMock,
             urlOpener: urlOpenerMock
@@ -136,8 +136,8 @@ struct SystemSettingsPiPTutorialManagerTests {
         // GIVEN
         let playerView = UIView()
         let sut = SystemSettingsPiPTutorialManager(
-            playerView: playerView,
-            videoPlayer: videoPlayerMock,
+            playerView: { playerView },
+            videoPlayer: { videoPlayerMock },
             pipTutorialURLProvider: urlProviderMock,
             eventMapper: eventMapperMock,
             urlOpener: urlOpenerMock
@@ -175,8 +175,8 @@ struct SystemSettingsPiPTutorialManagerTests {
         // GIVEN
         let playerView = UIView()
         let sut = SystemSettingsPiPTutorialManager(
-            playerView: playerView,
-            videoPlayer: videoPlayerMock,
+            playerView: { playerView },
+            videoPlayer: { videoPlayerMock },
             pipTutorialURLProvider: urlProviderMock,
             eventMapper: eventMapperMock,
             urlOpener: urlOpenerMock
@@ -217,8 +217,8 @@ struct SystemSettingsPiPTutorialManagerTests {
         videoPlayerMock.currentItemError = error
         videoPlayerMock.currentItemURL = url
         let sut = SystemSettingsPiPTutorialManager(
-            playerView: UIView(),
-            videoPlayer: videoPlayerMock,
+            playerView: { UIView() },
+            videoPlayer: { videoPlayerMock },
             pipTutorialURLProvider: urlProviderMock,
             eventMapper: eventMapperMock,
             urlOpener: urlOpenerMock

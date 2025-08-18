@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
@@ -150,7 +151,29 @@ extension ReleaseNotesValues {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
+        // Fall back to cached release notes if necessary
+        // This happens when there's no connectivity,
+        // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
+            let keyValueStore = Application.appDelegate.keyValueStore
+            if let data = try? keyValueStore.object(forKey: UpdateController.Constants.pendingUpdateInfoKey) as? Data,
+               let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMMM dd yyyy"
+                let releaseTitle = formatter.string(from: cached.date)
+
+                self.init(status: .loaded,
+                          currentVersion: currentVersion,
+                          latestVersion: "\(cached.version) \(cached.build)",
+                          lastUpdate: lastUpdate,
+                          releaseTitle: releaseTitle,
+                          releaseNotes: cached.releaseNotes,
+                          releaseNotesPrivacyPro: cached.releaseNotesPrivacyPro,
+                          downloadProgress: nil,
+                          automaticUpdate: updateController.areAutomaticUpdatesEnabled)
+                return
+            }
+
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,

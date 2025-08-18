@@ -39,8 +39,8 @@ tags:
 - assertVisible: ${output.youtubeMobileDomain}
 
 # Assert Duck Player Welcome Pill is present
-- assertVisible:
-    id: duckPlayerWelcomePill
+- runFlow: 
+    file: shared/pill_is_visible.yaml
 
 - tapOn:
     id: duckPlayerWelcomeButton
@@ -96,8 +96,8 @@ tags:
     file: shared/load_youtube_url.yaml
 
   # Assert Youtube Search Page opens and open the video
-- assertVisible: ${output.videoTitle}
-- tapOn: ${output.videoTitle}
+- runFlow:
+    file: shared/tap_serp_title.yaml
 
 # Assert Pill is present
 - assertVisible:

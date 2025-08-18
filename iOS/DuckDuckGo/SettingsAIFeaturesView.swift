@@ -21,6 +21,9 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import DesignResourcesKitIcons
+import BrowserServicesKit
+import Common
+import Networking
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -29,9 +32,13 @@ struct SettingsAIFeaturesView: View {
         List {
 
             VStack(alignment: .center) {
-                Image(.settingsAIChatHero)
-                    .padding(.top, -20)
-
+                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
+                    Image(.settingAIFeaturesHero)
+                        .padding(.top, -30)
+                } else {
+                    Image(.settingsAIChatHero)
+                        .padding(.top, -20)
+                }
                 Text(UserText.settingsAiFeatures)
                     .daxTitle3()
 
@@ -64,26 +71,54 @@ struct SettingsAIFeaturesView: View {
 
             if viewModel.isAiChatEnabledBinding.wrappedValue {
                 if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-                    Section {
-                        SettingsCellView(label: UserText.settingsAiChatSearchInput,
-                                         accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
-                    } footer: {
-                        Text(UserText.settingsAiChatSearchInputFooter)
+
+                    if viewModel.isUpdatedAIFeaturesSettingsEnabled {
+                        Section {
+                            SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                        } footer: {
+                            Text(footerAttributedString)
+                                .environment(\.openURL, OpenURLAction { url in
+                                    switch FooterAction.from(url) {
+                                    case .shareFeedback?:
+                                        viewModel.presentLegacyView(.feedback)
+                                        return .handled
+                                    case nil:
+                                        return .systemAction
+                                    }
+                                })
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
+                    } else {
+                        Section {
+                            SettingsCellView(label: UserText.settingsAiChatSearchInput,
+                                             accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
+                        } footer: {
+                            Text(UserText.settingsAiChatSearchInputFooter)
+                        }
                     }
                 }
 
-                Section(header: Text(UserText.settingsAiChatShortcuts)) {
-                    SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
+                if viewModel.isUpdatedAIFeaturesSettingsEnabled {
+                    Section {
+                        NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
+                            SettingsCellView(label: UserText.settingsManageAIChatShortcuts)
+                        }
+                    }
+                    .listRowBackground(Color(designSystemColor: .surface))
+                } else {
+                    Section(header: Text(UserText.settingsAiChatShortcuts)) {
+                        SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
-                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                        SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
 
-                    SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                        SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
 
-                    SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                        SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
+                                         accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                    }
                 }
             }
 
@@ -99,9 +134,45 @@ struct SettingsAIFeaturesView: View {
                                      displayMode: .inline,
                                      viewModel: viewModel)
 
+
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
+        }
+    }
+}
+
+private extension SettingsAIFeaturesView {
+    var footerAttributedString: AttributedString {
+        var base = AttributedString(UserText.settingsAiExperimentalPickerFooterDescription + " ")
+        var link = AttributedString(UserText.subscriptionFeedback)
+        link.foregroundColor = Color(designSystemColor: .accent)
+        link.link = FooterAction.shareFeedback.url
+        base.append(link)
+        return base
+    }
+}
+
+private enum FooterAction {
+    static let scheme = "action"
+
+    case shareFeedback
+
+    var url: URL {
+        URL(string: "\(Self.scheme)://\(host)")!
+    }
+
+    private var host: String {
+        switch self {
+        case .shareFeedback: return "share-feedback"
+        }
+    }
+
+    static func from(_ url: URL) -> FooterAction? {
+        guard url.scheme == Self.scheme else { return nil }
+        switch url.host {
+        case "share-feedback": return .shareFeedback
+        default: return nil
         }
     }
 }

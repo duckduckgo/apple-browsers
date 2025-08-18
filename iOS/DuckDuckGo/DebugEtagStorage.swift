@@ -25,7 +25,7 @@ import os.log
 /// Only intended for use via Debug screens.
 class DebugEtagStorage {
 
-    private let defaults = UserDefaults(suiteName: "\(Global.groupIdPrefix).app-configuration")
+    private let defaults = UserDefaults(suiteName: Global.appConfigurationGroupName)
 
     func loadEtag(for storeKey: String) -> String? {
         let etag = defaults?.string(forKey: storeKey)

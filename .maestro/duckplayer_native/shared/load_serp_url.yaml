@@ -11,3 +11,5 @@ appId: com.duckduckgo.mobile.ios
     id: ${output.searchEntryId}
 - inputText: ${output.videoSearchUrl}
 - pressKey: Enter
+
+- waitForAnimationToEnd

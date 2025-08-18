@@ -1,0 +1,25 @@
+# Shared constants for DuckPlayer Classic tests (iPad)
+appId: com.duckduckgo.mobile.ios
+---
+# Define variables that can be used across tests
+- evalScript: "${output.videoTitle = 'DuckDuckGo vs Google: 5 Reasons You Should Switch'}"
+- evalScript: "${output.videoTitleYouTube = 'DuckDuckGo vs Google: 5 Reasons You Should Switch - YouTube'}"
+- evalScript: "${output.videoSearchUrl = 'https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web'}"
+- evalScript: "${output.youtubeSearchUrl = 'https://www.youtube.com/results?search_query=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%22&sp=EgIQAQ%253D%253D'}"
+- evalScript: "${output.youtubeVideoUrl = 'https://www.youtube.com/watch?v=3ml7yeKBUhc'}"
+- evalScript: "${output.duckPlayerUrl = 'duck://player/3ml7yeKBUhc'}"
+- evalScript: "${output.searchEntryId = 'searchEntry'}"
+- evalScript: "${output.duckPlayerLabel = 'Duck Player'}"
+- evalScript: "${output.doneLabel = 'Done'}"
+- evalScript: "${output.watchOnYoutubeLabel = 'Watch on YouTube'}"
+- evalScript: "${output.watchInDuckPlayerLabel = 'Watch In Duck Player'}"
+- evalScript: "${output.youtubeDomain = 'youtube.com'}"
+- evalScript: "${output.youtubeSignIn = 'Sign In'}"
+- evalScript: "${output.youtubeLogo = 'YouTube Home'}"
+- evalScript: "${output.dontShowLabel = \"Don't Show\"}"
+- evalScript: "${output.videosTabLabel = 'Videos'}"
+- evalScript: "${output.alwaysLabel = 'Always'}"
+- evalScript: "${output.askLabel = 'Ask Every Time'}"
+- evalScript: "${output.neverLabel = 'Never'}"
+- evalScript: "${output.turnOnDuckPlayerLabel = 'Turn On Duck Player'}"
+- evalScript: "${output.openInfoLabel = 'Open Info'}"

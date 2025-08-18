@@ -436,6 +436,37 @@ struct UserText {
     static let autoconsentExplanation = NSLocalizedString("autoconsent.explanation", value: "DuckDuckGo will try to select the most private settings available and hide these pop-ups for you.", comment: "Autoconsent feature explanation in settings")
     static let privateSearchExplanation = NSLocalizedString("private.search.explenation", value: "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.", comment: "feature explanation in settings")
     static let webTrackingProtectionExplanation = NSLocalizedString("web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "feature explanation in settings")
+    static let webTrackingProtectionUpdatedDescription = NSLocalizedString("web.tracking.protection.updated.description", value: "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active.", comment: "Updated feature description in settings")
+    static let webTrackingProtectionAlwaysOn = NSLocalizedString("Always On", comment: "Web tracking protection Always on title")
+    
+    // Tracking Protection Features
+    static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("tracking.protection.feature1.title", value: "Blocks 3rd-party trackers", comment: "Feature box title")
+    static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.feature1.description", value: "Stops tracking companies from collecting your data across websites", comment: "Feature box description")
+    
+    static let trackingProtectionTargetedAdsTitle = NSLocalizedString("tracking.protection.feature2.title", value: "Blocks targeted ads", comment: "Feature box title")
+    static let trackingProtectionTargetedAdsDescription = NSLocalizedString("tracking.protection.feature2.description", value: "Prevents advertisers from following you around the web", comment: "Feature box description")
+    
+    static let trackingProtectionLinkTrackingTitle = NSLocalizedString("tracking.protection.feature3.title", value: "Prevents link tracking", comment: "Feature box title")
+    static let trackingProtectionLinkTrackingDescription = NSLocalizedString("tracking.protection.feature3.description", value: "Removes tracking parameters from URLs to protect your privacy", comment: "Feature box description")
+    
+    static let trackingProtectionFingerprintingTitle = NSLocalizedString("tracking.protection.feature4.title", value: "Prevents fingerprint tracking", comment: "Feature box title")
+    static let trackingProtectionFingerprintingDescription = NSLocalizedString("tracking.protection.feature4.description", value: "Blocks techniques that identify your unique device characteristics", comment: "Feature box description")
+    
+    static let trackingProtectionReferrerTitle = NSLocalizedString("tracking.protection.feature5.title", value: "Protects against referrer tracking", comment: "Feature box title")
+    static let trackingProtectionReferrerDescription = NSLocalizedString("tracking.protection.feature5.description", value: "Limits information shared about your browsing history", comment: "Feature box description")
+    
+    static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("tracking.protection.feature6.title", value: "Expires 1st-party cookies", comment: "Feature box title")
+    static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.feature6.description", value: "Automatically clears tracking cookies after 24 hours", comment: "Feature box description")
+    
+    static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("tracking.protection.feature7.title", value: "Protects against DNS CNAME cloaking", comment: "Feature box title")
+    static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.feature7.description", value: "Detects and blocks disguised third-party trackers", comment: "Feature box description")
+    
+    static let trackingProtectionGoogleAMPTitle = NSLocalizedString("tracking.protection.feature8.title", value: "Blocks Google's AMP Tracking", comment: "Feature box title")
+    static let trackingProtectionGoogleAMPDescription = NSLocalizedString("tracking.protection.feature8.description", value: "Loads original pages instead of Google-hosted versions", comment: "Feature box description")
+    
+    static let trackingProtectionGoogleSignInTitle = NSLocalizedString("tracking.protection.feature9.title", value: "Blocks Google's sign-in pop-ups", comment: "Feature box title")
+    static let trackingProtectionGoogleSignInDescription = NSLocalizedString("tracking.protection.feature9.description", value: "Prevents annoying sign-in prompts on websites", comment: "Feature box description")
+    
     static let emailProtectionExplanation = NSLocalizedString("email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.", comment: "Email protection feature explanation in settings. The feature blocks email trackers and hides original email address.")
 
     // Misc
@@ -511,7 +542,7 @@ struct UserText {
     static let duckPlayerOnboardingConfirmationModalCTAConfirm = NSLocalizedString("duck-player.onboarding-confirmation-modal-CTA-confirm", value: "Got it", comment: "Button to confirm on Duck Player onboarding modal confirmation screen")
 
     static let gpcCheckboxTitle = NSLocalizedString("gpc.checkbox.title", value: "Enable Global Privacy Control", comment: "GPC settings checkbox title")
-    static let gpcExplanation = NSLocalizedString("gpc.explanation", value: "Tells participating websites not to sell or share your data.", comment: "GPC explanation in settings")
+    static let gpcExplanation = NSLocalizedString("gpc.explanation", value: "Expresses opt-out rights on your behalf by telling sites not to sell or share your personal info.", comment: "GPC explanation in settings")
     static let learnMore = NSLocalizedString("learnmore.link", value: "Learn More", comment: "Learn More link")
 
     static let autofillOnboardingPopoverCTAReject = NSLocalizedString("autofill.onboarding.popover.reject", value: "No Thanks", comment: "Autofill onboarding CTA for rejection")

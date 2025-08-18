@@ -21,31 +21,69 @@ import Combine
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 extension Preferences {
 
     struct WebTrackingProtectionView: View {
         @ObservedObject var model: WebTrackingProtectionPreferences
 
+        // Define all tracking protection features
+        private let trackingProtectionFeatures = [
+            PreferencesFeature(
+                title: UserText.trackingProtectionThirdPartyTrackersTitle,
+                description: UserText.trackingProtectionThirdPartyTrackersDescription,
+                iconName: "Shield-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionTargetedAdsTitle,
+                description: UserText.trackingProtectionTargetedAdsDescription,
+                iconName: "Ads-Tracking-Blocked-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionLinkTrackingTitle,
+                description: UserText.trackingProtectionLinkTrackingDescription,
+                iconName: "Link-Blocked-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionFingerprintingTitle,
+                description: UserText.trackingProtectionFingerprintingDescription,
+                iconName: "Fingerprint-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionReferrerTitle,
+                description: UserText.trackingProtectionReferrerDescription,
+                iconName: "Profile-Lock-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionFirstPartyCookiesTitle,
+                description: UserText.trackingProtectionFirstPartyCookiesDescription,
+                iconName: "Cookie-Blocked-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionCNAMECloakingTitle,
+                description: UserText.trackingProtectionCNAMECloakingDescription,
+                iconName: "Eye-Blocked-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionGoogleAMPTitle,
+                description: UserText.trackingProtectionGoogleAMPDescription,
+                iconName: "Device-Laptop-Lock-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionGoogleSignInTitle,
+                description: UserText.trackingProtectionGoogleSignInDescription,
+                iconName: "Popup-Blocked-16"
+            )
+        ]
+
         var body: some View {
             PreferencePane(UserText.webTrackingProtection, spacing: 4) {
 
-                // SECTION 1: Status Indicator
                 PreferencePaneSection {
                     StatusIndicatorView(status: .alwaysOn, isLarge: true)
                 }
 
-                // SECTION 2: Description
-                PreferencePaneSection {
-                    VStack(alignment: .leading, spacing: 1) {
-                        TextMenuItemCaption(UserText.webTrackingProtectionExplanation)
-                        TextButton(UserText.learnMore) {
-                            model.openNewTab(with: .webTrackingProtection)
-                        }
-                    }
-                }
-
-                // SECTION 3: Global privacy control
                 PreferencePaneSection {
                     ToggleMenuItem(UserText.gpcCheckboxTitle, isOn: $model.isGPCEnabled)
                     VStack(alignment: .leading, spacing: 1) {
@@ -53,8 +91,24 @@ extension Preferences {
                         TextButton(UserText.learnMore) {
                             model.openNewTab(with: .gpcLearnMore)
                         }
-                    }.padding(.leading, 19)
+                    }
                 }
+
+                PreferencePaneSection {
+                    TextMenuItemHeader(UserText.webTrackingProtectionAlwaysOn)
+                    VStack(alignment: .leading, spacing: 0) {
+                        TextMenuItemCaption(UserText.webTrackingProtectionUpdatedDescription)
+                        TextButton(UserText.learnMore) {
+                            model.openNewTab(with: .webTrackingProtection)
+                        }
+                    }
+                    PreferencesFeatureGridView(
+                        features: trackingProtectionFeatures,
+                        columns: 2,
+                        cellMinHeight: 90
+                    )
+                }
+
             }
         }
     }

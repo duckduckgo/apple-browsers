@@ -74,7 +74,7 @@ jobs:
       branch: ${{ inputs.branch || github.ref_name }}
       internal-release-bump: ${{ inputs.internal-release-bump || false }}
       prerelease: ${{ inputs.release-type == 'internal' }}
-      ignore-unreleased-changes: ${{ github.event.inputs.ignore-unreleased-changes }}
+      ignore-unreleased-changes: ${{ github.event.inputs.ignore-unreleased-changes == 'true' }}
     secrets: inherit
 
   stop-workflow-if-needed:

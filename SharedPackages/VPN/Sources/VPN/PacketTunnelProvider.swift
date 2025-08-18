@@ -1570,7 +1570,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         await latencyMonitor.start(serverIP: ip) { [weak self] result in
-            guard let self else {return }
+            guard let self else { return }
 
             switch result {
             case .error:

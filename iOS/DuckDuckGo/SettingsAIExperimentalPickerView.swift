@@ -21,11 +21,20 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
+private enum SettingsAIExperimentalPickerViewLayout {
+    static let optionsHorizontalSpacing: CGFloat = 16
+    static let optionContentVerticalSpacing: CGFloat = 8
+    static let textStackSpacing: CGFloat = 0
+    static let viewHeight: CGFloat = 152
+    static let maxViewWidth: CGFloat = 380
+    static let checkmarkHeight: CGFloat = 20
+}
+
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
                 isSelected: !isDuckAISelected,
                 selectedImage: .searchExperimentalOn,
@@ -46,6 +55,8 @@ struct SettingsAIExperimentalPickerView: View {
                 isDuckAISelected = true
             }
         }
+        .frame(height: SettingsAIExperimentalPickerViewLayout.viewHeight)
+        .frame(maxWidth: SettingsAIExperimentalPickerViewLayout.maxViewWidth)
     }
 }
 
@@ -59,12 +70,12 @@ private struct PickerOptionView: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: SettingsAIExperimentalPickerViewLayout.optionContentVerticalSpacing) {
                 Image(isSelected ? selectedImage : unselectedImage)
                     .resizable()
                     .scaledToFit()
 
-                VStack(spacing: 0) {
+                VStack(spacing: SettingsAIExperimentalPickerViewLayout.textStackSpacing) {
                     Text(title)
                     Text(subtitle)
                 }
@@ -73,7 +84,7 @@ private struct PickerOptionView: View {
 
                 CheckmarkView(isSelected: isSelected)
                     .scaledToFit()
-                    .frame(height: 20)
+                    .frame(height: SettingsAIExperimentalPickerViewLayout.checkmarkHeight)
             }
             .frame(maxWidth: .infinity)
         }

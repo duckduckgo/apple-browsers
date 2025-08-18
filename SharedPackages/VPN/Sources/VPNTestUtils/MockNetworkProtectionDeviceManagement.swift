@@ -28,7 +28,6 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
     public var spyGenerateTunnelConfiguration: (
         selectionMethod: VPN.NetworkProtectionServerSelectionMethod,
         excludeLocalNetworks: Bool,
-        includeIPv6Routes: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         regenerateKey: Bool
     )?
@@ -45,13 +44,11 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
     public func generateTunnelConfiguration(
         resolvedSelectionMethod: VPN.NetworkProtectionServerSelectionMethod,
         excludeLocalNetworks: Bool,
-        includeIPv6Routes: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         regenerateKey: Bool) async throws -> (tunnelConfiguration: VPN.TunnelConfiguration, server: VPN.NetworkProtectionServer) {
             spyGenerateTunnelConfiguration = (
                 selectionMethod: resolvedSelectionMethod,
                 excludeLocalNetworks: excludeLocalNetworks,
-                includeIPv6Routes: includeIPv6Routes,
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
                 )

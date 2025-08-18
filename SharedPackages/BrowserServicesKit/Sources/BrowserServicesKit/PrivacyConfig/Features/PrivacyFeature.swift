@@ -228,9 +228,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Risky Domain Protection for VPN
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case riskyDomainsProtection
-
-    /// Include IPv6 routes in VPN tunnel
-    case includeIPv6Routes
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {

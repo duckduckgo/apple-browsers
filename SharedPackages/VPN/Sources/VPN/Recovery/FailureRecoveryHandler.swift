@@ -35,7 +35,6 @@ protocol FailureRecoveryHandling {
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
-        includeIPv6Routes: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async
@@ -85,7 +84,6 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
-        includeIPv6Routes: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
@@ -101,7 +99,6 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                 let result = try await makeRecoveryAttempt(
                     to: lastConnectedServer,
                     excludeLocalNetworks: excludeLocalNetworks,
-                    includeIPv6Routes: includeIPv6Routes,
                     dnsSettings: dnsSettings)
                 switch result {
                 case .noRecoveryNecessary:
@@ -127,7 +124,6 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
     private func makeRecoveryAttempt(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
-        includeIPv6Routes: Bool,
         dnsSettings: NetworkProtectionDNSSettings) async throws -> FailureRecoveryResult {
 
         let serverSelectionMethod: NetworkProtectionServerSelectionMethod = .failureRecovery(serverName: lastConnectedServer.serverName)
@@ -136,7 +132,6 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
         configurationResult = try await deviceManager.generateTunnelConfiguration(
             resolvedSelectionMethod: serverSelectionMethod,
             excludeLocalNetworks: excludeLocalNetworks,
-            includeIPv6Routes: includeIPv6Routes,
             dnsSettings: dnsSettings,
             regenerateKey: false
         )

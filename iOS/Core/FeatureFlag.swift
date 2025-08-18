@@ -88,8 +88,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
-    case networkProtectionIncludeIPv6Routes
-
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
 
@@ -195,7 +193,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .textZoom,
              .networkProtectionRiskyDomainsProtection,
-             .networkProtectionIncludeIPv6Routes,
              .privacyProAuthV2,
              .scamSiteProtection,
              .maliciousSiteProtection,
@@ -318,8 +315,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .networkProtectionIncludeIPv6Routes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.includeIPv6Routes))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .setAsDefaultBrowserPiPVideoTutorial:

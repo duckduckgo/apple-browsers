@@ -1057,7 +1057,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             configurationResult = try await deviceManager.generateTunnelConfiguration(
                 resolvedSelectionMethod: resolvedServerSelectionMethod,
                 excludeLocalNetworks: settings.excludeLocalNetworks,
-                includeIPv6Routes: settings.includeIPv6Routes,
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
             )
@@ -1213,8 +1212,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setRegistrationKeyValidity,
                 .setSelectedEnvironment,
                 .setShowInMenuBar,
-                .setDisableRekeying,
-                .setIncludeIPv6Routes:
+                .setDisableRekeying:
             // Intentional no-op
             // Some of these don't require further action
             // Some may require an adapter restart, but it's best if that's taken care of by
@@ -1543,7 +1541,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await self.failureRecoveryHandler.attemptRecovery(
                 to: server,
                 excludeLocalNetworks: protocolConfiguration.excludeLocalNetworks,
-                includeIPv6Routes: self.settings.includeIPv6Routes,
                 dnsSettings: self.settings.dnsSettings) { [weak self] generateConfigResult in
 
                 try await self?.handleFailureRecoveryConfigUpdate(result: generateConfigResult)

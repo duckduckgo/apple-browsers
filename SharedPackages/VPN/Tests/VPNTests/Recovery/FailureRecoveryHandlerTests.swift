@@ -58,7 +58,6 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: server,
             excludeLocalNetworks: expectedExcludeLocalNetworks,
-            includeIPv6Routes: false,
             dnsSettings: .ddg(blockRiskyDomains: false)
         ) { _ in }
         guard let spyGenerateTunnelConfiguration = deviceManager.spyGenerateTunnelConfiguration else {
@@ -123,7 +122,6 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
-            includeIPv6Routes: false,
             dnsSettings: .ddg(blockRiskyDomains: false)
         ) { _ in }
 
@@ -309,7 +307,6 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
-            includeIPv6Routes: false,
             dnsSettings: .ddg(blockRiskyDomains: false)
         ) { _ in }
     }
@@ -326,7 +323,6 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
-            includeIPv6Routes: false,
             dnsSettings: .ddg(blockRiskyDomains: false)
         ) { _ in
             let underlyingError = NSError(domain: "test", code: 1)
@@ -346,7 +342,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
 
         var newConfigResult: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
 
-        await failureRecoveryHandler.attemptRecovery(to: lastServer, excludeLocalNetworks: false, includeIPv6Routes: false, dnsSettings: .ddg(blockRiskyDomains: false)) { configResult in
+        await failureRecoveryHandler.attemptRecovery(to: lastServer, excludeLocalNetworks: false, dnsSettings: .ddg(blockRiskyDomains: false)) { configResult in
             newConfigResult = configResult
         }
         return newConfigResult

@@ -89,6 +89,11 @@ extension Preferences {
                 description: UserText.trackingProtectionGoogleSignInDescription,
                 iconName: "Popup-Blocked-16"
             )
+            PreferencesFeature(
+                title: UserText.trackingProtectionFacebookTitle,
+                description: UserText.trackingProtectionFacebookDescription,
+                iconName: "Eye-Blocked-16"
+            )
         ]
 
         var body: some View {

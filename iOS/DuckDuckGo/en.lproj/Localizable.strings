@@ -3056,7 +3056,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.web.tracking.protection.explanation" = "DuckDuckGo automatically blocks hidden trackers as you browse the web.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Updated description for web tracking protection settings */
-"settings.web.tracking.protection.updated.description" = "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active. ";
+"settings.web.tracking.protection.updated.description" = "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active.";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Select the option that best describes the problem you experienced.";

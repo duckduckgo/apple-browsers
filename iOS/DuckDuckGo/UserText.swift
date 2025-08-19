@@ -1265,7 +1265,7 @@ public struct UserText {
 
     public static let webTrackingProtection = NSLocalizedString("settings.web.tracking.protection", value: "Web Tracking Protection", comment: "The name of Settings category in Privacy Features related to configuration of the web tracking protection feature")
     public static let webTrackingProtectionAlwaysOn = NSLocalizedString("settings.web.tracking.protection.always.on", value: "Web tracking protections are always on", comment: "Header text explaining that web tracking protections are always enabled")
-    public static let webTrackingProtectionUpdatedDescription = NSLocalizedString("settings.web.tracking.protection.updated.description", value: "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active. ", comment: "Updated description for web tracking protection settings")
+    public static let webTrackingProtectionUpdatedDescription = NSLocalizedString("settings.web.tracking.protection.updated.description", value: "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active.", comment: "Updated description for web tracking protection settings")
     
     // Web Tracking Protection Features
     public static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("settings.tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Title for third-party tracker blocking feature")
@@ -1281,13 +1281,13 @@ public struct UserText {
     public static let trackingProtectionFingerprintingDescription = NSLocalizedString("settings.tracking.protection.fingerprinting.description", value: "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites.", comment: "Description for fingerprinting protection feature")
     
     public static let trackingProtectionReferrerTitle = NSLocalizedString("settings.tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Title for referrer tracking protection feature")
-  public static let trackingProtectionReferrerDescription = NSLocalizedString("settings.tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Description for Referer tracking protection feature")
+    public static let trackingProtectionReferrerDescription = NSLocalizedString("settings.tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Description for Referer tracking protection feature")
     
     public static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("settings.tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Title for third-party cookie blocking feature")
     public static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("settings.tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Description for third-party cookie blocking feature")
     
     public static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("settings.tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Title for CNAME cloaking protection feature")
-  public static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("settings.tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Description for CNAME cloaking protection feature")
+    public static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("settings.tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Description for CNAME cloaking protection feature")
     
     public static let trackingProtectionGoogleAMPTitle = NSLocalizedString("settings.tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Title for Google AMP protection feature")
     public static let trackingProtectionGoogleAMPDescription = NSLocalizedString("settings.tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher’s site.", comment: "Description for Google AMP protection feature")

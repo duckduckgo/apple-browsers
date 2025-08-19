@@ -95,18 +95,16 @@ struct WebTrackingProtectionView: View {
     }
 
     var body: some View {
-        Group {
-            VStack(alignment: .leading, spacing: LayoutConstants.mainStackSpacing) {
-                List {
-                    SettingsDescriptionView(content: description)
-                    WebTrackingProtectionViewSettings()
-                    WebTrackingProtectionFeatureGrid(features: trackingProtectionFeatures)
-                }
-                .applySettingsListModifiers(title: UserText.webTrackingProtection,
-                                            displayMode: .inline,
-                                            viewModel: viewModel)
-                
+        VStack(alignment: .leading, spacing: LayoutConstants.mainStackSpacing) {
+            List {
+                SettingsDescriptionView(content: description)
+                WebTrackingProtectionViewSettings()
+                WebTrackingProtectionFeatureGrid(features: trackingProtectionFeatures)
             }
+            .applySettingsListModifiers(title: UserText.webTrackingProtection,
+                                        displayMode: .inline,
+                                        viewModel: viewModel)
+            
         }
         .onForwardNavigationAppear {
             Pixel.fire(pixel: .settingsWebTrackingProtectionOpen)

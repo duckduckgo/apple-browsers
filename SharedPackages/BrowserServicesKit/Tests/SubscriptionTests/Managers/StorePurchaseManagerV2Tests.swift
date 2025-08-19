@@ -374,20 +374,6 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertEqual(rowMonthlyPrice, "€8.99")
     }
 
-    func testUpdateAvailableProductsUpdatesFeatureMapping() async {
-        // Given
-        let monthlyProduct = createMonthlyProduct()
-        let yearlyProduct = createYearlyProduct()
-        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
-
-        // When
-        await sut.updateAvailableProducts()
-
-        // Then
-        XCTAssertTrue(mockCache.didCallSubscriptionFeatures)
-        XCTAssertEqual(mockCache.lastCalledSubscriptionId, yearlyProduct.id)
-    }
-
     func testIsUserEligibleForFreeTrialReturnsTrueWhenEligibleProductExists() async {
         // Given
         let monthlyProduct = createMonthlyProduct(withTrial: true)

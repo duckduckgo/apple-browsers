@@ -171,17 +171,14 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that IPv6 DNS servers work correctly with VPN in modern dual-stack network environments
     func testIPv6DNSServersWorkCorrectly() {
-
-        let ipv6Address = IPv6Address("2001:4860:4860::8888")! // Google DNS IPv6
+        let ipv6Address = IPv6Address("2001:4860:4860::8888")!
         let dnsServer = DNSServer(address: ipv6Address)
         let resolver = VPNRoutingTableResolver(
             dnsServers: [dnsServer],
             excludeLocalNetworks: true
         )
         
-
         let includedRoutes = resolver.includedRoutes
-
         let googleIPv6 = IPv6Address("2001:4860:4860::8888")!
         let hasIPv6DNSRoute = includedRoutes.contains { route in
             route.address is IPv6Address && route.contains(googleIPv6)
@@ -189,7 +186,15 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         
         XCTAssertTrue(hasIPv6DNSRoute, "Should create host route for IPv6 DNS server")
         
-
+        // CRITICAL: Verify IPv6 DNS routes use /128 not /32 (potential bug check)
+        let ipv6DNSRoute = includedRoutes.first { route in
+            route.address is IPv6Address && route.contains(googleIPv6)
+        }
+        XCTAssertNotNil(ipv6DNSRoute, "Should find IPv6 DNS route")
+        if let route = ipv6DNSRoute {
+            XCTAssertEqual(route.networkPrefixLength, 128, 
+                          "IPv6 DNS routes must use /128 for single host, not /32")
+        }
     }
     
     /// Verifies that VPN routing table remains clean and efficient when no DNS servers are specified

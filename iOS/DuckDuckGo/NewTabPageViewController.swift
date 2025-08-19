@@ -96,7 +96,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         }
 
         assignFavoriteModelActions()
-        assignShorcutsModelActions()
+        assignShortcutsModelActions()
     }
 
     override func viewDidLoad() {
@@ -195,7 +195,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         }
     }
 
-    private func assignShorcutsModelActions() {
+    private func assignShortcutsModelActions() {
         shortcutsModel.onShortcutOpened = { [weak self] shortcut in
             guard let self else { return }
 

@@ -22,14 +22,14 @@ import VPN
 
 /// Mathematical validation helpers for VPN routing ranges
 public final class VPNRoutingMathematicsHelpers {
-    
+
     /// Finds mathematical conflicts between included and excluded routing ranges
     public static func findActualRangeConflicts(
-        included: [IPAddressRange], 
+        included: [IPAddressRange],
         excluded: [IPAddressRange]
     ) -> [(included: IPAddressRange, excluded: IPAddressRange)] {
         var conflicts: [(included: IPAddressRange, excluded: IPAddressRange)] = []
-        
+
         for includedRange in included {
             for excludedRange in excluded {
 
@@ -38,10 +38,10 @@ public final class VPNRoutingMathematicsHelpers {
                 }
             }
         }
-        
+
         return conflicts
     }
-    
+
     /// Validates that an IP address falls within exactly one of the provided range categories
     public static func classifyIPAddress(
         _ address: IPAddress,
@@ -49,22 +49,22 @@ public final class VPNRoutingMathematicsHelpers {
         privateRanges: [IPAddressRange],
         systemRanges: [IPAddressRange]
     ) -> (category: String, range: IPAddressRange)? {
-        
+
         if let systemRange = systemRanges.first(where: { range in range.contains(address) }) {
             return ("system", systemRange)
         }
-        
+
         if let privateRange = privateRanges.first(where: { range in range.contains(address) }) {
             return ("private", privateRange)
         }
-        
+
         if let publicRange = publicRanges.first(where: { range in range.contains(address) }) {
             return ("public", publicRange)
         }
-        
+
         return nil
     }
-    
+
     /// Validates comprehensive internet coverage by checking for gaps in public ranges
     public static func findPublicInternetGaps(
         publicRanges: [IPAddressRange],
@@ -83,28 +83,26 @@ public final class VPNRoutingMathematicsHelpers {
             "64.6.64.6",      // Verisign
             "77.88.8.8"       // Yandex
         ]
-        
+
         var gaps: [String] = []
-        
+
         for addressString in testPublicAddresses {
             guard let address = IPv4Address(addressString) else { continue }
-            
 
             let isSystemAddress = systemRanges.contains { range in range.contains(address) }
             let isPrivateAddress = privateRanges.contains { range in range.contains(address) }
-            
+
             if isSystemAddress || isPrivateAddress {
                 continue
             }
-            
 
             let isCoveredByPublic = publicRanges.contains { range in range.contains(address) }
-            
+
             if !isCoveredByPublic {
                 gaps.append(addressString)
             }
         }
-        
+
         return gaps
     }
 }

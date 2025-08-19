@@ -124,7 +124,9 @@ extension SubscriptionPurchaseWidePixelData {
             case 5000..<10000: return 10000
             case 10000..<30000: return 30000
             case 30000..<60000: return 60000
-            default: return 60000
+            case 60000..<300000: return 300000 // 5 minutes
+            case 300000..<600000: return 600000 // 10 minutes
+            default: return 600000
             }
         }
 

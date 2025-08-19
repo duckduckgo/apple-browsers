@@ -21,15 +21,9 @@ import Network
 import VPN
 
 /// Mathematical validation helpers for VPN routing ranges
-///
-/// Provides utilities for finding actual range conflicts and overlaps using IP mathematics
-/// rather than string comparisons, enabling more robust routing validation.
 public final class VPNRoutingMathematicsHelpers {
     
     /// Finds mathematical conflicts between included and excluded routing ranges
-    ///
-    /// Returns actual range overlaps that could cause routing ambiguity, using IP mathematics
-    /// rather than string matching to detect real conflicts.
     public static func findActualRangeConflicts(
         included: [IPAddressRange], 
         excluded: [IPAddressRange]
@@ -38,7 +32,7 @@ public final class VPNRoutingMathematicsHelpers {
         
         for includedRange in included {
             for excludedRange in excluded {
-                // Use mathematical overlap detection
+
                 if includedRange.overlaps(excludedRange) {
                     conflicts.append((included: includedRange, excluded: excludedRange))
                 }
@@ -49,8 +43,6 @@ public final class VPNRoutingMathematicsHelpers {
     }
     
     /// Validates that an IP address falls within exactly one of the provided range categories
-    ///
-    /// Returns the range that contains the address, or nil if not found in any category
     public static func classifyIPAddress(
         _ address: IPAddress,
         publicRanges: [IPAddressRange],
@@ -74,8 +66,6 @@ public final class VPNRoutingMathematicsHelpers {
     }
     
     /// Validates comprehensive internet coverage by checking for gaps in public ranges
-    ///
-    /// Returns addresses that should be covered by public ranges but aren't found in any
     public static func findPublicInternetGaps(
         publicRanges: [IPAddressRange],
         excludingSystemRanges systemRanges: [IPAddressRange],
@@ -99,7 +89,7 @@ public final class VPNRoutingMathematicsHelpers {
         for addressString in testPublicAddresses {
             guard let address = IPv4Address(addressString) else { continue }
             
-            // Skip if it's in system or private ranges (expected exclusions)
+
             let isSystemAddress = systemRanges.contains { range in range.contains(address) }
             let isPrivateAddress = privateRanges.contains { range in range.contains(address) }
             
@@ -107,7 +97,7 @@ public final class VPNRoutingMathematicsHelpers {
                 continue
             }
             
-            // Check if it's covered by public ranges
+
             let isCoveredByPublic = publicRanges.contains { range in range.contains(address) }
             
             if !isCoveredByPublic {

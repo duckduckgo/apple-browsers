@@ -30,11 +30,11 @@ final class VPNRoutingMathematicsTests: XCTestCase {
     
     /// Verifies that private network addresses never appear in public routing ranges
     func testPrivateAddressesNeverInPublicRanges() {
-        // Given
+
         let publicRanges = VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv4Address }
         let privateAddresses = ["10.0.0.1", "172.16.0.1", "192.168.1.1"]
         
-        // When/Then - Check each private address against all public ranges
+
         for addressString in privateAddresses {
             guard let address = IPv4Address(addressString) else { continue }
             
@@ -49,11 +49,11 @@ final class VPNRoutingMathematicsTests: XCTestCase {
     /// - Discussion: System addresses (loopback, link-local, multicast) should never be mathematically
     ///   contained within public network ranges, as this could create routing ambiguity.
     func testSystemAddressesNeverOverlapWithPublicRanges() {
-        // Given
+
         let publicRanges = VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv4Address }
         let systemRanges = VPNRoutingRange.alwaysExcludedIPv4Range
         
-        // When - Check all system ranges against all public ranges
+
         var overlaps: [(system: IPAddressRange, public: IPAddressRange)] = []
         for systemRange in systemRanges {
             for publicRange in publicRanges {
@@ -63,7 +63,7 @@ final class VPNRoutingMathematicsTests: XCTestCase {
             }
         }
         
-        // Then - Verify no mathematical overlaps exist
+
         XCTAssertTrue(overlaps.isEmpty, "System ranges should never overlap with public ranges: \(overlaps)")
         
         // Verify system traffic is still properly excluded in routing
@@ -78,30 +78,28 @@ final class VPNRoutingMathematicsTests: XCTestCase {
     
     /// Verifies that CIDR range mathematics work correctly for subnet operations
     func testCIDRMathematicsWorkCorrectly() {
-        // Given - Test fundamental CIDR range relationships
-        let wideRange = IPAddressRange(from: "64.0.0.0/2")!     // Covers 64-127
+        let wideRange = IPAddressRange(from: "64.0.0.0/2")!
         let narrowRanges = [
-            IPAddressRange(from: "64.0.0.0/3")!,   // Covers 64-95
-            IPAddressRange(from: "96.0.0.0/4")!,   // Covers 96-111
-            IPAddressRange(from: "112.0.0.0/5")!,  // Covers 112-119
-            IPAddressRange(from: "120.0.0.0/6")!,  // Covers 120-123
-            IPAddressRange(from: "124.0.0.0/7")!,  // Covers 124-125
-            IPAddressRange(from: "126.0.0.0/8")!   // Covers 126
+            IPAddressRange(from: "64.0.0.0/3")!,
+            IPAddressRange(from: "96.0.0.0/4")!,
+            IPAddressRange(from: "112.0.0.0/5")!,
+            IPAddressRange(from: "120.0.0.0/6")!,
+            IPAddressRange(from: "124.0.0.0/7")!,
+            IPAddressRange(from: "126.0.0.0/8")!
         ]
-        let excludedRange = IPAddressRange(from: "127.0.0.0/8")! // Covers 127
+        let excludedRange = IPAddressRange(from: "127.0.0.0/8")!
         
-        // When - Test containment relationships
-        // Then - Wide range should contain the excluded range (demonstrates the problem)
+
         XCTAssertTrue(wideRange.contains(excludedRange), 
                      "64.0.0.0/2 mathematically contains 127.0.0.0/8")
         
-        // But narrow ranges should NOT contain the excluded range (demonstrates the solution)
+
         for narrowRange in narrowRanges {
             XCTAssertFalse(narrowRange.contains(excludedRange), 
                           "Granular range \(narrowRange) should not contain 127.0.0.0/8")
         }
         
-        // Verify the narrow ranges provide equivalent coverage (minus the excluded range)
+
         let testAddresses = ["75.75.75.75", "100.100.100.100", "125.125.125.125"]
         for addressString in testAddresses {
             guard let address = IPv4Address(addressString) else { continue }
@@ -116,17 +114,15 @@ final class VPNRoutingMathematicsTests: XCTestCase {
     
     /// Verifies that VPN correctly handles overlapping ranges by prioritizing exclusions
     func testVPNHandlesOverlappingRangesCorrectly() {
-        // Given - Configuration that creates known range overlaps
         let resolver = VPNRoutingTableResolver(
             dnsServers: [DNSServer(address: IPv4Address("192.168.1.1")!)],
             excludeLocalNetworks: true
         )
         
-        // When
+
         let includedRoutes = resolver.includedRoutes  
         let excludedRoutes = resolver.excludedRoutes
         
-        // Then - Find overlaps using mathematical analysis
         let overlaps = VPNRoutingMathematicsHelpers.findActualRangeConflicts(
             included: includedRoutes,
             excluded: excludedRoutes
@@ -139,28 +135,25 @@ final class VPNRoutingMathematicsTests: XCTestCase {
             let isBroadExclusion = overlap.excluded.networkPrefixLength < 32
             
             if isDNSHostRoute && isBroadExclusion {
-                print("Expected overlap: DNS route \(overlap.included) overrides exclusion \(overlap.excluded)")
+
                 continue
             }
             
             // Any other overlaps should be documented as intentional VPN behavior
-            print("VPN overlap: \(overlap.included) vs \(overlap.excluded)")
         }
     }
     
     /// Verifies that DNS server routes can conflict with excluded ranges by design
     func testDNSRoutesCanConflictWithExcludedRanges() {
-        // Given - DNS server in an excluded range (common in corporate environments)
         let corporateDNS = DNSServer(address: IPv4Address("192.168.1.53")!)
         let resolver = VPNRoutingTableResolver(dnsServers: [corporateDNS], excludeLocalNetworks: true)
         
-        // When
+
         let conflicts = VPNRoutingMathematicsHelpers.findActualRangeConflicts(
             included: resolver.includedRoutes,
             excluded: resolver.excludedRoutes
         )
         
-        // Then - Should find the expected DNS/exclusion conflict
         let dnsConflicts = conflicts.filter { conflict in
             conflict.included.networkPrefixLength == 32 && // DNS host route
             conflict.included.description.contains("192.168.1.53")
@@ -168,48 +161,45 @@ final class VPNRoutingMathematicsTests: XCTestCase {
         
         XCTAssertFalse(dnsConflicts.isEmpty, "Should find DNS server conflict with excluded range")
         
-        for conflict in dnsConflicts {
-            print("DNS route \(conflict.included) overrides exclusion \(conflict.excluded) - this is expected VPN behavior")
-        }
+
     }
     
     /// Verifies that subnet containment logic works correctly
     func testSubnetContainmentLogicWorks() {
-        // Given - Create test ranges with known containment relationships
-        let wideRange = IPAddressRange(from: "192.168.0.0/16")!   // Covers all 192.168.x.x
-        let mediumRange = IPAddressRange(from: "192.168.1.0/24")!  // Covers 192.168.1.x
-        let narrowRange = IPAddressRange(from: "192.168.1.0/28")!  // Covers 192.168.1.0-15
-        let differentSubnet = IPAddressRange(from: "192.168.2.0/24")! // Different subnet
+        let wideRange = IPAddressRange(from: "192.168.0.0/16")!
+        let mediumRange = IPAddressRange(from: "192.168.1.0/24")!
+        let narrowRange = IPAddressRange(from: "192.168.1.0/28")!
+        let differentSubnet = IPAddressRange(from: "192.168.2.0/24")!
         
-        // When/Then - Test containment hierarchy
+
         XCTAssertTrue(wideRange.contains(mediumRange), "/16 should contain /24 within same network")
         XCTAssertTrue(wideRange.contains(narrowRange), "/16 should contain /28 within same network")
         XCTAssertTrue(mediumRange.contains(narrowRange), "/24 should contain /28 within same subnet")
         
-        // Test non-containment
+
         XCTAssertFalse(mediumRange.contains(wideRange), "/24 should not contain /16 (reversed relationship)")
         XCTAssertFalse(mediumRange.contains(differentSubnet), "Different subnets should not contain each other")
         
-        // Test overlaps
+
         XCTAssertTrue(wideRange.overlaps(differentSubnet), "/16 should overlap with /24 within same network")
         XCTAssertFalse(mediumRange.overlaps(differentSubnet), "Different /24 subnets should not overlap")
     }
     
     /// Verifies that public internet coverage has no gaps for major services
     func testPublicInternetCoverageHasNoGaps() {
-        // Given
+
         let publicRanges = VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv4Address }
         let systemRanges = VPNRoutingRange.alwaysExcludedIPv4Range
         let privateRanges = VPNRoutingRange.localNetworkRange.filter { $0.address is IPv4Address }
         
-        // When - Check for gaps in public internet coverage
+
         let gaps = VPNRoutingMathematicsHelpers.findPublicInternetGaps(
             publicRanges: publicRanges,
             excludingSystemRanges: systemRanges,
             excludingPrivateRanges: privateRanges
         )
         
-        // Then - Should have no gaps in major service coverage
+
         XCTAssertTrue(gaps.isEmpty, "Public internet should have comprehensive coverage. Missing: \(gaps)")
     }
 }

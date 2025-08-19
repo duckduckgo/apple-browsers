@@ -27,20 +27,20 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that VPN routing works correctly when DNS servers are configured
     func testVPNRoutingWorksWithDNSServers() {
-        // Given
+
         let dnsServers = [
             DNSServer(address: IPv4Address("8.8.8.8")!),
             DNSServer(address: IPv4Address("1.1.1.1")!)
         ]
         let excludeLocalNetworks = true
         
-        // When
+
         let resolver = VPNRoutingTableResolver(
             dnsServers: dnsServers,
             excludeLocalNetworks: excludeLocalNetworks
         )
         
-        // Then
+
         let routes = resolver.includedRoutes
         XCTAssertFalse(routes.isEmpty, "Resolver should generate routes with valid DNS servers")
         
@@ -49,17 +49,17 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that VPN routing works correctly even when no DNS servers are configured
     func testVPNRoutingWorksWithoutDNSServers() {
-        // Given
+
         let dnsServers: [DNSServer] = []
         let excludeLocalNetworks = false
         
-        // When
+
         let resolver = VPNRoutingTableResolver(
             dnsServers: dnsServers,
             excludeLocalNetworks: excludeLocalNetworks
         )
         
-        // Then
+
         let includedRoutes = resolver.includedRoutes
         let excludedRoutes = resolver.excludedRoutes
         
@@ -84,18 +84,18 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         ]
         
         for config in configurations {
-            // Given
+    
             let dnsServers = [DNSServer(address: IPv4Address("8.8.8.8")!)]
             let resolver = VPNRoutingTableResolver(
                 dnsServers: dnsServers,
                 excludeLocalNetworks: config.excludeLocal
             )
             
-            // When
+    
             let excludedRoutes = resolver.excludedRoutes
             let excludedStrings = excludedRoutes.map { $0.description }
             
-            // Then
+    
             XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), 
                          "Should always exclude loopback \(config.description)")
             XCTAssertTrue(excludedStrings.contains("169.254.0.0/16"), 
@@ -123,18 +123,17 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         ]
         
         for config in configurations {
-            // Given
+    
             let dnsServers = [DNSServer(address: IPv4Address("8.8.8.8")!)]
             let resolver = VPNRoutingTableResolver(
                 dnsServers: dnsServers,
                 excludeLocalNetworks: config.excludeLocal
             )
             
-            // When
+    
             let includedRoutes = resolver.includedRoutes
             let includedStrings = includedRoutes.map { $0.description }
-            
-            // Then - Should always include key public ranges
+
             XCTAssertTrue(includedStrings.contains("1.0.0.0/8"), 
                          "Should always include 1.0.0.0/8 \(config.description)")
             XCTAssertTrue(includedStrings.contains("8.0.0.0/7"), 
@@ -150,17 +149,17 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that DNS servers remain accessible when VPN is active by creating specific routes for them
     func testDNSServersRemainAccessible() {
-        // Given
+
         let dnsServer = DNSServer(address: IPv4Address("8.8.8.8")!)
         let resolver = VPNRoutingTableResolver(
             dnsServers: [dnsServer],
             excludeLocalNetworks: true
         )
         
-        // When
+
         let includedRoutes = resolver.includedRoutes
         
-        // Then
+
         let includedStrings = includedRoutes.map { $0.description }
         XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), 
                      "Should create /32 host route for DNS server")
@@ -170,7 +169,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that all configured DNS servers (primary, secondary, etc.) remain accessible through the VPN
     func testMultipleDNSServersRemainAccessible() {
-        // Given
+
         let dnsServers = [
             DNSServer(address: IPv4Address("8.8.8.8")!),
             DNSServer(address: IPv4Address("8.8.4.4")!),
@@ -182,10 +181,10 @@ final class VPNRoutingTableResolverTests: XCTestCase {
             excludeLocalNetworks: false
         )
         
-        // When
+
         let includedRoutes = resolver.includedRoutes
         
-        // Then
+
         let includedStrings = includedRoutes.map { $0.description }
         
         // Should have all DNS server host routes
@@ -199,7 +198,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that IPv6 DNS servers work correctly with VPN in modern dual-stack network environments
     func testIPv6DNSServersWorkCorrectly() {
-        // Given
+
         let ipv6Address = IPv6Address("2001:4860:4860::8888")! // Google DNS IPv6
         let dnsServer = DNSServer(address: ipv6Address)
         let resolver = VPNRoutingTableResolver(
@@ -207,10 +206,9 @@ final class VPNRoutingTableResolverTests: XCTestCase {
             excludeLocalNetworks: true
         )
         
-        // When
+
         let includedRoutes = resolver.includedRoutes
-        
-        // Then - Check for IPv6 DNS route using mathematical operations
+
         let googleIPv6 = IPv6Address("2001:4860:4860::8888")!
         let hasIPv6DNSRoute = includedRoutes.contains { route in
             route.address is IPv6Address && route.contains(googleIPv6)
@@ -223,17 +221,16 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that VPN routing table remains clean and efficient when no DNS servers are specified
     func testRoutingTableStaysCleanWithoutDNSServers() {
-        // Given
+
         let resolver = VPNRoutingTableResolver(
             dnsServers: [],
             excludeLocalNetworks: true
         )
         
-        // When
+
         let includedRoutes = resolver.includedRoutes
-        
-        // Then - Should only have public network ranges, no DNS-specific host routes
-        // Check for host routes (DNS-specific /32 routes) using mathematical operations
+
+
         let hasHostRoutes = includedRoutes.contains { route in
             route.networkPrefixLength == 32 && 
             !route.hasExactMatch(in: VPNRoutingRange.publicNetworkRange)
@@ -248,12 +245,11 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     /// Verifies that VPN remains responsive even when configured with many DNS servers
     func testComplexDNSConfigurationsArePerformant() {
-        // Given - Configuration with many DNS servers
         let manyDNSServers = (1...20).map { i in
             DNSServer(address: IPv4Address("8.8.8.\(i)")!)
         }
         
-        // When
+
         let startTime = CFAbsoluteTimeGetCurrent()
         let resolver = VPNRoutingTableResolver(
             dnsServers: manyDNSServers,
@@ -263,7 +259,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         let _ = resolver.excludedRoutes
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
         
-        // Then
+
         XCTAssertLessThan(elapsed, 0.1, "Route generation should complete in under 100ms even with many DNS servers")
         
         let includedRoutes = resolver.includedRoutes

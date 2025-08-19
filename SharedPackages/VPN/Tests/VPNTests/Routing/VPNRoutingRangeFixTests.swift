@@ -26,25 +26,24 @@ final class VPNRoutingRangeFixTests: XCTestCase {
     
     /// Verifies that CIDR range splitting mathematics work correctly for avoiding unwanted inclusions
     func testCIDRRangeSplittingMathematics() {
-        // Given - Current problematic range
         let currentProblematic = IPAddressRange(from: "64.0.0.0/2")!
         let loopback = IPAddressRange(from: "127.0.0.0/8")!
         
-        // Verify the current problem exists
+
         XCTAssertTrue(currentProblematic.contains(loopback), 
                      "Current 64.0.0.0/2 range contains loopback (this is the issue)")
         
-        // When - Apply the proposed fix (replace 64.0.0.0/2 with 6 more specific ranges)
+
         let proposedReplacement = [
-            "64.0.0.0/3",   // 64.0.0.0 - 95.255.255.255  
-            "96.0.0.0/4",   // 96.0.0.0 - 111.255.255.255
-            "112.0.0.0/5",  // 112.0.0.0 - 119.255.255.255
-            "120.0.0.0/6",  // 120.0.0.0 - 123.255.255.255
-            "124.0.0.0/7",  // 124.0.0.0 - 125.255.255.255
-            "126.0.0.0/8"   // 126.0.0.0 - 126.255.255.255
+            "64.0.0.0/3",
+            "96.0.0.0/4",
+            "112.0.0.0/5",
+            "120.0.0.0/6",
+            "124.0.0.0/7",
+            "126.0.0.0/8"
         ]
         
-        // Then - Verify the fix resolves the overlap
+
         for rangeString in proposedReplacement {
             let range = IPAddressRange(from: rangeString)!
             XCTAssertFalse(range.overlaps(loopback), 
@@ -78,33 +77,30 @@ final class VPNRoutingRangeFixTests: XCTestCase {
             }
         }
         
-        print("✅ CIDR splitting can eliminate unwanted inclusions while maintaining coverage")
-        print("Example: Covering 64-126 without 127 requires 6 granular ranges")
+
     }
     
     /// Verifies that all VPN routing range categories have no mathematical overlaps
-    func testAllRangeCategoriesHaveNoMathematicalOverlaps() {
-        // Given - All range categories from VPNRoutingRange  
+    func testAllRangeCategoriesHaveNoMathematicalOverlaps() {  
         let alwaysExcluded = VPNRoutingRange.alwaysExcludedIPv4Range
         let localNetwork = VPNRoutingRange.localNetworkRange
         let publicNetwork = VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv4Address }
         
-        // When - Check all possible category overlaps
+
         let excludedVsLocal = findAllOverlaps(alwaysExcluded, localNetwork)
         let excludedVsPublic = findAllOverlaps(alwaysExcluded, publicNetwork)
         let localVsPublic = findAllOverlaps(localNetwork, publicNetwork)
         let publicInternal = findInternalOverlaps(publicNetwork)
         
-        // Then - Document all findings
+
         XCTAssertTrue(excludedVsLocal.isEmpty, "Should be no excluded/local overlaps: \(excludedVsLocal)")
         XCTAssertTrue(localVsPublic.isEmpty, "Should be no local/public overlaps: \(localVsPublic)")
         XCTAssertTrue(publicInternal.isEmpty, "Should be no internal public overlaps: \(publicInternal)")
         
-        // After the fix, there should be no overlaps
+
         XCTAssertEqual(excludedVsPublic.count, 0, "Should find NO excluded/public overlaps after fix")
         
-        print("✅ Confirmed: No overlaps exist after loopback fix")
-        print("🎯 ANALYSIS COMPLETE: All range overlaps resolved")
+
     }
     
     private func findAllOverlaps(_ ranges1: [IPAddressRange], _ ranges2: [IPAddressRange]) -> [(IPAddressRange, IPAddressRange)] {
@@ -133,7 +129,7 @@ final class VPNRoutingRangeFixTests: XCTestCase {
     
     /// Verifies that public internet coverage remains comprehensive after range optimizations
     func testPublicInternetCoverageIsComprehensive() {
-        // Given
+
         let publicRanges = VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv4Address }
         
         // When - Test coverage of major public internet services

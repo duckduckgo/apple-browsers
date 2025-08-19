@@ -20,6 +20,22 @@
 import SwiftUI
 import DesignResourcesKit
 
+// MARK: - Layout Constants
+
+private enum LayoutConstants {
+    static let contentSpacing: CGFloat = 12
+    static let textSpacing: CGFloat = 6
+    static let cardPadding: CGFloat = 12
+    static let cornerRadius: CGFloat = 8
+    static let borderWidth: CGFloat = 1
+    
+    static let iconContainerSize: CGFloat = 32
+    static let iconSize: CGFloat = 16
+    
+    static let defaultColumns: Int = 2
+    static let adaptiveMinColumnWidth: CGFloat = 150
+}
+
 /// Model representing a settings feature for display in feature boxes
 struct SettingsFeature: Identifiable {
     let id = UUID()
@@ -42,7 +58,7 @@ struct SettingsFeatureView: View {
     let minHeight: CGFloat?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: LayoutConstants.contentSpacing) {
             // Icon at the top
             HStack {
                 iconPlaceholder
@@ -50,7 +66,7 @@ struct SettingsFeatureView: View {
             }
             
             // Text content below the icon
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: LayoutConstants.textSpacing) {
                 Text(feature.title)
                     .daxFootnoteSemibold()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -68,13 +84,13 @@ struct SettingsFeatureView: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding(12)
+        .padding(LayoutConstants.cardPadding)
         .frame(minHeight: minHeight, maxHeight: minHeight != nil ? .infinity : nil)
         .background(Color(designSystemColor: .surface))
-        .cornerRadius(8)
+        .cornerRadius(LayoutConstants.cornerRadius)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+            RoundedRectangle(cornerRadius: LayoutConstants.cornerRadius)
+                .stroke(Color(designSystemColor: .lines), lineWidth: LayoutConstants.borderWidth)
         )
     }
     
@@ -83,10 +99,10 @@ struct SettingsFeatureView: View {
         // Circle with same background as box and custom or fallback icon
         Circle()
             .fill(Color(designSystemColor: .surface))
-            .frame(width: 32, height: 32)
+            .frame(width: LayoutConstants.iconContainerSize, height: LayoutConstants.iconContainerSize)
             .overlay(
                 Circle()
-                    .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .lines), lineWidth: LayoutConstants.borderWidth)
             )
             .overlay(
                 Group {
@@ -95,14 +111,14 @@ struct SettingsFeatureView: View {
                             .resizable()
                             .renderingMode(.template)
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 16, height: 16)
+                            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                     } else if let iconName = feature.iconName {
                         Image(iconName)
                             .resizable()
                             .renderingMode(.template)
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 16, height: 16)
+                            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                     }
                 }
@@ -110,45 +126,6 @@ struct SettingsFeatureView: View {
     }
 }
 
-/// Collection view for displaying multiple settings features in a custom staggered layout
-struct SettingsFeatureGridView: View {
-    let features: [SettingsFeature]
-    let columns: Int
-    let cellMinHeight: CGFloat?
-    
-    init(features: [SettingsFeature], columns: Int = 2, cellMinHeight: CGFloat? = nil) {
-        self.features = features
-        self.columns = columns
-        self.cellMinHeight = cellMinHeight
-    }
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            // Create rows of uneven columns to match the organic layout
-            ForEach(Array(stride(from: 0, to: features.count, by: 2)), id: \.self) { rowIndex in
-                HStack(alignment: .top, spacing: 12) {
-                    // First item in row
-                    if rowIndex < features.count {
-                        SettingsFeatureView(feature: features[rowIndex], minHeight: cellMinHeight)
-                            .frame(maxWidth: .infinity)
-                    }
-                    
-                    // Second item in row (if exists)
-                    if rowIndex + 1 < features.count {
-                        SettingsFeatureView(feature: features[rowIndex + 1], minHeight: cellMinHeight)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        // Empty spacer if odd number of items
-                        Spacer()
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 12)
-    }
-}
 
 /// Masonry-style staggered grid layout for settings features
 struct SettingsFeatureMasonryView: View {
@@ -156,7 +133,7 @@ struct SettingsFeatureMasonryView: View {
     let columns: Int
     let spacing: CGFloat
     
-    init(features: [SettingsFeature], columns: Int = 2, spacing: CGFloat = 12) {
+    init(features: [SettingsFeature], columns: Int = LayoutConstants.defaultColumns, spacing: CGFloat = LayoutConstants.contentSpacing) {
         self.features = features
         self.columns = columns
         self.spacing = spacing
@@ -167,7 +144,7 @@ struct SettingsFeatureMasonryView: View {
             createMasonryLayout()
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 12)
+        .padding(.top, LayoutConstants.contentSpacing)
     }
     
     @ViewBuilder
@@ -204,29 +181,3 @@ struct SettingsFeatureMasonryView: View {
     }
 }
 
-/// Alternative masonry layout using SwiftUI's built-in LazyVGrid with adaptive columns
-struct SettingsFeatureAdaptiveGridView: View {
-    let features: [SettingsFeature]
-    let minColumnWidth: CGFloat
-    let spacing: CGFloat
-    
-    init(features: [SettingsFeature], minColumnWidth: CGFloat = 150, spacing: CGFloat = 12) {
-        self.features = features
-        self.minColumnWidth = minColumnWidth
-        self.spacing = spacing
-    }
-    
-    var body: some View {
-        let columns = [
-            GridItem(.adaptive(minimum: minColumnWidth), spacing: spacing, alignment: .top)
-        ]
-        
-        LazyVGrid(columns: columns, alignment: .leading, spacing: spacing) {
-            ForEach(features) { feature in
-                SettingsFeatureView(feature: feature, minHeight: nil)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 12)
-    }
-}

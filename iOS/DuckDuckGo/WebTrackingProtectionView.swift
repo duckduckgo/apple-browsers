@@ -148,9 +148,7 @@ struct WebTrackingProtectionFeatureGrid: View {
 
             // Feature grid with masonry layout
             SettingsFeatureMasonryView(
-                features: features,
-                columns: 2,
-                spacing: 12
+                features: features
             )
         }
         .listRowInsets(EdgeInsets())

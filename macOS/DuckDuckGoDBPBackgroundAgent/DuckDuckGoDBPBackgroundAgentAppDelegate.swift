@@ -110,10 +110,9 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
 
-        Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
         let configStore = ConfigurationStore()
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configStore)
+        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configStore, configurationURLProvider: DBPAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configStore)
         configurationManager.start()
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))

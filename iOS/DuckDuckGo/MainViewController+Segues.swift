@@ -302,6 +302,7 @@ extension MainViewController {
                                                             syncPausedStateManager: syncPausedStateManager,
                                                             fireproofing: fireproofing,
                                                             websiteDataManager: websiteDataManager,
+                                                            customConfigurationURLProvider: customConfigurationURLProvider,
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                             daxDialogsManager: daxDialogsManager)
@@ -370,6 +371,7 @@ extension MainViewController {
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
             fireproofing: self.fireproofing,
+            customConfigurationURLProvider: customConfigurationURLProvider,
             keyValueStore: self.keyValueStore,
             systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
             daxDialogManager: self.daxDialogsManager))

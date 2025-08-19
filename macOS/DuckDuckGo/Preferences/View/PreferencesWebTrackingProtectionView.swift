@@ -21,7 +21,21 @@ import Combine
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
-import DesignResourcesKit
+
+// MARK: - Layout Constants
+
+private enum Layout {
+    enum Spacing {
+        static let preferencePane: CGFloat = 4
+        static let caption: CGFloat = 1
+        static let section: CGFloat = 0
+    }
+
+    enum Grid {
+        static let columns: Int = 2
+        static let cellMinHeight: CGFloat = 90
+    }
+}
 
 extension Preferences {
 
@@ -63,22 +77,27 @@ extension Preferences {
             PreferencesFeature(
                 title: UserText.trackingProtectionCNAMECloakingTitle,
                 description: UserText.trackingProtectionCNAMECloakingDescription,
-                iconName: "Eye-Blocked-16"
+                iconName: "Device-Laptop-Lock-16"
             ),
             PreferencesFeature(
                 title: UserText.trackingProtectionGoogleAMPTitle,
                 description: UserText.trackingProtectionGoogleAMPDescription,
-                iconName: "Device-Laptop-Lock-16"
+                iconName: "Eye-Blocked-16"
             ),
             PreferencesFeature(
                 title: UserText.trackingProtectionGoogleSignInTitle,
                 description: UserText.trackingProtectionGoogleSignInDescription,
                 iconName: "Popup-Blocked-16"
+            ),
+            PreferencesFeature(
+                title: UserText.trackingProtectionFacebookTitle,
+                description: UserText.trackingProtectionFacebookDescription,
+                iconName: "Eye-Blocked-16"
             )
         ]
 
         var body: some View {
-            PreferencePane(UserText.webTrackingProtection, spacing: 4) {
+            PreferencePane(UserText.webTrackingProtection, spacing: Layout.Spacing.preferencePane) {
 
                 PreferencePaneSection {
                     StatusIndicatorView(status: .alwaysOn, isLarge: true)
@@ -86,7 +105,7 @@ extension Preferences {
 
                 PreferencePaneSection {
                     ToggleMenuItem(UserText.gpcCheckboxTitle, isOn: $model.isGPCEnabled)
-                    VStack(alignment: .leading, spacing: 1) {
+                    VStack(alignment: .leading, spacing: Layout.Spacing.caption) {
                         TextMenuItemCaption(UserText.gpcExplanation)
                         TextButton(UserText.learnMore) {
                             model.openNewTab(with: .gpcLearnMore)
@@ -96,7 +115,7 @@ extension Preferences {
 
                 PreferencePaneSection {
                     TextMenuItemHeader(UserText.webTrackingProtectionAlwaysOn)
-                    VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: Layout.Spacing.section) {
                         TextMenuItemCaption(UserText.webTrackingProtectionUpdatedDescription)
                         TextButton(UserText.learnMore) {
                             model.openNewTab(with: .webTrackingProtection)
@@ -104,8 +123,8 @@ extension Preferences {
                     }
                     PreferencesFeatureGridView(
                         features: trackingProtectionFeatures,
-                        columns: 2,
-                        cellMinHeight: 90
+                        columns: Layout.Grid.columns,
+                        cellMinHeight: Layout.Grid.cellMinHeight
                     )
                 }
 

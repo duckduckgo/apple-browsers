@@ -2678,7 +2678,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.ai.experimental.picker.experimental" = "(Experimental)";
 
 /* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer.description" = "Search the web or ask Duck.ai directly from the Address Bar.";
+"settings.ai.experimental.picker.footer" = "Try our experimental option to ask Duck.ai directly from the Address Bar.";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";

@@ -260,8 +260,12 @@ extension XCUIApplication {
     /// Sets the "Always ask where to save files" toggle to a specific state
     func setAlwaysAskWhereToSaveFiles(enabled: Bool) {
         let prefs = preferencesWindow
+
+
         let toggleIdentifier = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
-        let control = prefs.descendants(matching: .any)
+        let scrollView = prefs.scrollViews.containing(.checkBox, identifier: toggleIdentifier).firstMatch
+        scrollView.swipeUp()
+        let control = prefs.descendants(matching: .checkBox)
             .matching(NSPredicate(format: "identifier == %@", toggleIdentifier))
             .firstMatch
         XCTAssertTrue(control.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Always ask toggle should exist in Preferences")

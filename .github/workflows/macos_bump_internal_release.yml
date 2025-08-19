@@ -37,6 +37,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 10
 
+    env:
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
     outputs:
       skip-release: ${{ steps.prepare-release-bump.outputs.skip_release }}
       asana-task-id: ${{ steps.prepare-release-bump.outputs.release_task_id }}

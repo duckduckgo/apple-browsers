@@ -118,8 +118,10 @@ struct SettingsAIFeaturesView: View {
                         SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
 
-                        SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                        if viewModel.state.voiceSearchEnabled {
+                            SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                             accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                        }
 
                         SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))

@@ -73,7 +73,6 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
-        rules.append(.exact(hostname: "bhall.duck.co"))
 
         return rules
     }

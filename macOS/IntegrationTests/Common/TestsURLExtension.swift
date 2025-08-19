@@ -23,6 +23,12 @@ extension URL {
 
     static let testsServer = URL(string: "http://localhost:8085/")!
 
+    /// Build a local download URL that returns random data with appropriate headers.
+    /// Size examples: "512", "100KB", "1MB", "500MB", "2GB"
+    static func testsDownload(size: String) -> URL {
+        return URL.testsServer.appendingPathComponent("download/").appendingPathComponent(size)
+    }
+
     /// used for Tests Server mock HTTP requests creation (see tests-server/main.swift)
     /**
      - Parameter status: HTTP status code returned by the server, defaults to 200.

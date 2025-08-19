@@ -67,7 +67,12 @@ extension XCUIApplication {
     ///  1. First, closing all windows
     ///  2. Opening a new window
     func enforceSingleWindow() {
-        typeKey("w", modifierFlags: [.command, .option, .shift])
+        let window = windows.firstMatch
+        if window.exists {
+            window.click()
+            typeKey("w", modifierFlags: [.command, .option, .shift])
+            _=window.waitForNonExistence(timeout: 5)
+        }
         typeKey("n", modifierFlags: .command)
     }
 
@@ -80,6 +85,12 @@ extension XCUIApplication {
     func closeCurrentTab() {
          typeKey("w", modifierFlags: .command)
      }
+
+    /// Activate address bar for input
+    /// On new tab pages, the address bar is already activated by default
+    func activateAddressBar() {
+        typeKey("l", modifierFlags: [.command])
+    }
 
     // MARK: - Bookmarks
 
@@ -214,4 +225,98 @@ extension XCUIApplication {
         let coordinate = contextMenu.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
         coordinate.click()
     }
+
+    // MARK: - Preferences
+
+    /// Opens the Preferences window via Cmd+, and waits for it to appear
+    func openPreferencesWindow() {
+        typeKey(",", modifierFlags: [.command])
+        let prefs = preferencesWindow
+        _ = prefs.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+    }
+
+    /// Closes the Preferences window if present
+    func closePreferencesWindow() {
+        let prefs = preferencesWindow
+        if prefs.exists {
+            let close = prefs.buttons["_XCUI:CloseWindow"].firstMatch
+            if close.exists { close.click() }
+        }
+    }
+
+    /// Returns the Preferences/Settings window element
+    var preferencesWindow: XCUIElement {
+        windows.containing(NSPredicate(format: "title CONTAINS[c] 'Preferences' OR title CONTAINS[c] 'Settings'"))
+            .firstMatch
+    }
+
+    /// Selects the General pane in Preferences
+    func preferencesGoToGeneralPane() {
+        let prefs = preferencesWindow
+        let general = prefs.buttons["PreferencesSidebar.generalButton"]
+        if general.waitForExistence(timeout: 2.0) { general.click() }
+    }
+
+    /// Sets the "Always ask where to save files" toggle to a specific state
+    func setAlwaysAskWhereToSaveFiles(enabled: Bool) {
+        let prefs = preferencesWindow
+        let toggleIdentifier = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
+        let control = prefs.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier == %@", toggleIdentifier))
+            .firstMatch
+        XCTAssertTrue(control.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Always ask toggle should exist in Preferences")
+
+        if let valueString = control.value as? String {
+            let isOn = valueString == "1" || valueString.lowercased() == "on"
+            if isOn != enabled { control.click() }
+        } else if let valueNumber = control.value as? NSNumber {
+            let isOn = valueNumber.intValue != 0
+            if isOn != enabled { control.click() }
+        } else {
+            // Fallback: click once and trust UI state
+            control.click()
+        }
+    }
+
+    /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
+    func setSwitchToNewTabWhenOpened(enabled: Bool) {
+        let prefs = preferencesWindow
+        let label = "When opening links, switch to the new tab or window immediately"
+        let switchToggle = prefs.switches.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
+        let switchCheckbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
+        let control = switchToggle.exists ? switchToggle : switchCheckbox
+        XCTAssertTrue(control.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Switch-to-new-tab toggle should exist in Preferences")
+
+        if let valueString = control.value as? String {
+            let isOn = valueString == "1" || valueString.lowercased() == "on"
+            if isOn != enabled { control.click() }
+        } else if let valueNumber = control.value as? NSNumber {
+            let isOn = valueNumber.intValue != 0
+            if isOn != enabled { control.click() }
+        } else {
+            // Fallback: click once and trust UI state
+            control.click()
+        }
+    }
+
+    /// Sets the "Automatically open the Downloads panel when downloads complete" preference
+    func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
+        let prefs = preferencesWindow
+        let label = "Automatically open the Downloads panel when downloads complete"
+        let toggle = prefs.switches.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
+        let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
+        let control = toggle.exists ? toggle : checkbox
+        XCTAssertTrue(control.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Downloads panel toggle should exist in Preferences")
+
+        if let valueString = control.value as? String {
+            let isOn = valueString == "1" || valueString.lowercased() == "on"
+            if isOn != enabled { control.click() }
+        } else if let valueNumber = control.value as? NSNumber {
+            let isOn = valueNumber.intValue != 0
+            if isOn != enabled { control.click() }
+        } else {
+            control.click()
+        }
+    }
+    
 }

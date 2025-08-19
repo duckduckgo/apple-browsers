@@ -54,10 +54,8 @@ final class VPNRoutingMathematicsTests: XCTestCase {
 
         var overlaps: [(system: IPAddressRange, public: IPAddressRange)] = []
         for systemRange in systemRanges {
-            for publicRange in publicRanges {
-                if systemRange.overlaps(publicRange) {
-                    overlaps.append((system: systemRange, public: publicRange))
-                }
+            for publicRange in publicRanges where systemRange.overlaps(publicRange) {
+                overlaps.append((system: systemRange, public: publicRange))
             }
         }
 

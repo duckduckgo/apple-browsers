@@ -31,11 +31,8 @@ public final class VPNRoutingMathematicsHelpers {
         var conflicts: [(included: IPAddressRange, excluded: IPAddressRange)] = []
 
         for includedRange in included {
-            for excludedRange in excluded {
-
-                if includedRange.overlaps(excludedRange) {
-                    conflicts.append((included: includedRange, excluded: excludedRange))
-                }
+            for excludedRange in excluded where includedRange.overlaps(excludedRange) {
+                conflicts.append((included: includedRange, excluded: excludedRange))
             }
         }
 

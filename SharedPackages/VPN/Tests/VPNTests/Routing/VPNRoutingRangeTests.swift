@@ -233,10 +233,8 @@ final class VPNRoutingRangeTests: XCTestCase {
         var overlaps: [(IPAddressRange, IPAddressRange)] = []
 
         for range1 in ranges1 {
-            for range2 in ranges2 {
-                if range1.overlaps(range2) {
-                    overlaps.append((range1, range2))
-                }
+            for range2 in ranges2 where range1.overlaps(range2) {
+                overlaps.append((range1, range2))
             }
         }
 

@@ -318,7 +318,7 @@ final class WidePixelTests: XCTestCase {
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
         XCTAssertEqual(parameters["feature.data.ext.create_account_latency_ms_bucketed"], "1000")
-        XCTAssertEqual(parameters["feature.data.ext.complete_purchase_latency_ms_bucketed"], "60000")
+        XCTAssertEqual(parameters["feature.data.ext.complete_purchase_latency_ms_bucketed"], "600000")
     }
 
     func testStopMeasurementWhenNeverStarted() throws {

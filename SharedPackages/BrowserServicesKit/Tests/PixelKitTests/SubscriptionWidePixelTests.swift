@@ -329,7 +329,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "UNKNOWN")
         XCTAssertEqual(params["feature.status.unknown-status-reason"], "activation_timeout")
-        XCTAssertEqual(params["feature.data.ext.activate_account_latency_ms_bucketed"], "60000") // Max bucket
+        XCTAssertEqual(params["feature.data.ext.activate_account_latency_ms_bucketed"], "300000") // Max bucket
     }
 
     // MARK: - Subscription Data Model Tests

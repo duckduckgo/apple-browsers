@@ -63,7 +63,6 @@ private struct PickerOptionView: View {
         Button(action: action) {
             VStack(spacing: SettingsAIExperimentalPickerViewLayout.optionContentVerticalSpacing) {
                 Image(isSelected ? selectedImage : unselectedImage)
-                    .resizable()
                     .scaledToFit()
 
                 VStack(spacing: SettingsAIExperimentalPickerViewLayout.textStackSpacing) {
@@ -102,7 +101,7 @@ private struct CheckmarkView: View {
 }
 
 private enum SettingsAIExperimentalPickerViewLayout {
-    static let optionsHorizontalSpacing: CGFloat = 26
+    static let optionsHorizontalSpacing: CGFloat = 10
     static let optionContentVerticalSpacing: CGFloat = 8
     static let textStackSpacing: CGFloat = 0
     static let viewHeight: CGFloat = 152

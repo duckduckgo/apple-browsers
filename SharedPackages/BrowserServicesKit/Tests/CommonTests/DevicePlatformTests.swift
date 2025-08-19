@@ -30,7 +30,7 @@ final class DevicePlatformTests: XCTestCase {
     func testWhenGettingCurrentPlatform_thenPlatformMatchesCurrentDevice() {
         #if os(macOS)
         XCTAssertEqual(DevicePlatform.currentPlatform, .macOS)
-        #elseif os (iOS)
+        #elseif os(iOS)
         XCTAssertEqual(DevicePlatform.currentPlatform, .iOS)
         #endif
     }

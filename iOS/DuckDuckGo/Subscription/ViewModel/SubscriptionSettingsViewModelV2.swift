@@ -177,15 +177,22 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     func manageSubscription() {
         Logger.subscription.log("User action: \(#function)")
-        switch state.subscriptionInfo?.platform {
+
+        guard let platform = state.subscriptionInfo?.platform else {
+            manageInternalSubscription()
+            return
+        }
+
+        switch platform {
         case .apple:
             Task { await manageAppleSubscription() }
         case .google:
             displayGoogleView(true)
         case .stripe:
             Task { await manageStripeSubscription() }
-        default:
-            manageInternalSubscription()
+        case .unknown:
+            assertionFailure("Invalid subscription platform")
+            return
         }
     }
 

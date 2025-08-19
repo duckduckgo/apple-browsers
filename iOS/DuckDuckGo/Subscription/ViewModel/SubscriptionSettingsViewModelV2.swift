@@ -37,6 +37,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     struct State {
         var subscriptionDetails: String = ""
         var subscriptionEmail: String?
+        var isShowingInternalSubscriptionNotice: Bool = false
         var isShowingRemovalNotice: Bool = false
         var shouldDismissView: Bool = false
         var isShowingGoogleView: Bool = false
@@ -176,16 +177,17 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     func manageSubscription() {
         Logger.subscription.log("User action: \(#function)")
-        switch state.subscriptionInfo?.platform {
-        case .apple:
-            Task { await manageAppleSubscription() }
-        case .google:
-            displayGoogleView(true)
-        case .stripe:
-            Task { await manageStripeSubscription() }
-        default:
-            assertionFailure("Invalid subscription platform")
-            return
+        Task {
+            switch state.subscriptionInfo?.platform {
+            case .apple:
+                await manageAppleSubscription()
+            case .google:
+                displayGoogleView(true)
+            case .stripe:
+                await manageStripeSubscription()
+            default:
+                manageInternalSubscription()
+            }
         }
     }
 
@@ -247,6 +249,12 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         Logger.subscription.log("Show stripe")
         if value != state.isShowingStripeView {
             state.isShowingStripeView = value
+        }
+    }
+
+    func displayInternalSubscriptionNotice(_ value: Bool) {
+        if value != state.isShowingInternalSubscriptionNotice {
+            state.isShowingInternalSubscriptionNotice = value
         }
     }
 
@@ -323,6 +331,14 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
         Task { @MainActor in
             self.displayStripeView(true)
+        }
+    }
+
+    private func manageInternalSubscription() {
+        Logger.subscription.log("Managing Internal Subscription")
+
+        Task { @MainActor in
+            self.displayInternalSubscriptionNotice(true)
         }
     }
 

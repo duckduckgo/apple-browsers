@@ -36,6 +36,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     struct State {
         var subscriptionDetails: String = ""
         var subscriptionEmail: String?
+        var isShowingInternalSubscriptionNotice: Bool = false
         var isShowingRemovalNotice: Bool = false
         var shouldDismissView: Bool = false
         var isShowingGoogleView: Bool = false
@@ -178,6 +179,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         case .stripe:
             Task { await manageStripeSubscription() }
         default:
+            manageInternalSubscription()
             return
         }
     }
@@ -236,7 +238,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             state.isShowingStripeView = value
         }
     }
-    
+
+    func displayInternalSubscriptionNotice(_ value: Bool) {
+        if value != state.isShowingInternalSubscriptionNotice {
+            state.isShowingInternalSubscriptionNotice = value
+        }
+    }
+
     func displayRemovalNotice(_ value: Bool) {
         if value != state.isShowingRemovalNotice {
             state.isShowingRemovalNotice = value
@@ -307,7 +315,15 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             self.displayStripeView(true)
         }
     }
-    
+
+    private func manageInternalSubscription() {
+        Logger.subscription.log("Managing Internal Subscription")
+
+        Task { @MainActor in
+            self.displayInternalSubscriptionNotice(true)
+        }
+    }
+
     @MainActor
     private func openURL(_ url: URL) {
         if UIApplication.shared.canOpenURL(url) {

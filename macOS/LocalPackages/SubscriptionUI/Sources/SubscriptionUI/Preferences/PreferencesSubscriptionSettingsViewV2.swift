@@ -247,8 +247,8 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     @ViewBuilder
     private var internalSubscriptionAlert: some View {
         SubscriptionDialog(imageName: "Privacy-Pro-128",
-                           title: "Change Plan or Billing",
-                           description: "Your subscription is provided by Dax. Thanks Dax!",
+                           title: UserText.changeSubscriptionDialogTitle,
+                           description: UserText.changeSubscriptionDialogInternalMessage,
                            buttons: {
             Button(UserText.okButtonTitle) { showingInternalSubscriptionAlert = false }
         })

@@ -21,7 +21,6 @@ import Combine
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
-import DesignResourcesKit
 
 // MARK: - Layout Constants
 

@@ -166,18 +166,17 @@ struct SettingsFeatureMasonryView: View {
             }
         }
     }
-    
+
     // Distribute features into columns trying to balance heights
     private func distributeIntoColumns() -> [[SettingsFeature]] {
         var columnArrays: [[SettingsFeature]] = Array(repeating: [], count: columns)
-        
+
         // Simple round-robin distribution that creates a staggered effect
         for (index, feature) in features.enumerated() {
             let columnIndex = index % columns
             columnArrays[columnIndex].append(feature)
         }
-        
+
         return columnArrays
     }
 }
-

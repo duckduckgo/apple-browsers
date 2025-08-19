@@ -119,7 +119,7 @@
             {
                 key: 'global.sample_rate',
                 type: 'number',
-                description: 'Sample rate for this pixel',
+                description: 'Sample rate for this pixel, between 0 and 1',
             },
             {
                 key: 'feature.name',

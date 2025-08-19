@@ -185,19 +185,19 @@
                 pattern: '^-?\\d+$',
             },
             {
-                key: 'feature.data.ext.create_account_latency_ms_bucketed',
+                key: 'feature.data.ext.account_creation_latency_ms_bucketed',
                 type: 'integer',
                 description: 'Bucketed latency for account creation step (ms)',
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
             },
             {
-                key: 'feature.data.ext.complete_purchase_latency_ms_bucketed',
+                key: 'feature.data.ext.account_payment_latency_ms_bucketed',
                 type: 'integer',
                 description: 'Bucketed latency for purchase completion step (ms)',
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
             },
             {
-                key: 'feature.data.ext.activate_account_latency_ms_bucketed',
+                key: 'feature.data.ext.account_activation_latency_ms_bucketed',
                 type: 'integer',
                 description: 'Bucketed latency for account activation step (ms)',
                 enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],

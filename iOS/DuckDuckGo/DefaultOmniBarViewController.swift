@@ -59,11 +59,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            if textFieldTapped {
-                // Means it's coming from the TextField interaction directly.
-                // Abort and launch the experimental controller.
-                presentExperimentalEditingState(for: textField, animated: true)
-            }
+            presentExperimentalEditingState(for: textField, animated: animateNextEditingTransition)
             return false
         }
 
@@ -151,11 +147,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     override func beginEditing(animated: Bool) {
         animateNextEditingTransition = animated
-
-        if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            // Present the experimental state but, also call the super's implementation to process other events.
-            presentExperimentalEditingState(for: omniBarView.textField, animated: animated)
-        }
 
         super.beginEditing(animated: animated)
         

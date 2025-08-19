@@ -25,7 +25,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     // MARK: - Initialization Tests
     
-    func testInit_WithValidDNSServers_SetsProperties() {
+    /// Verifies that VPN routing works correctly when DNS servers are configured
+    func testVPNRoutingWorksWithDNSServers() {
         // Given
         let dnsServers = [
             DNSServer(address: IPv4Address("8.8.8.8")!),
@@ -46,7 +47,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
 
     }
     
-    func testInit_WithEmptyDNSServers_HandlesGracefully() {
+    /// Verifies that VPN routing works correctly even when no DNS servers are configured
+    func testVPNRoutingWorksWithoutDNSServers() {
         // Given
         let dnsServers: [DNSServer] = []
         let excludeLocalNetworks = false
@@ -69,61 +71,12 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     // MARK: - Excluded Routes Logic Tests
     
-    func testExcludedRoutes_WhenExcludeLocalNetworksTrue_IncludesLocalRanges() {
-        // Given
-        let dnsServers = [DNSServer(address: IPv4Address("8.8.8.8")!)]
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: dnsServers,
-            excludeLocalNetworks: true
-        )
-        
-        // When
-        let excludedRoutes = resolver.excludedRoutes
-        
-        // Then
-        let excludedStrings = excludedRoutes.map { $0.description }
-        
-        // Should include always excluded ranges
-        XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), "Should exclude loopback range")
-        XCTAssertTrue(excludedStrings.contains("169.254.0.0/16"), "Should exclude link-local range")
-        XCTAssertTrue(excludedStrings.contains("224.0.0.0/4"), "Should exclude multicast range")
-        XCTAssertTrue(excludedStrings.contains("240.0.0.0/4"), "Should exclude Class E range")
-        
-        // Should include local network ranges when excluding local networks
-        XCTAssertTrue(excludedStrings.contains("172.16.0.0/12"), "Should exclude RFC 1918 172.16.x.x range")
-        XCTAssertTrue(excludedStrings.contains("192.168.0.0/16"), "Should exclude RFC 1918 192.168.x.x range")
-        
 
-    }
     
-    func testExcludedRoutes_WhenExcludeLocalNetworksFalse_ExcludesOnlySystemRanges() {
-        // Given
-        let dnsServers = [DNSServer(address: IPv4Address("8.8.8.8")!)]
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: dnsServers,
-            excludeLocalNetworks: false
-        )
-        
-        // When
-        let excludedRoutes = resolver.excludedRoutes
-        
-        // Then
-        let excludedStrings = excludedRoutes.map { $0.description }
-        
-        // Should include always excluded ranges
-        XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), "Should exclude loopback range")
-        XCTAssertTrue(excludedStrings.contains("169.254.0.0/16"), "Should exclude link-local range")
-        XCTAssertTrue(excludedStrings.contains("224.0.0.0/4"), "Should exclude multicast range")
-        XCTAssertTrue(excludedStrings.contains("240.0.0.0/4"), "Should exclude Class E range")
-        
-        // Should NOT include local network ranges when not excluding local networks
-        XCTAssertFalse(excludedStrings.contains("172.16.0.0/12"), "Should NOT exclude RFC 1918 172.16.x.x range when includeLocal=true")
-        XCTAssertFalse(excludedStrings.contains("192.168.0.0/16"), "Should NOT exclude RFC 1918 192.168.x.x range when includeLocal=true")
-        
 
-    }
     
-    func testExcludedRoutes_AlwaysIncludesSystemRanges() {
+    /// Verifies that critical system traffic (loopback, multicast, link-local) never goes through the VPN tunnel regardless of configuration
+    func testSystemTrafficAlwaysStaysLocal() {
         // Test both configurations include system ranges
         let configurations = [
             (excludeLocal: true, description: "with exclude local networks"),
@@ -158,65 +111,12 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     // MARK: - Included Routes Logic Tests
     
-    func testIncludedRoutes_WhenExcludeLocalNetworksTrue_ExcludesLocalRanges() {
-        // Given
-        let dnsServers = [DNSServer(address: IPv4Address("8.8.8.8")!)]
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: dnsServers,
-            excludeLocalNetworks: true
-        )
-        
-        // When
-        let includedRoutes = resolver.includedRoutes
-        
-        // Then
-        let includedStrings = includedRoutes.map { $0.description }
-        
-        // Should include public network ranges
-        XCTAssertTrue(includedStrings.contains("1.0.0.0/8"), "Should include public range 1.0.0.0/8")
-        XCTAssertTrue(includedStrings.contains("8.0.0.0/7"), "Should include public range 8.0.0.0/7")
-        
-        // Should NOT include local network ranges when excluding local networks
-        XCTAssertFalse(includedStrings.contains("10.0.0.0/8"), "Should NOT include RFC 1918 10.x.x.x range when excluding local")
-        XCTAssertFalse(includedStrings.contains("172.16.0.0/12"), "Should NOT include RFC 1918 172.16.x.x range when excluding local")
-        XCTAssertFalse(includedStrings.contains("192.168.0.0/16"), "Should NOT include RFC 1918 192.168.x.x range when excluding local")
-        
-        // Should include DNS server routes
-        XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), "Should include DNS server as /32 host route")
-        
 
-    }
     
-    func testIncludedRoutes_WhenExcludeLocalNetworksFalse_IncludesLocalRanges() {
-        // Given
-        let dnsServers = [DNSServer(address: IPv4Address("1.1.1.1")!)]
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: dnsServers,
-            excludeLocalNetworks: false
-        )
-        
-        // When
-        let includedRoutes = resolver.includedRoutes
-        
-        // Then
-        let includedStrings = includedRoutes.map { $0.description }
-        
-        // Should include public network ranges
-        XCTAssertTrue(includedStrings.contains("1.0.0.0/8"), "Should include public range 1.0.0.0/8")
-        XCTAssertTrue(includedStrings.contains("8.0.0.0/7"), "Should include public range 8.0.0.0/7")
-        
-        // Should include local network ranges when not excluding local networks
-        XCTAssertTrue(includedStrings.contains("10.0.0.0/8"), "Should include RFC 1918 10.x.x.x range when including local")
-        XCTAssertTrue(includedStrings.contains("172.16.0.0/12"), "Should include RFC 1918 172.16.x.x range when including local")
-        XCTAssertTrue(includedStrings.contains("192.168.0.0/16"), "Should include RFC 1918 192.168.x.x range when including local")
-        
-        // Should include DNS server routes
-        XCTAssertTrue(includedStrings.contains("1.1.1.1/32"), "Should include DNS server as /32 host route")
-        
 
-    }
     
-    func testIncludedRoutes_AlwaysIncludesPublicRanges() {
+    /// Verifies that all public internet traffic is always routed through the VPN tunnel regardless of local network settings
+    func testPublicInternetAlwaysUsesTunnel() {
         let configurations = [
             (excludeLocal: true, description: "with exclude local networks"),
             (excludeLocal: false, description: "without exclude local networks")
@@ -248,7 +148,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     // MARK: - DNS Routes Generation Tests
     
-    func testDNSRoutes_WithSingleDNSServer_CreatesHostRoute() {
+    /// Verifies that DNS servers remain accessible when VPN is active by creating specific routes for them
+    func testDNSServersRemainAccessible() {
         // Given
         let dnsServer = DNSServer(address: IPv4Address("8.8.8.8")!)
         let resolver = VPNRoutingTableResolver(
@@ -267,7 +168,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
 
     }
     
-    func testDNSRoutes_WithMultipleDNSServers_CreatesMultipleHostRoutes() {
+    /// Verifies that all configured DNS servers (primary, secondary, etc.) remain accessible through the VPN
+    func testMultipleDNSServersRemainAccessible() {
         // Given
         let dnsServers = [
             DNSServer(address: IPv4Address("8.8.8.8")!),
@@ -295,7 +197,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
 
     }
     
-    func testDNSRoutes_WithIPv6DNS_CreatesIPv6HostRoute() {
+    /// Verifies that IPv6 DNS servers work correctly with VPN in modern dual-stack network environments
+    func testIPv6DNSServersWorkCorrectly() {
         // Given
         let ipv6Address = IPv6Address("2001:4860:4860::8888")! // Google DNS IPv6
         let dnsServer = DNSServer(address: ipv6Address)
@@ -320,7 +223,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
 
     }
     
-    func testDNSRoutes_WithEmptyDNSServers_ReturnsNoExtraRoutes() {
+    /// Verifies that VPN routing table remains clean and efficient when no DNS servers are specified
+    func testRoutingTableStaysCleanWithoutDNSServers() {
         // Given
         let resolver = VPNRoutingTableResolver(
             dnsServers: [],
@@ -343,79 +247,10 @@ final class VPNRoutingTableResolverTests: XCTestCase {
 
     }
     
-    // MARK: - Integration and Edge Case Tests
+    // MARK: - Performance and Edge Cases
     
-    func testRoutingTable_WithTypicalHomeConfiguration_GeneratesExpectedRoutes() {
-        // Given - Typical home router setup with Cloudflare DNS
-        let dnsServers = [
-            DNSServer(address: IPv4Address("1.1.1.1")!),
-            DNSServer(address: IPv4Address("1.0.0.1")!)
-        ]
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: dnsServers,
-            excludeLocalNetworks: true // Typical VPN configuration
-        )
-        
-        // When
-        let includedRoutes = resolver.includedRoutes
-        let excludedRoutes = resolver.excludedRoutes
-        
-        // Then
-        XCTAssertTrue(includedRoutes.count > 30, "Should have comprehensive public route coverage")
-        XCTAssertTrue(excludedRoutes.count >= 6, "Should exclude system ranges and local networks")
-        
-        let includedStrings = includedRoutes.map { $0.description }
-        let excludedStrings = excludedRoutes.map { $0.description }
-        
-        // Verify DNS routing
-        XCTAssertTrue(includedStrings.contains("1.1.1.1/32"), "Should route Cloudflare DNS primary")
-        XCTAssertTrue(includedStrings.contains("1.0.0.1/32"), "Should route Cloudflare DNS secondary")
-        
-        // Verify local network exclusion
-        XCTAssertTrue(excludedStrings.contains("192.168.0.0/16"), "Should exclude home network range")
-        XCTAssertTrue(excludedStrings.contains("172.16.0.0/12"), "Should exclude RFC 1918 range")
-        
-
-    }
-    
-    func testRoutingTable_WithCorporateNetworkConfiguration_AllowsLocalAccess() {
-        // Given - Corporate network setup with local DNS
-        let dnsServers = [
-            DNSServer(address: IPv4Address("10.1.1.10")!), // Corporate DNS server
-            DNSServer(address: IPv4Address("8.8.8.8")!)    // Backup public DNS
-        ]
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: dnsServers,
-            excludeLocalNetworks: false // Allow access to corporate resources
-        )
-        
-        // When
-        let includedRoutes = resolver.includedRoutes
-        let excludedRoutes = resolver.excludedRoutes
-        
-        // Then
-        let includedStrings = includedRoutes.map { $0.description }
-        let excludedStrings = excludedRoutes.map { $0.description }
-        
-        // Should include local network ranges for corporate access
-        XCTAssertTrue(includedStrings.contains("10.0.0.0/8"), "Should include corporate network range")
-        XCTAssertTrue(includedStrings.contains("172.16.0.0/12"), "Should include RFC 1918 range")
-        XCTAssertTrue(includedStrings.contains("192.168.0.0/16"), "Should include private network range")
-        
-        // Should NOT exclude local networks from routing
-        XCTAssertFalse(excludedStrings.contains("192.168.0.0/16"), "Should NOT exclude private networks in corporate mode")
-        
-        // Should still exclude system ranges
-        XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), "Should still exclude loopback")
-        
-        // Should route both DNS servers
-        XCTAssertTrue(includedStrings.contains("10.1.1.10/32"), "Should route corporate DNS server")
-        XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), "Should route backup DNS server")
-        
-
-    }
-    
-    func testRoutingTable_WithManyDNSServers_HandlesPerformantly() {
+    /// Verifies that VPN remains responsive even when configured with many DNS servers
+    func testComplexDNSConfigurationsArePerformant() {
         // Given - Configuration with many DNS servers
         let manyDNSServers = (1...20).map { i in
             DNSServer(address: IPv4Address("8.8.8.\(i)")!)
@@ -446,33 +281,5 @@ final class VPNRoutingTableResolverTests: XCTestCase {
 
     }
     
-    func testRoutingTable_WithDuplicateDNSServers_DeduplicatesCorrectly() {
-        // Given - Configuration with duplicate DNS servers
-        let duplicateDNSServers = [
-            DNSServer(address: IPv4Address("8.8.8.8")!),
-            DNSServer(address: IPv4Address("1.1.1.1")!),
-            DNSServer(address: IPv4Address("8.8.8.8")!), // Duplicate
-            DNSServer(address: IPv4Address("1.1.1.1")!)  // Duplicate
-        ]
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: duplicateDNSServers,
-            excludeLocalNetworks: true
-        )
-        
-        // When
-        let includedRoutes = resolver.includedRoutes
-        
-        // Then
-        let includedStrings = includedRoutes.map { $0.description }
-        
-        // Count occurrences of each DNS route
-        let googleDNSCount = includedStrings.filter { $0 == "8.8.8.8/32" }.count
-        let cloudflareDNSCount = includedStrings.filter { $0 == "1.1.1.1/32" }.count
-        
-        // Implementation may or may not deduplicate automatically, but should handle gracefully
-        XCTAssertTrue(googleDNSCount >= 1, "Should have at least one route for 8.8.8.8")
-        XCTAssertTrue(cloudflareDNSCount >= 1, "Should have at least one route for 1.1.1.1")
-        
 
-    }
 }

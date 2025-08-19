@@ -25,7 +25,8 @@ final class VPNRoutingIntegrationTests: XCTestCase {
     
     // MARK: - Real-World Configuration Tests
     
-    func testHomeNetworkConfiguration_WithCloudflareDNS_RoutesCorrectly() {
+    /// Verifies that a typical home network VPN setup with public DNS provides expected security by blocking local access
+    func testStandardHomeNetworkSecurity() {
         // Given - Typical home network setup with Cloudflare DNS and local network exclusion
         let dnsServers = [
             DNSServer(address: IPv4Address("1.1.1.1")!), // Cloudflare primary
@@ -52,7 +53,8 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
     }
     
-    func testSplitTunnelConfiguration_WithInternalDNS_AllowsLocalAccess() {
+    /// Verifies that split-tunnel mode allows users to access local devices while still protecting internet traffic
+    func testSplitTunnelBalancesSecurityAndLocalAccess() {
         // Given - Split-tunnel configuration with internal DNS and local network access
         let dnsServers = [
             DNSServer(address: IPv4Address("10.1.1.10")!), // Internal/local DNS
@@ -79,7 +81,8 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
     }
     
-    func testPublicWiFiConfiguration_WithGoogleDNS_BlocksLocalAccess() {
+    /// Verifies that maximum security mode on untrusted networks blocks all local access for complete protection
+    func testMaximumSecurityOnUntrustedNetworks() {
         // Given - Public WiFi with Google DNS and strict local network blocking
         let dnsServers = [
             DNSServer(address: IPv4Address("8.8.8.8")!),
@@ -106,7 +109,8 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
     }
     
-    func testMixedDNSConfiguration_IPv4AndIPv6_HandlesCorrectly() {
+    /// Verifies that dual-stack DNS configurations with both IPv4 and IPv6 servers work correctly
+    func testDualStackDNSConfigurationsWork() {
         // Given - Mixed IPv4 and IPv6 DNS configuration
         let ipv4DNS = DNSServer(address: IPv4Address("1.1.1.1")!)
         let ipv6DNS = DNSServer(address: IPv6Address("2606:4700:4700::1111")!) // Cloudflare IPv6
@@ -136,12 +140,13 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), "Should exclude loopback")
         // Note: IPv6 exclusions might be handled differently in the current implementation
         
-        //.info("Mixed IPv4/IPv6 DNS configuration validated")
+
     }
     
     // MARK: - Edge Case and Boundary Tests
     
-    func testExtremeDNSConfiguration_ManyServers_HandlesPerformantly() {
+    /// Verifies that VPN routing remains fast and responsive even with unusually complex DNS configurations
+    func testComplexDNSConfigurationsRemainPerformant() {
         // Given - Configuration with many DNS servers (stress test)
         let manyDNSServers: [DNSServer] = (1...50).compactMap { i in
             guard let ip = IPv4Address("8.8.8.\(i % 254 + 1)") else { return nil }
@@ -168,10 +173,11 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         let dnsRouteCount = includedStrings.filter { $0.hasSuffix("/32") && $0.hasPrefix("8.8.8.") }.count
         XCTAssertGreaterThan(dnsRouteCount, 40, "Should create DNS routes for most servers")
         
-        //.info("Extreme DNS configuration performance test passed: \(manyDNSServers.count) servers, \(elapsed)s elapsed")
+
     }
     
-    func testEmptyDNSConfiguration_NoDNSServers_GeneratesValidRoutes() {
+    /// Verifies that VPN maintains basic connectivity even when DNS servers are not configured
+    func testVPNWorksWithoutDNSConfiguration() {
         // Given - Configuration without any DNS servers
         let resolver = VPNRoutingTableResolver(
             dnsServers: [],
@@ -197,10 +203,11 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), "Should still exclude loopback")
         XCTAssertTrue(excludedStrings.contains("192.168.0.0/16"), "Should exclude local networks")
         
-        //.info("Empty DNS configuration handled correctly")
+
     }
     
-    func testDuplicateDNSServers_SameIP_HandlesGracefully() {
+    /// Verifies that VPN handles misconfigured DNS settings with duplicate servers without breaking connectivity
+    func testMisconfiguredDNSDoesNotBreakConnectivity() {
         // Given - Configuration with duplicate DNS servers
         let duplicateDNS = [
             DNSServer(address: IPv4Address("8.8.8.8")!),
@@ -224,12 +231,13 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), "Should route to 8.8.8.8")
         XCTAssertTrue(includedStrings.contains("1.1.1.1/32"), "Should route to 1.1.1.1")
         
-        //.info("Duplicate DNS servers handled gracefully")
+
     }
     
     // MARK: - Routing Table Completeness Tests
     
-    func testRoutingTableCompleteness_CoversAllInternetSpace() {
+    /// Verifies that no internet traffic can bypass the VPN tunnel - all public traffic is properly routed
+    func testNoInternetTrafficCanBypassVPN() {
         // Given - Standard VPN configuration
         let resolver = VPNRoutingTableResolver(
             dnsServers: [DNSServer(address: IPv4Address("8.8.8.8")!)],
@@ -246,10 +254,11 @@ final class VPNRoutingIntegrationTests: XCTestCase {
             excludedRoutes: excludedRoutes
         )
         
-        //.info("Routing table completeness verified")
+
     }
     
-    func testRoutingTable_NoConflictsBetweenIncludedAndExcluded() {
+    /// Verifies logical consistency in routing tables to prevent conflicts that could break VPN connectivity
+    func testRoutingTableLogicIsConsistent() {
         let configurations = [
             (excludeLocal: true, description: "excluding local networks"),
             (excludeLocal: false, description: "including local networks")
@@ -277,7 +286,11 @@ final class VPNRoutingIntegrationTests: XCTestCase {
     
     // MARK: - Configuration Change Tests
     
-    func testConfigurationToggle_ExcludeLocalNetworks_UpdatesCorrectly() {
+    /// Verifies that users can switch between security mode and local access mode by toggling network settings
+    ///
+    /// - Discussion: This test validates the core VPN flexibility - users can choose between maximum security
+    ///   (blocking local access) and convenience (allowing local device access) without reconnecting.
+    func testUserCanToggleBetweenSecurityAndConvenienceModes() {
         let dnsServers = [DNSServer(address: IPv4Address("1.1.1.1")!)]
         
         // Given - Initial configuration excluding local networks
@@ -319,11 +332,17 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertTrue(routesIncluding.included.contains("1.1.1.1/32"), 
                      "DNS route should exist when including local")
         
-        //.info("Configuration toggle for local networks verified")
+
     }
     
     // MARK: - Helper Methods for Assertions
     
+    /// Validates VPN routing configuration for both security and split-tunnel modes
+    ///
+    /// - Discussion: This function handles the nuanced VPN routing behavior where 10.0.0.0/8 
+    ///   is treated specially. When local networks are excluded for security, most private ranges
+    ///   (172.16.x.x, 192.168.x.x) are blocked, but 10.0.0.0/8 remains unblocked because
+    ///   VPN tunnels commonly use these addresses and blocking them would break the VPN itself.
     private func assertVPNRoutingConfiguration(
         includedRoutes: [IPAddressRange],
         excludedRoutes: [IPAddressRange],

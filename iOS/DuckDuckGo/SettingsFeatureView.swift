@@ -52,13 +52,12 @@ struct SettingsFeatureView: View {
             // Text content below the icon
             VStack(alignment: .leading, spacing: 6) {
                 Text(feature.title)
-                    .font(.footnote)
-                    .fontWeight(.semibold)
+                    .daxFootnoteSemibold()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Text(feature.description)
-                    .font(.caption)
+                    .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .fixedSize(horizontal: false, vertical: true)
                     .lineLimit(nil)

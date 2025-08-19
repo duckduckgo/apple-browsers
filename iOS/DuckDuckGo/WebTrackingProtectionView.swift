@@ -31,47 +31,47 @@ struct WebTrackingProtectionView: View {
         SettingsFeature(
             title: UserText.trackingProtectionThirdPartyTrackersTitle,
             description: UserText.trackingProtectionThirdPartyTrackersDescription,
-            iconImage: UIImage(systemName: "shield.fill")
+            iconName: "Shield-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionTargetedAdsTitle,
             description: UserText.trackingProtectionTargetedAdsDescription,
-            iconImage: UIImage(systemName: "eye.slash.fill")
+            iconName: "Ads-Tracking-Blocked-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionLinkTrackingTitle,
             description: UserText.trackingProtectionLinkTrackingDescription,
-            iconImage: UIImage(systemName: "link.badge.plus")
+            iconName: "Link-Blocked-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionFingerprintingTitle,
             description: UserText.trackingProtectionFingerprintingDescription,
-            iconImage: UIImage(systemName: "touchid")
+            iconName: "Fingerprint-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionReferrerTitle,
             description: UserText.trackingProtectionReferrerDescription,
-            iconImage: UIImage(systemName: "person.crop.circle.badge.xmark")
+            iconName: "Profile-Lock-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionFirstPartyCookiesTitle,
             description: UserText.trackingProtectionFirstPartyCookiesDescription,
-            iconImage: UIImage(systemName: "xmark.circle.fill")
+            iconName: "Cookie-Blocked-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionCNAMECloakingTitle,
             description: UserText.trackingProtectionCNAMECloakingDescription,
-            iconImage: UIImage(systemName: "eye.trianglebadge.exclamationmark")
+            iconName: "Device-Laptop-Lock-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionGoogleAMPTitle,
             description: UserText.trackingProtectionGoogleAMPDescription,
-            iconImage: UIImage(systemName: "bolt.slash.fill")
+            iconName: "Eye-Blocked-16"
         ),
         SettingsFeature(
             title: UserText.trackingProtectionGoogleSignInTitle,
             description: UserText.trackingProtectionGoogleSignInDescription,
-            iconImage: UIImage(systemName: "rectangle.badge.xmark")
+            iconName: "Popup-Blocked-16"
         )
     ]
 
@@ -131,11 +131,13 @@ struct WebTrackingProtectionFeatureGrid: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("ALWAYS ON")
+                Text(UserText.settingsAlwaysOn).textCase(.uppercase)
+                    .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(UserText.webTrackingProtectionUpdatedDescription)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .daxFootnoteRegular()
                     Button(UserText.learnMore) {
                         viewModel.openWebTrackingProtectionLearnMore()
                     }.buttonStyle(LinkButtonStyle())
@@ -161,7 +163,7 @@ struct WebTrackingProtectionFeatureGrid: View {
 struct LinkButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.footnote)
+            .daxFootnoteRegular()
             .foregroundColor(Color(designSystemColor: .accent))
             .opacity(configuration.isPressed ? 0.5 : 1.0)
     }

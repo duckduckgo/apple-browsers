@@ -318,5 +318,5 @@ extension XCUIApplication {
             control.click()
         }
     }
-    
+
 }

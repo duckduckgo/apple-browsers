@@ -558,7 +558,6 @@ class DownloadsUITests: UITestCase {
         // Click to open in new tab (respects default behavior of target=_blank)
         link.click()
 
-
         // Downloads UI should be accessible
         verifyDownloadPopupIsShown()
         // At the end, only one tab should remain

@@ -1782,7 +1782,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if isError {
             showBars(animated: true)
-            privacyInfo = nil
+            privacyInfo = PrivacyInfo(url: .empty, parentEntity: nil, protectionStatus: .init(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false), isSpecialErrorPageVisible: true)
             onPrivacyInfoChanged()
         }
         

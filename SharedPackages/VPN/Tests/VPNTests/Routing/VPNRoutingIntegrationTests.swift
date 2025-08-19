@@ -41,21 +41,21 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         let excludedRoutes = resolver.excludedRoutes
         
         // Then - Verify complete routing configuration
-        self.assertTypicalVPNRouting(
+        self.assertVPNRoutingConfiguration(
             includedRoutes: includedRoutes,
             excludedRoutes: excludedRoutes,
             expectedDNSServers: ["1.1.1.1/32", "1.0.0.1/32"],
-            excludesLocalNetworks: true,
+            includeLocalNetworks: false,
             testName: "HomeNetwork+Cloudflare"
         )
         
-        //.info("Home network with Cloudflare DNS configuration validated")
+
     }
     
-    func testCorporateNetworkConfiguration_WithInternalDNS_AllowsLocalAccess() {
-        // Given - Corporate network with internal DNS and local network access
+    func testSplitTunnelConfiguration_WithInternalDNS_AllowsLocalAccess() {
+        // Given - Split-tunnel configuration with internal DNS and local network access
         let dnsServers = [
-            DNSServer(address: IPv4Address("10.1.1.10")!), // Corporate DNS
+            DNSServer(address: IPv4Address("10.1.1.10")!), // Internal/local DNS
             DNSServer(address: IPv4Address("8.8.8.8")!)    // Fallback public DNS
         ]
         let resolver = VPNRoutingTableResolver(
@@ -67,15 +67,16 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         let includedRoutes = resolver.includedRoutes
         let excludedRoutes = resolver.excludedRoutes
         
-        // Then - Verify corporate routing configuration
-        self.assertCorporateVPNRouting(
+        // Then - Verify split-tunnel routing configuration
+        self.assertVPNRoutingConfiguration(
             includedRoutes: includedRoutes,
             excludedRoutes: excludedRoutes,
             expectedDNSServers: ["10.1.1.10/32", "8.8.8.8/32"],
-            testName: "CorporateNetwork+InternalDNS"
+            includeLocalNetworks: true,
+            testName: "SplitTunnel+InternalDNS"
         )
         
-        //.info("Corporate network with internal DNS configuration validated")
+
     }
     
     func testPublicWiFiConfiguration_WithGoogleDNS_BlocksLocalAccess() {
@@ -94,15 +95,15 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         let excludedRoutes = resolver.excludedRoutes
         
         // Then - Verify public WiFi security configuration
-        self.assertTypicalVPNRouting(
+        self.assertVPNRoutingConfiguration(
             includedRoutes: includedRoutes,
             excludedRoutes: excludedRoutes,
             expectedDNSServers: ["8.8.8.8/32", "8.8.4.4/32"],
-            excludesLocalNetworks: true,
+            includeLocalNetworks: false,
             testName: "PublicWiFi+GoogleDNS"
         )
         
-        //.info("Public WiFi with Google DNS security configuration validated")
+
     }
     
     func testMixedDNSConfiguration_IPv4AndIPv6_HandlesCorrectly() {
@@ -270,7 +271,7 @@ final class VPNRoutingIntegrationTests: XCTestCase {
             XCTAssertTrue(conflicts.isEmpty, 
                          "No routes should be both included and excluded \(config.description). Conflicts: \(conflicts)")
             
-            //.debug("No routing conflicts found \(config.description)")
+
         }
     }
     
@@ -323,11 +324,11 @@ final class VPNRoutingIntegrationTests: XCTestCase {
     
     // MARK: - Helper Methods for Assertions
     
-    private func assertTypicalVPNRouting(
+    private func assertVPNRoutingConfiguration(
         includedRoutes: [IPAddressRange],
         excludedRoutes: [IPAddressRange],
         expectedDNSServers: [String],
-        excludesLocalNetworks: Bool,
+        includeLocalNetworks: Bool,
         testName: String
     ) {
         let includedStrings = includedRoutes.map { $0.description }
@@ -347,64 +348,43 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertTrue(includedStrings.contains("::/0"), 
                      "\(testName): Should include IPv6 default route")
         
-        // Verify system exclusions
+        // Verify system exclusions (always apply regardless of local network setting)
         XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), 
                      "\(testName): Should exclude loopback")
         XCTAssertTrue(excludedStrings.contains("224.0.0.0/4"), 
                      "\(testName): Should exclude multicast")
+        XCTAssertTrue(excludedStrings.contains("169.254.0.0/16"), 
+                     "\(testName): Should exclude link-local")
         
-        // Verify local network handling
-        if excludesLocalNetworks {
-            XCTAssertTrue(excludedStrings.contains("192.168.0.0/16"), 
-                         "\(testName): Should exclude local networks")
-            XCTAssertFalse(includedStrings.contains("192.168.0.0/16"), 
-                          "\(testName): Should NOT include excluded local networks")
+        // Verify local network handling based on VPN implementation specifics
+        if includeLocalNetworks {
+            // When including local networks: all RFC 1918 ranges should be included
+            let allLocalRanges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+            for localNetwork in allLocalRanges {
+                XCTAssertTrue(includedStrings.contains(localNetwork), 
+                             "\(testName): Should include local network \(localNetwork) when includeLocalNetworks=true")
+                XCTAssertFalse(excludedStrings.contains(localNetwork), 
+                              "\(testName): Should NOT exclude local network \(localNetwork) when includeLocalNetworks=true")
+            }
         } else {
-            XCTAssertFalse(excludedStrings.contains("192.168.0.0/16"), 
-                          "\(testName): Should NOT exclude local networks")
-            XCTAssertTrue(includedStrings.contains("192.168.0.0/16"), 
-                         "\(testName): Should include local networks")
+            // When excluding local networks: only localNetworkRangeWithoutDNS is excluded
+            // 10.0.0.0/8 is intentionally NOT excluded (VPN tunnels commonly use 10.x.x.x)
+            let excludedLocalRanges = ["172.16.0.0/12", "192.168.0.0/16"]
+            for localNetwork in excludedLocalRanges {
+                XCTAssertTrue(excludedStrings.contains(localNetwork), 
+                             "\(testName): Should exclude local network \(localNetwork) when includeLocalNetworks=false")
+                XCTAssertFalse(includedStrings.contains(localNetwork), 
+                              "\(testName): Should NOT include local network \(localNetwork) when includeLocalNetworks=false")
+            }
+            
+            // 10.0.0.0/8 should NOT be excluded (special case for VPN compatibility)
+            XCTAssertFalse(excludedStrings.contains("10.0.0.0/8"), 
+                          "\(testName): Should NOT exclude 10.0.0.0/8 (VPN tunnel compatibility)")
         }
         
         // Verify reasonable route counts
         XCTAssertGreaterThan(includedRoutes.count, 30, "\(testName): Should have comprehensive included routes")
         XCTAssertGreaterThan(excludedRoutes.count, 3, "\(testName): Should have proper excluded routes")
-    }
-    
-    private func assertCorporateVPNRouting(
-        includedRoutes: [IPAddressRange],
-        excludedRoutes: [IPAddressRange],
-        expectedDNSServers: [String],
-        testName: String
-    ) {
-        let includedStrings = includedRoutes.map { $0.description }
-        let excludedStrings = excludedRoutes.map { $0.description }
-        
-        // Verify DNS server routes (including internal DNS)
-        for dnsRoute in expectedDNSServers {
-            XCTAssertTrue(includedStrings.contains(dnsRoute), 
-                         "\(testName): Should include DNS route \(dnsRoute)")
-        }
-        
-        // Verify local network inclusion for corporate access
-        XCTAssertTrue(includedStrings.contains("10.0.0.0/8"), 
-                     "\(testName): Should include corporate network 10.0.0.0/8")
-        XCTAssertTrue(includedStrings.contains("172.16.0.0/12"), 
-                     "\(testName): Should include corporate network 172.16.0.0/12")
-        XCTAssertTrue(includedStrings.contains("192.168.0.0/16"), 
-                     "\(testName): Should include corporate network 192.168.0.0/16")
-        
-        // Verify system exclusions still apply
-        XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"), 
-                     "\(testName): Should still exclude loopback")
-        XCTAssertTrue(excludedStrings.contains("169.254.0.0/16"), 
-                     "\(testName): Should still exclude link-local")
-        
-        // Verify local networks are NOT excluded in corporate mode
-        XCTAssertFalse(excludedStrings.contains("10.0.0.0/8"), 
-                      "\(testName): Should NOT exclude corporate networks")
-        XCTAssertFalse(excludedStrings.contains("192.168.0.0/16"), 
-                      "\(testName): Should NOT exclude corporate networks")
     }
     
     private func assertRoutingTableCompleteness(

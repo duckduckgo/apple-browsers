@@ -43,7 +43,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         let routes = resolver.includedRoutes
         XCTAssertFalse(routes.isEmpty, "Resolver should generate routes with valid DNS servers")
         
-        //.info("Successfully initialized VPNRoutingTableResolver with \(dnsServers.count) DNS servers")
+
     }
     
     func testInit_WithEmptyDNSServers_HandlesGracefully() {
@@ -64,7 +64,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertFalse(includedRoutes.isEmpty, "Should still have public network routes even without DNS servers")
         XCTAssertFalse(excludedRoutes.isEmpty, "Should always have excluded routes for system ranges")
         
-        //.info("Successfully handled empty DNS servers list")
+
     }
     
     // MARK: - Excluded Routes Logic Tests
@@ -93,7 +93,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertTrue(excludedStrings.contains("172.16.0.0/12"), "Should exclude RFC 1918 172.16.x.x range")
         XCTAssertTrue(excludedStrings.contains("192.168.0.0/16"), "Should exclude RFC 1918 192.168.x.x range")
         
-        //.debug("Excluded routes with local networks: \(excludedStrings)")
+
     }
     
     func testExcludedRoutes_WhenExcludeLocalNetworksFalse_ExcludesOnlySystemRanges() {
@@ -120,7 +120,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertFalse(excludedStrings.contains("172.16.0.0/12"), "Should NOT exclude RFC 1918 172.16.x.x range when includeLocal=true")
         XCTAssertFalse(excludedStrings.contains("192.168.0.0/16"), "Should NOT exclude RFC 1918 192.168.x.x range when includeLocal=true")
         
-        //.debug("Excluded routes without local networks: \(excludedStrings)")
+
     }
     
     func testExcludedRoutes_AlwaysIncludesSystemRanges() {
@@ -152,7 +152,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
             XCTAssertTrue(excludedStrings.contains("240.0.0.0/4"), 
                          "Should always exclude Class E \(config.description)")
             
-            //.debug("System ranges verified \(config.description)")
+
         }
     }
     
@@ -184,7 +184,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         // Should include DNS server routes
         XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), "Should include DNS server as /32 host route")
         
-        //.debug("Included routes excluding local networks: count=\(includedRoutes.count)")
+
     }
     
     func testIncludedRoutes_WhenExcludeLocalNetworksFalse_IncludesLocalRanges() {
@@ -213,7 +213,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         // Should include DNS server routes
         XCTAssertTrue(includedStrings.contains("1.1.1.1/32"), "Should include DNS server as /32 host route")
         
-        //.debug("Included routes including local networks: count=\(includedRoutes.count)")
+
     }
     
     func testIncludedRoutes_AlwaysIncludesPublicRanges() {
@@ -242,7 +242,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
             XCTAssertTrue(includedStrings.contains("::/0"), 
                          "Should always include IPv6 default route \(config.description)")
             
-            //.debug("Public ranges verified \(config.description)")
+
         }
     }
     
@@ -264,7 +264,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), 
                      "Should create /32 host route for DNS server")
         
-        //.info("DNS server route created: 8.8.8.8/32")
+
     }
     
     func testDNSRoutes_WithMultipleDNSServers_CreatesMultipleHostRoutes() {
@@ -292,7 +292,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertTrue(includedStrings.contains("1.1.1.1/32"), "Should have Cloudflare DNS primary")
         XCTAssertTrue(includedStrings.contains("1.0.0.1/32"), "Should have Cloudflare DNS secondary")
         
-        //.info("Multiple DNS server routes created: \(dnsServers.count) servers")
+
     }
     
     func testDNSRoutes_WithIPv6DNS_CreatesIPv6HostRoute() {
@@ -317,7 +317,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         
         XCTAssertTrue(hasIPv6DNSRoute, "Should create host route for IPv6 DNS server")
         
-        //.info("IPv6 DNS server route created for 2001:4860:4860::8888")
+
     }
     
     func testDNSRoutes_WithEmptyDNSServers_ReturnsNoExtraRoutes() {
@@ -340,7 +340,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         
         XCTAssertFalse(hasHostRoutes, "Should not have any /32 host routes when no DNS servers provided")
         
-        //.info("No DNS routes created with empty DNS servers list")
+
     }
     
     // MARK: - Integration and Edge Case Tests
@@ -375,7 +375,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertTrue(excludedStrings.contains("192.168.0.0/16"), "Should exclude home network range")
         XCTAssertTrue(excludedStrings.contains("172.16.0.0/12"), "Should exclude RFC 1918 range")
         
-        //.info("Typical home configuration validated: \(includedRoutes.count) included, \(excludedRoutes.count) excluded")
+
     }
     
     func testRoutingTable_WithCorporateNetworkConfiguration_AllowsLocalAccess() {
@@ -412,7 +412,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertTrue(includedStrings.contains("10.1.1.10/32"), "Should route corporate DNS server")
         XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), "Should route backup DNS server")
         
-        //.info("Corporate network configuration validated: local access enabled")
+
     }
     
     func testRoutingTable_WithManyDNSServers_HandlesPerformantly() {
@@ -443,7 +443,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
                          "Should have host route for DNS server 8.8.8.\(i)")
         }
         
-        //.info("Performance test passed: \(manyDNSServers.count) DNS servers processed in \(elapsed)s")
+
     }
     
     func testRoutingTable_WithDuplicateDNSServers_DeduplicatesCorrectly() {
@@ -473,6 +473,6 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         XCTAssertTrue(googleDNSCount >= 1, "Should have at least one route for 8.8.8.8")
         XCTAssertTrue(cloudflareDNSCount >= 1, "Should have at least one route for 1.1.1.1")
         
-        //.info("Duplicate DNS servers handled: Google=\(googleDNSCount), Cloudflare=\(cloudflareDNSCount)")
+
     }
 }

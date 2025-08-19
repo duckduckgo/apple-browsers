@@ -275,7 +275,7 @@ final class VPNRoutingRangeTests: XCTestCase {
                                "Range \(rangeString) in \(rangeName)[\(index)] should be valid")
             }
             
-            //.debug("All ranges in \(rangeName) parsed successfully: \(ranges.count) ranges")
+
         }
     }
     
@@ -295,7 +295,7 @@ final class VPNRoutingRangeTests: XCTestCase {
                                "IPv6 range \(rangeString) in \(rangeName)[\(index)] should be valid")
             }
             
-            //.debug("All IPv6 ranges in \(rangeName) parsed successfully: \(ranges.count) ranges")
+
         }
     }
     

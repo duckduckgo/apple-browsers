@@ -19,6 +19,21 @@
 import SwiftUI
 import DesignResourcesKit
 
+// MARK: - Layout Constants
+
+private enum LayoutConstants {
+    static let contentSpacing: CGFloat = 12
+    static let textSpacing: CGFloat = 6
+    static let cardPadding: CGFloat = 12
+    static let cornerRadius: CGFloat = 8
+    static let borderWidth: CGFloat = 1
+    
+    static let iconContainerSize: CGFloat = 32
+    static let iconSize: CGFloat = 16
+    
+    static let defaultColumns: Int = 2
+}
+
 /// Model representing a settings feature for display in feature boxes
 struct PreferencesFeature: Identifiable {
     let id = UUID()
@@ -41,7 +56,7 @@ struct PreferencesFeatureView: View {
     let minHeight: CGFloat?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: LayoutConstants.contentSpacing) {
             // Icon at the top
             HStack {
                 iconPlaceholder
@@ -49,7 +64,7 @@ struct PreferencesFeatureView: View {
             }
 
             // Text content below the icon
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: LayoutConstants.textSpacing) {
                 Text(feature.title)
                     .daxTitle3()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -64,13 +79,13 @@ struct PreferencesFeatureView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(12)
+        .padding(LayoutConstants.cardPadding)
         .frame(minHeight: minHeight, maxHeight: .infinity)
         .background(Color(designSystemColor: .surface))
-        .cornerRadius(8)
+        .cornerRadius(LayoutConstants.cornerRadius)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+            RoundedRectangle(cornerRadius: LayoutConstants.cornerRadius)
+                .stroke(Color(designSystemColor: .lines), lineWidth: LayoutConstants.borderWidth)
         )
     }
 
@@ -79,10 +94,10 @@ struct PreferencesFeatureView: View {
         // Circle with same background as box and custom or fallback icon
         Circle()
             .fill(Color(designSystemColor: .surface))
-            .frame(width: 32, height: 32)
+            .frame(width: LayoutConstants.iconContainerSize, height: LayoutConstants.iconContainerSize)
             .overlay(
                 Circle()
-                    .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .lines), lineWidth: LayoutConstants.borderWidth)
             )
             .overlay(
                 Group {
@@ -91,14 +106,14 @@ struct PreferencesFeatureView: View {
                             .resizable()
                             .renderingMode(.template)
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 16, height: 16)
+                            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                     } else if let iconName = feature.iconName {
                         Image(iconName, bundle: .main)
                             .resizable()
                             .renderingMode(.template)
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 16, height: 16)
+                            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
                             .foregroundColor(Color(designSystemColor: .textPrimary))
                     }
                 }
@@ -112,24 +127,24 @@ struct PreferencesFeatureGridView: View {
     let columns: Int
     let cellMinHeight: CGFloat?
 
-    init(features: [PreferencesFeature], columns: Int = 2, cellMinHeight: CGFloat? = nil) {
+    init(features: [PreferencesFeature], columns: Int = LayoutConstants.defaultColumns, cellMinHeight: CGFloat? = nil) {
         self.features = features
         self.columns = columns
         self.cellMinHeight = cellMinHeight
     }
 
     private var gridColumns: [GridItem] {
-        Array(repeating: GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: 12, alignment: .top), count: columns)
+        Array(repeating: GridItem(.flexible(minimum: 0, maximum: .infinity), spacing: LayoutConstants.contentSpacing, alignment: .top), count: columns)
     }
 
     var body: some View {
-        LazyVGrid(columns: gridColumns, spacing: 12) {
+        LazyVGrid(columns: gridColumns, spacing: LayoutConstants.contentSpacing) {
             ForEach(features) { feature in
                 PreferencesFeatureView(feature: feature, minHeight: cellMinHeight)
                     .frame(maxWidth: .infinity)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 12)
+        .padding(.top, LayoutConstants.contentSpacing)
     }
 }

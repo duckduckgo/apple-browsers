@@ -22,6 +22,18 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 
+// MARK: - Layout Constants
+
+private enum LayoutConstants {
+    static let sectionSpacing: CGFloat = 12
+    static let headerSpacing: CGFloat = 8
+    static let descriptionSpacing: CGFloat = 4
+    static let horizontalPadding: CGFloat = 20
+    static let mainStackSpacing: CGFloat = 16
+    static let buttonOpacityPressed: Double = 0.5
+    static let buttonOpacityNormal: Double = 1.0
+}
+
 struct WebTrackingProtectionView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -84,7 +96,7 @@ struct WebTrackingProtectionView: View {
 
     var body: some View {
         Group {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: LayoutConstants.mainStackSpacing) {
                 List {
                     SettingsDescriptionView(content: description)
                     WebTrackingProtectionViewSettings()
@@ -129,12 +141,12 @@ struct WebTrackingProtectionFeatureGrid: View {
     let features: [SettingsFeature]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: LayoutConstants.sectionSpacing) {
+            VStack(alignment: .leading, spacing: LayoutConstants.headerSpacing) {
                 Text(UserText.settingsAlwaysOn).textCase(.uppercase)
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: LayoutConstants.descriptionSpacing) {
                     Text(UserText.webTrackingProtectionUpdatedDescription)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .daxFootnoteRegular()
@@ -143,7 +155,7 @@ struct WebTrackingProtectionFeatureGrid: View {
                     }.buttonStyle(LinkButtonStyle())
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, LayoutConstants.horizontalPadding)
             .daxBodyRegular()
 
             // Feature grid with masonry layout
@@ -163,6 +175,6 @@ struct LinkButtonStyle: ButtonStyle {
         configuration.label
             .daxFootnoteRegular()
             .foregroundColor(Color(designSystemColor: .accent))
-            .opacity(configuration.isPressed ? 0.5 : 1.0)
+            .opacity(configuration.isPressed ? LayoutConstants.buttonOpacityPressed : LayoutConstants.buttonOpacityNormal)
     }
 }

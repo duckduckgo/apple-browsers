@@ -173,7 +173,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         Logger.subscription.debug("User action: \(#function)")
 
         guard let platform = state.subscriptionInfo?.platform else {
-            manageInternalSubscription()
+            assertionFailure("Invalid subscription platform")
             return
         }
 
@@ -185,8 +185,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         case .stripe:
             Task { await manageStripeSubscription() }
         case .unknown:
-            assertionFailure("Invalid subscription platform")
-            return
+            manageInternalSubscription()
         }
     }
     

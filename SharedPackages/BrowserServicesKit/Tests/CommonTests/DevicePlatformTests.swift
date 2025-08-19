@@ -19,11 +19,31 @@
 import XCTest
 @testable import Common
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 final class DevicePlatformTests: XCTestCase {
 
-    func testWhenPlatformIsMac_ThenIsMacIsTrue() {
+    func testWhenDeviceIsMac_ThenIsMacIsTrue() {
         #if os(macOS)
         XCTAssertTrue(DevicePlatform.isMac)
+        #endif
+    }
+
+    func testWhenDeviceIsPhone_ThenIsIphoneIsTrue() {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            XCTAssertTrue(DevicePlatform.isIphone)
+        }
+        #endif
+    }
+
+    func testWhenDeviceIsTablet_ThenIsIpadIsTrue() {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            XCTAssertTrue(DevicePlatform.isIpad)
+        }
         #endif
     }
 

@@ -78,12 +78,12 @@ extension Preferences {
             PreferencesFeature(
                 title: UserText.trackingProtectionCNAMECloakingTitle,
                 description: UserText.trackingProtectionCNAMECloakingDescription,
-                iconName: "Eye-Blocked-16"
+                iconName: "Device-Laptop-Lock-16"
             ),
             PreferencesFeature(
                 title: UserText.trackingProtectionGoogleAMPTitle,
                 description: UserText.trackingProtectionGoogleAMPDescription,
-                iconName: "Device-Laptop-Lock-16"
+                iconName: "Eye-Blocked-16"
             ),
             PreferencesFeature(
                 title: UserText.trackingProtectionGoogleSignInTitle,

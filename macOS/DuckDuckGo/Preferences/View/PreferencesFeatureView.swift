@@ -81,12 +81,12 @@ struct PreferencesFeatureView: View {
             // Text content below the icon
             VStack(alignment: .leading, spacing: Layout.Spacing.textVertical) {
                 Text(feature.title)
-                    .daxTitle3()
+                    .font(.title3)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text(feature.description)
-                    .daxBody()
+                    .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .fixedSize(horizontal: false, vertical: true)
                     .lineLimit(nil)

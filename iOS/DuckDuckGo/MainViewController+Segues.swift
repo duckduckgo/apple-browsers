@@ -256,16 +256,20 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsAIChat() {
+    func segueToSettingsAIChat(completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings(deepLinkTarget: .aiChat)
+        launchSettings(completion: { _ in
+            completion?()
+        }, deepLinkTarget: .aiChat)
     }
 
-    func segueToSettingsPrivateSearch() {
+    func segueToSettingsPrivateSearch(completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings(deepLinkTarget: .privateSearch)
+        launchSettings(completion: { _ in
+            completion?()
+        }, deepLinkTarget: .privateSearch)
     }
 
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {

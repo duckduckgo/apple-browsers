@@ -38,6 +38,19 @@ struct SettingsRootView: View {
         SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 
+    init(viewModel: SettingsViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+
+        if let initialTarget = viewModel.deepLinkTarget {
+            _deepLinkTarget = State(initialValue: initialTarget)
+            _shouldDisplayDeepLinkPush = State(initialValue: true)
+            deepLinkTarget = nil
+        } else {
+            _deepLinkTarget = State(initialValue: nil)
+            _shouldDisplayDeepLinkPush = State(initialValue: false)
+        }
+    }
+
     var body: some View {
 
         // Hidden navigationLinks for programatic navigation

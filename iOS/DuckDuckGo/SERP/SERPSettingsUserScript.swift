@@ -38,6 +38,14 @@ protocol SERPSettingsUserScriptDelegate: AnyObject {
 
 }
 
+enum SERPSettingsConstants {
+
+    static let returnParameterKey = "return"
+    static let privateSearch = "privateSearch"
+    static let aiFeatures = "aiFeatures"
+
+}
+
 // MARK: - AIChatUserScript Class
 
 final class SERPSettingsUserScript: NSObject, Subfeature {
@@ -91,9 +99,9 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     @MainActor
     private func openNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: String] else { return nil }
-        if parameters["return"] == "privateSearch" {
+        if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
             delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
-        } else if parameters["return"] == "aiFeatures" {
+        } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScriptDidRequestToOpenDuckAISettings(self)
         }
         return nil

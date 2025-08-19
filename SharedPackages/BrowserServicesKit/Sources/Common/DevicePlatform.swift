@@ -56,4 +56,19 @@ public enum DevicePlatform {
             return "unknown"
         }
     }
+
+    public static var currentPlatform: DevicePlatform {
+        if isMac {
+            return .macOS
+        } else if isIpad || isIphone {
+            return .iOS
+        } else {
+            assertionFailure("Unsupported platform")
+            return .unknown
+        }
+    }
+
+    case macOS
+    case iOS
+    case unknown
 }

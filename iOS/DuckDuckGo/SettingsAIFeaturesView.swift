@@ -34,7 +34,7 @@ struct SettingsAIFeaturesView: View {
             VStack(alignment: .center) {
                 if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                     Image(.settingAIFeaturesHero)
-                        .padding(.top, -30)
+                        .padding(.top, -20)
                 } else {
                     Image(.settingsAIChatHero)
                         .padding(.top, -20)

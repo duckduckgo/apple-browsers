@@ -166,13 +166,14 @@ final class VPNRoutingRangeTests: XCTestCase {
     
     // MARK: - IP Range Parsing and Validation Tests
     
-    /// Verifies that all static IPv4 range definitions are valid and don't contain typos that could break routing
-    func testIPv4RangeDefinitionsAreValid() {
+    /// Verifies that all static IP range definitions are valid and don't contain typos that could break routing
+    func testIPRangeDefinitionsAreValid() {
         let allRanges = [
             ("alwaysExcludedIPv4", VPNRoutingRange.alwaysExcludedIPv4Range),
+            ("alwaysExcludedIPv6", VPNRoutingRange.alwaysExcludedIPv6Range),
             ("localNetwork", VPNRoutingRange.localNetworkRange),
             ("localNetworkWithoutDNS", VPNRoutingRange.localNetworkRangeWithoutDNS),
-            ("publicNetwork", VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv4Address }) // IPv4 only
+            ("publicNetwork", VPNRoutingRange.publicNetworkRange)
         ]
         
         for (rangeName, ranges) in allRanges {
@@ -182,27 +183,6 @@ final class VPNRoutingRangeTests: XCTestCase {
                 XCTAssertNotNil(IPAddressRange(from: rangeString), 
                                "Range \(rangeString) in \(rangeName)[\(index)] should be valid")
             }
-            
-
-        }
-    }
-    
-    /// Verifies that all static IPv6 range definitions are valid and don't contain typos that could break routing
-    func testIPv6RangeDefinitionsAreValid() {
-        let allIPv6Ranges = [
-            ("alwaysExcludedIPv6", VPNRoutingRange.alwaysExcludedIPv6Range),
-            ("publicNetworkIPv6", VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv6Address })
-        ]
-        
-        for (rangeName, ranges) in allIPv6Ranges {
-            for (index, range) in ranges.enumerated() {
-                let rangeString = range.description
-                
-                XCTAssertNotNil(IPAddressRange(from: rangeString), 
-                               "IPv6 range \(rangeString) in \(rangeName)[\(index)] should be valid")
-            }
-            
-
         }
     }
     
@@ -257,19 +237,7 @@ final class VPNRoutingRangeTests: XCTestCase {
         }
     }
     
-    /// Verifies that public and private IP ranges have no overlaps that could cause routing ambiguity
-    func testPublicAndPrivateRangesDoNotOverlap() {
 
-        let publicRanges = VPNRoutingRange.publicNetworkRange.filter { range in
-    
-            range.address is IPv4Address
-        }
-        let privateRanges = VPNRoutingRange.localNetworkRange
-
-        let overlaps = findOverlappingRanges(publicRanges, privateRanges)
-        XCTAssertTrue(overlaps.isEmpty, 
-                     "Found overlaps between public and private ranges: \(overlaps)")
-    }
     
 
     

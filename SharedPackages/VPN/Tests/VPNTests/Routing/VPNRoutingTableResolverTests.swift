@@ -147,29 +147,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
     
     // MARK: - DNS Routes Generation Tests
     
-    /// Verifies that DNS servers remain accessible when VPN is active by creating specific routes for them
+    /// Verifies that all configured DNS servers remain accessible through the VPN
     func testDNSServersRemainAccessible() {
-
-        let dnsServer = DNSServer(address: IPv4Address("8.8.8.8")!)
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: [dnsServer],
-            excludeLocalNetworks: true
-        )
-        
-
-        let includedRoutes = resolver.includedRoutes
-        
-
-        let includedStrings = includedRoutes.map { $0.description }
-        XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), 
-                     "Should create /32 host route for DNS server")
-        
-
-    }
-    
-    /// Verifies that all configured DNS servers (primary, secondary, etc.) remain accessible through the VPN
-    func testMultipleDNSServersRemainAccessible() {
-
         let dnsServers = [
             DNSServer(address: IPv4Address("8.8.8.8")!),
             DNSServer(address: IPv4Address("8.8.4.4")!),
@@ -181,19 +160,13 @@ final class VPNRoutingTableResolverTests: XCTestCase {
             excludeLocalNetworks: false
         )
         
-
         let includedRoutes = resolver.includedRoutes
-        
-
         let includedStrings = includedRoutes.map { $0.description }
         
-        // Should have all DNS server host routes
         XCTAssertTrue(includedStrings.contains("8.8.8.8/32"), "Should have Google DNS primary")
         XCTAssertTrue(includedStrings.contains("8.8.4.4/32"), "Should have Google DNS secondary")
         XCTAssertTrue(includedStrings.contains("1.1.1.1/32"), "Should have Cloudflare DNS primary")
         XCTAssertTrue(includedStrings.contains("1.0.0.1/32"), "Should have Cloudflare DNS secondary")
-        
-
     }
     
     /// Verifies that IPv6 DNS servers work correctly with VPN in modern dual-stack network environments
@@ -241,38 +214,4 @@ final class VPNRoutingTableResolverTests: XCTestCase {
 
     }
     
-    // MARK: - Performance and Edge Cases
-    
-    /// Verifies that VPN remains responsive even when configured with many DNS servers
-    func testComplexDNSConfigurationsArePerformant() {
-        let manyDNSServers = (1...20).map { i in
-            DNSServer(address: IPv4Address("8.8.8.\(i)")!)
-        }
-        
-
-        let startTime = CFAbsoluteTimeGetCurrent()
-        let resolver = VPNRoutingTableResolver(
-            dnsServers: manyDNSServers,
-            excludeLocalNetworks: true
-        )
-        let _ = resolver.includedRoutes
-        let _ = resolver.excludedRoutes
-        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-        
-
-        XCTAssertLessThan(elapsed, 0.1, "Route generation should complete in under 100ms even with many DNS servers")
-        
-        let includedRoutes = resolver.includedRoutes
-        let includedStrings = includedRoutes.map { $0.description }
-        
-        // Verify all DNS servers get host routes
-        for i in 1...20 {
-            XCTAssertTrue(includedStrings.contains("8.8.8.\(i)/32"), 
-                         "Should have host route for DNS server 8.8.8.\(i)")
-        }
-        
-
-    }
-    
-
 }

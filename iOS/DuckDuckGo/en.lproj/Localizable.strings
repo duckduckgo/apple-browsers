@@ -2990,7 +2990,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.tracking.protection.facebook.title" = "Facebook tracking protection";
 
 /* Description for fingerprinting protection feature */
-"settings.tracking.protection.fingerprinting.description" = "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites.";
+"settings.tracking.protection.fingerprinting.description" = "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.";
 
 /* Title for fingerprinting protection feature */
 "settings.tracking.protection.fingerprinting.title" = "Prevents fingerprint tracking";

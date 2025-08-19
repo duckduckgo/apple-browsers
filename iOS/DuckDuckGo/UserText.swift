@@ -1278,7 +1278,7 @@ public struct UserText {
     public static let trackingProtectionLinkTrackingDescription = NSLocalizedString("settings.tracking.protection.link.tracking.description", value: "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites.", comment: "Description for link tracking removal feature")
     
     public static let trackingProtectionFingerprintingTitle = NSLocalizedString("settings.tracking.protection.fingerprinting.title", value: "Prevents fingerprint tracking", comment: "Title for fingerprinting protection feature")
-    public static let trackingProtectionFingerprintingDescription = NSLocalizedString("settings.tracking.protection.fingerprinting.description", value: "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites.", comment: "Description for fingerprinting protection feature")
+    public static let trackingProtectionFingerprintingDescription = NSLocalizedString("settings.tracking.protection.fingerprinting.description", value: "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.", comment: "Description for fingerprinting protection feature")
     
     public static let trackingProtectionReferrerTitle = NSLocalizedString("settings.tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Title for referrer tracking protection feature")
     public static let trackingProtectionReferrerDescription = NSLocalizedString("settings.tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Description for Referer tracking protection feature")

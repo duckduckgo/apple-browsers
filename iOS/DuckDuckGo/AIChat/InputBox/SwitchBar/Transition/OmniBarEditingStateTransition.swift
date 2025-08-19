@@ -95,10 +95,8 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
 
         if !transitionContext.isAnimated {
             toVC.switchBarVC.textEntryViewController.isExpandable = true
-            toVC.view.layoutIfNeeded()
 
             fromVC.hide(with: offsets.barYOffset, contentYOffset: offsets.contentYOffset)
-            fromVC.view.layoutIfNeeded()
 
             transitionContext.completeTransition(true)
             return

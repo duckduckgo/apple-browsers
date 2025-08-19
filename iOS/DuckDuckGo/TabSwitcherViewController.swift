@@ -335,8 +335,8 @@ class TabSwitcherViewController: UIViewController {
         canUpdateCollection = false
 
         Pixel.fire(pixel: .tabSwitcherNewTab)
-        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
         dismiss()
+        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {

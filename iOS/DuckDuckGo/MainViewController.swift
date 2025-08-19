@@ -958,7 +958,7 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.barView.menuButtonContent.delegate = self
     }
     
-    fileprivate func attachHomeScreen() {
+    fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false) {
         guard !autoClearInProgress else { return }
         
         viewCoordinator.logoContainer.isHidden = false
@@ -973,6 +973,11 @@ class MainViewController: UIViewController {
         guard let tabModel = tabManager.model.currentTab else {
             fatalError("No tab model")
         }
+
+        // Attaching HomeScreen means it's going to be displayed immediately.
+        // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
+        tabModel.viewed = true
+        refreshControls()
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
@@ -996,10 +1001,10 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
-        // Attaching HomeScreen means it's going to be displayed immediately.
-        // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
-        tabModel.viewed = true
-        refreshControls()
+        if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
+            let isExperimentalSearchEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+            omniBar.beginEditing(animated: !isExperimentalSearchEnabled)
+        }
 
         syncService.scheduler.requestSyncImmediately()
 
@@ -1168,7 +1173,7 @@ class MainViewController: UIViewController {
     func enterSearch() {
         if presentedViewController == nil {
             showBars()
-            viewCoordinator.omniBar.beginEditing()
+            viewCoordinator.omniBar.beginEditing(animated: true)
         }
     }
 
@@ -1378,7 +1383,7 @@ class MainViewController: UIViewController {
             self.deferredFireOrientationPixel()
         } completion: { _ in
             if isKeyboardShowing {
-                self.omniBar.beginEditing()
+                self.omniBar.beginEditing(animated: true)
             }
 
             ViewHighlighter.updatePositions()
@@ -1692,10 +1697,9 @@ class MainViewController: UIViewController {
         } else {
             tabManager.addHomeTab()
         }
-        attachHomeScreen()
+        attachHomeScreen(isNewTab: true, allowingKeyboard: allowingKeyboard)
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
-        newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()
     }
     
@@ -2570,10 +2574,7 @@ extension MainViewController: OmniBarDelegate {
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
-        guard let newTabPageViewController = newTabPageViewController else {
-            return selectQueryText
-        }
-        newTabPageViewController.launchNewSearch()
+
         return selectQueryText
     }
 

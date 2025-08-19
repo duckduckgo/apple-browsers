@@ -150,7 +150,7 @@ final class WidePixelTests: XCTestCase {
         let subscriptionData = makeTestSubscriptionData(contextName: "cancellation-test")
         widePixel.startFlow(subscriptionData)
 
-        let _ = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)
+        _ = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)
 
         let expectation = XCTestExpectation(description: "Flow cancelled")
         widePixel.completeFlow(subscriptionData, finalStatus: .cancelled) { success, error in

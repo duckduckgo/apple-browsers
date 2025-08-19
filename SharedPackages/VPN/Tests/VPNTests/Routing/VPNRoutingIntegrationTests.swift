@@ -289,10 +289,8 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
         var conflicts: [(dns: IPAddressRange, excluded: IPAddressRange)] = []
         for dnsRoute in dnsRoutes {
-            for excludedRange in excludedRoutes {
-                if excludedRange.contains(dnsRoute) {
-                    conflicts.append((dns: dnsRoute, excluded: excludedRange))
-                }
+            for excludedRange in excludedRoutes where excludedRange.contains(dnsRoute) {
+                conflicts.append((dns: dnsRoute, excluded: excludedRange))
             }
         }
 

@@ -33,67 +33,47 @@ struct DefaultBrowserPromptInactiveUserView: View {
     let setAsDefaultAction: () -> Void
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Image(.daxmag)
+        GeometryReader { proxy in
+            ZStack(alignment: .top) {
+                Image(.daxmag)
 
-            content
+                content(proxy: proxy)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .background(background.ignoresSafeArea())
+            .overlay(alignment: .topTrailing) {
+                DismissButton(action: closeAction)
+                    .padding(.top, Metrics.DismissButton.closeButtonTopPadding)
+                    .padding(.trailing, Metrics.DismissButton.horizontalPadding)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .background(background.ignoresSafeArea())
-        .overlay(alignment: .topTrailing) {
-            DismissButton(action: closeAction)
-                .padding(.top, Metrics.DismissButton.closeButtonTopPadding)
-                .padding(.trailing, Metrics.DismissButton.horizontalPadding)
-        }
-
     }
 
     @ViewBuilder
-    private var content: some View {
-        let innerSectionsVerticalSpacing: CGFloat = Metrics.Content.innerSectionsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)
-
-        VStack(alignment: .leading, spacing: Metrics.Content.sectionsSpacing) {
-            VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
-                Text(UserText.InactiveUserModal.title)
-                    .titleStyle(alignment: .leading)
-
-                ScrollView {
-                    browserComparisonChart
-                        .frame(height: Metrics.Chart.maxHeight)
-                }
-                .frame(maxHeight: Metrics.Chart.maxHeight)
-                .overlay(alignment: .bottom) {
-                    Divider()
-                }
-            }
-            VStack(alignment: .leading, spacing: innerSectionsVerticalSpacing) {
-                PlusMoreButton()
-                    .frame(height: Metrics.PlusMoreButton.height)
-
-                Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
-            }
+    private func content(proxy: GeometryProxy) -> some View {
+        VStack(alignment: .leading, spacing: Metrics.Content.innerSectionsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
+            Text(UserText.InactiveUserModal.title)
+                .titleStyle(
+                    alignment: .leading,
+                    fontSize: Metrics.Content.titleSize.build(v: verticalSizeClass, h: horizontalSizeClass),
+                    kerning: Metrics.Content.titleKerning.build(v: verticalSizeClass, h: horizontalSizeClass)
+                )
+            
+            browserComparisonChart
+            
+            Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
         }
         .padding(Metrics.Content.innerPadding)
         .background(Color(designSystemColor: .surface))
         .frame(maxWidth: Metrics.Content.maxWidth, alignment: .bottom)
         .cornerRadius(Metrics.Content.cornerRadius)
         .padding(.horizontal, Metrics.Content.outerHorizontalPadding)
-        .padding(.bottom, Metrics.Content.bottomPadding)
         .padding(.top, Metrics.Content.topPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
+        .if(proxy.safeAreaInsets.bottom == 0) { view in // Adds bottom padding only to devices with physical home button
+            view.padding(.bottom, Metrics.Content.bottomPadding)
+        }
     }
-}
-
-struct PlusMoreButton: View {
-
-    var body: some View {
-        Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
-            .font(.system(size: Metrics.PlusMoreButton.moreProtectionsFontSize))
-            .underline(true)
-            .multilineTextAlignment(.leading)
-            .lineLimit(2)
-            .tint(Color(designSystemColor: .accent))
-    }
-
 }
 
 struct DismissButton: View {
@@ -105,7 +85,7 @@ struct DismissButton: View {
         Button(action: action) {
             Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                 .foregroundColor(.primary)
-                .padding(Metrics.PlusMoreButton.padding)
+                .padding(Metrics.DismissButton.contentPadding)
                 .background(Color(designSystemColor: .textSelectionFill))
                 .clipShape(RoundedRectangle(cornerRadius: Metrics.DismissButton.cornerRadius))
         }
@@ -138,13 +118,15 @@ private enum Metrics {
 
     @MainActor
     enum Content {
+        static let titleSize = MetricBuilder<CGFloat>(iPhone: 24.0, iPad: 28.0).iPhoneSmallScreen(22.0)
+        static let titleKerning = MetricBuilder<CGFloat>(default: 0.38).iPhoneSmallScreen(0.35)
+
         static let maxWidth = MetricBuilder<CGFloat?>(iPhone: nil, iPad: 542).build()
         static let topPadding = MetricBuilder(iPhone: 158.0, iPad: 198.0).iPad(landscape: 158.0)
-        static let outerHorizontalPadding: CGFloat = 16
         static let bottomPadding: CGFloat = 12
+        static let outerHorizontalPadding: CGFloat = 16
         static let innerPadding: CGFloat = 24
         static let cornerRadius: CGFloat = 24
-        static let sectionsSpacing: CGFloat = 0
         static let innerSectionsVerticalSpacing = MetricBuilder(default: 24.0).iPhoneSmallScreen(16.0)
     }
 
@@ -152,14 +134,9 @@ private enum Metrics {
         static let maxHeight: CGFloat = 260.0
     }
 
-    enum PlusMoreButton {
-        static let height: CGFloat = 48.0
-        static let padding: CGFloat = 12.0
-        static let moreProtectionsFontSize: CGFloat = 15
-    }
-
     @MainActor
     enum DismissButton {
+        static let contentPadding: CGFloat = 12.0
         static let closeButtonTopPadding: CGFloat = MetricBuilder(iPhone: 30.0, iPad: 60.0).build()
         static let size: CGFloat = 44.0
         static let horizontalPadding =  MetricBuilder(iPhone: 16.0, iPad: 24.0).build()

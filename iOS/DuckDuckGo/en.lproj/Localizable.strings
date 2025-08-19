@@ -2671,6 +2671,24 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Show Full Site Address";
 
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Default)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Experimental)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Try our experimental option to ask Duck.ai directly from the Address Bar.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Search Only";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Manage Duck.ai Shortcuts";
+
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai Shortcuts";
 
@@ -3100,8 +3118,8 @@ Take back control of your personal information with the browser designed for dat
 /* FAQ Description */
 "subscription.faq.description" = "Get answers to frequently asked questions or contact Privacy Pro support from our help pages.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Send Feedback";
+/* Share Feedback Button */
+"subscription.feedback" = "Share Feedback";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Cancel";

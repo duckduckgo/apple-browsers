@@ -24,24 +24,22 @@ import SystemSettingsPiPTutorial
 
 @MainActor
 final class SystemSettingsPiPTutorialService {
-    let manager: SystemSettingsPiPTutorialManager
+    lazy var manager: SystemSettingsPiPTutorialManager = SystemSettingsPiPTutorialManager(
+        playerView: self.videoPlayerComponents.playerView,
+        videoPlayer: self.videoPlayerComponents.playerCoordinator,
+        eventMapper: SystemSettingsPiPTutorialPixelHandler()
+    )
 
-    init(featureFlagger: FeatureFlagger) {
-        // Initialises the Video Player Coordinator and assign the avPlayerLayer to PiP controller.
+    // PlayerView and VideoPlayerCoordinator are injected as autoclosure var so they're initialisation will be deferred till they're needed
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1211011039245367?focus=true
+    private lazy var videoPlayerComponents: (playerView: PlayerUIView, playerCoordinator: VideoPlayerCoordinator) = {
         let videoPlayerCoordinator = VideoPlayerCoordinator(configuration: .init(allowsPictureInPicturePlayback: true, requiresLinearPlayback: true))
         let playerView = PlayerUIView(player: videoPlayerCoordinator.player)
         videoPlayerCoordinator.setupPictureInPicture(playerLayer: playerView.playerLayer)
+        return (playerView, videoPlayerCoordinator)
+    }()
 
-        let isFeatureEnabled = {
-            true
-        }
-
-        manager = SystemSettingsPiPTutorialManager(
-            playerView: playerView,
-            videoPlayer: videoPlayerCoordinator,
-            eventMapper: SystemSettingsPiPTutorialPixelHandler()
-        )
-
+    init(featureFlagger: FeatureFlagger) {
         // Register PiP Video URL providers
         registerAllURLProviders(featureFlagger: featureFlagger)
     }

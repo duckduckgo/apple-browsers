@@ -107,9 +107,9 @@ final class MainMenu: NSMenu {
     let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser + "…", action: #selector(AppDelegate.setAsDefault))
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
-#if FEEDBACK
+
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
-#endif
+
     let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let featureFlagger: FeatureFlagger
@@ -120,6 +120,7 @@ final class MainMenu: NSMenu {
     private let appearancePreferences: AppearancePreferences
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let appVersion: AppVersion
+    private let configurationURLProvider: CustomConfigurationURLProviding
 
     // MARK: - Initialization
 
@@ -134,7 +135,8 @@ final class MainMenu: NSMenu {
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         appVersion: AppVersion = .shared) {
+         appVersion: AppVersion = .shared,
+         configurationURLProvider: CustomConfigurationURLProviding) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -145,6 +147,7 @@ final class MainMenu: NSMenu {
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
+        self.configurationURLProvider = configurationURLProvider
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -448,10 +451,7 @@ final class MainMenu: NSMenu {
                 releaseNotesMenuItem
                 whatIsNewMenuItem
 #endif
-
-#if FEEDBACK
                 sendFeedbackMenuItem
-#endif
             })
     }
 
@@ -727,8 +727,8 @@ final class MainMenu: NSMenu {
                 configurationDateAndTimeMenuItem
                 NSMenuItem.separator()
                 NSMenuItem(title: "Reload Configuration Now", action: #selector(AppDelegate.reloadConfigurationNow))
-                NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomConfigurationURL))
-                NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetConfigurationToDefault))
+                NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomPrivacyConfigurationURL))
+                NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
             }
             NSMenuItem(title: "Remote Messaging Framework")
                 .submenu(RemoteMessagingDebugMenu())
@@ -867,12 +867,8 @@ final class MainMenu: NSMenu {
             dateString = "Last Update Time: -"
         }
         configurationDateAndTimeMenuItem.title = dateString
-        let urlProvider = AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
 
-        customConfigurationUrlMenuItem.title = "Configuration URL:  \(urlProvider.url(for: .privacyConfiguration).absoluteString)"
+        customConfigurationUrlMenuItem.title = "Configuration URL:  \(configurationURLProvider.url(for: .privacyConfiguration).absoluteString)"
     }
 
     @objc private func toggleAutofillScriptDebugSettingsAction(_ sender: NSMenuItem) {

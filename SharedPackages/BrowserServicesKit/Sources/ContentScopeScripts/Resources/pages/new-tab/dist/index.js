@@ -1605,13 +1605,30 @@
     )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("clipPath", { id: "Find-Search-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
   }
   function SearchColorIcon(props) {
-    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Search-Find-Color-16_svg__a)" }, /* @__PURE__ */ _("path", { fill: "#ADC2FC", d: "M12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z" }), /* @__PURE__ */ _("path", { fill: "#fff", d: "M7 2a4.98 4.98 0 0 1 3.403 1.338 5.5 5.5 0 0 0-7.065 7.065A5 5 0 0 1 7 2Z", opacity: ".5" }), /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Search-Find-Color-16_svg__a)" }, /* @__PURE__ */ _("path", { fill: "#CCDAFF", d: "M13 7A6 6 0 1 1 1 7a6 6 0 0 1 12 0Z" }), /* @__PURE__ */ _("path", { fill: "#fff", d: "M7 2a4.98 4.98 0 0 1 3.403 1.338 5.5 5.5 0 0 0-7.065 7.065A5 5 0 0 1 7 2Z", opacity: ".5" }), /* @__PURE__ */ _(
       "path",
       {
-        fill: "#557FF3",
+        fill: "url(#Search-Find-Color-16_svg__b)",
         d: "M7 0a7 7 0 0 1 5.372 11.488l3.445 3.445.043.047a.625.625 0 0 1-.88.88l-.047-.043-3.445-3.445A7 7 0 1 1 7 0Zm0 1a6 6 0 1 0 0 12A6 6 0 0 0 7 1Z"
       }
-    )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("clipPath", { id: "Search-Find-Color-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
+    )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("linearGradient", { id: "Search-Find-Color-16_svg__b", x1: "8", x2: "8", y1: "0", y2: "16", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#557FF3" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#2B55CA" })), /* @__PURE__ */ _("clipPath", { id: "Search-Find-Color-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
+  }
+  function SearchOnDarkColorIcon(props) {
+    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Search-Find-OnDark-Color-16_svg__a)" }, /* @__PURE__ */ _("path", { fill: "#444", d: "M13 7A6 6 0 1 1 1 7a6 6 0 0 1 12 0Z" }), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        "fill-opacity": ".4",
+        d: "M7 2c1.315 0 2.512.508 3.404 1.339a5.5 5.5 0 0 0-7.065 7.065A5 5 0 0 1 7 2Z",
+        opacity: ".5"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "url(#Search-Find-OnDark-Color-16_svg__b)",
+        d: "M7 0a7 7 0 0 1 5.371 11.486l3.446 3.447.08.098a.626.626 0 0 1-.866.867l-.098-.08-3.447-3.447A7 7 0 1 1 7 0Zm0 1a6 6 0 1 0 0 12A6 6 0 0 0 7 1Z"
+      }
+    )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("linearGradient", { id: "Search-Find-OnDark-Color-16_svg__b", x1: "8", x2: "8", y1: "0", y2: "16", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#CCDAFF" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#8FABF9" })), /* @__PURE__ */ _("clipPath", { id: "Search-Find-OnDark-Color-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
   }
   function AiChatIcon(props) {
     return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { fill: "currentColor", "clip-path": "url(#Ai-Chat-16_svg__a)" }, /* @__PURE__ */ _(
@@ -1624,16 +1641,16 @@
     ), /* @__PURE__ */ _("path", { d: "M7.62 3.271c.099-.396.661-.396.76 0l.22.878a3.27 3.27 0 0 0 2.376 2.376l.878.22c.396.099.396.661 0 .76l-.878.22A3.27 3.27 0 0 0 8.6 10.102l-.219.877c-.099.396-.661.396-.76 0l-.22-.877a3.27 3.27 0 0 0-2.377-2.377l-.877-.22c-.396-.099-.396-.661 0-.76l.877-.22A3.27 3.27 0 0 0 7.4 4.15l.22-.878Z" })), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("clipPath", { id: "Ai-Chat-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
   }
   function AiChatColorIcon(props) {
-    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Ai-Chat-Gradient-Color-16_svg__a)" }, /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Ai-Chat-Color-16_svg__a)" }, /* @__PURE__ */ _(
       "path",
       {
-        fill: "url(#Ai-Chat-Gradient-Color-16_svg__b)",
+        fill: "url(#Ai-Chat-Color-16_svg__b)",
         d: "M1.164 14.763c-.441.51-.014 1.284.65 1.17 2.655-.457 7.306-1.338 9.199-2.206C13.938 12.667 16 10.111 16 7.125 16 3.19 12.418 0 8 0S0 3.19 0 7.125c0 1.974.902 3.76 2.358 5.051.32.283.38.773.1 1.095l-1.294 1.492Z"
       }
     ), /* @__PURE__ */ _(
       "path",
       {
-        fill: "url(#Ai-Chat-Gradient-Color-16_svg__c)",
+        fill: "url(#Ai-Chat-Color-16_svg__c)",
         d: "M15 7.125c0 2.495-1.729 4.72-4.328 5.662l-.039.014-.037.017c-.838.384-2.376.803-4.114 1.19a98.74 98.74 0 0 1-4.03.797l.762-.878c.68-.785.487-1.898-.193-2.5-1.227-1.087-1.973-2.55-2.019-4.147L1 7.125C1 3.848 4.022 1 8 1V0l-.207.003C3.54.099.11 3.153.003 6.94L0 7.125c0 1.913.846 3.649 2.223 4.929l.135.122c.32.283.38.773.1 1.096l-1.293 1.491c-.442.51-.015 1.284.65 1.17 2.654-.456 7.305-1.338 9.198-2.206C13.938 12.667 16 10.111 16 7.125l-.002-.184C15.888 3.091 12.349.001 8 .001v1c3.916 0 6.905 2.759 6.998 5.97l.002.154Z"
       }
     ), /* @__PURE__ */ _(
@@ -1645,7 +1662,7 @@
     ), /* @__PURE__ */ _(
       "path",
       {
-        fill: "url(#Ai-Chat-Gradient-Color-16_svg__d)",
+        fill: "url(#Ai-Chat-Color-16_svg__d)",
         d: "M6.662 2.544C7 1.195 8.867 1.154 9.3 2.418l.038.126.438 1.753c.114.457.47.813.927.927l1.753.438c1.392.348 1.392 2.328 0 2.676l-1.753.438c-.457.114-.813.47-.927.927l-.438 1.753c-.348 1.392-2.328 1.392-2.676 0l-.438-1.753a1.274 1.274 0 0 0-.927-.927l-1.753-.438c-1.392-.348-1.392-2.328 0-2.676l1.753-.438c.457-.114.813-.47.927-.927l.438-1.753ZM8 5.271A3.273 3.273 0 0 1 6.27 7 3.273 3.273 0 0 1 8 8.729 3.274 3.274 0 0 1 9.729 7 3.273 3.273 0 0 1 8 5.27Z"
       }
     ), /* @__PURE__ */ _(
@@ -1654,7 +1671,40 @@
         fill: "#fff",
         d: "M7.632 2.787c.096-.383.64-.383.736 0l.438 1.753c.203.815.84 1.45 1.654 1.654l1.753.438c.383.096.383.64 0 .736l-1.753.438c-.815.203-1.45.84-1.654 1.654l-.438 1.753c-.096.383-.64.383-.736 0L7.194 9.46A2.273 2.273 0 0 0 5.54 7.806l-1.753-.438c-.383-.096-.383-.64 0-.736l1.753-.438A2.273 2.273 0 0 0 7.194 4.54l.438-1.753Z"
       }
-    )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-Gradient-Color-16_svg__b", x1: "8", x2: "8", y1: "0", y2: "15.944", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#A7B7FD" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#5981F3" })), /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-Gradient-Color-16_svg__c", x1: "8", x2: "8", y1: "0", y2: "15.944", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#7C99F7" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#4B74EE" })), /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-Gradient-Color-16_svg__d", x1: "8", x2: "8", y1: "2.5", y2: "11.5", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#8EA6FA" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#6186F4" })), /* @__PURE__ */ _("clipPath", { id: "Ai-Chat-Gradient-Color-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
+    )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-Color-16_svg__b", x1: "8", x2: "8", y1: "0", y2: "15.944", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#A7B7FD" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#3969EF" })), /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-Color-16_svg__c", x1: "8", x2: "8", y1: "15.944", y2: "0", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#2B55CA" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#557FF3" })), /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-Color-16_svg__d", x1: "8", x2: "8", y1: "2.5", y2: "11.5", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#839DF9" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#3969EF" })), /* @__PURE__ */ _("clipPath", { id: "Ai-Chat-Color-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
+  }
+  function AiChatOnDarkColorIcon(props) {
+    return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _("g", { "clip-path": "url(#Ai-Chat-OnDark-Color-16_svg__a)" }, /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "url(#Ai-Chat-OnDark-Color-16_svg__b)",
+        d: "M1.164 14.763c-.441.51-.014 1.284.65 1.17 2.655-.457 7.306-1.338 9.199-2.206C13.938 12.667 16 10.111 16 7.125 16 3.19 12.418 0 8 0S0 3.19 0 7.125c0 1.974.902 3.76 2.358 5.051.32.283.38.773.1 1.095l-1.294 1.492Z"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "url(#Ai-Chat-OnDark-Color-16_svg__c)",
+        d: "M15 7.125c0 2.495-1.729 4.72-4.328 5.662l-.039.014-.037.017c-.838.384-2.376.803-4.114 1.19a98.74 98.74 0 0 1-4.03.797l.762-.878c.68-.785.487-1.898-.193-2.5-1.227-1.087-1.973-2.55-2.019-4.147L1 7.125C1 3.848 4.022 1 8 1V0l-.207.003C3.54.099.11 3.153.003 6.94L0 7.125c0 1.913.846 3.649 2.223 4.929l.135.122c.32.283.38.773.1 1.096l-1.293 1.491c-.442.51-.015 1.284.65 1.17 2.654-.456 7.305-1.338 9.198-2.206C13.938 12.667 16 10.111 16 7.125l-.002-.184C15.888 3.091 12.349.001 8 .001v1c3.916 0 6.905 2.759 6.998 5.97l.002.154Z"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#fff",
+        d: "M7.632 2.787c.096-.383.64-.383.736 0l.438 1.753c.203.815.84 1.45 1.654 1.654l1.753.438c.383.096.383.64 0 .736l-1.753.438c-.815.203-1.45.84-1.654 1.654l-.438 1.753c-.096.383-.64.383-.736 0L7.194 9.46A2.273 2.273 0 0 0 5.54 7.806l-1.753-.438c-.383-.096-.383-.64 0-.736l1.753-.438A2.273 2.273 0 0 0 7.194 4.54l.438-1.753Z"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "url(#Ai-Chat-OnDark-Color-16_svg__d)",
+        d: "M6.662 2.544C7 1.195 8.867 1.154 9.3 2.418l.038.126.438 1.753c.114.457.47.813.927.927l1.753.438c1.392.348 1.392 2.328 0 2.676l-1.753.438c-.457.114-.813.47-.927.927l-.438 1.753c-.348 1.392-2.328 1.392-2.676 0l-.438-1.753a1.274 1.274 0 0 0-.927-.927l-1.753-.438c-1.392-.348-1.392-2.328 0-2.676l1.753-.438c.457-.114.813-.47.927-.927l.438-1.753ZM8 5.271A3.273 3.273 0 0 1 6.27 7 3.273 3.273 0 0 1 8 8.729 3.274 3.274 0 0 1 9.729 7 3.273 3.273 0 0 1 8 5.27Z"
+      }
+    ), /* @__PURE__ */ _(
+      "path",
+      {
+        fill: "#2B55CA",
+        d: "M7.632 2.787c.096-.383.64-.383.736 0l.438 1.753c.203.815.84 1.45 1.654 1.654l1.753.438c.383.096.383.64 0 .736l-1.753.438c-.815.203-1.45.84-1.654 1.654l-.438 1.753c-.096.383-.64.383-.736 0L7.194 9.46A2.273 2.273 0 0 0 5.54 7.806l-1.753-.438c-.383-.096-.383-.64 0-.736l1.753-.438A2.273 2.273 0 0 0 7.194 4.54l.438-1.753Z"
+      }
+    )), /* @__PURE__ */ _("defs", null, /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-OnDark-Color-16_svg__b", x1: "8", x2: "8", y1: "0", y2: "15.944", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#CCDAFF" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#8FABF9" })), /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-OnDark-Color-16_svg__c", x1: "8", x2: "8", y1: "15.944", y2: "0", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#557FF3" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#ADC2FC" })), /* @__PURE__ */ _("linearGradient", { id: "Ai-Chat-OnDark-Color-16_svg__d", x1: "8", x2: "8", y1: "2.5", y2: "11.5", gradientUnits: "userSpaceOnUse" }, /* @__PURE__ */ _("stop", { "stop-color": "#CCDAFF" }), /* @__PURE__ */ _("stop", { offset: "1", "stop-color": "#ADC2FC" })), /* @__PURE__ */ _("clipPath", { id: "Ai-Chat-OnDark-Color-16_svg__a" }, /* @__PURE__ */ _("path", { fill: "#fff", d: "M0 0h16v16H0z" }))));
   }
   function ArrowRightIcon(props) {
     return /* @__PURE__ */ _("svg", { width: "16", height: "16", fill: "none", viewBox: "0 0 16 16", xmlns: "http://www.w3.org/2000/svg", ...props }, /* @__PURE__ */ _(
@@ -1803,7 +1853,7 @@
       "path",
       {
         fill: "currentColor",
-        d: "M10.433 4.683a.625.625 0 1 1 .884.884L8.884 8l2.433 2.433a.625.625 0 1 1-.884.884L8 8.884l-2.433 2.433a.625.625 0 1 1-.884-.884L7.116 8 4.683 5.567a.625.625 0 1 1 .884-.884L8 7.116l2.433-2.433Z"
+        d: "M11.933 3.183a.625.625 0 1 1 .884.884L8.884 8l3.933 3.933a.625.625 0 1 1-.884.884L8 8.884l-3.933 3.933a.625.625 0 1 1-.884-.884L7.116 8 3.183 4.067a.625.625 0 1 1 .884-.884L8 7.116l3.933-3.933Z"
       }
     ));
   }
@@ -1835,7 +1885,7 @@
         e4.preventDefault();
         e4.stopImmediatePropagation();
         const items = getItems();
-        const simplified = items.filter((x3) => x3.id !== "debug").map((item) => {
+        const simplified = items.filter((x3) => !x3.id.startsWith("_")).map((item) => {
           return {
             id: item.id,
             title: item.title
@@ -7767,7 +7817,7 @@
   });
 
   // pages/new-tab/app/omnibar/components/AiChatForm.js
-  function AiChatForm({ chat, autoFocus, onFocus, onBlur, onInput, onChange, onSubmit }) {
+  function AiChatForm({ chat, autoFocus, onChange, onSubmit }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
       {}
@@ -7837,9 +7887,6 @@
         "aria-label": t4("omnibar_aiChatFormPlaceholder"),
         autoComplete: "off",
         rows: 1,
-        onFocusCapture: onFocus,
-        onBlurCapture: onBlur,
-        onInput,
         onKeyDown: handleKeyDown,
         onChange: (event) => onChange(event.currentTarget.value)
       }
@@ -8321,7 +8368,7 @@
     );
     const platformName = usePlatformName();
     const {
-      term,
+      term: _term,
       setTerm,
       suggestionsListId,
       suggestions,
@@ -8332,6 +8379,7 @@
       clearSelectedSuggestion,
       hideSuggestions
     } = useSearchFormContext();
+    const term = _term.replace(/\n/g, " ");
     let inputBase, inputCompletion;
     if (selectedSuggestion) {
       const completionString = getSuggestionCompletionString(selectedSuggestion, term);
@@ -8438,7 +8486,7 @@
           }
         }
       ),
-      inputSuffix && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("span", { class: SearchForm_default.suffixSpacer, inert: true }, (inputBase + inputCompletion).replace(/\n/g, "") || t4("omnibar_searchFormPlaceholder")), /* @__PURE__ */ _("span", { class: SearchForm_default.suffix, inert: true }, inputSuffixText)),
+      inputSuffix && /* @__PURE__ */ _(k, null, /* @__PURE__ */ _("span", { class: SearchForm_default.suffixSpacer, inert: true }, inputBase + inputCompletion || t4("omnibar_searchFormPlaceholder")), /* @__PURE__ */ _("span", { class: SearchForm_default.suffix, inert: true }, inputSuffixText)),
       term.length > 0 && /* @__PURE__ */ _(
         "button",
         {
@@ -8447,11 +8495,9 @@
           tabIndex: 0,
           onClick: (event) => {
             event.preventDefault();
-            if (suggestions.length > 0) {
-              hideSuggestions();
-            } else {
-              setTerm("");
-            }
+            hideSuggestions();
+            setTerm("");
+            inputRef.current?.focus();
           }
         },
         /* @__PURE__ */ _(CloseSmallIcon, null)
@@ -8588,15 +8634,27 @@
         "aria-label": t4("omnibar_tabSwitcherLabel")
       },
       /* @__PURE__ */ _("div", { class: TabSwitcher_default.blob }),
-      /* @__PURE__ */ _("button", { class: TabSwitcher_default.tab, role: "tab", "aria-selected": mode === "search", onClick: () => onChange("search") }, mode === "search" ? /* @__PURE__ */ _(SearchColorIcon, null) : /* @__PURE__ */ _(SearchIcon, null), /* @__PURE__ */ _("span", { class: TabSwitcher_default.tabLabel }, t4("omnibar_searchTabLabel"))),
-      /* @__PURE__ */ _("button", { class: TabSwitcher_default.tab, role: "tab", "aria-selected": mode === "ai", onClick: () => onChange("ai") }, mode === "ai" ? /* @__PURE__ */ _(AiChatColorIcon, null) : /* @__PURE__ */ _(AiChatIcon, null), /* @__PURE__ */ _("span", { class: TabSwitcher_default.tabLabel }, t4("omnibar_aiTabLabel")))
+      /* @__PURE__ */ _("button", { class: TabSwitcher_default.tab, role: "tab", "aria-selected": mode === "search", onClick: () => onChange("search") }, /* @__PURE__ */ _(TabIcon, { mode: "search", selected: mode === "search" }), /* @__PURE__ */ _("span", { class: TabSwitcher_default.tabLabel }, t4("omnibar_searchTabLabel"))),
+      /* @__PURE__ */ _("button", { class: TabSwitcher_default.tab, role: "tab", "aria-selected": mode === "ai", onClick: () => onChange("ai") }, /* @__PURE__ */ _(TabIcon, { mode: "ai", selected: mode === "ai" }), /* @__PURE__ */ _("span", { class: TabSwitcher_default.tabLabel }, t4("omnibar_aiTabLabel")))
     );
+  }
+  function TabIcon({ mode, selected }) {
+    const { main } = x2(CustomizerThemesContext);
+    if (mode === "search") {
+      if (selected) return main.value === "light" ? /* @__PURE__ */ _(SearchColorIcon, null) : /* @__PURE__ */ _(SearchOnDarkColorIcon, null);
+      return /* @__PURE__ */ _(SearchIcon, null);
+    } else {
+      if (selected) return main.value === "light" ? /* @__PURE__ */ _(AiChatColorIcon, null) : /* @__PURE__ */ _(AiChatOnDarkColorIcon, null);
+      return /* @__PURE__ */ _(AiChatIcon, null);
+    }
   }
   var init_TabSwitcher2 = __esm({
     "pages/new-tab/app/omnibar/components/TabSwitcher.js"() {
       "use strict";
       init_preact_module();
+      init_hooks_module();
       init_Icons2();
+      init_CustomizerProvider();
       init_types();
       init_TabSwitcher();
     }
@@ -8614,10 +8672,6 @@
     );
     const [resetKey, setResetKey] = d2(0);
     const [autoFocus, setAutoFocus] = d2(false);
-    const [focusRing, setFocusRing] = d2(
-      /** @type {boolean|undefined} */
-      void 0
-    );
     const { openSuggestion, submitSearch, submitChat } = x2(OmnibarContext);
     const resetForm = () => {
       setQuery("");
@@ -8637,21 +8691,9 @@
     };
     const handleChangeMode = (nextMode) => {
       setAutoFocus(true);
-      setFocusRing(void 0);
       setMode(nextMode);
     };
-    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode, "data-focus-ring": focusRing }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field }, mode === "search" ? /* @__PURE__ */ _(SearchForm, { autoFocus, onOpenSuggestion: handleOpenSuggestion, onSubmit: handleSubmitSearch }) : /* @__PURE__ */ _(
-      AiChatForm,
-      {
-        chat: query,
-        autoFocus,
-        onFocus: () => setFocusRing(true),
-        onBlur: () => setFocusRing(false),
-        onInput: () => setFocusRing(false),
-        onChange: setQuery,
-        onSubmit: handleSubmitChat
-      }
-    )), mode === "search" && /* @__PURE__ */ _(SuggestionsList, { onOpenSuggestion: handleOpenSuggestion })))));
+    return /* @__PURE__ */ _("div", { key: resetKey, class: Omnibar_default.root, "data-mode": mode }, /* @__PURE__ */ _(LogoStacked, { class: Omnibar_default.logo, "aria-label": t4("omnibar_logoAlt") }), enableAi && /* @__PURE__ */ _(TabSwitcher, { mode, onChange: handleChangeMode }), /* @__PURE__ */ _(SearchFormProvider, { term: query, setTerm: setQuery }, /* @__PURE__ */ _("div", { class: Omnibar_default.spacer }, /* @__PURE__ */ _("div", { class: Omnibar_default.popup }, /* @__PURE__ */ _(ResizingContainer, { className: Omnibar_default.field }, mode === "search" ? /* @__PURE__ */ _(SearchForm, { autoFocus, onOpenSuggestion: handleOpenSuggestion, onSubmit: handleSubmitSearch }) : /* @__PURE__ */ _(AiChatForm, { chat: query, autoFocus, onChange: setQuery, onSubmit: handleSubmitChat })), mode === "search" && /* @__PURE__ */ _(SuggestionsList, { onOpenSuggestion: handleOpenSuggestion })))));
   }
   var init_Omnibar2 = __esm({
     "pages/new-tab/app/omnibar/components/Omnibar.js"() {
@@ -27944,7 +27986,7 @@
     const telemetry2 = useTelemetry();
     useCustomizer({
       title: "\u{1F41E} Debug",
-      id: "debug",
+      id: "_debug",
       icon: /* @__PURE__ */ _(DuckFoot, null),
       visibility: isOpen ? "visible" : "hidden",
       toggle: (_id) => setOpen((prev) => !prev),
@@ -30329,10 +30371,10 @@
       content: {
         messageType: "big_single_action",
         id: "id-big-single",
-        titleText: "Tell Us Your Thoughts on Privacy Pro",
-        descriptionText: "Take our short anonymous survey and share your feedback.",
-        icon: "PrivacyPro",
-        primaryActionText: "Take Survey"
+        titleText: "New! Advanced AI for Subscribers",
+        descriptionText: "Your subscription now includes access to more advanced models in Duck.ai, our private AI chat service. Always optional. No extra cost.",
+        icon: "DuckAi",
+        primaryActionText: "Try Duck.ai"
       }
     },
     big_two_action: {

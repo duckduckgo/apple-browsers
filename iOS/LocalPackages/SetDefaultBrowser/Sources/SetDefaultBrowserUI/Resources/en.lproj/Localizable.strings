@@ -5,6 +5,5 @@
 "setDefaultBrowser.cta.secondary.title" = "Don’t Ask Again";
 
 "setDefaultBrowser.modal.inactive-user.title" = "DuckDuckGo has protections other browsers don’t.";
-"setDefaultBrowser.modal.inactive-user.more-protections.title" = "[Plus even more protections...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
-"setDefaultBrowser.inactive-user.cta.primary.title" = "Open Links with DuckDuckGo";
-"setDefaultBrowser.inactive-user.cta.secondary.title" = "Maybe Later";
+"setDefaultBrowser.modal.inactive-user.cta.primary.title" = "Open Links With DuckDuckGo";
+"setDefaultBrowser.modal.inactive-user.cta.secondary.title" = "Maybe Later";

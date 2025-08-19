@@ -43,7 +43,7 @@ struct Launching: LaunchingHandling {
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
-    private let aiChatSettings = AIChatSettings()
+    private let aiChatSettings: AIChatSettings
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
@@ -89,7 +89,8 @@ struct Launching: LaunchingHandling {
                                                             appSettings: appSettings,
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
-                                                            privacyConfigurationManager: privacyConfigurationManager)
+                                                            privacyConfigurationManager: privacyConfigurationManager,
+                                                            configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
@@ -104,6 +105,9 @@ struct Launching: LaunchingHandling {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
             isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
         )
+
+        // Has to be intialised after configuration.start in case values need to be migrated
+        aiChatSettings = AIChatSettings()
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -122,6 +126,7 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
+                                              customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,

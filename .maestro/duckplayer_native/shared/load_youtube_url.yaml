@@ -12,5 +12,9 @@ appId: com.duckduckgo.mobile.ios
 - inputText: ${output.youtubeSearchUrl}
 - pressKey: Enter
 
+- waitForAnimationToEnd
+
 # Refresh the page to ensure the cookies are handled
 - tapOn: Refresh page
+
+- waitForAnimationToEnd

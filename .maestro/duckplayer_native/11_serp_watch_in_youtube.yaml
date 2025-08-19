@@ -18,8 +18,8 @@ tags:
     file: shared/load_serp_url.yaml
 
 # Open Specific Video
-- assertVisible: ${output.videoTitle}
-- tapOn: ${output.videoTitle}
+- runFlow:
+    file: shared/tap_serp_title.yaml
 
 # Validate Duck Player is Visible
 - runFlow: 

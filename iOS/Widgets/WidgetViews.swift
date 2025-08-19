@@ -138,8 +138,10 @@ struct FavoritesWidgetView: View {
             VStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
-                    Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                        CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                    if entry.isAIChatEnabled {
+                        Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
+                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                        }
                     }
                 }
                 if entry.favorites.isEmpty, !entry.isPreview {

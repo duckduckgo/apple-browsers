@@ -217,14 +217,16 @@ extension AppDelegate {
         Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
     }
 
-#if FEEDBACK
-
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
                 Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
             } else {
-                FeedbackPresenter.presentFeedbackForm()
+                if self.featureFlagger.isFeatureOn(.newFeedbackForm) {
+                    Application.appDelegate.openRequestANewFeature(nil)
+                } else {
+                    FeedbackPresenter.presentFeedbackForm()
+                }
             }
         }
     }
@@ -256,12 +258,119 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
     @objc func openReportABrowserProblem(_ sender: Any?) {
+        guard !self.internalUserDecider.isInternalUser else {
+            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            return
+        }
 
+        var window: NSWindow?
+
+        // Check if we can report broken site (same logic as openReportBrokenSite)
+        let canReportBrokenSite = Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+
+        let formView = ReportProblemFormFlowView(
+            canReportBrokenSite: canReportBrokenSite,
+            onReportBrokenSite: {
+                // Close the problem report form and show broken site dashboard
+                window?.close()
+                DispatchQueue.main.async {
+                    NSApp.delegateTyped.openReportBrokenSite(sender)
+                }
+            },
+            onClose: {
+                window?.close()
+            },
+            onSeeWhatsNew: {
+                Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
+                window?.close()
+            },
+            onResize: { width, height in
+                guard let window = window else { return }
+                let currentFrame = window.frame
+                let newFrame = NSRect(
+                    x: currentFrame.origin.x,
+                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
+                    width: width,
+                    height: height
+                )
+                window.setFrame(newFrame, display: true, animate: true)
+            }
+        )
+
+        let controller = ReportProblemFormViewController(rootView: formView)
+        window = NSWindow(contentViewController: controller)
+
+        guard let window = window else { return }
+
+        window.styleMask.remove(.resizable)
+        let windowRect = NSRect(x: 0,
+                                y: 0,
+                                width: ReportProblemFormViewController.Constants.width,
+                                height: ReportProblemFormViewController.Constants.height)
+        window.setFrame(windowRect, display: true)
+
+        DispatchQueue.main.async {
+            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
+                assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
+                return
+            }
+
+            parentWindowController.window?.beginSheet(window) { _ in }
+        }
     }
 
+    @MainActor
     @objc func openRequestANewFeature(_ sender: Any?) {
+        guard !self.internalUserDecider.isInternalUser else {
+            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            return
+        }
 
+        var window: NSWindow?
+
+        let formView = RequestNewFeatureFormFlowView(
+            onClose: {
+                window?.close()
+            },
+            onSeeWhatsNew: {
+                Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
+                window?.close()
+            },
+            onResize: { width, height in
+                guard let window = window else { return }
+                let currentFrame = window.frame
+                let newFrame = NSRect(
+                    x: currentFrame.origin.x,
+                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
+                    width: width,
+                    height: height
+                )
+                window.setFrame(newFrame, display: true, animate: true)
+            }
+        )
+
+        let controller = RequestNewFeatureFormViewController(rootView: formView)
+        window = NSWindow(contentViewController: controller)
+
+        guard let window = window else { return }
+
+        window.styleMask.remove(.resizable)
+        let windowRect = NSRect(x: 0,
+                                y: 0,
+                                width: RequestNewFeatureFormViewController.Constants.width,
+                                height: RequestNewFeatureFormViewController.Constants.height)
+        window.setFrame(windowRect, display: true)
+
+        DispatchQueue.main.async {
+            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
+                assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
+                return
+            }
+
+            parentWindowController.window?.beginSheet(window) { _ in }
+        }
     }
 
     @MainActor
@@ -273,8 +382,6 @@ extension AppDelegate {
     @objc func copyVersion(_ sender: Any?) {
         NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
     }
-
-#endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {
@@ -636,16 +743,8 @@ extension AppDelegate {
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
     }
 
-    private func setConfigurationUrl(_ configurationUrl: URL?) {
-        var configurationProvider = AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger,
-            customPrivacyConfiguration: configurationUrl
-        )
-        if configurationUrl == nil {
-            configurationProvider.resetToDefaultConfigurationUrl()
-        }
-        Configuration.setURLProvider(configurationProvider)
+    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) {
+        configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
@@ -654,12 +753,9 @@ extension AppDelegate {
         }
     }
 
-    @objc func setCustomConfigurationURL(_ sender: Any?) {
-        let currentConfigurationURL = AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        ).url(for: .privacyConfiguration).absoluteString
-        let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
+    @objc func setCustomPrivacyConfigurationURL(_ sender: Any?) {
+        let privacyConfigURL = configurationURLProvider.url(for: .privacyConfiguration).absoluteString
+        let alert = NSAlert.customConfigurationAlert(configurationUrl: privacyConfigURL)
         if alert.runModal() != .cancel {
             guard let textField = alert.accessoryView as? NSTextField,
                   let newConfigurationUrl = URL(string: textField.stringValue) else {
@@ -667,12 +763,12 @@ extension AppDelegate {
                 return
             }
 
-            setConfigurationUrl(newConfigurationUrl)
+            setPrivacyConfigurationUrl(newConfigurationUrl)
         }
     }
 
-    @objc func resetConfigurationToDefault(_ sender: Any?) {
-        setConfigurationUrl(nil)
+    @objc func resetPrivacyConfigurationToDefault(_ sender: Any?) {
+        setPrivacyConfigurationUrl(nil)
     }
 
     @objc func resetInstallStatistics() {
@@ -1417,10 +1513,8 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.openExportLogins(_:)):
             return areTherePasswords
 
-#if FEEDBACK
         case #selector(AppDelegate.openReportBrokenSite(_:)):
             return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
-#endif
         default:
             return true
         }

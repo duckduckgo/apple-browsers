@@ -176,7 +176,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
-    private let visualStyleDecider: VisualStyleDecider
 
     let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -194,6 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     var configurationStore = ConfigurationStore()
     var configurationManager: ConfigurationManager
+    var configurationURLProvider: CustomConfigurationURLProviding
 
     // MARK: - VPN
 
@@ -593,8 +593,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
-        visualStyle = visualStyleDecider.style
+        visualStyle = VisualStyle.current
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -673,8 +672,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         appContentBlocking = contentBlocking
 #endif
-
+        configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults.appConfiguration))
         configurationManager = ConfigurationManager(
+            fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents),
             store: configurationStore,
             trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
             privacyConfigurationManager: privacyConfigurationManager,
@@ -729,6 +729,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
+                configurationURLProvider: configurationURLProvider,
                 visualStyle: self.visualStyle
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
@@ -807,10 +808,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
-        Configuration.setURLProvider(AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        ))
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore, startupPreferences: startupPreferences)
 

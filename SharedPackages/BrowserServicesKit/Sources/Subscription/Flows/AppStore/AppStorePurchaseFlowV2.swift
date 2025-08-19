@@ -146,6 +146,8 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             switch error {
             case .purchaseCancelledByUser:
                 return .failure(.cancelledByUser)
+            case .purchaseFailed(let underlyingError):
+                return .failure(.purchaseFailed(underlyingError))
             default:
                 return .failure(.purchaseFailed(error))
             }

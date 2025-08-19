@@ -264,10 +264,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
-                    case .accountCreationFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
-                    case .purchaseFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed)
+                    case .accountCreationFailed(let creationError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
+                    case .purchaseFailed(let purchaseError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
                     case .cancelledByUser:
                         subscriptionErrorReporter.report(subscriptionActivationError: .cancelledByUser)
                     case .missingEntitlements:
@@ -307,10 +307,10 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
-                    case .accountCreationFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
-                    case .purchaseFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed)
+                    case .accountCreationFailed(let creationError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
+                    case .purchaseFailed(let purchaseError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
                     case .cancelledByUser:
                         subscriptionErrorReporter.report(subscriptionActivationError: .cancelledByUser)
                     case .missingEntitlements:
@@ -338,8 +338,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 switch error {
                 case .noProductsFound:
                     subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
-                case .accountCreationFailed:
-                    subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
+                case .accountCreationFailed(let creationError):
+                    subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
                 }
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
             }

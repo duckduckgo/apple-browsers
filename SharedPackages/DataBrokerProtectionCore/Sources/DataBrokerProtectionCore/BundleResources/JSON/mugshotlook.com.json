@@ -1,7 +1,7 @@
 {
   "name": "MugshotLook",
   "url": "mugshotlook.com",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.mugshotlook.com/optOut/name/landing",
   "steps": [
@@ -206,5 +206,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1738339540066
+  "addedDatetime": 1738339540066,
+  "removedAt": null
 }

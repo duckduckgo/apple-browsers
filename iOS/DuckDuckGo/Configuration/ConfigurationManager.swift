@@ -60,7 +60,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
 
     public static let didUpdateTrackerDependencies = NSNotification.Name(rawValue: "com.duckduckgo.configurationManager.didUpdateTrackerDependencies")
 
-    private static let configurationDebugEvents = EventMapping<ConfigurationDebugEvents> { event, error, _, _ in
+    public static let configurationDebugEvents = EventMapping<ConfigurationDebugEvents> { event, error, _, _ in
         let domainEvent: Pixel.Event
         switch event {
         case .invalidPayload(let configuration):
@@ -74,9 +74,9 @@ final class ConfigurationManager: DefaultConfigurationManager {
         }
     }
 
-    init(fetcher: ConfigurationFetching = ConfigurationFetcher(store: ConfigurationStore(), eventMapping: configurationDebugEvents),
+    init(fetcher: ConfigurationFetching,
          store: ConfigurationStoring = AppDependencyProvider.shared.configurationStore,
-         defaults: KeyValueStoring = UserDefaults(suiteName: "\(Global.groupIdPrefix).app-configuration") ?? UserDefaults(),
+         defaults: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          trackerDataManager: TrackerDataManager = ContentBlocking.shared.trackerDataManager,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
         self.trackerDataManager = trackerDataManager

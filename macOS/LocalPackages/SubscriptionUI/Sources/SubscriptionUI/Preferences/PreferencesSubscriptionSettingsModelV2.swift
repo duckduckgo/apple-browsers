@@ -148,6 +148,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     enum ChangePlanOrBillingAction {
         case presentSheet(ManageSubscriptionSheet)
         case navigateToManageSubscription(() -> Void)
+        case showInternalSubscriptionAlert
     }
 
     @MainActor
@@ -166,8 +167,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                 self?.changePlanOrBilling(for: .stripe)
             }
         default:
-            assertionFailure("Missing or unknown subscriptionPlatform")
-            return .navigateToManageSubscription { }
+            return .showInternalSubscriptionAlert
         }
     }
 

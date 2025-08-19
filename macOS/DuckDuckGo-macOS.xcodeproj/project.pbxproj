@@ -6829,6 +6829,7 @@
 				84AECC4E2DFBF75700438ACC /* CommonObjCExtensions */,
 				9DB980122D96AF8600B174B3 /* DataBrokerProtection-macOS */,
 				9DB9801B2D96B3FE00B174B3 /* DataBrokerProtectionCore */,
+				4BC5E8612E174B7D00391C19 /* DesignResourcesKit */,
 				BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */,
 				7B8FDD1E2CDD877000720907 /* FeatureFlags */,
 				9DF2DB592C73B52F0025F43C /* Freemium */,
@@ -6845,13 +6846,12 @@
 				4B94B7512D471E7E0014AAB8 /* SyncUI-macOS */,
 				7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */,
 				7B8594172B5B25FB0007EB3E /* UDSHelper */,
+				31D49A392DC2948D00262F26 /* UIComponents */,
 				373DE97A2D3916FD000577EE /* UserScriptActionsManager */,
 				3772BEDF2D01A1400019B9EF /* Utilities */,
+				7BB9F8E72DFC1AB700741690 /* VPN */,
 				3720B7F82D00DA4500D20F23 /* WebKitExtensions */,
 				7B76E6852AD5D77600186A84 /* XPCHelper */,
-				31D49A392DC2948D00262F26 /* UIComponents */,
-				7BB9F8E72DFC1AB700741690 /* VPN */,
-				4BC5E8612E174B7D00391C19 /* DesignResourcesKit */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";

@@ -80355,7 +80355,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out."
+            "value" : "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS."
           }
         }
       }
@@ -80372,6 +80372,30 @@
         }
       }
     },
+    "tracking.protection.facebook.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites."
+          }
+        }
+      }
+    },
+    "tracking.protection.facebook.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Facebook tracking protection"
+          }
+        }
+      }
+    },
     "tracking.protection.fingerprinting.description" : {
       "comment" : "Feature box description",
       "extractionState" : "extracted_with_value",
@@ -80379,7 +80403,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites."
+            "value" : "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web."
           }
         }
       }
@@ -80403,7 +80427,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Helps block companies from identifying the last website you visited."
+            "value" : "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out."
           }
         }
       }
@@ -80427,7 +80451,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out."
+            "value" : "Replaces Google AMP links with the original publisher's site."
           }
         }
       }
@@ -80451,7 +80475,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Replaces Google AMP links with the original publisher's site."
+            "value" : "Blocks Google sign-in pop-ups on sites Google doesn't own."
           }
         }
       }
@@ -80487,7 +80511,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Prevents link tracking"
+            "value" : "Blocks link tracking"
           }
         }
       }
@@ -80499,7 +80523,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Stops 3rd-party trackers from loading in the first place."
+            "value" : "Helps block companies from identifying the last website you visited."
           }
         }
       }
@@ -80547,7 +80571,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Helps block 3rd-party cookies that track you from site to site by stopping 3rd-party trackers from loading in the first place."
+            "value" : "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place."
           }
         }
       }

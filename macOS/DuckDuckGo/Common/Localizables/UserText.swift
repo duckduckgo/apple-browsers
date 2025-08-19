@@ -441,31 +441,34 @@ struct UserText {
     
     // Tracking Protection Features
     static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Feature box title")
-    static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by stopping 3rd-party trackers from loading in the first place.", comment: "Feature description")
+    static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.", comment: "Feature description")
     
     static let trackingProtectionTargetedAdsTitle = NSLocalizedString("tracking.protection.targeted.ads.title", value: "Blocks targeted ads", comment: "Feature box title")
     static let trackingProtectionTargetedAdsDescription = NSLocalizedString("tracking.protection.targeted.ads.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Feature description")
     
-    static let trackingProtectionLinkTrackingTitle = NSLocalizedString("tracking.protection.link.tracking.title", value: "Prevents link tracking", comment: "Feature box title")
+    static let trackingProtectionLinkTrackingTitle = NSLocalizedString("tracking.protection.link.tracking.title", value: "Blocks link tracking", comment: "Feature box title")
     static let trackingProtectionLinkTrackingDescription = NSLocalizedString("tracking.protection.link.tracking.description", value: "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites.", comment: "Feature box description")
     
     static let trackingProtectionFingerprintingTitle = NSLocalizedString("tracking.protection.fingerprinting.title", value: "Prevents fingerprint tracking", comment: "Feature box title")
-    static let trackingProtectionFingerprintingDescription = NSLocalizedString("tracking.protection.fingerprinting.description", value: "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites.", comment: "Feature box description")
+    static let trackingProtectionFingerprintingDescription = NSLocalizedString("tracking.protection.fingerprinting.description", value: "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.", comment: "Feature box description")
     
     static let trackingProtectionReferrerTitle = NSLocalizedString("tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Feature box title")
-    static let trackingProtectionReferrerDescription = NSLocalizedString("tracking.protection.referrer.description", value: "Stops 3rd-party trackers from loading in the first place.", comment: "Feature box description")
+    static let trackingProtectionReferrerDescription = NSLocalizedString("tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Feature box description")
     
     static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Feature box title")
-    static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.first.party.cookies.description", value: "Helps block companies from identifying the last website you visited.", comment: "Feature box description")
+    static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
     
     static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Feature box title")
-    static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.cname.cloaking.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
+    static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Feature box description")
     
     static let trackingProtectionGoogleAMPTitle = NSLocalizedString("tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Feature box title")
-    static let trackingProtectionGoogleAMPDescription = NSLocalizedString("tracking.protection.google.amp.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
+    static let trackingProtectionGoogleAMPDescription = NSLocalizedString("tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher's site.", comment: "Feature box description")
     
     static let trackingProtectionGoogleSignInTitle = NSLocalizedString("tracking.protection.google.sign.in.title", value: "Blocks Google's sign-in pop-ups", comment: "Feature box title")
-    static let trackingProtectionGoogleSignInDescription = NSLocalizedString("tracking.protection.google.sign.in.description", value: "Replaces Google AMP links with the original publisher's site.", comment: "Feature box description")
+    static let trackingProtectionGoogleSignInDescription = NSLocalizedString("tracking.protection.google.sign.in.description", value: "Blocks Google sign-in pop-ups on sites Google doesn't own.", comment: "Feature box description")
+    
+    static let trackingProtectionFacebookTitle = NSLocalizedString("tracking.protection.facebook.title", value: "Facebook tracking protection", comment: "Feature box title")
+    static let trackingProtectionFacebookDescription = NSLocalizedString("tracking.protection.facebook.description", value: "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites.", comment: "Feature box description")
     
     static let emailProtectionExplanation = NSLocalizedString("email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.", comment: "Email protection feature explanation in settings. The feature blocks email trackers and hides original email address.")
 

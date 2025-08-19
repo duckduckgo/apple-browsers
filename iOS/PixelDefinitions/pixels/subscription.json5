@@ -76,7 +76,7 @@
         ],
     },
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
-    m_wide_subscription_purchase: {
+    m_ios_wide_subscription_purchase: {
         description: 'Wide pixel sent at the end of a subscription purchase flow',
         owners: ['samsymons'],
         triggers: ['other'],

@@ -19,6 +19,7 @@
 import Foundation
 import XCTest
 import Network
+import VPNTestUtils
 @testable import VPN
 
 final class VPNRoutingRangeTests: XCTestCase {
@@ -27,21 +28,35 @@ final class VPNRoutingRangeTests: XCTestCase {
     
     /// Verifies that critical system traffic never goes through the VPN tunnel
     func testCriticalSystemTrafficStaysLocal() {
-        // Given
-        let ipv4Excluded = VPNRoutingRange.alwaysExcludedIPv4Range.map { $0.description }
-        let ipv6Excluded = VPNRoutingRange.alwaysExcludedIPv6Range.map { $0.description }
+        // Given - System ranges that should always be excluded
+        let ipv4Excluded = VPNRoutingRange.alwaysExcludedIPv4Range
+        let ipv6Excluded = VPNRoutingRange.alwaysExcludedIPv6Range
         
-        // Then - Verify all critical IPv4 ranges are protected
-        XCTAssertTrue(ipv4Excluded.contains("127.0.0.0/8"), "Should exclude loopback")
-        XCTAssertTrue(ipv4Excluded.contains("169.254.0.0/16"), "Should exclude link-local") 
-        XCTAssertTrue(ipv4Excluded.contains("224.0.0.0/4"), "Should exclude multicast")
-        XCTAssertTrue(ipv4Excluded.contains("240.0.0.0/4"), "Should exclude experimental ranges")
+        // Define expected system ranges
+        let expectedIPv4Ranges = [
+            IPAddressRange(from: "127.0.0.0/8")!,      // Loopback
+            IPAddressRange(from: "169.254.0.0/16")!,   // Link-local
+            IPAddressRange(from: "224.0.0.0/4")!,      // Multicast
+            IPAddressRange(from: "240.0.0.0/4")!       // Experimental
+        ]
         
-        // Then - Verify all critical IPv6 ranges are protected  
-        XCTAssertTrue(ipv6Excluded.contains("::1/128"), "Should exclude IPv6 loopback")
-        XCTAssertTrue(ipv6Excluded.contains("fe80::/10"), "Should exclude IPv6 link-local")
-        XCTAssertTrue(ipv6Excluded.contains("ff00::/8"), "Should exclude IPv6 multicast")
-        XCTAssertTrue(ipv6Excluded.contains("fc00::/7"), "Should exclude IPv6 private")
+        let expectedIPv6Ranges = [
+            IPAddressRange(from: "::1/128")!,          // IPv6 loopback
+            IPAddressRange(from: "fe80::/10")!,        // IPv6 link-local
+            IPAddressRange(from: "ff00::/8")!,         // IPv6 multicast
+            IPAddressRange(from: "fc00::/7")!          // IPv6 private
+        ]
+        
+        // Then - Verify critical system ranges are excluded using exact matching
+        for expectedRange in expectedIPv4Ranges {
+            XCTAssertTrue(expectedRange.hasExactMatch(in: ipv4Excluded), 
+                         "IPv4 system range \(expectedRange) should be excluded")
+        }
+        
+        for expectedRange in expectedIPv6Ranges {
+            XCTAssertTrue(expectedRange.hasExactMatch(in: ipv6Excluded), 
+                         "IPv6 system range \(expectedRange) should be excluded")
+        }
     }
     
     // MARK: - Local Network Range Tests
@@ -91,16 +106,21 @@ final class VPNRoutingRangeTests: XCTestCase {
     func testPublicInternetTrafficIsFullyCovered() {
         // Given
         let publicNetworks = VPNRoutingRange.publicNetworkRange
-        let publicStrings = publicNetworks.map { $0.description }
         
-        // Then - Should include major public IPv4 ranges
-        XCTAssertTrue(publicStrings.contains("1.0.0.0/8"), "Should include 1.0.0.0/8")
-        XCTAssertTrue(publicStrings.contains("8.0.0.0/7"), "Should include 8.0.0.0/7 (covers 8.x and 9.x)")
-        XCTAssertTrue(publicStrings.contains("64.0.0.0/2"), "Should include 64.0.0.0/2 (covers 64-127)")
-        XCTAssertTrue(publicStrings.contains("128.0.0.0/3"), "Should include 128.0.0.0/3 (covers 128-159)")
+        // Expected major public ranges that should be covered
+        let expectedPublicRanges = [
+            IPAddressRange(from: "1.0.0.0/8")!,       // Major public block
+            IPAddressRange(from: "8.0.0.0/7")!,       // Covers 8.x and 9.x
+            IPAddressRange(from: "64.0.0.0/3")!,      // Part of fixed 64.0.0.0/2 split
+            IPAddressRange(from: "128.0.0.0/3")!,     // Major upper block
+            IPAddressRange(from: "::/0")!             // IPv6 default route
+        ]
         
-        // Should include IPv6
-        XCTAssertTrue(publicStrings.contains("::/0"), "Should include IPv6 default route ::/0")
+        // Then - Verify major public ranges are covered using exact matching
+        for expectedRange in expectedPublicRanges {
+            XCTAssertTrue(expectedRange.hasExactMatch(in: publicNetworks), 
+                         "Major public range \(expectedRange) should be covered")
+        }
         
     }
     
@@ -108,15 +128,19 @@ final class VPNRoutingRangeTests: XCTestCase {
     func testPublicAndPrivateTrafficAreSeparated() {
         // Given
         let publicNetworks = VPNRoutingRange.publicNetworkRange
-        let publicStrings = publicNetworks.map { $0.description }
         
-        // Then - Should NOT directly include RFC 1918 ranges
-        XCTAssertFalse(publicStrings.contains("10.0.0.0/8"), 
-                      "Public ranges should NOT directly include private 10.0.0.0/8")
-        XCTAssertFalse(publicStrings.contains("172.16.0.0/12"), 
-                      "Public ranges should NOT directly include private 172.16.0.0/12")
-        XCTAssertFalse(publicStrings.contains("192.168.0.0/16"), 
-                      "Public ranges should NOT directly include private 192.168.0.0/16")
+        // Define private ranges that should NOT be in public ranges
+        let privateRanges = [
+            IPAddressRange(from: "10.0.0.0/8")!,
+            IPAddressRange(from: "172.16.0.0/12")!,
+            IPAddressRange(from: "192.168.0.0/16")!
+        ]
+        
+        // Then - Verify private ranges are NOT in public ranges using exact matching
+        for privateRange in privateRanges {
+            XCTAssertFalse(privateRange.hasExactMatch(in: publicNetworks), 
+                          "Private range \(privateRange) should NOT be in public ranges")
+        }
         
     }
     
@@ -124,17 +148,22 @@ final class VPNRoutingRangeTests: XCTestCase {
     func testInternetTrafficDoesNotIncludeSystemRanges() {
         // Given
         let publicNetworks = VPNRoutingRange.publicNetworkRange
-        let publicStrings = publicNetworks.map { $0.description }
         
-        // Then - Should NOT include system ranges that are always excluded
-        XCTAssertFalse(publicStrings.contains("127.0.0.0/8"), 
-                      "Public ranges should NOT include loopback 127.0.0.0/8")
-        XCTAssertFalse(publicStrings.contains("169.254.0.0/16"), 
-                      "Public ranges should NOT include link-local 169.254.0.0/16")
-        XCTAssertFalse(publicStrings.contains("224.0.0.0/4"), 
-                      "Public ranges should NOT include multicast 224.0.0.0/4")
-        XCTAssertFalse(publicStrings.contains("240.0.0.0/4"), 
-                      "Public ranges should NOT include Class E 240.0.0.0/4")
+        // Define system ranges that should NOT be in public ranges
+        let systemRanges = [
+            IPAddressRange(from: "127.0.0.0/8")!,      // Loopback
+            IPAddressRange(from: "169.254.0.0/16")!,   // Link-local
+            IPAddressRange(from: "224.0.0.0/4")!,      // Multicast
+            IPAddressRange(from: "240.0.0.0/4")!       // Experimental
+        ]
+        
+        // Then - Verify system ranges are NOT included in public internet using mathematical operations
+        for systemRange in systemRanges {
+            let foundInPublic = publicNetworks.contains { publicRange in
+                publicRange == systemRange || publicRange.contains(systemRange) || systemRange.contains(publicRange)
+            }
+            XCTAssertFalse(foundInPublic, "System range \(systemRange) should NOT be in public ranges")
+        }
         
     }
     
@@ -148,7 +177,7 @@ final class VPNRoutingRangeTests: XCTestCase {
             ("alwaysExcludedIPv4", VPNRoutingRange.alwaysExcludedIPv4Range),
             ("localNetwork", VPNRoutingRange.localNetworkRange),
             ("localNetworkWithoutDNS", VPNRoutingRange.localNetworkRangeWithoutDNS),
-            ("publicNetwork", VPNRoutingRange.publicNetworkRange.filter { !$0.description.contains(":") }) // IPv4 only
+            ("publicNetwork", VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv4Address }) // IPv4 only
         ]
         
         for (rangeName, ranges) in allRanges {
@@ -169,7 +198,7 @@ final class VPNRoutingRangeTests: XCTestCase {
     func testIPv6RangeDefinitionsAreValid() {
         let allIPv6Ranges = [
             ("alwaysExcludedIPv6", VPNRoutingRange.alwaysExcludedIPv6Range),
-            ("publicNetworkIPv6", VPNRoutingRange.publicNetworkRange.filter { $0.description.contains(":") })
+            ("publicNetworkIPv6", VPNRoutingRange.publicNetworkRange.filter { $0.address is IPv6Address })
         ]
         
         for (rangeName, ranges) in allIPv6Ranges {
@@ -209,57 +238,98 @@ final class VPNRoutingRangeTests: XCTestCase {
     
     // MARK: - Range Logic and Consistency Tests
     
-    /// Verifies logical consistency - ensures no IP range is both included and excluded which would break routing
+    /// Verifies that no IP ranges overlap between different routing categories which would cause routing conflicts
     func testRoutingLogicIsConsistent() {
         // Given
-        let alwaysExcluded = Set(VPNRoutingRange.alwaysExcludedIPv4Range.map { $0.description })
-        let localNetwork = Set(VPNRoutingRange.localNetworkRange.map { $0.description })
-        let localWithoutDNS = Set(VPNRoutingRange.localNetworkRangeWithoutDNS.map { $0.description })
+        let alwaysExcluded = VPNRoutingRange.alwaysExcludedIPv4Range
+        let localNetwork = VPNRoutingRange.localNetworkRange
+        let localWithoutDNS = VPNRoutingRange.localNetworkRangeWithoutDNS
         
-        // Then - Categories should not overlap
-        let alwaysExcludedAndLocal = alwaysExcluded.intersection(localNetwork)
-        let alwaysExcludedAndLocalWithoutDNS = alwaysExcluded.intersection(localWithoutDNS)
+        // Then - Check for actual range overlaps, not just exact string matches
+        let alwaysExcludedAndLocal = findOverlappingRanges(alwaysExcluded, localNetwork)
+        let alwaysExcludedAndLocalWithoutDNS = findOverlappingRanges(alwaysExcluded, localWithoutDNS)
         
         XCTAssertTrue(alwaysExcludedAndLocal.isEmpty, 
-                     "Always excluded and local network ranges should not overlap")
+                     "Found overlapping ranges between always excluded and local: \(alwaysExcludedAndLocal)")
         XCTAssertTrue(alwaysExcludedAndLocalWithoutDNS.isEmpty, 
-                     "Always excluded and local network (without DNS) ranges should not overlap")
-        
+                     "Found overlapping ranges between always excluded and local (without DNS): \(alwaysExcludedAndLocalWithoutDNS)")
     }
     
-    /// Verifies that DNS-compatible and full local network range definitions have the correct relationship
-    ///
-    /// - Discussion: The "WithoutDNS" variant excludes 10.0.0.0/8 to prevent VPN tunnel conflicts,
-    ///   while the full range includes all RFC 1918 addresses for complete local network coverage.
+    /// Verifies that DNS-compatible local ranges are properly contained within full local ranges
     func testDNSCompatibleRangesAreProperSubset() {
         // Given
-        let localNetwork = Set(VPNRoutingRange.localNetworkRange.map { $0.description })
-        let localWithoutDNS = Set(VPNRoutingRange.localNetworkRangeWithoutDNS.map { $0.description })
+        let localNetwork = VPNRoutingRange.localNetworkRange
+        let localWithoutDNS = VPNRoutingRange.localNetworkRangeWithoutDNS
         
-        // Then - localNetworkRangeWithoutDNS should be subset of localNetworkRange
-        XCTAssertTrue(localWithoutDNS.isSubset(of: localNetwork), 
-                     "localNetworkRangeWithoutDNS should be a subset of localNetworkRange")
-        
+        // Then - Every range in localWithoutDNS should be contained in or equal to a range in localNetwork
+        for rangeWithoutDNS in localWithoutDNS {
+            let isContained = localNetwork.contains { localRange in
+                localRange.contains(rangeWithoutDNS) || localRange == rangeWithoutDNS
+            }
+            XCTAssertTrue(isContained, 
+                         "Range \(rangeWithoutDNS) should be contained within localNetworkRange")
+        }
     }
+    
+    /// Verifies that public and private IP ranges have no overlaps that could cause routing ambiguity
+    func testPublicAndPrivateRangesDoNotOverlap() {
+        // Given
+        let publicRanges = VPNRoutingRange.publicNetworkRange.filter { range in
+            // Only check IPv4 public ranges vs IPv4 private ranges
+            range.address is IPv4Address
+        }
+        let privateRanges = VPNRoutingRange.localNetworkRange
+        
+        // Then - No public range should overlap with private ranges
+        let overlaps = findOverlappingRanges(publicRanges, privateRanges)
+        XCTAssertTrue(overlaps.isEmpty, 
+                     "Found overlaps between public and private ranges: \(overlaps)")
+    }
+    
+
+    
+    // MARK: - Helper Methods
+    
+    private func findOverlappingRanges(_ ranges1: [IPAddressRange], _ ranges2: [IPAddressRange]) -> [(IPAddressRange, IPAddressRange)] {
+        var overlaps: [(IPAddressRange, IPAddressRange)] = []
+        
+        for range1 in ranges1 {
+            for range2 in ranges2 {
+                if range1.overlaps(range2) {
+                    overlaps.append((range1, range2))
+                }
+            }
+        }
+        
+        return overlaps
+    }
+
     
     /// Verifies that VPN provides comprehensive global internet access by covering all major address blocks
     func testGlobalInternetAccessIsComprehensive() {
         // Given
         let publicNetworks = VPNRoutingRange.publicNetworkRange
-        let publicStrings = publicNetworks.map { $0.description }
-        
-        // Then - Should cover major internet address blocks
+        // Expected major internet address blocks that should be covered
         let expectedMajorBlocks = [
             "1.0.0.0/8",      // APNIC
             "8.0.0.0/7",      // Various (Level 3, Google, etc.)
-            "64.0.0.0/2",     // North America
+            "64.0.0.0/3",     // Part of former 64.0.0.0/2 (64-95)
+            "96.0.0.0/4",     // Part of former 64.0.0.0/2 (96-111)
             "128.0.0.0/3",    // Various global
             "::/0"            // IPv6 default
         ]
         
+        // Then - Verify all expected blocks are covered using mathematical operations
         for expectedBlock in expectedMajorBlocks {
-            XCTAssertTrue(publicStrings.contains(expectedBlock), 
-                         "Public network range should contain \(expectedBlock)")
+            guard let expectedRange = IPAddressRange(from: expectedBlock) else {
+                XCTFail("Invalid test range: \(expectedBlock)")
+                continue
+            }
+            
+            let isCovered = publicNetworks.contains { publicRange in
+                publicRange == expectedRange || publicRange.contains(expectedRange)
+            }
+            XCTAssertTrue(isCovered, "Public network range should contain \(expectedBlock)")
         }
         
     }

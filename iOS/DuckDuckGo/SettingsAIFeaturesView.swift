@@ -75,11 +75,10 @@ struct SettingsAIFeaturesView: View {
                     if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                         Section {
                             HStack {
-                                Spacer()
                                 SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
                                     .padding(.vertical, 8)
-                                Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .center)
                         } footer: {
                             Text(footerAttributedString)
                                 .environment(\.openURL, OpenURLAction { url in

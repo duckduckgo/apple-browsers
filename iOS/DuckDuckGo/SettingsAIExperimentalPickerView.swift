@@ -63,6 +63,7 @@ private struct PickerOptionView: View {
         Button(action: action) {
             VStack(spacing: SettingsAIExperimentalPickerViewLayout.optionContentVerticalSpacing) {
                 Image(isSelected ? selectedImage : unselectedImage)
+                    .resizable()
                     .scaledToFit()
 
                 VStack(spacing: SettingsAIExperimentalPickerViewLayout.textStackSpacing) {

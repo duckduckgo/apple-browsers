@@ -186,11 +186,11 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         
         XCTAssertTrue(hasIPv6DNSRoute, "Should create host route for IPv6 DNS server")
         
-        // CRITICAL: Verify IPv6 DNS routes use /128 not /32 (potential bug check)
+        // Verify IPv6 DNS routes use correct /128 prefix for single host
         let ipv6DNSRoute = includedRoutes.first { route in
-            route.address is IPv6Address && route.contains(googleIPv6)
+            route.address.rawValue == googleIPv6.rawValue
         }
-        XCTAssertNotNil(ipv6DNSRoute, "Should find IPv6 DNS route")
+        XCTAssertNotNil(ipv6DNSRoute, "Should create IPv6 DNS route")
         if let route = ipv6DNSRoute {
             XCTAssertEqual(route.networkPrefixLength, 128, 
                           "IPv6 DNS routes must use /128 for single host, not /32")

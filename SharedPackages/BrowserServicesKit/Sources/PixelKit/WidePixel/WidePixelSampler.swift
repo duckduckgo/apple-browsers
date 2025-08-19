@@ -1,5 +1,5 @@
 //
-//  WidePixelEvents.swift
+//  WidePixelSampler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,11 +16,15 @@
 //  limitations under the License.
 //
 
-import Foundation
+public protocol WidePixelSampling {
+    func shouldSend(sampleRate: Double) -> Bool
+}
 
-public enum WidePixelEvent {
-    case saveFailed(pixelName: String, error: Error)
-    case updateFailed(pixelName: String, error: Error)
-    case loadFailed(pixelName: String, error: Error)
-    case completeFailed(pixelName: String, error: Error)
+public struct DefaultWidePixelSampler: WidePixelSampling {
+    public init() {}
+
+    public func shouldSend(sampleRate: Double) -> Bool {
+        let rate = max(0.0, min(1.0, sampleRate))
+        return Double.random(in: 0..<1) < rate
+    }
 }

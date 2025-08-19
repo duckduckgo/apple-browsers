@@ -27,27 +27,27 @@ import UIKit
 public protocol WidePixelManaging {
     func startFlow<T: WidePixelData>(_ data: T)
     func updateFlow<T: WidePixelData>(_ data: T)
-    func completeFlow<T: WidePixelData>(_ data: T, finalStatus: WidePixelFinalStatus, onComplete: @escaping PixelKit.CompletionBlock)
+    func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
 
-    func startMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, MeasuredInterval?>)
-    func stopMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, MeasuredInterval?>)
+    func startMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, WidePixel.MeasuredInterval?>)
+    func stopMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, WidePixel.MeasuredInterval?>)
 
     func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
     func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: UUID) -> T?
-
-    func getActiveFlowNames() -> [String]
     func clearAllFlows()
 }
 
-// MARK: - WidePixelManaging convenience defaults
-
-public extension WidePixelManaging {
-    func completeFlow<T: WidePixelData>(_ data: T, onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
-        completeFlow(data, finalStatus: .success, onComplete: onComplete)
-    }
-}
-
 public final class WidePixel: WidePixelManaging {
+
+    public struct MeasuredInterval: Codable {
+        public var start: Date?
+        public var end: Date?
+
+        public init(start: Date? = nil, end: Date? = nil) {
+            self.start = start
+            self.end = end
+        }
+    }
 
     // MARK: - Storage Configuration
 
@@ -59,13 +59,13 @@ public final class WidePixel: WidePixelManaging {
     private let storage: WidePixelStoring
     private let pixelKitProvider: () -> PixelKit?
     private let sampler: WidePixelSampling
-    private let eventMapping: EventMapping<WidePixelEvents>?
+    private let eventMapping: EventMapping<WidePixelEvent>?
 
     public init(userDefaults: UserDefaults = UserDefaults(suiteName: WidePixel.storageKeyPrefix) ?? .standard,
                 pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
                 sampler: WidePixelSampling = DefaultWidePixelSampler(),
                 storage: WidePixelStoring? = nil,
-                events: EventMapping<WidePixelEvents>? = nil) {
+                events: EventMapping<WidePixelEvent>? = nil) {
         self.defaults = userDefaults
         self.pixelKitProvider = pixelKitProvider
         self.sampler = sampler
@@ -83,8 +83,6 @@ public final class WidePixel: WidePixelManaging {
             report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
         }
     }
-
-    // removed: updateFlowParameters; callers should mutate their instance and call updateFlow(_:) instead
 
     public func updateFlow<T: WidePixelData>(_ data: T) {
         let contextID = data.contextData.id
@@ -108,22 +106,24 @@ public final class WidePixel: WidePixelManaging {
 
     // MARK: - Flow Completion
 
-    public func completeFlow<T: WidePixelData>(_ data: T, finalStatus: WidePixelFinalStatus, onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
+    public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
         Self.logger.info("Completing wide pixel flow: \(T.pixelName, privacy: .public) with context ID: \(data.contextData.id, privacy: .public)")
 
         do {
             try storage.update(data)
             let current: T = try storage.load(contextID: data.contextData.id)
+
             guard shouldSampleFlow(current) else {
                 handleDroppedFlow(for: data.contextData.id, sampleRate: current.globalData.sampleRate)
                 onComplete(true, nil)
                 return
             }
 
-            let parameters = try generateFinalParameters(from: current, expectedType: T.self, withStatus: finalStatus)
-
+            let parameters = try generateFinalParameters(from: current, status: status)
             clearFlow(for: data.contextData.id)
+
             try firePixel(named: T.pixelName, parameters: parameters, onComplete: onComplete)
+
             Self.logger.info("Completed wide pixel flow: \(T.pixelName, privacy: .public) with context ID: \(data.contextData.id, privacy: .public)")
         } catch {
             Self.logger.error("Failed to complete wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
@@ -142,25 +142,25 @@ public final class WidePixel: WidePixelManaging {
         Self.logger.info("Wide pixel dropped due to sample rate (\(sampleRate, privacy: .public)) for context ID: \(contextID, privacy: .public)")
     }
 
-    private func generateFinalParameters<T: WidePixelData>(from typed: T, expectedType: T.Type, withStatus status: WidePixelFinalStatus) throws -> [String: String] {
+    private func generateFinalParameters<T: WidePixelData>(from typed: T, status: WidePixelStatus) throws -> [String: String] {
         var parameters: [String: String] = [:]
+
         parameters.merge(typed.globalData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(typed.appData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(typed.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
-        parameters["feature.name"] = T.pixelName
-        parameters["feature.status"] = status.asString
-        if case let .unknown(reason) = status, !reason.isEmpty {
-            parameters["feature.status.unknown-status-reason"] = reason
+
+        parameters[WidePixelParameter.Feature.name] = T.pixelName
+        parameters[WidePixelParameter.Feature.status] = status.asString
+
+        if case let .unknown(reason) = status {
+            parameters[WidePixelParameter.Feature.statusReason] = reason
         }
+
         return parameters
     }
 
-    private func firePixel(
-        named pixelName: String,
-        parameters: [String: String],
-        onComplete: @escaping PixelKit.CompletionBlock
-    ) throws {
+    private func firePixel(named pixelName: String, parameters: [String: String], onComplete: @escaping PixelKit.CompletionBlock) throws {
         guard !pixelName.isEmpty else {
             Self.logger.error("Cannot fire wide pixel: empty pixel name")
             onComplete(false, WidePixelError.invalidParameters("Pixel name cannot be empty"))
@@ -180,7 +180,7 @@ public final class WidePixel: WidePixelManaging {
         }
 
         let finalPixelName = Self.generatePixelName(for: pixelName)
-        let widePixelEvent = WidePixelEvent(name: finalPixelName, parameters: parameters)
+        let widePixelEvent = WidePixelPixelKitEvent(name: finalPixelName, parameters: parameters)
 
         pixelKit.fire(
             widePixelEvent,
@@ -202,17 +202,14 @@ public final class WidePixel: WidePixelManaging {
         )
     }
 
-    public func completeFlow<T: WidePixelData>(
-        _ type: T.Type, contextID: UUID,
-        finalStatus: WidePixelFinalStatus,
-        onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }
-    ) {
+    public func completeFlow<T: WidePixelData>(_ type: T.Type, contextID: UUID, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         guard let currentData = getFlowData(T.self, contextID: contextID) else {
             report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil)
             onComplete(false, WidePixelError.flowNotFound(pixelName: T.pixelName))
             return
         }
-        completeFlow(currentData, finalStatus: finalStatus, onComplete: onComplete)
+
+        completeFlow(currentData, status: status, onComplete: onComplete)
     }
 
     // MARK: - Duration Measurements
@@ -288,7 +285,14 @@ public final class WidePixel: WidePixelManaging {
     }
 
     private static func generatePixelName(for name: String) -> String {
-        return "m_\(PlatformInfo.pixelName)_wide_\(name)"
+        #if os(macOS)
+        return "m_mac_wide_\(name)"
+        #elseif os(iOS)
+        return "m_ios_wide_\(name)"
+        #else
+        assertionFailure("Unsupported platform")
+        return "m_unknown_wide_\(name)"
+        #endif
     }
 
     // MARK: - Helper Methods for Single Flow Convenience
@@ -304,83 +308,23 @@ public final class WidePixel: WidePixelManaging {
 
     // MARK: - Utility Methods
 
-    public func getActiveFlowNames() -> [String] {
-        return Self.storageQueue.sync { storage.getActiveFlowNames() }
-    }
-
     public func clearAllFlows() {
         Self.storageQueue.sync { storage.removeAll() }
     }
 
     // MARK: - Event Mapping
 
-    private func report(_ event: WidePixelEvents, error: Error?, params: [String: String]?) {
+    private func report(_ event: WidePixelEvent, error: Error?, params: [String: String]?) {
         eventMapping?.fire(event, error: error, parameters: params)
     }
 }
 
-// MARK: - Wide Pixel Event Wrapper
-
-struct WidePixelEvent: PixelKitEvent {
+struct WidePixelPixelKitEvent: PixelKitEvent {
     let name: String
     let parameters: [String: String]?
 
     init(name: String, parameters: [String: String]) {
         self.name = name
         self.parameters = parameters
-    }
-}
-
-// MARK: - Sampling
-
-public protocol WidePixelSampling {
-    func shouldSend(sampleRate: Double) -> Bool
-}
-
-public struct DefaultWidePixelSampler: WidePixelSampling {
-    public init() {}
-    public func shouldSend(sampleRate: Double) -> Bool {
-        let rate = max(0.0, min(1.0, sampleRate))
-        return Double.random(in: 0..<1) < rate
-    }
-}
-
-// MARK: - Platform Information
-
-struct PlatformInfo {
-    static let displayName: String = {
-        #if os(iOS)
-        return "iOS"
-        #elseif os(macOS)
-        return "macOS"
-        #else
-        return "Unknown"
-        #endif
-    }()
-
-    static let pixelName: String = {
-        #if os(iOS)
-        return "ios"
-        #elseif os(macOS)
-        return "mac"
-        #else
-        return "unknown"
-        #endif
-    }()
-
-    static let formFactor: String? = {
-        #if os(iOS)
-        return UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "phone"
-        #else
-        return nil
-        #endif
-    }()
-
-    static var appVersion: String {
-        return AppVersion.shared.versionAndBuildNumber
-    }
-
-    static var appName: String {
-        return AppVersion.shared.name
     }
 }

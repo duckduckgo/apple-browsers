@@ -17,23 +17,17 @@
 //
 
 import Foundation
-
-public protocol WidePixelParameterProviding {
-    func pixelParameters() -> [String: String]
-}
+import Common
 
 public protocol WidePixelData: Codable, WidePixelParameterProviding {
     static var pixelName: String { get }
+
     var contextData: WidePixelContextData { get set }
     var appData: WidePixelAppData { get set }
     var globalData: WidePixelGlobalData { get set }
 }
 
-public extension WidePixelParameterProviding {
-    func pixelParameters() -> [String: String] { [:] }
-}
-
-public enum WidePixelFinalStatus: Codable {
+public enum WidePixelStatus: Codable {
     case success
     case failure
     case cancelled
@@ -48,17 +42,24 @@ public enum WidePixelFinalStatus: Codable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case type, reason }
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case reason
+    }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(asString, forKey: .type)
-        if case let .unknown(reason) = self { try container.encode(reason, forKey: .reason) }
+
+        if case let .unknown(reason) = self {
+            try container.encode(reason, forKey: .reason)
+        }
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(String.self, forKey: .type)
+
         switch type {
         case "SUCCESS": self = .success
         case "FAILURE": self = .failure
@@ -72,15 +73,7 @@ public enum WidePixelFinalStatus: Codable {
     }
 }
 
-public struct MeasuredInterval: Codable {
-    public var start: Date?
-    public var end: Date?
-
-    public init(start: Date? = nil, end: Date? = nil) {
-        self.start = start
-        self.end = end
-    }
-}
+// MARK: - WidePixelGlobalData
 
 public struct WidePixelGlobalData: Codable {
     public var platform: String
@@ -88,7 +81,7 @@ public struct WidePixelGlobalData: Codable {
     public var sampleRate: Double
 
     public init() {
-        self.init(platform: PlatformInfo.displayName, sampleRate: 1.0)
+        self.init(platform: "TODO AFTER MERGING DEVICEPLATFORM CHANGES", sampleRate: 1.0)
     }
 
     public init(platform: String, sampleRate: Double) {
@@ -102,43 +95,62 @@ public struct WidePixelGlobalData: Codable {
     }
 }
 
+extension WidePixelGlobalData: WidePixelParameterProviding {
+    public func pixelParameters() -> [String: String] {
+        var parameters: [String: String] = [:]
+
+        parameters[WidePixelParameter.Global.platform] = platform
+        parameters[WidePixelParameter.Global.type] = type
+        parameters[WidePixelParameter.Global.sampleRate] = String(sampleRate)
+
+        return parameters
+    }
+}
+
+// MARK: - WidePixelAppData
+
 public struct WidePixelAppData: Codable {
     public var name: String
     public var version: String
     public var formFactor: String?
-}
 
-public extension WidePixelAppData {
-    init() {
-        self.name = PlatformInfo.appName
-        self.version = PlatformInfo.appVersion
-        self.formFactor = PlatformInfo.formFactor
-    }
-}
+    public init(
+        name: String = AppVersion.shared.name,
+        version: String = AppVersion.shared.versionAndBuildNumber,
+        formFactor: String? = nil
+    ) {
+        self.name = name
+        self.version = version
 
-extension WidePixelGlobalData: WidePixelParameterProviding {
-    public func pixelParameters() -> [String: String] {
-        var parameters: [String: String] = [:]
-        parameters["global.platform"] = platform
-        parameters["global.type"] = type
-        parameters["global.sample_rate"] = String(sampleRate)
-        return parameters
+        #if os(iOS)
+        self.formFactor = formFactor ?? DevicePlatform.formFactor
+        #else
+        self.formFactor = formFactor
+        #endif
     }
 }
 
 extension WidePixelAppData: WidePixelParameterProviding {
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
-        parameters["app.name"] = name
-        parameters["app.version"] = version
+
+        parameters[WidePixelParameter.App.name] = name
+        parameters[WidePixelParameter.App.version] = version
+
         if let formFactor = formFactor {
-            parameters["global.form_factor"] = formFactor
+            parameters[WidePixelParameter.Global.formFactor] = formFactor
         }
+
         return parameters
     }
+
 }
 
+// MARK: - WidePixelContextData
+
 public struct WidePixelContextData: Codable {
+
     public let id: UUID
     public var name: String?
     public var data: [String: String]?
@@ -148,20 +160,26 @@ public struct WidePixelContextData: Codable {
         self.name = name
         self.data = data
     }
+
 }
 
 extension WidePixelContextData: WidePixelParameterProviding {
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
-        if let name = name { parameters["context.name"] = name }
+
+        if let name = name { parameters[WidePixelParameter.Context.name] = name }
         if let data = data {
             for (key, value) in data { parameters["context.data.\(key)"] = value }
         }
+
         return parameters
     }
+
 }
 
 public struct WidePixelErrorData: Codable {
+
     public var domain: String
     public var code: Int
     public var underlyingDomain: String?
@@ -177,4 +195,5 @@ public struct WidePixelErrorData: Codable {
             self.underlyingCode = underlyingError.code
         }
     }
+
 }

@@ -92,8 +92,9 @@ final class SubscriptionWidePixelTests: XCTestCase {
     // MARK: - Successful Subscription Flow Tests
 
     func testSuccessfulAppStoreSubscriptionFlow() throws {
-        var subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appstore)
-        subscriptionData.setContext(name: "funnel_onboarding_ios")
+        let context = WidePixelContextData(name: "funnel_onboarding_ios")
+        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appstore, contextData: context)
+
         widePixel.startFlow(subscriptionData)
 
         var updatedData = subscriptionData
@@ -122,7 +123,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
         // Complete the flow successfully
         let expectation = XCTestExpectation(description: "Pixel fired")
         let finalData = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
-        widePixel.completeFlow(finalData, finalStatus: .success) { success, error in
+        widePixel.completeFlow(finalData, status: .success) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -141,9 +142,9 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "appstore")
         XCTAssertEqual(params["feature.data.ext.subscription_identifier"], "ddg.privacy.pro.monthly.renews.us")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "true")
-        XCTAssertEqual(params["feature.data.ext.create_account_latency_ms_bucketed"], "5000") // Bucketed from 2500
-        XCTAssertEqual(params["feature.data.ext.complete_purchase_latency_ms_bucketed"], "5000") // Bucketed from 1200
-        XCTAssertEqual(params["feature.data.ext.activate_account_latency_ms_bucketed"], "1000") // Bucketed from 800
+        XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000") // Bucketed from 2500
+        XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000") // Bucketed from 1200
+        XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "1000") // Bucketed from 800
         XCTAssertEqual(params["context.name"], "funnel_onboarding_ios")
 
         // Global and app parameters should be present
@@ -158,8 +159,9 @@ final class SubscriptionWidePixelTests: XCTestCase {
     }
 
     func testSuccessfulStripeSubscriptionFlow() throws {
-        var subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .stripe)
-        subscriptionData.setContext(name: "direct_purchase")
+        let context = WidePixelContextData(name: "funnel_onboarding_ios")
+        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .stripe, contextData: context)
+
         widePixel.startFlow(subscriptionData)
 
         var updated = subscriptionData
@@ -177,7 +179,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         // Complete the flow
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, finalStatus: .success) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .success) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -190,7 +192,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "stripe")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "false")
-        XCTAssertEqual(params["context.name"], "direct_purchase")
+        XCTAssertEqual(params["context.name"], "funnel_onboarding_ios")
     }
 
     // MARK: - Failed Subscription Flow Tests
@@ -213,7 +215,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         // Complete the failed flow
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, finalStatus: .failure) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .failure) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -230,7 +232,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(params["feature.data.error.code"], "500")
         XCTAssertEqual(params["feature.data.error.underlying_domain"], "NetworkError")
         XCTAssertEqual(params["feature.data.error.underlying_code"], "-1009")
-        XCTAssertEqual(params["feature.data.ext.create_account_latency_ms_bucketed"], "10000") // Bucketed from 8000
+        XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "10000") // Bucketed from 8000
     }
 
     func testFailedSubscriptionFlowStoreKitPurchase() throws {
@@ -253,7 +255,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         // Complete the failed flow
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, finalStatus: .failure) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .failure) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -268,8 +270,8 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.failing_step"], "STOREKIT_PURCHASE")
         XCTAssertEqual(params["feature.data.error.domain"], "SKErrorDomain")
         XCTAssertEqual(params["feature.data.error.code"], "2")
-        XCTAssertEqual(params["feature.data.ext.create_account_latency_ms_bucketed"], "5000") // Successful step
-        XCTAssertEqual(params["feature.data.ext.complete_purchase_latency_ms_bucketed"], "30000") // Failed step, bucketed from 15000
+        XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000") // Successful step
+        XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "30000") // Failed step, bucketed from 15000
     }
 
     // MARK: - Cancelled/Timeout Flow Tests
@@ -284,7 +286,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         // Complete the cancelled flow
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, finalStatus: .cancelled) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .cancelled) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -297,8 +299,8 @@ final class SubscriptionWidePixelTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "CANCELLED")
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "appstore")
-        XCTAssertEqual(params["feature.data.ext.create_account_latency_ms_bucketed"], "5000")
-        XCTAssertNil(params["feature.data.ext.complete_purchase_latency_ms_bucketed"])
+        XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
+        XCTAssertNil(params["feature.data.ext.account_payment_latency_ms_bucketed"])
         XCTAssertNil(params["feature.data.ext.failing_step"])
     }
 
@@ -316,7 +318,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         // Complete the timeout flow
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, finalStatus: .unknown(reason: "activation_timeout")) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .unknown(reason: "activation_timeout")) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -328,35 +330,11 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.status"], "UNKNOWN")
-        XCTAssertEqual(params["feature.status.unknown-status-reason"], "activation_timeout")
-        XCTAssertEqual(params["feature.data.ext.activate_account_latency_ms_bucketed"], "300000") // Max bucket
+        XCTAssertEqual(params["feature.status_reason"], "activation_timeout")
+        XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "300000") // Max bucket
     }
 
     // MARK: - Subscription Data Model Tests
-
-    func testSubscriptionDataConvenienceMethods() throws {
-        var subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appstore)
-
-        // Test markAsFailed
-        let testError = NSError(domain: "TestDomain", code: 456, userInfo: nil)
-        subscriptionData.markAsFailed(at: .storekitPurchase, error: testError)
-
-        XCTAssertEqual(subscriptionData.failingStep, .storekitPurchase)
-        XCTAssertEqual(subscriptionData.errorData?.domain, "TestDomain")
-        XCTAssertEqual(subscriptionData.errorData?.code, 456)
-
-        // Test setContext
-        let uuid = UUID()
-        subscriptionData.setContext(id: uuid, name: "onboarding")
-        XCTAssertEqual(subscriptionData.contextData.id, uuid)
-        XCTAssertEqual(subscriptionData.contextData.name, "onboarding")
-
-        // Test setContext with only name
-        let preservedUUID = subscriptionData.contextData.id
-        subscriptionData.setContext(name: "updated_context")
-        XCTAssertEqual(subscriptionData.contextData.id, preservedUUID)
-        XCTAssertEqual(subscriptionData.contextData.name, "updated_context")
-    }
 
     func testSubscriptionPlatformAndFailingStepEnums() {
         // Test PurchasePlatform enum
@@ -391,7 +369,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
         widePixel.startFlow(subscriptionData)
 
         let expectation = XCTestExpectation(description: "Completion called")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, finalStatus: .success) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .success) { success, error in
             XCTAssertFalse(success)
             XCTAssertNotNil(error)
             expectation.fulfill()
@@ -412,7 +390,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
             widePixel.startFlow(subscriptionData)
 
             let expectation = XCTestExpectation(description: "Pixel \(i) fired")
-            widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, finalStatus: .success) { success, error in
+            widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .success) { success, error in
                 XCTAssertTrue(success)
                 XCTAssertNil(error)
                 expectation.fulfill()

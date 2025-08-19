@@ -18,8 +18,6 @@
 
 import Foundation
 
-// Persistence handled directly by WidePixelUserDefaultsStorage
-
 public protocol WidePixelStoring {
     func save<T: WidePixelData>(_ data: T) throws
     func load<T: WidePixelData>(contextID: UUID) throws -> T
@@ -33,9 +31,10 @@ public protocol WidePixelStoring {
 
 public final class WidePixelUserDefaultsStorage: WidePixelStoring {
     private let defaults: UserDefaults
+
     private struct Envelope: Codable {
         let featureDataJSON: Data
-    let featureDataType: String
+        let featureDataType: String
     }
 
     public init(userDefaults: UserDefaults) {
@@ -59,14 +58,18 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
 
     public func load<T: WidePixelData>(contextID: UUID) throws -> T {
         let key = storageKey(T.self, contextID: contextID)
+
         guard let data = defaults.data(forKey: key) else {
             throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with context ID \(contextID)")
         }
+
         let envelope = try JSONDecoder().decode(Envelope.self, from: data)
         let expected = String(describing: T.self)
+
         guard envelope.featureDataType == expected else {
             throw WidePixelError.typeMismatch(expected: expected, actual: envelope.featureDataType)
         }
+
         return try JSONDecoder().decode(T.self, from: envelope.featureDataJSON)
     }
 
@@ -74,6 +77,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         guard defaults.data(forKey: storageKey(T.self, contextID: data.contextData.id)) != nil else {
             throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with context ID \(data.contextData.id)")
         }
+
         try save(data)
     }
 
@@ -109,18 +113,21 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
 
     public func firstContextID<T: WidePixelData>(for type: T.Type) -> UUID? {
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
+
         for key in allKeys {
             let parts = key.components(separatedBy: ".")
             if parts.count == 2 && parts[0] == T.pixelName, let uuid = UUID(uuidString: parts[1]) {
                 return uuid
             }
         }
-                return nil
+
+        return nil
     }
 
     public func allFlowData<T: WidePixelData>(for type: T.Type) -> [T] {
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
         var results: [T] = []
+
         for key in allKeys {
             let parts = key.components(separatedBy: ".")
             if parts.count == 2 && parts[0] == T.pixelName, let uuid = UUID(uuidString: parts[1]),
@@ -128,6 +135,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
                 results.append(decoded)
             }
         }
+
         return results
     }
 

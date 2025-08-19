@@ -18,24 +18,12 @@
 
 import Foundation
 
-/// Errors that can occur during wide pixel operations
 public enum WidePixelError: Error, LocalizedError {
-    /// Flow with the specified pixel name was not found
     case flowNotFound(pixelName: String)
-
-    /// Type mismatch when trying to decode feature data
     case typeMismatch(expected: String, actual: String)
-
-    /// Failed to serialize or deserialize data
     case serializationFailed(Error)
-
-    /// Invalid flow state (e.g., trying to complete a flow that was never started)
     case invalidFlowState
-
-    /// UserDefaults storage error
     case storageError(Error)
-
-    /// Invalid parameters provided
     case invalidParameters(String)
 
     public var errorDescription: String? {

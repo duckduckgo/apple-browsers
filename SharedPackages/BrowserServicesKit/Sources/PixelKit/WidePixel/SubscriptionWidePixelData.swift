@@ -21,39 +21,28 @@ import Foundation
 public struct SubscriptionPurchaseWidePixelData: WidePixelData {
     public static let pixelName = "subscription_purchase"
 
-    // MARK: Subscription-Specific Info
+    public var globalData: WidePixelGlobalData
+    public var contextData: WidePixelContextData
+    public var appData: WidePixelAppData
 
     public let purchasePlatform: PurchasePlatform
     public var subscriptionIdentifier: String?
     public var freeTrialEligible: Bool?
 
-    // MARK: Performance Metrics (Bucketed)
-
-    /// Measured intervals for each step (persisted as start/end)
-    public var createAccountDuration: MeasuredInterval?
-    public var completePurchaseDuration: MeasuredInterval?
-    public var activateAccountDuration: MeasuredInterval?
-
-    // MARK: Error Information
+    public var createAccountDuration: WidePixel.MeasuredInterval?
+    public var completePurchaseDuration: WidePixel.MeasuredInterval?
+    public var activateAccountDuration: WidePixel.MeasuredInterval?
 
     public var failingStep: FailingStep?
     public var errorData: WidePixelErrorData?
-
-    // MARK: Context Information
-
-    public var contextData: WidePixelContextData
-    public var appData: WidePixelAppData
-    public var globalData: WidePixelGlobalData
-
-    // MARK: Initializer
 
     public init(purchasePlatform: PurchasePlatform,
                 failingStep: FailingStep? = nil,
                 subscriptionIdentifier: String? = nil,
                 freeTrialEligible: Bool? = nil,
-                createAccountDuration: MeasuredInterval? = nil,
-                completePurchaseDuration: MeasuredInterval? = nil,
-                activateAccountDuration: MeasuredInterval? = nil,
+                createAccountDuration: WidePixel.MeasuredInterval? = nil,
+                completePurchaseDuration: WidePixel.MeasuredInterval? = nil,
+                activateAccountDuration: WidePixel.MeasuredInterval? = nil,
                 errorData: WidePixelErrorData? = nil,
                 contextData: WidePixelContextData = WidePixelContextData(),
                 appData: WidePixelAppData = WidePixelAppData(),
@@ -73,6 +62,7 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
 }
 
 extension SubscriptionPurchaseWidePixelData {
+
     public enum PurchasePlatform: String, Codable, CaseIterable {
         case appstore
         case stripe
@@ -84,60 +74,46 @@ extension SubscriptionPurchaseWidePixelData {
         case storekitPurchase = "STOREKIT_PURCHASE"
         case accountActivation = "ACCOUNT_ACTIVATION"
     }
-}
-
-extension SubscriptionPurchaseWidePixelData {
 
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters["feature.data.ext.purchase_platform"] = purchasePlatform.rawValue
+        parameters[WidePixelParameter.SubscriptionFeature.purchasePlatform] = purchasePlatform.rawValue
 
         if let failingStep = failingStep {
-            parameters["feature.data.ext.failing_step"] = failingStep.rawValue
+            parameters[WidePixelParameter.SubscriptionFeature.failingStep] = failingStep.rawValue
         }
 
         if let subscriptionIdentifier = subscriptionIdentifier {
-            parameters["feature.data.ext.subscription_identifier"] = subscriptionIdentifier
+            parameters[WidePixelParameter.SubscriptionFeature.subscriptionIdentifier] = subscriptionIdentifier
         }
 
         if let freeTrialEligible = freeTrialEligible {
-            parameters["feature.data.ext.free_trial_eligible"] = freeTrialEligible ? "true" : "false"
+            parameters[WidePixelParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
         }
 
         if let errorData = errorData {
-            parameters["feature.data.error.domain"] = errorData.domain
-            parameters["feature.data.error.code"] = String(errorData.code)
+            parameters[WidePixelParameter.Feature.errorDomain] = errorData.domain
+            parameters[WidePixelParameter.Feature.errorCode] = String(errorData.code)
+
             if let underlyingDomain = errorData.underlyingDomain {
-                parameters["feature.data.error.underlying_domain"] = underlyingDomain
+                parameters[WidePixelParameter.Feature.underlyingErrorDomain] = underlyingDomain
             }
+
             if let underlyingCode = errorData.underlyingCode {
-                parameters["feature.data.error.underlying_code"] = String(underlyingCode)
+                parameters[WidePixelParameter.Feature.underlyingErrorCode] = String(underlyingCode)
             }
         }
 
-        func bucket(_ ms: Int) -> Int {
-            switch ms {
-            case 0..<1000: return 1000
-            case 1000..<5000: return 5000
-            case 5000..<10000: return 10000
-            case 10000..<30000: return 30000
-            case 30000..<60000: return 60000
-            case 60000..<300000: return 300000
-            case 300000..<600000: return 600000
-            default: return 600000
-            }
-        }
-
-        func emit(_ key: String, interval: MeasuredInterval?) {
+        func emit(_ key: String, interval: WidePixel.MeasuredInterval?) {
             guard let start = interval?.start, let end = interval?.end else { return }
             let ms = max(0, Int(end.timeIntervalSince(start) * 1000))
             parameters[key] = String(bucket(ms))
         }
 
-        emit("feature.data.ext.create_account_latency_ms_bucketed", interval: createAccountDuration)
-        emit("feature.data.ext.complete_purchase_latency_ms_bucketed", interval: completePurchaseDuration)
-        emit("feature.data.ext.activate_account_latency_ms_bucketed", interval: activateAccountDuration)
+        emit(WidePixelParameter.SubscriptionFeature.accountCreationLatency, interval: createAccountDuration)
+        emit(WidePixelParameter.SubscriptionFeature.accountPaymentLatency, interval: completePurchaseDuration)
+        emit(WidePixelParameter.SubscriptionFeature.accountActivationLatency, interval: activateAccountDuration)
 
         return parameters
     }
@@ -147,19 +123,16 @@ extension SubscriptionPurchaseWidePixelData {
         self.errorData = WidePixelErrorData(error: error)
     }
 
-    public mutating func setContext(id: UUID? = nil, name: String? = nil) {
-        if let id = id {
-            self.contextData = WidePixelContextData(
-                id: id,
-                name: name ?? self.contextData.name,
-                data: self.contextData.data
-            )
-        } else {
-            self.contextData = WidePixelContextData(
-                id: self.contextData.id,
-                name: name ?? self.contextData.name,
-                data: self.contextData.data
-            )
+    private func bucket(_ ms: Int) -> Int {
+        switch ms {
+        case 0..<1000: return 1000
+        case 1000..<5000: return 5000
+        case 5000..<10000: return 10000
+        case 10000..<30000: return 30000
+        case 30000..<60000: return 60000
+        case 60000..<300000: return 300000
+        case 300000..<600000: return 600000
+        default: return 600000
         }
     }
 

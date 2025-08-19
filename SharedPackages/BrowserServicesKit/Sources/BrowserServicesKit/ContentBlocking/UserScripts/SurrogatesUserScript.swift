@@ -58,7 +58,7 @@ public class DefaultSurrogatesUserScriptConfig: SurrogatesUserScriptConfig {
                 encodedSurrogateTrackerData: String?,
                 trackerDataManager: TrackerDataManager,
                 tld: TLD,
-                isDebugBuild: Bool) {
+                isDebugBuild: Bool) throws {
 
         if trackerData == nil {
             // Fallback to embedded
@@ -77,10 +77,10 @@ public class DefaultSurrogatesUserScriptConfig: SurrogatesUserScriptConfig {
         self.surrogates = surrogates
         self.tld = tld
 
-        source = SurrogatesUserScript.generateSource(privacyConfiguration: self.privacyConfig,
-                                                     surrogates: self.surrogates,
-                                                     encodedSurrogateTrackerData: self.encodedSurrogateTrackerData,
-                                                     isDebugBuild: isDebugBuild)
+        source = try SurrogatesUserScript.generateSource(privacyConfiguration: self.privacyConfig,
+                                                         surrogates: self.surrogates,
+                                                         encodedSurrogateTrackerData: self.encodedSurrogateTrackerData,
+                                                         isDebugBuild: isDebugBuild)
     }
 }
 
@@ -193,7 +193,7 @@ open class SurrogatesUserScript: NSObject, UserScript, WKScriptMessageHandlerWit
     public static func generateSource(privacyConfiguration: PrivacyConfiguration,
                                       surrogates: String,
                                       encodedSurrogateTrackerData: String?,
-                                      isDebugBuild: Bool) -> String {
+                                      isDebugBuild: Bool) throws -> String {
         let remoteUnprotectedDomains = (privacyConfiguration.tempUnprotectedDomains.joined(separator: "\n"))
             + "\n"
             + (privacyConfiguration.exceptionsList(forFeature: .contentBlocking).joined(separator: "\n"))
@@ -207,7 +207,7 @@ open class SurrogatesUserScript: NSObject, UserScript, WKScriptMessageHandlerWit
             trackerData = String(data: encodedData!, encoding: .utf8)!
         }
 
-        return SurrogatesUserScript.loadJS("surrogates", from: Bundle.module, withReplacements: [
+        return try SurrogatesUserScript.loadJS("surrogates", from: Bundle.module, withReplacements: [
             "$IS_DEBUG$": isDebugBuild ? "true" : "false",
             "$TEMP_UNPROTECTED_DOMAINS$": remoteUnprotectedDomains,
             "$USER_UNPROTECTED_DOMAINS$": privacyConfiguration.userUnprotectedDomains.joined(separator: "\n"),

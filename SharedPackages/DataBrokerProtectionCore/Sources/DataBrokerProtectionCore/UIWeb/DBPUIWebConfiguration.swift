@@ -30,13 +30,13 @@ public final class DBPUIUserContentController: WKUserContentController {
          prefs: ContentScopeProperties,
          delegate: DBPUICommunicationDelegate,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         vpnBypassService: VPNBypassServiceProvider?) {
+         vpnBypassService: VPNBypassServiceProvider?) throws {
 
-        dbpUIUserScripts = DBPUIUserScript(privacyConfig: privacyConfigurationManager,
-                                           prefs: prefs,
-                                           delegate: delegate,
-                                           webUISettings: webUISettings,
-                                           vpnBypassService: vpnBypassService)
+        dbpUIUserScripts = try DBPUIUserScript(privacyConfig: privacyConfigurationManager,
+                                               prefs: prefs,
+                                               delegate: delegate,
+                                               webUISettings: webUISettings,
+                                               vpnBypassService: vpnBypassService)
 
         super.init()
 
@@ -69,9 +69,9 @@ public final class DBPUIUserScript: UserScriptsProvider {
          prefs: ContentScopeProperties,
          delegate: DBPUICommunicationDelegate,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         vpnBypassService: VPNBypassServiceProvider?) {
+         vpnBypassService: VPNBypassServiceProvider?) throws {
         self.webUISettings = webUISettings
-        contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig, properties: prefs, isIsolated: false, privacyConfigurationJSONGenerator: nil)
+        contentScopeUserScriptIsolated = try ContentScopeUserScript(privacyConfig, properties: prefs, isIsolated: false, privacyConfigurationJSONGenerator: nil)
         contentScopeUserScriptIsolated.messageNames = ["dbpui"]
         dbpUICommunicationLayer = DBPUICommunicationLayer(webURLSettings: webUISettings,
                                                           vpnBypassService: vpnBypassService,
@@ -106,13 +106,13 @@ extension WKWebViewConfiguration {
                                         prefs: ContentScopeProperties,
                                         delegate: DBPUICommunicationDelegate,
                                         webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                                        vpnBypassService: VPNBypassServiceProvider?) {
+                                        vpnBypassService: VPNBypassServiceProvider?) throws {
         preferences.isFraudulentWebsiteWarningEnabled = false
-        let userContentController = DBPUIUserContentController(with: privacyConfig,
-                                                               prefs: prefs,
-                                                               delegate: delegate,
-                                                               webUISettings: webUISettings,
-                                                               vpnBypassService: vpnBypassService)
+        let userContentController = try DBPUIUserContentController(with: privacyConfig,
+                                                                   prefs: prefs,
+                                                                   delegate: delegate,
+                                                                   webUISettings: webUISettings,
+                                                                   vpnBypassService: vpnBypassService)
         self.userContentController = userContentController
      }
 }

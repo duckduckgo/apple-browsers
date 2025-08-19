@@ -78,14 +78,19 @@ struct DuckPlayerWebView: UIViewRepresentable {
        let jsonGenerator = privacyConfigurationJSONGenerator ??
             ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: featureFlagger,
                                                           privacyConfigurationManager: scriptSourceProvider.privacyConfigurationManager)
-              
-       self.contentScopeUserScripts = contentScopeUserScripts ??
-            ContentScopeUserScript(scriptSourceProvider.privacyConfigurationManager,
-                    properties: scriptSourceProvider.contentScopeProperties,
-           isIsolated: true,
-           privacyConfigurationJSONGenerator: jsonGenerator
-       )
-              
+
+       do {
+           self.contentScopeUserScripts = try contentScopeUserScripts ??
+           ContentScopeUserScript(scriptSourceProvider.privacyConfigurationManager,
+                                  properties: scriptSourceProvider.contentScopeProperties,
+                                  isIsolated: true,
+                                  privacyConfigurationJSONGenerator: jsonGenerator
+           )
+       } catch {
+           // TODO: Fire pixel
+           fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
+       }
+
        self.coordinator = Coordinator(viewModel: viewModel)
    }
 

@@ -54,11 +54,16 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
         distributionType.append(" Alpha")
 #endif
 
-        source = Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
-            "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
-            "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(distributionType))"
-        ])
-        super.init()
+        do {
+            source = try Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
+                "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
+                "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(distributionType))"
+            ])
+            super.init()
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to load JS for InternalFeedbackFormUserScript: \(error)")
+        }
     }
 }
 

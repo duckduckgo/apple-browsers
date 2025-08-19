@@ -115,7 +115,12 @@ final class DebugScanJob: SubJobWebRunning {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             Task {
-                await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                do {
+                    try await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                } catch {
+                    // TODO: Fire pixel with EventMapping
+                    fatalError("Failed to initialize handler for DebugScanJob: \(error.localizedDescription)")
+                }
 
                 do {
                     let scanStep = try query.dataBroker.scanStep()

@@ -88,11 +88,16 @@ struct HeadlessWebView: UIViewRepresentable {
         if settings.contentBlocking {
             let sourceProvider = DefaultScriptSourceProvider(fireproofing: UserDefaultsFireproofing.xshared)
             let contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
-            let contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
-                                                                properties: sourceProvider.contentScopeProperties,
-                                                                privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-            userContentController.addUserScript(contentBlockerUserScript.makeWKUserScriptSync())
-            userContentController.addUserScript(contentScopeUserScript.makeWKUserScriptSync())
+            do {
+                let contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
+                                                                    properties: sourceProvider.contentScopeProperties,
+                                                                    privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                userContentController.addUserScript(contentBlockerUserScript.makeWKUserScriptSync())
+                userContentController.addUserScript(contentScopeUserScript.makeWKUserScriptSync())
+            } catch {
+                // TODO: Fire pixel
+                fatalError("Failed to initialize ContentScopeUserScript: \(error)")
+            }
         }
         
         if let userScript, let subFeature {

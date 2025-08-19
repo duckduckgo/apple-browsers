@@ -3366,14 +3366,19 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        let runtimeConfiguration =
-                DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-                                                                         properties: buildContentScopePropertiesForDomain(domain))
-                                                                .build()
-                                                                .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration =
+            try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                                      properties: buildContentScopePropertiesForDomain(domain))
+            .build()
+            .buildRuntimeConfigResponse()
 
-        cachedRuntimeConfigurationForDomain = [domain: runtimeConfiguration]
-        completionHandler(runtimeConfiguration)
+            cachedRuntimeConfigurationForDomain = [domain: runtimeConfiguration]
+            completionHandler(runtimeConfiguration)
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 
     private func buildContentScopePropertiesForDomain(_ domain: String) -> ContentScopeProperties {

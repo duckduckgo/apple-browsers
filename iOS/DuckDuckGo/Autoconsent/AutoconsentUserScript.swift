@@ -65,7 +65,12 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     init(config: PrivacyConfiguration, preferences: AutoconsentPreferences = AppUserDefaults(), ignoreNonHTTPURLs: Bool = true) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
-        source = Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
+        do {
+            source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to load JS for AutoconsentUserScript: \(error.localizedDescription)")
+        }
         self.config = config
         self.preferences = preferences
         self.ignoreNonHTTPURLs = ignoreNonHTTPURLs

@@ -410,12 +410,17 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
                                                 featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig))
 
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                                         properties: properties)
-            .build()
-            .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                 properties: properties)
+                .build()
+                .buildRuntimeConfigResponse()
 
-        completionHandler(runtimeConfiguration)
+            completionHandler(runtimeConfiguration)
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 }
 

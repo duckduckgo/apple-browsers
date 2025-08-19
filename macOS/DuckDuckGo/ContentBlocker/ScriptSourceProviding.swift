@@ -140,14 +140,19 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
     public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
         let privacyConfig = self.privacyConfigurationManager.privacyConfig
-        return DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                     properties: ContentScopeProperties(gpcEnabled: webTrakcingProtectionPreferences.isGPCEnabled,
-                                                                                        sessionKey: self.sessionKey ?? "",
-                                                                                        messageSecret: self.messageSecret ?? "",
-                                                                                        featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig)),
-                                                     isDebug: AutofillPreferences().debugScriptEnabled)
-                .withJSLoading()
-                .build()
+        do {
+            return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                             properties: ContentScopeProperties(gpcEnabled: webTrakcingProtectionPreferences.isGPCEnabled,
+                                                                                                sessionKey: self.sessionKey ?? "",
+                                                                                                messageSecret: self.messageSecret ?? "",
+                                                                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig)),
+                                                             isDebug: AutofillPreferences().debugScriptEnabled)
+            .withJSLoading()
+            .build()
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 
     private func buildContentBlockerRulesConfig() -> ContentBlockerUserScriptConfig {
@@ -159,11 +164,16 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             $0.name == DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName
         })?.trackerData)
 
-        return DefaultContentBlockerUserScriptConfig(privacyConfiguration: privacyConfigurationManager.privacyConfig,
-                                                     trackerData: trackerData,
-                                                     ctlTrackerData: ctlTrackerData,
-                                                     tld: tld,
-                                                     trackerDataManager: trackerDataManager)
+        do {
+            return try DefaultContentBlockerUserScriptConfig(privacyConfiguration: privacyConfigurationManager.privacyConfig,
+                                                             trackerData: trackerData,
+                                                             ctlTrackerData: ctlTrackerData,
+                                                             tld: tld,
+                                                             trackerDataManager: trackerDataManager)
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error.localizedDescription)")
+        }
     }
 
     private func buildSurrogatesConfig() -> SurrogatesUserScriptConfig {
@@ -177,13 +187,18 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
         let surrogates = configStorage.loadData(for: .surrogates)?.utf8String() ?? ""
         let allTrackers = mergeTrackerDataSets(rules: contentBlockingManager.currentRules)
-        return DefaultSurrogatesUserScriptConfig(privacyConfig: privacyConfigurationManager.privacyConfig,
-                                                 surrogates: surrogates,
-                                                 trackerData: allTrackers.trackerData,
-                                                 encodedSurrogateTrackerData: allTrackers.encodedTrackerData,
-                                                 trackerDataManager: trackerDataManager,
-                                                 tld: tld,
-                                                 isDebugBuild: isDebugBuild)
+        do {
+            return try DefaultSurrogatesUserScriptConfig(privacyConfig: privacyConfigurationManager.privacyConfig,
+                                                         surrogates: surrogates,
+                                                         trackerData: allTrackers.trackerData,
+                                                         encodedSurrogateTrackerData: allTrackers.encodedTrackerData,
+                                                         trackerDataManager: trackerDataManager,
+                                                         tld: tld,
+                                                         isDebugBuild: isDebugBuild)
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error.localizedDescription)")
+        }
     }
 
     @MainActor

@@ -74,11 +74,16 @@ public final class DBPUIViewModel {
 
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
-        configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
-                                              prefs: contentScopeProperties,
-                                              delegate: self,
-                                              webUISettings: webUISettings,
-                                              vpnBypassService: nil)
+        do {
+            try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
+                                                      prefs: contentScopeProperties,
+                                                      delegate: self,
+                                                      webUISettings: webUISettings,
+                                                      vpnBypassService: nil)
+        } catch {
+            // TODO: Fire pixel with EventMapping
+            fatalError("Failed to apply DBPUI configuration: \(error)")
+        }
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
         if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {

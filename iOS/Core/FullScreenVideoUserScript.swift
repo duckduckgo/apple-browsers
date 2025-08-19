@@ -22,7 +22,12 @@ import UserScript
 
 public class FullScreenVideoUserScript: NSObject, UserScript {
     public var source: String {
-        return Self.loadJS("fullscreenvideo", from: Bundle.core)
+        do {
+            return try Self.loadJS("fullscreenvideo", from: Bundle.core)
+        } catch {
+            // TODO: Fire pixel
+            fatalError("Failed to load JS for FullScreenVideoUserScript: \(error)")
+        }
     }
 
     public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart

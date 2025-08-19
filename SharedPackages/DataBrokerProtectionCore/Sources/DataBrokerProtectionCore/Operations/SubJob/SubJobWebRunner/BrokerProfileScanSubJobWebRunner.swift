@@ -103,7 +103,12 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
 
                 task = Task {
-                    await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                    do {
+                        try await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                    } catch {
+                        failed(with: error)
+                    }
+
                     do {
                         let scanStep = try query.dataBroker.scanStep()
                         if let actionsHandler = actionsHandler {

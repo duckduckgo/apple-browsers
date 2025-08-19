@@ -65,11 +65,16 @@ public final class DBPUIViewModel {
         guard let dataManager = dataManager else { return nil }
 
         let configuration = WKWebViewConfiguration()
-        configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
-                                              prefs: prefs,
-                                              delegate: dataManager.communicator,
-                                              webUISettings: webUISettings,
-                                              vpnBypassService: vpnBypassService)
+        do {
+            try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
+                                                      prefs: prefs,
+                                                      delegate: dataManager.communicator,
+                                                      webUISettings: webUISettings,
+                                                      vpnBypassService: vpnBypassService)
+        } catch {
+            // TODO: Fire pixel with EventMapping
+            fatalError("Failed to apply DBPUI configuration: \(error)")
+        }
         dataManager.communicator.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 

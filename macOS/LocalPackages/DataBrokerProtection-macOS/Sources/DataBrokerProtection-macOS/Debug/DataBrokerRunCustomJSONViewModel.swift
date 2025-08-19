@@ -24,6 +24,7 @@ import ContentScopeScripts
 import Combine
 import os.log
 import PixelKit
+import UserScript
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -402,6 +403,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 }
                             }
                             group.leave()
+                        } catch let UserScriptError.failedToLoadJS(jsFile, filePath, error) {
+                            // TODO: Fire pixel with EventMapping
+                            fatalError("Failed to load JS file \(jsFile) at path \(filePath): \(error)")
                         } catch {
                             self.error = error
                             group.leave()
@@ -455,6 +459,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     self.alert = AlertUI(title: "Success!", description: "We finished the opt out process for the selected profile.")
                 }
 
+            } catch let UserScriptError.failedToLoadJS(jsFile, filePath, error) {
+                // TODO: Fire pixel with EventMapping
+                fatalError("Failed to load JS file \(jsFile) at path \(filePath): \(error)")
             } catch {
                 showAlert(for: error)
             }

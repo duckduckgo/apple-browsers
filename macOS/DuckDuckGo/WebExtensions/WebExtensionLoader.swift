@@ -19,6 +19,7 @@
 #if WEB_EXTENSIONS_ENABLED
 
 import CryptoKit
+import WebKit
 
 @available(macOS 15.4, *)
 protocol WebExtensionLoading: AnyObject {

@@ -18,6 +18,8 @@
 
 #if WEB_EXTENSIONS_ENABLED
 
+import AppKit
+
 @available(macOS 15.4, *)
 final class WebExtensionsDebugMenu: NSMenu {
 

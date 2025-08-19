@@ -20,6 +20,7 @@
 
 import Foundation
 import os.log
+import WebKit
 
 @available(macOS 15.4, *)
 protocol NativeMessagingConnectionDelegate: AnyObject {

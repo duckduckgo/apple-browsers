@@ -210,12 +210,10 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         // When
         let includedRoutes = resolver.includedRoutes
         
-        // Then
-        let includedStrings = includedRoutes.map { $0.description }
-        
-        // Note: IPv6 host routes should be /128, but let's check what the implementation actually creates
-        let hasIPv6DNSRoute = includedStrings.contains { route in
-            route.contains("2001:4860:4860::8888")
+        // Then - Check for IPv6 DNS route using mathematical operations
+        let googleIPv6 = IPv6Address("2001:4860:4860::8888")!
+        let hasIPv6DNSRoute = includedRoutes.contains { route in
+            route.address is IPv6Address && route.contains(googleIPv6)
         }
         
         XCTAssertTrue(hasIPv6DNSRoute, "Should create host route for IPv6 DNS server")
@@ -234,12 +232,11 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         // When
         let includedRoutes = resolver.includedRoutes
         
-        // Then
-        let includedStrings = includedRoutes.map { $0.description }
-        
-        // Should only have public network ranges, no DNS-specific host routes
-        let hasHostRoutes = includedStrings.contains { route in
-            route.hasSuffix("/32") && !VPNRoutingRange.publicNetworkRange.map(\.description).contains(route)
+        // Then - Should only have public network ranges, no DNS-specific host routes
+        // Check for host routes (DNS-specific /32 routes) using mathematical operations
+        let hasHostRoutes = includedRoutes.contains { route in
+            route.networkPrefixLength == 32 && 
+            !route.hasExactMatch(in: VPNRoutingRange.publicNetworkRange)
         }
         
         XCTAssertFalse(hasHostRoutes, "Should not have any /32 host routes when no DNS servers provided")

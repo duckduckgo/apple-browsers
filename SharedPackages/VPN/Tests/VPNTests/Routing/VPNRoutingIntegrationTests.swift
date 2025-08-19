@@ -145,7 +145,7 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         // Should have standard excluded ranges using mathematical operations
         let loopbackRange = IPAddressRange(from: "127.0.0.0/8")!
         let isLoopbackExcluded = excludedRoutes.contains { route in
-            route == loopbackRange || route.contains(loopbackRange)
+            route == loopbackRange || loopbackRange.hasExactMatch(in: [route])
         }
         XCTAssertTrue(isLoopbackExcluded, "Should exclude loopback")
         // Note: IPv6 exclusions might be handled differently in the current implementation
@@ -179,7 +179,7 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertGreaterThan(excludedRoutes.count, 4, "Should maintain proper exclusions")
         
         // Verify a sampling of DNS routes were created
-        // Count 8.8.8.x DNS routes using mathematical operations
+        // Count DNS host routes using mathematical operations
         let dnsRouteCount = includedRoutes.filter { route in
             route.networkPrefixLength == 32 && route.address is IPv4Address
         }.count
@@ -213,10 +213,10 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         let homeNetworkRange = IPAddressRange(from: "192.168.0.0/16")!
         
         let isLoopbackExcluded = excludedRoutes.contains { route in
-            route == loopbackRange || route.contains(loopbackRange)
+            route == loopbackRange || loopbackRange.hasExactMatch(in: [route])
         }
         let isHomeNetworkExcluded = excludedRoutes.contains { route in
-            route == homeNetworkRange || route.contains(homeNetworkRange)
+            route == homeNetworkRange || homeNetworkRange.hasExactMatch(in: [route])
         }
         
         XCTAssertTrue(isLoopbackExcluded, "Should still exclude loopback")

@@ -1002,8 +1002,9 @@ class MainViewController: UIViewController {
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            let isExperimentalSearchEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
-            omniBar.beginEditing(animated: !isExperimentalSearchEnabled)
+            let animated = !featureFlagger.isFeatureOn(.experimentalAddressBarNonAnimatedNTP)
+
+            omniBar.beginEditing(animated: animated)
         }
 
         syncService.scheduler.requestSyncImmediately()

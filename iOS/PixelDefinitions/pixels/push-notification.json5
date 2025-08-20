@@ -2,7 +2,7 @@
 {
     'm_push-notification_local-provisional_inactive-user-tap': {
         description: 'Fires when a user taps a local provisional push notification that was scheduled due to inactivity.',
-        owners: ['htang'],
+        owners: ['hanyutang-sandra'],
         triggers: ['other'],
         suffixes: ['form_factor'],
         parameters: [

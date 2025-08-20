@@ -92,9 +92,9 @@ protocol OmniBarDelegate: AnyObject {
     func isSuggestionTrayVisible() -> Bool
 
     // MARK: - Experimental Address Bar (pixels only)
-    func onExperimentalAddressBarTappedForPixelsOnly()
-    func onExperimentalAddressBarClearPressedForPixelsOnly()
-    func onExperimentalAddressBarCancelPressedForPixelsOnly()
+    func onExperimentalAddressBarTapped()
+    func onExperimentalAddressBarClearPressed()
+    func onExperimentalAddressBarCancelPressed()
 }
 
 extension OmniBarDelegate {
@@ -153,7 +153,7 @@ extension OmniBarDelegate {
     }
 
     // Default no-op implementations for experimental address bar pixel hooks
-    func onExperimentalAddressBarTappedForPixelsOnly() {}
-    func onExperimentalAddressBarClearPressedForPixelsOnly() {}
-    func onExperimentalAddressBarCancelPressedForPixelsOnly() {}
+    func onExperimentalAddressBarTapped() {}
+    func onExperimentalAddressBarClearPressed() {}
+    func onExperimentalAddressBarCancelPressed() {}
 }

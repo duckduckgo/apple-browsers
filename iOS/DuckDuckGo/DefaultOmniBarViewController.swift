@@ -60,7 +60,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            omniDelegate?.onExperimentalAddressBarTappedForPixelsOnly()
+            omniDelegate?.onExperimentalAddressBarTapped()
             presentExperimentalEditingState(for: textField)
             return false
         }
@@ -189,7 +189,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         switchBarHandler.clearButtonTappedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.omniDelegate?.onExperimentalAddressBarClearPressedForPixelsOnly()
+                self?.omniDelegate?.onExperimentalAddressBarClearPressed()
             }
             .store(in: &cancellables)
         
@@ -263,7 +263,7 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
 
     func onDismissRequested() {
         // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
-        omniDelegate?.onExperimentalAddressBarCancelPressedForPixelsOnly()
+        omniDelegate?.onExperimentalAddressBarCancelPressed()
     }
 }
 

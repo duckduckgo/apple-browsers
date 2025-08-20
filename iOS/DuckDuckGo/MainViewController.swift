@@ -2653,17 +2653,17 @@ extension MainViewController: OmniBarDelegate {
     }
 
     // MARK: - Experimental Address Bar (pixels only)
-    func onExperimentalAddressBarTappedForPixelsOnly() {
+    func onExperimentalAddressBarTapped() {
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP, serp: .addressBarClickOnSERP, website: .addressBarClickOnWebsite)
     }
 
-    func onExperimentalAddressBarClearPressedForPixelsOnly() {
+    func onExperimentalAddressBarClearPressed() {
         fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
                                  serp: .addressBarClearPressedOnSERP,
                                  website: .addressBarClearPressedOnWebsite)
     }
 
-    func onExperimentalAddressBarCancelPressedForPixelsOnly() {
+    func onExperimentalAddressBarCancelPressed() {
         fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite)

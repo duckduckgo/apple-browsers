@@ -23,6 +23,7 @@ class AddressBarSpoofingUITests: UITestCase {
 
     private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement!
+    private var webView: XCUIElement!
 
     override func setUp() {
         continueAfterFailure = false
@@ -33,7 +34,14 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Use extension property instead of manual reference
         addressBarTextField = app.addressBar
+        webView = app.webViews.firstMatch
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    override func tearDown() {
+        app = nil
+        addressBarTextField = nil
+        webView = nil
     }
 
     // MARK: - Address Bar Spoofing Security Tests
@@ -55,15 +63,12 @@ class AddressBarSpoofingUITests: UITestCase {
         // Check that address bar was not spoofed to duckduckgo.com:8443
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertNotEqual(addressBarValue, "https://duckduckgo.com:8443/",
-                         "Address bar should not be spoofed to malicious URL, got: \(addressBarValue)")
+                          "Address bar should not be spoofed to malicious URL, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithUnsupportedApplicationScheme() {
         let testURL = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-application-scheme.html")!
         addressBarTextField.pasteURL(testURL, pressingEnter: true)
-
-        // Define webView once and use it throughout
-        let webView = app.webViews.firstMatch
 
         // Look for the "run" button and click it to trigger the exploit
         let runButton = webView.links["Start"]
@@ -89,17 +94,14 @@ class AddressBarSpoofingUITests: UITestCase {
         let addressBarEmpty = addressBarValue.isEmpty
 
         XCTAssertTrue(contentNotSpoofed || addressBarUpdated || addressBarEmpty,
-                     "Exploit should be blocked: content spoofed=\(!contentNotSpoofed), addressBar=\(addressBarValue)")
+                      "Exploit should be blocked: content spoofed=\(!contentNotSpoofed), addressBar=\(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithSpoofAboutBlankRewrite() {
         let testURL = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-about-blank-rewrite.html")!
         addressBarTextField.pasteURL(testURL, pressingEnter: true)
 
-        // Define webView once and use it throughout
-        let webView = app.webViews.firstMatch
-
-        // Look for the "run" button and click it to trigger the exploit  
+        // Look for the "run" button and click it to trigger the exploit
         let runButton = webView.buttons["Start"]
         XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Start button should be available")
         runButton.click()
@@ -121,7 +123,7 @@ class AddressBarSpoofingUITests: UITestCase {
         
         // Verify the address bar shows the original site (not spoofed)
         XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site") || addressBarValue.isEmpty, 
-                     "Address bar should show original URL or be empty, got: \(addressBarValue)")
+                      "Address bar should show original URL or be empty, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithBasicAuth2028() {
@@ -134,7 +136,8 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for exploit attempt to complete
-        sleep(2) // Give time for navigation to complete
+        let navigationCompleted = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: 10.0), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
         app.activateAddressBar()
@@ -142,7 +145,7 @@ class AddressBarSpoofingUITests: UITestCase {
         
         // The browser should strip basic auth credentials, showing clean URL
         XCTAssertEqual(addressBarValue, "https://example.com/",
-                     "Basic auth credentials should be stripped from address bar, got: \(addressBarValue)")
+                       "Basic auth credentials should be stripped from address bar, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithBasicAuthWhitespace() {
@@ -155,14 +158,14 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
-        // JavaScript execution should complete within a reasonable timeframe
+        let navigationCompleted = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: 10.0), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
         app.activateAddressBar()
         let addressBarValue = addressBarTextField.value as? String ?? ""
-        let basicAuthStrippedFromAddressBar = addressBarValue == "https://example.com/"
-        XCTAssertTrue(basicAuthStrippedFromAddressBar,
-                     "Basic auth should be stripped from address bar, got: \(addressBarValue)")
+        XCTAssertEqual(addressBarValue, "https://example.com/",
+                       "Basic auth should be stripped from address bar, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithBasicAuth2029() {
@@ -182,15 +185,12 @@ class AddressBarSpoofingUITests: UITestCase {
         let addressBarValue = addressBarTextField.value as? String ?? ""
         let basicAuthStrippedFromAddressBar = addressBarValue == "https://example.com/"
         XCTAssertTrue(basicAuthStrippedFromAddressBar,
-                     "Basic auth should be stripped from address bar, got: \(addressBarValue)")
+                      "Basic auth should be stripped from address bar, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithFormAction() {
         let testURL = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-form-action.html")!
         addressBarTextField.pasteURL(testURL, pressingEnter: true)
-
-        // Define webView once and use it throughout
-        let webView = app.webViews.firstMatch
 
         // Look for the "run" button and click it to trigger the exploit
         let runButton = webView.buttons["run"]
@@ -207,7 +207,7 @@ class AddressBarSpoofingUITests: UITestCase {
         
         // The form should navigate to duckduckgo.com (duck.co redirects there)
         XCTAssertEqual(addressBarValue, "https://duckduckgo.com/",
-                     "Address bar should show duckduckgo.com after form submission, got: \(addressBarValue)")
+                       "Address bar should show duckduckgo.com after form submission, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithJsDownloadUrl() {
@@ -233,15 +233,12 @@ class AddressBarSpoofingUITests: UITestCase {
         let addressBarAboutBlank = addressBarValue == "about:blank"
 
         XCTAssertTrue(navigatedToDownloadRedirect || stayedOnOriginalPage || addressBarAboutBlank,
-                     "Address bar should show expected URL based on browser behavior, got: \(addressBarValue)")
+                      "Address bar should show expected URL based on browser behavior, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithOpenB64Html() {
         let testURL = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-open-b64-html.html")!
         addressBarTextField.pasteURL(testURL, pressingEnter: true)
-
-        // Define webView once and use it throughout
-        let webView = app.webViews.firstMatch
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = webView.buttons["Start"]
@@ -259,7 +256,7 @@ class AddressBarSpoofingUITests: UITestCase {
         let addressBarIsData = addressBarValue.starts(with: "data:text/html")
 
         XCTAssertTrue(addressBarEmpty || addressBarIsData,
-                     "Address bar should be empty or show data URL, got: \(addressBarValue)")
+                      "Address bar should be empty or show data URL, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithUnsupportedScheme() {
@@ -279,7 +276,7 @@ class AddressBarSpoofingUITests: UITestCase {
         let addressBarValue = addressBarTextField.value as? String ?? ""
         let addressBarNotUpdated = addressBarValue == "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-unsupported-scheme.html"
         XCTAssertTrue(addressBarNotUpdated,
-                     "Address bar should show original test page URL, got: \(addressBarValue)")
+                      "Address bar should show original test page URL, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithLongLoadingRequestRewrite() {
@@ -298,15 +295,12 @@ class AddressBarSpoofingUITests: UITestCase {
         // Verify address bar protection against long loading request rewrite
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site"),
-                     "Address bar should show original test page URL, not be spoofed, got: \(addressBarValue)")
+                      "Address bar should show original test page URL, not be spoofed, got: \(addressBarValue)")
     }
 
     func testUrlBarSpoofingWithNewWindowRewrite() {
         let testURL = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-new-window.html")!
         addressBarTextField.pasteURL(testURL, pressingEnter: true)
-
-        // Define webView once and use it throughout
-        let webView = app.webViews.firstMatch
 
         // Step 1: Click "New Window" button to open a new window
         let newWindowButton = webView.buttons["New Window"]
@@ -315,6 +309,7 @@ class AddressBarSpoofingUITests: UITestCase {
         // Option+click to open new window
         XCUIElement.perform(withKeyModifiers: [.option]) {
             newWindowButton.click()
+            Thread.sleep(forTimeInterval: 0.5)
         }
 
         // Wait for second window to appear
@@ -346,8 +341,8 @@ class AddressBarSpoofingUITests: UITestCase {
         let addressBarShowsOriginal = addressBarValue.contains("privacy-test-pages.site")
 
         XCTAssertTrue(addressBarNotSpoofed,
-                     "Address bar should NOT be spoofed to broken.third-party.site, got: \(addressBarValue)")
+                      "Address bar should NOT be spoofed to broken.third-party.site, got: \(addressBarValue)")
         XCTAssertTrue(addressBarShowsOriginal,
-                     "Address bar should show original privacy-test-pages.site URL, got: \(addressBarValue)")
+                      "Address bar should show original privacy-test-pages.site URL, got: \(addressBarValue)")
     }
 }

@@ -2153,7 +2153,7 @@
       var r4, f4 = n3.__c;
       if (f4) {
         f4.__$f &= -2;
-        if (void 0 === (r4 = f4.__$u)) f4.__$u = r4 = function(i6) {
+        if (void 0 === (r4 = f4.__$u)) f4.__$u = r4 = (function(i6) {
           var n4;
           E2(function() {
             n4 = this;
@@ -2163,7 +2163,7 @@
             f4.setState({});
           };
           return n4;
-        }();
+        })();
       }
       l4 = f4;
       g3(r4);
@@ -2345,9 +2345,9 @@
   );
   var QueryDispatch = K(
     /** @type {(a: Action) => void} */
-    (_5) => {
+    ((_5) => {
       throw new Error("missing QueryDispatch");
-    }
+    })
   );
   function QueryProvider({ children, query = { term: "" } }) {
     const initial = {
@@ -3519,8 +3519,8 @@
   // pages/history/app/global/Providers/SelectionProvider.js
   var SelectionDispatchContext = K(
     /** @type {(a: Action) => void} */
-    (_5) => {
-    }
+    ((_5) => {
+    })
   );
   var SelectionStateContext = K(
     /** @type {ReadonlySignal<SelectionState>} */
@@ -3860,7 +3860,7 @@
   } };
   var fn = l.vnode;
   l.vnode = function(n3) {
-    "string" == typeof n3.type && function(n4) {
+    "string" == typeof n3.type && (function(n4) {
       var t4 = n4.props, e4 = n4.type, u4 = {}, o4 = -1 === e4.indexOf("-");
       for (var i5 in t4) {
         var l5 = t4[i5];
@@ -3874,7 +3874,7 @@
       })), "select" == e4 && null != u4.defaultValue && (u4.value = H(t4.children).forEach(function(n5) {
         n5.props.selected = u4.multiple ? -1 != u4.defaultValue.indexOf(n5.props.value) : u4.defaultValue == n5.props.value;
       })), t4.class && !t4.className ? (u4.class = t4.class, Object.defineProperty(u4, "className", cn)) : (t4.className && !t4.class || t4.class && t4.className) && (u4.class = u4.className = t4.className), n4.props = u4;
-    }(n3), n3.$$typeof = q4, fn && fn(n3);
+    })(n3), n3.$$typeof = q4, fn && fn(n3);
   };
   var an = l.__r;
   l.__r = function(n3) {

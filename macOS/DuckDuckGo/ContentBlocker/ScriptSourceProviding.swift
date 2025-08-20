@@ -152,9 +152,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             .withJSLoading()
             .build()
         } catch {
-            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
-                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
-                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
         }
@@ -176,9 +175,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
                                                              tld: tld,
                                                              trackerDataManager: trackerDataManager)
         } catch {
-            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
-                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
-                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error.localizedDescription)")
         }
@@ -204,9 +202,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
                                                          tld: tld,
                                                          isDebugBuild: isDebugBuild)
         } catch {
-            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
-                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
-                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error.localizedDescription)")
         }

@@ -78,10 +78,8 @@ final class UserScripts: UserScriptsProvider {
                                                                         isIsolated: true,
                                                                         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
-            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
-                let params = [PixelParameters.jsFile: jsFile, PixelParameters.path: filePath]
-                Pixel.fire(pixel: .userScriptLoadJSFailed, error: error, withAdditionalParameters: params)
-                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
             }
             fatalError("Failed to initialize ContentScopeUserScript: \(error)")
         }

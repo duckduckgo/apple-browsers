@@ -266,7 +266,6 @@ extension XCUIApplication {
     func setAlwaysAskWhereToSaveFiles(enabled: Bool) {
         let prefs = preferencesWindow
 
-
         let toggleIdentifier = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         let scrollView = prefs.scrollViews.containing(.checkBox, identifier: toggleIdentifier).firstMatch
         scrollView.swipeUp()

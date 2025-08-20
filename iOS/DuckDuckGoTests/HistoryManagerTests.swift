@@ -87,26 +87,7 @@ final class HistoryManagerTests: XCTestCase {
 
         let historyManager = makeHistoryManager(db)
 
-        XCTAssertTrue(historyManager.isHistoryFeatureEnabled())
         XCTAssertTrue(historyManager.historyCoordinator is HistoryCoordinator)
-    }
-
-    func testWhenDisabledInPrivacyConfig_ThenFeatureIsDisabled() {
-        privacyConfig.isFeatureKeyEnabled = { feature, _ in
-            XCTAssertEqual(feature, .history)
-            return false
-        }
-        
-        privacyConfigManager.privacyConfig = privacyConfig
-
-        let model = CoreDataDatabase.loadModel(from: History.bundle, named: "BrowsingHistory")!
-        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: model)
-        db.loadStore()
-
-        let historyManager = makeHistoryManager(db)
-
-        XCTAssertFalse(historyManager.isHistoryFeatureEnabled())
-        XCTAssertTrue(historyManager.historyCoordinator is NullHistoryCoordinator)
     }
 
     func test_WhenUserHasDisabledAutocompleteSitesSetting_ThenDontStoreOrLoadHistory() {

@@ -28,7 +28,6 @@ import os.log
 public protocol HistoryManaging {
     
     var historyCoordinator: HistoryCoordinating { get }
-    func isHistoryFeatureEnabled() -> Bool
     var isEnabledByUser: Bool { get }
     func removeAllHistory() async
     func deleteHistoryForURL(_ url: URL) async
@@ -37,13 +36,11 @@ public protocol HistoryManaging {
 
 public class HistoryManager: HistoryManaging {
 
-    let privacyConfigManager: PrivacyConfigurationManaging
     let dbCoordinator: HistoryCoordinator
     let tld: TLD
 
     public var historyCoordinator: HistoryCoordinating {
-        guard isHistoryFeatureEnabled(),
-                isEnabledByUser else {
+        guard isEnabledByUser else {
             return NullHistoryCoordinator()
         }
         return dbCoordinator
@@ -63,16 +60,10 @@ public class HistoryManager: HistoryManaging {
          isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
          isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool) {
 
-        self.privacyConfigManager = privacyConfigManager
         self.dbCoordinator = dbCoordinator
         self.tld = tld
         self.isAutocompleteEnabledByUser = isAutocompleteEnabledByUser
         self.isRecentlyVisitedSitesEnabledByUser = isRecentlyVisitedSitesEnabledByUser
-    }
-
-    /// Determines if the history feature is enabled.  This code will need to be cleaned up once the roll out is at 100%
-    public func isHistoryFeatureEnabled() -> Bool {
-        return privacyConfigManager.privacyConfig.isEnabled(featureKey: .history)
     }
 
     public func removeAllHistory() async {

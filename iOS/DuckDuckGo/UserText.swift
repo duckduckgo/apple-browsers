@@ -1559,6 +1559,10 @@ public struct UserText {
         return NSLocalizedString("subscription.faq.description", value: "Get answers to frequently asked questions or contact Privacy Pro support from our help pages.", comment: "FAQ Description")
     }
 
+    // Update or cancel internal plan
+    public static let subscriptionManageInternalTitle = "Change Plan or Billing"
+    public static let subscriptionManageInternalMessage = "Your subscription is provided by Dax. Thanks Dax!"
+
     // Remove subscription confirmation
     public static let subscriptionRemoveFromDeviceConfirmTitle = NSLocalizedString("subscription.remove.from.device.title", value: "Remove from this device?", comment: "Remove from device confirmation dialog title")
     public static func subscriptionRemoveFromDeviceConfirmText(isRebrandingOn: Bool) -> String {

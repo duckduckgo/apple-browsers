@@ -51,11 +51,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         // Wait for redirect to search - invalid TLD should trigger search redirect
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
-        
+
         // Verify the URL changed to a search URL by checking address bar after navigation
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after search redirect")
-        
+
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "Should redirect to DuckDuckGo search page")
         XCTAssertTrue(addressBarValue.contains(invalidDomain), "Search URL should contain the original search term")
@@ -70,11 +70,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         // Wait for redirect to search - invalid TLD should trigger search redirect
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
-        
+
         // Verify the URL changed to a search URL by checking address bar after navigation
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after search redirect")
-        
+
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "Should redirect to DuckDuckGo search page")
         XCTAssertTrue(addressBarValue.contains(typoedDomain), "Search URL should contain the original search term")
@@ -89,11 +89,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         // Wait for redirect to search - should load DuckDuckGo search page
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
-        
+
         // Verify the URL changed to a search URL by checking address bar after navigation
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after search redirect")
-        
+
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "Should redirect to DuckDuckGo search page")
         XCTAssertTrue(addressBarValue.contains(randomString), "Search URL should contain the original search term")
@@ -131,11 +131,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         // Wait for redirect to search - invalid TLD should trigger search redirect
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
-        
+
         // Verify history was recorded - address bar should contain search URL
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible for history navigation")
-        
+
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "History should record the search redirect")
         XCTAssertTrue(addressBarValue.contains(invalidDomain), "Search URL should contain the original search term")
@@ -151,7 +151,7 @@ class SearchNonexistentDomainUITests: UITestCase {
         let webView = app.webViews.firstMatch
         let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
         XCTAssertTrue(pageContent.waitForExistence(timeout: 15.0), "Should navigate to example.com and show page content")
-        
+
         // Verify browser navigated and remains functional - address bar should still be accessible
         app.activateAddressBar() // Activate address bar after navigation
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should remain accessible after valid domain navigation")

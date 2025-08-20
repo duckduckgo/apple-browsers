@@ -3435,9 +3435,6 @@
         }
       }
     },
-    "Always On" : {
-      "comment" : "Web tracking protection Always on title"
-    },
     "Always Show" : {
       "comment" : "Preference for always showing the bookmarks bar",
       "localizations" : {
@@ -33569,55 +33566,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Sagt den teilnehmenden Websites, dass sie deine Daten nicht verkaufen oder weitergeben dürfen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Expresses opt-out rights on your behalf by telling sites not to sell or share your personal info."
+            "value" : "Tells participating websites not to sell or share your data."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Indica a los sitios web participantes que no vendan ni compartan tus datos."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Indique aux sites Web participants de ne pas vendre ou partager vos données."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Indica ai siti Web partecipanti di non vendere o condividere i tuoi dati."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Vertelt deelnemende websites dat ze je gegevens niet mogen verkopen of delen."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Instruuje uczestniczące witryny, aby nie sprzedawały ani nie udostępniały Twoich danych."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Indica aos sites participantes que não devem vender nem partilhar os teus dados."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Требует от сайтов, участвующих в программе GPC, не продавать и не передавать ваши данные."
           }
         }
@@ -80348,246 +80345,6 @@
         }
       }
     },
-    "tracking.protection.cname.cloaking.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS."
-          }
-        }
-      }
-    },
-    "tracking.protection.cname.cloaking.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Protects against DNS CNAME cloaking"
-          }
-        }
-      }
-    },
-    "tracking.protection.facebook.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites."
-          }
-        }
-      }
-    },
-    "tracking.protection.facebook.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Facebook tracking protection"
-          }
-        }
-      }
-    },
-    "tracking.protection.fingerprinting.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web."
-          }
-        }
-      }
-    },
-    "tracking.protection.fingerprinting.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Prevents fingerprint tracking"
-          }
-        }
-      }
-    },
-    "tracking.protection.first.party.cookies.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out."
-          }
-        }
-      }
-    },
-    "tracking.protection.first.party.cookies.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Expires 1st-party cookies"
-          }
-        }
-      }
-    },
-    "tracking.protection.google.amp.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Replaces Google AMP links with the original publisher's site."
-          }
-        }
-      }
-    },
-    "tracking.protection.google.amp.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Blocks Google's AMP Tracking"
-          }
-        }
-      }
-    },
-    "tracking.protection.google.sign.in.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Blocks Google sign-in pop-ups on sites Google doesn't own."
-          }
-        }
-      }
-    },
-    "tracking.protection.google.sign.in.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Blocks Google's sign-in pop-ups"
-          }
-        }
-      }
-    },
-    "tracking.protection.link.tracking.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites."
-          }
-        }
-      }
-    },
-    "tracking.protection.link.tracking.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Blocks link tracking"
-          }
-        }
-      }
-    },
-    "tracking.protection.referrer.description" : {
-      "comment" : "Feature box description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Helps block companies from identifying the last website you visited."
-          }
-        }
-      }
-    },
-    "tracking.protection.referrer.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Protects against referrer tracking"
-          }
-        }
-      }
-    },
-    "tracking.protection.targeted.ads.description" : {
-      "comment" : "Feature description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking."
-          }
-        }
-      }
-    },
-    "tracking.protection.targeted.ads.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Blocks targeted ads"
-          }
-        }
-      }
-    },
-    "tracking.protection.third.party.trackers.description" : {
-      "comment" : "Feature description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place."
-          }
-        }
-      }
-    },
-    "tracking.protection.third.party.trackers.title" : {
-      "comment" : "Feature box title",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Blocks 3rd-party trackers"
-          }
-        }
-      }
-    },
     "Transformations" : {
       "comment" : "Main Menu Edit item",
       "localizations" : {
@@ -86474,18 +86231,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Защита от отслеживания онлайн"
-          }
-        }
-      }
-    },
-    "web.tracking.protection.updated.description" : {
-      "comment" : "Updated feature description in settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active."
           }
         }
       }

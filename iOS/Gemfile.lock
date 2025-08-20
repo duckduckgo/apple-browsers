@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: 8b941568aaeee176f1c828ffc54b993923750231
-  branch: dominik/hotfix-blocking-release-bumps
+  revision: 339863686afda0424d11f7e22da1c55094111fe5
+  branch: dominik/public-release-tag-tag
   specs:
-    fastlane-plugin-ddg_apple_automation (2.7.1)
+    fastlane-plugin-ddg_apple_automation (2.7.3)
       asana
       climate_control
       httpparty
@@ -39,7 +39,7 @@ GEM
     aws-sdk-kms (1.110.0)
       aws-sdk-core (~> 3, >= 3.228.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.196.1)
+    aws-sdk-s3 (1.197.0)
       aws-sdk-core (~> 3, >= 3.228.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)

@@ -9,7 +9,6 @@ on:
     inputs:
       destination:
         description: "Upload destination (TestFlight or App Store)"
-        required: true
         default: testflight
         type: choice
         options:
@@ -25,7 +24,6 @@ on:
     inputs:
       destination:
         description: "Upload destination (TestFlight or App Store)"
-        required: true
         default: testflight
         type: string
       asana-task-url:
@@ -42,7 +40,6 @@ on:
         type: string
       skip-notify:
         description: "Skip Mattermost notification"
-        required: false
         default: false
         type: boolean
     secrets:

@@ -86,7 +86,7 @@
                 key: 'app.name',
                 type: 'string',
                 description: 'App name',
-                enum: ['DuckDuckGo iOS']
+                enum: ['DuckDuckGo iOS'],
             },
             {
                 key: 'app.version',

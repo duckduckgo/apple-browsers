@@ -34,7 +34,7 @@ struct SettingsAIFeaturesView: View {
             VStack(alignment: .center) {
                 if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                     Image(.settingAIFeaturesHero)
-                        .padding(.top, -30)
+                        .padding(.top, -20)
                 } else {
                     Image(.settingsAIChatHero)
                         .padding(.top, -20)
@@ -75,11 +75,10 @@ struct SettingsAIFeaturesView: View {
                     if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                         Section {
                             HStack {
-                                Spacer()
                                 SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
                                     .padding(.vertical, 8)
-                                Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .center)
                         } footer: {
                             Text(footerAttributedString)
                                 .environment(\.openURL, OpenURLAction { url in

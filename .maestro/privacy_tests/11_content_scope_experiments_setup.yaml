@@ -16,6 +16,11 @@ name: 01_content_scope_experiments_setup
 - runFlow:
     file: ../shared/open_debug_menu.yaml
 
+##Set internal status
+- tapOn:
+    text: "0"
+    index: 0
+
 ##Override Privacy Config
 - tapOn: "Configuration URLs"
 - tapOn: "Privacy Config"
@@ -31,7 +36,5 @@ name: 01_content_scope_experiments_setup
 - inputText: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html"
 - pressKey: Enter
 
-# Check if two 200 or two 300 are visible
-- assertVisible:
-    text: "200|300"
-    index: 1
+# Check if test suite passes
+- assertVisible: "pass, application status"

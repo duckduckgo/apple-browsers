@@ -81,7 +81,7 @@ jobs:
     timeout-minutes: 10
 
     outputs:
-      commit-sha: ${{ steps.increment-build-number.outputs.commit_sha }}
+      commit_sha: ${{ steps.increment-build-number.outputs.commit_sha }}
 
     steps:
 
@@ -115,7 +115,7 @@ jobs:
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      commit-sha: ${{ needs.increment_build_number.outputs.commit-sha }}
+      commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
     secrets: inherit
 
   tag_and_merge:
@@ -126,6 +126,6 @@ jobs:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       base-branch: ${{ github.ref_name }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      commit-sha: ${{ needs.increment_build_number.outputs.commit-sha }}
+      commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
       prerelease: true
     secrets: inherit

@@ -349,7 +349,9 @@ class DownloadsUITests: UITestCase {
         // Restart app and verify the same file is listed
         app.typeKey("q", modifierFlags: [.command])
         app.launch()
+        _=app.wait(for: .runningForeground, timeout: 5.0)
         app.enforceSingleWindow()
+
         openDownloadsPopup()
         XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(sizeLabel.exists)

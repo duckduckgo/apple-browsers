@@ -1514,6 +1514,7 @@
 		CB1143DE2AF6D4B600C1CCD3 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = CB1143DC2AF6D4B600C1CCD3 /* InfoPlist.strings */; };
 		CB14D5832E269A7F002E897E /* UserAgentConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB14D5822E269A73002E897E /* UserAgentConfiguration.swift */; };
 		CB18A3662E2790C700BE9D8D /* UserAgentConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB18A3652E2790C700BE9D8D /* UserAgentConfigurationTests.swift */; };
+		CB1A79712E4CAD4F009C96C1 /* SERPSettingsUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1A79702E4CAD45009C96C1 /* SERPSettingsUserScript.swift */; };
 		CB258D1229A4F24900DEBA24 /* ConfigurationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB258D0F29A4D0FD00DEBA24 /* ConfigurationManager.swift */; };
 		CB258D1329A4F24E00DEBA24 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB84C7C029A3F0280088A5B8 /* ConfigurationStore.swift */; };
 		CB258D1D29A52AF900DEBA24 /* EtagStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9896632322C56716007BE4FE /* EtagStorage.swift */; };
@@ -3712,6 +3713,7 @@
 		CB15F4762AF6D5100062A994 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB18A3652E2790C700BE9D8D /* UserAgentConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAgentConfigurationTests.swift; sourceTree = "<group>"; };
 		CB18F2712AF6D4E400A0F8FE /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		CB1A79702E4CAD45009C96C1 /* SERPSettingsUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsUserScript.swift; sourceTree = "<group>"; };
 		CB1AEFB02799AA940031AE3D /* SwiftUICollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUICollectionViewCell.swift; sourceTree = "<group>"; };
 		CB1FAE472AF6D59B003F452F /* sk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sk; path = sk.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB24F70E29A3EB15006DCC58 /* AppConfigurationURLProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppConfigurationURLProvider.swift; path = ../Core/AppConfigurationURLProvider.swift; sourceTree = "<group>"; };
@@ -7449,6 +7451,14 @@
 			path = UICoordination;
 			sourceTree = "<group>";
 		};
+		CB1A79722E4CAD54009C96C1 /* SERP */ = {
+			isa = PBXGroup;
+			children = (
+				CB1A79702E4CAD45009C96C1 /* SERPSettingsUserScript.swift */,
+			);
+			path = SERP;
+			sourceTree = "<group>";
+		};
 		CB258D1129A4F1BB00DEBA24 /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
@@ -8389,6 +8399,7 @@
 		F1AB2B401E3F75A000868554 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				CB1A79722E4CAD54009C96C1 /* SERP */,
 				D6E83C492B20C883006C8AFB /* Model */,
 				D6E83C3B2B1F27BA006C8AFB /* Views */,
 				858566F1252E55AE007501B8 /* Debug */,
@@ -9888,6 +9899,7 @@
 				856F28D72D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift in Sources */,
 				853C5F6121C277C7001F7A05 /* global.swift in Sources */,
 				EE9D68D82AE15AD600B55EF4 /* UIApplicationExtension.swift in Sources */,
+				CB1A79712E4CAD4F009C96C1 /* SERPSettingsUserScript.swift in Sources */,
 				566B73702BECD46800FF1959 /* MainViewController+SyncAlerts.swift in Sources */,
 				31B5E8C52E1E64D400EECC1E /* DaxLogoManager.swift in Sources */,
 				859DB8182CE6263C001F7210 /* TextZoomCoordinator.swift in Sources */,

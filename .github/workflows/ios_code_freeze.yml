@@ -70,14 +70,7 @@ jobs:
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
       skip-release: true
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GH_RO_PAT: ${{ secrets.GH_RO_PAT }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   prepare_release:
     name: Prepare Release
@@ -86,16 +79,7 @@ jobs:
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   tag_and_merge:
     name: Tag and Merge Branch
@@ -105,6 +89,4 @@ jobs:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
       release-type: internal
-    secrets:
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GHA_ELEVATED_PERMISSIONS_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+    secrets: inherit

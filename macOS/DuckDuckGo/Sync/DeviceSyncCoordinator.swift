@@ -28,26 +28,35 @@ import PixelKit
 import os.log
 import BrowserServicesKit
 
-protocol DeviceSyncCoordinating: AnyObject {
+protocol SyncDeviceFlowLaunching {
+    @MainActor
+    func startDeviceSyncFlow(completion: (() -> Void)?)
 }
 
-final class DeviceSyncCoordinator: DeviceSyncCoordinating {
+protocol DeviceSyncCoordinationDelegate: AnyObject {
+    @MainActor
+    func didEndFlow()
+}
+
+final class DeviceSyncCoordinator {
     var cancellable: AnyCancellable?
 
-    init(managementDialogModel: ManagementDialogModel) {
+    @MainActor
+    init?(managementDialogModel: ManagementDialogModel = .init(), dialogController: SyncDialogController? = nil) {
         self.managementDialogModel = managementDialogModel
-        cancellable = managementDialogModel.$currentDialog.sink { [weak self] dialog in
-            Task {
-                dialog == nil ? await self?.dismissDialog() : await self?.presentDialog()
-            }
+        guard let dialogController = dialogController ?? Self.createDialogController(managementDialogModel: managementDialogModel) else {
+            return nil
         }
+        self.dialogController = dialogController
+        dialogController.coordinationDelegate = self
     }
 
     private let managementDialogModel: ManagementDialogModel
+    private let dialogController: SyncDialogController
     private var syncWindowController: NSWindowController?
 
     @MainActor
-    private func presentDialog() {
+    private func presentDialog(completion: (() -> Void)? = nil) {
         guard !(syncWindowController?.window?.isVisible ?? false) else {
             return
         }
@@ -56,7 +65,7 @@ final class DeviceSyncCoordinator: DeviceSyncCoordinating {
             return
         }
 
-        let syncViewController = SyncManagementDialogViewController(managementDialogModel)
+        let syncViewController = SyncManagementDialogViewController(managementDialogModel, dialogController: dialogController, coordinator: self)
         syncWindowController = syncViewController.wrappedInWindowController()
 
         guard let syncWindow = syncWindowController?.window,
@@ -65,20 +74,91 @@ final class DeviceSyncCoordinator: DeviceSyncCoordinating {
             assertionFailure("Sync: Failed to present SyncManagementDialogViewController")
             return
         }
-        parentWindowController.window?.beginSheet(syncWindow)
+        parentWindowController.window?.beginSheet(syncWindow) { _ in
+            completion?()
+        }
     }
 
     @MainActor
-    private func dismissDialog() {
+    private static func createDialogController(managementDialogModel: ManagementDialogModel) -> SyncDialogController? {
+        guard let syncService = NSApp.delegateTyped.syncService, let errorHandler = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler else {
+            assertionFailure("Sync: Core dependencies not available")
+            return nil
+        }
+
+        return SyncDialogController(syncService: syncService, managementDialogModel: managementDialogModel, syncPausedStateManager: errorHandler)
+    }
+}
+
+extension DeviceSyncCoordinator: DeviceSyncCoordinationDelegate {
+    @MainActor
+    func didEndFlow() {
         guard let window = syncWindowController?.window, let sheetParent = window.sheetParent else {
             return
         }
         sheetParent.endSheet(window)
-        cleanUp()
+        syncWindowController?.close()
+
+        // Very important to prevent a memory leak as there is a strong dependency
+        // cycle between these types.
+        syncWindowController = nil
+    }
+}
+
+extension DeviceSyncCoordinator: SyncDeviceFlowLaunching {
+    func startDeviceSyncFlow(completion: (() -> Void)?) {
+        presentDialog(completion: completion)
+        Task {
+            await dialogController.syncWithAnotherDevicePressed()
+        }
+    }
+}
+
+extension DeviceSyncCoordinator: SyncSettingsViewHandling {
+    func saveRecoveryPDF() {
+        dialogController.saveRecoveryPDF()
     }
 
-    private func cleanUp() {
-        syncWindowController?.close()
-        syncWindowController = nil
+    var devicesPublisher: AnyPublisher<[SyncDevice], Never> {
+        dialogController.devicesPublisher
+    }
+
+    func refreshDevices() {
+        dialogController.refreshDevices()
+    }
+
+    func turnOffSyncPressed() {
+        presentDialog()
+        dialogController.turnOffSyncPressed()
+    }
+
+    func presentDeviceDetails(_ device: SyncUI_macOS.SyncDevice) {
+        presentDialog()
+        dialogController.presentDeviceDetails(device)
+    }
+
+    func presentRemoveDevice(_ device: SyncUI_macOS.SyncDevice) {
+        presentDialog()
+        dialogController.presentRemoveDevice(device)
+    }
+
+    func presentDeleteAccount() {
+        presentDialog()
+        dialogController.presentDeleteAccount()
+    }
+
+    func syncWithAnotherDevicePressed() async {
+        presentDialog()
+        await dialogController.syncWithAnotherDevicePressed()
+    }
+
+    func syncWithServerPressed() async {
+        presentDialog()
+        await dialogController.syncWithServerPressed()
+    }
+
+    func recoverDataPressed() async {
+        presentDialog()
+        await dialogController.recoverDataPressed()
     }
 }

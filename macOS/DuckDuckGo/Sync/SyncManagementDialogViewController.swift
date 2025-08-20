@@ -22,16 +22,25 @@ import SyncUI_macOS
 
 final class SyncManagementDialogViewController: NSViewController {
 
-    init(_ model: ManagementDialogModel) {
+    /*
+     These properties serve only to keep the instances alive for
+     the entire lifecycle of this flow.
+     */
+    let dialogController: SyncDialogController
+    let coordinator: DeviceSyncCoordinator
+
+    weak var managementDialogModel: ManagementDialogModel?
+
+    init(_ model: ManagementDialogModel, dialogController: SyncDialogController, coordinator: DeviceSyncCoordinator) {
         self.managementDialogModel = model
+        self.dialogController = dialogController
+        self.coordinator = coordinator
         super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    private weak var managementDialogModel: ManagementDialogModel?
 
     override func loadView() {
         guard let managementDialogModel else {
@@ -42,5 +51,4 @@ final class SyncManagementDialogViewController: NSViewController {
         let syncManagementDialog = ManagementDialog(model: managementDialogModel)
         view = NSHostingView(rootView: syncManagementDialog)
     }
-
 }

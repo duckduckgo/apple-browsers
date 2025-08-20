@@ -49,7 +49,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     func refreshDevices() {
-        syncDialogController.refreshDevices()
+        syncSettingsHandler.refreshDevices()
     }
 
     var syncPausedTitle: String? {
@@ -150,7 +150,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAppVersionNotSupported: Bool = true
 
     private let syncPausedStateManager: any SyncPausedStateManaging
-    let syncDialogController: SyncDialogController
+    let syncSettingsHandler: SyncSettingsViewHandling
 
     private func updateSyncFeatureFlags(_ syncFeatureFlags: SyncFeatureFlags) {
         isDataSyncingAvailable = syncFeatureFlags.contains(.dataSyncing)
@@ -189,7 +189,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified
 
-        self.syncDialogController = SyncDialogController(
+        let syncSettingsHandler = SyncDialogController(
             syncService: syncService,
             managementDialogModel: managementDialogModel,
             userAuthenticator: userAuthenticator,
@@ -197,6 +197,8 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             connectionControllerFactory: connectionControllerFactory,
             featureFlagger: featureFlagger
         )
+
+        self.syncSettingsHandler = DeviceSyncCoordinator(managementDialogModel: managementDialogModel, dialogController: syncSettingsHandler) ?? syncSettingsHandler
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 
@@ -246,7 +248,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             }
             .store(in: &cancellables)
 
-        syncDialogController.$devices
+        syncSettingsHandler.devicesPublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.devices, onWeaklyHeld: self)
             .store(in: &cancellables)
@@ -305,45 +307,45 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .store(in: &cancellables)
     }
 
-    // MARK: - Public API (Delegation to SyncDialogController)
+    // MARK: - Public API (Delegation to syncSettingsHandler)
 
     @MainActor
     func turnOffSyncPressed() {
-        syncDialogController.turnOffSyncPressed()
+        syncSettingsHandler.turnOffSyncPressed()
     }
 
     @MainActor
     func presentDeviceDetails(_ device: SyncDevice) {
-        syncDialogController.presentDeviceDetails(device)
+        syncSettingsHandler.presentDeviceDetails(device)
     }
 
     @MainActor
     func presentRemoveDevice(_ device: SyncDevice) {
-        syncDialogController.presentRemoveDevice(device)
+        syncSettingsHandler.presentRemoveDevice(device)
     }
 
     @MainActor
     func presentDeleteAccount() {
-        syncDialogController.presentDeleteAccount()
+        syncSettingsHandler.presentDeleteAccount()
     }
 
     @MainActor
     func syncWithAnotherDevicePressed() async {
-        await syncDialogController.syncWithAnotherDevicePressed()
+        await syncSettingsHandler.syncWithAnotherDevicePressed()
     }
 
     @MainActor
     func syncWithServerPressed() async {
-        await syncDialogController.syncWithServerPressed()
+        await syncSettingsHandler.syncWithServerPressed()
     }
 
     @MainActor
     func recoverDataPressed() async {
-        await syncDialogController.recoverDataPressed()
+        await syncSettingsHandler.recoverDataPressed()
     }
 
     @MainActor
     func saveRecoveryPDF() {
-        syncDialogController.saveRecoveryPDF()
+        syncSettingsHandler.saveRecoveryPDF()
     }
 }

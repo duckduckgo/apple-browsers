@@ -43,6 +43,13 @@ protocol SyncSettingsViewHandling {
     func syncWithServerPressed() async
 
     func recoverDataPressed() async
+
+    func saveRecoveryPDF()
+
+    // These two members should probably be split out / moved to DDGSync
+    func refreshDevices()
+
+    var devicesPublisher: AnyPublisher<[SyncDevice], Never> { get }
 }
 
 @MainActor
@@ -60,11 +67,6 @@ final class SyncDialogController {
     private let connectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling
     private lazy var connectionController: SyncConnectionControlling = connectionControllerFactory(syncService, self)
 
-    private let defaultDeviceSyncCoordinatorFactory: (ManagementDialogModel) -> DeviceSyncCoordinating = {
-        DeviceSyncCoordinator(managementDialogModel: $0)
-    }
-    private let deviceSyncCoordinating: DeviceSyncCoordinating
-
     private var cancellables = Set<AnyCancellable>()
     private var syncPromoSource: String?
 
@@ -78,20 +80,20 @@ final class SyncDialogController {
 
     @Published var devices: [SyncDevice] = []
 
+    weak var coordinationDelegate: DeviceSyncCoordinationDelegate?
+
     init(
         syncService: DDGSyncing,
         managementDialogModel: ManagementDialogModel = ManagementDialogModel(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
-        deviceSyncCoordinatorFactory: ((ManagementDialogModel) -> DeviceSyncCoordinating)? = nil,
         featureFlagger: FeatureFlagger? = nil
     ) {
         self.syncService = syncService
         self.userAuthenticator = userAuthenticator
         self.syncPausedStateManager = syncPausedStateManager
         self.connectionControllerFactory = connectionControllerFactory ?? SyncDialogController.defaultConnectionControllerFactory
-        self.deviceSyncCoordinating = deviceSyncCoordinatorFactory?(managementDialogModel) ?? defaultDeviceSyncCoordinatorFactory(managementDialogModel)
         self.featureFlagger = featureFlagger ?? Application.appDelegate.featureFlagger
         self.managementDialogModel = managementDialogModel
 
@@ -284,9 +286,9 @@ extension SyncDialogController: ManagementDialogModelDelegate {
             do {
                 try await syncService.disconnect()
                 PixelKit.fire(SyncFeatureUsagePixels.syncDisabled)
-                managementDialogModel.endFlow()
                 syncPausedStateManager.syncDidTurnOff()
                 diagnosisHelper.didManuallyDisableSync()
+                managementDialogModel.endFlow()
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToTurnSyncOff, description: error.localizedDescription)
                 PixelKit.fire(DebugEvent(GeneralPixel.syncLogoutError(error: error)))
@@ -300,9 +302,9 @@ extension SyncDialogController: ManagementDialogModelDelegate {
                 let connectedDevices = devices.count
                 try await syncService.deleteAccount()
                 PixelKit.fire(SyncFeatureUsagePixels.syncDisabledAndDeleted(connectedDevices: connectedDevices))
-                managementDialogModel.endFlow()
                 syncPausedStateManager.syncDidTurnOff()
                 diagnosisHelper.didManuallyDisableSync()
+                managementDialogModel.endFlow()
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToDeleteData, description: error.localizedDescription)
                 PixelKit.fire(DebugEvent(GeneralPixel.syncDeleteAccountError(error: error)))
@@ -316,8 +318,8 @@ extension SyncDialogController: ManagementDialogModelDelegate {
             syncService.scheduler.cancelSyncAndSuspendSyncQueue()
             do {
                 let devices = try await syncService.updateDeviceName(name)
-                managementDialogModel.endFlow()
                 mapDevices(devices)
+                managementDialogModel.endFlow()
             } catch {
                 if case SyncError.unauthenticatedWhileLoggedIn = error {
                     diagnosisHelper.didManuallyDisableSync()
@@ -411,7 +413,6 @@ extension SyncDialogController: ManagementDialogModelDelegate {
 
     func turnOnSync() {
         Task { @MainActor in
-            managementDialogModel.endFlow()
             do {
                 let device = Self.deviceInfo()
                 presentDialog(for: .prepareToSync)
@@ -485,10 +486,15 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         Task { [weak self] in
             await self?.connectionController.cancel()
         }
+        coordinationDelegate?.didEndFlow()
     }
 }
 
 extension SyncDialogController: SyncSettingsViewHandling {
+    var devicesPublisher: AnyPublisher<[SyncDevice], Never> {
+        $devices.eraseToAnyPublisher()
+    }
+
     @MainActor
     func turnOffSyncPressed() {
         presentDialog(for: .turnOffSync)

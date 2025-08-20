@@ -33,7 +33,7 @@ public protocol WidePixelManaging {
     func stopMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, WidePixel.MeasuredInterval?>)
 
     func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
-    func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: UUID) -> T?
+    func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: String) -> T?
     func clearAllFlows()
 }
 
@@ -63,13 +63,13 @@ public final class WidePixel: WidePixelManaging {
 
     public init(userDefaults: UserDefaults = UserDefaults(suiteName: WidePixel.storageKeyPrefix) ?? .standard,
                 pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
-                sampler: WidePixelSampling = DefaultWidePixelSampler(),
+                sampler: WidePixelSampling? = nil,
                 storage: WidePixelStoring? = nil,
                 events: EventMapping<WidePixelEvent>? = nil) {
         self.defaults = userDefaults
         self.pixelKitProvider = pixelKitProvider
-        self.sampler = sampler
         self.storage = storage ?? WidePixelUserDefaultsStorage(userDefaults: userDefaults)
+        self.sampler = sampler ?? DefaultWidePixelSampler(storage: self.storage)
         self.eventMapping = events
     }
 
@@ -96,7 +96,7 @@ public final class WidePixel: WidePixelManaging {
         Self.logger.debug("Wide pixel flow updated: \(T.pixelName, privacy: .public) with context ID: \(contextID, privacy: .public)")
     }
 
-    public func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: UUID) -> T? {
+    public func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: String) -> T? {
         return Self.storageQueue.sync { try? storage.load(contextID: contextID) }
     }
 
@@ -134,10 +134,10 @@ public final class WidePixel: WidePixelManaging {
     }
 
     private func shouldSampleFlow(_ data: any WidePixelData) -> Bool {
-        return sampler.shouldSend(sampleRate: data.globalData.sampleRate)
+        return sampler.shouldSend(sampleRate: Float(data.globalData.sampleRate), contextID: data.contextData.id, pixelName: type(of: data).pixelName)
     }
 
-    private func handleDroppedFlow(for contextID: UUID, sampleRate: Double) {
+    private func handleDroppedFlow(for contextID: String, sampleRate: Double) {
         clearFlow(for: contextID)
         Self.logger.info("Wide pixel dropped due to sample rate (\(sampleRate, privacy: .public)) for context ID: \(contextID, privacy: .public)")
     }
@@ -202,7 +202,7 @@ public final class WidePixel: WidePixelManaging {
         )
     }
 
-    public func completeFlow<T: WidePixelData>(_ type: T.Type, contextID: UUID, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
+    public func completeFlow<T: WidePixelData>(_ type: T.Type, contextID: String, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
         guard let currentData = getFlowData(T.self, contextID: contextID) else {
             report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil)
             onComplete(false, WidePixelError.flowNotFound(pixelName: T.pixelName))
@@ -214,7 +214,7 @@ public final class WidePixel: WidePixelManaging {
 
     // MARK: - Duration Measurements
 
-    public func startMeasuring<T: WidePixelData>(_ type: T.Type, contextID: UUID, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
+    public func startMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
         guard var typed: T = try? storage.load(contextID: contextID) else {
             report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil)
             return
@@ -226,7 +226,7 @@ public final class WidePixel: WidePixelManaging {
         do { try Self.storageQueue.sync { try storage.save(typed) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
     }
 
-    public func stopMeasuring<T: WidePixelData>(_ type: T.Type, contextID: UUID, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
+    public func stopMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
         guard var typed: T = try? storage.load(contextID: contextID) else {
             report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil)
             return
@@ -241,7 +241,7 @@ public final class WidePixel: WidePixelManaging {
 
     // MARK: - Test Helpers
 
-    func startMeasuring<T: WidePixelData>(_ type: T.Type, contextID: UUID, keyPath: WritableKeyPath<T, MeasuredInterval?>, at date: Date) {
+    func startMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>, at date: Date) {
         guard var typed: T = try? storage.load(contextID: contextID) else { report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil); return }
         var interval = typed[keyPath: keyPath] ?? MeasuredInterval()
         if interval.start != nil { assertionFailure("startMeasurement called but start is already set"); return }
@@ -250,7 +250,7 @@ public final class WidePixel: WidePixelManaging {
         do { try Self.storageQueue.sync { try storage.save(typed) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
     }
 
-    func stopMeasuring<T: WidePixelData>(_ type: T.Type, contextID: UUID, keyPath: WritableKeyPath<T, MeasuredInterval?>, at date: Date) {
+    func stopMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>, at date: Date) {
         guard var typed: T = try? storage.load(contextID: contextID) else { report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil); return }
         var interval = typed[keyPath: keyPath] ?? MeasuredInterval()
         if interval.start == nil { interval.start = date }
@@ -280,7 +280,7 @@ public final class WidePixel: WidePixelManaging {
 
     // MARK: - Internal Helper Methods
 
-    func clearFlow(for contextID: UUID) {
+    func clearFlow(for contextID: String) {
         Self.storageQueue.sync { storage.clearContext(contextID) }
     }
 
@@ -302,7 +302,7 @@ public final class WidePixel: WidePixelManaging {
         return getFlowData(type, contextID: contextID)
     }
 
-    func getFirstFlowContextID<T: WidePixelData>(_ type: T.Type) -> UUID? {
+    func getFirstFlowContextID<T: WidePixelData>(_ type: T.Type) -> String? {
         return Self.storageQueue.sync { storage.firstContextID(for: T.self) }
     }
 

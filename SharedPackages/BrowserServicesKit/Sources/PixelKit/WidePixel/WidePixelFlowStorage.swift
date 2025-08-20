@@ -18,15 +18,18 @@
 
 import Foundation
 
+// Persistence handled directly by WidePixelUserDefaultsStorage
+
 public protocol WidePixelStoring {
     func save<T: WidePixelData>(_ data: T) throws
-    func load<T: WidePixelData>(contextID: UUID) throws -> T
+    func load<T: WidePixelData>(contextID: String) throws -> T
     func update<T: WidePixelData>(_ data: T) throws
-    func clearContext(_ contextID: UUID)
+    func clearContext(_ contextID: String)
     func removeAll()
     func getActiveFlowNames() -> [String]
-    func firstContextID<T: WidePixelData>(for type: T.Type) -> UUID?
+    func firstContextID<T: WidePixelData>(for type: T.Type) -> String?
     func allFlowData<T: WidePixelData>(for type: T.Type) -> [T]
+    func percentile(for pixelName: String, contextID: String) -> Float
 }
 
 public final class WidePixelUserDefaultsStorage: WidePixelStoring {
@@ -56,20 +59,16 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         }
     }
 
-    public func load<T: WidePixelData>(contextID: UUID) throws -> T {
+    public func load<T: WidePixelData>(contextID: String) throws -> T {
         let key = storageKey(T.self, contextID: contextID)
-
         guard let data = defaults.data(forKey: key) else {
             throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with context ID \(contextID)")
         }
-
         let envelope = try JSONDecoder().decode(Envelope.self, from: data)
         let expected = String(describing: T.self)
-
         guard envelope.featureDataType == expected else {
             throw WidePixelError.typeMismatch(expected: expected, actual: envelope.featureDataType)
         }
-
         return try JSONDecoder().decode(T.self, from: envelope.featureDataJSON)
     }
 
@@ -81,8 +80,8 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         try save(data)
     }
 
-    public func clearContext(_ contextID: UUID) {
-        let suffix = ".\(contextID.uuidString)"
+    public func clearContext(_ contextID: String) {
+        let suffix = ".\(contextID)"
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
         for key in allKeys where key.hasSuffix(suffix) {
             defaults.removeObject(forKey: key)
@@ -111,13 +110,12 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         return Array(flowNames)
     }
 
-    public func firstContextID<T: WidePixelData>(for type: T.Type) -> UUID? {
+    public func firstContextID<T: WidePixelData>(for type: T.Type) -> String? {
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
-
         for key in allKeys {
             let parts = key.components(separatedBy: ".")
-            if parts.count == 2 && parts[0] == T.pixelName, let uuid = UUID(uuidString: parts[1]) {
-                return uuid
+            if parts.count == 2 && parts[0] == T.pixelName {
+                return parts[1]
             }
         }
 
@@ -127,19 +125,28 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
     public func allFlowData<T: WidePixelData>(for type: T.Type) -> [T] {
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
         var results: [T] = []
-
         for key in allKeys {
             let parts = key.components(separatedBy: ".")
-            if parts.count == 2 && parts[0] == T.pixelName, let uuid = UUID(uuidString: parts[1]),
-               let decoded: T = try? load(contextID: uuid) {
+            if parts.count == 2 && parts[0] == T.pixelName, let decoded: T = (try? load(contextID: parts[1])) {
                 results.append(decoded)
             }
         }
-
         return results
     }
 
-    private func storageKey<T: WidePixelData>(_ type: T.Type, contextID: UUID) -> String {
-        return "\(T.pixelName).\(contextID.uuidString)"
+    public func percentile(for pixelName: String, contextID: String) -> Float {
+        let key = "\(pixelName).\(contextID).percentile"
+
+        if let stored = defaults.object(forKey: key) as? Float {
+            return stored
+        }
+
+        let value = Float.random(in: 0..<1)
+        defaults.set(value, forKey: key)
+        return value
+    }
+
+    private func storageKey<T: WidePixelData>(_ type: T.Type, contextID: String) -> String {
+        return "\(T.pixelName).\(contextID)"
     }
 }

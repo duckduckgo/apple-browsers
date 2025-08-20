@@ -69,7 +69,7 @@ final class WidePixelTests: XCTestCase {
 
     func makeTestSubscriptionData(
         platform: SubscriptionPurchaseWidePixelData.PurchasePlatform = .appstore,
-        contextID: UUID = UUID(),
+        contextID: String = UUID().uuidString,
         contextName: String? = nil,
         subscriptionIdentifier: String? = nil,
         freeTrialEligible: Bool? = nil
@@ -89,7 +89,7 @@ final class WidePixelTests: XCTestCase {
         ])
     }
 
-    func XCTUnwrapFlow<T: WidePixelData>(_ type: T.Type, contextID: UUID, file: StaticString = #file, line: UInt = #line) throws -> T {
+    func XCTUnwrapFlow<T: WidePixelData>(_ type: T.Type, contextID: String, file: StaticString = #file, line: UInt = #line) throws -> T {
         guard let flow = widePixel.getFlowData(type, contextID: contextID) else {
             XCTFail("Expected flow data for \(type) with contextID \(contextID)", file: file, line: line)
             throw TestError.flowNotFound
@@ -161,20 +161,20 @@ final class WidePixelTests: XCTestCase {
     // MARK: - Error Handling Tests
 
     func testGetFlowDataForNonExistentFlow() {
-        let nonExistentContextID = UUID()
+        let nonExistentContextID = UUID().uuidString
         let result = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: nonExistentContextID)
         XCTAssertNil(result)
     }
 
     func testUpdateFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID()
+        let nonExistentContextID = UUID().uuidString
         let data = makeTestSubscriptionData(contextID: nonExistentContextID)
 
         widePixel.updateFlow(data)
     }
 
     func testCompleteFlowForNonExistentFlow() {
-        let nonExistentContextID = UUID()
+        let nonExistentContextID = UUID().uuidString
         let data = makeTestSubscriptionData(contextID: nonExistentContextID)
 
         widePixel.completeFlow(data, status: .success) { _, _ in }
@@ -328,7 +328,7 @@ final class WidePixelTests: XCTestCase {
 
     func testComprehensiveParameterFlattening() throws {
         let testError = makeTestError(domain: "TestErrorDomain", code: 12345)
-        let contextID = UUID()
+        let contextID = UUID().uuidString
 
         let subscriptionData = SubscriptionPurchaseWidePixelData(
             purchasePlatform: .appstore,
@@ -518,9 +518,9 @@ final class WidePixelTests: XCTestCase {
     }
 
     func testFlowRestartWithSameContextID() throws {
-        let contextID = UUID()
-
+        let contextID = UUID().uuidString
         let data1 = makeTestSubscriptionData(platform: .appstore, contextID: contextID, contextName: "first")
+
         widePixel.startFlow(data1)
 
         var updated1 = data1
@@ -534,5 +534,29 @@ final class WidePixelTests: XCTestCase {
         XCTAssertEqual(retrievedData.purchasePlatform, .stripe)
         XCTAssertEqual(retrievedData.contextData.name, "second")
         XCTAssertNil(retrievedData.subscriptionIdentifier)
+    }
+
+    func testPerContextSamplingSingleFireForSamePixelAndContext() throws {
+        let contextID = UUID().uuidString
+
+        var dataA = makeTestSubscriptionData(contextID: contextID)
+        var dataB = makeTestSubscriptionData(contextID: contextID)
+
+        dataA.globalData.sampleRate = 0.5
+        dataB.globalData.sampleRate = 0.5
+
+        widePixel.clearAllFlows()
+        widePixel.startFlow(dataA)
+        widePixel.startFlow(dataB)
+
+        let expectationA = XCTestExpectation(description: "A")
+        let expectationB = XCTestExpectation(description: "B")
+
+        widePixel.completeFlow(dataA, status: .success) { _, _ in expectationA.fulfill() }
+        widePixel.completeFlow(dataB, status: .success) { _, _ in expectationB.fulfill() }
+
+        wait(for: [expectationA, expectationB], timeout: 1.0)
+
+        XCTAssertTrue(self.capturedPixels.count == 0 || self.capturedPixels.count == 1)
     }
 }

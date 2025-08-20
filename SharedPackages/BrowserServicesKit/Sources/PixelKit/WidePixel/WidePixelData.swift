@@ -151,11 +151,11 @@ extension WidePixelAppData: WidePixelParameterProviding {
 
 public struct WidePixelContextData: Codable {
 
-    public let id: UUID
+    public let id: String
     public var name: String?
     public var data: [String: String]?
 
-    public init(id: UUID = UUID(), name: String? = nil, data: [String: String]? = nil) {
+    public init(id: String = UUID().uuidString, name: String? = nil, data: [String: String]? = nil) {
         self.id = id
         self.name = name
         self.data = data

@@ -98,9 +98,9 @@ class AutoconsentUITests: UITestCase {
         let privacyDashboard = app.popovers.firstMatch
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: 10.0), "Privacy dashboard should open")
 
-        // Verify autoconsent is working by checking for "Cookie Pop-up Hidden" status
-        let cookiePopupHiddenInfo = privacyDashboard.buttons.containing(NSPredicate(format: "title CONTAINS 'Cookie Pop-up Hidden'")).firstMatch
-        XCTAssertTrue(cookiePopupHiddenInfo.waitForExistence(timeout: 5.0), "Privacy dashboard should show 'Cookie Pop-up Hidden' indicating autoconsent is active")
+        // Verify autoconsent is working by checking for "Cookies Managed" status
+        let cookiePopupHiddenInfo = privacyDashboard.groups.containing(.button, identifier: "Cookies Managed").firstMatch
+        XCTAssertTrue(cookiePopupHiddenInfo.waitForExistence(timeout: 5.0), "Privacy dashboard should show 'Cookies Managed' indicating autoconsent is active")
 
         app.typeKey(.escape, modifierFlags: [])
     }

@@ -2654,7 +2654,9 @@ extension MainViewController: OmniBarDelegate {
 
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {
-        fireControllerAwarePixel(ntp: .addressBarClickOnNTP, serp: .addressBarClickOnSERP, website: .addressBarClickOnWebsite)
+        fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
+                                 serp: .addressBarClickOnSERP,
+                                 website: .addressBarClickOnWebsite)
     }
 
     func onExperimentalAddressBarClearPressed() {

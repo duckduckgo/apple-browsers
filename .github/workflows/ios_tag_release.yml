@@ -102,8 +102,7 @@ jobs:
       if: inputs.commit-sha
       run: |
         git merge-base --is-ancestor "${{ inputs.commit-sha }}" "origin/${{ env.BRANCH }}" \
-        || echo "👎 Commit ${{ inputs.commit-sha }} does not belong to ${{ env.BRANCH }} branch" \
-        && exit 1
+          || (echo "👎 Commit ${{ inputs.commit-sha }} does not belong to ${{ env.BRANCH }} branch" && exit 1)
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

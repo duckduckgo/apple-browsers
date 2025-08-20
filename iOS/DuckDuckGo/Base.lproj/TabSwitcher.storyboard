@@ -462,7 +462,7 @@
                                                     <color key="backgroundColor" systemColor="systemYellowColor"/>
                                                     <userDefinedRuntimeAttributes>
                                                         <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                                            <integer key="value" value="8"/>
+                                                            <integer key="value" value="12"/>
                                                         </userDefinedRuntimeAttribute>
                                                     </userDefinedRuntimeAttributes>
                                                 </view>
@@ -471,17 +471,31 @@
                                                     <color key="backgroundColor" systemColor="systemTealColor"/>
                                                 </view>
                                                 <stackView opaque="NO" contentMode="scaleToFill" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="LwM-2c-pnd">
-                                                    <rect key="frame" x="12" y="0.0" width="56" height="40"/>
+                                                    <rect key="frame" x="8" y="0.0" width="60" height="40"/>
                                                     <subviews>
-                                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="GlobeSmall" translatesAutoresizingMaskIntoConstraints="NO" id="uOh-0G-QVj">
-                                                            <rect key="frame" x="0.0" y="0.0" width="16" height="40"/>
+                                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="DMB-Py-7va">
+                                                            <rect key="frame" x="0.0" y="0.0" width="24" height="40"/>
+                                                            <subviews>
+                                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="GlobeSmall" translatesAutoresizingMaskIntoConstraints="NO" id="uOh-0G-QVj">
+                                                                    <rect key="frame" x="4" y="12" width="16" height="16"/>
+                                                                    <constraints>
+                                                                        <constraint firstAttribute="width" constant="16" id="bXc-Lb-63L"/>
+                                                                        <constraint firstAttribute="height" constant="16" id="gfL-GQ-54f"/>
+                                                                    </constraints>
+                                                                </imageView>
+                                                            </subviews>
                                                             <constraints>
-                                                                <constraint firstAttribute="width" constant="16" id="bXc-Lb-63L"/>
-                                                                <constraint firstAttribute="height" constant="16" id="gfL-GQ-54f"/>
+                                                                <constraint firstItem="uOh-0G-QVj" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="DMB-Py-7va" secondAttribute="leading" id="64C-7j-wkt"/>
+                                                                <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="uOh-0G-QVj" secondAttribute="bottom" id="Lzi-sX-N49"/>
+                                                                <constraint firstItem="uOh-0G-QVj" firstAttribute="top" relation="greaterThanOrEqual" secondItem="DMB-Py-7va" secondAttribute="top" id="Pqb-Xl-9B7"/>
+                                                                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="uOh-0G-QVj" secondAttribute="trailing" id="T5e-AO-h7U"/>
+                                                                <constraint firstItem="uOh-0G-QVj" firstAttribute="centerY" secondItem="DMB-Py-7va" secondAttribute="centerY" id="ZkS-a0-VPG"/>
+                                                                <constraint firstItem="uOh-0G-QVj" firstAttribute="centerX" secondItem="DMB-Py-7va" secondAttribute="centerX" id="aBU-V1-OV5"/>
+                                                                <constraint firstAttribute="width" constant="24" id="rfj-ap-d6Z"/>
                                                             </constraints>
-                                                        </imageView>
+                                                        </view>
                                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Website -- Long Title" textAlignment="natural" lineBreakMode="characterWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Uu4-yR-9tN" customClass="FadeOutLabel" customModule="DuckDuckGo" customModuleProvider="target">
-                                                            <rect key="frame" x="20" y="0.0" width="36" height="40"/>
+                                                            <rect key="frame" x="28" y="0.0" width="32" height="40"/>
                                                             <accessibility key="accessibilityConfiguration">
                                                                 <accessibilityTraits key="traits" button="YES" staticText="YES"/>
                                                             </accessibility>
@@ -498,13 +512,14 @@
                                                         <constraint firstAttribute="width" constant="1" id="K7x-ei-NPt"/>
                                                     </constraints>
                                                 </view>
-                                                <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="left" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xto-EI-h22">
-                                                    <rect key="frame" x="68" y="0.0" width="32" height="40"/>
+                                                <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="left" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xto-EI-h22" customClass="BrowserChromeButton" customModule="DuckDuckGo" customModuleProvider="target">
+                                                    <rect key="frame" x="60" y="0.0" width="40" height="40"/>
                                                     <accessibility key="accessibilityConfiguration" hint="Close"/>
                                                     <constraints>
-                                                        <constraint firstAttribute="width" constant="32" id="VnH-Yc-5vx"/>
+                                                        <constraint firstAttribute="width" secondItem="xto-EI-h22" secondAttribute="height" multiplier="1:1" id="My3-u5-ZMU"/>
                                                     </constraints>
                                                     <state key="normal" image="Remove"/>
+                                                    <buttonConfiguration key="configuration" style="gray" image="Remove"/>
                                                     <connections>
                                                         <action selector="onRemovePressed" destination="sXq-vg-lf2" eventType="touchUpInside" id="76r-66-qxK"/>
                                                     </connections>
@@ -515,7 +530,7 @@
                                                 <constraint firstItem="xto-EI-h22" firstAttribute="trailing" secondItem="37U-Jd-wxr" secondAttribute="trailing" id="90I-9Z-JeZ"/>
                                                 <constraint firstItem="gw0-u8-5aN" firstAttribute="height" secondItem="37U-Jd-wxr" secondAttribute="height" id="Bl9-4V-c3M"/>
                                                 <constraint firstItem="gw0-u8-5aN" firstAttribute="leading" secondItem="37U-Jd-wxr" secondAttribute="leading" id="C4I-35-4Co"/>
-                                                <constraint firstItem="LwM-2c-pnd" firstAttribute="leading" secondItem="37U-Jd-wxr" secondAttribute="leading" constant="12" id="Cn9-AA-Hzr"/>
+                                                <constraint firstItem="LwM-2c-pnd" firstAttribute="leading" secondItem="37U-Jd-wxr" secondAttribute="leading" constant="8" id="Cn9-AA-Hzr"/>
                                                 <constraint firstItem="alN-nB-cJU" firstAttribute="height" secondItem="37U-Jd-wxr" secondAttribute="height" multiplier="0.75" id="DUM-PI-q90"/>
                                                 <constraint firstItem="cBG-3F-dhe" firstAttribute="centerY" secondItem="37U-Jd-wxr" secondAttribute="centerY" id="Gb3-5B-6EA"/>
                                                 <constraint firstItem="xto-EI-h22" firstAttribute="centerY" secondItem="37U-Jd-wxr" secondAttribute="centerY" id="KRp-jO-mLd"/>

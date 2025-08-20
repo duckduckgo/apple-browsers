@@ -25,7 +25,7 @@ import DesignResourcesKitIcons
 class TabsBarCell: UICollectionViewCell {
 
     @IBOutlet weak var label: FadeOutLabel!
-    @IBOutlet weak var removeButton: UIButton!
+    @IBOutlet weak var removeButton: BrowserChromeButton!
     @IBOutlet weak var faviconImage: UIImageView!
     @IBOutlet weak var topBackgroundView: UIView!
     @IBOutlet weak var bottomBackgroundView: UIView!
@@ -46,10 +46,11 @@ class TabsBarCell: UICollectionViewCell {
         super.awakeFromNib()
 
         faviconImage.layer.cornerRadius = 4
-        faviconImage.layer.masksToBounds = false
-        removeButton.setImage(DesignSystemImages.Glyphs.Size16.closeSolidAlt, for: .normal)
+        faviconImage.layer.masksToBounds = true
+        removeButton.type = .tabSwitcher
+        removeButton.setImage(DesignSystemImages.Glyphs.Size16.close)
         removeButton.isPointerInteractionEnabled = true
-        
+
         contentView.addInteraction(UIPointerInteraction(delegate: self))
     }
     

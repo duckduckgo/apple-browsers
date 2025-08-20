@@ -207,12 +207,6 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 
             if Set(availableProducts.map { $0.id }) != Set(self.availableProducts.map { $0.id }) {
                 self.availableProducts = availableProducts
-
-                // Update cached subscription features mapping
-                for id in availableProducts.compactMap({ $0.id }) {
-                    _ = await subscriptionFeatureMappingCache.subscriptionFeatures(for: id)
-                }
-
                 NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
             }
         } catch {

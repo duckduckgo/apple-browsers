@@ -46,17 +46,18 @@ public final class PrivacyInfo {
     @Published public var connectionUpgradedTo: URL?
     @Published public var cookieConsentManaged: CookieConsentInfo?
     @Published public var malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind?
-    @Published public var isSpecialErrorPageVisible: Bool = false
+    @Published public var isSpecialErrorPageVisible: Bool
     @Published public var shouldCheckServerTrust: Bool
     public var privacyExperimentCohorts: String
     public private(set) var debugFlags: String = ""
 
-    public init(url: URL, parentEntity: Entity?, protectionStatus: ProtectionStatus, malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind? = .none, shouldCheckServerTrust: Bool = false, allActiveContentScopeExperiments: Experiments = [:]) {
+    public init(url: URL, parentEntity: Entity?, protectionStatus: ProtectionStatus, malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind? = .none, shouldCheckServerTrust: Bool = false, allActiveContentScopeExperiments: Experiments = [:], isSpecialErrorPageVisible: Bool = false) {
         self.url = url
         self.parentEntity = parentEntity
         self.protectionStatus = protectionStatus
         self.malicousSiteThreatKind = malicousSiteThreatKind
         self.shouldCheckServerTrust = shouldCheckServerTrust
+        self.isSpecialErrorPageVisible = isSpecialErrorPageVisible
         var experiments: [String: String] = [:]
         for feature in allActiveContentScopeExperiments {
             experiments[feature.key] = feature.value.cohortID

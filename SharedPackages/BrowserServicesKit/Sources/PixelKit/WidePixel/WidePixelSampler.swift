@@ -19,7 +19,7 @@
 import Foundation
 
 public protocol WidePixelSampling {
-    func shouldSend(sampleRate: Float, contextID: String, pixelName: String) -> Bool
+    func shouldSendPixel(sampleRate: Float, contextID: String) -> Bool
 }
 
 public struct DefaultWidePixelSampler: WidePixelSampling {
@@ -30,9 +30,9 @@ public struct DefaultWidePixelSampler: WidePixelSampling {
         self.storage = storage
     }
 
-    public func shouldSend(sampleRate: Float, contextID: String, pixelName: String) -> Bool {
+    public func shouldSendPixel(sampleRate: Float, contextID: String) -> Bool {
         let sampleRate = max(0.0, min(1.0, sampleRate))
-        let userPercentile = storage.percentile(for: pixelName, contextID: contextID)
+        let userPercentile = storage.percentile(for: contextID)
         return userPercentile < sampleRate
     }
 

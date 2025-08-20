@@ -18,8 +18,6 @@
 
 import Foundation
 
-// Persistence handled directly by WidePixelUserDefaultsStorage
-
 public protocol WidePixelStoring {
     func save<T: WidePixelData>(_ data: T) throws
     func load<T: WidePixelData>(contextID: String) throws -> T
@@ -27,9 +25,8 @@ public protocol WidePixelStoring {
     func clearContext(_ contextID: String)
     func removeAll()
     func getActiveFlowNames() -> [String]
-    func firstContextID<T: WidePixelData>(for type: T.Type) -> String?
     func allFlowData<T: WidePixelData>(for type: T.Type) -> [T]
-    func percentile(for pixelName: String, contextID: String) -> Float
+    func percentile(for contextID: String) -> Float
 }
 
 public final class WidePixelUserDefaultsStorage: WidePixelStoring {
@@ -110,18 +107,6 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         return Array(flowNames)
     }
 
-    public func firstContextID<T: WidePixelData>(for type: T.Type) -> String? {
-        let allKeys = Array(defaults.dictionaryRepresentation().keys)
-        for key in allKeys {
-            let parts = key.components(separatedBy: ".")
-            if parts.count == 2 && parts[0] == T.pixelName {
-                return parts[1]
-            }
-        }
-
-        return nil
-    }
-
     public func allFlowData<T: WidePixelData>(for type: T.Type) -> [T] {
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
         var results: [T] = []
@@ -134,8 +119,8 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         return results
     }
 
-    public func percentile(for pixelName: String, contextID: String) -> Float {
-        let key = "\(pixelName).\(contextID).percentile"
+    public func percentile(for contextID: String) -> Float {
+        let key = "\(contextID).percentile"
 
         if let stored = defaults.object(forKey: key) as? Float {
             return stored

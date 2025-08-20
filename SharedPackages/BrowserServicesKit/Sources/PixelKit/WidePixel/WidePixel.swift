@@ -134,7 +134,10 @@ public final class WidePixel: WidePixelManaging {
     }
 
     private func shouldSampleFlow(_ data: any WidePixelData) -> Bool {
-        return sampler.shouldSend(sampleRate: Float(data.globalData.sampleRate), contextID: data.contextData.id, pixelName: type(of: data).pixelName)
+        return sampler.shouldSendPixel(
+            sampleRate: Float(data.globalData.sampleRate),
+            contextID: data.contextData.id
+        )
     }
 
     private func handleDroppedFlow(for contextID: String, sampleRate: Double) {
@@ -293,17 +296,6 @@ public final class WidePixel: WidePixelManaging {
         assertionFailure("Unsupported platform")
         return "m_unknown_wide_\(name)"
         #endif
-    }
-
-    // MARK: - Helper Methods for Single Flow Convenience
-
-    func getFirstFlowData<T: WidePixelData>(_ type: T.Type) -> T? {
-        guard let contextID = getFirstFlowContextID(type) else { return nil }
-        return getFlowData(type, contextID: contextID)
-    }
-
-    func getFirstFlowContextID<T: WidePixelData>(_ type: T.Type) -> String? {
-        return Self.storageQueue.sync { storage.firstContextID(for: T.self) }
     }
 
     // MARK: - Utility Methods

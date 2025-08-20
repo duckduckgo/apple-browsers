@@ -22,10 +22,10 @@ import SwiftUIExtensions
 struct AddBookmarkPopoverView: View {
 
     @ObservedObject private var model: AddBookmarkPopoverViewModel
-    @ObservedObject private var syncButtonModel: SyncFromFeatureButtonModel
+    @ObservedObject private var syncButtonModel: SyncDeviceButtonModel
     @Environment(\.dismiss) private var dismiss
 
-    init(model: AddBookmarkPopoverViewModel, syncButtonModel: SyncFromFeatureButtonModel) {
+    init(model: AddBookmarkPopoverViewModel, syncButtonModel: SyncDeviceButtonModel) {
         self.model = model
         self.syncButtonModel = syncButtonModel
     }
@@ -90,7 +90,7 @@ struct AddBookmarkPopoverView: View {
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: SyncFromFeatureButtonModel())
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: SyncDeviceButtonModel())
         .preferredColorScheme(.light)
 }
 
@@ -105,7 +105,7 @@ struct AddBookmarkPopoverView: View {
     )
     bkman.loadBookmarks()
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: SyncFromFeatureButtonModel())
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: SyncDeviceButtonModel())
         .preferredColorScheme(.dark)
 }
 #endif

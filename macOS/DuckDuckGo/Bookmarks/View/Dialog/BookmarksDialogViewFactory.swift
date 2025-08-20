@@ -99,7 +99,7 @@ private extension BookmarksDialogViewFactory {
     private static func makeAddEditBookmarkDialogView(viewModel: AddEditBookmarkDialogViewModel, bookmarkManager: BookmarkManager) -> AddEditBookmarkDialogView {
         let addFolderViewModel = AddEditBookmarkFolderDialogViewModel(mode: .add(parentFolder: nil), bookmarkManager: bookmarkManager)
         let viewModel = AddEditBookmarkDialogCoordinatorViewModel(bookmarkModel: viewModel, folderModel: addFolderViewModel)
-        let syncButtonViewModel = SyncFromFeatureButtonModel()
+        let syncButtonViewModel = SyncDeviceButtonModel()
         return AddEditBookmarkDialogView(viewModel: viewModel, syncButtonModel: syncButtonViewModel)
     }
 

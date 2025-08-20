@@ -142,7 +142,7 @@ final class SaveCredentialsViewController: NSViewController {
 
     private var autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences()
 
-    private var syncButtonModel: SyncFromFeatureButtonModel = SyncFromFeatureButtonModel()
+    private var syncButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel()
 
     private var passwordManagerStateCancellable: AnyCancellable?
 

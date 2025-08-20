@@ -268,7 +268,7 @@ extension XCUIApplication {
         let control = prefs.descendants(matching: .checkBox)
             .matching(NSPredicate(format: "identifier == %@", toggleIdentifier))
             .firstMatch
-        XCTAssertTrue(control.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Always ask toggle should exist in Preferences")
+        XCTAssertTrue(control.exists, "Always ask toggle should exist in Preferences")
 
         if let valueString = control.value as? String {
             let isOn = valueString == "1" || valueString.lowercased() == "on"
@@ -286,20 +286,18 @@ extension XCUIApplication {
     func setSwitchToNewTabWhenOpened(enabled: Bool) {
         let prefs = preferencesWindow
         let label = "When opening links, switch to the new tab or window immediately"
-        let switchToggle = prefs.switches.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
-        let switchCheckbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
-        let control = switchToggle.exists ? switchToggle : switchCheckbox
-        XCTAssertTrue(control.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Switch-to-new-tab toggle should exist in Preferences")
+        let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
+        XCTAssertTrue(checkbox.exists, "Switch-to-new-tab toggle should exist in Preferences")
 
-        if let valueString = control.value as? String {
+        if let valueString = checkbox.value as? String {
             let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { control.click() }
-        } else if let valueNumber = control.value as? NSNumber {
+            if isOn != enabled { checkbox.click() }
+        } else if let valueNumber = checkbox.value as? NSNumber {
             let isOn = valueNumber.intValue != 0
-            if isOn != enabled { control.click() }
+            if isOn != enabled { checkbox.click() }
         } else {
             // Fallback: click once and trust UI state
-            control.click()
+            checkbox.click()
         }
     }
 
@@ -307,19 +305,17 @@ extension XCUIApplication {
     func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
         let prefs = preferencesWindow
         let label = "Automatically open the Downloads panel when downloads complete"
-        let toggle = prefs.switches.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
         let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
-        let control = toggle.exists ? toggle : checkbox
-        XCTAssertTrue(control.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Downloads panel toggle should exist in Preferences")
+        XCTAssertTrue(checkbox.exists, "Downloads panel toggle should exist in Preferences")
 
-        if let valueString = control.value as? String {
+        if let valueString = checkbox.value as? String {
             let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { control.click() }
-        } else if let valueNumber = control.value as? NSNumber {
+            if isOn != enabled { checkbox.click() }
+        } else if let valueNumber = checkbox.value as? NSNumber {
             let isOn = valueNumber.intValue != 0
-            if isOn != enabled { control.click() }
+            if isOn != enabled { checkbox.click() }
         } else {
-            control.click()
+            checkbox.click()
         }
     }
 

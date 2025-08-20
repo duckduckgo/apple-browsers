@@ -21,11 +21,21 @@ import XCTest
 class DownloadsUITests: UITestCase {
 
     private var app: XCUIApplication!
+    private var webView: XCUIElement!
 
-        override func setUpWithError() throws {
+    override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
+
+        webView = app.webViews.firstMatch
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    override func tearDown() {
+        webView = nil
+        app = nil
     }
 
     // MARK: - Test Cases
@@ -276,7 +286,7 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         app.openNewTab()
         app.pasteURL(url, pressingEnter: true)
-        let webView = app.webViews.firstMatch
+
         XCTAssertTrue(webView.waitForExistence(timeout: 10.0))
         let link = webView.links["Download via Data URL"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: 5.0))
@@ -348,9 +358,12 @@ class DownloadsUITests: UITestCase {
 
         // Restart app and verify the same file is listed
         app.typeKey("q", modifierFlags: [.command])
+
         app.launch()
         _=app.wait(for: .runningForeground, timeout: 5.0)
         app.enforceSingleWindow()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         openDownloadsPopup()
         XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))

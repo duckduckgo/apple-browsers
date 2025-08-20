@@ -2651,6 +2651,23 @@ extension MainViewController: OmniBarDelegate {
     func onDidEndEditing() {
         omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
     }
+
+    // MARK: - Experimental Address Bar (pixels only)
+    func onExperimentalAddressBarTappedForPixelsOnly() {
+        fireControllerAwarePixel(ntp: .addressBarClickOnNTP, serp: .addressBarClickOnSERP, website: .addressBarClickOnWebsite)
+    }
+
+    func onExperimentalAddressBarClearPressedForPixelsOnly() {
+        fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
+                                 serp: .addressBarClearPressedOnSERP,
+                                 website: .addressBarClearPressedOnWebsite)
+    }
+
+    func onExperimentalAddressBarCancelPressedForPixelsOnly() {
+        fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
+                                 serp: .addressBarCancelPressedOnSERP,
+                                 website: .addressBarCancelPressedOnWebsite)
+    }
 }
 
 extension MainViewController: FavoritesOverlayDelegate {

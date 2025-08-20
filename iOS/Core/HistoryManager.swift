@@ -54,8 +54,7 @@ public class HistoryManager: HistoryManaging {
     }
 
     /// Use `make()`
-    init(privacyConfigManager: PrivacyConfigurationManaging,
-         dbCoordinator: HistoryCoordinator,
+    init(dbCoordinator: HistoryCoordinator,
          tld: TLD,
          isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
          isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool) {
@@ -218,7 +217,6 @@ extension HistoryManager {
     /// Should only be called once in the app
     public static func make(isAutocompleteEnabledByUser: @autoclosure @escaping () -> Bool,
                             isRecentlyVisitedSitesEnabledByUser: @autoclosure @escaping () -> Bool,
-                            privacyConfigManager: PrivacyConfigurationManaging,
                             tld: TLD) -> Result<HistoryManager, Error> {
 
         let database = HistoryDatabase.make()
@@ -234,8 +232,7 @@ extension HistoryManager {
         let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let dbCoordinator = HistoryCoordinator(historyStoring: HistoryStore(context: context, eventMapper: HistoryStoreEventMapper()))
 
-        let historyManager = HistoryManager(privacyConfigManager: privacyConfigManager,
-                                            dbCoordinator: dbCoordinator,
+        let historyManager = HistoryManager(dbCoordinator: dbCoordinator,
                                             tld: tld,
                                             isAutocompleteEnabledByUser: isAutocompleteEnabledByUser(),
                                             isRecentlyVisitedSitesEnabledByUser: isRecentlyVisitedSitesEnabledByUser())

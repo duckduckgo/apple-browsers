@@ -100,9 +100,27 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         Picker(selection: $startupModel.restorePreviousSession, content: {
-                            Text(UserText.showHomePage).tag(false)
+                            if featureFlagger.isFeatureOn(.openFireWindowByDefault) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(UserText.openANew)
+                                        Picker("", selection: $startupModel.startupWindowType) {
+                                            ForEach(StartupWindowType.allCases, id: \.self) { windowType in
+                                                Text(windowType.displayName).tag(windowType)
+                                            }
+                                        }
+                                        .pickerStyle(.menu)
+                                        .disabled(startupModel.restorePreviousSession)
+                                    }
+                                }
+                                .tag(false)
                                 .padding(.bottom, 4)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.openANewWindow")
+                            } else {
+                                Text(UserText.showHomePage).tag(false)
+                                    .padding(.bottom, 4)
+                                    .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.openANewWindow")
+                            }
                             Text(UserText.reopenAllWindowsFromLastSession).tag(true)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})

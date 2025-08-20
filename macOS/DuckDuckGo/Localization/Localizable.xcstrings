@@ -67710,6 +67710,18 @@
         }
       }
     },
+    "preferences.open-fire-window-by-default.explanation" : {
+      "comment" : "Explanation for the option to make all new windows Fire Windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Fire Window by default when opening a new window (Command + N). You can still open a regular browser window when this setting is on with Shift + Command + N."
+          }
+        }
+      }
+    },
     "preferences.paidAIChat" : {
       "comment" : "Title of the option to show the Duck.ai Pro preferences",
       "extractionState" : "extracted_with_value",
@@ -68486,6 +68498,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Усовершенствованное шифрование"
+          }
+        }
+      }
+    },
+    "preferences.startup.open-a-new" : {
+      "comment" : "Label for startup window type selection",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open a new:"
+          }
+        }
+      }
+    },
+    "preferences.startup.window" : {
+      "comment" : "Option for regular window type",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Window"
           }
         }
       }

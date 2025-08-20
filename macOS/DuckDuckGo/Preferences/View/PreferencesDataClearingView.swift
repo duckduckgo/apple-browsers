@@ -47,6 +47,9 @@ extension Preferences {
                         PreferencePaneSubSection {
                             ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.openFireWindowByDefault)
                                 .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.openFireWindoyByDefaultExplanation)
+                            }
                         }
                     }
                 }

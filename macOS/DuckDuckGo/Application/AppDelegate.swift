@@ -901,7 +901,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if WindowsManager.windows.first(where: { $0 is MainWindow }) == nil,
            case .normal = AppVersion.runType {
-            WindowsManager.openNewWindow(lazyLoadTabs: true)
+            // Use startup window preferences if not restoring previous session
+            if !startupPreferences.restorePreviousSession {
+                let startupBurnerMode = startupPreferences.startupWindowType == .fireWindow && featureFlagger.isFeatureOn(.openFireWindowByDefault) ? BurnerMode(isBurner: true) : .regular
+                WindowsManager.openNewWindow(burnerMode: startupBurnerMode, lazyLoadTabs: true)
+            } else {
+                WindowsManager.openNewWindow(lazyLoadTabs: true)
+            }
         }
 
         grammarFeaturesManager.manage()
@@ -1091,7 +1097,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
-            WindowsManager.openNewWindow()
+            // Use startup window preferences when reopening from dock
+            let startupBurnerMode = startupPreferences.startupWindowType == .fireWindow && featureFlagger.isFeatureOn(.openFireWindowByDefault) ? BurnerMode(isBurner: true) : .regular
+            WindowsManager.openNewWindow(burnerMode: startupBurnerMode)
             return true
         }
         return true

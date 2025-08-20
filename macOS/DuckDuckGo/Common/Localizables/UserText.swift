@@ -937,8 +937,11 @@ struct UserText {
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
+    static let openANew = NSLocalizedString("preferences.startup.open-a-new", value: "Open a new:", comment: "Label for startup window type selection")
+    static let window = NSLocalizedString("preferences.startup.window", value: "Window", comment: "Option for regular window type")
     static let fireWindow = NSLocalizedString("preferences.fire-window-section", value: "Fire Window", comment: "Section title for Fire Window preferences")
     static let openFireWindowByDefault = NSLocalizedString("preferences.open-fire-window-by-default", value: "Open Fire Window by default", comment: "Option to make all new windows Fire Windows")
+    static let openFireWindoyByDefaultExplanation = NSLocalizedString("preferences.open-fire-window-by-default.explanation", value: "Open Fire Window by default when opening a new window (Command + N). You can still open a regular browser window when this setting is on with Shift + Command + N.", comment: "Explanation for the option to make all new windows Fire Windows")
 
     static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
     static let pinnedTabsWarningTitle = NSLocalizedString("preferences-pinned-tabs-warning-title", value: "Are you sure you want to share pinned tabs across all windows?", comment: "Title of warning before switching from per window pinned tabs to shared pinned tabs")

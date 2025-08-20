@@ -317,8 +317,8 @@ class AddressBarSpoofingUITests: UITestCase {
         XCTAssertTrue(secondWindow.waitForExistence(timeout: 5.0), "Second window should open")
 
         // Step 2: Switch to the original window (it becomes the second one in order)
-        let originalWindow = app.windows.element(boundBy: 1)
-        originalWindow.click()
+        app.menuBarItems["Window"].firstMatch.click()
+        app.menuBarItems["Window"].menuItems["URL Spoofing - New Window Rewrite"].firstMatch.click()
 
         // Wait for the second window to show spoofing message
         let spoofMessage = secondWindow.staticTexts["Your address bar has been spoofed. This is not https://broken.third-party.site"]

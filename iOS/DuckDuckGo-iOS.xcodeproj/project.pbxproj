@@ -222,9 +222,9 @@
 		31EEBCD92E2AAB4C00901255 /* NavigationActionBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */; };
 		31EEBCDB2E2AABAD00901255 /* NavigationActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */; };
 		31FD991B2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */; };
-		369809B92E5613D7007FE895 /* ClipboardSearchIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369809B72E5613D2007FE895 /* ClipboardSearchIntent.swift */; };
+		365E900B2E566C2300BDB0E8 /* AIChatIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */; };
+		365E90132E5673DF00BDB0E8 /* SearchInAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */; };
 		369809BF2E5635E7007FE895 /* AppShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369809BE2E5635E1007FE895 /* AppShortcuts.swift */; };
-		369809C32E56391E007FE895 /* SearchInAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369809C22E563919007FE895 /* SearchInAppIntent.swift */; };
 		3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */; };
 		372A0FF02B2389590033BF7F /* SyncMetricsEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */; };
 		373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */; };
@@ -2179,9 +2179,9 @@
 		31EEBCD82E2AAB4700901255 /* NavigationActionBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarViewController.swift; sourceTree = "<group>"; };
 		31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarView.swift; sourceTree = "<group>"; };
 		31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalAIChatManager.swift; sourceTree = "<group>"; };
-		369809B72E5613D2007FE895 /* ClipboardSearchIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardSearchIntent.swift; sourceTree = "<group>"; };
+		365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatIntent.swift; sourceTree = "<group>"; };
+		365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchInAppIntent.swift; sourceTree = "<group>"; };
 		369809BE2E5635E1007FE895 /* AppShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShortcuts.swift; sourceTree = "<group>"; };
-		369809C22E563919007FE895 /* SearchInAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchInAppIntent.swift; sourceTree = "<group>"; };
 		3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingStoreErrorHandling.swift; sourceTree = "<group>"; };
 		372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetricsEventsHandler.swift; sourceTree = "<group>"; };
 		3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeStorage.swift; sourceTree = "<group>"; };
@@ -4895,13 +4895,13 @@
 			path = LocalPackages;
 			sourceTree = "<group>";
 		};
-		369809BA2E5626F8007FE895 /* AppIntent */ = {
+		365E90092E566C0A00BDB0E8 /* AppIntents */ = {
 			isa = PBXGroup;
 			children = (
-				369809C22E563919007FE895 /* SearchInAppIntent.swift */,
-				369809B72E5613D2007FE895 /* ClipboardSearchIntent.swift */,
+				365E90122E5673DF00BDB0E8 /* SearchInAppIntent.swift */,
+				365E900A2E566C2300BDB0E8 /* AIChatIntent.swift */,
 			);
-			path = AppIntent;
+			path = AppIntents;
 			sourceTree = "<group>";
 		};
 		377D80202AB4853A002AF251 /* SettingSyncHandlers */ = {
@@ -5664,8 +5664,8 @@
 		84E341941E2F7EFB00BDBA6F /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
+				365E90092E566C0A00BDB0E8 /* AppIntents */,
 				369809BE2E5635E1007FE895 /* AppShortcuts.swift */,
-				369809BA2E5626F8007FE895 /* AppIntent */,
 				F1970B592DF1F356008F18BC /* AdAttribution */,
 				311C79E22CF790270021196A /* AIChat */,
 				AA4D6A8023DE4973007E8790 /* AppIcon */,
@@ -9872,6 +9872,7 @@
 				CB3C78892D06D3A700A7E4ED /* Foreground.swift in Sources */,
 				CB3C788A2D06D3A700A7E4ED /* Background.swift in Sources */,
 				C1AD33342DBAD1DD003B80A4 /* SaveCreditCardViewController.swift in Sources */,
+				365E900B2E566C2300BDB0E8 /* AIChatIntent.swift in Sources */,
 				C1AD33352DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift in Sources */,
 				C1AD33362DBAD1DD003B80A4 /* SaveCreditCardView.swift in Sources */,
 				65D091242D47DF2100226164 /* DuckPlayerViewModel.swift in Sources */,
@@ -9974,7 +9975,6 @@
 				8C4838B5221C8F7F008A6739 /* GestureToolbarButton.swift in Sources */,
 				859DB8172CE6263C001F7210 /* TextZoomLevel.swift in Sources */,
 				31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */,
-				369809B92E5613D7007FE895 /* ClipboardSearchIntent.swift in Sources */,
 				31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */,
 				31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */,
 				BDE91CD62C6294020005CB74 /* FeedbackCategoryProviding.swift in Sources */,
@@ -10423,7 +10423,7 @@
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
 				CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */,
 				C13830FE2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift in Sources */,
-				369809C32E56391E007FE895 /* SearchInAppIntent.swift in Sources */,
+				365E90132E5673DF00BDB0E8 /* SearchInAppIntent.swift in Sources */,
 				373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */,
 				9872D205247DCAC100CEF398 /* TabPreviewsSource.swift in Sources */,
 				4B0F3F502B9BFF2100392892 /* NetworkProtectionFAQView.swift in Sources */,

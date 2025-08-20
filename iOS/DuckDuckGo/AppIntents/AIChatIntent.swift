@@ -1,5 +1,5 @@
 //
-//  SearchInAppIntent.swift
+//  AIChatIntent.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,27 +22,21 @@ import AppIntents
 import Core
 
 @available(iOS 17.0, *)
-struct SearchInAppIntent: AppIntent {
-    static var title: LocalizedStringResource = "Search privately in DuckDuckGo"
-    static let description: LocalizedStringResource = "Search privately in DuckDuckGo"
+struct AIChatIntent: AppIntent {
+    static var title: LocalizedStringResource = "Duck.ai"
+    static let description: LocalizedStringResource = "Chat with Duck.ai"
     static let openAppWhenRun: Bool = true
     static let isDiscoverable: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
-    @Parameter(title: "Query") var query: String
-
-    static var parameterSummary: some ParameterSummary {
-        Summary("Search \(\.$query) in App")
+    public static var parameterSummary: some ParameterSummary {
+        Summary("Chat with Duck.ai in DuckDuckGo")
     }
     
     @MainActor
-    func perform() async throws -> some IntentResult & OpensIntent {
-        guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(query)) else {
-            return .result()
-        }
+    public func perform() async throws -> some IntentResult & OpensIntent {
         
-        UIApplication.shared.open(quickLinkURL)
-        
+        await UIApplication.shared.open(AppDeepLinkSchemes.openAIChat.url)
         return .result()
     }
 }

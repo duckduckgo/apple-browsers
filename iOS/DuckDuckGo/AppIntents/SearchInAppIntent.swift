@@ -1,5 +1,5 @@
 //
-//  ClipboardSearchIntent.swift
+//  SearchInAppIntent.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,28 +17,26 @@
 //  limitations under the License.
 //
 
-
 import SwiftUI
 import AppIntents
 import Core
 
- @available(iOS 17.0, *)
- struct ClipboardSearchIntent: AppIntent {
-    
-    static let title: LocalizedStringResource = "Open Link privately with DuckDuckGo"
-    static let description: LocalizedStringResource = "View the link content from your clipboard in DuckDuckGo"
+@available(iOS 17.0, *)
+struct SearchInAppIntent: AppIntent {
+    static var title: LocalizedStringResource = "Search"
+    static let description: LocalizedStringResource = "Search in DuckDuckGo"
     static let openAppWhenRun: Bool = true
     static let isDiscoverable: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Search in DuckDuckGo")
+    }
     
     @MainActor
     func perform() async throws -> some IntentResult & OpensIntent {
-        guard let clipboardContent = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines), !clipboardContent.isEmpty, let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(clipboardContent)) else {
-            return .result()
-        }
         
-        UIApplication.shared.open(quickLinkURL)
-        
+        await UIApplication.shared.open(AppDeepLinkSchemes.newSearch.url)
         return .result()
     }
- }
+}

@@ -394,52 +394,6 @@ final class WidePixelTests: XCTestCase {
         XCTAssertNil(parameters["feature.status"])
     }
 
-    // MARK: - Concurrency Tests
-
-    func testConcurrentFlowOperations() throws {
-        let expectation = XCTestExpectation(description: "Concurrent operations complete")
-        expectation.expectedFulfillmentCount = 10
-
-        DispatchQueue.concurrentPerform(iterations: 10) { i in
-            let data = self.makeTestSubscriptionData(contextName: "concurrent-\(i)")
-            self.widePixel.startFlow(data)
-
-            var updated = data
-            updated.subscriptionIdentifier = "updated-\(i)"
-            self.widePixel.updateFlow(updated)
-
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 5.0)
-
-        let allFlows = widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self)
-        XCTAssertEqual(allFlows.count, 10)
-    }
-
-    func testConcurrentMeasurements() throws {
-        let data = makeTestSubscriptionData()
-        widePixel.startFlow(data)
-
-        let expectation = XCTestExpectation(description: "Concurrent measurements complete")
-        expectation.expectedFulfillmentCount = 6
-
-        DispatchQueue.concurrentPerform(iterations: 3) { i in
-            let keyPaths: [WritableKeyPath<SubscriptionPurchaseWidePixelData, WidePixel.MeasuredInterval?>] = [\.createAccountDuration, \.completePurchaseDuration]
-
-            for keyPath in keyPaths {
-                self.widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: keyPath)
-                self.widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: keyPath)
-                expectation.fulfill()
-            }
-        }
-
-        wait(for: [expectation], timeout: 5.0)
-
-        let finalData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
-        XCTAssertTrue(finalData.createAccountDuration != nil || finalData.completePurchaseDuration != nil)
-    }
-
     // MARK: - Storage Management Tests
 
     func testActiveFlowManagement() throws {

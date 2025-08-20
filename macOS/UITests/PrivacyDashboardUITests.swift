@@ -57,7 +57,6 @@ class PrivacyDashboardUITests: UITestCase {
         let privacyDashboard = app.windows.containing(NSPredicate(format: "identifier CONTAINS 'privacy' OR title CONTAINS 'Privacy'")).firstMatch
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: 10.0), "Privacy dashboard should open when privacy button is clicked")
 
-        
         // Verify dashboard contains privacy information content (not empty)
         let dashboardContent = privacyDashboard.groups.firstMatch
         XCTAssertTrue(dashboardContent.waitForExistence(timeout: 5.0), "Privacy dashboard should contain privacy information")
@@ -111,31 +110,31 @@ class PrivacyDashboardUITests: UITestCase {
         let advancedButton = app.buttons["Advanced..."]
         XCTAssertTrue(advancedButton.waitForExistence(timeout: 5.0), "Advanced... button should be available in phishing warning")
         advancedButton.click()
-        
+
         // Step 2: Click "Accept Risk and Visit Site" text element (it's static text, not a link or button!)
         let acceptRiskText = app.staticTexts["Accept Risk and Visit Site"]
         XCTAssertTrue(acceptRiskText.waitForExistence(timeout: 5.0), "Accept Risk and Visit Site text should be available after clicking Advanced...")
         acceptRiskText.click()
-        
+
         // Step 3: Wait for the actual phishing page to load
         let webView = app.webViews.firstMatch
         let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Phishing page'")).firstMatch
         XCTAssertTrue(pageContent.waitForExistence(timeout: 30.0), "Phishing test page should load after accepting risk")
-        
+
         // Step 4: Privacy button should be available after bypassing warning
         let privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
         XCTAssertTrue(privacyButton.waitForExistence(timeout: 10.0), "Privacy button should be available after bypassing phishing warning")
-        
+
         privacyButton.click()
-        
+
         // Step 5: Privacy dashboard should open
         let privacyDashboard = app.windows.containing(NSPredicate(format: "identifier CONTAINS 'privacy' OR title CONTAINS 'Privacy'")).firstMatch
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: 10.0), "Privacy dashboard should open")
-        
+
         // Step 6: Verify privacy dashboard displays phishing detection information
         let dashboardContent = privacyDashboard.groups.firstMatch
         XCTAssertTrue(dashboardContent.waitForExistence(timeout: 5.0), "Privacy dashboard should contain phishing detection information")
-        
+
         // Close dashboard
         app.typeKey(.escape, modifierFlags: [])
 

@@ -404,10 +404,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     private func onImport() {
-        if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
-            let syncDeviceFlowController = SyncDialogController(syncService: syncService, syncPausedStateManager: syncDataProviders.syncErrorHandler)
-            DataImportView(isDataTypePickerExpanded: true, syncLauncher: syncDeviceFlowController).show()
-        }
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {

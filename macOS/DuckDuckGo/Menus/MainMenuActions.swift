@@ -449,19 +449,19 @@ extension AppDelegate {
 
     @objc func openImportBookmarksWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: true).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
         }
     }
 
     @objc func openImportPasswordsWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: true).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
         }
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView(isDataTypePickerExpanded: false).show()
+            DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: false)
         }
     }
 

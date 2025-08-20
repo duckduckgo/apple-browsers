@@ -327,7 +327,7 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
-        DataImportView(isDataTypePickerExpanded: true).show()
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @IBAction func openExportLogins(_ sender: Any) {
@@ -337,7 +337,7 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func onImportClicked(_ sender: NSButton) {
         self.dismiss()
-        DataImportView(isDataTypePickerExpanded: true).show()
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @IBAction func onDeleteAllPasswordsClicked(_ sender: Any) {

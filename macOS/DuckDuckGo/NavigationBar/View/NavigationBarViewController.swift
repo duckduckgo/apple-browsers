@@ -1758,7 +1758,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu) {
-        DataImportView(isDataTypePickerExpanded: true).show()
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
     }
 
     func optionsButtonMenuRequestedBookmarkExportInterface(_ menu: NSMenu) {

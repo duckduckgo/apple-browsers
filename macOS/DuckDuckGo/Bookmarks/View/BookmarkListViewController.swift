@@ -689,10 +689,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func onImportClicked() {
-        if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
-            let syncDeviceFlowController = SyncDialogController(syncService: syncService, syncPausedStateManager: syncDataProviders.syncErrorHandler)
-            DataImportView(isDataTypePickerExpanded: true, syncLauncher: syncDeviceFlowController).show()
-        }
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
     }
 
     private func showManageBookmarks() {

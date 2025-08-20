@@ -21,8 +21,55 @@ import SwiftUI
 import BrowserServicesKit
 import Common
 
+protocol DataImportFlowLaunching {
+    @MainActor
+    func launchDataImport(
+        model: DataImportViewModel,
+        title: String,
+        isDataTypePickerExpanded: Bool
+    )
+}
+
+final class DataImportFlowLauncher: DataImportFlowLaunching {
+    @MainActor
+    func launchDataImport(
+        model: DataImportViewModel,
+        title: String,
+        isDataTypePickerExpanded: Bool
+    ) {
+        launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded, in: nil)
+    }
+
+    @MainActor
+    func launchDataImport(
+        model: DataImportViewModel = DataImportViewModel(),
+        title: String = UserText.importDataTitle,
+        isDataTypePickerExpanded: Bool,
+        in window: NSWindow? = nil,
+        completion: (() -> Void)? = nil
+    ) {
+        let syncFeatureVisibility: DataImportView.SyncFeatureVisibility
+        if let deviceSyncLauncher = DeviceSyncCoordinator() {
+            syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
+        } else {
+            syncFeatureVisibility = .hide
+        }
+        DataImportView(
+            model: model,
+            importFlowLauncher: self,
+            title: title,
+            isDataTypePickerExpanded: isDataTypePickerExpanded,
+            syncFeatureVisibility: syncFeatureVisibility
+        ).show(in: window, completion: completion)
+    }
+}
+
 @MainActor
 struct DataImportView: ModalView {
+    enum SyncFeatureVisibility {
+        case show(syncLauncher: SyncDeviceFlowLaunching)
+        case hide
+    }
 
     private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
@@ -30,13 +77,19 @@ struct DataImportView: ModalView {
     @State var model: DataImportViewModel
     let title: String
 
+    let importFlowLauncher: DataImportFlowLaunching
+
     @State private var isInternalUser = false
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
-    init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool) {
+    private let syncFeatureVisibility: SyncFeatureVisibility
+
+    init(model: DataImportViewModel = DataImportViewModel(), importFlowLauncher: DataImportFlowLaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
         self._model = State(initialValue: model)
+        self.importFlowLauncher = importFlowLauncher
         self.title = title
         self.isDataTypePickerExpanded = isDataTypePickerExpanded
+        self.syncFeatureVisibility = syncFeatureVisibility
     }
 
     struct ProgressState {
@@ -58,8 +111,16 @@ struct DataImportView: ModalView {
 #endif
     }
 
+    private var alignment: HorizontalAlignment {
+        if case .summary = model.screen {
+            return .leading
+        } else {
+            return .center
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .center, spacing: 0) {
+        VStack(alignment: alignment, spacing: 0) {
             viewHeader()
                 .padding(.top, 30)
                 .padding(.leading, 20)
@@ -83,7 +144,7 @@ struct DataImportView: ModalView {
             viewFooter()
                 .padding(.top, 16)
                 .padding(.bottom, 16)
-                .padding(.trailing, 20)
+                .padding(.horizontal, 20)
 
             if shouldShowDebugView {
                 debugView()
@@ -170,16 +231,6 @@ struct DataImportView: ModalView {
             case .shortcuts(let dataTypes):
                 DataImportShortcutsView(dataTypes: dataTypes)
             }
-
-            Button {
-                model.startSync()
-            } label: {
-                Text("Or Sync from DuckDuckGo on another device")
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color(.linkBlue))
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 20)
         }
     }
 
@@ -200,6 +251,21 @@ struct DataImportView: ModalView {
                     .disabled(model.isImportSourcePickerDisabled)
                 .padding(.top, 8)
             }
+        }
+
+        if case .show(let syncLauncher) = syncFeatureVisibility {
+            Button {
+                dismiss.callAsFunction()
+                syncLauncher.startDeviceSyncFlow {
+                    importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                }
+            } label: {
+                Text("Or Sync from DuckDuckGo on another device")
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(.linkBlue))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 20)
         }
     }
 
@@ -295,6 +361,14 @@ struct DataImportView: ModalView {
     // under line buttons
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
+            if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
+                Button("Sync from Another Device") {
+                    dismiss.callAsFunction()
+                    syncLauncher.startDeviceSyncFlow {
+                        importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                    }
+                }
+            }
             Spacer()
 
             ForEach(model.buttons.indices, id: \.self) { idx in
@@ -691,7 +765,7 @@ extension DataImportViewModel {
 
 #Preview {
     VStack(alignment: .leading, spacing: 0) { @MainActor in
-        DataImportView(model: ._mockPreviewViewModel(), isDataTypePickerExpanded: false)
+        DataImportView(importFlowLauncher: StubDataImportFlowLaunching(), isDataTypePickerExpanded: true, syncFeatureVisibility: .hide)
             // swiftlint:disable:next force_cast
             .environment(\EnvironmentValues.presentationMode as! WritableKeyPath,
                           Binding<PresentationMode> {
@@ -703,4 +777,10 @@ extension DataImportViewModel {
     }
     .frame(minHeight: 666)
 }
+
+private final class StubDataImportFlowLaunching: DataImportFlowLaunching {
+    func launchDataImport(model: DataImportViewModel, title: String, isDataTypePickerExpanded: Bool) {
+    }
+}
+
 #endif

@@ -710,6 +710,15 @@ extension DataImportViewModel {
         }
     }
 
+    var shouldShowSyncFooterButton: Bool {
+        switch screen {
+        case .summary:
+            return true
+        default:
+            return false
+        }
+    }
+
     var isSelectFileButtonDisabled: Bool {
         importTask != nil
     }

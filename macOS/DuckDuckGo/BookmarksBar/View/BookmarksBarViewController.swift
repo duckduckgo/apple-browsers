@@ -295,10 +295,7 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     @IBAction func importBookmarksClicked(_ sender: Any) {
-        if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
-            let syncDeviceFlowController = SyncDialogController(syncService: syncService, syncPausedStateManager: syncDataProviders.syncErrorHandler)
-            DataImportView(isDataTypePickerExpanded: true, syncLauncher: syncDeviceFlowController).show(in: view.window)
-        }
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, in: view.window)
     }
 
     var showSync = true

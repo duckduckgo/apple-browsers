@@ -83,5 +83,32 @@ extension APIRequestV2 {
             }
         }
     }
+}
 
+extension APIRequestV2.Error: CustomNSError {
+
+    public static var errorDomain: String { "com.duckduckgo.networking.apirequestv2" }
+
+    public var errorCode: Int {
+        switch self {
+        case .urlSession(_):
+            70000
+        case .invalidResponse:
+            70001
+        case .unsatisfiedRequirement(_):
+            70002
+        case .invalidStatusCode(_):
+            70003
+        case .invalidDataType:
+            70004
+        case .emptyResponseBody:
+            70005
+        case .invalidURL:
+            70006
+        }
+    }
+
+    public var errorUserInfo: [String : Any] {
+        [NSLocalizedDescriptionKey: errorDescription ?? "nil"]
+    }
 }

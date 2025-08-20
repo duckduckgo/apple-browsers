@@ -61,3 +61,43 @@ public enum OAuthServiceError: Error, LocalizedError, Equatable {
         }
     }
 }
+
+extension OAuthServiceError: CustomNSError {
+
+    public static var errorDomain: String { "com.duckduckgo.networking.oauthservice" }
+
+    public var errorCode: Int {
+        switch self {
+        case .authAPIError(code: let code):
+            77000
+        case .apiServiceError(_):
+            77001
+        case .invalidRequest:
+            77002
+        case .invalidResponseCode(_):
+            77003
+        case .missingResponseValue(_):
+            77004
+        }
+    }
+
+    public var errorUserInfo: [String : Any] {
+        var underlyingError: NSError?
+        switch self {
+        case .authAPIError(code: let code):
+            underlyingError = NSError(domain: Self.errorDomain, code: -1, userInfo: [NSLocalizedDescriptionKey: code])
+        case .apiServiceError(let error):
+            underlyingError = error as NSError
+        case .invalidRequest:
+            break
+        case .invalidResponseCode(let code):
+            underlyingError = NSError(domain: Self.errorDomain, code: -1, userInfo: [NSLocalizedDescriptionKey: code])
+        case .missingResponseValue(let missingValue):
+            underlyingError = NSError(domain: Self.errorDomain, code: -1, userInfo: [NSLocalizedDescriptionKey: missingValue])
+        }
+        return [
+            NSLocalizedDescriptionKey: errorDescription ?? "nil",
+            NSUnderlyingErrorKey: underlyingError ?? NSNull()
+        ]
+    }
+}

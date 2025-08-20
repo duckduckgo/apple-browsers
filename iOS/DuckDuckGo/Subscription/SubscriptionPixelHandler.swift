@@ -41,7 +41,7 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
         let sourceParam = [Defaults.sourceKey: source.rawValue]
         switch pixel {
         case .invalidRefreshToken:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
+            DailyPixel.fire(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
         case .subscriptionIsActive:
             DailyPixel.fire(pixel: .privacyProSubscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
         case .migrationFailed(let error):

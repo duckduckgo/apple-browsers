@@ -59,6 +59,28 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
     }
 }
 
+extension SubscriptionManagerError: CustomNSError {
+
+    public static var errorDomain: String { "com.duckduckgo.subscription.subscriptionmanager" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noTokenAvailable:
+            71000
+        case .errorRetrievingTokenContainer(error: let error):
+            71001
+        case .confirmationHasInvalidSubscription:
+            71002
+        case .noProductsFound:
+            71003
+        }
+    }
+
+    public var errorUserInfo: [String : Any] {
+        [NSLocalizedDescriptionKey: errorDescription ?? "nil"]
+    }
+}
+
 public enum SubscriptionPixelType: Equatable {
     case invalidRefreshToken
     case migrationSucceeded

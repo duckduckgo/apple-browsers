@@ -22,7 +22,7 @@ import CommonCrypto
 /// Helper that generates codes used in the OAuth2 authentication process
 struct OAuthCodesGenerator {
 
-    public enum OAuthCodesGeneratorError: Error, LocalizedError {
+    public enum OAuthCodesGeneratorError: Error, LocalizedError, CustomNSError {
         case failedToLoadRandomBytes(Int32)
 
         public var errorDescription: String? {
@@ -34,6 +34,19 @@ struct OAuthCodesGenerator {
 
         public var localizedDescription: String {
             errorDescription ?? "Unknown"
+        }
+
+        public static var errorDomain: String { "com.duckduckgo.networking.oauthcodesgenerator" }
+
+        public var errorCode: Int {
+            switch self {
+            case .failedToLoadRandomBytes(_):
+                68000
+            }
+        }
+
+        public var errorUserInfo: [String : Any] {
+            [NSLocalizedDescriptionKey: errorDescription ?? "nil"]
         }
     }
 

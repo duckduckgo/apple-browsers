@@ -49,6 +49,33 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
     }
 }
 
+extension OAuthClientError: CustomNSError {
+
+    public static var errorDomain: String { "com.duckduckgo.networking.oauthclient" }
+
+    public var errorCode: Int {
+        switch self {
+        case .internalError(_):
+            67000
+        case .missingTokenContainer:
+            67001
+        case .unauthenticated:
+            67002
+        case .invalidTokenRequest:
+            67003
+        case .authMigrationNotPerformed:
+            67004
+        case .unknownAccount:
+            67005
+        }
+    }
+
+    public var errorUserInfo: [String : Any] {
+        [NSLocalizedDescriptionKey: errorDescription ?? "nil"]
+    }
+}
+
+
 /// Provides the locally stored tokens container
 public protocol AuthTokenStoring {
     func getTokenContainer() throws -> TokenContainer?

@@ -65,6 +65,29 @@ extension TokenContainer {
 
 public enum TokenPayloadError: Error {
     case invalidTokenScope
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidTokenScope:
+            "Invalid token scope"
+        }
+    }
+}
+
+extension TokenPayloadError: CustomNSError {
+
+    public static var errorDomain: String { "com.duckduckgo.networking.tokenpayload" }
+
+    public var errorCode: Int {
+        switch self {
+        case .invalidTokenScope:
+            69000
+        }
+    }
+
+    public var errorUserInfo: [String : Any] {
+        [NSLocalizedDescriptionKey: errorDescription ?? "nil"]
+    }
 }
 
 public struct JWTAccessToken: JWTPayload, Equatable {

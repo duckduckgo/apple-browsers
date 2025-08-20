@@ -1,7 +1,6 @@
 //  AddressBarUITests.swift
-//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,13 +20,13 @@ import Foundation
 class AddressBarUITests: UITestCase {
     private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement { app.addressBar }
-    
+
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
     }
-    
+
     // MARK: - Address Bar Activation/Focus Tests
 
     func testAddressBar_ClickToActivate_BecomesActive() throws {
@@ -70,7 +69,7 @@ class AddressBarUITests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
         // Press Escape (twice to hide suggestions if any)
         app.typeKey(.escape, modifierFlags: [])
-        
+
         // Verify deactivation - address bar should be cleared and not accepting input
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertFalse(addressBarValue.contains("test-deactivation"),
@@ -87,7 +86,7 @@ class AddressBarUITests: UITestCase {
 
         // Use Cmd+L to activate
         app.activateAddressBar()
-        
+
         // Verify activation by navigating via paste (ensures field is focused)
         app.pasteURL(UITests.simpleServedPage(titled: "Address Bar Test CmdL"), pressingEnter: true)
         let secondPageContent = app.webViews.firstMatch.staticTexts
@@ -180,9 +179,9 @@ class AddressBarUITests: UITestCase {
         // Basic test that text can be entered in address bar (detailed autocomplete behavior in AutocompleteTests.swift)
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible")
-        
+
         addressBarTextField.typeText("duck")
-        
+
         // Verify text was entered successfully
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("duck"), "Address bar should contain typed text")
@@ -231,7 +230,7 @@ class AddressBarUITests: UITestCase {
 
         let firstPageContent = app.webViews.firstMatch.staticTexts.containing(NSPredicate(format: "value CONTAINS 'First Tab Test'")).firstMatch
         XCTAssertTrue(firstPageContent.waitForExistence(timeout: 15.0), "Should load first page")
-        
+
         // Navigate to second page
         let secondURL = UITests.simpleServedPage(titled: "Second Page Test")
         app.activateAddressBar()
@@ -240,17 +239,17 @@ class AddressBarUITests: UITestCase {
         let secondPageContent = app.webViews.firstMatch.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Second Page Test'"))
             .firstMatch
         XCTAssertTrue(secondPageContent.waitForExistence(timeout: 15.0), "Should load second page")
-        
+
         // Go back via keyboard shortcut to avoid toolbar identifier flakiness
         let window = app.windows.firstMatch
         _ = window.waitForExistence(timeout: 10.0)
         if window.exists { window.click() }
         app.typeKey("[", modifierFlags: [.command])
-            
+
         // Verify we're back on first page (by content; avoid address bar access here)
         XCTAssertTrue(firstPageContent.waitForExistence(timeout: 15.0), "Should navigate back to first page")
     }
-    
+
     func testAddressBar_ForwardNavigation_UpdatesURLCorrectly() throws {
         // Set up navigation history (two pages)
         let firstURL = UITests.simpleServedPage(titled: "First Tab Test")
@@ -267,18 +266,18 @@ class AddressBarUITests: UITestCase {
         let secondPageContent = app.webViews.firstMatch.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Second Page Test'"))
             .firstMatch
         XCTAssertTrue(secondPageContent.waitForExistence(timeout: 15.0), "Should load second page")
-        
+
         // Go back first via keyboard shortcut
         let window = app.windows.firstMatch
         _ = window.waitForExistence(timeout: 10.0)
         if window.exists { window.click() }
         app.typeKey("[", modifierFlags: [.command])
         XCTAssertTrue(firstPageContent.waitForExistence(timeout: 15.0), "Should be back on first page")
-            
+
         // Now go forward via keyboard shortcut
         if window.exists { window.click() }
         app.typeKey("]", modifierFlags: [.command])
-                
+
         // Verify forward navigation worked (by content; avoid address bar access here)
         XCTAssertTrue(secondPageContent.waitForExistence(timeout: 15.0), "Should navigate forward to second page")
     }
@@ -295,7 +294,7 @@ class AddressBarUITests: UITestCase {
 
         // Reload the page via keyboard shortcut (more stable than toolbar identifier)
         app.typeKey("r", modifierFlags: [.command])
-        
+
         // Verify page reloaded and URL preserved
         XCTAssertTrue(pageContent.waitForExistence(timeout: 15.0), "Page should reload successfully")
 
@@ -303,9 +302,9 @@ class AddressBarUITests: UITestCase {
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("localhost:8085"), "Address bar should preserve URL after reload")
     }
-    
+
     // MARK: - Edge Cases Tests
-    
+
     func testAddressBar_EmptyInput_DoesNotNavigate() throws {
         // Try to navigate with empty input
         app.activateAddressBar()
@@ -321,7 +320,7 @@ class AddressBarUITests: UITestCase {
         app.activateAddressBar()
         addressBarTextField.typeText("  example.com  ")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
-        
+
         // Should navigate to example.com (whitespace trimmed). Accept either content or trimmed URL.
         let webView = app.webViews.firstMatch
         _ = webView.waitForExistence(timeout: 10.0)
@@ -337,7 +336,7 @@ class AddressBarUITests: UITestCase {
 
         XCTAssertTrue(contentAppeared || urlLooksTrimmed, "Should trim whitespace and navigate successfully")
     }
-    
+
     func testAddressBar_SpecialCharacters_HandledCorrectly() throws {
         let specialQueries = [
             "hello world", // Space
@@ -353,7 +352,7 @@ class AddressBarUITests: UITestCase {
             addressBarTextField.typeKey("a", modifierFlags: [.command]) // Select all
             addressBarTextField.typeText(query)
             addressBarTextField.typeKey(.enter, modifierFlags: [])
-            
+
             // Should either navigate or search (not crash)
             let webView = app.webViews.firstMatch
             XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Should handle special characters without crashing: \(query)")

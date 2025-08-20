@@ -42,6 +42,7 @@ struct SearchInAppIntent: AppIntent {
         }
         
         UIApplication.shared.open(quickLinkURL)
+        
         return .result()
     }
 }

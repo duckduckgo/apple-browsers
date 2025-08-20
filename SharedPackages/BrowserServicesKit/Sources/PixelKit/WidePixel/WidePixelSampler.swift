@@ -30,9 +30,9 @@ public struct DefaultWidePixelSampler: WidePixelSampling {
     }
 
     public func shouldSend(sampleRate: Float, contextID: String, pixelName: String) -> Bool {
-        let rate = max(0.0, min(1.0, sampleRate))
-        let percentile = storage.percentile(for: pixelName, contextID: contextID)
-        return percentile < rate
+        let sampleRate = max(0.0, min(1.0, sampleRate))
+        let userPercentile = storage.percentile(for: pixelName, contextID: contextID)
+        return userPercentile < sampleRate
     }
 
 }

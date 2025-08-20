@@ -119,7 +119,7 @@ final class DebugScanJob: SubJobWebRunning {
                     try await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
                 } catch {
                     if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
-                        // TODO: Fire pixel with EventMapping
+                        pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error))
                         try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                     }
                     fatalError("Failed to initialize handler for DebugScanJob: \(error.localizedDescription)")

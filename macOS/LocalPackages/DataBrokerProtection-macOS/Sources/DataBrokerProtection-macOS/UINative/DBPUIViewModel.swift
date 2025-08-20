@@ -74,7 +74,7 @@ public final class DBPUIViewModel {
                                                       vpnBypassService: vpnBypassService)
         } catch {
             if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
-                // TODO: Fire pixel with EventMapping
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, path: filePath, error: error))
                 Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
             }
             fatalError("Failed to apply DBPUI configuration: \(error)")

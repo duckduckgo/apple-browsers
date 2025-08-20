@@ -362,7 +362,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
-            return .internalOnly()
+            return .enabled
         }
     }
 }

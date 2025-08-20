@@ -405,7 +405,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         let defaults = UserDefaults.netP
 #endif
 
-        APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        let trimmedOSVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion)"
+        APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent(systemVersion: trimmedOSVersion))
         NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
 

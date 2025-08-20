@@ -53,6 +53,13 @@ struct AutocompleteView: View {
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
+            if let query = model.query {
+                SuggestionsSection(suggestions: [.init(suggestion: .askAIChat(value: query))],
+                                   query: query,
+                                   onSuggestionSelected: model.onSuggestionSelected,
+                                   onSuggestionDeleted: model.deleteSuggestion)
+            }
+
         }
         .offset(x: 0, y: -28)
         .padding(.bottom, -20)
@@ -275,7 +282,15 @@ private struct SuggestionView: View {
 
             case .internalPage, .unknown:
                 FailedAssertionView("Unknown or unsupported suggestion type")
+
+            case .askAIChat(value: let value):
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
+                                   title: value,
+                                   subtitle: "Ask Duck.ai")
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
+
             }
+
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

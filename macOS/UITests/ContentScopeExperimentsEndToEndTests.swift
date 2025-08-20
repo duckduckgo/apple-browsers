@@ -59,8 +59,8 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         // Step 3: Check test passes
         let suiteStatusLabel = app.staticTexts["Test suite status: "]
         let suiteStatusValue = app.staticTexts["pass"]
-        XCTAssertTrue(suiteStatusLabel.exists)
-        XCTAssertTrue(suiteStatusValue.exists)
+        XCTAssertTrue(suiteStatusLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Label not found")
+        XCTAssertTrue(suiteStatusValue.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Value not pass")
     }
 
 }

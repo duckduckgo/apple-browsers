@@ -178,7 +178,8 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
-        // JavaScript execution should complete within a reasonable timeframe
+        let navigationCompleted = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: 10.0), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
         app.activateAddressBar()

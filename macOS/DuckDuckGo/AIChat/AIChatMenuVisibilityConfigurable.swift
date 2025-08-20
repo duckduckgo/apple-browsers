@@ -16,11 +16,26 @@
 //  limitations under the License.
 //
 
-import Combine
-import BrowserServicesKit
 import AIChat
+import AppKit
+import BrowserServicesKit
+import Combine
 
 protocol AIChatMenuVisibilityConfigurable {
+
+    /// Indicates whether any AI Chat feature should be displayed to the user.
+    ///
+    /// This property checks both remote setting and local global switch value to determine
+    /// if any of the AI Chat-related features should be visible in the UI.
+    ///
+    /// - Returns: `true` if any AI Chat feature should be shown; otherwise, `false`.
+    var shouldDisplayAnyAIChatFeature: Bool { get }
+
+    /// This property validates user settings to determine if the shortcut
+    /// should be presented to the user.
+    ///
+    /// - Returns: `true` if the New Tab Page omnibar shortcut should be displayed; otherwise, `false`.
+    var shouldDisplayNewTabPageShortcut: Bool { get }
 
     /// This property validates user settings to determine if the shortcut
     /// should be presented to the user.
@@ -33,6 +48,17 @@ protocol AIChatMenuVisibilityConfigurable {
     ///
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
     var shouldDisplayApplicationMenuShortcut: Bool { get }
+
+    /// This property determines whether AI Chat should open in the sidebar.
+    ///
+    /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
+    var shouldOpenAIChatInSidebar: Bool { get }
+
+    /// This property validates user settings to determine if the text summarization
+    /// feature should be presented to the user.
+    ///
+    /// - Returns: `true` if the text summarization menu action should be displayed; otherwise, `false`.
+    var shouldDisplaySummarizationMenuItem: Bool { get }
 
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
@@ -52,40 +78,60 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     private var cancellables = Set<AnyCancellable>()
     private var storage: AIChatPreferencesStorage
-    private let notificationCenter: NotificationCenter
     private let remoteSettings: AIChatRemoteSettingsProvider
+    private let featureFlagger: FeatureFlagger
 
     var valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
+    var shouldDisplayAnyAIChatFeature: Bool {
+        let isAIChatEnabledRemotely = remoteSettings.isAIChatEnabled
+        let isAIChatEnabledLocally = storage.isAIFeaturesEnabled
+
+        if featureFlagger.isFeatureOn(.aiChatGlobalSwitch) {
+            return isAIChatEnabledRemotely && isAIChatEnabledLocally
+        } else {
+            return isAIChatEnabledRemotely
+        }
+    }
+
+    var shouldDisplayNewTabPageShortcut: Bool {
+        shouldDisplayAnyAIChatFeature && storage.showShortcutOnNewTabPage
+    }
+
+    var shouldDisplaySummarizationMenuItem: Bool {
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextSummarization) && shouldDisplayApplicationMenuShortcut
+    }
+
     var shouldDisplayApplicationMenuShortcut: Bool {
-        return storage.showShortcutInApplicationMenu
+        shouldDisplayAnyAIChatFeature && storage.showShortcutInApplicationMenu
     }
 
     var shouldDisplayAddressBarShortcut: Bool {
-        storage.showShortcutInAddressBar
+        shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBar
     }
 
-    init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         notificationCenter: NotificationCenter = .default,
-         remoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings()) {
+    var shouldOpenAIChatInSidebar: Bool {
+        shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
+    }
+
+    init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {
         self.storage = storage
-        self.notificationCenter = notificationCenter
         self.remoteSettings = remoteSettings
+        self.featureFlagger = featureFlagger
 
         self.subscribeToValuesChanged()
     }
 
     private func subscribeToValuesChanged() {
-        storage.showShortcutInApplicationMenuPublisher
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.valuesChangedPublisher.send()
-            }.store(in: &cancellables)
-
-        storage.showShortcutInAddressBarPublisher
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.valuesChangedPublisher.send()
-            }.store(in: &cancellables)
+        Publishers.Merge5(
+            storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
+            storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
+            storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
+            storage.showShortcutInAddressBarPublisher.removeDuplicates(),
+            storage.openAIChatInSidebarPublisher.removeDuplicates()
+        )
+        .sink { [weak self] _ in
+            self?.valuesChangedPublisher.send()
+        }.store(in: &cancellables)
     }
 }

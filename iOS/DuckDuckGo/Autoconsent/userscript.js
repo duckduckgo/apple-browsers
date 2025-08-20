@@ -1,5 +1,5 @@
 import AutoConsent from '@duckduckgo/autoconsent';
-import * as rules from '@duckduckgo/autoconsent/rules/rules.json';
+import { consentomatic } from '@duckduckgo/autoconsent/rules/consentomatic.json'
 
 const autoconsent = new AutoConsent(
     (message) => {
@@ -12,7 +12,9 @@ const autoconsent = new AutoConsent(
         }
     },
     null,
-    rules,
+    {
+        consentomatic,
+    }
 );
 window.autoconsentMessageCallback = (msg) => {
     autoconsent.receiveMessageCallback(msg);

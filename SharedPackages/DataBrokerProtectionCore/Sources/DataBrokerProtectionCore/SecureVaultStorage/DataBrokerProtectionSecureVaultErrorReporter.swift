@@ -25,25 +25,44 @@ import Common
 public final class DataBrokerProtectionSecureVaultErrorReporter: SecureVaultReporting {
 
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public init(pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
+    let privacyConfigManager: PrivacyConfigurationManaging?
+
+    public init(pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                privacyConfigManager: PrivacyConfigurationManaging? = nil) {
         self.pixelHandler = pixelHandler
+        self.privacyConfigManager = privacyConfigManager
     }
 
     public func secureVaultError(_ error: SecureStorageError) {
         switch error {
         case .initFailed(let cause as SecureStorageError):
             switch cause {
-            case .keystoreReadError:
-                pixelHandler.fire(.secureVaultKeyStoreReadError(error: cause))
+            case .keystoreReadError(let field, let serviceName, _):
+                pixelHandler.fire(.secureVaultKeyStoreReadError(error: cause, field: field, serviceName: serviceName))
             case .keystoreUpdateError:
                 pixelHandler.fire(.secureVaultKeyStoreUpdateError(error: cause))
             default:
                 pixelHandler.fire(.secureVaultInitError(error: error))
             }
-        case .initFailed(let cause), .failedToOpenDatabase(let cause):
+        case .initFailed(let cause):
             pixelHandler.fire(.secureVaultInitError(error: cause))
+        case .failedToOpenDatabase(let cause):
+            pixelHandler.fire(.failedToOpenDatabase(error: cause))
         default:
             pixelHandler.fire(.secureVaultError(error: error))
+        }
+    }
+
+    public func secureVaultKeyStoreEvent(_ event: SecureStorageKeyStoreEvent) {
+        switch event {
+        case .databaseRecreation:
+            var parameters: [String: String]?
+            if let privacyConfigManager = privacyConfigManager {
+                parameters = ["isInternalUser": String(privacyConfigManager.internalUserDecider.isInternalUser)]
+            }
+            pixelHandler.fire(.secureVaultDatabaseRecreated, parameters: parameters)
+        default:
+            break
         }
     }
 }

@@ -25,6 +25,8 @@ import BrowserServicesKit
 import SyncUI_iOS
 import Persistence
 import Common
+import Configuration
+import SystemSettingsPiPTutorial
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -42,6 +44,10 @@ class SettingsLegacyViewProvider: ObservableObject {
     let syncPausedStateManager: any SyncPausedStateManaging
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
+    let customConfigurationURLProvider: CustomConfigurationURLProviding
+    let keyValueStore: ThrowingKeyValueStoring
+    let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+    let daxDialogsManager: DaxDialogsManaging
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -50,7 +56,11 @@ class SettingsLegacyViewProvider: ObservableObject {
          tabManager: TabManager,
          syncPausedStateManager: any SyncPausedStateManaging,
          fireproofing: Fireproofing,
-         websiteDataManager: WebsiteDataManaging) {
+         websiteDataManager: WebsiteDataManaging,
+         customConfigurationURLProvider: CustomConfigurationURLProviding,
+         keyValueStore: ThrowingKeyValueStoring,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+         daxDialogsManager: DaxDialogsManaging) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -59,12 +69,16 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.syncPausedStateManager = syncPausedStateManager
         self.fireproofing = fireproofing
         self.websiteDataManager = websiteDataManager
+        self.customConfigurationURLProvider = customConfigurationURLProvider
+        self.keyValueStore = keyValueStore
+        self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
+        self.daxDialogsManager = daxDialogsManager
     }
     
     enum LegacyView {
         case addToDock,
-             sync,
-             logins,
+             sync(PairingInfo?),
+             autofill,
              appIcon,
              gpc,
              autoconsent,
@@ -73,6 +87,7 @@ class SettingsLegacyViewProvider: ObservableObject {
              autoclearData,
              keyboard,
              feedback,
+             passwordsImport,
              debug
     }
 
@@ -109,7 +124,11 @@ class SettingsLegacyViewProvider: ObservableObject {
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing))
+            fireproofing: self.fireproofing,
+            customConfigurationURLProvider: self.customConfigurationURLProvider,
+            keyValueStore: self.keyValueStore,
+            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
+            daxDialogManager: self.daxDialogsManager))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
@@ -128,25 +147,46 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     @MainActor
-    func syncSettings(source: String? = nil) -> SyncSettingsViewController {
+    func syncSettings(source: String? = nil, pairingInfo: PairingInfo?) -> SyncSettingsViewController {
         return SyncSettingsViewController(syncService: self.syncService,
                                           syncBookmarksAdapter: self.syncDataProviders.bookmarksAdapter,
                                           syncCredentialsAdapter: self.syncDataProviders.credentialsAdapter,
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
-                                          source: source)
+                                          source: source,
+                                          pairingInfo: pairingInfo)
     }
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,
                        selectedAccount: SecureVaultModels.WebsiteAccount?,
+                       selectedCard: SecureVaultModels.CreditCard?,
+                       showPasswordManagement: Bool,
+                       showCreditCardManagement: Bool,
                        source: AutofillSettingsSource?) -> AutofillSettingsViewController {
         return AutofillSettingsViewController(appSettings: self.appSettings,
-                                                       syncService: self.syncService,
-                                                       syncDataProviders: self.syncDataProviders,
-                                                       selectedAccount: selectedAccount,
-                                                       source: source ?? .settings,
-                                                       bookmarksDatabase: self.bookmarksDatabase,
-                                                       favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
+                                              syncService: self.syncService,
+                                              syncDataProviders: self.syncDataProviders,
+                                              selectedAccount: selectedAccount,
+                                              selectedCard: selectedCard,
+                                              showPasswordManagement: showPasswordManagement,
+                                              showCardManagement: showCreditCardManagement,
+                                              source: source ?? .settings,
+                                              bookmarksDatabase: self.bookmarksDatabase,
+                                              favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+                                              keyValueStore: keyValueStore)
+    }
+
+    func importPasswords(delegate: DataImportViewControllerDelegate) -> DataImportViewController {
+        let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
+                                                  bookmarksDatabase: bookmarksDatabase,
+                                                  favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+                                                  tld: AppDependencyProvider.shared.storageCache.tld)
+        let viewController = DataImportViewController(importManager: dataImportManager,
+                                                      importScreen: DataImportViewModel.ImportScreen.settings,
+                                                      syncService: syncService,
+                                                      keyValueStore: keyValueStore)
+        viewController.delegate = delegate
+        return viewController
     }
 
 }

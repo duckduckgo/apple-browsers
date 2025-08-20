@@ -21,7 +21,7 @@ import UIKit
 import Common
 import Network
 import NetworkExtension
-import NetworkProtection
+import VPN
 import Subscription
 
 final class NetworkProtectionDebugViewController: UITableViewController {
@@ -80,10 +80,12 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     enum ExtensionDebugCommandRows: Int, CaseIterable {
         case triggerTestNotification
-        case shutDown
+        case simulateSubscriptionExpirationInTunnel
         case showEntitlementMessaging
         case resetEntitlementMessaging
         case startSnooze
+        case createLogSnapshot
+        case viewLogSnapshots
     }
 
     enum NetworkPathRows: Int, CaseIterable {
@@ -269,9 +271,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     private func configure(_ cell: UITableViewCell, forSimulateFailureAtRow row: Int) {
         switch SimulateFailureRows(rawValue: row) {
         case .controllerFailure:
-            cell.textLabel?.text = "Enable NetP > Controller Failure"
+            cell.textLabel?.text = "Enable VPN > Controller Failure"
         case .tunnelFailure:
-            cell.textLabel?.text = "Enable NetP > Tunnel Failure"
+            cell.textLabel?.text = "Enable VPN > Tunnel Failure"
         case .crashFatalError:
             cell.textLabel?.text = "Tunnel: Crash (Fatal Error)"
         case .crashMemory:
@@ -372,14 +374,18 @@ final class NetworkProtectionDebugViewController: UITableViewController {
         switch ExtensionDebugCommandRows(rawValue: row) {
         case .triggerTestNotification:
             cell.textLabel?.text = "Test Notification"
-        case .shutDown:
-            cell.textLabel?.text = "Disable VPN From Extension"
+        case .simulateSubscriptionExpirationInTunnel:
+            cell.textLabel?.text = "Simulate Subscription Expiration In Tunnel"
         case .showEntitlementMessaging:
             cell.textLabel?.text = "Show Entitlement Messaging"
         case .resetEntitlementMessaging:
             cell.textLabel?.text = "Reset Entitlement Messaging"
         case .startSnooze:
             cell.textLabel?.text = "Snooze For 30 Seconds"
+        case .createLogSnapshot:
+            cell.textLabel?.text = "Create Log Snapshot"
+        case .viewLogSnapshots:
+            cell.textLabel?.text = "View Log Snapshots"
         case .none:
             break
         }
@@ -391,9 +397,9 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             Task {
                 try await NetworkProtectionDebugUtilities().sendTestNotificationRequest()
             }
-        case .shutDown:
+        case .simulateSubscriptionExpirationInTunnel:
             Task {
-                await NetworkProtectionDebugUtilities().disableConnectOnDemandAndShutDown()
+                await NetworkProtectionDebugUtilities().simulateSubscriptionExpirationInTunnel()
             }
         case .showEntitlementMessaging:
             UserDefaults.networkProtectionGroupDefaults.enableEntitlementMessaging()
@@ -403,6 +409,12 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             Task {
                 await NetworkProtectionDebugUtilities().startSnooze(duration: .seconds(30))
             }
+        case .createLogSnapshot:
+            Task {
+                await createLogSnapshot()
+            }
+        case .viewLogSnapshots:
+            showLogSnapshotsViewer()
         case .none:
             break
         }
@@ -703,6 +715,46 @@ shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "
             await AppDependencyProvider.shared.networkProtectionTunnelController.stop()
             await AppDependencyProvider.shared.networkProtectionTunnelController.removeVPN(reason: .debugMenu)
         }
+    }
+    
+    @MainActor
+    private func createLogSnapshot() async {
+        do {
+            try await NetworkProtectionDebugUtilities().createLogSnapshot()
+            
+            let alert = UIAlertController(
+                title: "Log Collection Started",
+                message: "Log collection is running in the background and may take up to a minute to complete. Check 'View Log Snapshots' to see when it's ready.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        } catch {
+            let alert = UIAlertController(
+                title: "Log Collection Failed",
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
+    }
+    
+    private func showLogSnapshotsViewer() {
+        let logViewer = NetworkProtectionLogViewerViewController()
+        self.navigationController?.pushViewController(logViewer, animated: true)
+    }
+    
+    private func showSuccessAlert(message: String) {
+        let alert = UIAlertController(title: "Success", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 

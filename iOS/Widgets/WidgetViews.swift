@@ -20,6 +20,7 @@
 import SwiftUI
 import WidgetKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct FavoriteView: View {
 
@@ -32,14 +33,14 @@ struct FavoriteView: View {
 
         ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .controlsFillPrimary))
 
             if let favorite = favorite {
 
                 Link(destination: favorite.url) {
                     ZStack {
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .fill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .container))
+                            .fill(favorite.needsColorBackground ? Color.forDomain(favorite.domain) : Color(designSystemColor: .controlsFillPrimary))
                             .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
                         
                         if let image = favorite.favicon {
@@ -56,10 +57,12 @@ struct FavoriteView: View {
                             }
                             
                         } else if favorite.isDuckDuckGo {
-                            Image(.duckDuckGoColor24)
+                            Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                                 .resizable()
                                 .useFullColorRendering()
-                                .frame(width: 45, height: 45, alignment: .center)
+                                .frame(width: 46, height: 46, alignment: .center)
+                                .isHidden(false)
+                                .accessibilityHidden(true)
                             
                         } else {
                             Text(favorite.domain.first?.uppercased() ?? "")
@@ -135,8 +138,10 @@ struct FavoritesWidgetView: View {
             VStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
-                    Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                        CircleIconView(image: Image(.aiChat24))
+                    if entry.isAIChatEnabled {
+                        Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
+                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                        }
                     }
                 }
                 if entry.favorites.isEmpty, !entry.isPreview {
@@ -203,10 +208,10 @@ struct SearchWidgetView: View {
                 ZStack(alignment: Alignment(horizontal: .trailing, vertical: .center)) {
 
                     RoundedRectangle(cornerSize: CGSize(width: 8, height: 8))
-                        .fill(Color(designSystemColor: .container))
+                        .fill(Color(designSystemColor: .controlsFillPrimary))
                         .frame(width: 126, height: 46)
 
-                    Image(.findSearch20)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size20.findSearch)
                         .useFullColorRendering()
                         .frame(width: 20, height: 20)
                         .padding(.leading)

@@ -59,11 +59,13 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 8) {
-                TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader)
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion))
+                TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: model.isPaidAIChatEnabled))
+                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion, isPaidAIChatEnabled: model.isPaidAIChatEnabled))
+
+                let purchaseButtonText = model.isUserEligibleForFreeTrial ? UserText.purchaseFreeTrialButton(isSubscriptionRebrandingEnabled: model.isSubscriptionRebrandingEnabled) : UserText.purchaseButton(isSubscriptionRebrandingEnabled: model.isSubscriptionRebrandingEnabled)
 
                 HStack {
-                    Button(UserText.purchaseButton) { model.purchaseAction() }
+                    Button(purchaseButtonText) { model.purchaseAction() }
                         .buttonStyle(DefaultActionButtonStyle(enabled: true))
                     Button(UserText.haveSubscriptionButton) {
                         if model.shouldDirectlyLaunchActivationFlow {
@@ -89,42 +91,67 @@ public struct PreferencesPurchaseSubscriptionView: View {
     @ViewBuilder
     private var featuresSection: some View {
         VStack {
-            switch model.subscriptionStorefrontRegion {
-            case .usa:
-                SectionView(iconName: "VPN-Icon",
-                            title: UserText.vpnServiceTitle,
-                            description: UserText.vpnServiceDescription)
-
-                Divider()
-                    .foregroundColor(Color.secondary)
-
-                SectionView(iconName: "PIR-Icon",
-                            title: UserText.personalInformationRemovalServiceTitle,
-                            description: UserText.personalInformationRemovalServiceDescription)
-
-                Divider()
-                    .foregroundColor(Color.secondary)
-
-                SectionView(iconName: "ITR-Icon",
-                            title: UserText.identityTheftRestorationServiceTitle,
-                            description: UserText.identityTheftRestorationServiceDescription)
-
-            case .restOfWorld:
-                SectionView(iconName: "VPN-Icon",
-                            title: UserText.vpnServiceTitle,
-                            description: UserText.vpnServiceDescription)
-
-                Divider()
-                    .foregroundColor(Color.secondary)
-
-                SectionView(iconName: "ITR-Icon",
-                            title: UserText.identityTheftRestorationServiceTitle,
-                            description: UserText.identityTheftRestorationServiceDescription)
+            ForEach(availableFeatures.indices, id: \.self) { index in
+                availableFeatures[index]
+                // Add divider between features, but not after the last one
+                if index < availableFeatures.count - 1 {
+                    Divider()
+                        .foregroundColor(Color.secondary)
+                }
             }
         }
         .padding(10)
         .roundedBorder()
         .padding(.bottom, 20)
+    }
+
+    private var availableFeatures: [SectionView] {
+        var features: [SectionView] = []
+
+        switch model.subscriptionStorefrontRegion {
+        case .usa:
+            // VPN
+            features.append(SectionView(iconName: "VPN-Icon",
+                                      title: UserText.vpnServiceTitle,
+                                      description: UserText.vpnServiceDescription))
+
+            // Personal Information Removal
+            features.append(SectionView(iconName: "PIR-Icon",
+                                      title: UserText.personalInformationRemovalServiceTitle,
+                                      description: UserText.personalInformationRemovalServiceDescription))
+
+            // AI Chat (Duck.ai) - Only add if enabled
+            if model.isPaidAIChatEnabled {
+                features.append(SectionView(iconName: "Ai-Chat-icon",
+                                          title: UserText.paidAIChatTitle,
+                                          description: UserText.paidAIChatServiceDescription))
+            }
+
+            // Identity Theft Restoration
+            features.append(SectionView(iconName: "ITR-Icon",
+                                      title: UserText.identityTheftRestorationServiceTitle,
+                                      description: UserText.identityTheftRestorationServiceDescription))
+
+        case .restOfWorld:
+            // VPN
+            features.append(SectionView(iconName: "VPN-Icon",
+                                      title: UserText.vpnServiceTitle,
+                                      description: UserText.vpnServiceDescription))
+
+            // AI Chat (Duck.ai) - Only add if enabled
+            if model.isPaidAIChatEnabled {
+                features.append(SectionView(iconName: "Ai-Chat-icon",
+                                          title: UserText.paidAIChatTitle,
+                                          description: UserText.paidAIChatServiceDescription))
+            }
+
+            // Identity Theft Restoration
+            features.append(SectionView(iconName: "ITR-Icon",
+                                      title: UserText.identityTheftRestorationServiceTitle,
+                                      description: UserText.identityTheftRestorationServiceDescription))
+        }
+
+        return features
     }
 
     @ViewBuilder

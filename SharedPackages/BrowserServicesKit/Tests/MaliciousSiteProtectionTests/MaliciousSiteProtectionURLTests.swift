@@ -42,4 +42,13 @@ class MaliciousSiteProtectionURLTests: XCTestCase {
             XCTAssertEqual(canonicalizedURL?.absoluteString, expectedURL)
         }
     }
+
+    func testCanonicalizeURLRemovingWWW() {
+        let expectedURL = "http://example.com/security/badware/phishing.html"
+        for testURL in testURLs {
+            let url = URL(string: testURL)!
+            let canonicalizedURL = url.canonicalURL(shouldRemoveWWW: true)
+            XCTAssertEqual(canonicalizedURL?.absoluteString, expectedURL)
+        }
+    }
 }

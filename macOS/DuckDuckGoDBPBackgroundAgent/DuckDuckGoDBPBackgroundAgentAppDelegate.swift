@@ -31,7 +31,7 @@ import Configuration
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
-    private let _delegate: DuckDuckGoDBPBackgroundAgentAppDelegate
+    private let _delegate: DuckDuckGoDBPBackgroundAgentAppDelegate // swiftlint:disable:this weak_delegate
 
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
@@ -92,17 +92,16 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
 
         // Configure Subscription
         if !settings.isAuthV2Enabled {
-            Logger.dbpBackgroundAgent.log("Using Auth V1")
-            subscriptionManager = DefaultSubscriptionManager()
+            Logger.dbpBackgroundAgent.log("Configuring subscription V1")
+            subscriptionManager = DefaultSubscriptionManager(pixelHandlingSource: .dbp)
         } else {
-            Logger.dbpBackgroundAgent.log("Using Auth V2")
+            Logger.dbpBackgroundAgent.log("Configuring subscription V2")
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
             let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
             subscriptionManager = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
                                                                environment: subscriptionEnvironment,
                                                                userDefaults: subscriptionUserDefaults,
-                                                               canPerformAuthMigration: false,
                                                                pixelHandlingSource: .dbp)
         }
     }
@@ -111,10 +110,9 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
 
-        Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
         let configStore = ConfigurationStore()
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configStore)
+        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configStore, configurationURLProvider: DBPAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configStore)
         configurationManager.start()
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))

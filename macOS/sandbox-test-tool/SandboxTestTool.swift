@@ -32,9 +32,16 @@ struct SandboxTestTool {
 @objc(SandboxTestToolApp)
 final class SandboxTestToolApp: NSApplication {
 
-    private var _delegate: SandboxTestToolAppDelegate!
+    private var _delegate: SandboxTestToolAppDelegate! // swiftlint:disable:this weak_delegate
 
     override init() {
+        // swizzle `startAccessingSecurityScopedResource` and `stopAccessingSecurityScopedResource`
+        // methods to accurately reflect the current number of start and stop calls
+        // stored in the associated `NSURL.sandboxExtensionRetainCount` value.
+        //
+        // See SecurityScopedFileURLController.swift
+        NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
+
         super.init()
 
         _delegate = SandboxTestToolAppDelegate()

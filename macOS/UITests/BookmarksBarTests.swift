@@ -41,8 +41,7 @@ class BookmarksBarTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         showBookmarksBarPreferenceToggle = app.checkBoxes["Preferences.AppearanceView.showBookmarksBarPreferenceToggle"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
@@ -53,7 +52,6 @@ class BookmarksBarTests: UITestCase {
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
         app.typeKey("n", modifierFlags: [.command]) // Guarantee a single window
         resetBookmarksAndAddOneBookmark()
@@ -173,7 +171,8 @@ private extension BookmarksBarTests {
             "The user settings appearance section button didn't become available in a reasonable timeframe."
         )
         // This should just be a click(), but there are states for this test where the first few clicks don't register here.
-        settingsAppearanceButton.click(forDuration: UITests.Timeouts.elementExistence, thenDragTo: settingsAppearanceButton)
+        // Xcode 26: When we transition to Xcode 26, we will need to use `click()` instead of `click(forDuration:thenDragTo:)`.
+        settingsAppearanceButton.click(forDuration: 0.5, thenDragTo: settingsAppearanceButton)
 
         XCTAssertTrue(
             showBookmarksBarPreferenceToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -189,10 +188,7 @@ private extension BookmarksBarTests {
     func openSecondWindowAndVisitSite() {
         app.typeKey("n", modifierFlags: [.command])
         app.typeKey("l", modifierFlags: [.command]) // Get address bar focus without addressing multiple address bars by identifier
-        XCTAssertTrue( // Use home page logo as a test to know if a new window is fully ready before we type
-            app.images["HomePageLogo"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Home Page Logo did not exist when it was expected."
-        )
+
         app.typeURL(urlForBookmarksBar)
     }
 

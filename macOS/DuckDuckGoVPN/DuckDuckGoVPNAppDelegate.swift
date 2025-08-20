@@ -26,14 +26,14 @@ import FeatureFlags
 import LoginItems
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
 import ServiceManagement
 import Subscription
-import SwiftUICore
+import SwiftUI
 import VPNAppLauncher
 import VPNAppState
 
@@ -42,7 +42,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
 
     public var accountManager: AccountManager
     public var subscriptionManagerV2: any SubscriptionManagerV2
-    private let _delegate: DuckDuckGoVPNAppDelegate
+    private let _delegate: DuckDuckGoVPNAppDelegate // swiftlint:disable:this weak_delegate
 
     override init() {
         Logger.networkProtection.log("🟢 Status Bar Agent starting\nPath: (\(Bundle.main.bundlePath, privacy: .public))\nVersion: \("\(Bundle.main.versionNumber!).\(Bundle.main.buildNumber)", privacy: .public)\nPID: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
@@ -59,8 +59,10 @@ final class DuckDuckGoVPNApplication: NSApplication {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         // V1
-        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                             userAgent: UserAgent.duckDuckGoUserAgent())
+        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                             userAgent: UserAgent.duckDuckGoUserAgent())
         let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
                                                                  key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                  settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
@@ -73,7 +75,6 @@ final class DuckDuckGoVPNApplication: NSApplication {
         subscriptionManagerV2 = DefaultSubscriptionManagerV2(keychainType: keychainType,
                                                              environment: subscriptionEnvironment,
                                                              userDefaults: subscriptionUserDefaults,
-                                                             canPerformAuthMigration: false,
                                                              pixelHandlingSource: .vpnApp)
 
         _delegate = DuckDuckGoVPNAppDelegate(accountManager: accountManager,
@@ -162,7 +163,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         self.accessTokenStorage = accessTokenStorage
         self.tunnelSettings = VPNSettings(defaults: .netP)
         self.tunnelSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
-        self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configurationStore)
+        self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         super.init()
 
         var tokenFound: Bool
@@ -333,6 +334,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    private let vpnNotificationsObserver = VPNNotificationsObserver()
+
     @MainActor
     private lazy var vpnAppEventsHandler = {
         VPNAppEventsHandler(tunnelController: tunnelController, appState: vpnAppState)
@@ -380,7 +383,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private func statusViewSubmenu() -> [StatusBarMenu.MenuItem] {
-        let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
+        let appLauncher = AppLauncher()
         let proxySettings = TransparentProxySettings(defaults: .netP)
         let excludedAppsMinusDBPAgent = proxySettings.excludedApps.filter { $0 != Bundle.main.dbpBackgroundAgentBundleId }
 
@@ -496,8 +499,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Logger.networkProtection.log("DuckDuckGoVPN started")
 
+        vpnNotificationsObserver.startObservingVPNStatusChanges()
+
         // Setup Remote Configuration
-        Configuration.setURLProvider(VPNAgentConfigurationURLProvider())
         configurationManager.start()
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configurationStore.loadEtag(for: .privacyConfiguration), data: configurationStore.loadData(for: .privacyConfiguration))

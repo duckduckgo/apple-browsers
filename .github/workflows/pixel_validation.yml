@@ -1,0 +1,48 @@
+name: Pixel Schema Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'macOS/package*'
+      - 'macOS/PixelDefinitions/**'
+      - 'iOS/package*'
+      - 'iOS/PixelDefinitions/**'
+
+jobs:
+  pixel-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        platform: [ 'macOS', 'iOS' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Checkout internal-github-asana-utils repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_RO_PAT }}
+          path: internal-github-asana-utils
+          repository: duckduckgo/internal-github-asana-utils
+            
+      - name: Install dependencies
+        run: npm ci --verbose --include-workspace-root
+        working-directory: ${{ matrix.platform }}
+      - name: Lint
+        run: npm run pixel-lint || (npm run pixel-lint.fix; git diff; echo 'Pixel lint check failed, review diff above or run "npm run pixel-lint.fix"'; exit 1)
+        working-directory: ${{ matrix.platform }}        
+      - name: Run validation with GitHub user map
+        run: npm run validate-defs-without-formatting -- -g ../internal-github-asana-utils/user_map.yml
+        working-directory: ${{ matrix.platform }}

@@ -23,7 +23,7 @@ import Networking
 
 public enum StripePurchaseFlowError: Swift.Error {
     case noProductsFound
-    case accountCreationFailed
+    case accountCreationFailed(Error)
 }
 
 public protocol StripePurchaseFlowV2 {
@@ -65,11 +65,12 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         }
 
         let features: [SubscriptionEntitlement] = [.networkProtection,
-                                                  .dataBrokerProtection,
-                                                  .identityTheftRestoration]
+                                                   .dataBrokerProtection,
+                                                   .identityTheftRestoration,
+                                                   .paidAIChat]
         return .success(SubscriptionOptionsV2(platform: SubscriptionPlatformName.stripe,
-                                            options: options,
-                                            availableEntitlements: features))
+                                              options: options,
+                                              availableEntitlements: features))
     }
 
     public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError> {
@@ -92,13 +93,13 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
                 return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
             } catch {
                 Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(error.localizedDescription, privacy: .public)")
-                return .failure(.accountCreationFailed)
+                return .failure(.accountCreationFailed(error))
             }
         }
     }
 
     private func isSubscriptionExpired() async -> Bool? {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData) else {
+        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst) else {
             return nil
         }
         return !subscription.isActive

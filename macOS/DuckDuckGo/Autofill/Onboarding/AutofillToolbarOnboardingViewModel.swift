@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import SwiftUI
+
 final class AutofillToolbarOnboardingViewModel: ObservableObject {
     var ctaCallback: ((Bool) -> Void)?
 

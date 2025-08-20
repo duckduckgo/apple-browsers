@@ -19,20 +19,23 @@
 
 import DesignResourcesKit
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct FavoriteItemView: View {
     let favorite: Favorite
-    let isExperimentalAppearanceEnabled: Bool
     let faviconLoading: FavoritesFaviconLoading?
+    let isEditable: Bool
     let onMenuAction: ((MenuAction) -> Void)?
 
     var body: some View {
         VStack(spacing: 6) {
-            FavoriteIconView(favorite: favorite, isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled, faviconLoading: faviconLoading)
-            .contextMenu {
-                // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
-                    contextMenuItems()
-            }
+            FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                .if(isEditable) {
+                    $0.contextMenu {
+                        // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
+                        contextMenuItems()
+                    }
+                }
 
             Text(favorite.title)
                 .font(Font.system(size: 12))
@@ -51,13 +54,21 @@ struct FavoriteItemView: View {
             Button {
                 onMenuAction?(.edit)
             } label: {
-                Label(UserText.favoriteMenuEdit, image: "Edit")
+                Label {
+                    Text(UserText.favoriteMenuEdit)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.edit)
+                }
             }
 
             Button {
                 onMenuAction?(.delete)
             } label: {
-                Label(UserText.favoriteMenuRemove, image: "RemoveFavoriteMenuIcon")
+                Label {
+                    Text(UserText.favoriteMenuRemove)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.favoriteRemove)
+                }
             }
         }
     }
@@ -78,7 +89,7 @@ extension FavoriteItemView {
 }
 
 private extension FavoriteItemView {
-    init(favorite: Favorite) {
-        self.init(favorite: favorite, isExperimentalAppearanceEnabled: false, faviconLoading: nil, onMenuAction: nil)
+    init(favorite: Favorite, isEditable: Bool = true) {
+        self.init(favorite: favorite, faviconLoading: nil, isEditable: isEditable, onMenuAction: nil)
     }
 }

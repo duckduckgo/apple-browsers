@@ -135,4 +135,39 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    // MARK: - iPad 17.7.7 Issue
+
+    func testShouldReturnDeveloperOverriddenCompletedWhenIpadAndOSIs17_7_7() throws {
+        // GIVEN
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.7")
+
+        // WHEN
+        let result = sut.onboardingStatus
+
+        // THEN
+        XCTAssertEqual(result, .overridden(.developer(completed: true)))
+    }
+
+    func testShouldNotReturnDeveloperOverriddenCompletedWhenIpadAndOSIsNot17_7_7() throws {
+        // GIVEN
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.6")
+
+        // WHEN
+        let result = sut.onboardingStatus
+
+        // THEN
+        XCTAssertEqual(result, .notOverridden)
+    }
+
+    func testShouldNotReturnDeveloperOverriddenCompletedWhenIsNotIpadAndOSIs17_7_7() {
+        // GIVEN
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: false, systemVersion: "17.7.7")
+
+        // WHEN
+        let result = sut.onboardingStatus
+
+        // THEN
+        XCTAssertEqual(result, .notOverridden)
+    }
+
 }

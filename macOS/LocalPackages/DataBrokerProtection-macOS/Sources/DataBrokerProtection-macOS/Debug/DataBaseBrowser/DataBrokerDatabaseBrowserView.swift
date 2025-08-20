@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import AppKit
 import DataBrokerProtectionCore
 
 struct DataBrokerDatabaseBrowserView: View {
@@ -26,7 +27,7 @@ struct DataBrokerDatabaseBrowserView: View {
         NavigationView {
             List {
                 ForEach(viewModel.tables) { table in
-                    NavigationLink(destination: DatabaseView(data: table.rows).navigationTitle(table.name),
+                    NavigationLink(destination: DatabaseTableContainer(table: table, viewModel: viewModel).navigationTitle(table.name),
                                    tag: table,
                                    selection: $viewModel.selectedTable) {
                         Text(table.name)
@@ -36,83 +37,307 @@ struct DataBrokerDatabaseBrowserView: View {
             .listStyle(.sidebar)
 
             if let table = viewModel.selectedTable {
-                DatabaseView(data: table.rows)
+                DatabaseTableContainer(table: table, viewModel: viewModel)
                     .navigationTitle(table.name)
             } else {
                 Text("No selection")
             }
         }
-        .frame(minWidth: 1300, minHeight: 800)
+        .frame(minWidth: 1300, minHeight: 1000)
     }
 }
 
-struct DatabaseView: View {
-    @State private var isPopoverVisible = false
+struct DatabaseTableContainer: View {
+    let table: DataBrokerDatabaseBrowserData.Table
+    @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
     @State private var selectedData: String = ""
-    let data: [DataBrokerDatabaseBrowserData.Row]
-    let rowHeight: CGFloat = 40.0
-
     var body: some View {
-        if data.count > 0 {
-            VStack {
-                dataView()
-                TextEditor(text: $selectedData)
-                    .frame(height: 100)
+        VStack(spacing: 0) {
+            // Search bar with export button
+            HStack(spacing: 8) {
+                SearchBarView(searchText: Binding(
+                    get: { viewModel.searchText },
+                    set: { viewModel.setSearchText($0, for: table) }
+                ))
+
+                Button("Export as CSV") {
+                    exportTableAsCSV()
+                }
+                .buttonStyle(.bordered)
             }
-        } else {
-            Text("No Data")
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(Color(NSColor.controlBackgroundColor))
+
+            DatabaseTableView(table: table, viewModel: viewModel, selectedData: $selectedData)
+
+            VStack(spacing: 0) {
+                if !selectedData.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Selected Row Details:")
+                            .font(.headline)
+                            .padding(.horizontal, 4)
+                            .padding(.top, 8)
+                            .padding(.bottom, 8)
+
+                        ScrollView {
+                            TextEditor(text: $selectedData)
+                        }
+                        .frame(height: 120)
+                    }
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: selectedData.isEmpty)
+        .onAppear {
+            viewModel.initializeColumnWidths(for: table)
+            viewModel.updatePublishedState(for: table)
         }
     }
 
-    private func spacerHeight(_ geometry: GeometryProxy) -> CGFloat {
-        let result = geometry.size.height - CGFloat(data.count) * rowHeight
-        return max(0, result)
+    private func exportTableAsCSV() {
+        let csvContent = viewModel.exportTableAsCSV(table)
+
+        let savePanel = NSSavePanel()
+        savePanel.title = "Export \(table.name) as CSV"
+        savePanel.nameFieldStringValue = "\(table.name).csv"
+        savePanel.allowedContentTypes = [.commaSeparatedText]
+        savePanel.canCreateDirectories = true
+
+        savePanel.begin { response in
+            if response == .OK, let url = savePanel.url {
+                do {
+                    try csvContent.write(to: url, atomically: true, encoding: .utf8)
+
+                    // Open the file location in Finder
+                    NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: url.deletingLastPathComponent().path)
+                } catch {
+                    // Show error alert
+                    let alert = NSAlert()
+                    alert.messageText = "Export Failed"
+                    alert.informativeText = "Could not save CSV file: \(error.localizedDescription)"
+                    alert.alertStyle = .warning
+                    alert.runModal()
+                }
+            }
+        }
+    }
+}
+
+struct SearchBarView: NSViewRepresentable {
+    @Binding var searchText: String
+
+    func makeNSView(context: Context) -> NSSearchField {
+        let searchField = NSSearchField()
+        searchField.placeholderString = "Search table..."
+        searchField.target = context.coordinator
+        searchField.action = #selector(Coordinator.searchChanged)
+
+        context.coordinator.searchField = searchField
+
+        return searchField
     }
 
-    private func dataView() -> some View {
-        GeometryReader { geometry in
-            ScrollView([.horizontal, .vertical]) {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 0) {
-                        ForEach(data[0].data.keys.sorted(), id: \.self) { key in
-                            VStack {
-                                Text(key)
-                                    .font(.headline)
-                                    .frame(maxWidth: 200)
-                                    .frame(height: 35)
-                                Divider()
-                            }
-                            if key != data[0].data.keys.sorted().last {
-                                Divider()
-                                    .background(Color.gray)
-                            }
-                        }
-                    }
-                    ForEach(data) { row in
-                        HStack(alignment: .top, spacing: 0) {
-                            ForEach(row.data.keys.sorted(), id: \.self) { key in
-                                VStack {
-                                    Text("\(row.data[key]?.description ?? "")")
-                                        .frame(maxWidth: 200)
-                                        .frame(height: rowHeight)
-                                        .frame(minWidth: 60)
-                                        .onTapGesture {
-                                            selectedData = row.data[key]?.description ?? ""
-                                        }
-                                    Divider()
-                                }
-                                if key != row.data.keys.sorted().last {
-                                    Divider()
-                                        .background(Color.gray)
-                                }
-                            }
-                        }
-                    }
-                    Spacer()
-                        .frame(height: spacerHeight(geometry))
-                }
-                .frame(minWidth: geometry.size.width, minHeight: 0, alignment: .topLeading)
+    func updateNSView(_ nsView: NSSearchField, context: Context) {
+        if nsView.stringValue != searchText {
+            nsView.stringValue = searchText
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    final class Coordinator: NSObject {
+        let parent: SearchBarView
+        weak var searchField: NSSearchField?
+
+        init(_ parent: SearchBarView) {
+            self.parent = parent
+        }
+
+        @objc func searchChanged() {
+            guard let searchField = searchField else { return }
+            parent.searchText = searchField.stringValue
+        }
+    }
+}
+
+// MARK: - NSTableView Implementation
+
+struct DatabaseTableView: NSViewRepresentable {
+    let table: DataBrokerDatabaseBrowserData.Table
+    @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
+    @Binding var selectedData: String
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        let tableView = NSTableView()
+
+        // Configure table view
+        tableView.delegate = context.coordinator
+        tableView.dataSource = context.coordinator
+        tableView.allowsColumnResizing = true
+        tableView.allowsColumnReordering = false
+        tableView.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        tableView.allowsMultipleSelection = false
+        tableView.allowsEmptySelection = true
+        tableView.intercellSpacing = NSSize(width: 1, height: 1)
+        tableView.gridStyleMask = [.solidHorizontalGridLineMask, .solidVerticalGridLineMask]
+        tableView.focusRingType = .none
+
+        // Setup columns
+        setupColumns(for: tableView, context: context)
+
+        // Configure scroll view
+        scrollView.documentView = tableView
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = true
+        scrollView.autohidesScrollers = false
+
+        // Store references for updates
+        context.coordinator.tableView = tableView
+        context.coordinator.scrollView = scrollView
+
+        return scrollView
+    }
+
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let tableView = nsView.documentView as? NSTableView else { return }
+
+        context.coordinator.updateData()
+        tableView.reloadData()
+
+        // Update sort indicators
+        updateSortIndicators(for: tableView, context: context)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    private func setupColumns(for tableView: NSTableView, context: Context) {
+        let sortedData = viewModel.sortedRows(for: table)
+        guard !sortedData.isEmpty else { return }
+
+        let columnKeys = viewModel.sortedColumnKeys(for: table)
+
+        // Remove existing columns
+        tableView.tableColumns.forEach { tableView.removeTableColumn($0) }
+
+        for key in columnKeys {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(key))
+            column.title = key
+            column.isEditable = false
+            column.width = viewModel.columnWidth(for: key, in: table)
+            column.minWidth = 60
+            column.maxWidth = 1000
+
+            // Create custom header cell with bold font
+            let headerCell = NSTableHeaderCell(textCell: key)
+            headerCell.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            column.headerCell = headerCell
+
+            // Enable sorting
+            let descriptor = NSSortDescriptor(key: key, ascending: true)
+            column.sortDescriptorPrototype = descriptor
+
+            tableView.addTableColumn(column)
+        }
+    }
+
+    private func updateSortIndicators(for tableView: NSTableView, context: Context) {
+        // First clear all sort indicators
+        for column in tableView.tableColumns {
+            tableView.setIndicatorImage(nil, in: column)
+        }
+
+        // Set the sort indicator for the current sort column
+        if let sortColumn = viewModel.sortColumn,
+           let column = tableView.tableColumn(withIdentifier: NSUserInterfaceItemIdentifier(sortColumn)) {
+            let ascending = viewModel.sortAscending
+            let image = ascending ? NSImage(named: "NSAscendingSortIndicator") : NSImage(named: "NSDescendingSortIndicator")
+            tableView.setIndicatorImage(image, in: column)
+        }
+    }
+}
+
+// MARK: - NSTableView Coordinator
+
+extension DatabaseTableView {
+    final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+        let parent: DatabaseTableView
+        private var sortedRows: [DataBrokerDatabaseBrowserData.Row] = []
+        private var columnKeys: [String] = []
+
+        weak var tableView: NSTableView?
+        weak var scrollView: NSScrollView?
+
+        init(_ parent: DatabaseTableView) {
+            self.parent = parent
+            super.init()
+            updateData()
+        }
+
+        func updateData() {
+            sortedRows = parent.viewModel.sortedRows(for: parent.table)
+            if !sortedRows.isEmpty {
+                columnKeys = parent.viewModel.sortedColumnKeys(for: parent.table)
             }
+        }
+
+        // MARK: - NSTableViewDataSource
+
+        func numberOfRows(in tableView: NSTableView) -> Int {
+            return sortedRows.count
+        }
+
+        func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
+            guard let identifier = tableColumn?.identifier.rawValue,
+                  row < sortedRows.count else { return nil }
+
+            return sortedRows[row].data[identifier]?.description ?? ""
+        }
+
+        // MARK: - NSTableViewDelegate
+
+        func tableView(_ tableView: NSTableView, didClick tableColumn: NSTableColumn) {
+            let key = tableColumn.identifier.rawValue
+            parent.viewModel.toggleSort(for: key, in: parent.table)
+        }
+
+        func tableViewSelectionDidChange(_ notification: Notification) {
+            guard let tableView = notification.object as? NSTableView else { return }
+
+            if tableView.selectedRow >= 0 && tableView.selectedRow < sortedRows.count {
+                let selectedRow = sortedRows[tableView.selectedRow]
+                // Show all data from the selected row with improved formatting
+                let rowData = columnKeys.compactMap { key in
+                    if let value = selectedRow.data[key] {
+                        return "\(key): \(value)"
+                    }
+                    return nil
+                }.joined(separator: "\n\n")  // Double newline for better readability
+
+                parent.selectedData = rowData
+            } else {
+                parent.selectedData = ""
+            }
+        }
+
+        func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+            return true
+        }
+
+        // Handle column resizing to update view model
+        func tableViewColumnDidResize(_ notification: Notification) {
+            guard let userInfo = notification.userInfo,
+                  let column = userInfo["NSTableColumn"] as? NSTableColumn else { return }
+
+            let key = column.identifier.rawValue
+            parent.viewModel.setColumnWidth(column.width, for: key, in: parent.table)
         }
     }
 }

@@ -50,4 +50,18 @@ final class AppVersionExtensionTests: XCTestCase {
         mockBundle.add(name: Bundle.Key.buildNumber, value: Constants.build)
         XCTAssertEqual("DuckDuckGo 2.0.4.14", testee.localized)
     }
+
+    func testVersionAndBuildContainsCorrectInformationWithSuffix() {
+        let suffix = "adhoc-test"
+        mockBundle.add(name: Bundle.Key.name, value: Constants.name)
+        mockBundle.add(name: Bundle.Key.versionNumber, value: Constants.version)
+        mockBundle.add(name: Bundle.Key.buildNumber, value: Constants.build)
+        mockBundle.add(name: Bundle.Key.alphaBuildSuffix, value: suffix)
+        XCTAssertEqual("2.0.4.14-adhoc-test", testee.versionAndBuildNumber)
+    }
+
+    func testThatCommitSHAReturnsValueFromTheBundle() {
+        mockBundle.add(name: Bundle.Key.commitSHA, value: "abcd0123")
+        XCTAssertEqual("abcd0123", testee.commitSHA)
+    }
 }

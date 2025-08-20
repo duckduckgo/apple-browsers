@@ -46,11 +46,14 @@ struct PinnedTabView: View, DropDelegate {
                     width: tabStyleProvider.pinnedTabWidth,
                     height: tabStyleProvider.pinnedTabHeight,
                     isSelected: isSelected,
+                    isHovered: collectionModel.hoveredItem == model,
                     foregroundColor: foregroundColor,
                     separatorColor: Color(tabStyleProvider.separatorColor),
                     separatorHeight: tabStyleProvider.separatorHeight,
-                    drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model),
-                    showSShaped: tabStyleProvider.shouldShowSShapedTab
+                    drawSeparator: shouldDrawSeparator,
+                    showSShaped: tabStyleProvider.shouldShowSShapedTab,
+                    applyTabShadow: tabStyleProvider.applyTabShadow,
+                    roundedHover: tabStyleProvider.isRoundedBackgroundPresentOnHover
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
@@ -68,10 +71,20 @@ struct PinnedTabView: View, DropDelegate {
                            size: TabShadowConfig.dividerSize)
             }
         }
+            .shadow(color: isSelected && tabStyleProvider.applyTabShadow ? Color(.shadowPrimary) : .clear, radius: 6, x: 0, y: -2)
 
         if controlActiveState == .key {
             stack.onHover { [weak collectionModel, weak model] isHovered in
                 collectionModel?.hoveredItem = isHovered ? model : nil
+                // Notify adjacent tabs to update their separators
+                if let model = model, let index = collectionModel?.items.firstIndex(of: model) {
+                    if index > 0 {
+                        collectionModel?.items[index - 1].needsSeparatorUpdate = true
+                    }
+                    if index < (collectionModel?.items.count ?? 0) - 1 {
+                        collectionModel?.items[index + 1].needsSeparatorUpdate = true
+                    }
+                }
             }
         } else {
             stack
@@ -103,7 +116,23 @@ struct PinnedTabView: View, DropDelegate {
             return Color(tabStyleProvider.selectedTabColor)
         }
         let isHovered = collectionModel.hoveredItem == model
-        return showsHover && isHovered ? .tabMouseOver : Color.clear
+        return showsHover && isHovered ? Color(tabStyleProvider.hoverTabColor) : Color.clear
+    }
+
+    private var shouldDrawSeparator: Bool {
+        let isHovered = collectionModel.hoveredItem == model
+        let rightItemIsHovered: Bool = {
+            guard let index = collectionModel.items.firstIndex(of: model),
+                  index < collectionModel.items.count - 1
+            else { return false }
+            return collectionModel.hoveredItem == collectionModel.items[index + 1]
+        }()
+
+        if tabStyleProvider.isRoundedBackgroundPresentOnHover && (isHovered || rightItemIsHovered) {
+            return false
+        }
+
+        return !isSelected && !collectionModel.itemsWithoutSeparator.contains(model)
     }
 
     @ViewBuilder
@@ -223,11 +252,18 @@ struct PinnedTabInnerView: View {
     let width: CGFloat
     let height: CGFloat
     var isSelected: Bool
+    var isHovered: Bool
     var foregroundColor: Color
     var separatorColor: Color
     var separatorHeight: CGFloat
     var drawSeparator: Bool = true
     var showSShaped: Bool
+    var applyTabShadow: Bool
+    var roundedHover: Bool
+
+    var shouldApplyNewHoverState: Bool {
+        return isHovered && !isSelected && roundedHover
+    }
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
@@ -238,8 +274,12 @@ struct PinnedTabInnerView: View {
         ZStack {
             Rectangle()
                 .foregroundColor(foregroundColor)
-                .frame(width: width, height: height)
-                .cornerRadius(PinnedTabView.Const.cornerRadius, corners: [.topLeft, .topRight])
+                .frame(width: shouldApplyNewHoverState ? width - 8 : showSShaped ? width : width-2,
+                       height: shouldApplyNewHoverState ? height - 8 : height)
+                .cornerRadius(
+                    shouldApplyNewHoverState ? 6 : PinnedTabView.Const.cornerRadius,
+                    corners: shouldApplyNewHoverState ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.topLeft, .topRight]
+                )
 
             if drawSeparator {
                 GeometryReader { proxy in
@@ -363,14 +403,13 @@ struct PinnedTabInnerView: View {
     }
 
     private var faviconImage: NSImage? {
-        if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError as? MaliciousSiteError != nil) {
-            return .redAlertCircle16
-        } else if model.error?.isWebContentProcessTerminated == true {
-            return .alertCircleColor16
-        } else if let favicon = model.favicon {
-            return favicon
-        }
-        return nil
+        return model.content.displayedFavicon(
+            error: model.error,
+            actualFavicon: model.favicon,
+            isBurner: model.burnerMode.isBurner,
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            visualStyle: NSApp.delegateTyped.visualStyle
+        )
     }
 
     @ViewBuilder
@@ -382,7 +421,7 @@ struct PinnedTabInnerView: View {
                 accessoryButton
             }
         } else if let domain = model.content.userEditableUrl?.host,
-                  let eTLDplus1 = ContentBlocking.shared.tld.eTLDplus1(domain),
+                  let eTLDplus1 = NSApp.delegateTyped.tld.eTLDplus1(domain),
                   let firstLetter = eTLDplus1.capitalized.first.flatMap(String.init) {
             ZStack {
                 Rectangle()

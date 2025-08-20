@@ -24,7 +24,7 @@ import Combine
 import Core
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import os.log
 import Subscription
 import WidgetKit
@@ -332,6 +332,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 pixelEvent = .networkProtectionClientFailedToParseRegisteredServersResponse
             case .invalidAuthToken:
                 pixelEvent = .networkProtectionClientInvalidAuthToken
+            case .vpnAccessRevoked(let error):
+                pixelEvent = .networkProtectionVPNAccessRevoked
+                pixelError = error
+            case .unmanagedSubscriptionError(let error):
+                pixelEvent = .networkProtectionUnmanagedSubscriptionError
+                pixelError = error
             case .serverListInconsistency:
                 return
             case .failedToCastKeychainValueToData(let field):
@@ -418,8 +424,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let settings = VPNSettings(defaults: .networkProtectionGroupDefaults)
 
-        Configuration.setURLProvider(VPNAgentConfigurationURLProvider())
-        configurationManager = ConfigurationManager(store: configurationStore)
+        configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: VPNAgentConfigurationURLProvider(), eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
         configurationManager.start()
         let privacyConfigurationManager = VPNPrivacyConfigurationManager.shared
         // Load cached config (if any)
@@ -434,13 +439,61 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             subscriptionEnvironment.serviceEnvironment = .staging
         }
 
-        // Configure Subscription
+        // MARK: - Configure Subscription
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
-        Self.isAuthV2Enabled = settings.isAuthV2Enabled
-        if !Self.isAuthV2Enabled {
-            // MARK: Subscription V1
+        Self.isUsingAuthV2 = settings.isAuthV2Enabled
+        if Self.isUsingAuthV2 {
+            Logger.networkProtection.log("Configure Subscription V2")
+            let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
+
+            let pixelHandler = SubscriptionPixelHandler(source: .systemExtension)
+            // keychain storage
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
+            let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
+                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
+                                  PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                                  PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: parameters)
+            }
+            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                                legacyTokenStorage: nil, // Only the main app can migrate
+                                                authService: authService)
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
+                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
+            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
+            let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
+                                                                   oAuthClient: authClient,
+                                                                   userDefaults: UserDefaults.standard,
+                                                                   subscriptionEndpointService: subscriptionEndpointService,
+                                                                   subscriptionEnvironment: subscriptionEnvironment,
+                                                                   pixelHandler: pixelHandler,
+                                                                   initForPurchase: false)
+            self.subscriptionManager = subscriptionManager
+
+            entitlementsCheck = {
+                Logger.networkProtection.log("Subscription Entitlements check...")
+                do {
+                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
+                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                    return .success(isNetworkProtectionEnabled)
+                } catch {
+                    Logger.networkProtection.error("Subscription Entitlements check failed: \(error.localizedDescription)")
+                    return .failure(error)
+                }
+            }
+            tokenHandler = subscriptionManager
+            self.accountManager = nil
+        } else {
             Logger.networkProtection.log("Configure Subscription V1")
             let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: UserDefaults.standard,
                                                                      key: UserDefaultsCacheKey.subscriptionEntitlements,
@@ -448,8 +501,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                                 userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
+            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                         userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
                                                        entitlementsCache: entitlementsCache,
                                                        subscriptionEndpointService: subscriptionEndpointService,
@@ -465,56 +520,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             tokenHandler = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
             entitlementsCheck = { return await Self.entitlementCheck(accountManager: accountManager) }
             self.subscriptionManager = nil
-        } else {
-            // MARK: Subscription V2
-            Logger.networkProtection.log("Configure Subscription V2")
-            let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
-
-            // keychain storage
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
-                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
-                                  PixelParameters.source: KeychainErrorSource.vpn.rawValue,
-                                  PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             withAdditionalParameters: parameters)
-            }
-            let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                                legacyTokenStorage: legacyAccountStorage,
-                                                authService: authService)
-            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
-                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
-            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-            let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
-            let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
-                                                                   oAuthClient: authClient,
-                                                                   subscriptionEndpointService: subscriptionEndpointService,
-                                                                   subscriptionEnvironment: subscriptionEnvironment,
-                                                                   pixelHandler: pixelHandler,
-                                                                   tokenRecoveryHandler: {
-                Logger.networkProtection.error("Expired refresh token detected")
-            },
-                                                                   initForPurchase: false)
-            self.subscriptionManager = subscriptionManager
-            
-            entitlementsCheck = {
-                Logger.networkProtection.log("Subscription Entitlements check...")
-                do {
-                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
-                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
-                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
-                    return .success(isNetworkProtectionEnabled)
-                } catch {
-                    Logger.networkProtection.error("Subscription Entitlements check failed: \(error.localizedDescription)")
-                    return .failure(error)
-                }
-            }
-            tokenHandler = subscriptionManager
-            self.accountManager = nil
         }
 
         // MARK: -
@@ -522,7 +527,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let errorStore = NetworkProtectionTunnelErrorStore()
         let notificationsPresenter = NetworkProtectionUNNotificationPresenter()
 
-        let notificationsPresenterDecorator = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let notificationsPresenterDecorator = VPNNotificationsPresenterTogglableDecorator(
             settings: settings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: notificationsPresenter
@@ -540,7 +545,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    settings: settings,
                    defaults: .networkProtectionGroupDefaults,
                    entitlementCheck: entitlementsCheck)
-
         accountManager?.delegate = self
         startMonitoringMemoryPressureEvents()
         observeServerChanges()

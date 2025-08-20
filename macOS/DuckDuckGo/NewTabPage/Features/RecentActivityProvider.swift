@@ -68,6 +68,7 @@ final class RecentActivityProvider: NewTabPageRecentActivityProviding {
     let trackerEntityPrevalenceComparator: TrackerEntityPrevalenceComparing
 
     init(
+        visibilityProvider: NewTabPageRecentActivityVisibilityProviding,
         historyCoordinator: HistoryCoordinating,
         urlFavoriteStatusProvider: URLFavoriteStatusProviding,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding,
@@ -79,6 +80,9 @@ final class RecentActivityProvider: NewTabPageRecentActivityProviding {
         self.trackerEntityPrevalenceComparator = trackerEntityPrevalenceComparator
 
         activityPublisher = historyCoordinator.historyDictionaryPublisher
+            .filter { [weak visibilityProvider] _ in
+                visibilityProvider?.isRecentActivityVisible == true
+            }
             .receive(on: DispatchQueue.main)
             .compactMap { [weak historyCoordinator] _ -> BrowsingHistory? in
                 historyCoordinator?.history
@@ -165,7 +169,7 @@ extension HistoryEntry {
         guard let domain = url.host else {
             return nil
         }
-        return ContentBlocking.shared.tld.eTLDplus1(domain)?.dropping(prefix: Const.wwwPrefix)
+        return Application.appDelegate.tld.eTLDplus1(domain)?.dropping(prefix: Const.wwwPrefix)
     }
 }
 

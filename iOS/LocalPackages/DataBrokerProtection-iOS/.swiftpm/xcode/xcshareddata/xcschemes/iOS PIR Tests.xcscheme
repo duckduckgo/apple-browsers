@@ -5,22 +5,43 @@
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-iOS"
+               BuildableName = "DataBrokerProtection-iOS"
+               BlueprintName = "DataBrokerProtection-iOS"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <TestPlans>
+         <TestPlanReference
+            reference = "container:Tests/DataBrokerProtection-iOS.xctestplan"
+            default = "YES">
+         </TestPlanReference>
+      </TestPlans>
       <Testables>
          <TestableReference
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionTests"
-               BuildableName = "DataBrokerProtectionTests"
-               BlueprintName = "DataBrokerProtectionTests"
-               ReferencedContainer = "container:">
+               BlueprintIdentifier = "DataBrokerProtection-iOSTests"
+               BuildableName = "DataBrokerProtection-iOSTests"
+               BlueprintName = "DataBrokerProtection-iOSTests"
+               ReferencedContainer = "container:../../../Package.swift">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -42,6 +63,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "DataBrokerProtection-iOS"
+            BuildableName = "DataBrokerProtection-iOS"
+            BlueprintName = "DataBrokerProtection-iOS"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

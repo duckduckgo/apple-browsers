@@ -18,6 +18,8 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct LargeSearchFieldView: View {
 
@@ -25,12 +27,12 @@ struct LargeSearchFieldView: View {
         Link(destination: DeepLinks.newSearch) {
             ZStack {
                 RoundedRectangle(cornerRadius: 23)
-                    .fill(Color(designSystemColor: .container))
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
                     .frame(minHeight: 46, maxHeight: 46)
                     .padding(.vertical, 16)
 
                 HStack {
-                    Image(.duckDuckGoColor28)
+                    Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                         .resizable()
                         .useFullColorRendering()
                         .frame(width: 28, height: 28, alignment: .leading)

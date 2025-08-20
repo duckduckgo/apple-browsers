@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
+import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockTabViewItemDelegate: TabBarViewItemDelegate {
@@ -34,9 +37,9 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     private(set) var tabBarViewItemRemoveBookmarkActionCalled = false
     private(set) var tabBarViewItemBookmarkAllOpenTabsActionCalled = false
 
-    func tabBarViewItem(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem, isMouseOver: Bool) {
+    func tabBarViewItem(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem, isMouseOver: Bool) {}
 
-    }
+    func tabBarViewItemSelectTab(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {}
 
     func tabBarViewItemWillOpenContextMenu(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
         tabBarViewItemWillOpenContextMenuCalled = true

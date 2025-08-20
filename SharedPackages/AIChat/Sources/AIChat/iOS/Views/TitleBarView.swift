@@ -19,6 +19,7 @@
 #if os(iOS)
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class TitleBarView: UIView {
     private let titleLabel: UILabel
@@ -54,7 +55,7 @@ final class TitleBarView: UIView {
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        closeButton.setImage(UIImage(named: "Close-24"), for: .normal)
+        closeButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
         closeButton.tintColor = UIColor(designSystemColor: .icons)
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)

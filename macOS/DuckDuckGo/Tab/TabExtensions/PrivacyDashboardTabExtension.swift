@@ -21,15 +21,17 @@ import Combine
 import Common
 import ContentBlocking
 import Foundation
+import MaliciousSiteProtection
 import Navigation
 import PrivacyDashboard
-import MaliciousSiteProtection
 import SpecialErrorPages
+import WebKit
 
 final class PrivacyDashboardTabExtension {
 
     private let contentBlocking: any ContentBlockingProtocol
     private let certificateTrustEvaluator: CertificateTrustEvaluating
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private var maliciousSiteProtectionStateProvider: MaliciousSiteProtectionStateProvider
 
     @Published private(set) var privacyInfo: PrivacyInfo?
@@ -42,6 +44,7 @@ final class PrivacyDashboardTabExtension {
 
     init(contentBlocking: some ContentBlockingProtocol,
          certificateTrustEvaluator: CertificateTrustEvaluating,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          autoconsentUserScriptPublisher: some Publisher<UserScriptWithAutoconsent?, Never>,
          contentScopeUserScriptPublisher: some Publisher<UserScriptWithContentScope?, Never>,
          didUpgradeToHttpsPublisher: some Publisher<URL, Never>,
@@ -51,6 +54,7 @@ final class PrivacyDashboardTabExtension {
 
         self.contentBlocking = contentBlocking
         self.certificateTrustEvaluator = certificateTrustEvaluator
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.maliciousSiteProtectionStateProvider = maliciousSiteProtectionStateProvider
 
         autoconsentUserScriptPublisher.sink { [weak self] autoconsentUserScript in
@@ -130,7 +134,8 @@ final class PrivacyDashboardTabExtension {
         privacyInfo = PrivacyInfo(url: url,
                                   parentEntity: entity,
                                   protectionStatus: makeProtectionStatus(for: host),
-                                  malicousSiteThreatKind: maliciousSiteProtectionStateProvider().bypassedMaliciousSiteThreatKind)
+                                  malicousSiteThreatKind: maliciousSiteProtectionStateProvider().bypassedMaliciousSiteThreatKind,
+                                  allActiveContentScopeExperiments: contentScopeExperimentsManager.allActiveContentScopeExperiments)
 
         previousPrivacyInfosByURL[url.absoluteString] = privacyInfo
 

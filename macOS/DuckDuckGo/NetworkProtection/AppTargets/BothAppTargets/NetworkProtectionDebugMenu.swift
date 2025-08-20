@@ -19,7 +19,7 @@
 import AppKit
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import SwiftUI
 import os.log
@@ -34,6 +34,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     // MARK: - Menus
 
     private let environmentMenu = NSMenu()
+    private let upsellMenu = NSMenu()
 
     private let preferredServerMenu: NSMenu
     private let preferredServerAutomaticItem = NSMenuItem(title: "Automatic", action: #selector(NetworkProtectionDebugMenu.setSelectedServer))
@@ -66,7 +67,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         let keyStore = NetworkProtectionKeychainKeyStore(keychainType: .default,
                                                          errorEvents: .networkProtectionAppDebugEvents)
         var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.isAuthV2Enabled {
+        if !Application.appDelegate.isUsingAuthV2 {
             tokenHandler = NetworkProtectionKeychainTokenStore()
         } else {
             // swiftlint:disable:next force_cast
@@ -82,13 +83,13 @@ final class NetworkProtectionDebugMenu: NSMenu {
         buildItems {
             NSMenuItem(title: "Reset") {
 
-                NSMenuItem(title: "Reset All State Keeping Invite", action: #selector(NetworkProtectionDebugMenu.resetAllKeepingInvite))
-                    .targetting(self)
-
                 NSMenuItem(title: "Reset All State", action: #selector(NetworkProtectionDebugMenu.resetAllState))
                     .targetting(self)
 
                 NSMenuItem.separator() // Resetting single components should go below this point
+
+                NSMenuItem(title: "Disable Login Items", action: #selector(NetworkProtectionDebugMenu.disableLoginItem(_:)))
+                    .targetting(self)
 
                 NSMenuItem(title: "Remove Network Extension and Login Items", action: #selector(NetworkProtectionDebugMenu.removeVPNNetworkExtensionAndAgents(_:)))
                     .targetting(self)
@@ -162,8 +163,14 @@ final class NetworkProtectionDebugMenu: NSMenu {
 #endif
             }
 
+            NSMenuItem(title: "Simulate Subscription Expiration in Tunnel", action: #selector(NetworkProtectionDebugMenu.simulateSubscriptionExpirationInTunnel))
+                .targetting(self)
+
             NSMenuItem(title: "Simulate Failure")
                 .submenu(NetworkProtectionSimulateFailureMenu())
+
+            NSMenuItem(title: "Upsell")
+                .submenu(upsellMenu)
 
             NSMenuItem.separator()
 
@@ -173,6 +180,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
         preferredServerMenu.autoenablesItems = false
         populateNetworkProtectionEnvironmentListMenuItems()
+        populateNetworkProtectionUpsellMenuItems()
         Task {
             try? await populateNetworkProtectionServerListMenuItems()
         }
@@ -187,6 +195,12 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     private var settings: VPNSettings {
         Application.appDelegate.vpnSettings
+    }
+
+    // MARK: - Upsell Visibility
+
+    private var upsellVisibilityManager: VPNUpsellVisibilityManager {
+        Application.appDelegate.vpnUpsellVisibilityManager
     }
 
     // MARK: - Debug Logic
@@ -217,21 +231,20 @@ final class NetworkProtectionDebugMenu: NSMenu {
         debugUtilities.resetVPNDisableExclusionSuggesitons()
     }
 
-    /// Resets all state for NetworkProtection.
-    ///
-    @objc func resetAllKeepingInvite(_ sender: Any?) {
-        Task { @MainActor in
-            guard case .alertFirstButtonReturn = await NSAlert.resetNetworkProtectionAlert().runModal() else { return }
-            do {
-                try await debugUtilities.resetAllState(keepAuthToken: true)
-            } catch {
-                Logger.networkProtection.error("Error in resetAllState: \(error.localizedDescription, privacy: .public)")
-            }
-        }
-    }
-
     @objc func resetSettings(_ sender: Any?) {
         settings.resetToDefaults()
+    }
+
+    /// Disables the login items
+    ///
+    @objc func disableLoginItem(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await debugUtilities.disableLoginItems()
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
     }
 
     /// Removes the system extension and agents for DuckDuckGo VPN.
@@ -268,6 +281,16 @@ final class NetworkProtectionDebugMenu: NSMenu {
         Task { @MainActor in
             do {
                 try await debugUtilities.restartAdapter()
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
+    }
+
+    @objc func simulateSubscriptionExpirationInTunnel(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await NetworkProtectionDebugUtilities().simulateSubscriptionExpirationInTunnel()
             } catch {
                 await NSAlert(error: error).runModal()
             }
@@ -380,6 +403,16 @@ final class NetworkProtectionDebugMenu: NSMenu {
         ]
     }
 
+    private func populateNetworkProtectionUpsellMenuItems() {
+        let toggleTitle = upsellVisibilityManager.state == .visible ? "Hide Upsell Button" : "Show Upsell Button"
+        upsellMenu.items = [
+            NSMenuItem(title: "⚠️ Please restart the browser after resetting upsell state", action: nil, target: nil),
+            NSMenuItem.separator(),
+            NSMenuItem(title: "Reset Upsell State", action: #selector(resetUpsellState), target: self, keyEquivalent: ""),
+            NSMenuItem(title: toggleTitle, action: #selector(toggleUpsellVisibility), target: self, keyEquivalent: ""),
+        ]
+    }
+
     @MainActor
     private func populateNetworkProtectionServerListMenuItems() async throws {
         let servers = try await networkProtectionDeviceManager.refreshServerList()
@@ -455,6 +488,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         updatePreferredServerMenu()
         updateRekeyValidityMenu()
         updateNetworkProtectionMenuItemsState()
+        updateUpsellMenuToggleTitle()
     }
 
     private func updateEnvironmentMenu() {
@@ -514,6 +548,40 @@ final class NetworkProtectionDebugMenu: NSMenu {
         shouldIncludeAllNetworksMenuItem.state = settings.includeAllNetworks ? .on : .off
         excludeLocalNetworksMenuItem.state = settings.excludeLocalNetworks ? .on : .off
         disableRekeyingMenuItem.state = settings.disableRekeying ? .on : .off
+    }
+
+    private func updateUpsellMenuToggleTitle() {
+        let toggleTitle = upsellVisibilityManager.state == .visible ? "Hide Upsell Button" : "Show Upsell Button"
+        upsellMenu.items[3].title = toggleTitle
+    }
+
+    // MARK: - Upsell
+
+    @objc func toggleUpsellVisibility(_ sender: Any?) {
+        if upsellVisibilityManager.state == .visible {
+            upsellVisibilityManager.makeNotEligible()
+        } else {
+            upsellVisibilityManager.makeVisible()
+        }
+
+        updateUpsellMenuToggleTitle()
+    }
+
+    @objc func resetUpsellState(_ sender: Any?) {
+        upsellVisibilityManager.makeNotEligible()
+
+        // Clear all statistics to simulate first launch
+        Application.appDelegate.resetInstallStatistics()
+
+        // Set install date to today to simulate new user
+        Application.appDelegate.changeInstallDateToToday(nil)
+
+        // Reset onboarding states using existing AppDelegate methods
+        Application.appDelegate.resetOnboarding(nil)
+        Application.appDelegate.resetContextualOnboarding(nil)
+        Application.appDelegate.resetHomePageSettingsOnboarding(nil)
+
+        Application.appDelegate.resetVPNUpsell()
     }
 
     // MARK: - Exclusions

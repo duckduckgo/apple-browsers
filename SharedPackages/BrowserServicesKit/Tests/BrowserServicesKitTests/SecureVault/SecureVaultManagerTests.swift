@@ -131,8 +131,121 @@ class SecureVaultManagerTests: XCTestCase {
         XCTAssertNil(entries.creditCard)
     }
 
-    // MARK: - AutofillSecureVaultDelegate Tests
+    func testWhenUserScriptRequestsCreditCardAndDelegateSelectsCard_ThenCorrectCardAndFillActionReturned() {
+        // Given
+        class CreditCardTestDelegate: MockSecureVaultManagerDelegate {
+            var didCallShouldPromptUserToAutofillCreditCard = false
+            var capturedCreditCards: [SecureVaultModels.CreditCard] = []
+            var capturedTrigger: AutofillUserScript.GetTriggerType?
+
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                didCallShouldPromptUserToAutofillCreditCard = true
+                capturedCreditCards = creditCards
+                capturedTrigger = trigger
+
+                // Return the second credit card
+                if let card = creditCards.first(where: { $0.id == 2 }) {
+                    completionHandler(card)
+                } else {
+                    completionHandler(nil)
+                }
+            }
+        }
+
+        // Setup test credit cards
+        let card1 = paymentMethod(id: 1, cardNumber: "4111111111111111", cardholderName: "Test User 1", cvv: "123", month: 1, year: 2030)
+        let card2 = paymentMethod(id: 2, cardNumber: "5555555555554444", cardholderName: "Test User 2", cvv: "456", month: 2, year: 2031)
+
+        try! self.testVault.storeCreditCard(card1)
+        try! self.testVault.storeCreditCard(card2)
+
+        let delegate = CreditCardTestDelegate()
+        self.manager.delegate = delegate
+
+        let triggerType = AutofillUserScript.GetTriggerType.userInitiated
+
+        // When
+        let expectation = self.expectation(description: "Credit card request completed")
+        var resultCard: SecureVaultModels.CreditCard?
+        var resultAction: RequestVaultDataAction?
+
+        manager.autofillUserScriptDidRequestCreditCard(mockAutofillUserScript, trigger: triggerType) { card, action in
+            resultCard = card
+            resultAction = action
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(delegate.didCallShouldPromptUserToAutofillCreditCard)
+        XCTAssertEqual(delegate.capturedCreditCards.count, 2)
+        XCTAssertEqual(delegate.capturedTrigger, triggerType)
+
+        // Verify the returned card and action
+        XCTAssertNotNil(resultCard)
+        XCTAssertEqual(resultCard?.id, 2)
+        XCTAssertEqual(resultCard?.cardNumber, "5555555555554444")
+        XCTAssertEqual(resultAction, .fill)
+    }
+
+    func testWhenUserScriptRequestsCreditCardWithNoCards_ThenDelegateIsNotCalled() {
+        // Given
+        class CreditCardTestDelegate: MockSecureVaultManagerDelegate {
+            var didCallShouldPromptUserToAutofillCreditCard = false
+            var capturedCreditCards: [SecureVaultModels.CreditCard] = []
+
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                didCallShouldPromptUserToAutofillCreditCard = true
+                capturedCreditCards = creditCards
+                completionHandler(nil)
+            }
+        }
+
+        let delegate = CreditCardTestDelegate()
+        self.manager.delegate = delegate
+
+        // When
+        let expectation = self.expectation(description: "Credit card request completed")
+        var resultCard: SecureVaultModels.CreditCard?
+        var resultAction: RequestVaultDataAction?
+
+        manager.autofillUserScriptDidRequestCreditCard(mockAutofillUserScript, trigger: .userInitiated) { card, action in
+            resultCard = card
+            resultAction = action
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        XCTAssertFalse(delegate.didCallShouldPromptUserToAutofillCreditCard)
+        XCTAssertEqual(delegate.capturedCreditCards.count, 0)
+
+        // Verify the returned card and action
+        XCTAssertNil(resultCard)
+        XCTAssertEqual(resultAction, RequestVaultDataAction.none)
+    }
+
     func testWhenRequestingCredentialsWithEmptyUsername_ThenNonActionIsReturned() throws {
+        // Given
+        class TestDelegate: MockSecureVaultManagerDelegate {
+            override func secureVaultManager(_: SecureVaultManager,
+                                             promptUserToImportCredentialsForDomain domain: String,
+                                             completionHandler: @escaping (Bool) -> Void) {
+                completionHandler(false)
+            }
+        }
+
+        let testDelegate = TestDelegate()
+        self.manager.delegate = testDelegate
+
         let triggerType = AutofillUserScript.GetTriggerType.userInitiated
 
         // account
@@ -288,6 +401,290 @@ class SecureVaultManagerTests: XCTestCase {
             expect.fulfill()
         }
         waitForExpectations(timeout: 0.1)
+    }
+
+    func testWhenFocusingOnCreditCardFieldWithCards_AndDelegateSelectsCard_ThenCardAndFillActionReturned() {
+        // Given
+        class FocusTestDelegate: MockSecureVaultManagerDelegate {
+            var didCallDidFocusFieldFor = false
+            var capturedMainType: AutofillUserScript.GetAutofillDataMainType?
+            var capturedCreditCards: [SecureVaultModels.CreditCard] = []
+
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                didCallDidFocusFieldFor = true
+                capturedMainType = mainType
+                capturedCreditCards = creditCards
+
+                // Return the first credit card
+                let selectedCard = creditCards.first { $0.id == 1 }
+                completionHandler(selectedCard)
+            }
+        }
+
+        // Setup test credit cards
+        let card1 = paymentMethod(id: 1, cardNumber: "4111111111111111", cardholderName: "Test User 1", cvv: "123", month: 1, year: 2030)
+        let card2 = paymentMethod(id: 2, cardNumber: "5555555555554444", cardholderName: "Test User 2", cvv: "456", month: 2, year: 2031)
+
+        try! self.testVault.storeCreditCard(card1)
+        try! self.testVault.storeCreditCard(card2)
+
+        let delegate = FocusTestDelegate()
+        self.manager.delegate = delegate
+
+        // When
+        let expectation = self.expectation(description: "Focus field completed")
+        var resultCard: SecureVaultModels.CreditCard?
+        var resultAction: RequestVaultDataAction?
+
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+            resultCard = card
+            resultAction = action
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(delegate.didCallDidFocusFieldFor)
+        XCTAssertEqual(delegate.capturedMainType, .creditCards)
+        XCTAssertEqual(delegate.capturedCreditCards.count, 2)
+
+        // Verify the returned card and action
+        XCTAssertNotNil(resultCard)
+        XCTAssertEqual(resultCard?.id, 1)
+        XCTAssertEqual(resultCard?.cardNumber, "4111111111111111")
+        XCTAssertEqual(resultAction, .fill)
+    }
+
+    func testWhenFocusingOnCreditCardFieldWithCards_AndDelegateReturnsNil_ThenNilCardAndNoneActionReturned() {
+        // Given
+        class FocusTestDelegate: MockSecureVaultManagerDelegate {
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                // Return nil to simulate no selection
+                completionHandler(nil)
+            }
+        }
+
+        // Setup test credit card
+        let card = paymentMethod(id: 1, cardNumber: "4111111111111111", cardholderName: "Test User", cvv: "123", month: 1, year: 2030)
+        try! self.testVault.storeCreditCard(card)
+
+        let delegate = FocusTestDelegate()
+        self.manager.delegate = delegate
+
+        // When
+        let expectation = self.expectation(description: "Focus field completed")
+        var resultCard: SecureVaultModels.CreditCard?
+        var resultAction: RequestVaultDataAction?
+
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+            resultCard = card
+            resultAction = action
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        XCTAssertNil(resultCard)
+        XCTAssertEqual(resultAction, RequestVaultDataAction.none)
+    }
+
+    func testWhenFocusingOnCreditCardFieldWithNoCards_ThenDelegateIsCalledWithEmptyArray() {
+        // Given
+        class FocusTestDelegate: MockSecureVaultManagerDelegate {
+            var didCallDidFocusFieldFor = false
+            var capturedCreditCards: [SecureVaultModels.CreditCard] = []
+
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                didCallDidFocusFieldFor = true
+                capturedCreditCards = creditCards
+                completionHandler(nil)
+            }
+        }
+
+        let delegate = FocusTestDelegate()
+        self.manager.delegate = delegate
+
+        // When
+        let expectation = self.expectation(description: "Focus field completed")
+        var resultCard: SecureVaultModels.CreditCard?
+        var resultAction: RequestVaultDataAction?
+
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+            resultCard = card
+            resultAction = action
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(delegate.didCallDidFocusFieldFor)
+        XCTAssertEqual(delegate.capturedCreditCards.count, 0)
+        XCTAssertNil(resultCard)
+        XCTAssertEqual(resultAction, RequestVaultDataAction.none)
+    }
+
+    func testWhenFocusingOnNonCreditCardField_ThenDelegateIsCalledWithEmptyArrayAndReturnsNone() {
+        // Given
+        class FocusTestDelegate: MockSecureVaultManagerDelegate {
+            var didCallDidFocusFieldFor = false
+            var capturedMainType: AutofillUserScript.GetAutofillDataMainType?
+            var capturedCreditCards: [SecureVaultModels.CreditCard] = []
+
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                didCallDidFocusFieldFor = true
+                capturedMainType = mainType
+                capturedCreditCards = creditCards
+                completionHandler(nil)
+            }
+        }
+
+        // Setup a test credit card (to verify it's not returned for non-credit card fields)
+        let card = paymentMethod(id: 1, cardNumber: "4111111111111111", cardholderName: "Test User", cvv: "123", month: 1, year: 2030)
+        try! self.testVault.storeCreditCard(card)
+
+        let delegate = FocusTestDelegate()
+        self.manager.delegate = delegate
+
+        // Test various non-credit card field types
+        let nonCreditCardTypes: [AutofillUserScript.GetAutofillDataMainType] = [.credentials, .identities, .unknown]
+
+        for fieldType in nonCreditCardTypes {
+            // When
+            let expectation = self.expectation(description: "Focus field completed for \(fieldType)")
+            var resultCard: SecureVaultModels.CreditCard?
+            var resultAction: RequestVaultDataAction?
+
+            manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: fieldType) { card, action in
+                resultCard = card
+                resultAction = action
+                expectation.fulfill()
+            }
+
+            waitForExpectations(timeout: 1.0)
+
+            // Then
+            XCTAssertTrue(delegate.didCallDidFocusFieldFor)
+            XCTAssertEqual(delegate.capturedMainType, fieldType)
+            XCTAssertEqual(delegate.capturedCreditCards.count, 0, "Should receive empty array for non-credit card fields")
+            XCTAssertNil(resultCard)
+            XCTAssertEqual(resultAction, RequestVaultDataAction.none)
+
+            // Reset for next iteration
+            delegate.didCallDidFocusFieldFor = false
+        }
+    }
+
+    func testWhenFocusingOnCreditCardFieldWithVaultError_ThenDelegateIsStillCalledWithEmptyArray() {
+        // Given
+        class ErrorTestDelegate: MockSecureVaultManagerDelegate {
+            var didCallDidFocusFieldFor = false
+            var capturedCreditCards: [SecureVaultModels.CreditCard] = []
+
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                didCallDidFocusFieldFor = true
+                capturedCreditCards = creditCards
+                completionHandler(nil)
+            }
+        }
+
+        // Create a manager without a vault to simulate an error condition
+        let errorManager = SecureVaultManager(vault: nil, tld: tld)
+        let delegate = ErrorTestDelegate()
+        errorManager.delegate = delegate
+
+        // When
+        let expectation = self.expectation(description: "Focus field completed")
+        var resultCard: SecureVaultModels.CreditCard?
+        var resultAction: RequestVaultDataAction?
+
+        errorManager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+            resultCard = card
+            resultAction = action
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(delegate.didCallDidFocusFieldFor, "Delegate should still be called even on error")
+        XCTAssertEqual(delegate.capturedCreditCards.count, 0, "Should receive empty array on error")
+        XCTAssertNil(resultCard)
+        XCTAssertEqual(resultAction, RequestVaultDataAction.none)
+    }
+
+    func testWhenFocusingOnCreditCardField_MultipleTimes_DelegateIsCalledEachTime() {
+        // Given
+        class FocusTestDelegate: MockSecureVaultManagerDelegate {
+            var callCount = 0
+            var selectedCardId: Int64 = 1
+
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+                callCount += 1
+                let selectedCard = creditCards.first { $0.id == selectedCardId }
+                completionHandler(selectedCard)
+            }
+        }
+
+        // Setup test credit cards
+        let card1 = paymentMethod(id: 1, cardNumber: "4111111111111111", cardholderName: "Test User 1", cvv: "123", month: 1, year: 2030)
+        let card2 = paymentMethod(id: 2, cardNumber: "5555555555554444", cardholderName: "Test User 2", cvv: "456", month: 2, year: 2031)
+
+        try! self.testVault.storeCreditCard(card1)
+        try! self.testVault.storeCreditCard(card2)
+
+        let delegate = FocusTestDelegate()
+        self.manager.delegate = delegate
+
+        // When - First focus
+        let expectation1 = self.expectation(description: "First focus")
+        var firstResultCard: SecureVaultModels.CreditCard?
+
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, _ in
+            firstResultCard = card
+            expectation1.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Change selected card for second focus
+        delegate.selectedCardId = 2
+
+        // When - Second focus
+        let expectation2 = self.expectation(description: "Second focus")
+        var secondResultCard: SecureVaultModels.CreditCard?
+
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, _ in
+            secondResultCard = card
+            expectation2.fulfill()
+        }
+
+        waitForExpectations(timeout: 1.0)
+
+        // Then
+        XCTAssertEqual(delegate.callCount, 2, "Delegate should be called twice")
+        XCTAssertEqual(firstResultCard?.id, 1)
+        XCTAssertEqual(secondResultCard?.id, 2)
     }
 
     func testWhenRequestingAutofillInitDataWithDomainAndPort_ThenDataIsReturned() throws {
@@ -1026,7 +1423,15 @@ private class MockSecureVaultManagerDelegate: SecureVaultManagerDelegate {
                             onAccountSelected account: @escaping (BrowserServicesKit.SecureVaultModels.WebsiteAccount?) -> Void,
                             completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {}
 
+    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
+
+    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
+
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {}
+
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToImportCredentialsForDomain domain: String,
+                            completionHandler: @escaping (Bool) -> Void) {}
 
     func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {}
 

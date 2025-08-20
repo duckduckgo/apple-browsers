@@ -21,6 +21,7 @@ import History
 import HistoryView
 import PixelKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 private struct FirePixelCall: Equatable {
@@ -78,6 +79,16 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             bookmarksHandler: bookmarksHandler,
             firePixel: { self.firePixelCalls.append(.init($0, $1)) }
         )
+    }
+
+    override func tearDown() {
+        actionsHandler = nil
+        bookmarksHandler = nil
+        contextMenuPresenter = nil
+        dataProvider = nil
+        dialogPresenter = nil
+        tabOpener = nil
+        firePixelCalls = []
     }
 
     // MARK: - showDeleteDialogForQuery

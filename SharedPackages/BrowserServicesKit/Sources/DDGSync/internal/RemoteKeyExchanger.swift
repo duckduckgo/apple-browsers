@@ -118,6 +118,10 @@ final class RemoteKeyExchanger: RemoteKeyExchanging {
 }
 
 final class RemoteExchangeRecoverer: RemoteExchangeRecovering {
+    private enum Constants {
+        static var pollingTimeout: TimeInterval = 10
+    }
+
     let exchangeInfo: ExchangeInfo
 
     let crypter: CryptingInternal
@@ -139,10 +143,20 @@ final class RemoteExchangeRecoverer: RemoteExchangeRecovering {
     // MARK: Recover Key
 
     func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey? {
+        try await pollForRecoveryKey(timeout: Constants.pollingTimeout)
+    }
+
+    func pollForRecoveryKey(timeout: TimeInterval) async throws -> SyncCode.RecoveryKey? {
         assert(!isPolling, "exchanger is already polling")
 
         isPolling = true
+        let timeoutDate = Date().addingTimeInterval(timeout)
+
         while isPolling {
+            if Date() > timeoutDate {
+                throw SyncError.pollingDidTimeOut
+            }
+
             if let key = try await fetchRecoveryKey() {
                 return key
             }

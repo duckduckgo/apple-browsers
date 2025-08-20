@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
 import CoreData
 import Common
+import Foundation
+import Persistence
 
 protocol ValueRepresentableManagedObject: NSManagedObject {
     associatedtype ValueType
@@ -55,21 +56,7 @@ extension CoreDataStore {
 
 internal class CoreDataStore<ManagedObject: ValueRepresentableManagedObject> {
 
-    private let tableName: String
-    private var _readContext: NSManagedObjectContext??
-
-    private var readContext: NSManagedObjectContext? {
-        if case .none = _readContext {
-#if DEBUG
-            guard AppVersion.runType.requiresEnvironment else {
-                _readContext = .some(.none)
-                return .none
-            }
-#endif
-            _readContext = Database.shared.makeContext(concurrencyType: .privateQueueConcurrencyType, name: tableName)
-        }
-        return _readContext!
-    }
+    private var readContext: NSManagedObjectContext?
 
     private func writeContext() -> NSManagedObjectContext? {
         guard let context = readContext else { return nil }
@@ -81,11 +68,12 @@ internal class CoreDataStore<ManagedObject: ValueRepresentableManagedObject> {
         return newContext
     }
 
-    init(context: NSManagedObjectContext? = nil, tableName: String) {
-        if let context = context {
-            self._readContext = .some(context)
-        }
-        self.tableName = tableName
+    convenience init(database: CoreDataDatabase?, tableName: String) {
+        self.init(context: database?.makeContext(concurrencyType: .privateQueueConcurrencyType, name: tableName))
+    }
+
+    init(context: NSManagedObjectContext?) {
+        readContext = context
     }
 
     typealias Value = ManagedObject.ValueType

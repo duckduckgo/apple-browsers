@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import RemoteMessaging
 import Core
 
@@ -80,12 +81,11 @@ struct HomeMessageView: View {
                     dimension[.top]
                 }
         }
-        .background(RoundedRectangle(cornerRadius: Const.Radius.corner)
-                        .fill(Color.background)
-                        .shadow(color: Color.shadow,
-                                radius: Const.Radius.shadow,
-                                x: 0,
-                                y: Const.Offset.shadowVertical))
+        .background(RoundedRectangle(cornerRadius: Const.Radius.cornerLarge)
+            .fill(Color.background)
+            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
+            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
+        )
         .onAppear {
             viewModel.onDidAppear()
         }
@@ -107,7 +107,7 @@ struct HomeMessageView: View {
                 await viewModel.onDidClose(.close)
             }
         } label: {
-            Image("Close-24")
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                 .foregroundColor(.primary)
         }
         .frame(width: Const.Size.closeButtonWidth, height: Const.Size.closeButtonWidth)
@@ -154,7 +154,7 @@ struct HomeMessageView: View {
             } label: {
                 HStack {
                     if case .share = buttonModel.actionStyle {
-                        Image("Share-24")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.shareApple)
                             .resizable()
                             .frame(width: 24, height: 24)
                     }
@@ -239,10 +239,11 @@ private extension Color {
     static let cancelButtonForeground = Color(designSystemColor: .buttonsSecondaryFillText)
     static let background = Color(designSystemColor: .surface)
     static let shadow = Color.shade(0.1)
+    static let updatedShadow = Color(designSystemColor: .shadowPrimary)
 }
 
 private extension Image {
-    static let dismiss = Image("HomeMessageDismissIcon")
+    static let dismiss = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
 }
 
 private enum Const {
@@ -255,7 +256,10 @@ private enum Const {
     
     enum Radius {
         static let shadow: CGFloat = 3
+        static let updatedShadow1: CGFloat = 12
+        static let updatedShadow2: CGFloat = 48
         static let corner: CGFloat = 8
+        static let cornerLarge: CGFloat = 16
     }
     
     enum Padding {
@@ -279,6 +283,8 @@ private enum Const {
     
     enum Offset {
         static let shadowVertical: CGFloat = 2
+        static let updatedShadow1Vertical: CGFloat = 4
+        static let updatedShadow2Vertical: CGFloat = 16
     }
 }
 

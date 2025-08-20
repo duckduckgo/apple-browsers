@@ -18,6 +18,7 @@
 
 import Foundation
 import Navigation
+import WebKit
 
 struct DuckPlayerOnboardingLocationValidator {
     private static let youtubeChannelCheckScript = """

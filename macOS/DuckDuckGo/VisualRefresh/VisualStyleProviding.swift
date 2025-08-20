@@ -16,48 +16,27 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import BrowserServicesKit
 import FeatureFlags
 import NetworkProtectionUI
+import DesignResourcesKit
+import PixelKit
 
 protocol VisualStyleProviding {
-    /// Address bar
-    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
-    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
-    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
-    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
-    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
-    var defaultAddressBarFontSize: CGFloat { get }
-    var newTabOrHomePageAddressBarFontSize: CGFloat { get }
-    var addressBarIconsProvider: AddressBarIconsProviding { get }
-    var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
-    var shouldShowLogoinInAddressBar: Bool { get }
-
-    /// Navigation toolbar
-    var backButtonImage: NSImage { get }
-    var forwardButtonImage: NSImage { get }
-    var reloadButtonImage: NSImage { get }
-    var homeButtonImage: NSImage { get }
-    var downloadsButtonImage: NSImage { get }
-    var passwordManagerButtonImage: NSImage { get }
-    var bookmarksButtonImage: NSImage { get }
-    var moreOptionsbuttonImage: NSImage { get }
-    var overflowButtonImage: NSImage { get }
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
     var areNavigationBarCornersRound: Bool { get }
+    var fireButtonSize: CGFloat { get }
+    var navigationToolbarButtonsSpacing: CGFloat { get }
+    var tabBarButtonSize: CGFloat { get }
+    var addToolbarShadow: Bool { get }
 
-    /// Other
-    var vpnNavigationIconsProvider: IconProvider { get }
-    var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
-    var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
+    var addressBarStyleProvider: AddressBarStyleProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
     var colorsProvider: ColorsProviding { get }
-}
-
-protocol VisualStyleManagerProviding {
-    var style: any VisualStyleProviding { get }
+    var iconsProvider: IconsProviding { get }
 }
 
 enum AddressBarSizeClass {
@@ -81,174 +60,31 @@ enum AddressBarSizeClass {
 }
 
 struct VisualStyle: VisualStyleProviding {
-    private let addressBarHeightForDefault: CGFloat
-    private let addressBarHeightForHomePage: CGFloat
-    private let addressBarHeightForPopUpWindow: CGFloat
-    private let addressBarTopPaddingForDefault: CGFloat
-    private let addressBarTopPaddingForHomePage: CGFloat
-    private let addressBarTopPaddingForPopUpWindow: CGFloat
-    private let addressBarBottomPaddingForDefault: CGFloat
-    private let addressBarBottomPaddingForHomePage: CGFloat
-    private let addressBarBottomPaddingForPopUpWindow: CGFloat
-    private let alwaysShowAddressBarOutline: Bool
-
-    let shouldShowLogoinInAddressBar: Bool
     let toolbarButtonsCornerRadius: CGFloat
-
-    let backButtonImage: NSImage
-    let forwardButtonImage: NSImage
-    let reloadButtonImage: NSImage
-    let homeButtonImage: NSImage
-    let downloadsButtonImage: NSImage
-    let passwordManagerButtonImage: NSImage
-    let bookmarksButtonImage: NSImage
-    let moreOptionsbuttonImage: NSImage
-    let overflowButtonImage: NSImage
-    let vpnNavigationIconsProvider: IconProvider
-    let fireButtonStyleProvider: FireButtonIconStyleProviding
-    let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
-    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
-    let addressBarIconsProvider: AddressBarIconsProviding
-    let tabStyleProvider: TabStyleProviding
     let fireWindowGraphic: NSImage
     let areNavigationBarCornersRound: Bool
+
+    let addressBarStyleProvider: AddressBarStyleProviding
+    let tabStyleProvider: TabStyleProviding
     let colorsProvider: ColorsProviding
-    let defaultAddressBarFontSize: CGFloat
-    let newTabOrHomePageAddressBarFontSize: CGFloat
-
-    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
-        switch type {
-        case .default: return addressBarHeightForDefault
-        case .homePage: return addressBarHeightForHomePage
-        case .popUpWindow: return addressBarHeightForPopUpWindow
-        }
-    }
-
-    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat {
-        switch type {
-        case .default: return addressBarTopPaddingForDefault
-        case .homePage: return addressBarTopPaddingForHomePage
-        case .popUpWindow: return addressBarTopPaddingForPopUpWindow
-        }
-    }
-
-    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat {
-        switch type {
-        case .default: return addressBarBottomPaddingForDefault
-        case .homePage: return addressBarBottomPaddingForHomePage
-        case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
-        }
-    }
-
-    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
-        switch type.isLogoVisible {
-        case true: return 16
-        case false: return 0
-        }
-    }
-
-    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
-        return alwaysShowAddressBarOutline || isHomePage
-    }
-
-    static var legacy: VisualStyleProviding {
-        return VisualStyle(addressBarHeightForDefault: 48,
-                           addressBarHeightForHomePage: 52,
-                           addressBarHeightForPopUpWindow: 42,
-                           addressBarTopPaddingForDefault: 6,
-                           addressBarTopPaddingForHomePage: 10,
-                           addressBarTopPaddingForPopUpWindow: 0,
-                           addressBarBottomPaddingForDefault: 6,
-                           addressBarBottomPaddingForHomePage: 8,
-                           addressBarBottomPaddingForPopUpWindow: 0,
-                           alwaysShowAddressBarOutline: false,
-                           shouldShowLogoinInAddressBar: false,
-                           toolbarButtonsCornerRadius: 4,
-                           backButtonImage: .back,
-                           forwardButtonImage: .forward,
-                           reloadButtonImage: .refresh,
-                           homeButtonImage: .home16,
-                           downloadsButtonImage: .downloads,
-                           passwordManagerButtonImage: .passwordManagement,
-                           bookmarksButtonImage: .bookmarks,
-                           moreOptionsbuttonImage: .settings,
-                           overflowButtonImage: .chevronDoubleRight16,
-                           vpnNavigationIconsProvider: NavigationBarIconProvider(),
-                           fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
-                           moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
-                           privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider(),
-                           addressBarIconsProvider: LegacyAddressBarIconsProvider(),
-                           tabStyleProvider: LegacyTabStyleProvider(),
-                           fireWindowGraphic: .burnerWindowGraphic,
-                           areNavigationBarCornersRound: false,
-                           colorsProvider: LegacyColorsProviding(),
-                           defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 15)
-    }
+    let iconsProvider: IconsProviding
+    let fireButtonSize: CGFloat
+    let navigationToolbarButtonsSpacing: CGFloat
+    let tabBarButtonSize: CGFloat
+    let addToolbarShadow: Bool
 
     static var current: VisualStyleProviding {
         let palette = NewColorPalette()
-        return VisualStyle(addressBarHeightForDefault: 52,
-                           addressBarHeightForHomePage: 52,
-                           addressBarHeightForPopUpWindow: 52,
-                           addressBarTopPaddingForDefault: 6,
-                           addressBarTopPaddingForHomePage: 6,
-                           addressBarTopPaddingForPopUpWindow: 6,
-                           addressBarBottomPaddingForDefault: 6,
-                           addressBarBottomPaddingForHomePage: 6,
-                           addressBarBottomPaddingForPopUpWindow: 6,
-                           alwaysShowAddressBarOutline: true,
-                           shouldShowLogoinInAddressBar: true,
-                           toolbarButtonsCornerRadius: 9,
-                           backButtonImage: .backNew,
-                           forwardButtonImage: .forwardNew,
-                           reloadButtonImage: .reloadNew,
-                           homeButtonImage: .homeNew,
-                           downloadsButtonImage: .downloadsNew,
-                           passwordManagerButtonImage: .passwordManagerNew,
-                           bookmarksButtonImage: .bookmarksNew,
-                           moreOptionsbuttonImage: .optionsNew,
-                           overflowButtonImage: .chevronDoubleRight16,
-                           vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
-                           fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
-                           moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
-                           privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider(),
-                           addressBarIconsProvider: NewAddressBarIconsProvider(),
-                           tabStyleProvider: NewlineTabStyleProvider(palette: palette),
+        return VisualStyle(toolbarButtonsCornerRadius: 9,
                            fireWindowGraphic: .burnerWindowGraphicNew,
                            areNavigationBarCornersRound: true,
+                           addressBarStyleProvider: CurrentAddressBarStyleProvider(),
+                           tabStyleProvider: NewlineTabStyleProvider(palette: palette),
                            colorsProvider: NewColorsProviding(palette: palette),
-                           defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 13)
-    }
-}
-
-final class VisualStyleManager: VisualStyleManagerProviding {
-    private let featureFlagger: FeatureFlagger
-
-    private var cancellables: Set<AnyCancellable> = []
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-
-        subscribeToLocalOverride()
-    }
-
-    var style: any VisualStyleProviding {
-        return featureFlagger.isFeatureOn(.visualRefresh) ? VisualStyle.current : VisualStyle.legacy
-    }
-
-    private func subscribeToLocalOverride() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .visualRefresh }
-            .sink { (_, enabled) in
-                /// Here I need to apply the visual changes. The easier way should be to restart the app.
-                print("Visual refresh feature flag changed to \(enabled ? "enabled" : "disabled")")
-            }
-            .store(in: &cancellables)
+                           iconsProvider: CurrentIconsProvider(),
+                           fireButtonSize: 32,
+                           navigationToolbarButtonsSpacing: 2,
+                           tabBarButtonSize: 28,
+                           addToolbarShadow: true)
     }
 }

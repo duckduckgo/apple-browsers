@@ -122,7 +122,8 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(useSubscriptionsAuthV2: isAuthV2Enabled)
+        /// Note that the `useAlternateStripePaymentFlow` value is not used on the IDTR page, and so we can set the value to false here.
+        return GetFeatureValue(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false, useAlternateStripePaymentFlow: false)
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

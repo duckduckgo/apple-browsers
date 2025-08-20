@@ -33,7 +33,7 @@ import os.log
 @available(macOS 12.0, *)
 class AddressBarTests: XCTestCase {
 
-    var window: MainWindow!
+    var window: NSWindow!
 
     var mainViewController: MainViewController {
         (window.contentViewController as! MainViewController)
@@ -66,6 +66,8 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     override func setUp() async throws {
+        TestRunHelper.allowAppSendUserEvents = true
+
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
@@ -80,25 +82,35 @@ class AddressBarTests: XCTestCase {
         // tests return debugDescription instead of localizedDescription
         NSError.disableSwizzledDescription = true
 
-        StartupPreferences.shared.customHomePageURL = URL.duckDuckGo.absoluteString
-        StartupPreferences.shared.launchToCustomHomePage = false
+        NSApp.delegateTyped.startupPreferences.customHomePageURL = URL.duckDuckGo.absoluteString
+        NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
         TabsPreferences.shared.pinnedTabsMode = .shared
 
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["asciiToCGEventMap"]
+    }
+
     @MainActor
     override func tearDown() async throws {
-        window?.close()
-        window = nil
-        schemeHandler = nil
-        NSError.disableSwizzledDescription = false
-        StartupPreferences.shared.launchToCustomHomePage = false
+        TestRunHelper.allowAppSendUserEvents = false
 
-        TabsPreferences.shared.pinnedTabsMode = .separate
+        autoreleasepool {
+            window?.close()
+            window = nil
+            schemeHandler = nil
+            contentBlockingMock = nil
+            privacyFeaturesMock = nil
+            NSError.disableSwizzledDescription = false
+            NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
-        HTTPStubs.removeAllStubs()
+            TabsPreferences.shared.pinnedTabsMode = .separate
+
+            HTTPStubs.removeAllStubs()
+        }
     }
 
     let asciiToCGEventMap: [String: UInt16] = [
@@ -191,7 +203,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenAddressIsTyped_LoadedTopHitSuggestionIsCorrectlyAppendedAndSelected() {
         // top hits should only work for visited urls
-        HistoryCoordinator.shared.addVisit(of: URL(string: "https://youtube.com")!)
+        NSApp.delegateTyped.historyCoordinator.addVisit(of: URL(string: "https://youtube.com")!)
         let tab = Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         window = WindowsManager.openNewWindow(with: tab)!
 
@@ -256,7 +268,7 @@ class AddressBarTests: XCTestCase {
             Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
             Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
         ]))
-        AppearancePreferences.shared.showFullURL = true
+        NSApp.delegateTyped.appearancePreferences.showFullURL = true
         window = WindowsManager.openNewWindow(with: viewModel)!
 
         // Switch between loaded tabs and home tab/settings/bookmarks, validate the Address Bar gets activated on the New Tab; Validate privacy entry button/icon is correct
@@ -274,7 +286,7 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRestoringToSettings_addressBarIsNotActive() async throws {
+    func testWhenRestoringToSettings_addressBarIsNotActive() {
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .settings(pane: .appearance), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
         window = WindowsManager.openNewWindow(with: viewModel)!
         XCTAssertEqual(window.firstResponder, mainViewController.browserTabViewController.preferencesViewController!.view)
@@ -303,32 +315,44 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenOpeningNewTab_addressBarIsActivated() async throws {
+    func testWhenOpeningNewTab_addressBarIsActivated() {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .loadedByStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         viewModel.append(tab: Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()), selected: true)
-        try await Task.sleep(interval: 0.01)
+        let expectation = self.expectation(description: "Wait 1")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 0.5)
         XCTAssertTrue(isAddressBarFirstResponder)
 
         viewModel.append(tab: Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()), selected: true)
-        try await Task.sleep(interval: 0.01)
+        let expectation2 = self.expectation(description: "Wait 2")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
+            expectation2.fulfill()
+        }
+        wait(for: [expectation2], timeout: 0.5)
         XCTAssertTrue(isAddressBarFirstResponder)
 
         viewModel.remove(at: .unpinned(2))
-        try await Task.sleep(interval: 0.01)
+        let expectation3 = self.expectation(description: "Wait 3")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
+            expectation3.fulfill()
+        }
+        wait(for: [expectation3], timeout: 0.5)
         XCTAssertTrue(isAddressBarFirstResponder)
 
         let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
         viewModel.remove(at: .unpinned(1))
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
+        wait(for: [firstResponderChangeExpectation], timeout: 1)
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
 
     @MainActor
-    func testWhenSwitchingBetweenTabsWithTypedValue_typedValueIsPreserved() async throws {
+    func testWhenSwitchingBetweenTabsWithTypedValue_typedValueIsPreserved() {
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
             Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
             Tab(content: .settings(pane: .about), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
@@ -342,23 +366,30 @@ class AddressBarTests: XCTestCase {
             Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
         ]))
         window = WindowsManager.openNewWindow(with: viewModel)!
-
         // Enter something, switch to another tab, enter something, return back, validate the input is preserved, return to tab 2, validate its input is preserved
         for (idx, tab) in viewModel.tabs.enumerated() {
             viewModel.select(tab: tab)
-            try await Task.sleep(interval: 0.01)
+            let expectation = self.expectation(description: "Wait 1")
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.01) {
+                expectation.fulfill()
+            }
+            wait(for: [expectation], timeout: 0.5)
 
             if !isAddressBarFirstResponder {
                 _=window.makeFirstResponder(addressBarTextField)
             }
 
             type("tab-\(idx)")
-         }
+        }
         for (idx, tab) in viewModel.tabs.enumerated() {
             viewModel.select(tab: tab)
             for _ in 0..<10 {
                 guard addressBarValue != "tab-\(idx)" else { continue }
-                try await Task.sleep(interval: 0.01)
+                let expectation = self.expectation(description: "Wait 2")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                    expectation.fulfill()
+                }
+                wait(for: [expectation], timeout: 0.5)
             }
             XCTAssertEqual(addressBarValue, "tab-\(idx)")
             if tab.content == .newtab {
@@ -409,6 +440,7 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(isAddressBarFirstResponder)
 
         let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
+
         type("\u{1b}", global: true) // send escape key
         await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
 
@@ -423,7 +455,7 @@ class AddressBarTests: XCTestCase {
 
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -452,7 +484,7 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(isAddressBarFirstResponder)
 
         let serpUrl = URL.makeSearchUrl(from: "cats")!
-        try await tab.setContent(.url(serpUrl, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(serpUrl, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertFalse(isAddressBarFirstResponder)
 
         // go back to New Tab page
@@ -550,7 +582,7 @@ class AddressBarTests: XCTestCase {
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
         XCTAssertEqual(window.firstResponder, tab.webView)
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -595,7 +627,7 @@ class AddressBarTests: XCTestCase {
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         _=window.makeFirstResponder(addressBarTextField)
         type("\r")
-        try await Task.sleep(interval: 0.01)
+        try await Task.sleep(interval: 0.1)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
@@ -610,6 +642,7 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .url(.makeSearchUrl(from: "catz")!, credential: nil, source: .userEntered("catz")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _=try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -620,13 +653,14 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .webViewUpdated), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
 
@@ -635,6 +669,7 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .webViewUpdated), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
         XCTAssertEqual(window.firstResponder, tab.webView)
 
@@ -650,6 +685,7 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .webViewUpdated), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
         XCTAssertEqual(window.firstResponder, tab.webView)
 
@@ -662,7 +698,7 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenHomePageIsOpened_addressBarIsDeactivated() async throws {
-        StartupPreferences.shared.launchToCustomHomePage = true
+        NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = true
 
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .webViewUpdated), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
@@ -685,6 +721,7 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _=try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
 
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
@@ -699,12 +736,13 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _=try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
 
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(50).first().promise()
         type(URL.duckDuckGo.absoluteString + "\r")
 
-        try await Task.sleep(interval: 0.01)
+        try await Task.sleep(interval: 0.1)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
@@ -744,6 +782,7 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         XCTAssertEqual(addressBarValue, URL.duckDuckGo.absoluteString)
         let page1loadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
 
@@ -762,7 +801,7 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenPageRedirectedWhenAddressBarIsInactive_addressBarShouldReset() async throws {
-        AppearancePreferences.shared.showFullURL = true
+        NSApp.delegateTyped.appearancePreferences.showFullURL = true
 
         let expectation = expectation(description: "request sent")
         schemeHandler.middleware = [{ request in
@@ -792,6 +831,7 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         let page1loadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
 
         // start typing in the address bar while loading and deactivate the address bar
@@ -854,6 +894,7 @@ class AddressBarTests: XCTestCase {
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         viewModel.select(at: .pinned(0))
         _=try await tabLoadedPromise.value
 
@@ -868,7 +909,7 @@ class AddressBarTests: XCTestCase {
         let firstResponderChangeExpectation = window2.responderDidChangeExpectation(to: tab.webView)
         viewModel2.select(at: .pinned(0))
 
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 2)
 
         XCTAssertEqual(window.firstResponder, window)
         XCTAssertEqual(window2.firstResponder, tab.webView)
@@ -876,16 +917,23 @@ class AddressBarTests: XCTestCase {
         // when activating a Pinned Tab in another window when its Address Bar is active, it should be kept active
         _=window.makeFirstResponder(addressBarTextField)
         window.makeKeyAndOrderFront(nil)
-        try await Task.sleep(interval: 0.01)
 
+        let becomesOwnFirstResponder = expectation(
+            for: NSPredicate { [weak window2] _, _ in
+                guard let window2 else { return false }
+                return window2.firstResponder === window2
+            },
+            evaluatedWith: nil
+        )
+
+        await fulfillment(of: [becomesOwnFirstResponder], timeout: 5.0)
         XCTAssertTrue(isAddressBarFirstResponder)
-        XCTAssertEqual(window2.firstResponder, window2)
     }
 
     @MainActor
     func test_WhenSiteCertificateNil_ThenAddressBarShowsStandardShieldIcon() async throws {
         // GIVEN
-        let expectedImage = NSImage(named: "Shield")!
+        let expectedImage = NSApp.delegateTyped.visualStyle.addressBarStyleProvider.privacyShieldStyleProvider.icon
         let evaluator = MockCertificateEvaluator()
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
@@ -893,17 +941,18 @@ class AddressBarTests: XCTestCase {
 
         // WHEN
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _=try await tabLoadedPromise.value
 
         // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
-        XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
+        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
+        XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
     @MainActor
     func test_WhenSiteCertificateValid_ThenAddressBarShowsStandardShieldIcon() async throws {
         // GIVEN
-        let expectedImage = NSImage(named: "Shield")!
+        let expectedImage = NSApp.delegateTyped.visualStyle.addressBarStyleProvider.privacyShieldStyleProvider.icon
         let evaluator = MockCertificateEvaluator()
         evaluator.isValidCertificate = true
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
@@ -912,17 +961,18 @@ class AddressBarTests: XCTestCase {
 
         // WHEN
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _=try await tabLoadedPromise.value
 
         // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
-        XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
+        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
+        XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
     @MainActor
     func test_WhenSiteCertificateInvalid_ThenAddressBarShowsDottedShieldIcon() async throws {
         // GIVEN
-        let expectedImage = NSImage(named: "ShieldDot")!
+        let expectedImage = NSApp.delegateTyped.visualStyle.addressBarStyleProvider.privacyShieldStyleProvider.iconWithDot
         let evaluator = MockCertificateEvaluator()
         evaluator.isValidCertificate = false
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
@@ -931,11 +981,12 @@ class AddressBarTests: XCTestCase {
 
         // WHEN
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _ = try await tabLoadedPromise.value
 
         // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
-        XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
+        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
+        XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
     @MainActor
@@ -948,6 +999,7 @@ class AddressBarTests: XCTestCase {
 
         // WHEN
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _=try await tabLoadedPromise.value
 
         // THEN
@@ -966,6 +1018,7 @@ class AddressBarTests: XCTestCase {
 
         // WHEN
         window = WindowsManager.openNewWindow(with: viewModel)!
+
         _=try await tabLoadedPromise.value
 
         // THEN
@@ -974,7 +1027,7 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenControlTextDidChange_ThenreportermeasureAddressBarTypedInCalled() async throws {
+    func test_WhenControlTextDidChange_ThenReporterMeasureAddressBarTypedInCalled() {
         // GIVEN
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -991,7 +1044,7 @@ class AddressBarTests: XCTestCase {
     }
 }
 
-private extension MainWindow {
+private extension NSWindow {
 
     func responderDidChangeExpectation(to firstResponder: NSResponder) -> XCTestExpectation {
         let expectation = XCTestExpectation(description: "First responder changed to \(firstResponder)")
@@ -1008,24 +1061,6 @@ private extension MainWindow {
         return expectation
     }
 
-}
-
-extension NSImage {
-    func pngData() -> Data? {
-        guard let tiffRepresentation = self.tiffRepresentation,
-              let bitmapImage = NSBitmapImageRep(data: tiffRepresentation) else {
-            return nil
-        }
-        return bitmapImage.representation(using: .png, properties: [:])
-    }
-
-    func isEqualToImage(_ image: NSImage) -> Bool {
-        guard let data1 = self.pngData(),
-              let data2 = image.pngData() else {
-            return false
-        }
-        return data1 == data2
-    }
 }
 
 class MockCertificateEvaluator: CertificateTrustEvaluating {

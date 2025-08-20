@@ -44,6 +44,10 @@ final class PasswordManagementListSectionTests: XCTestCase {
         login(named: "š")
     ]
 
+    override var allowedNonNilVariables: Set<String> {
+        ["currentLocaleFormatter", "enFormatter", "nonASCIIAccounts", "$__lazy_storage_$_accounts", "$__lazy_storage_$_nonASCIIAccounts"]
+    }
+
     func testWhenSortingEmptyArray_ThenNoSectionsAreReturned() {
         let sections = PasswordManagementListSection.sections(with: [], by: \.id, order: .ascending)
         XCTAssertTrue(sections.isEmpty)

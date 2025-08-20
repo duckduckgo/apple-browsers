@@ -25,7 +25,7 @@ import WidgetKit
 @available(iOSApplicationExtension 18.0, *)
 public struct VPNControlWidget: ControlWidget {
     static let displayName = LocalizedStringResource(stringLiteral: "DuckDuckGo\nVPN")
-    static let description = LocalizedStringResource(stringLiteral: "View and manage your VPN connection. Requires a Privacy Pro subscription.")
+    static let description = LocalizedStringResource(stringLiteral: "View and manage your VPN connection. Requires a DuckDuckGo subscription.")
     static let unknownLocation = UserText.vpnControlWidgetLocationUnknown
 
     public init() {}
@@ -35,6 +35,7 @@ public struct VPNControlWidget: ControlWidget {
                                    provider: VPNControlStatusValueProvider()) { status in
 
             ControlWidgetToggle(title(status: status), isOn: status.isConnected, action: ControlWidgetToggleVPNIntent()) { isOn in
+                // These images are intentionally not part of the design system images (yet)
                 if isOn {
                     Label(location(status: status), image: "ControlCenter-VPN-on")
                 } else {

@@ -16,17 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import Common
 import DataBrokerProtection_macOS
-import Subscription
-import os.log
+import Foundation
 import Freemium
+import os.log
+import Subscription
 
 protocol DataBrokerProtectionFeatureGatekeeper {
     func disableAndDeleteForAllUsers()
-    func arePrerequisitesSatisfied() async -> Bool
+    func arePrerequisitesSatisfied() async throws -> Bool
 }
 
 struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeatureGatekeeper {
@@ -38,7 +39,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
          featureDisabler: DataBrokerProtectionFeatureDisabling = DataBrokerProtectionFeatureDisabler(),
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          userDefaults: UserDefaults = .standard,
@@ -85,17 +86,14 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     /// 2. The user has a subscription with valid entitlements
     ///
     /// - Returns: Bool indicating prerequisites are satisfied
-    func arePrerequisitesSatisfied() async -> Bool {
+    func arePrerequisitesSatisfied() async throws -> Bool {
 
         let isAuthenticated = subscriptionManager.isUserAuthenticated
         if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
 
         // NOTE: This check In AuthV1 this can fail in case of bad network, in AuthV2 works as expected in any network condition
-        let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .dataBrokerProtection,
-                                                                        cachePolicy: .reloadIgnoringLocalCacheData)) ?? false
-
+        let hasEntitlements = try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
         firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
-
         return hasEntitlements && isAuthenticated
     }
 }

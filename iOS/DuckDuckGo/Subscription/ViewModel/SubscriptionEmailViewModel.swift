@@ -22,6 +22,7 @@ import UserScript
 import Combine
 import Core
 import Subscription
+import BrowserServicesKit
 
 final class SubscriptionEmailViewModel: ObservableObject {
     
@@ -62,6 +63,10 @@ final class SubscriptionEmailViewModel: ObservableObject {
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state = State()
 
+    var isPIREnabled: Bool {
+        featureFlagger.isFeatureOn(.personalInformationRemoval)
+    }
+
     enum SubscriptionRestoreError: Error {
         case subscriptionExpired,
              generalError
@@ -75,13 +80,20 @@ final class SubscriptionEmailViewModel: ObservableObject {
         return currentURL.forComparison() == checkedURL.forComparison()
     }
 
+    private let urlOpener: URLOpener
+    private let featureFlagger: FeatureFlagger
+
     init(isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         urlOpener: URLOpener = UIApplication.shared,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        self.urlOpener = urlOpener
+        self.featureFlagger = featureFlagger
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -179,6 +191,9 @@ final class SubscriptionEmailViewModel: ObservableObject {
                 case .identityTheftRestoration, .identityTheftRestorationGlobal:
                     UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                     self.state.selectedFeature = .itr
+                case .paidAIChat:
+                    UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                    self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                 case .unknown:
                     break
                 }

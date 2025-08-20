@@ -20,6 +20,8 @@
 import SwiftUI
 import WidgetKit
 import AppIntents
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 @available(iOS 17.0, *)
 struct QuickActionsProvider: AppIntentTimelineProvider {
@@ -87,11 +89,11 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
 
     var icon: Image {
         switch self {
-        case .passwords: return Image(.key24)
-        case .duckAI: return Image(.aiChat24)
-        case .voiceSearch: return Image(.microphoneSolidSearch24)
-        case .favorites: return Image(.favorite24)
-        case .emailProtection: return Image(.email24)
+        case .passwords: return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
+        case .duckAI: return Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
+        case .voiceSearch: return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
+        case .favorites: return Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite)
+        case .emailProtection: return Image(uiImage: DesignSystemImages.Glyphs.Size24.email)
         }
     }
 
@@ -145,7 +147,7 @@ struct QuickActionsWidgetView: View {
 private struct SearchBoxView: View {
     var body: some View {
         HStack {
-            Image(.duckDuckGoColor28)
+            Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                 .resizable()
                 .useFullColorRendering()
                 .frame(width: 28, height: 28)
@@ -161,7 +163,7 @@ private struct SearchBoxView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 46)
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .controlsFillPrimary))
         )
     }
 }
@@ -172,7 +174,7 @@ private struct IconView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .controlsFillPrimary))
             image
                 .resizable()
                 .scaledToFit()

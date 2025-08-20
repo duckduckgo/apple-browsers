@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import CommonObjCExtensions
 
 final class WebViewContainerView: NSView {
     @objc
@@ -194,16 +195,40 @@ final class WebViewContainerView: NSView {
 
     // MARK: NSDraggingDestination
 
+    private static let nsViewPerformDragOperationMethod = {
+        class_getMethodImplementation(NSView.self, #selector(NSDraggingDestination.performDragOperation))
+    }()
+    private func nextResponderDraggingDestination() -> NSDraggingDestination? {
+        guard let nextResponder else { return nil }
+        // find dragging destination responder suitable for handling drag events
+        for case let draggingDestination as NSDraggingDestination in sequence(first: nextResponder, next: \.nextResponder) {
+
+            let draggingDestinationType = type(of: draggingDestination)
+            // NSView and subclasses are NSDraggingDestination but their handler methods just return .none
+            // make sure we‘re not passing the drag operation
+            if draggingDestinationType == NSView.self || draggingDestinationType == NSStackView.self
+            || (draggingDestination is NSView && class_getMethodImplementation(type(of: draggingDestination), #selector(NSDraggingDestination.performDragOperation)) == Self.nsViewPerformDragOperationMethod) {
+                continue
+            }
+
+            return draggingDestination
+        }
+        return nil
+    }
+
     override func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return superview?.draggingEntered(draggingInfo) ?? .none
+        let draggingDestination = nextResponderDraggingDestination()
+        return draggingDestination?.draggingEntered?(draggingInfo) ?? .none
     }
 
     override func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return superview?.draggingUpdated(draggingInfo) ?? .none
+        let draggingDestination = nextResponderDraggingDestination()
+        return draggingDestination?.draggingUpdated?(draggingInfo) ?? .none
     }
 
     override func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
-        return superview?.performDragOperation(draggingInfo) ?? false
+        let draggingDestination = nextResponderDraggingDestination()
+        return draggingDestination?.performDragOperation?(draggingInfo) ?? false
     }
 
 }

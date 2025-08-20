@@ -1,7 +1,7 @@
 {
   "name": "PeopleSearchUSA",
   "url": "peoplesearchusa.org",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.peoplesearchusa.org/optOut/name/landing",
   "steps": [
@@ -203,5 +203,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1738341520312
+  "addedDatetime": 1738341520312,
+  "removedAt": null
 }

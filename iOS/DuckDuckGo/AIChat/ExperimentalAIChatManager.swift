@@ -33,7 +33,7 @@ struct ExperimentalAIChatManager {
     }
 
     var isExperimentalAIChatFeatureFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAIChat)
+        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAddressBar, allowOverride: true)
     }
 
     var isExperimentalAIChatSettingsEnabled: Bool {

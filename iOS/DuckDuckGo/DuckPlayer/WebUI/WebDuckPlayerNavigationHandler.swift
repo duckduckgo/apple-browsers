@@ -735,7 +735,12 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` whose URL has changed.
     /// - Returns: A result indicating whether the URL change was handled.
     @MainActor
-    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
+    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?, isNavigationError: Bool) -> DuckPlayerNavigationHandlerURLChangeResult {
+
+        // Don't trigger DuckPlayer if there was a navigation error
+        if isNavigationError {
+            return .notHandled(.invalidURL)
+        }
 
         // We want to prevent multiple simultaneous redirects
         // This can be caused by Duplicate Nav events, and quick URL changes

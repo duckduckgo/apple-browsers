@@ -17,25 +17,45 @@
 //
 
 import AppKit
+import Common
 import Foundation
 
 @objc(Application)
 final class Application: NSApplication {
 
-    public static var appDelegate: AppDelegate!
+    public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
 
     override init() {
         super.init()
+
+        // swizzle `startAccessingSecurityScopedResource` and `stopAccessingSecurityScopedResource`
+        // methods to accurately reflect the current number of start and stop calls
+        // stored in the associated `NSURL.sandboxExtensionRetainCount` value.
+        //
+        // See SecurityScopedFileURLController.swift
+        NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
+
+#if DEBUG
+        if [.unitTests, .integrationTests].contains(AppVersion.runType) {
+            (NSClassFromString("TestRunHelper") as? NSObject.Type)!.perform(NSSelectorFromString("sharedInstance"))
+        }
+#endif
 
         let delegate = AppDelegate()
         self.delegate = delegate
         Application.appDelegate = delegate
 
-        let mainMenu = MainMenu(featureFlagger: delegate.featureFlagger,
-                                bookmarkManager: delegate.bookmarksManager,
-                                faviconManager: delegate.faviconManager,
-                                aiChatMenuConfig: AIChatMenuConfiguration(),
-                                internalUserDecider: delegate.internalUserDecider)
+        let mainMenu = MainMenu(
+            featureFlagger: delegate.featureFlagger,
+            bookmarkManager: delegate.bookmarkManager,
+            historyCoordinator: delegate.historyCoordinator,
+            faviconManager: delegate.faviconManager,
+            aiChatMenuConfig: delegate.aiChatMenuConfiguration,
+            internalUserDecider: delegate.internalUserDecider,
+            appearancePreferences: delegate.appearancePreferences,
+            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+            configurationURLProvider: delegate.configurationURLProvider
+        )
         self.mainMenu = mainMenu
 
         // Makes sure Spotlight search is part of Help menu
@@ -53,4 +73,32 @@ final class Application: NSApplication {
         NSGetUncaughtExceptionHandler()?(exception)
     }
 
+#if DEBUG
+    var testIgnoredEvents: [NSEvent.EventType] = {
+        var testIgnoredEvents: [NSEvent.EventType] = [
+            .mouseMoved, .mouseExited, .mouseExited, .mouseEntered,
+            .leftMouseUp, .leftMouseUp, .leftMouseDown, .leftMouseDragged,
+            .rightMouseUp, .rightMouseUp, .rightMouseDown, .rightMouseDragged,
+            .otherMouseUp, .otherMouseUp, .otherMouseDown, .otherMouseDragged,
+            .keyDown, .keyUp, .flagsChanged,
+            .scrollWheel, .magnify, .rotate, .swipe,
+            .directTouch, .gesture, .beginGesture,
+            .tabletPoint, .tabletProximity,
+            .pressure,
+        ]
+        if #available(macOS 26.0, *) {
+            testIgnoredEvents.append(.init(rawValue: 40)! /* .mouseCancelled */)
+        }
+        return testIgnoredEvents
+    }()
+    override func sendEvent(_ event: NSEvent) {
+        // Ignore user events when running Tests
+        if [.unitTests, .integrationTests].contains(AppVersion.runType),
+           testIgnoredEvents.contains(event.type),
+           (NSClassFromString("TestRunHelper") as? NSObject.Type)!.value(forKey: "allowAppSendUserEvents") as? Bool != true {
+            return
+        }
+        super.sendEvent(event)
+    }
+#endif
 }

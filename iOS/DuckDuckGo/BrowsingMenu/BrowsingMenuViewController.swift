@@ -58,19 +58,21 @@ final class BrowsingMenuViewController: UIViewController {
     private var headerButtons: [BrowsingMenuButton] = []
     private let headerEntries: [BrowsingMenuEntry]
     private let menuEntries: [BrowsingMenuEntry]
+    private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
 
     var onDismiss: (() -> Void)?
 
-    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
+    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
-            BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, appSettings: appSettings, coder: coder)
+            BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, coder: coder)
         }!
     }
 
-    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], appSettings: AppSettings, coder: NSCoder) {
+    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings, coder: NSCoder) {
         self.headerEntries = headerEntries
         self.menuEntries = menuEntries
+        self.daxDialogsManager = daxDialogsManager
         self.appSettings = appSettings
         super.init(coder: coder)
         self.transitioningDelegate = self
@@ -188,7 +190,7 @@ final class BrowsingMenuViewController: UIViewController {
     }
 
     @IBAction func backgroundTapped(_ sender: Any) {
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
         dismiss(animated: true)
@@ -223,7 +225,7 @@ final class BrowsingMenuViewController: UIViewController {
         bottomConstraintIPad.isActive = isIPad
 
         // Make it go above WebView in Landscape
-        topConstraint.constant = frame.minY + (isIPhoneLandscape ? -10 : 5)
+        topConstraint.constant = (isIPhoneLandscape ? 10 : 0)
         // Move menu up in Landscape, as bottom toolbar shrinks
 
         bottomConstraint.constant = windowBounds.maxY - frame.maxY - (isIPhoneLandscape ? 2 : 10)
@@ -324,7 +326,7 @@ extension BrowsingMenuViewController {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
-        
+        configureArrow(with: theme.browsingMenuBackgroundColor)
         configureShadow(for: theme)
         
         for headerButton in headerButtons {

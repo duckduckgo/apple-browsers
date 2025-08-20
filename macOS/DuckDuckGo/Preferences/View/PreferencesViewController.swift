@@ -22,7 +22,7 @@ import SwiftUI
 import SwiftUIExtensions
 import Combine
 import DDGSync
-import NetworkProtection
+import VPN
 import AIChat
 import Subscription
 
@@ -33,22 +33,29 @@ final class PreferencesViewController: NSViewController {
     let model: PreferencesSidebarModel
     let tabCollectionViewModel: TabCollectionViewModel
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let aiChatRemoteSettings: AIChatRemoteSettingsProvider
     private var selectedTabContentCancellable: AnyCancellable?
     private var selectedPreferencePaneCancellable: AnyCancellable?
 
     private var bitwardenManager: BWManagement = BWManager.shared
+    private let featureFlagger: FeatureFlagger
 
     init(
         syncService: DDGSyncing,
         duckPlayer: DuckPlayer = DuckPlayer.shared,
         tabCollectionViewModel: TabCollectionViewModel,
-        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge = Application.appDelegate.subscriptionAuthV1toV2Bridge
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge = Application.appDelegate.subscriptionAuthV1toV2Bridge,
+        featureFlagger: FeatureFlagger
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
-        model = PreferencesSidebarModel(syncService: syncService,
+        self.featureFlagger = featureFlagger
+        self.aiChatRemoteSettings = aiChatRemoteSettings
+        model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
+                                        featureFlagger: featureFlagger,
+                                        syncService: syncService,
                                         vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
@@ -67,7 +74,7 @@ final class PreferencesViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if !Application.appDelegate.isAuthV2Enabled {
+        if !Application.appDelegate.isUsingAuthV2 {
             let prefRootView = Preferences.RootView(model: model,
                                                     subscriptionManager: Application.appDelegate.subscriptionManagerV1!,
                                                     subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
@@ -76,7 +83,9 @@ final class PreferencesViewController: NSViewController {
         } else {
             let prefRootView = Preferences.RootViewV2(model: model,
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
-                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
+                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
+                                                      featureFlagger: featureFlagger,
+                                                      aiChatURLSettings: aiChatRemoteSettings)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         }

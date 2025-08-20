@@ -80,7 +80,7 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
     }
 
     func testWhenCredentialsImportPresentationCountIs5_ThenAutofillUserScriptShouldShowPasswordImportDialogIsFalse() {
-        let result = autofillUserScriptShouldShowPasswordImportDialogResult(isCredentialsImportPromptPermanantlyDismissed: true)
+        let result = autofillUserScriptShouldShowPasswordImportDialogResult(isCredentialsImportPromoInBrowserPermanentlyDismissed: true)
 
         XCTAssertFalse(result)
     }
@@ -94,7 +94,7 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
     func testWhenPermanentCredentialsImportPromptDismissalIsRequested_ThenStateFlagIsSetToTrue() {
         manager.autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal()
 
-        XCTAssertTrue(importState.isCredentialsImportPromptPermanantlyDismissed)
+        XCTAssertTrue(importState.isCredentialsImportPromoInBrowserPermanentlyDismissed)
     }
 
     func testOnAutofillUserScriptShouldDisplayOverlay_NonParsableSerializedInputContext_returnsTrue() {
@@ -110,7 +110,7 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
     }
 
     func testOnAutofillUserScriptShouldDisplayOverlay_SerializedInputContextWithCredentialsImportTrue_PromptHasNOTBeenPermanantlyDismissed_returnsTrue() {
-        importState.isCredentialsImportPromptPermanantlyDismissed = false
+        importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
         let result = manager.autofillUserScriptShouldDisplayOverlay("", for: "fill.dev")
 
         XCTAssertTrue(result)
@@ -118,7 +118,7 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
 
     func testOnAutofillUserScriptShouldDisplayOverlay_SerializedInputContextWithCredentialsImportTrue_PromptHasBeenPermanantlyDismissed_returnsFalse() {
         let serializedInputContext = "{\"inputType\":\"credentials.username\",\"credentialsImport\":true}"
-        importState.isCredentialsImportPromptPermanantlyDismissed = true
+        importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = true
         let result = manager.autofillUserScriptShouldDisplayOverlay(serializedInputContext, for: "fill.dev")
 
         XCTAssertFalse(result)
@@ -132,12 +132,12 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
                                                                         isEligibleDDGUser: Bool = true,
                                                                         hasNeverPromptWebsites: Bool = false,
                                                                         isAutofillEnabled: Bool = true,
-                                                                        isCredentialsImportPromptPermanantlyDismissed: Bool = false,
+                                                                        isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool = false,
                                                                         file: StaticString = #filePath,
                                                                         line: UInt = #line) -> Bool {
         importState.stubHasNeverPromptWebsitesForDomain = hasNeverPromptWebsites
         importState.hasImportedLogins = hasUserImportedLogins
-        importState.isCredentialsImportPromptPermanantlyDismissed = isCredentialsImportPromptPermanantlyDismissed
+        importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = isCredentialsImportPromoInBrowserPermanentlyDismissed
         importState.isAutofillEnabled = isAutofillEnabled
         importState.isEligibleDDGUser = isEligibleDDGUser
         return manager.autofillUserScriptShouldShowPasswordImportDialog(domain: "", credentials: credentials, credentialsProvider: credentialsProvider, totalCredentialsCount: totalCredentialsCount)
@@ -155,7 +155,11 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
 }
 
 final class MockAutofillLoginImportState: AutofillLoginImportStateStoring, AutofillLoginImportStateProvider {
-    var isCredentialsImportPromptPermanantlyDismissed: Bool = false
+    var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool = false
+
+    var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool = false
+
+    var credentialsImportPromptPresentationCount: Int = 0
 
     var isEligibleDDGUser = false
 

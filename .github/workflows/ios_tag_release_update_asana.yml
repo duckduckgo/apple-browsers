@@ -133,8 +133,11 @@ jobs:
             echo "::notice::Branch ${branch} doesn't exist on the remote repository, staying on main."
           fi
 
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
@@ -197,3 +200,14 @@ jobs:
         with:
           version: ${{ env.TAG }}
           platform: "ios"
+
+      - name: Create Asana notification task
+        if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
+        continue-on-error: true
+        uses: ./.github/actions/send-release-notification-task
+        with:
+          platform: ios
+          tag: ${{ env.TAG }}
+          asana-project: ${{ vars.APPLE_DEPLOYMENTS_ASANA_PROJECT_ID }}
+          asana-section: ${{ vars.APPLE_DEPLOYMENTS_SECTION_ID }}
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}

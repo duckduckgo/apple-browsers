@@ -136,14 +136,18 @@ public struct SecondaryFillButtonStyle: ButtonStyle {
 
 public struct GhostButtonStyle: ButtonStyle {
 
-    public init() {}
+    let compact: Bool
+
+    public init(compact: Bool = false) {
+        self.compact = compact
+    }
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Font(UIFont.boldAppFont(ofSize: Consts.fontSize)))
             .foregroundColor(foregroundColor(configuration.isPressed))
             .padding()
-            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: Consts.height)
+            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.height - 10 : Consts.height)
             .background(backgroundColor(configuration.isPressed))
             .cornerRadius(Consts.cornerRadius)
             .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
@@ -159,7 +163,7 @@ public struct GhostButtonStyle: ButtonStyle {
 }
 
 private enum Consts {
-    static let cornerRadius: CGFloat = 8
+    static let cornerRadius: CGFloat = 12
     static let height: CGFloat = 50
     static let fontSize: CGFloat = 15
     static let pressedOpacity: CGFloat = 0.7

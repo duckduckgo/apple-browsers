@@ -22,6 +22,7 @@ import Foundation
 import Navigation
 import PrivacyDashboard
 import UserScript
+import WebKit
 
 final class BrokenSiteInfoTabExtension {
 

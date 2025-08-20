@@ -33,7 +33,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
 
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor())
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0
@@ -47,7 +47,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 return nil
             },
             showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.legacy
+            visualStyle: VisualStyle.current
         )
 
         provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
@@ -55,6 +55,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: storageLocation)
+        appearancePreferences = nil
+        customizationModel = nil
+        provider = nil
+        userBackgroundImagesManager = nil
     }
 
     func testThatCustomizerOpenerReturnsSettingsModelCustomizerOpener() {
@@ -120,7 +124,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 theme: .light,
                 userColor: .init(hex: "#123abc"),
                 userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init),
-                defaultStyles: .init(lightBackgroundColor: "#FAFAFA", darkBackgroundColor: "#333333")
+                defaultStyles: .init(lightBackgroundColor: "#F2F2F2", darkBackgroundColor: "#262626")
             )
         )
     }

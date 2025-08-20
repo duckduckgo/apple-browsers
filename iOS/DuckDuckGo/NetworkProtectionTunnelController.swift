@@ -19,11 +19,12 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import Core
 import Foundation
 import NetworkExtension
-import NetworkProtection
-import Common
+import VPN
+import Subscription
 
 enum VPNConfigurationRemovalReason: String {
     case didBecomeActiveCheck
@@ -92,8 +93,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case loadFromPreferencesFailed(Error)
         case saveToPreferencesFailed(Error)
         case startVPNFailed(Error)
-        case fetchAuthTokenFailed(Error)
+        case failedToFetchAuthToken(Error)
         case configSystemPermissionsDenied(Error)
+        case noAuthToken
 
         public var errorCode: Int {
             switch self {
@@ -101,21 +103,22 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             case .loadFromPreferencesFailed: 1
             case .saveToPreferencesFailed: 2
             case .startVPNFailed: 3
-            case .fetchAuthTokenFailed: 4
+            case .failedToFetchAuthToken: 4
             case .configSystemPermissionsDenied: 5
+            case .noAuthToken: 6
             }
         }
 
         public var errorUserInfo: [String: Any] {
             switch self {
-            case
+            case .noAuthToken,
                     .simulateControllerFailureError:
                 return [:]
             case
                     .loadFromPreferencesFailed(let error),
                     .saveToPreferencesFailed(let error),
                     .startVPNFailed(let error),
-                    .fetchAuthTokenFailed(let error),
+                    .failedToFetchAuthToken(let error),
                     .configSystemPermissionsDenied(let error):
                 return [NSUnderlyingErrorKey: error]
             }
@@ -280,10 +283,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         options["activationAttemptId"] = UUID().uuidString as NSString
 
         do {
-            let token =  try await tokenHandler.getToken()
-            options["authToken"] = NSString(string: token)
+            try await tokenHandler.getToken()
         } catch {
-            throw StartError.fetchAuthTokenFailed(error)
+            switch error {
+            case SubscriptionManagerError.noTokenAvailable:
+                throw StartError.noAuthToken
+            default:
+                throw StartError.failedToFetchAuthToken(error)
+            }
         }
 
         options[NetworkProtectionOptionKey.selectedEnvironment] = settings.selectedEnvironment.rawValue as NSString

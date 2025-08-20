@@ -20,7 +20,7 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -322,17 +322,17 @@ final class VPNPreferencesModel: ObservableObject {
 
     @MainActor
     func manageExcludedApps() {
-        WindowControllersManager.shared.showVPNAppExclusions()
+        Application.appDelegate.windowControllersManager.showVPNAppExclusions()
     }
 
     @MainActor
     func manageExcludedSites() {
-        WindowControllersManager.shared.showVPNDomainExclusions()
+        Application.appDelegate.windowControllersManager.showVPNDomainExclusions()
     }
 
     @MainActor
     func openNewTab(with url: URL) {
-        WindowControllersManager.shared.show(url: url, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     private func updateDNSSettings() {

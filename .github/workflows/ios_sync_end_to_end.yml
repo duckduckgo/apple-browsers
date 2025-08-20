@@ -9,17 +9,30 @@ on:
     - cron: '0 1 * * *' # run at 1 AM UTC
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-for-sync-end-to-end-tests:
     name: Build for Sync End To End Tests
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     timeout-minutes: 30
+
+    env:
+      RUNS_ON: macos-15
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Set cache key hash
       run: |
@@ -42,16 +55,34 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.2"
+
     - name: Build for tests
       run: |
+        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+        
         set -o pipefail && xcodebuild \
           -scheme "iOS Browser" \
-          -destination "platform=iOS Simulator,name=iPhone 16" \
+          -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           ONLY_ACTIVE_ARCH=NO \
         | tee xcodebuild.log
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_ios_sync_tests_build
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Store Binary
       uses: actions/upload-artifact@v4
@@ -73,16 +104,21 @@ jobs:
     name: Sync End To End Tests
     needs: build-for-sync-end-to-end-tests
     runs-on: macos-15
+
+    env:
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
+
     timeout-minutes: 240
-    strategy:
-      matrix:
-        os-version: [17] #[15, 16, 17]
-      max-parallel: 1 # Uncomment this line to run tests sequentially.
-      fail-fast: false
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v4 # Don't need submodules here as this is only for the tests folder
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Create test account for Sync and return the recovery code
       uses: duckduckgo/sync_crypto/action@main
@@ -102,7 +138,7 @@ jobs:
 
     - name: Sync e2e tests
       id: upload
-      uses: loremattei/action-maestro-cloud@fix-timeout-handling
+      uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
@@ -114,14 +150,22 @@ jobs:
         env: |
           ONBOARDING_COMPLETED=true
           CODE=${{ steps.sync-recovery-code.outputs.recovery-code }}
-        ios-version: ${{ matrix.os-version }}
-        fail-on-timeout: true
+        device-os: iOS-18-2
+        device-model: iPhone-16
 
     - name: Reset config
       run: |
         git checkout ../.maestro/config.yaml
 
-
+    - name: Report job duration
+      if: success() || (always() && steps.upload.outcome == 'failure')
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_ios_18_sync_tests
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
   notify-failure:
     name: Notify on failure

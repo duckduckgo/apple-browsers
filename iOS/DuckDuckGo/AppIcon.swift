@@ -21,6 +21,7 @@ import UIKit
 
 enum AppIcon: String, CaseIterable {
     case red = "AppIcon-red"
+    case pink = "AppIcon-pink"
     case yellow = "AppIcon-yellow"
     case green = "AppIcon-green"
     case blue = "AppIcon-blue"
@@ -30,6 +31,7 @@ enum AppIcon: String, CaseIterable {
     var accessibilityName: String {
         switch self {
         case .red: "red"
+        case .pink: "pink"
         case .yellow: "yellow"
         case .green: "green"
         case .blue: "blue"
@@ -42,12 +44,44 @@ enum AppIcon: String, CaseIterable {
         return .red
     }
 
-    var smallImage: UIImage? {
-        UIImage(named: "\(rawValue)-small")
+    // These images not part of the design system
+    var smallImage: UIImage {
+        switch self {
+        case .red:
+            return UIImage(resource: .appIconRedSmall)
+        case .pink:
+            return UIImage(resource: .appIconPinkSmall)
+        case .yellow:
+            return UIImage(resource: .appIconYellowSmall)
+        case .green:
+            return UIImage(resource: .appIconGreenSmall)
+        case .blue:
+            return UIImage(resource: .appIconBlueSmall)
+        case .purple:
+            return UIImage(resource: .appIconPurpleSmall)
+        case .black:
+            return UIImage(resource: .appIconBlackSmall)
+        }
     }
 
-    var mediumImage: UIImage? {
-        UIImage(named: "\(rawValue)-medium")
+    // These images not part of the design system
+    var mediumImage: UIImage {
+        switch self {
+        case .red:
+            return UIImage(resource: .appIconRedMedium)
+        case .pink:
+            return UIImage(resource: .appIconPinkMedium)
+        case .yellow:
+            return UIImage(resource: .appIconYellowMedium)
+        case .green:
+            return UIImage(resource: .appIconGreenMedium)
+        case .blue:
+            return UIImage(resource: .appIconBlueMedium)
+        case .purple:
+            return UIImage(resource: .appIconPurpleMedium)
+        case .black:
+            return UIImage(resource: .appIconBlackMedium)
+        }
     }
 
 }

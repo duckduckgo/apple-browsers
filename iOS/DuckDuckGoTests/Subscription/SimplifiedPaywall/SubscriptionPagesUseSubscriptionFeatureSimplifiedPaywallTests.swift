@@ -34,7 +34,6 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockAccountManager: AccountManagerMock!
     private var mockStorePurchaseManager: StorePurchaseManagerMock!
-    private var mockFreeTrialsFeatureFlagExperiment: MockFreeTrialsFeatureFlagExperiment!
     private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
 
     override func setUp() async throws {
@@ -52,7 +51,6 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
 
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
-        mockFreeTrialsFeatureFlagExperiment = MockFreeTrialsFeatureFlagExperiment()
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
@@ -61,7 +59,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             appStorePurchaseFlow: mockAppStorePurchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-            freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment)
+        subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelper())
     }
 
     func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {
@@ -135,44 +133,5 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         // the future, which should not make this test fail on its own.
         XCTAssertNil(additionalParams[experimentNameKey])
         XCTAssertNil(additionalParams[experimentTreatmentKey])
-    }
-}
-
-private final class MockFreeTrialsFeatureFlagExperiment: FreeTrialsFeatureFlagExperimenting {
-
-    typealias CohortType = PrivacyProFreeTrialExperimentCohort
-    var rawValue: String = "MockFreeTrialsFeatureFlagExperiment"
-    var source: FeatureFlagSource = .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-
-    func getCohortIfEnabled() -> (any FeatureFlagCohortDescribing)? {
-        nil
-    }
-
-    func oneTimeParameters(for cohort: any FeatureFlagCohortDescribing) -> [String: String]? {
-        nil
-    }
-
-    func incrementPaywallViewCountIfWithinConversionWindow() {
-        // no-op
-    }
-
-    func firePaywallImpressionPixel() {
-        // no-op
-    }
-
-    func fireOfferSelectionMonthlyPixel() {
-        // no-op
-    }
-
-    func fireOfferSelectionYearlyPixel() {
-        // no-op
-    }
-
-    func fireSubscriptionStartedMonthlyPixel() {
-        // no-op
-    }
-
-    func fireSubscriptionStartedYearlyPixel() {
-        // no-op
     }
 }

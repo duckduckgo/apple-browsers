@@ -126,7 +126,10 @@ final class StorePurchaseManagerTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, StorePurchaseManagerError.productNotFound)
+            switch error {
+            case .productNotFound: break
+            default: XCTFail("Expected productNotFound")
+            }
         }
     }
 
@@ -145,7 +148,10 @@ final class StorePurchaseManagerTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, StorePurchaseManagerError.externalIDisNotAValidUUID)
+            switch error {
+            case .externalIDisNotAValidUUID: break
+            default: XCTFail("Expected externalIDisNotAValidUUID")
+            }
         }
     }
 
@@ -165,7 +171,10 @@ final class StorePurchaseManagerTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, StorePurchaseManagerError.purchaseFailed)
+            switch error {
+            case .purchaseFailed: break
+            default: XCTFail("Expected purchaseFailed")
+            }
         }
     }
 }

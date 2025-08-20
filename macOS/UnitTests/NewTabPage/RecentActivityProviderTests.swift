@@ -53,8 +53,13 @@ final class MockTrackerEntityPrevalenceComparator: TrackerEntityPrevalenceCompar
     }
 }
 
+final class MockNewTabPageRecentActivityVisibilityProvider: NewTabPageRecentActivityVisibilityProviding {
+    var isRecentActivityVisible: Bool = true
+}
+
 final class RecentActivityProviderTests: XCTestCase {
     var provider: RecentActivityProvider!
+    var visibilityProvider: MockNewTabPageRecentActivityVisibilityProvider!
     var historyCoordinator: HistoryCoordinatingMock!
     var urlFavoriteStatusProvider: MockURLFavoriteStatusProvider!
     var duckPlayerHistoryEntryTitleProvider: MockDuckPlayerHistoryEntryTitleProvider!
@@ -62,15 +67,25 @@ final class RecentActivityProviderTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
 
+        visibilityProvider = MockNewTabPageRecentActivityVisibilityProvider()
         historyCoordinator = HistoryCoordinatingMock()
         urlFavoriteStatusProvider = MockURLFavoriteStatusProvider()
         duckPlayerHistoryEntryTitleProvider = MockDuckPlayerHistoryEntryTitleProvider()
         provider = RecentActivityProvider(
+            visibilityProvider: visibilityProvider,
             historyCoordinator: historyCoordinator,
             urlFavoriteStatusProvider: urlFavoriteStatusProvider,
             duckPlayerHistoryEntryTitleProvider: duckPlayerHistoryEntryTitleProvider,
             trackerEntityPrevalenceComparator: MockTrackerEntityPrevalenceComparator()
         )
+    }
+
+    override func tearDown() {
+        duckPlayerHistoryEntryTitleProvider = nil
+        historyCoordinator = nil
+        provider = nil
+        urlFavoriteStatusProvider = nil
+        visibilityProvider = nil
     }
 
     func testWhenHistoryIsEmptyThenActivityIsEmpty() throws {

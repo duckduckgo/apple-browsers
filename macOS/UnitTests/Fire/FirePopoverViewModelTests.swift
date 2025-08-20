@@ -16,13 +16,17 @@
 //  limitations under the License.
 //
 
+import Common
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FirePopoverViewModelTests: XCTestCase {
 
     @MainActor
-    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel, onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager()) -> FirePopoverViewModel {
+    private func makeViewModel(
+        with tabCollectionViewModel: TabCollectionViewModel,
+        onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager(trackerMessageProvider: MockTrackerMessageProvider())
+    ) -> FirePopoverViewModel {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -30,16 +34,16 @@ final class FirePopoverViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
         return FirePopoverViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionViewModel,
             historyCoordinating: HistoryCoordinatingMock(),
-            fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock()),
+            fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
-            tld: ContentBlocking.shared.tld,
+            tld: Application.appDelegate.tld,
             onboardingContextualDialogsManager: onboardingContextualDialogsManager
         )
     }
@@ -66,6 +70,9 @@ final class FirePopoverViewModelTests: XCTestCase {
 class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdater {
 
     var state: ContextualOnboardingState = .onboardingCompleted
+
+    @Published var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
     var updatedForTab: Tab?
     var gotItPressedCalled = false

@@ -32,7 +32,16 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED
     func testWhenCustomHeadersAreSet_headersAreSent() throws {
-        var shouldAddHeaders = true
+        var _shouldAddHeaders = true
+        let lock = NSLock()
+        var shouldAddHeaders: Bool {
+            get {
+                lock.withLock { _shouldAddHeaders }
+            }
+            set {
+                lock.withLock { _shouldAddHeaders = newValue }
+            }
+        }
         let headers = ["x-custom-header": "val", "x-another-header": "test"]
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         responder(at: 0).onNavigationAction = { _, preferences in
@@ -1061,7 +1070,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
     }
 
     func testSimulatedRequestAfterCustomSchemeRequest() throws {
-        navigationDelegateProxy.finishEventsDispatchTime = .instant
+        navigationDelegateProxy.didFailEventsDispatchTime = .instant
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         testSchemeHandler.onRequest = { [unowned webView=withWebView(do: { $0 }), data, urls] task in
             webView.loadSimulatedRequest(req(urls.https), responseHTML: String(data: data.html, encoding: .utf8)!)
@@ -1096,7 +1105,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
     func testSimulatedRequestAfterCustomSchemeRequestWithFailureBeforeWillStartNavigation() throws {
         // receive didFailProvisionalNavigation AFTER decidePolicyForNavigationAction for loadSimulatedRequest (works different in runtime than in tests)
-        navigationDelegateProxy.finishEventsDispatchTime = .beforeWillStartNavigationAction
+        navigationDelegateProxy.didFailEventsDispatchTime = .beforeWillStartNavigationAction
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         testSchemeHandler.onRequest = { [unowned webView=withWebView(do: { $0 }), data, urls] task in
             webView.loadSimulatedRequest(req(urls.https), responseHTML: String(data: data.html, encoding: .utf8)!)
@@ -1126,7 +1135,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
     func testSimulatedRequestAfterCustomSchemeRequestWithFailureAfterWillStartNavigation() throws {
         // receive didFailProvisionalNavigation AFTER decidePolicyForNavigationAction for loadSimulatedRequest (because it works different in runtime than in tests)
-        navigationDelegateProxy.finishEventsDispatchTime = .afterWillStartNavigationAction
+        navigationDelegateProxy.didFailEventsDispatchTime = .afterWillStartNavigationAction
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         testSchemeHandler.onRequest = { [unowned webView=withWebView(do: { $0 }), data, urls] task in
             webView.loadSimulatedRequest(req(urls.https), responseHTML: String(data: data.html, encoding: .utf8)!)
@@ -1156,7 +1165,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
     func testSimulatedRequestAfterCustomSchemeRequestWithFailureAfterDidStartNavigation() throws {
         // receive didFailProvisionalNavigation AFTER decidePolicyForNavigationAction for loadSimulatedRequest (works different in runtime than in tests)
-        navigationDelegateProxy.finishEventsDispatchTime = .afterDidStartNavigationAction
+        navigationDelegateProxy.didFailEventsDispatchTime = .afterDidStartNavigationAction
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         testSchemeHandler.onRequest = { [unowned webView=withWebView(do: { $0 }), data, urls] task in
             webView.loadSimulatedRequest(req(urls.https), responseHTML: String(data: data.html, encoding: .utf8)!)
@@ -1394,6 +1403,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
+            // delay the response to avoid flakiness when the response is received before WebView stops loading
+            Thread.sleep(forTimeInterval: 0.1)
             return .ok(.data(data.html))
         }]
         try server.start(8084)
@@ -1505,7 +1516,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
     func disabled_testWhenRedirectNavigationActionResponderTakesLongToReturnDecisionAndAnotherNavigationComesInBeforeItThenTaskIsCancelled() throws {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
-        navigationDelegateProxy.finishEventsDispatchTime = .afterWillStartNavigationAction
+        navigationDelegateProxy.didFailEventsDispatchTime = .afterWillStartNavigationAction
 
         server.middleware = [{ [urls, data] request in
             guard request.path == "/" else { return nil }
@@ -1630,7 +1641,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         responder(at: 0).onNavigationResponse = { [unowned webView=withWebView(do: { $0 })] _ in
-            webView.perform(NSSelectorFromString("_killWebContentProcess"))
+            webView.killWebContentProcess()
             return .next
         }
 
@@ -1651,8 +1662,16 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             _=webView.load(req(urls.local1))
         }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations(timeout: 10)
 
+        // sometimes didCommit and navigationResponse can be received,
+        // we‘re only interested in .didTerminate and .didFail events here
+        if case .didCommit = responder(at: 0).history[safe: 4] {
+            responder(at: 0).history.remove(at: 4)
+        }
+        if case .navigationResponse = responder(at: 0).history[safe: 4] {
+            responder(at: 0).history.remove(at: 4)
+        }
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1), .other, src: main(responderIdx: 0)),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),

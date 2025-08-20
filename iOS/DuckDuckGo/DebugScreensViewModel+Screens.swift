@@ -23,6 +23,7 @@ import UIKit
 import WebKit
 import BareBonesBrowserKit
 import Core
+import DataBrokerProtection_iOS
 
 extension DebugScreensViewModel {
 
@@ -41,6 +42,11 @@ extension DebugScreensViewModel {
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),
+            .action(title: "Reset Settings > Complete Setup", { d in
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
+            }),
             .action(title: "Generate Diagnostic Report", { d in
                 guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
 
@@ -48,13 +54,13 @@ extension DebugScreensViewModel {
                     func dataGatheringStarted() {
                         ActionMessageView.present(message: "Data Gathering Started... please wait")
                     }
-                    
+
                     func dataGatheringComplete() {
                         ActionMessageView.present(message: "Data Gathering Complete")
                     }
                 }
 
-                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), fireproofing: d.fireproofing)], fromView: controller.view)
+                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
 
             // MARK: SwiftUI Views
@@ -63,6 +69,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
+            }),
+            .view(title: "ContentScope Experiments", { _ in
+                ContentScopeExperimentsDebugView()
             }),
             .view(title: "Crashes", { _ in
                 CrashDebugScreen()
@@ -85,6 +94,9 @@ extension DebugScreensViewModel {
             .view(title: "Remote Messaging", { _ in
                 RemoteMessagingDebugRootView()
             }),
+            .view(title: "Settings Cells Demo", { _ in
+                SettingsCellDemoDebugView()
+            }),
             .view(title: "Vanilla Web View", { d in
                 let configuration = WKWebViewConfiguration()
                 configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
@@ -106,6 +118,9 @@ extension DebugScreensViewModel {
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
             }),
+            .view(title: "Default Browser Prompt", { d in
+                DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in
@@ -113,6 +128,7 @@ extension DebugScreensViewModel {
                 return storyboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
+                                                  tabsModel: d.tabManager.model,
                                                   fireproofing: d.fireproofing)
                 }
             }),
@@ -123,6 +139,9 @@ extension DebugScreensViewModel {
                                             sync: d.syncService,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
+            }),
+            .controller(title: "Log Viewer", { d in
+                return LogViewerViewController(dependencies: d)
             }),
             .controller(title: "Configuration Refresh Info", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
@@ -136,12 +155,12 @@ extension DebugScreensViewModel {
                     NetworkProtectionDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "PIR", { _ in
+            AppDependencyProvider.shared.featureFlagger.isFeatureOn(.personalInformationRemoval) ? .controller(title: "PIR", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "DataBrokerProtectionDebugViewController") { coder in
                     DataBrokerProtectionDebugViewController(coder: coder)
                 }
-            }),
+            }) : nil,
             .controller(title: "File Size Inspector", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
@@ -160,11 +179,13 @@ extension DebugScreensViewModel {
                     KeychainItemsDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "Autofill", { _ in
+            .controller(title: "Autofill", { d in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
+                let autofillDebugViewController = storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
                     AutofillDebugViewController(coder: coder)
                 }
+                autofillDebugViewController.keyValueStore = d.keyValueStore
+                return autofillDebugViewController
             }),
             .controller(title: "Subscription", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
@@ -175,10 +196,12 @@ extension DebugScreensViewModel {
             .controller(title: "Configuration URLs", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "ConfigurationURLDebugViewController") { coder in
-                    ConfigurationURLDebugViewController(coder: coder)
+                    let viewController = ConfigurationURLDebugViewController(coder: coder)
+                    viewController?.viewModel = self
+                    return viewController
                 }
             }),
-            .controller(title: "Onboarding", { _ in
+            .controller(title: "Onboarding", { d in
                 class OnboardingDebugViewController: UIHostingController<OnboardingDebugView>, OnboardingDelegate {
                     func onboardingCompleted(controller: UIViewController) {
                         controller.presentingViewController?.dismiss(animated: true)
@@ -188,7 +211,7 @@ extension DebugScreensViewModel {
                 weak var capturedController: OnboardingDebugViewController?
                 let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
                     guard let capturedController else { return }
-                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter())
+                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter(), systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager, daxDialogsManager: d.daxDialogManager)
                     controller.delegate = capturedController
                     controller.modalPresentationStyle = .overFullScreen
                     capturedController.parent?.present(controller: controller, fromView: capturedController.view)
@@ -196,7 +219,7 @@ extension DebugScreensViewModel {
                 capturedController = onboardingController
                 return onboardingController
             }),
-        ]
+        ].compactMap { $0 }
     }
 
 }

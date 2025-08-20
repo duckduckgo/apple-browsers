@@ -25,6 +25,11 @@ final class FreemiumDBPPresenterTests: XCTestCase {
     private var mockWindowControllerManager: MockWindowControllerManager!
     private var mockFreemiumDBPStateManager: MockFreemiumDBPUserStateManager!
 
+    override func tearDown() {
+        mockWindowControllerManager = nil
+        mockFreemiumDBPStateManager = nil
+    }
+
     @MainActor
     func testWhenCallShowFreemiumDBPThenShowPIRTabIsCalledAndActivatedStateIsSet() async throws {
         // Given
@@ -41,6 +46,7 @@ final class FreemiumDBPPresenterTests: XCTestCase {
 }
 
 private final class MockWindowControllerManager: WindowControllersManagerProtocol {
+    var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
@@ -62,11 +68,16 @@ private final class MockWindowControllerManager: WindowControllersManagerProtoco
         showTabContent = content
     }
 
+    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {}
+
     func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {}
 
     func showBookmarksTab() {}
 
-    func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> DuckDuckGo_Privacy_Browser.MainWindow? {
+    func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
         nil
     }
+
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 }

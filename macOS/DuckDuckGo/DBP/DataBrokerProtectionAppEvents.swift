@@ -69,7 +69,9 @@ struct DataBrokerProtectionAppEvents {
 
         // Check feature prerequisites and disable the login item if they are not satisfied
         Task { @MainActor in
-            let prerequisitesMet = await featureGatekeeper.arePrerequisitesSatisfied()
+            // Failure doesn't mean no entitlements, so we just bail out and do nothing
+            let prerequisitesMet = try await featureGatekeeper.arePrerequisitesSatisfied()
+
             guard prerequisitesMet else {
                 loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
                 NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
@@ -79,7 +81,7 @@ struct DataBrokerProtectionAppEvents {
     }
 
     private func restartBackgroundAgent(loginItemsManager: LoginItemsManager) {
-        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerResetLoginItemDaily, frequency: .daily)
+        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerResetLoginItemDaily, frequency: .legacyDaily)
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
         NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
         loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])

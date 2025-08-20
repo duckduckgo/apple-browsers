@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - sync
 name: 02_login_account
 
@@ -20,6 +21,10 @@ name: 02_login_account
 # Set Internal User
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
+
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
 
 # Login
 - assertVisible: Sync & Backup

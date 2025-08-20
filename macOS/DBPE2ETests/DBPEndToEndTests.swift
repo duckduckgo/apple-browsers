@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
+import Common
+import LoginItems
+import PixelKitTestingUtilities
+import XCTest
+
 @testable import DataBrokerProtection_macOS
 @testable import DataBrokerProtectionCore
-import BrowserServicesKit
-import LoginItems
-import XCTest
-import PixelKitTestingUtilities
-import Combine
 @testable import DuckDuckGo_Privacy_Browser
 @testable import PixelKit
 
@@ -31,11 +33,11 @@ import Combine
 final class DBPEndToEndTests: XCTestCase {
 
     var loginItemsManager: LoginItemsManager!
-    var pirProtectionManager = DataBrokerProtectionManager.shared
+    var pirProtectionManager: DataBrokerProtectionManager! = DataBrokerProtectionManager.shared
     var communicationLayer: DBPUICommunicationLayer!
     var communicationDelegate: DBPUICommunicationDelegate!
     var viewModel: DBPUIViewModel!
-    let testUserDefault = UserDefaults(suiteName: #function)!
+    var testUserDefault: UserDefaults! = UserDefaults(suiteName: #function)
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -44,8 +46,7 @@ final class DBPEndToEndTests: XCTestCase {
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
         loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
 
-        communicationLayer = DBPUICommunicationLayer(webURLSettings:
-                                                        DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
+        communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager!.communicator
 
@@ -62,6 +63,13 @@ final class DBPEndToEndTests: XCTestCase {
     override func tearDown() async throws {
         try pirProtectionManager.dataManager!.database.deleteProfileData()
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+
+        loginItemsManager = nil
+        pirProtectionManager = nil
+        communicationLayer = nil
+        communicationDelegate = nil
+        viewModel = nil
+        testUserDefault = nil
     }
 
     /*
@@ -238,7 +246,7 @@ final class DBPEndToEndTests: XCTestCase {
             let queries = try! database.fetchAllBrokerProfileQueryData()
             let optOutJobs = queries.flatMap { $0.optOutJobData }
             let events = optOutJobs.flatMap { $0.historyEvents }
-            let optOutsRequested = events.filter{ $0.type == .optOutRequested }
+            let optOutsRequested = events.filter { $0.type == .optOutRequested }
             return optOutsRequested.count > 0
         })
         print("Stage 5 passed: We finish running the opt out jobs")
@@ -293,7 +301,7 @@ final class DBPEndToEndTests: XCTestCase {
                 let queries = try! database.fetchAllBrokerProfileQueryData()
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 let events = optOutJobs.flatMap { $0.historyEvents }
-                let optOutsConfirmed = events.filter{ $0.type == .optOutConfirmed }
+                let optOutsConfirmed = events.filter { $0.type == .optOutConfirmed }
                 return optOutsConfirmed.count > 0
             }
         })
@@ -419,8 +427,9 @@ private extension DBPEndToEndTests {
     // A useful function for debugging responses from the fake broker
     func prettyPrintJSONData(_ data: Data) {
         if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
-           let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) {
-            print(String(decoding: jsonData, as: UTF8.self))
+           let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+           let jsonString = jsonData.utf8String() {
+            print(jsonString)
         } else {
             print("json data malformed")
         }

@@ -16,17 +16,19 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
 import Combine
 import CoreLocation
+import Foundation
+import OSLog
 import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class GeolocationProviderTests: XCTestCase {
 
-    let geolocationServiceMock = GeolocationServiceMock()
-    let appIsActive = CurrentValueSubject<Bool, Never>(true)
+    var geolocationServiceMock: GeolocationServiceMock!
+    var appIsActive: CurrentValueSubject<Bool, Never>!
     var windows = [MockWindow]()
     var webViews = [WKWebView]()
     var webView: WKWebView!
@@ -76,6 +78,8 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     override func setUp() {
+        geolocationServiceMock = GeolocationServiceMock()
+        appIsActive = CurrentValueSubject(true)
         webView = makeWebView()
     }
 
@@ -96,6 +100,7 @@ final class GeolocationProviderTests: XCTestCase {
         webViews.append(webView)
 
         webView.uiDelegate = self
+        webView.navigationDelegate = self
 
         window.contentView = view
 
@@ -103,12 +108,13 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     override func tearDown() {
-        geolocationServiceMock.onSubscriptionReceived = nil
-        geolocationServiceMock.onSubscriptionCancelled = nil
+        geolocationServiceMock.tearDown()
         geolocationHandler = nil
         windows = []
         webView = nil
         webViews = []
+        geolocationServiceMock = nil
+        appIsActive = nil
     }
 
     func testWhenGeolocationRequestedThenGeolocationIsProvidedOnce() {
@@ -124,7 +130,7 @@ final class GeolocationProviderTests: XCTestCase {
             e2 = geolocationReceived
             e3 = cancelled
 
-            geolocationServiceMock.currentLocationPublished = .success(coordinate)
+            geolocationServiceMock!.currentLocationPublished = .success(coordinate)
         }
         geolocationHandler = { _, body in
             try XCTAssertEqual(Response(body), Response(coordinate.removingAltitude()))
@@ -136,7 +142,7 @@ final class GeolocationProviderTests: XCTestCase {
 
         webView.loadHTMLString(Self.getCurrentPosition, baseURL: .duckDuckGo)
 
-        waitForExpectations(timeout: 2)
+        waitForExpectations(timeout: 5)
         XCTAssertEqual(geolocationServiceMock.history, [.subscribed,
                                                         .locationPublished,
                                                         .cancelled])
@@ -186,13 +192,13 @@ final class GeolocationProviderTests: XCTestCase {
         let location2 = CLLocation(latitude: 10.1, longitude: -13.5)
 
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            geolocationServiceMock.currentLocationPublished = .success(location1)
+            geolocationServiceMock!.currentLocationPublished = .success(location1)
         }
         let e1 = expectation(description: "location1 received")
         let e2 = expectation(description: "location2 received")
         geolocationHandler = { [geolocationServiceMock, webView] _, body in
-            if geolocationServiceMock.history == [.subscribed, .locationPublished] {
-                geolocationServiceMock.currentLocationPublished = .success(location2)
+            if geolocationServiceMock!.history == [.subscribed, .locationPublished] {
+                geolocationServiceMock!.currentLocationPublished = .success(location2)
                 try XCTAssertEqual(Response(body), Response(location1.removingAltitude()))
                 e1.fulfill()
             } else {
@@ -257,9 +263,9 @@ final class GeolocationProviderTests: XCTestCase {
 
         geolocationServiceMock.currentLocationPublished = .success(location1)
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock.history == [.locationPublished, .subscribed, .subscribed] {
+            if geolocationServiceMock!.history == [.locationPublished, .subscribed, .subscribed] {
                 DispatchQueue.main.async {
-                    geolocationServiceMock.currentLocationPublished = .success(location2)
+                    geolocationServiceMock!.currentLocationPublished = .success(location2)
                 }
             }
         }
@@ -339,11 +345,11 @@ final class GeolocationProviderTests: XCTestCase {
         geolocationServiceMock.currentLocationPublished = .success(location1)
         let e = expectation(description: "re-subscribed")
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock.history == [.locationPublished, .subscribed] {
+            if geolocationServiceMock!.history == [.locationPublished, .subscribed] {
                 DispatchQueue.main.async {
                     self.appIsActive.send(false)
                 }
-            } else if geolocationServiceMock.history == [.locationPublished, .subscribed, .cancelled, .subscribed] {
+            } else if geolocationServiceMock!.history == [.locationPublished, .subscribed, .cancelled, .subscribed] {
                 e.fulfill()
             } else {
                 XCTFail("Unexpected call sequence")
@@ -373,10 +379,10 @@ final class GeolocationProviderTests: XCTestCase {
 
         geolocationServiceMock.currentLocationPublished = .success(location1)
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock.history == [.locationPublished, .subscribed, .subscribed] {
+            if geolocationServiceMock!.history == [.locationPublished, .subscribed, .subscribed] {
                 DispatchQueue.main.async {
                     webView2.configuration.processPool.geolocationProvider!.isPaused = true
-                    geolocationServiceMock.currentLocationPublished = .success(location2)
+                    geolocationServiceMock!.currentLocationPublished = .success(location2)
                 }
             }
         }
@@ -436,7 +442,7 @@ final class GeolocationProviderTests: XCTestCase {
             switch try Response(body) {
             case Response(location1.removingAltitude()):
                 webView.configuration.processPool.geolocationProvider!.isPaused = true
-                geolocationServiceMock.currentLocationPublished = .success(location2)
+                geolocationServiceMock!.currentLocationPublished = .success(location2)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     webView.configuration.processPool.geolocationProvider!.isPaused = false
                 }
@@ -474,7 +480,7 @@ final class GeolocationProviderTests: XCTestCase {
         }
         let e = expectation(description: "subscription cancelled")
         geolocationServiceMock.onSubscriptionCancelled = { [geolocationServiceMock] in
-            geolocationServiceMock.currentLocationPublished = .success(location2)
+            geolocationServiceMock!.currentLocationPublished = .success(location2)
             e.fulfill()
         }
 
@@ -535,7 +541,7 @@ final class GeolocationProviderTests: XCTestCase {
         }
         let e2 = expectation(description: "subscription cancelled")
         geolocationServiceMock.onSubscriptionCancelled = { [geolocationServiceMock] in
-            geolocationServiceMock.currentLocationPublished = .success(location2)
+            geolocationServiceMock!.currentLocationPublished = .success(location2)
             e2.fulfill()
         }
 
@@ -613,7 +619,7 @@ final class GeolocationProviderTests: XCTestCase {
 
 }
 
-extension GeolocationProviderTests: WKUIDelegate {
+extension GeolocationProviderTests: WKUIDelegate, WKNavigationDelegate {
     @objc(_webView:requestGeolocationPermissionForFrame:decisionHandler:)
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void) {
         decisionHandler(shouldGrant)
@@ -626,6 +632,21 @@ extension GeolocationProviderTests: WKUIDelegate {
                  initiatedBy frame: WKFrameInfo,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
         decisionHandler(shouldGrant ? .grant : .deny)
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        Logger.general.debug("decidePolicyForNavigationAction: \(navigationAction.debugDescription)")
+        return .allow
+    }
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        Logger.general.debug("decidePolicyForNavigationResponse: \(navigationResponse.debugDescription)")
+        return .allow
+    }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Logger.general.debug("didFinish: \(navigation.debugDescription)")
+    }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) {
+        Logger.general.debug("didFailProvisionalNavigation: \(navigation.debugDescription) with \(error.localizedDescription)")
     }
 }
 

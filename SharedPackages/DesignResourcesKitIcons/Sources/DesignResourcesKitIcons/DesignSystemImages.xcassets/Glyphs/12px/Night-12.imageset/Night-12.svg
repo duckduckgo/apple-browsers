@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Night-12_svg__a)">
+    <path fill="#000" fill-rule="evenodd" d="M6.674 1.298A5.501 5.501 0 0 1 2.49 9.2a4.75 4.75 0 1 0 4.184-7.903ZM5.982 0H6a6 6 0 1 1-4.985 9.34.846.846 0 0 1-.02-.916A.883.883 0 0 1 1.75 8a4.25 4.25 0 0 0 3.526-6.624.895.895 0 0 1-.073-.872.855.855 0 0 1 .78-.504Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Night-12_svg__a">
+      <path fill="#fff" d="M0 0h12v12H0z"/>
+    </clipPath>
+  </defs>
+</svg>

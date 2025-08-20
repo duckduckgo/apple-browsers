@@ -75,6 +75,7 @@ public final class CrashCollection {
                 .compactMap(\.crashDiagnostics)
                 .flatMap { $0 }
                 .map { diagnostic in
+
                     var params = [
                         "appVersion": "\(diagnostic.applicationVersion).\(diagnostic.metaData.applicationBuildVersion)",
                         "code": "\(diagnostic.exceptionCode ?? -1)",
@@ -84,6 +85,9 @@ public final class CrashCollection {
                     if first {
                         params["first"] = "1"
                     }
+
+                    let metadataJSON = try? JSONSerialization.jsonObject(with: diagnostic.metaData.jsonRepresentation()) as? [String: Any]
+                    params["bundle"] = metadataJSON?["bundleIdentifier"] as? String
                     return params
                 }
             let processedData = process(payloads)

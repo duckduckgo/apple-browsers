@@ -24,6 +24,7 @@ import History
 import MaliciousSiteProtection
 import PrivacyDashboard
 import SpecialErrorPages
+import WebKit
 
 /**
  Tab Extensions should conform to TabExtension protocol
@@ -77,6 +78,9 @@ protocol TabExtensionDependencies {
     var maliciousSiteDetector: MaliciousSiteDetecting { get }
     var faviconManagement: FaviconManagement? { get }
     var featureFlagger: FeatureFlagger { get }
+    var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
+    var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
+    var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -84,6 +88,7 @@ typealias TabExtensionsBuilderArguments = (
     tabIdentifier: UInt64,
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
+    isTabLoadedInSidebar: Bool,
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
@@ -138,6 +143,7 @@ extension TabExtensionsBuilder {
         add {
             PrivacyDashboardTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking,
                                          certificateTrustEvaluator: dependencies.certificateTrustEvaluator,
+                                         contentScopeExperimentsManager: dependencies.contentScopeExperimentsManager,
                                          autoconsentUserScriptPublisher: userScripts.map(\.?.autoconsentUserScript),
                                          contentScopeUserScriptPublisher: userScripts.map(\.?.contentScopeUserScript),
                                          didUpgradeToHttpsPublisher: httpsUpgrade.didUpgradeToHttpsPublisher,
@@ -166,10 +172,15 @@ extension TabExtensionsBuilder {
 
         add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
+                                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                  isBurner: args.isTabBurner)
         }
         add {
-            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript))
+            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
+                               contentPublisher: args.contentPublisher,
+                               isLoadedInSidebar: args.isTabLoadedInSidebar,
+                               internalUserDecider: dependencies.featureFlagger.internalUserDecider,
+                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -191,14 +202,24 @@ extension TabExtensionsBuilder {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
         }
         add {
-            HistoryTabExtension(isBurner: args.isTabBurner,
+            NewTabPageTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                   webViewPublisher: args.webViewFuture,
+                                   pixelSender: dependencies.newTabPageShownPixelSender)
+        }
+
+        let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar
+        add {
+            HistoryTabExtension(isCapturingHistory: isCapturingHistory,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
                                 titlePublisher: args.titlePublisher)
         }
         add {
-            PrivacyStatsTabExtension(trackersPublisher: contentBlocking.trackersPublisher)
+            PrivacyStatsTabExtension(
+                trackersPublisher: contentBlocking.trackersPublisher,
+                trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: dependencies.privacyFeatures.contentBlocking)
+            )
         }
         add {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)
@@ -217,9 +238,9 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            AIChatOnboardingTabExtension(webViewPublisher: args.webViewFuture,
-                                         notificationCenter: .default,
-                                         remoteSettings: AIChatRemoteSettings())
+            AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                               webViewPublisher: args.webViewFuture,
+                               isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 
         add {
@@ -237,6 +258,10 @@ extension TabExtensionsBuilder {
             )
         }
 
+        add {
+            SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
+        }
+
 #if SPARKLE
         add {
             ReleaseNotesTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
@@ -251,6 +276,13 @@ extension TabExtensionsBuilder {
             add {
                 NetworkProtectionControllerTabExtension(tunnelController: tunnelController)
             }
+        }
+
+        add {
+            InternalFeedbackFormTabExtension(
+                webViewPublisher: args.webViewFuture,
+                internalUserDecider: dependencies.featureFlagger.internalUserDecider
+            )
         }
     }
 

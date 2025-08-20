@@ -20,23 +20,54 @@ import SwiftUI
 import Common
 import Combine
 import BrowserServicesKit
+import FeatureFlags
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     static let shared = AboutPreferences(internalUserDecider: NSApp.delegateTyped.internalUserDecider)
 
-    private let internalUserDecider: InternalUserDecider
-    @Published var isInternalUser: Bool
-    private var internalUserCancellable: AnyCancellable?
+    let appVersionModel: AppVersionModel
+    @Published var featureFlagOverrideToggle = false
+    private let featureFlagger: FeatureFlagger
+    let supportedOSChecker: SupportedOSChecking
+    private var cancellables = Set<AnyCancellable>()
 
-    private init(internalUserDecider: InternalUserDecider) {
-        self.internalUserDecider = internalUserDecider
-        self.isInternalUser = internalUserDecider.isInternalUser
-        self.internalUserCancellable = internalUserDecider.isInternalUserPublisher
-            .sink { [weak self] in self?.isInternalUser = $0 }
+    private init(internalUserDecider: InternalUserDecider,
+                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                 supportedOSChecker: SupportedOSChecking? = nil) {
+
+        self.featureFlagger = featureFlagger
+        self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
+        self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
+        internalUserDecider.isInternalUserPublisher
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
+
+        subscribeToFeatureFlagOverrideChanges()
+    }
+
+    private func subscribeToFeatureFlagOverrideChanges() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0.category == .osSupportWarnings }
+            .sink { [weak self] _ in
+                self?.featureFlagOverrideToggle.toggle()
+            }
+            .store(in: &cancellables)
     }
 
 #if SPARKLE
+    var useLegacyAutoRestartLogic: Bool {
+        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+    }
+
+    var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
+        !useLegacyAutoRestartLogic
+    }
+
     @Published var updateState = UpdateState.upToDate
 
     var updateController: UpdateControllerProtocol? {
@@ -59,17 +90,67 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     private var subscribed = false
 
-#endif
+    private var hasPendingUpdate: Bool {
+        updateController?.hasPendingUpdate == true
+    }
 
-    let appVersion = AppVersion()
+    private var isAtRestartCheckpoint: Bool {
+        updateController?.isAtRestartCheckpoint ?? false
+    }
+
+    struct UpdateButtonConfiguration {
+        let title: String
+        let action: () -> Void
+        let enabled: Bool
+    }
+
+    var updateButtonConfiguration: UpdateButtonConfiguration {
+        switch updateState {
+        case .upToDate:
+            return UpdateButtonConfiguration(
+                title: UserText.checkForUpdate,
+                action: { [weak self] in
+                    self?.checkForUpdate(userInitiated: true)
+                },
+                enabled: true)
+        case .updateCycle(let progress):
+            if isAtRestartCheckpoint {
+                return UpdateButtonConfiguration(
+                    title: UserText.restartToUpdate,
+                    action: runUpdate,
+                    enabled: true)
+            } else if hasPendingUpdate {
+                return UpdateButtonConfiguration(
+                    title: UserText.runUpdate,
+                    action: runUpdate,
+                    enabled: true)
+            } else if progress.isFailed {
+                return UpdateButtonConfiguration(
+                    title: UserText.retryUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
+                    enabled: true)
+            } else {
+                return UpdateButtonConfiguration(
+                    title: UserText.checkForUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
+                    enabled: false)
+            }
+        }
+    }
+
+#endif
 
     private var cancellable: AnyCancellable?
 
     let displayableAboutURL: String = URL.aboutDuckDuckGo
         .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
 
-    var isCurrentOsReceivingUpdates: Bool {
-        return SupportedOSChecker.isCurrentOSReceivingUpdates
+    var osSupportWarning: OSSupportWarning? {
+        supportedOSChecker.supportWarning
     }
 
     @MainActor
@@ -82,8 +163,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
 #if SPARKLE
-    func checkForUpdate() {
-        updateController?.checkForUpdateSkippingRollout()
+    func checkForUpdate(userInitiated: Bool) {
+        if userInitiated {
+            updateController?.checkForUpdateSkippingRollout()
+        } else {
+            updateController?.checkForUpdateRespectingRollout()
+        }
     }
 
     func runUpdate() {

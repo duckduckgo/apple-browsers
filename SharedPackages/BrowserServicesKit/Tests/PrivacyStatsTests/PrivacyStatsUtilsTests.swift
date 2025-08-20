@@ -274,6 +274,91 @@ final class PrivacyStatsUtilsTests: XCTestCase {
         }
     }
 
+    // MARK: - load7DaysTotalBlockedTrackersCount
+
+    func testWhenThereAreNoObjectsInDatabaseThenLoad7DaysTotalBlockedTrackersCountIsZero() throws {
+        let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+
+        context.performAndWait {
+            do {
+                let count = try PrivacyStatsUtils.load7DaysTotalBlockedTrackersCount(in: context)
+                XCTAssertEqual(count, 0)
+            } catch {
+                XCTFail("Should not throw")
+            }
+        }
+    }
+
+    func testWhenThereAreObjectsInDatabaseFrom7DaysAgoOrMoreTheLoad7DaysTotalBlockedTrackersCountIsZero() throws {
+        let date = Date()
+
+        try databaseProvider.addObjects { context in
+            return [
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(10), companyName: "A", count: 123, context: context),
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(20), companyName: "B", count: 4567, context: context),
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(7), companyName: "C", count: 890, context: context)
+            ]
+        }
+
+        let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+
+        context.performAndWait {
+            do {
+                let count = try PrivacyStatsUtils.load7DaysTotalBlockedTrackersCount(in: context)
+                XCTAssertEqual(count, 0)
+            } catch {
+                XCTFail("Should not throw")
+            }
+        }
+    }
+
+    func testThatObjectsWithZeroCountAreNotReportedByLoad7DaysTotalBlockedTrackersCount() throws {
+        let date = Date()
+
+        try databaseProvider.addObjects { context in
+            return [
+                DailyBlockedTrackersEntity.make(timestamp: date, companyName: "A", count: 0, context: context),
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(4), companyName: "B", count: 0, context: context),
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(6), companyName: "C", count: 0, context: context)
+            ]
+        }
+
+        let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+
+        context.performAndWait {
+            do {
+                let count = try PrivacyStatsUtils.load7DaysTotalBlockedTrackersCount(in: context)
+                XCTAssertEqual(count, 0)
+            } catch {
+                XCTFail("Should not throw")
+            }
+        }
+    }
+
+    func testThatObjectsWithNonZeroCountAreReportedByLoad7DaysTotalBlockedTrackersCount() throws {
+        let date = Date()
+
+        try databaseProvider.addObjects { context in
+            return [
+                DailyBlockedTrackersEntity.make(timestamp: date, companyName: "A", count: 150, context: context),
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(1), companyName: "B", count: 400, context: context),
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(2), companyName: "C", count: 84, context: context),
+                DailyBlockedTrackersEntity.make(timestamp: date.daysAgo(6), companyName: "D", count: 5, context: context)
+            ]
+        }
+
+        let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+
+        context.performAndWait {
+            do {
+                let count = try PrivacyStatsUtils.load7DaysTotalBlockedTrackersCount(in: context)
+                XCTAssertEqual(count, 639)
+            } catch {
+                XCTFail("Should not throw")
+            }
+        }
+    }
+
     // MARK: - deleteOutdatedPacks
 
     func testWhenDeleteOutdatedPacksIsCalledThenObjectsFrom7DaysAgoOrMoreAreDeleted() throws {

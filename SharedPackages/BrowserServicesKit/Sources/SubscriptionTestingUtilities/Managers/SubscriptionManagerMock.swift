@@ -19,10 +19,12 @@
 import Foundation
 import Common
 @testable import Subscription
+import Combine
 
 public final class SubscriptionManagerMock: SubscriptionManager {
-
     public var email: String?
+
+    public var isEligibleForFreeTrialResult: Bool = false
 
     public var accountManager: AccountManager
     public var subscriptionEndpointService: SubscriptionEndpointService
@@ -63,8 +65,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        return []
+        return subscriptionFeatures
     }
+
+    public var subscriptionFeatures: [Entitlement.ProductName] = []
 
     public init(accountManager: AccountManager,
                 subscriptionEndpointService: SubscriptionEndpointService,
@@ -88,7 +92,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func getToken() async throws -> String {
         guard let accessToken = accountManager.accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return accessToken
     }
@@ -117,15 +121,18 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         accountManager.isUserAuthenticated
     }
 
-    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
-
-        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async throws -> Bool {
+        let result = await accountManager.hasEntitlement(forProductName: feature)
         switch result {
         case .success(let hasEntitlements):
             return hasEntitlements
         case .failure(let error):
             throw error
         }
+    }
+
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
+        await currentSubscriptionFeatures().contains(feature)
     }
 
     public func signOut(notifyUI: Bool) async {
@@ -147,5 +154,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isSubscriptionPresent() -> Bool {
         isUserAuthenticated
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
+    }
+
+    public let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> {
+        canPurchaseSubject.eraseToAnyPublisher()
     }
 }

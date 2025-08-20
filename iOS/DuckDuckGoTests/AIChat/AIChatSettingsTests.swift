@@ -22,26 +22,30 @@ import XCTest
 @testable import DuckDuckGo
 import BrowserServicesKit
 import Combine
+import AIChat
+import Persistence
+import PersistenceTestingUtils
 
 class AIChatSettingsTests: XCTestCase {
 
     private var mockPrivacyConfigurationManager: PrivacyConfigurationManagerMock!
-    private var mockUserDefaults: UserDefaults!
+    private var mockKeyValueStore: KeyValueStoring!
     private var mockNotificationCenter: NotificationCenter!
     private var mockFeatureFlagger: FeatureFlagger!
+    private var mockAIChatDebugSettings: MockAIChatDebugSettings!
 
     override func setUp() {
         super.setUp()
         mockPrivacyConfigurationManager = PrivacyConfigurationManagerMock()
-        mockUserDefaults = UserDefaults(suiteName: "TestDefaults")
+        mockKeyValueStore = MockKeyValueStore()
         mockNotificationCenter = NotificationCenter()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockAIChatDebugSettings = MockAIChatDebugSettings()
     }
 
     override func tearDown() {
-        mockUserDefaults.removePersistentDomain(forName: "TestDefaults")
         mockPrivacyConfigurationManager = nil
-        mockUserDefaults = nil
+        mockKeyValueStore = nil
         mockNotificationCenter = nil
         mockFeatureFlagger = nil
         super.tearDown()
@@ -49,7 +53,8 @@ class AIChatSettingsTests: XCTestCase {
 
     func testAIChatURLReturnsDefaultWhenRemoteSettingsMissing() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                      userDefaults: mockUserDefaults,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
 
         (mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)?.settings = [:]
@@ -60,7 +65,8 @@ class AIChatSettingsTests: XCTestCase {
 
     func testAIChatURLReturnsRemoteSettingWhenAvailable() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                      userDefaults: mockUserDefaults,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
 
         let remoteURL = "https://example.com/ai-chat"
@@ -71,9 +77,22 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertEqual(settings.aiChatURL, URL(string: remoteURL))
     }
 
+    func testAIChatURLReturnsOverriddenSettingWhenAvailable() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        let override = "https://override.com/ai-chat"
+        mockAIChatDebugSettings.customURL = override
+
+        XCTAssertEqual(settings.aiChatURL, URL(string: override))
+    }
+
     func testEnableAIChatBrowsingMenuUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                      userDefaults: mockUserDefaults,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
 
         settings.enableAIChatBrowsingMenuUserSettings(enable: false)
@@ -85,7 +104,8 @@ class AIChatSettingsTests: XCTestCase {
 
     func testEnableAIChatAddressBarUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                      userDefaults: mockUserDefaults,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
 
         settings.enableAIChatAddressBarUserSettings(enable: false)
@@ -97,7 +117,8 @@ class AIChatSettingsTests: XCTestCase {
 
     func testNotificationPostedWhenSettingsChange() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                      userDefaults: mockUserDefaults,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
                                       notificationCenter: mockNotificationCenter)
 
         let expectation = self.expectation(description: "Notification should be posted")
@@ -111,4 +132,10 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
+}
+
+final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
+    var messagePolicyHostname: String?
+    var customURL: String?
+    func reset() {}
 }

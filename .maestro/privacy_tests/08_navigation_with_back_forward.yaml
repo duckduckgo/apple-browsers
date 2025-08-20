@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - privacy
 
 ---
@@ -22,7 +23,7 @@ tags:
 - assertVisible:
     text: "Publisher site"
 - tapOn: 
-    point: "6%,10%" # Shield icon. 
+    id: "privacy-icon-shield.button" 
 - assertVisible:
     text: "View Tracker Companies"
 - tapOn:
@@ -76,7 +77,7 @@ tags:
 - assertVisible:
     text: "Pay First Party"
 - tapOn: 
-    point: "6%,10%" # Shield icon. 
+    id: "privacy-icon-shield.button" 
 - assertVisible:
     text: "View Tracker Companies"
 - tapOn:
@@ -115,7 +116,7 @@ tags:
 - tapOn:
     text: "Pay"
 - tapOn: 
-    point: "6%,10%" # Shield icon. 
+    id: "privacy-icon-shield.button" 
 - assertVisible:
     text: "View Tracker Companies"
 - tapOn:

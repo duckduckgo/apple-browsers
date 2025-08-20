@@ -40,7 +40,9 @@ public struct DefaultNewTabPageContextMenuPresenter: NewTabPageContextMenuPresen
 
     public func showContextMenu(_ menu: NSMenu) {
         if !menu.items.isEmpty {
-            menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+            let view = window?.contentView
+            let mouseLocation = window.flatMap { window in view?.convert(window.mouseLocationOutsideOfEventStream, from: nil) } ?? NSEvent.mouseLocation
+            menu.popUp(positioning: nil, at: mouseLocation, in: view)
         }
     }
 

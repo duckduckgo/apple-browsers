@@ -36,16 +36,21 @@ let extensionsInputFiles: [InputFile] = [
 ]
 
 let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
-    .init("BWEncryption.m", .source),
-    .init("BWEncryptionOutput.m", .source),
+    .init("InfoPlist.xcstrings", .resource),
+    .init("DeveloperID.xcstrings", .resource),
     .init("BWManager.swift", .source),
+    .init("UpdateCheckActor.swift", .source),
+    .init("UpdateCheckState.swift", .source),
     .init("UpdateController.swift", .source),
     .init("UpdateUserDriver.swift", .source),
-    .init("PFMoveApplication.m", .source),
     .init("DuckDuckGo VPN.app", .unknown),
-    .init("DuckDuckGo Notifications.app", .unknown),
     .init("DuckDuckGo Personal Information Removal.app", .unknown)
 ] + extensionsInputFiles)
+
+let sandboxedExtraInputFiles: Set<InputFile> = Set([
+    .init("AppStore.xcstrings", .resource),
+    .init("AppStoreInfoPlist.xcstrings", .resource)
+])
 
 /**
  * This dictionary keeps track of input files that are not present in all targets.
@@ -60,16 +65,19 @@ let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
 let extraInputFiles: [TargetName: Set<InputFile>] = [
     "DuckDuckGo Privacy Browser": nonSandboxedExtraInputFiles,
 
-    "DuckDuckGo Privacy Browser App Store": [],
+    "DuckDuckGo Privacy Browser App Store": sandboxedExtraInputFiles,
 
     "DuckDuckGo Privacy Pro": nonSandboxedExtraInputFiles,
 
     "Unit Tests": [
         .init("BWEncryptionTests.swift", .source),
+        .init("UpdateCheckStateTests.swift", .source),
         .init("WKWebViewPrivateMethodsAvailabilityTests.swift", .source),
         .init("WebExtensionManagerTests.swift", .source),
         .init("WebExtensionPathsCacheMock.swift", .source),
-        .init("WebExtensionLoaderMock.swift", .source)
+        .init("WebExtensionLoaderMock.swift", .source),
+        .init("SupportedOSCheckerTests.swift", .source),
+        .init("UpdateControllerTests.swift", .source)
     ],
 
     "Integration Tests": []

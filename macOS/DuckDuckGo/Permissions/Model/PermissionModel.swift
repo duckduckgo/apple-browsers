@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
-import WebKit
 import AVFoundation
+import Combine
 import CoreLocation
+import Foundation
+import Navigation
+import WebKit
 
 final class PermissionModel {
 
@@ -29,7 +30,7 @@ final class PermissionModel {
 
     private(set) var authorizationQueries = [PermissionAuthorizationQuery]() {
         didSet {
-            authorizationQuery = authorizationQueries.first
+            authorizationQuery = authorizationQueries.last
         }
     }
 
@@ -46,7 +47,7 @@ final class PermissionModel {
     private var cancellables = Set<AnyCancellable>()
 
     init(webView: WKWebView? = nil,
-         permissionManager: PermissionManagerProtocol = PermissionManager.shared,
+         permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared) {
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
@@ -172,7 +173,7 @@ final class PermissionModel {
                 .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
         }
 
-        permissions.forEach { self.permissions[$0].authorizationQueried(query) }
+        permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
         authorizationQueries.append(query)
     }
 

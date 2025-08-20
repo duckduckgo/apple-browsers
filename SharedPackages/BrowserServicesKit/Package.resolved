@@ -1,48 +1,12 @@
 {
   "pins" : [
     {
-      "identity" : "bloom_cpp",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/bloom_cpp.git",
-      "state" : {
-        "revision" : "8076199456290b61b4544bf2f4caf296759906a0",
-        "version" : "3.0.0"
-      }
-    },
-    {
-      "identity" : "content-scope-scripts",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/content-scope-scripts",
-      "state" : {
-        "revision" : "1d5f27d5167e4bdcaedebe67086cea3bab8d7f94",
-        "version" : "8.19.0"
-      }
-    },
-    {
-      "identity" : "designresourceskit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/DesignResourcesKit",
-      "state" : {
-        "revision" : "f07a285c6edb5265b3a256c87124135ebcedee6f",
-        "version" : "4.3.0"
-      }
-    },
-    {
       "identity" : "duckduckgo-autofill",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "90541ed7d3a69733fc37e9c51bd92f21e0d56a57",
-        "version" : "17.1.0"
-      }
-    },
-    {
-      "identity" : "grdb.swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/GRDB.swift.git",
-      "state" : {
-        "revision" : "5b2f6a81099d26ae0f9e38788f51490cd6a4b202",
-        "version" : "2.4.2"
+        "revision" : "252082be808ece0ab91d60a27e18bfcf10dcec1b",
+        "version" : "18.3.0"
       }
     },
     {
@@ -68,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "b370e1e1afa322a48a8a37c6c954a444c15489e4",
-        "version" : "9.0.0"
+        "revision" : "fd3b7e2d8194e265c537f227c706de7db3085da5",
+        "version" : "9.4.0"
       }
     },
     {
@@ -86,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "a54383ada6cecde007d374f58f864e29370ba5c3",
-        "version" : "1.3.2"
+        "revision" : "f70225981241859eb4aa1a18a75531d26637c8cc",
+        "version" : "1.4.0"
       }
     },
     {
@@ -131,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/sync_crypto",
       "state" : {
-        "revision" : "4e383fa27d3386a48e01a43fd890540a7d8656aa",
-        "version" : "0.5.0"
+        "revision" : "8dfdea29e325c6611d9b2b556e1d380252d54ba6",
+        "version" : "0.7.0"
       }
     },
     {

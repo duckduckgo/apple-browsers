@@ -45,6 +45,10 @@ public extension String {
 
     static let localhost = "localhost"
 
+    init(_ staticString: StaticString) {
+        self = "\(staticString)"
+    }
+
     // MARK: Prefix/Suffix
 
     func trimmingWhitespace() -> String {
@@ -136,6 +140,22 @@ public extension String {
         }
 
         return message
+    }
+
+    /// Repeatedly removes percent-encoding until no more percent-escapes remain.
+    /// - Returns: The fully unescaped string.
+    func fullyRemovingPercentEncoding() -> String {
+        var currentString = self
+        var previousString: String
+
+        repeat {
+            previousString = currentString
+            if let unescapedString = currentString.removingPercentEncoding {
+                currentString = unescapedString
+            }
+        } while currentString != previousString
+
+        return currentString
     }
 
     private enum FileRegex {

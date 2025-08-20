@@ -24,11 +24,13 @@ import BrowserServicesKit
 import WebKit
 import Core
 import SwiftUI
+import Combine
 
 protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String)
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String)
 }
 
 final class AIChatViewControllerManager {
@@ -39,40 +41,83 @@ final class AIChatViewControllerManager {
 
     // MARK: - Private Properties
 
-    private weak var chatViewController: AIChatViewController?
+    private(set) var chatViewController: AIChatViewController?
     private weak var userContentController: UserContentController?
 
     private var aiChatUserScript: AIChatUserScript?
     private var payloadHandler = AIChatPayloadHandler()
-    private var inputBoxHandler: AIChatInputBoxHandling?
-    private var inputBoxViewModel: AIChatInputBoxViewModel?
+    private let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private let userAgentManager: AIChatUserAgentProviding
+    private let featureFlagger: FeatureFlagger
     private let experimentalAIChatManager: ExperimentalAIChatManager
+    private let aiChatSettings: AIChatSettingsProvider
+    private var cancellables = Set<AnyCancellable>()
+    private var sessionTimer: AIChatSessionTimer?
+    private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
 
     // MARK: - Initialization
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
-         userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
-         experimentalAIChatManager: ExperimentalAIChatManager) {
+         userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
+         experimentalAIChatManager: ExperimentalAIChatManager,
+         featureFlagger: FeatureFlagger,
+         aiChatSettings: AIChatSettingsProvider,
+         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
         self.experimentalAIChatManager = experimentalAIChatManager
+        self.featureFlagger = featureFlagger
+        self.aiChatSettings = aiChatSettings
+        self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
     }
 
     // MARK: - Public Methods
 
     @MainActor
-    func openAIChat(_ query: String? = nil, payload: Any? = nil, autoSend: Bool = false, on viewController: UIViewController) {
+    func openAIChat(_ query: String? = nil,
+                    payload: Any? = nil,
+                    autoSend: Bool = false,
+                    tools: [AIChatRAGTool]? = nil,
+                    on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 
+        /// Reset the session timer if the subscription state has changed, as we will force a refresh on AI Chat
+        if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
+            stopSessionTimer()
+        }
+
+        pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
+        pixelMetricHandler?.fireOpenAIChat()
+
+        /// If we have a query or payload, let's clean the previous session and start fresh
+        if query != nil || payload != nil || subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
+            subscriptionAIChatStateHandler.reset()
+            Task {
+                await cleanUpSession()
+                setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: viewController)
+            }
+        } else {
+            setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: viewController)
+        }
+    }
+
+    @MainActor
+    private func setupAndPresentAIChat(_ query: String?,
+                                       payload: Any?,
+                                       autoSend: Bool,
+                                       tools: [AIChatRAGTool]?,
+                                       on viewController: UIViewController) {
         let aiChatViewController = createAIChatViewController()
-        setupChatViewController(aiChatViewController, query: query, payload: payload, autoSend: autoSend)
+        setupChatViewController(aiChatViewController, query: query,
+                                payload: payload,
+                                autoSend: autoSend,
+                                tools: tools)
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(
             contentViewController: aiChatViewController,
@@ -82,25 +127,53 @@ final class AIChatViewControllerManager {
 
         viewController.present(roundedPageSheet, animated: true)
         chatViewController = aiChatViewController
+        stopSessionTimer()
     }
 
     // MARK: - Private Helper Methods
 
+    private func startSessionTimer() {
+        guard isKeepSessionEnabled else { return }
+
+        let sessionTime = TimeInterval(aiChatSettings.sessionTimerInMinutes * 60)
+        sessionTimer = AIChatSessionTimer(durationInSeconds: sessionTime, completion: { [weak self] in
+            Task {
+                await self?.cleanUpSession()
+            }
+        })
+        sessionTimer?.start()
+    }
+
+    @MainActor
+    private func cleanUpSession() async {
+        await self.cleanUpUserContent()
+        self.chatViewController = nil
+    }
+
+    private func stopSessionTimer() {
+        sessionTimer?.cancel()
+        sessionTimer = nil
+    }
+
+    private var isKeepSessionEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatKeepSession)
+    }
+
     @MainActor
     private func createAIChatViewController() -> AIChatViewController {
-        let settings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
+        if let chatViewController = chatViewController {
+            return chatViewController
+        }
         let webViewConfiguration = createWebViewConfiguration()
         let inspectableWebView = isInspectableWebViewEnabled()
-        let chatInputBox = setupChatInputBoxIfNeeded()
 
         let aiChatViewController = AIChatViewController(
-            settings: settings,
+            settings: aiChatSettings,
             webViewConfiguration: webViewConfiguration,
             requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
             inspectableWebView: inspectableWebView,
             downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
-            userAgentManager: userAgentManager,
-            chatInputBox: chatInputBox
+            userAgentManager: userAgentManager
         )
 
         aiChatViewController.delegate = self
@@ -117,9 +190,15 @@ final class AIChatViewControllerManager {
         return configuration
     }
 
-    private func setupChatViewController(_ aiChatViewController: AIChatViewController, query: String?, payload: Any?, autoSend: Bool) {
+    private func setupChatViewController(_ aiChatViewController: AIChatViewController,
+                                         query: String?,
+                                         payload: Any?,
+                                         autoSend: Bool,
+                                         tools: [AIChatRAGTool]?) {
         if let query = query {
-            aiChatViewController.loadQuery(query, autoSend: autoSend)
+            aiChatViewController.loadQuery(query,
+                                           autoSend: autoSend,
+                                           tools: tools)
         }
 
         if let payload = payload as? AIChatPayload {
@@ -136,22 +215,15 @@ final class AIChatViewControllerManager {
 #endif
     }
 
-    private func setupChatInputBoxIfNeeded() -> AnyView? {
-        guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return nil }
-
-        let viewModel = AIChatInputBoxViewModel()
-        let handler = AIChatInputBoxHandler(inputBoxViewModel: viewModel)
-
-        inputBoxViewModel = viewModel
-        inputBoxHandler = handler
-
-        return AnyView(AIChatInputBox(viewModel: viewModel))
+    private func cleanUpUserContent() async {
+        await userContentController?.removeAllContentRuleLists()
+        await userContentController?.cleanUpBeforeClosing()
     }
 
-    private func cleanUpUserContent() {
-        Task {
-            await userContentController?.removeAllContentRuleLists()
-            await userContentController?.cleanUpBeforeClosing()
+    private func loadQuery(_ query: String) {
+        chatViewController?.dismiss(animated: true) { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.aiChatViewControllerManager(self, didSubmitQuery: query)
         }
     }
 }
@@ -173,7 +245,6 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView
-        aiChatUserScript?.inputBoxHandler = inputBoxHandler
     }
 }
 
@@ -181,11 +252,13 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
 
 extension AIChatViewControllerManager: AIChatViewControllerDelegate {
     func aiChatViewController(_ viewController: AIChatViewController, didRequestToLoad url: URL) {
-        delegate?.aiChatViewControllerManager(self, didRequestToLoad: url)
-        viewController.dismiss(animated: true)
+        viewController.dismiss(animated: true) {
+            self.delegate?.aiChatViewControllerManager(self, didRequestToLoad: url)
+        }
     }
 
     func aiChatViewControllerDidFinish(_ viewController: AIChatViewController) {
+        startSessionTimer()
         viewController.dismiss(animated: true)
     }
 
@@ -201,7 +274,11 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
 
 extension AIChatViewControllerManager: RoundedPageSheetContainerViewControllerDelegate {
     func roundedPageSheetContainerViewControllerDidDisappear(_ controller: RoundedPageSheetContainerViewController) {
-        cleanUpUserContent()
+        guard isKeepSessionEnabled == false else { return }
+
+        Task {
+            await cleanUpSession()
+        }
     }
 }
 
@@ -221,12 +298,16 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             break
         }
     }
+
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
+        pixelMetricHandler?.firePixelWithMetric(metric)
+    }
 }
 
 // MARK: - AIChatUserAgentHandler
 
 private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
-    let userAgentManager: UserAgentManager
+    let userAgentManager: UserAgentManaging
 
     func userAgent(url: URL?) -> String {
         userAgentManager.userAgent(isDesktop: false, url: url)

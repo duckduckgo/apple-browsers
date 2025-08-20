@@ -25,7 +25,7 @@ enum OperationPreferredDateUpdaterOrigin {
     case scan
 }
 
-protocol OperationPreferredDateUpdater {
+protocol OperationPreferredDateUpdating {
     var database: DataBrokerProtectionRepository { get }
 
     func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
@@ -37,7 +37,7 @@ protocol OperationPreferredDateUpdater {
     func updateChildrenBrokerForParentBroker(_ parentBroker: DataBroker, profileQueryId: Int64) throws
 }
 
-struct OperationPreferredDateUpdaterUseCase: OperationPreferredDateUpdater {
+struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
 
     let database: DataBrokerProtectionRepository
     private let calculator = OperationPreferredDateCalculator()
@@ -79,8 +79,8 @@ struct OperationPreferredDateUpdaterUseCase: OperationPreferredDateUpdater {
                 if let childBrokerId = childBroker.id {
                     let confirmOptOutScanDate = Date().addingTimeInterval(childBroker.schedulingConfig.confirmOptOutScan.hoursToSeconds)
                     try database.updatePreferredRunDate(confirmOptOutScanDate,
-                                                    brokerId: childBrokerId,
-                                                    profileQueryId: profileQueryId)
+                                                        brokerId: childBrokerId,
+                                                        profileQueryId: profileQueryId)
                 }
             }
         } catch {
@@ -159,10 +159,10 @@ struct OperationPreferredDateUpdaterUseCase: OperationPreferredDateUpdater {
         return min(date1, date2)
     }
 
-    private func updatePreferredRunDate( _ date: Date?,
-                                         brokerId: Int64,
-                                         profileQueryId: Int64,
-                                         extractedProfileId: Int64?) throws {
+    private func updatePreferredRunDate(_ date: Date?,
+                                        brokerId: Int64,
+                                        profileQueryId: Int64,
+                                        extractedProfileId: Int64?) throws {
         do {
             if let extractedProfileId = extractedProfileId {
                 try database.updatePreferredRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)

@@ -208,11 +208,20 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Skriv inn koden manuelt";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Åpne DuckDuckGo-appen på en annen enhet og gå til %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Skann denne koden med en annen enhet for å synkronisere.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "Mobil til mobil?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Åpne DuckDuckGo på en annen enhet og skann denne koden for å synkronisere.";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Eller skann med DuckDuckGo på en annen enhet";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Del tekstkode";

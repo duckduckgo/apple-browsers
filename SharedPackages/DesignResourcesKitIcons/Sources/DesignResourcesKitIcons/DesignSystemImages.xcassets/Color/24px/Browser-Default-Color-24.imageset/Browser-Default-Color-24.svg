@@ -1,0 +1,18 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#F5F5F5" d="M17.625 3A4.375 4.375 0 0 1 22 7.375v3.375c0 .25-.776 1.605-1.25 1.25a6.25 6.25 0 0 0-9.323 7.833C11.641 20.252 10.75 21 10 21H6.375A4.375 4.375 0 0 1 2 16.625v-9.25A4.375 4.375 0 0 1 6.375 3h11.25Z"/>
+  <path fill="#CCC" d="M2.25 7.625A4.375 4.375 0 0 1 6.625 3.25h10.75a4.375 4.375 0 0 1 4.375 4.375V9H2.25V7.625Z"/>
+  <path fill="url(#Browser-Default-Color-24_svg__a)" fill-rule="evenodd" d="M17.85 3.006A4.375 4.375 0 0 1 22 7.375v4.1c0 .57-.795.866-1.25.524V9.25H3.25v7.375c0 1.726 1.4 3.125 3.125 3.125h5.012c.261.532-.09 1.25-.683 1.25H6.375a4.375 4.375 0 0 1-4.37-4.15L2 16.626v-9.25A4.375 4.375 0 0 1 6.375 3h11.25l.226.006ZM6.376 4.25a3.125 3.125 0 0 0-3.121 2.964l-.004.161V8h17.5v-.625c0-1.726-1.4-3.125-3.125-3.125H6.375Z" clip-rule="evenodd"/>
+  <path fill="#4CBA3C" d="M22 17a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z"/>
+  <path fill="url(#Browser-Default-Color-24_svg__b)" d="M20.75 17A3.75 3.75 0 1 0 17 20.75V22a5 5 0 1 1 0-10 5 5 0 0 1 0 10v-1.25A3.75 3.75 0 0 0 20.75 17Z"/>
+  <path fill="#fff" d="M18.432 15.464a.626.626 0 0 1 .885.885l-2.343 2.343a.626.626 0 0 1-.787.08l-.098-.08-1.407-1.406-.08-.099a.626.626 0 0 1 .867-.866l.098.08.964.964 1.901-1.901Z"/>
+  <defs>
+    <linearGradient id="Browser-Default-Color-24_svg__a" x1="12" x2="12" y1="3" y2="21" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#333"/>
+    </linearGradient>
+    <linearGradient id="Browser-Default-Color-24_svg__b" x1="17" x2="17" y1="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#399F29"/>
+      <stop offset="1" stop-color="#288419"/>
+    </linearGradient>
+  </defs>
+</svg>

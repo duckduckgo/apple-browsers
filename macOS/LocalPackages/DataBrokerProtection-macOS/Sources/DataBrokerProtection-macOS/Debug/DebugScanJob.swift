@@ -50,7 +50,7 @@ struct EmptyCookieHandler: CookieHandler {
     }
 }
 
-final class DebugScanJob: DataBrokerJob {
+final class DebugScanJob: SubJobWebRunning {
     typealias ReturnValue = DebugScanReturnValue
     typealias InputValue = Void
 
@@ -60,6 +60,7 @@ final class DebugScanJob: DataBrokerJob {
     let emailService: EmailServiceProtocol
     let captchaService: CaptchaServiceProtocol
     let stageCalculator: StageDurationCalculator
+    let executionConfig: BrokerJobExecutionConfig
     var webViewHandler: WebViewHandler?
     var actionsHandler: ActionsHandler?
     var continuation: CheckedContinuation<DebugScanReturnValue, Error>?
@@ -81,6 +82,7 @@ final class DebugScanJob: DataBrokerJob {
          query: BrokerProfileQueryData,
          emailService: EmailServiceProtocol,
          captchaService: CaptchaServiceProtocol,
+         executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
          operationAwaitTime: TimeInterval = 3,
          clickAwaitTime: TimeInterval = 0,
          shouldRunNextStep: @escaping () -> Bool
@@ -90,6 +92,7 @@ final class DebugScanJob: DataBrokerJob {
         self.query = query
         self.emailService = emailService
         self.captchaService = captchaService
+        self.executionConfig = executionConfig
         self.operationAwaitTime = operationAwaitTime
         self.shouldRunNextStep = shouldRunNextStep
         self.clickAwaitTime = clickAwaitTime
@@ -134,7 +137,7 @@ final class DebugScanJob: DataBrokerJob {
     }
 
     public func runNextAction(_ action: Action) async {
-        if action as? ExtractAction != nil {
+        if action is ExtractAction {
             do {
                 if let path = self.debugScanContentPath {
                     let fileName = "\(query.profileQuery.id ?? 0)_\(query.dataBroker.name)"
@@ -146,7 +149,9 @@ final class DebugScanJob: DataBrokerJob {
             }
         }
 
-        await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
+        await webViewHandler?.execute(action: action,
+                                      ofType: actionsHandler?.stepType,
+                                      data: .userData(query.profileQuery, self.extractedProfile))
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
@@ -172,8 +177,16 @@ final class DebugScanJob: DataBrokerJob {
         await executeNextStep()
     }
 
+    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
+        if action.actionType == .expectation, !stageCalculator.isRetrying {
+            retriesCountOnError = 1
+        }
+
+        return false
+    }
+
     public func executeNextStep() async {
-        retriesCountOnError = 0 // We reset the retries on error when it is successful
+        resetRetriesCount()
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)

@@ -19,7 +19,7 @@
 
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkExtension
 
 /// Utility code to help implement our debug menu options for Network Protection.
@@ -46,14 +46,14 @@ final class NetworkProtectionDebugUtilities {
         try? await activeSession.sendProviderMessage(.triggerTestNotification)
     }
 
-    // MARK: - Disable VPN
+    // MARK: - Simulate Subscription Expiration
 
-    func disableConnectOnDemandAndShutDown() async {
+    func simulateSubscriptionExpirationInTunnel() async {
         guard let activeSession = await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession() else {
             return
         }
 
-        try? await activeSession.sendProviderRequest(.command(.disableConnectOnDemandAndShutDown))
+        try? await activeSession.sendProviderRequest(.command(.simulateSubscriptionExpirationInTunnel))
     }
 
     // MARK: - Failure Simulation
@@ -77,6 +77,23 @@ final class NetworkProtectionDebugUtilities {
         }
 
         try? await activeSession.sendProviderMessage(.startSnooze(duration))
+    }
+    
+    func createLogSnapshot() async throws {
+        guard let activeSession = await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession() else {
+            throw NSError(domain: "NetworkProtectionDebugUtilities", code: 1, userInfo: [NSLocalizedDescriptionKey: "No active VPN session"])
+        }
+
+        let responseData: ExtensionMessageString? = try await activeSession.sendProviderRequest(.command(.createLogSnapshot))
+
+        guard let responseString = responseData?.value else {
+            throw NSError(domain: "NetworkProtectionDebugUtilities", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid response from VPN extension"])
+        }
+        
+        if responseString.hasPrefix("Error: ") {
+            let errorMessage = String(responseString.dropFirst("Error: ".count))
+            throw NSError(domain: "NetworkProtectionDebugUtilities", code: 3, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
     }
 }
 

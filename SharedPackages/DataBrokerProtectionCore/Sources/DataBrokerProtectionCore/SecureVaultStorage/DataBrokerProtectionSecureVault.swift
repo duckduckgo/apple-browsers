@@ -28,8 +28,8 @@ public func createDataBrokerProtectionSecureVaultFactory(appGroupName: String?, 
             return DataBrokerProtectionCryptoProvider()
         }, makeKeyStoreProvider: { _ in
             return DataBrokerProtectionKeyStoreProvider(appGroupName: appGroupName)
-        }, makeDatabaseProvider: { key in
-            try DefaultDataBrokerProtectionDatabaseProvider.create(file: databaseFileURL, key: key)
+        }, makeDatabaseProvider: { key, reporter in
+            try DefaultDataBrokerProtectionDatabaseProvider.create(file: databaseFileURL, key: key, reporter: reporter)
         }
     )
 }
@@ -110,6 +110,12 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
+
+    func fetchFirstEligibleJobDate() throws -> Date?
+
+    func save(backgroundTaskEvent: BackgroundTaskEvent) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
 }
 
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
@@ -499,5 +505,25 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         let password = try passwordInUse()
         let l2Key = try l2KeyFrom(password: password)
         return try providers.crypto.decrypt(data, withKey: l2Key)
+    }
+
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        return try self.providers.database.fetchFirstEligibleJobDate()
+    }
+
+    public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
+        let mapperToDB = MapperToDB(mechanism: { $0 })
+        let eventDB = try mapperToDB.mapToDB(backgroundTaskEvent)
+        try self.providers.database.save(eventDB)
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        let eventsDB = try self.providers.database.fetchBackgroundTaskEvents(since: date)
+        let mapperToModel = MapperToModel(mechanism: { $0 })
+        return try eventsDB.map { try mapperToModel.mapToModel($0) }
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        try self.providers.database.deleteBackgroundTaskEvents(olderThan: date)
     }
 }

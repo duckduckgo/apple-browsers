@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "Το VPN αποσυνδέθηκε λόγω λήξης της συνδρομής. Εγγραφείτε στο Privacy Pro για να συνδέσετε εκ νέου το DuckDuckGo VPN.";
+"network.protection.entitlement.expired.notification.body" = "Το VPN αποσυνδέθηκε λόγω λήξης της συνδρομής. Εγγραφείτε στο DuckDuckGo για να συνδέσετε εκ νέου το VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Η σύνδεση του DuckDuckGo VPN απέτυχε. Ξαναδοκιμάστε αργότερα.";

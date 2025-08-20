@@ -169,6 +169,10 @@ final class CredentialProviderListViewController: UIViewController {
         navigationController?.navigationBar.barTintColor = UIColor(designSystemColor: .panel)
         navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
 
+        var titleAttrs = navigationController?.navigationBar.titleTextAttributes ?? [:]
+        titleAttrs[NSAttributedString.Key.foregroundColor] = UIColor(designSystemColor: .textPrimary)
+        navigationController?.navigationBar.titleTextAttributes = titleAttrs
+
         let appearance = UINavigationBarAppearance()
         appearance.shadowColor = .clear
         appearance.backgroundColor = UIColor(designSystemColor: .background)
@@ -322,8 +326,6 @@ extension CredentialProviderListViewController: UITableViewDataSource {
                 self?.presentDetailsForCredentials(item: item)
             }
             return cell
-        default:
-            return UITableViewCell()
         }
     }
 
@@ -331,8 +333,6 @@ extension CredentialProviderListViewController: UITableViewDataSource {
         switch viewModel.sections[section] {
         case .suggestions(let title, _), .credentials(let title, _):
             return title
-        default:
-            return nil
         }
     }
 
@@ -363,8 +363,6 @@ extension CredentialProviderListViewController: UITableViewDelegate {
                 onRowSelected(item)
                 Pixel.fire(pixel: .autofillExtensionPasswordSelected)
             }
-        default:
-            return
         }
     }
 

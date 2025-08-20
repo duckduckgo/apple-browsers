@@ -43,6 +43,8 @@ public struct AccessTokenValue: Encodable {
 public struct GetFeatureValue: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool
+    let usePaidDuckAi: Bool
+    let useAlternateStripePaymentFlow: Bool
 }
 
 /// Use Subscription sub-feature
@@ -67,10 +69,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     let uiHandler: SubscriptionUIHandling
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
-    private let freemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging
     private let notificationCenter: NotificationCenter
-    /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
-    private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
+    /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
+    private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
+
+    private let featureFlagger: FeatureFlagger
+    private let aiChatURL: URL
 
     public init(subscriptionManager: SubscriptionManagerV2,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler = PrivacyProSubscriptionAttributionPixelHandler(),
@@ -78,18 +82,20 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
-                freemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging,
                 notificationCenter: NotificationCenter = .default,
-                freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler()) {
+                dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
+                featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                aiChatURL: URL) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
         self.uiHandler = uiHandler
+        self.aiChatURL = aiChatURL
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
-        self.freemiumDBPPixelExperimentManager = freemiumDBPPixelExperimentManager
         self.notificationCenter = notificationCenter
-        self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
+        self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
+        self.featureFlagger = featureFlagger
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -165,7 +171,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription retrieved")
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -179,7 +185,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(useSubscriptionsAuthV2: true)
+        return GetFeatureValue(
+            useSubscriptionsAuthV2: true,
+            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+        )
     }
 
     // MARK: -
@@ -197,10 +207,13 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         switch subscriptionPlatform {
         case .appStore:
-            if #available(macOS 12.0, *) {
-                if let appStoreSubscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions() {
-                    subscriptionOptions = appStoreSubscriptionOptions
-                }
+            guard #available(macOS 12.0, *) else { break }
+
+            if featureFlagger.isFeatureOn(.privacyProFreeTrial),
+               let freeTrialOptions = await freeTrialSubscriptionOptions() {
+                subscriptionOptions = freeTrialOptions
+            } else if let appStoreSubscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions() {
+                subscriptionOptions = appStoreSubscriptionOptions
             }
         case .stripe:
             switch await stripePurchaseFlow.subscriptionOptions() {
@@ -270,10 +283,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
-                    case .accountCreationFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
-                    case .purchaseFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed)
+                    case .accountCreationFailed(let creationError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
+                    case .purchaseFailed(let purchaseError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
                     case .cancelledByUser:
                         subscriptionErrorReporter.report(subscriptionActivationError: .cancelledByUser)
                     case .missingEntitlements:
@@ -303,6 +316,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActivated, frequency: .uniqueByName)
                     subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
                     sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
+                    notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
                 case .failure(let error):
                     switch error {
@@ -312,10 +326,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
-                    case .accountCreationFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
-                    case .purchaseFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed)
+                    case .accountCreationFailed(let creationError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
+                    case .purchaseFailed(let purchaseError):
+                        subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
                     case .cancelledByUser:
                         subscriptionErrorReporter.report(subscriptionActivationError: .cancelledByUser)
                     case .missingEntitlements:
@@ -343,8 +357,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 switch error {
                 case .noProductsFound:
                     subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
-                case .accountCreationFailed:
-                    subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
+                case .accountCreationFailed(let creationError):
+                    subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
                 }
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
             }
@@ -386,6 +400,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             PixelKit.fire(PrivacyProPixel.privacyProWelcomeIdentityRestoration, frequency: .uniqueByName)
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
+        case .paidAIChat:
+            PixelKit.fire(PrivacyProPixel.privacyProWelcomeAIChat, frequency: .uniqueByName)
+            await uiHandler.showTab(with: .aiChat(aiChatURL))
         case .unknown:
             break
         }
@@ -403,6 +420,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         saveSubscriptionUpgradeTimestampIfFreemiumActivated()
         subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
+        notificationCenter.post(name: .subscriptionDidChange, object: self)
         return [String: String]() // cannot be nil, the web app expect something back before redirecting the user to the final page
     }
 
@@ -516,10 +534,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     ///
     /// - Note: This method is asynchronous when extracting the origin from the webview URL.
     private func setPixelOrigin(from message: WKScriptMessage) async {
-        // If the user has performed a Freemium scan, set a Freemium origin and return
-        guard !setFreemiumOriginIfScanPerformed() else { return }
-
-        // Else, Extract the origin from the webview URL to use for attribution pixel.
+        // Extract the origin from the webview URL to use for attribution pixel.
         subscriptionSuccessPixelHandler.origin = await originFrom(originalMessage: message)
     }
 }
@@ -572,7 +587,7 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
     /// If the feature is activated (`didActivate` returns `true`), it fires a unique subscription-related pixel event using `PixelKit`.
     func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
         if freemiumDBPUserStateManager.didActivate {
-            freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.subscription, parameters: freemiumDBPPixelExperimentManager.pixelParameters)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
         }
     }
 
@@ -587,20 +602,16 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
         }
     }
 
-    /// Sets the origin for attribution if the user has started their first Freemium PIR scan
+    /// Retrieves free trial subscription options for App Store.
     ///
-    /// This method checks whether the user has started their first Freemium PIR scan.
-    /// If they have, the method sets the subscription success tracking origin to `"funnel_freescan_macos"` and returns `true`.
-    ///
-    /// - Returns:
-    ///   - `true` if the origin is set because the user has started their first Freemim PIR scan.
-    ///   - `false` if a first scan has not been started and the origin is not set.
-    func setFreemiumOriginIfScanPerformed() -> Bool {
-        let origin = SubscriptionFunnelOrigin.freeScan.rawValue
-        if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
-            subscriptionSuccessPixelHandler.origin = origin
-            return true
+    /// - Returns: A `SubscriptionOptionsV2` object containing the relevant subscription options, or nil if unavailable.
+    ///   If free trial options are unavailable, falls back to standard subscription options.
+    ///   This fallback could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
+    @available(macOS 12.0, *)
+    func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2? {
+        guard let options = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
+            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
         }
-        return false
+        return options
     }
 }

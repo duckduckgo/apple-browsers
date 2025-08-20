@@ -103,6 +103,12 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func fetchAllAttempts() throws -> [OptOutAttemptDB]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> OptOutAttemptDB?
     func save(_ optOutAttemptDB: OptOutAttemptDB) throws
+
+    func fetchFirstEligibleJobDate() throws -> Date?
+
+    func save(_ event: BackgroundTaskEventDB) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEventDB]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
  }
 
 public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorageDatabaseProvider, DataBrokerProtectionDatabaseProvider {
@@ -115,17 +121,22 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     ///   - key: Key used in encryption
     ///   - featureFlagger: Migrations feature flagger
     ///   - migrationProvider: Migrations provider
+    ///   - reporter: Secure vault event/error reporter
     /// - Returns: DefaultDataBrokerProtectionDatabaseProvider instance
     public static func create<T: MigrationsProvider>(file: URL,
                                                      key: Data,
-                                                     migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self) throws -> DefaultDataBrokerProtectionDatabaseProvider {
-        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v6Migrations)
+                                                     migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self,
+                                                     reporter: SecureVaultReporting? = nil) throws -> DefaultDataBrokerProtectionDatabaseProvider {
+        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v7Migrations, reporter: reporter)
     }
 
     public init(file: URL,
                 key: Data,
-                registerMigrationsHandler: (inout DatabaseMigrator) throws -> Void) throws {
-        try super.init(file: file, key: key, writerType: .pool, registerMigrationsHandler: registerMigrationsHandler)
+                registerMigrationsHandler: (inout DatabaseMigrator) throws -> Void,
+                reporter: SecureVaultReporting? = nil) throws {
+        try super.init(file: file, key: key, writerType: .pool, registerMigrationsHandler: registerMigrationsHandler) {
+            reporter?.secureVaultKeyStoreEvent(.databaseRecreation)
+        }
     }
 
     func createFileURLInDocumentsDirectory(fileName: String) -> URL? {
@@ -638,6 +649,93 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
             //
             // https://app.asana.com/0/1205591970852438/1208761697124514/f
             try optOutAttemptDB.upsert(db)
+        }
+    }
+
+    /// Returns the first eligible scan/opt-out job for scheduled background task
+    /// Same as the logic being used in sortedEligibleJobs(brokerProfileQueriesData:jobType:priorityDate:)
+    ///
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210758578775514?focus=true
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        let alias = "firstDate"
+
+        return try db.read { db in
+            let sql = """
+                WITH parent_site_optout_brokers AS (
+                    -- Identify brokers that use parent site opt-out
+                    SELECT \(BrokerDB.Columns.id.rawValue)
+                    FROM \(BrokerDB.databaseTableName)
+                    WHERE json_extract(CAST(\(BrokerDB.Columns.json.rawValue) AS TEXT), '$.steps[1].optOutType') = 'parentSiteOptOut'
+                ),
+                user_removed_profiles AS (
+                    -- Identify profiles that users manually marked as removed (using "This isn't me")
+                    SELECT DISTINCT \(OptOutHistoryEventDB.Columns.extractedProfileId.rawValue),
+                           \(OptOutHistoryEventDB.Columns.brokerId.rawValue),
+                           \(OptOutHistoryEventDB.Columns.profileQueryId.rawValue)
+                    FROM \(OptOutHistoryEventDB.databaseTableName)
+                    WHERE \(OptOutHistoryEventDB.Columns.event.rawValue) LIKE '%matchRemovedByUser%'
+                ),
+                first_scan AS (
+                    -- First eligible scan job
+                    SELECT
+                        MIN(scan.\(ScanDB.Columns.preferredRunDate.rawValue)) as firstDate
+                    FROM \(ScanDB.databaseTableName) scan
+                    INNER JOIN \(ProfileQueryDB.databaseTableName) profile_query ON scan.\(ScanDB.Columns.profileQueryId.rawValue) = profile_query.\(ProfileQueryDB.Columns.id.rawValue)
+                    WHERE scan.\(ScanDB.Columns.preferredRunDate.rawValue) IS NOT NULL
+                ),
+                first_optout AS (
+                    -- First eligible opt-out job
+                    SELECT
+                        MIN(optout.\(OptOutDB.Columns.preferredRunDate.rawValue)) as \(alias)
+                    FROM \(OptOutDB.databaseTableName) optout
+                    INNER JOIN \(BrokerDB.databaseTableName) broker ON optout.\(OptOutDB.Columns.brokerId.rawValue) = broker.\(BrokerDB.Columns.id.rawValue)
+                    INNER JOIN \(ProfileQueryDB.databaseTableName) profile_query ON optout.\(OptOutDB.Columns.profileQueryId.rawValue) = profile_query.\(ProfileQueryDB.Columns.id.rawValue)
+                    INNER JOIN \(ExtractedProfileDB.databaseTableName) extracted_profile ON optout.\(OptOutDB.Columns.extractedProfileId.rawValue) = extracted_profile.\(ExtractedProfileDB.Columns.id.rawValue)
+                    WHERE
+                        extracted_profile.\(ExtractedProfileDB.Columns.removedDate.rawValue) IS NULL  -- Exclude profiles already marked as removed
+                        AND optout.\(OptOutDB.Columns.brokerId.rawValue) NOT IN (SELECT \(BrokerDB.Columns.id.rawValue) FROM parent_site_optout_brokers)  -- Exclude parent site opt-out brokers
+                        AND NOT EXISTS (  -- Exclude profiles manually removed by user
+                            SELECT 1
+                            FROM user_removed_profiles
+                            WHERE user_removed_profiles.\(OptOutHistoryEventDB.Columns.extractedProfileId.rawValue) = optout.\(OptOutDB.Columns.extractedProfileId.rawValue)
+                            AND user_removed_profiles.\(OptOutHistoryEventDB.Columns.brokerId.rawValue) = optout.\(OptOutDB.Columns.brokerId.rawValue)
+                            AND user_removed_profiles.\(OptOutHistoryEventDB.Columns.profileQueryId.rawValue) = optout.\(OptOutDB.Columns.profileQueryId.rawValue)
+                        )
+                        AND optout.\(OptOutDB.Columns.preferredRunDate.rawValue) IS NOT NULL
+                )
+                -- Return the earlier of the two dates
+                SELECT MIN(\(alias)) as \(alias)
+                FROM (
+                    SELECT \(alias) FROM first_scan
+                    UNION ALL
+                    SELECT \(alias) FROM first_optout
+                )
+            """
+
+            let result = try Row.fetchOne(db, sql: sql)
+            return result?[alias]
+        }
+    }
+
+    public func save(_ event: BackgroundTaskEventDB) throws {
+        try db.write { db in
+            try event.save(db)
+        }
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEventDB] {
+        try db.read { db in
+            try BackgroundTaskEventDB
+                .filter(BackgroundTaskEventDB.Columns.timestamp >= date)
+                .fetchAll(db)
+        }
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        _ = try db.write { db in
+            try BackgroundTaskEventDB
+                .filter(BackgroundTaskEventDB.Columns.timestamp < date)
+                .deleteAll(db)
         }
     }
 }

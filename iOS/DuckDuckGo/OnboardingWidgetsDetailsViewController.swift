@@ -32,14 +32,12 @@ class OnboardingWidgetsDetailsViewController: UIViewController {
         super.viewDidLoad()
         overrideUserInterfaceStyle = .light
         
-        if  let image = UIImage(named: "OnboardingWidgetInstructionsLabelImage"),
-            let string = secondInstructionsLabel.text?.attributedString(
-                withPlaceholder: "%@",
-                replacedByImage: image,
-                horizontalPadding: 3.0,
-                verticalOffset: -5.0) {
-            secondInstructionsLabel.attributedText = string
-        }
+        let string = secondInstructionsLabel.text?.attributedString(
+            withPlaceholder: "%@",
+            replacedByImage: UIImage(resource: .onboardingWidgetInstructionsLabel),
+            horizontalPadding: 3.0,
+            verticalOffset: -5.0)
+        secondInstructionsLabel.attributedText = string
 
         navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .accent)
         gotItButton.tintColor = UIColor(designSystemColor: .accent)

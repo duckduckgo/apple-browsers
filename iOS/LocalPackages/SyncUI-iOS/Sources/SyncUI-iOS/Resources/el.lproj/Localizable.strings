@@ -208,11 +208,20 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Μη αυτόματη εισαγωγή κωδικού";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Ανοίξτε την εφαρμογή DuckDuckGo στη συσκευή σας και μεταβείτε στο %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Σαρώστε αυτόν τον κωδικό με άλλη συσκευή για συγχρονισμό.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "Από κινητό σε κινητό;";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Ανοίξτε το DuckDuckGo στην άλλη συσκευή σας και σαρώστε αυτόν τον κωδικό για συγχρονισμό.";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Ή πραγματοποιήστε σάρωση με το DuckDuckGo στη συσκευή σας";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Κοινοποίηση κωδικού κειμένου";

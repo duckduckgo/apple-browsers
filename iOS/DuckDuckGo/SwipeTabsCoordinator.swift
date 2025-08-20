@@ -75,7 +75,8 @@ class SwipeTabsCoordinator: NSObject {
                 
         super.init()
         
-        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: "omnibar")
+        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.omniBarReuseIdentifier)
+        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.templateReuseIdentifier)
         collectionView.isPagingEnabled = true
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -85,7 +86,6 @@ class SwipeTabsCoordinator: NSObject {
         collectionView.showsVerticalScrollIndicator = false
 
         updateLayout()
-        registerForNotifications()
     }
     
     enum State {
@@ -109,6 +109,10 @@ class SwipeTabsCoordinator: NSObject {
     weak var preview: UIView?
     weak var currentView: UIView?
 
+    private var omniBarHeight: CGFloat {
+        DefaultOmniBarView.expectedHeight
+    }
+
     func invalidateLayout() {
         updateLayout()
         scrollToCurrent()
@@ -118,7 +122,6 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func updateLayout() {
-        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
@@ -145,28 +148,10 @@ class SwipeTabsCoordinator: NSObject {
                                          animated: false)
     }
 
-
-    private func registerForNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(updateRoundCornersMaskView),
-                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(updateRoundCornersMaskView),
-                                               name: UIDevice.orientationDidChangeNotification,
-                                               object: nil)
+    private struct Constant {
+        static let omniBarReuseIdentifier = "omniBar"
+        static let templateReuseIdentifier = "template"
     }
-
-    @objc func updateRoundCornersMaskView() {
-        for cell in collectionView.visibleCells {
-            if let omniBarCell = cell as? OmniBarCell {
-                omniBarCell.roundCornersMaskView?.removeFromSuperview()
-                omniBarCell.roundCornersMaskView = nil
-                omniBarCell.addMaskViewIfNeeded()
-            }
-        }
-    }
-
 }
 
 // MARK: UICollectionViewDelegate
@@ -251,10 +236,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
-            preview?.clipsToBounds = true
-            preview?.layer.cornerRadius = 12
-        }
     }
     
     private func createPreviewFromImage(_ image: UIImage) {
@@ -361,11 +342,14 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "omnibar", for: indexPath) as? OmniBarCell else {
+        let isCurrentTab = tabsModel.currentIndex == indexPath.row || !isEnabled
+        let reuseIdentifier = isCurrentTab ? Constant.omniBarReuseIdentifier : Constant.templateReuseIdentifier
+
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as? OmniBarCell else {
             fatalError("Not \(OmniBarCell.self)")
         }
 
-        if !isEnabled || tabsModel.currentIndex == indexPath.row {
+        if isCurrentTab {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
@@ -405,7 +389,6 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
-    var roundCornersMaskView: RoundedCornersMaskView?
     var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {
@@ -424,32 +407,6 @@ class OmniBarCell: UICollectionViewCell {
                 omniBarView.topAnchor.constraint(equalTo: topAnchor),
                 omniBarView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])
-
-            addMaskViewIfNeeded()
-        }
-    }
-
-    func addMaskViewIfNeeded() {
-        guard let omniBarView = omniBar?.barView else { return }
-
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled,
-           AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
-           isPortrait {
-            let maskView = RoundedCornersMaskView(cornerRadius: 12.0,
-                                                  cornerColor: UIColor(designSystemColor: .background),
-                                                  cornersPosition: .bottom)
-            addSubview(maskView)
-            roundCornersMaskView = maskView
-
-            maskView.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                maskView.widthAnchor.constraint(equalTo: omniBarView.widthAnchor),
-                maskView.bottomAnchor.constraint(equalTo: omniBarView.topAnchor),
-                maskView.centerXAnchor.constraint(equalTo: omniBarView.centerXAnchor),
-                maskView.heightAnchor.constraint(equalToConstant: 25)
-            ])
-            bringSubviewToFront(maskView)
-                
         }
     }
 

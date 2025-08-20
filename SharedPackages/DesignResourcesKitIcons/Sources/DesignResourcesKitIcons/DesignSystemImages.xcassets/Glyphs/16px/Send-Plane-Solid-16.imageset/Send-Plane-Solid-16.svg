@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Send-Plane-Solid-16_svg__a)">
+    <path fill="#000" d="M2.597 14.887A1.125 1.125 0 0 1 1 13.866v-3.713c0-.559.41-1.033.963-1.113l3.753-.545c.571-.083.571-.907 0-.99L1.963 6.96A1.125 1.125 0 0 1 1 5.847V2.134c0-.821.851-1.366 1.597-1.021L15.29 6.979c.87.402.87 1.64 0 2.042L2.597 14.887Z"/>
+  </g>
+  <defs>
+    <clipPath id="Send-Plane-Solid-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CapturingHistoryViewDeleteDialogPresenter: HistoryViewDialogPresenting {

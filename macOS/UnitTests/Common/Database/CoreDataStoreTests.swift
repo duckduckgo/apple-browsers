@@ -18,13 +18,20 @@
 
 import Foundation
 import XCTest
+import CoreData
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CoreDataStoreTests: XCTestCase {
 
-    let container = CoreData.coreDataStoreTestsContainer()
+    var container: NSPersistentContainer! = CoreData.coreDataStoreTestsContainer()
     typealias Store = CoreDataStore<TestManagedObject>
-    lazy var store = Store(context: container.newBackgroundContext(), tableName: "TestDataModel")
+    lazy var store: Store! = Store(context: container.newBackgroundContext())
+
+    override func tearDown() {
+        container = nil
+        store = nil
+    }
 
     private func load(into result: inout [CoreDataTestStruct: NSManagedObjectID],
                       idValue: Store.IDValueTuple) throws {
@@ -45,7 +52,7 @@ final class CoreDataStoreTests: XCTestCase {
         let e = expectation(description: "object removed")
         store.remove(objectWithId: storedId2) { [store] error in
             XCTAssertNil(error)
-            let fireproofed = try? store.load(into: .init(), self.load)
+            let fireproofed = try? store!.load(into: .init(), self.load)
             XCTAssertEqual(fireproofed, [.init(domain: "duckduckgo.com"): storedId1])
             e.fulfill()
         }
@@ -65,7 +72,7 @@ final class CoreDataStoreTests: XCTestCase {
                 XCTFail("unexpected error \(error)")
             }
 
-            let fireproofed = try? store.load(into: .init(), self.load)
+            let fireproofed = try? store!.load(into: .init(), self.load)
             XCTAssertEqual(fireproofed, [.init(domain: "duckduckgo.com", testAttribute: "a"): storedId1])
             e.fulfill()
         }
@@ -80,7 +87,7 @@ final class CoreDataStoreTests: XCTestCase {
         store.update(objectWithId: storedId1, with: .init(domain: "www.duckduckgo.com", testAttribute: "a")) { [store] error in
             XCTAssertNil(error)
 
-            let fireproofed = try? store.load(into: .init(), self.load)
+            let fireproofed = try? store!.load(into: .init(), self.load)
             XCTAssertEqual(fireproofed, [.init(domain: "www.duckduckgo.com", testAttribute: "a"): storedId1,
                                          .init(domain: "otherdomain.com"): storedId2])
             e.fulfill()
@@ -98,7 +105,7 @@ final class CoreDataStoreTests: XCTestCase {
                      with: .init(domain: "www.duckduckgo.com", testAttribute: "a")) { [store] error in
             XCTAssertNil(error)
 
-            let fireproofed = try? store.load(into: .init(), self.load)
+            let fireproofed = try? store!.load(into: .init(), self.load)
             XCTAssertEqual(fireproofed, [.init(domain: "www.duckduckgo.com", testAttribute: "a"): storedId1,
                                          .init(domain: "otherdomain.com", testAttribute: "b"): storedId2])
             e.fulfill()
@@ -115,7 +122,7 @@ final class CoreDataStoreTests: XCTestCase {
         store.update(objectWithPredicate: NSPredicate(format: #keyPath(TestManagedObject.testAttribute) + " == %@", "c"),
                      with: .init(domain: "www.duckduckgo.com", testAttribute: "c")) { [store] error in
             XCTAssertEqual(error as? CoreDataStoreError, CoreDataStoreError.objectNotFound)
-            let fireproofed = try? store.load(into: .init(), self.load)
+            let fireproofed = try? store!.load(into: .init(), self.load)
             XCTAssertEqual(fireproofed, [.init(domain: "duckduckgo.com", testAttribute: "a"): storedId1,
                                          .init(domain: "otherdomain.com", testAttribute: "b"): storedId2])
             e.fulfill()
@@ -133,7 +140,7 @@ final class CoreDataStoreTests: XCTestCase {
         store.clear { [store] error in
             XCTAssertNil(error)
 
-            let fireproofed = try! store.load(into: .init(), self.load)
+            let fireproofed = try! store!.load(into: .init(), self.load)
 
             XCTAssertEqual(fireproofed, [:])
 

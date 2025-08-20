@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import PixelKit
 
 @MainActor
 final class MainWindowController: NSWindowController {
@@ -27,8 +28,9 @@ final class MainWindowController: NSWindowController {
     private var cancellables: Set<AnyCancellable> = []
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
-    private let appearancePreferences: AppearancePreferences = .shared
+    private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
+    private let visualStyle: VisualStyleProviding
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -45,7 +47,8 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          popUp: Bool,
          fireWindowSession: FireWindowSession? = nil,
-         fireViewModel: FireViewModel? = nil) {
+         fireViewModel: FireViewModel,
+         visualStyle: VisualStyleProviding) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -57,11 +60,13 @@ final class MainWindowController: NSWindowController {
             : MainWindow(frame: frame))
         window.contentViewController = mainViewController
         window.setContentSize(frame.size)
-        self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
+        self.fireViewModel = fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession
         fireWindowSession?.addWindow(window)
+
+        self.visualStyle = visualStyle
 
         super.init(window: window)
 
@@ -110,6 +115,9 @@ final class MainWindowController: NSWindowController {
 
     private func setupWindow(_ window: NSWindow) {
         window.delegate = self
+
+        // Prevent a 2px white line from appearing above the tab bar on macOS 26
+        window.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
 
         if shouldShowOnboarding {
             mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.startOnboarding()
@@ -163,7 +171,7 @@ final class MainWindowController: NSWindowController {
         // Empty toolbar ensures that window buttons are centered vertically
         window?.toolbar = NSToolbar()
         window?.toolbar?.showsBaselineSeparator = true
-
+        window?.toolbarStyle = .unifiedCompact
         moveTabBarView(toTitlebarView: true)
     }
 
@@ -174,7 +182,13 @@ final class MainWindowController: NSWindowController {
         // slide tabs to the left in full screen
         trafficLightsAlphaCancellable = window?.standardWindowButton(.closeButton)?
             .publisher(for: \.alphaValue)
-            .map { alphaValue in TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPadding.rawValue * alphaValue }
+            .map { alphaValue in
+                if #available(macOS 26, *) {
+                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPaddingMacOS26.rawValue * alphaValue
+                } else {
+                    return TabBarViewController.HorizontalSpace.pinnedTabsScrollViewPadding.rawValue * alphaValue
+                }
+            }
             .assign(to: \.constant, onWeaklyHeld: tabBarViewController.pinnedTabsViewLeadingConstraint)
     }
 
@@ -218,8 +232,8 @@ final class MainWindowController: NSWindowController {
             return
         }
         let tabBarViewController = mainViewController.tabBarViewController
-
         tabBarViewController.view.removeFromSuperview()
+
         if toTitlebarView {
             // Prevent 1px line from appearing below Tab Bar when hiding and subsequently showing it in fullscreen mode
             // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209999815083499?focus=true
@@ -227,6 +241,15 @@ final class MainWindowController: NSWindowController {
             newParentView.addSubview(tabBarViewController.view)
         } else {
             newParentView.addSubview(tabBarViewController.view, positioned: .below, relativeTo: mainViewController.fireViewController.view)
+        }
+
+        // enable Tab Bar appear as an AX child of the Window
+        // this won‘t work by-default since we‘re adding it to the NSToolbar view
+        // providing its own a11y implementation: see TabBarViewController
+        if let toolbarView = newParentView.subviews.first(where: { $0.className == "NSToolbarView" }) {
+            toolbarView.setAccessibilityEnabled(false)
+            toolbarView.setAccessibilityElement(false)
+            tabBarViewController.view.setAccessibilityParent(window)
         }
 
         tabBarViewController.view.frame = newParentView.bounds
@@ -257,7 +280,7 @@ final class MainWindowController: NSWindowController {
     }
 
     func orderWindowBack(_ sender: Any?) {
-        if let lastKeyWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window {
+        if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window {
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
         } else {
             window?.orderFront(sender)
@@ -266,7 +289,7 @@ final class MainWindowController: NSWindowController {
     }
 
     private func register() {
-        WindowControllersManager.shared.register(self)
+        Application.appDelegate.windowControllersManager.register(self)
     }
 
 }
@@ -281,7 +304,7 @@ extension MainWindowController: NSWindowDelegate {
         mainViewController.windowDidBecomeKey()
 
         if !mainWindow.isPopUpWindow {
-            WindowControllersManager.shared.lastKeyMainWindowController = self
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
         }
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
@@ -320,6 +343,10 @@ extension MainWindowController: NSWindowDelegate {
         fullscreenController.resetFullscreenExitFlag()
     }
 
+    func windowDidEndLiveResize(_ notification: Notification) {
+        mainViewController.windowDidEndLiveResize()
+    }
+
     private func hideTabBarAndBookmarksBar() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             guard let self else { return }
@@ -350,6 +377,17 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     func windowDidEnterFullScreen(_ notification: Notification) {
+        guard let window = self.window else { return }
+
+        // Detect split screen vs regular fullscreen mode
+        if window.isApproximatelyHalfScreenWide {
+            // Fire pixel for split screen usage
+            PixelKit.fire(GeneralPixel.windowSplitScreen, frequency: .dailyAndCount)
+        } else {
+            // Fire pixel for regular fullscreen usage
+            PixelKit.fire(GeneralPixel.windowFullscreen, frequency: .dailyAndCount)
+        }
+
         // fix NSToolbarFullScreenWindow occurring beneath the MainWindow
         // https://app.asana.com/0/1177771139624306/1203853030672990/f
         // NSApp should be active at the moment of window ordering otherwise toolbar would disappear on activation
@@ -402,7 +440,7 @@ extension MainWindowController: NSWindowDelegate {
         // Because it's also the delegate, deinit within this method caused crash
         // Push the Window Controller into current autorelease pool so it‘s released when the event loop pass ends
         _=Unmanaged.passRetained(self).autorelease()
-        WindowControllersManager.shared.unregister(self)
+        Application.appDelegate.windowControllersManager.unregister(self)
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {

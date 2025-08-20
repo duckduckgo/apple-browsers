@@ -21,6 +21,8 @@ import UIKit
 import Core
 import Bookmarks
 import WidgetKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol FavoritesHomeViewSectionRendererDelegate: AnyObject {
     
@@ -54,6 +56,7 @@ class FavoritesHomeViewSectionRenderer {
     private weak var reorderingCell: FavoriteHomeCell?
 
     var isEditing = false
+    var isUsingSearchInputCustomStyling = false
 
     var onFaviconMissing: ((String) -> Void)?
 
@@ -148,6 +151,8 @@ class FavoritesHomeViewSectionRenderer {
             self?.onFaviconMissing?(domain)
         })
         cell.isEditing = isEditing
+        cell.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
+        
         return cell
 
     }
@@ -234,12 +239,12 @@ class FavoritesHomeViewSectionRenderer {
         guard let cell = collectionView.cellForItem(at: indexPath) as? FavoriteHomeCell else { return nil }
 
         let edit = UIAction(title: UserText.favoriteMenuEdit,
-                            image: UIImage(named: "Edit")) { [weak self] _ in
+                            image: DesignSystemImages.Glyphs.Size24.edit) { [weak self] _ in
             self?.editFavorite(cell, collectionView)
         }
 
         let remove = UIAction(title: UserText.favoriteMenuRemove,
-                              image: UIImage(named: "RemoveFavoriteMenuIcon")) { [weak self] _ in
+                              image: DesignSystemImages.Glyphs.Size24.favoriteRemove) { [weak self] _ in
             self?.removeFavorite(cell, collectionView)
         }
 

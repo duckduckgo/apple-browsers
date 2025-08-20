@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Combine
 import PrivacyDashboard
 
 /// Represents the current state of onboarding.
@@ -51,6 +52,7 @@ protocol ContextualOnboardingDialogTypeProviding {
 /// Protocol to update the onboarding state (e.g., when the user uses the fire button or the feature is turned off).
 protocol ContextualOnboardingStateUpdater: AnyObject {
     var state: ContextualOnboardingState { get set }
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { get }
     func gotItPressed()
     func fireButtonUsed()
     func turnOffFeature()
@@ -87,7 +89,7 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 }
 
 /// Main manager responsible for deciding which onboarding dialog to display based on the current state and tab.
-public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
+public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
 
     private let trackerMessageProvider: TrackerMessageProviding
     private var stateStorage: ContextualOnboardingStateStoring
@@ -98,6 +100,10 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
     // The last tab for which a dialog was provided.
     private weak var lastTab: Tab?
 
+    // Publisher for contextual onboarding completion
+    @Published private(set) var isContextualOnboardingCompleted: Bool
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
+
     // Computed property for managing state.
     var state: ContextualOnboardingState {
         get {
@@ -106,6 +112,13 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         set {
             // Update persistent state.
             stateStorage.stateString = newValue.rawValue
+
+            // Publish completion status
+            let isCompleted = newValue == .onboardingCompleted
+            if isContextualOnboardingCompleted != isCompleted {
+                isContextualOnboardingCompleted = isCompleted
+            }
+
             // If onboarding is restarted, clear all stored dialogs and flags.
             if state == ContextualOnboardingState.notStarted {
                 stateStorage.contextualDialogsSeen = []
@@ -115,10 +128,10 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         }
     }
 
-    init(trackerMessageProvider: TrackerMessageProviding = TrackerMessageProvider(),
-         stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
+    init(trackerMessageProvider: TrackerMessageProviding, stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
         self.trackerMessageProvider = trackerMessageProvider
         self.stateStorage = stateStorage
+        self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
 
     // Returns the last dialog shown if it was shown for the given tab.

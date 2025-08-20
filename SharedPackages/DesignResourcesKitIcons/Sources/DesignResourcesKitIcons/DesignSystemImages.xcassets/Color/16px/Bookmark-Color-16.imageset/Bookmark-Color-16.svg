@@ -1,0 +1,19 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Bookmark-Color-16_svg__a)">
+    <path fill="url(#Bookmark-Color-16_svg__b)" d="M10.125.5h-4.25A3.375 3.375 0 0 0 2.5 3.875v9.948c0 1.353 1.512 2.155 2.632 1.398l1.923-1.3a1.688 1.688 0 0 1 1.89 0l1.923 1.3c1.12.758 2.632-.045 2.632-1.398V3.875A3.375 3.375 0 0 0 10.125.5Z"/>
+    <path fill="url(#Bookmark-Color-16_svg__c)" d="M6.775 13.507c.74-.5 1.71-.5 2.45 0l1.923 1.3A1.188 1.188 0 0 0 13 13.823V3.875A2.875 2.875 0 0 0 10.125 1h-4.25A2.875 2.875 0 0 0 3 3.875v9.948a1.188 1.188 0 0 0 1.853.984l1.922-1.3Zm7.225.316c0 1.753-1.96 2.794-3.412 1.812l-1.923-1.3a1.188 1.188 0 0 0-1.33 0l-1.923 1.3C3.96 16.617 2 15.576 2 13.823V3.875A3.875 3.875 0 0 1 5.875 0h4.25A3.875 3.875 0 0 1 14 3.875v9.948Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Bookmark-Color-16_svg__b" x1="8" x2="8" y1=".5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FABF9"/>
+      <stop offset="1" stop-color="#7295F6"/>
+    </linearGradient>
+    <linearGradient id="Bookmark-Color-16_svg__c" x1="8" x2="8" y1=".5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3969EF"/>
+      <stop offset="1" stop-color="#1E42A4"/>
+    </linearGradient>
+    <clipPath id="Bookmark-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

@@ -1,0 +1,25 @@
+{
+  "profile": {
+    "name": "Default",
+    "created_by_version": "138.0.7204.50"
+  },
+  "ntp": {
+    "shortcust_visible": true,
+    "use_most_visited_tiles": false
+  },
+  "custom_links": {
+    "initialized": true,
+    "list": [
+      {
+        "isMostVisited": true,
+        "title": "DuckDuckGo",
+        "url": "https://duckduckgo.com/"
+      },
+      {
+        "isMostVisited": true,
+        "title": "Example Domain",
+        "url": "http://example.com/"
+      },
+    ]
+  }
+}

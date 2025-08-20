@@ -1,0 +1,9 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#fff" fill-rule="evenodd" d="M2 1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h5.416A5 5 0 0 1 16 9V3a2 2 0 0 0-2-2H2Z" clip-rule="evenodd"/>
+  <path fill="#444" fill-opacity=".05" fill-rule="evenodd" d="M2 1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h5.416A5 5 0 0 1 16 9V3a2 2 0 0 0-2-2H2Z" clip-rule="evenodd"/>
+  <path fill="#444" fill-opacity=".15" d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2H0V3Z"/>
+  <path fill="#666" fill-rule="evenodd" d="M15 4H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v1ZM0 4.5V12a2 2 0 0 0 2 2h5.416a4.962 4.962 0 0 1-.316-1H2a1 1 0 0 1-1-1V5h14v3c.379.284.716.62 1 1V3a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v1.5Z" clip-rule="evenodd"/>
+  <path fill="#B3F1AA" d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+  <path fill="#399F29" fill-rule="evenodd" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" clip-rule="evenodd"/>
+  <path fill="#399F29" fill-rule="evenodd" d="M13.854 10.646a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708 0l-1-1a.5.5 0 0 1 .708-.708l.646.647 1.646-1.647a.5.5 0 0 1 .708 0Z" clip-rule="evenodd"/>
+</svg>

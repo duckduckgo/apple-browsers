@@ -40,7 +40,6 @@ class MainViewCoordinator {
     var toolbar: UIToolbar!
     var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
-    var toolbarFireButton: UIButton { toolbarHandler.fireButton }
     var toolbarFireBarButtonItem: UIBarButtonItem { toolbarHandler.fireBarButtonItem }
     var toolbarForwardButton: UIBarButtonItem { toolbarHandler.forwardButton }
     var toolbarTabSwitcherButton: UIBarButtonItem { toolbarHandler.tabSwitcherButton }
@@ -60,14 +59,6 @@ class MainViewCoordinator {
         self.superview = parentController.view
     }
     
-    func showToolbarSeparator() {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            hideToolbarSeparator()
-        } else {
-            toolbar.setShadowImage(nil, forToolbarPosition: .any)
-        }
-    }
-
     func hideToolbarSeparator() {
         toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
     }

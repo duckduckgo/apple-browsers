@@ -9,17 +9,30 @@ on:
     - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-end-to-end-tests:
     name: Build End to End Tests
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     timeout-minutes: 30
+
+    env:
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Set cache key hash
       run: |
@@ -42,16 +55,34 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
+    - name: Select iOS Simulator
+      id: select-simulator
+      uses: ./.github/actions/select-ios-simulator
+      with:
+        preferred-versions: "18.6,18.2"
+
     - name: Build for tests
       run: |
+        echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
+        echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
+        
         set -o pipefail && xcodebuild \
           -scheme "iOS Browser" \
-          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.2" \
+          -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           ONLY_ACTIVE_ARCH=NO \
         | tee xcodebuild.log
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_ios_e2e_tests_build
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Store Binary
       uses: actions/upload-artifact@v4
@@ -74,9 +105,43 @@ jobs:
     needs: build-end-to-end-tests
     runs-on: macos-15
     timeout-minutes: 300
+
+    env:
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
+
     strategy:
       matrix:
-        test-tag: [release, privacy, securityTest, adClick]
+        include:
+          # iPhone tests - exclude iPad tagged tests
+          - test-tag: release
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: privacy 
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: securityTest
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: adClick
+            exclude-tags: ipad
+            device-model: iPhone-16
+            device-name: iPhone
+          - test-tag: duckplayer_native
+            exclude-tags: ipad
+            device-model: iPhone-16
+          - test-tag: device_info
+            exclude-tags: ipad
+            device-model: iPhone-16 
+          # iPad tests - only tests tagged with 'ipad', exclude iPhone specific tests
+          - test-tag: device_info
+            exclude-tags: iphone
+            device-model: iPad-10th-generation 
+          - test-tag: duckplayer_classic
+            exclude-tags: iphone
+            device-model: iPad-10th-generation 
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 
@@ -85,26 +150,43 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v4 # Don't need submodules here as this is only for the tests folder
 
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
     - name: Retrieve Binary
       uses: actions/download-artifact@v4
       with:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
-    - name: End to End tests
+    - name: End to End tests (${{ matrix.device-name }})
       id: upload
-      uses: loremattei/action-maestro-cloud@fix-timeout-handling
+      uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
-        name: ${{ matrix.test-tag }}_${{ github.sha }}
+        name: ${{ matrix.test-tag }}_${{ matrix.device-name }}_${{ github.sha }}
         timeout: 300
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
+        exclude-tags: ${{ matrix.exclude-tags }}
         env: ONBOARDING_COMPLETED=true
-        ios-version: 17
-        fail-on-timeout: true
+        device-os: iOS-18-2
+        device-model: ${{ matrix.device-model }}
+        device-name: ${{ matrix.device-name }}
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_ios_e2e_tests_${{ matrix.test-tag }}
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
   notify-failure:
     name: Notify on failure

@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#000" clip-path="url(#Dashboard-16_svg__a)">
+    <path d="M12.375 7.125c.345 0 .625.28.625.625V10a.625.625 0 1 1-1.25 0V7.75c0-.345.28-.625.625-.625ZM10.084 6a.625.625 0 1 0-1.25 0v4a.625.625 0 1 0 1.25 0V6ZM6.541 4.375c.345 0 .625.28.625.625v5a.625.625 0 0 1-1.25 0V5c0-.345.28-.625.625-.625ZM4.25 6.75a.625.625 0 1 0-1.25 0V10a.625.625 0 1 0 1.25 0V6.75Z"/>
+    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Dashboard-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

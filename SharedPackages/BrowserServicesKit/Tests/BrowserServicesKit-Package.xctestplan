@@ -43,13 +43,6 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "NetworkProtectionTests",
-        "name" : "NetworkProtectionTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
         "identifier" : "DDGSyncCryptoTests",
         "name" : "DDGSyncCryptoTests"
       }
@@ -185,13 +178,6 @@
         "containerPath" : "container:",
         "identifier" : "BrowserServicesKitTests",
         "name" : "BrowserServicesKitTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "OnboardingTests",
-        "name" : "OnboardingTests"
       }
     },
     {

@@ -1,0 +1,12 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#557FF3" d="M.5 4A2.5 2.5 0 0 1 3 1.5h10A2.5 2.5 0 0 1 15.5 4v8a2.5 2.5 0 0 1-2.5 2.5H3A2.5 2.5 0 0 1 .5 12V4Z"/>
+  <path fill="#fff" d="M1 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v6a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 1 12V6Z"/>
+  <path fill="#ADC2FC" d="M3 7.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5v-4Z"/>
+  <path fill="url(#Calendar-Day-Color-16_svg__a)" fill-rule="evenodd" d="M4.5 0a.5.5 0 0 1 .5.5V1h6V.5a.5.5 0 0 1 1 0V1h1a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3h1V.5a.5.5 0 0 1 .5-.5ZM11 2v.5a.5.5 0 0 0 1 0V2h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h1v.5a.5.5 0 0 0 1 0V2h6ZM2 4.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5Zm1.5 2a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-4Zm0 1h4v4h-4v-4Z" clip-rule="evenodd"/>
+  <defs>
+    <linearGradient id="Calendar-Day-Color-16_svg__a" x1="8" x2="8" y1="0" y2="15" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B55CA"/>
+      <stop offset="1" stop-color="#14307E"/>
+    </linearGradient>
+  </defs>
+</svg>

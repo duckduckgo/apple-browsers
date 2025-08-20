@@ -48,6 +48,7 @@ class AutocompleteViewModel: ObservableObject {
     @Published var query: String?
     @Published var isMessageVisible = true
     @Published var emptySuggestion: [SuggestionModel]?
+    @Published var isPad: Bool = false
 
     weak var delegate: AutocompleteViewModelDelegate?
 

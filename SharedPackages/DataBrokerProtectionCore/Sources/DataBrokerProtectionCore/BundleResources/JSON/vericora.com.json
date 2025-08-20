@@ -1,7 +1,7 @@
 {
   "name": "Vericora",
   "url": "vericora.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://vericora.com/ng/control/privacy",
   "steps": [
@@ -140,5 +140,6 @@
     "confirmOptOutScan": 72,
     "maintenanceScan": 120,
     "maxAttempts": -1
-  }
+  },
+  "removedAt": null
 }

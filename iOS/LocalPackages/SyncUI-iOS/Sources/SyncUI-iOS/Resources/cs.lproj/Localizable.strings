@@ -208,11 +208,20 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Ruční zadání kódu";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Otevři aplikaci DuckDuckGo na druhém zařízení a přejdi na %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Pro synchronizaci naskenuj tenhle kód pomocí jiného zařízení.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "Z mobilu na mobil?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Pro synchronizaci spusť DuckDuckGo na svém druhém zařízení a naskenuj kód.";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Nebo skenuj pomocí DuckDuckGo na svém druhém zařízení.";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Sdílet textový kód?";

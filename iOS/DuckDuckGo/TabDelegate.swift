@@ -65,12 +65,24 @@ protocol TabDelegate: AnyObject {
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
              source: AutofillSettingsSource)
 
+    func tab(_ tab: TabViewController,
+             didRequestDataImport source: DataImportViewModel.ImportScreen,
+             onFinished: @escaping () -> Void,
+             onCancelled: @escaping () -> Void)
+
     func tabDidRequestSettings(tab: TabViewController)
 
     func tab(_ tab: TabViewController,
              didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
              source: AutofillSettingsSource)
-    
+
+    func tab(_ tab: TabViewController,
+             didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard,
+             source: AutofillSettingsSource)
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
+                                                     source: AutofillSettingsSource)
+
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
 

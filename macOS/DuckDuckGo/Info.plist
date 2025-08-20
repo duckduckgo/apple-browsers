@@ -509,16 +509,22 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NETP_APP_GROUP</key>
 	<string>$(NETP_APP_GROUP)</string>
-	<key>NOTIFICATIONS_AGENT_BUNDLE_ID</key>
-	<string>$(NOTIFICATIONS_AGENT_BUNDLE_ID)</string>
-	<key>NOTIFICATIONS_AGENT_PRODUCT_NAME</key>
-	<string>$(NOTIFICATIONS_AGENT_PRODUCT_NAME)</string>
 	<key>NSAppDataUsageDescription</key>
 	<string>DuckDuckGo will securely access your Bitwarden vault to autofill your passwords. To prevent this dialog in the future, go to Mac System Settings &gt; Privacy &amp; Security &gt; Full Disk Access and toggle DuckDuckGo on, or switch back to the built-in password manager.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>detectportal.firefox.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+			</dict>
+		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Lets websites ask permission to use your camera for video calls, recording and uploading videos, or taking and uploading photos.</string>
@@ -545,7 +551,7 @@
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://staticcdn.duckduckgo.com/macos-desktop-browser/appcast2.xml</string>
+	<string>$(SPARKLE_FEED_URL)</string>
 	<key>SUPublicEDKey</key>
 	<string>ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=</string>
 	<key>SUScheduledCheckInterval</key>

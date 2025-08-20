@@ -77,3 +77,6 @@ node_modules/
 
 # Release build script
 release/
+
+# loc_export artifacts
+scripts/assets/loc/*.xliff

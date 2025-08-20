@@ -23,6 +23,7 @@ import Foundation
 import UniformTypeIdentifiers
 import PixelKit
 import AppKitExtensions
+import Persistence
 
 protocol DownloadListStoring {
 
@@ -49,25 +50,14 @@ extension DownloadListStoring {
 
 final class DownloadListStore: DownloadListStoring {
 
-    private var _context: NSManagedObjectContext??
-    private var context: NSManagedObjectContext? {
-        if case .none = _context {
-#if DEBUG
-            if [.unitTests, .xcPreviews].contains(AppVersion.runType) {
-                _context = .some(.none)
-                return .none
-            }
-#endif
-            _context = Database.shared.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Downloads")
-        }
-        return _context!
+    private var context: NSManagedObjectContext?
+
+    convenience init(database: CoreDataDatabase? = nil) {
+        self.init(context: database?.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Downloads"))
     }
 
-    init() {
-    }
-
-    init(context: NSManagedObjectContext) {
-        self._context = .some(context)
+    init(context: NSManagedObjectContext? = nil) {
+        self.context = context
     }
 
     enum HistoryStoreError: Error {
@@ -193,7 +183,7 @@ extension DownloadListItem {
               let modified = managedObject.modified,
               let url = managedObject.urlEncrypted as? URL
         else {
-            PixelKit.fire(DebugEvent(GeneralPixel.downloadListItemDecryptionFailedUnique), frequency: .daily)
+            PixelKit.fire(DebugEvent(GeneralPixel.downloadListItemDecryptionFailedUnique), frequency: .legacyDaily)
             assertionFailure("DownloadListItem: Failed to init from ManagedObject")
             return nil
         }

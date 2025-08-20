@@ -16,18 +16,32 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 protocol ColorsProviding {
     var navigationBackgroundColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }
     var textPrimaryColor: NSColor { get }
     var textSecondaryColor: NSColor { get }
-    var backgroundTertiaryColor: NSColor { get }
+    var textTertiaryColor: NSColor { get }
     var accentPrimaryColor: NSColor { get }
     var addressBarOutlineShadow: NSColor { get }
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
+    var fillButtonBackgroundColor: NSColor { get }
+    var fillButtonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
+    var settingsBackgroundColor: NSColor { get }
+    var bookmarksManagerBackgroundColor: NSColor { get }
+    var bookmarksPanelBackgroundColor: NSColor { get }
+    var downloadsPanelBackgroundColor: NSColor { get }
+    var passwordManagerBackgroundColor: NSColor { get }
+    var passwordManagerLockScreenBackgroundColor: NSColor { get }
+    var activeAddressBarBackgroundColor: NSColor { get }
+    var inactiveAddressBarBackgroundColor: NSColor { get }
+    var suggestionsBackgroundColor: NSColor { get }
+    var bannerBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -39,13 +53,25 @@ final class LegacyColorsProviding: ColorsProviding {
     var baseBackgroundColor: NSColor { .windowBackground }
     var textPrimaryColor: NSColor { .labelColor }
     var textSecondaryColor: NSColor { .secondaryLabelColor }
-    var backgroundTertiaryColor: NSColor { .inactiveSearchBarBackground }
-    var accentPrimaryColor: NSColor { .controlAccentColor.withAlphaComponent(0.8) }
-    var addressBarOutlineShadow: NSColor { .controlColor.withAlphaComponent(0.2) }
+    var textTertiaryColor: NSColor { .tertiaryLabelColor }
+    var accentPrimaryColor: NSColor { .globalAccent.withAlphaComponent(0.8) }
+    var addressBarOutlineShadow: NSColor { .globalAccent.withAlphaComponent(0.2) }
     var iconsColor: NSColor { .button }
     var buttonMouseOverColor: NSColor { .buttonMouseOver }
+    var fillButtonBackgroundColor: NSColor { .buttonMouseOver }
+    var fillButtonMouseOverColor: NSColor { .buttonMouseDownColorLight }
     var addressBarSuffixTextColor: NSColor { .addressBarSuffix }
     var addressBarTextFieldColor: NSColor { .suggestionText }
+    var settingsBackgroundColor: NSColor { .preferencesBackground }
+    var bookmarksManagerBackgroundColor: NSColor { .bookmarkPageBackground}
+    var bookmarksPanelBackgroundColor: NSColor { .popoverBackground }
+    var downloadsPanelBackgroundColor: NSColor { .popoverBackground }
+    var passwordManagerBackgroundColor: NSColor { .popoverBackground }
+    var passwordManagerLockScreenBackgroundColor: NSColor { .neutralBackground }
+    var activeAddressBarBackgroundColor: NSColor { .addressBarBackground }
+    var inactiveAddressBarBackgroundColor: NSColor { .inactiveSearchBarBackground }
+    var suggestionsBackgroundColor: NSColor { .addressBarBackground }
+    var bannerBackgroundColor: NSColor { .bannerBackground }
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#333333" }
 
@@ -58,15 +84,28 @@ final class NewColorsProviding: ColorsProviding {
     var baseBackgroundColor: NSColor { palette.surfaceBackdrop }
     var textPrimaryColor: NSColor { palette.textPrimary }
     var textSecondaryColor: NSColor { palette.textSecondary }
-    var backgroundTertiaryColor: NSColor { palette.surfaceTertiary }
+    var textTertiaryColor: NSColor { palette.textTertiary }
     var accentPrimaryColor: NSColor { palette.accentPrimary }
     var addressBarOutlineShadow: NSColor { palette.accentAltGlow }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
+    var settingsBackgroundColor: NSColor { palette.surfaceCanvas }
     var iconsColor: NSColor { palette.iconsPrimary }
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
+    var buttonMouseDownColor: NSColor { palette.controlsFillSecondary }
+    var fillButtonBackgroundColor: NSColor { palette.controlsFillPrimary }
+    var fillButtonMouseOverColor: NSColor { palette.controlsFillSecondary }
+    var bookmarksManagerBackgroundColor: NSColor { palette.surfaceCanvas }
+    var bookmarksPanelBackgroundColor: NSColor { palette.surfaceSecondary }
+    var downloadsPanelBackgroundColor: NSColor { palette.surfaceSecondary }
+    var passwordManagerBackgroundColor: NSColor { palette.surfaceSecondary }
+    var passwordManagerLockScreenBackgroundColor: NSColor { palette.surfaceSecondary }
+    var activeAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
+    var inactiveAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
+    var suggestionsBackgroundColor: NSColor { palette.surfaceTertiary }
+    var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var ntpLightBackgroundColor: String { "#F2F2F2" }
-    var ntpDarkBackgroundColor: String { "#27282A" }
+    var ntpDarkBackgroundColor: String { "#262626" }
 
     init(palette: ColorPalette) {
         self.palette = palette

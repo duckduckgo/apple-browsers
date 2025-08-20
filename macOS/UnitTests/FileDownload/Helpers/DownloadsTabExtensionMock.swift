@@ -18,8 +18,10 @@
 
 import Combine
 import Foundation
-import UniformTypeIdentifiers
 import protocol Navigation.WebKitDownload
+import UniformTypeIdentifiers
+import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class DownloadsTabExtensionMock: NSObject, DownloadsTabExtensionProtocol {
@@ -48,12 +50,11 @@ class DownloadsTabExtensionMock: NSObject, DownloadsTabExtensionProtocol {
     }
 
     func saveDownloadedData(_ data: Data?, suggestedFilename: String, mimeType: String, originatingURL: URL) async throws -> URL? {
-        didCallSaveDownloadedData = true
         capturedSavedDownloadData = data
         capturedSuggestedFilename = suggestedFilename
         capturedMimeType = mimeType
         capturedOriginatingURL = originatingURL
-
+        didCallSaveDownloadedData = true
         return nil
     }
 

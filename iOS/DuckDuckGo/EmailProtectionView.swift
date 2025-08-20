@@ -26,8 +26,8 @@ struct EmailProtectionView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
     @State var shouldShowEmailAlert = false
 
-    var description: PrivacyProtectionDescription {
-        PrivacyProtectionDescription(imageName: "SettingsEmailProtectionContent",
+    var description: SettingsDescription {
+        SettingsDescription(imageName: "SettingsEmailProtectionContent",
                                      title: UserText.emailProtection,
                                      status: viewModel.emailProtectionStatus,
                                      explanation: UserText.emailProtectionExplanation)
@@ -35,7 +35,7 @@ struct EmailProtectionView: View {
 
     var body: some View {
         List {
-            PrivacyProtectionDescriptionView(content: description)
+            SettingsDescriptionView(content: description)
             EmailProtectionViewSettings()
         }
         .applySettingsListModifiers(title: UserText.emailProtection,

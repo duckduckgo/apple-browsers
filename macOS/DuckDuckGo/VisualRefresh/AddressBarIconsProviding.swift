@@ -16,23 +16,20 @@
 //  limitations under the License.
 //
 
-protocol AddressBarIconsProviding {
+import AppKit
+import DesignResourcesKitIcons
+
+protocol AddressBarCookiesIconsProviding {
     var cookiesIcon: NSImage { get }
     var cookiesBiteIcon: NSImage { get }
-    var addBookmarkIcon: NSImage { get }
-    var bookmarkFilledIcon: NSImage { get }
 }
 
-final class LegacyAddressBarIconsProvider: AddressBarIconsProviding {
+final class LegacyAddressBarCookiesIconsProvider: AddressBarCookiesIconsProviding {
     let cookiesIcon: NSImage = .cookie
     let cookiesBiteIcon: NSImage = .cookieBite
-    let addBookmarkIcon: NSImage = .bookmark
-    let bookmarkFilledIcon: NSImage = .bookmarkFilled
 }
 
-final class NewAddressBarIconsProvider: AddressBarIconsProviding {
-    let cookiesIcon: NSImage = .cookieNew
-    let cookiesBiteIcon: NSImage = .cookieBiteNew
-    let addBookmarkIcon: NSImage = .addBookmarkNew
-    let bookmarkFilledIcon: NSImage = .bookmarkFilledNew
+final class CurrentAddressBarCookiesIconsProvider: AddressBarCookiesIconsProviding {
+    let cookiesIcon: NSImage = DesignSystemImages.Glyphs.Size16.cookieWhole
+    let cookiesBiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.cookie
 }

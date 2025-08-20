@@ -6,7 +6,7 @@ UIComponents is a Swift Package designed to house reusable UI components for iOS
 
 ## Dependencies
 
-This package depends on [DesignResourceKit](https://github.com/duckduckgo/DesignResourcesKit), which provides the foundational Design System atoms. It is crucial to understand that:
+This package depends on [DesignResourcesKit](https://github.com/duckduckgo/apple-browsers/SharedPackages/DesignResourcesKit), which provides the foundational Design System atoms. It is crucial to understand that:
 
 - **Text should NOT be added to this package**; it should always be injected.
 - **Design System elements are not to be added here**. The Design System should remain a consistent set of elements, and any constructs built using these atoms should reside outside of the Design System. For example, components like toasts or alerts, which are built from multiple atoms (colors, buttons, typefaces, spacings), should be implemented in this package rather than in the Design System.

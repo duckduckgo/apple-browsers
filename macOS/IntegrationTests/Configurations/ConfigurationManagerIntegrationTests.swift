@@ -17,44 +17,57 @@
 //
 
 import XCTest
+import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
+import Combine
+import Persistence
+@testable import Configuration
+import PersistenceTestingUtils
 
 final class ConfigurationManagerIntegrationTests: XCTestCase {
 
     var configManager: ConfigurationManager!
+    var customURLProvider: ConfigurationURLProvider!
 
     override func setUpWithError() throws {
-        // use default privacyConfiguration link
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL)
-        configManager = ConfigurationManager()
+        customURLProvider = ConfigurationURLProvider(
+            defaultProvider: AppConfigurationURLProvider(privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger()), internalUserDecider: MockInternalUserDecider(), store: MockCustomConfigurationURLStore())
+        let fetcher = ConfigurationFetcher(store: MockConfigurationStoring(), configurationURLProvider: customURLProvider)
+        let privacyFeatures = Application.appDelegate.privacyFeatures
+        configManager = ConfigurationManager(fetcher: fetcher,
+                                             store: MockConfigurationStoring(),
+                                             defaults: MockKeyValueStore(),
+                                             trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
+                                             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                             contentBlockingManager: privacyFeatures.contentBlocking.contentBlockingManager,
+                                             httpsUpgrade: privacyFeatures.httpsUpgrade)
     }
 
     override func tearDownWithError() throws {
-        // use default privacyConfiguration link
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL)
         configManager = nil
+        customURLProvider = nil
     }
 
     // Test temporarily disabled due to failure
     func testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment() async {
         // GIVEN
         await configManager.refreshNow()
-        let etag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
+        let etag = await Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag
         // use test privacyConfiguration link with tds experiments
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/test/macos-config.json")!)
+        customURLProvider.setCustomURL(URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/test/macos-config.json"), for: .privacyConfiguration)
 
         // WHEN
         await configManager.refreshNow()
 
         // THEN
-        let newEtag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
+        let newEtag = await Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag
         XCTAssertNotEqual(etag, newEtag)
         XCTAssertEqual(newEtag, "\"2ce60c57c3d384f986ccbe2c422aac44\"")
 
         // RESET
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL)
+        customURLProvider.setCustomURL(nil, for: .privacyConfiguration)
         await configManager.refreshNow()
-        let resetEtag  = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
+        let resetEtag = await Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag
         XCTAssertNotEqual(newEtag, resetEtag)
     }
 

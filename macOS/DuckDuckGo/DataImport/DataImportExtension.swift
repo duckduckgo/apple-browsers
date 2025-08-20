@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
+import Foundation
 
 extension DataImport {
 
@@ -276,6 +277,19 @@ extension DataImport.Source {
             return UserText.importLoginsCSV
         case .bookmarksHTML:
             return UserText.importBookmarksHTML
+        }
+    }
+
+    var pixelSourceParameterName: String {
+        switch self {
+        case .brave, .chrome, .safari, .firefox, .bitwarden, .lastPass, .onePassword7, .onePassword8, .opera, .edge, .csv, .bookmarksHTML:
+            return rawValue
+        case .chromium, .coccoc, .tor, .yandex, .vivaldi:
+            return "other"
+        case .safariTechnologyPreview:
+            return Self.safari.rawValue
+        case .operaGX:
+            return Self.opera.rawValue
         }
     }
 

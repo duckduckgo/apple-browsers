@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import PixelKit
@@ -250,11 +250,13 @@ extension TunnelControllerIPCService: XPCServerInterface {
             break
         case .uninstallVPN(let showNotification):
             try await uninstall(.all, showNotification: showNotification)
-        case .disableConnectOnDemandAndShutDown:
-            // Not implemented on macOS yet
+        case .simulateSubscriptionExpirationInTunnel:
+            // This is handled by the network extension
             break
         case .quitAgent:
             quitAgent()
+        case .createLogSnapshot:
+            assertionFailure("Unsupported on macOS")
         }
     }
 

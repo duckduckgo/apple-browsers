@@ -25,6 +25,7 @@ import Core
 import os.log
 import BrowserServicesKit
 import Networking
+import Persistence
 
 final class SubscriptionSettingsViewModelV2: ObservableObject {
 
@@ -36,6 +37,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     struct State {
         var subscriptionDetails: String = ""
         var subscriptionEmail: String?
+        var isShowingInternalSubscriptionNotice: Bool = false
         var isShowingRemovalNotice: Bool = false
         var shouldDismissView: Bool = false
         var isShowingGoogleView: Bool = false
@@ -69,12 +71,23 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     public let usesUnifiedFeedbackForm: Bool
 
-    init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!) {
+    @Published var showRebrandingMessage: Bool = false
+
+    private let keyValueStorage: KeyValueStoring
+    private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
+
+    init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         keyValueStorage: KeyValueStoring = SubscriptionSettingsStore()) {
         self.subscriptionManager = subscriptionManager
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
+        self.keyValueStorage = keyValueStorage
+        let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
+        let isRebrandingOn = featureFlagger.isFeatureOn(.subscriptionRebranding)
+        self.showRebrandingMessage = !rebrandingMessageDismissed && isRebrandingOn
         setupNotificationObservers()
     }
 
@@ -92,14 +105,14 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     func onFirstAppear() {
         Task {
             // Load initial state from the cache
-            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .returnCacheDataDontLoad)
-            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .returnCacheDataDontLoad,
+            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .cacheFirst)
+            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheFirst,
                                                                                                  loadingIndicator: false)
             let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
             // Reload remote subscription and email state
-            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
-            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .reloadIgnoringLocalCacheData,
+            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
+            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .remoteFirst,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
             let (hasReloadedEmail, hasReloadedSubscription) = await (reloadedEmail, reloadedSubscription)
         }
@@ -131,18 +144,17 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
     }
 
-    func fetchAndUpdateAccountEmail(cachePolicy: SubscriptionCachePolicy = .returnCacheDataElseLoad) async -> Bool {
+    func fetchAndUpdateAccountEmail(cachePolicy: SubscriptionCachePolicy = .cacheFirst) async -> Bool {
         Logger.subscription.log("Fetch and update account email")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        var tokensPolicy: AuthTokensCachePolicy = .local
+        let tokensPolicy: AuthTokensCachePolicy
+
         switch cachePolicy {
-        case .reloadIgnoringLocalCacheData:
+        case .remoteFirst:
             tokensPolicy = .localForceRefresh
-        case .returnCacheDataElseLoad:
+        case .cacheFirst:
             tokensPolicy = .localValid
-        case .returnCacheDataDontLoad:
-            tokensPolicy = .local
         }
 
         do {
@@ -165,16 +177,21 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     func manageSubscription() {
         Logger.subscription.log("User action: \(#function)")
-        switch state.subscriptionInfo?.platform {
+
+        guard let platform = state.subscriptionInfo?.platform else {
+            assertionFailure("Invalid subscription platform")
+            return
+        }
+
+        switch platform {
         case .apple:
             Task { await manageAppleSubscription() }
         case .google:
             displayGoogleView(true)
         case .stripe:
             Task { await manageStripeSubscription() }
-        default:
-            assertionFailure("Invalid subscription platform")
-            return
+        case .unknown:
+            manageInternalSubscription()
         }
     }
 
@@ -236,6 +253,12 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         Logger.subscription.log("Show stripe")
         if value != state.isShowingStripeView {
             state.isShowingStripeView = value
+        }
+    }
+
+    func displayInternalSubscriptionNotice(_ value: Bool) {
+        if value != state.isShowingInternalSubscriptionNotice {
+            state.isShowingInternalSubscriptionNotice = value
         }
     }
 
@@ -315,6 +338,14 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
     }
 
+    private func manageInternalSubscription() {
+        Logger.subscription.log("Managing Internal Subscription")
+
+        Task { @MainActor in
+            self.displayInternalSubscriptionNotice(true)
+        }
+    }
+
     @MainActor
     private func openURL(_ url: URL) {
         if UIApplication.shared.canOpenURL(url) {
@@ -322,7 +353,34 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
     }
 
+    func dismissRebrandingMessage() {
+        keyValueStorage.set(true, forKey: bannerDismissedKey)
+        showRebrandingMessage = false
+    }
+
     deinit {
         signOutObserver = nil
+    }
+}
+
+public struct SubscriptionSettingsStore: KeyValueStoring {
+    private let keyValueFileStore: KeyValueFileStore?
+
+    public init() {
+        if let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            self.keyValueFileStore = try? KeyValueFileStore(location: appSupportDir, name: "com.duckduckgo.app.subscriptionSettingsStore")
+        } else {
+            self.keyValueFileStore = nil
+        }
+    }
+
+    public func object(forKey defaultName: String) -> Any? {
+        try? keyValueFileStore?.object(forKey: defaultName)
+    }
+    public func set(_ value: Any?, forKey defaultName: String) {
+        try? keyValueFileStore?.set(value, forKey: defaultName)
+    }
+    public func removeObject(forKey defaultName: String) {
+        try? keyValueFileStore?.removeObject(forKey: defaultName)
     }
 }

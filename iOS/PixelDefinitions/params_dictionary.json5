@@ -1,0 +1,50 @@
+// This file defines commonly used params - this does NOT mean they are added by default
+// In your pixel definitions, you can reference these params by their key
+// See TEMPLATE.json for an example
+{
+    appVersion: {
+        key: 'appVersion',
+        type: 'string',
+        description: '',
+        pattern: '^[0-9]+\\.[0-9]+\\.[0-9]+$',
+        examples: ['7.175.1'],
+    },
+    atb: {
+        key: 'atb',
+        type: 'string',
+        pattern: 'v[0-9]{1,3}-[0-7]([a-z]{2})?',
+        description: 'Add to browser value, corresponding to the users install week and day',
+    },
+    pixelSource: {
+        key: 'pixelSource',
+        type: 'string',
+        description: 'The channel the user is on',
+        enum: ['phone', 'tablet'],
+    },
+    errorDomain: {
+        key: 'd',
+        type: 'string',
+        description: 'NSError code domain',
+        examples: ['NSURLErrorDomain'],
+    },
+    errorCode: {
+        key: 'e',
+        type: 'string',
+        description: 'NSError code',
+        pattern: '^-?\\d+$',
+        examples: ['-1009', '42'],
+    },
+    underlyingErrorCode: {
+        keyPattern: '^ue[0-9]$',
+        type: 'string',
+        description: 'Underlying NSError code',
+        pattern: '^-?\\d+$',
+        examples: ['-1009', '42'],
+    },
+    underlyingErrorDomain: {
+        keyPattern: '^ud[0-9]$',
+        type: 'string',
+        description: 'Underlying NSError code domain',
+        examples: ['NSURLErrorDomain'],
+    },
+}

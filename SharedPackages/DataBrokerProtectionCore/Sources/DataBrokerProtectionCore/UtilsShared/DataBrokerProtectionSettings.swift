@@ -93,6 +93,11 @@ public final class DataBrokerProtectionSettings {
         lastBrokerJSONUpdateCheckTimestamp = timestamp ?? Date().timeIntervalSince1970
     }
 
+    public func resetBrokerDeliveryData() {
+        mainConfigETag = nil
+        updateLastSuccessfulBrokerJSONUpdateCheckTimestamp(Date.distantPast.timeIntervalSince1970)
+    }
+
     // MARK: - Service root
 
     public var serviceRoot: String {

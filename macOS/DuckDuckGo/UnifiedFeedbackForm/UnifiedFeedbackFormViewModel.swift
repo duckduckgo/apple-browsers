@@ -22,6 +22,7 @@ import SwiftUI
 import PixelKit
 import Networking
 import Subscription
+import BrowserServicesKit
 
 protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
     func feedbackViewModelDismissedView(_ viewModel: UnifiedFeedbackFormViewModel)
@@ -30,6 +31,7 @@ protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
 final class UnifiedFeedbackFormViewModel: ObservableObject {
     private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
     private static let platform = "macos"
+    private let featureFlagger: FeatureFlagger
 
     enum ViewState {
         case feedbackPending
@@ -102,6 +104,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             case .vpn: defaultCategory = .vpn
             case .pir: defaultCategory = .pir
             case .itr: defaultCategory = .itr
+            case .duckAi: defaultCategory = .duckAi
             default: defaultCategory = .prompt
             }
             selectedCategory = defaultCategory.rawValue
@@ -133,6 +136,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case .vpn: return VPNFeedbackSubcategory.prompt.rawValue
         case .pir: return PIRFeedbackSubcategory.prompt.rawValue
         case .itr: return ITRFeedbackSubcategory.prompt.rawValue
+        case .duckAi: return PaidAIChatFeedbackSubcategory.prompt.rawValue
         }
     }
 
@@ -165,6 +169,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
          dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadataCollector: any UnifiedMetadataCollector = EmptyMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
+         featureFlagger: FeatureFlagger,
          source: UnifiedFeedbackSource = .default) {
         self.viewState = .feedbackPending
 
@@ -174,10 +179,13 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadataCollector
         self.feedbackSender = feedbackSender
+        self.featureFlagger = featureFlagger
         self.source = source
 
         Task {
-            let features = await subscriptionManager.currentSubscriptionFeatures()
+            // This requires follow-up work:
+            // https://app.asana.com/1/137249556945/task/1210799126744217
+            let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
 
             if features.contains(.networkProtection) {
                 availableCategories.append(.vpn)
@@ -185,10 +193,17 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             if features.contains(.dataBrokerProtection) {
                 availableCategories.append(.pir)
             }
+            if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+                availableCategories.append(.duckAi)
+            }
             if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {
                 availableCategories.append(.itr)
             }
         }
+    }
+
+    var isSubscriptionRebrandingEnabled: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRebranding)
     }
 
     @MainActor
@@ -237,6 +252,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             case .vpn: return VPNFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .pir: return PIRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .itr: return ITRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
+            case .duckAi: return PaidAIChatFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             }
         }()
 

@@ -18,6 +18,7 @@
 
 import AVFoundation
 import Combine
+import CommonObjCExtensions
 import Foundation
 import WebKit
 import XCTest
@@ -72,6 +73,8 @@ final class PermissionModelTests: XCTestCase {
         permissionManagerMock = nil
         geolocationServiceMock = nil
         pixelKit = nil
+        geolocationProviderMock = nil
+        model = nil
     }
 
     func testWhenCameraIsActivatedThenCameraPermissionChangesToActive() {

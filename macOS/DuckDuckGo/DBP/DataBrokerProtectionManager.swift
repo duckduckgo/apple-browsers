@@ -57,13 +57,13 @@ public final class DataBrokerProtectionManager {
 
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        let privacyConfigManager = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigManager)
 
         let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
         do {
             vault = try vaultFactory.makeVault(reporter: reporter)
         } catch let error {
-            assertionFailure("Failed to make secure storage vault")
             pixelHandler.fire(.mainAppSetUpFailedSecureVaultInitFailed(error: error))
             return nil
         }
@@ -121,12 +121,6 @@ public final class DataBrokerProtectionManager {
         authenticationManager.isUserAuthenticated
     }
 
-    public func checkForBrokerUpdates() {
-        Task {
-            try await brokerUpdater?.checkForUpdates()
-        }
-    }
-
     // MARK: - Debugging Features
 
     public func showAgentIPAddress() {
@@ -141,6 +135,7 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
     }
 
     public func dataBrokerProtectionDataManagerDidDeleteData() {
+        DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
         loginItemInterface.dataDeleted()
     }
 
@@ -156,5 +151,11 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
 
     public func isAuthenticatedUser() -> Bool {
         isUserAuthenticated()
+    }
+
+    /// Returns whether the current user is eligible for a free trial of Data Broker Protection
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
+    public func isUserEligibleForFreeTrial() -> Bool {
+        authenticationManager.isUserEligibleForFreeTrial
     }
 }

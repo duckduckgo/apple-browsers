@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
-import Foundation
-import DDGSync
-import SyncUI_macOS
 import Common
+import DDGSync
+import Foundation
+import SyncUI_macOS
 
 final class FaviconsFetcherOnboarding {
 
@@ -44,7 +45,7 @@ final class FaviconsFetcherOnboarding {
         let windowController = viewController.wrappedInWindowController()
 
         guard let window = windowController.window,
-              let parentWindow = targetWindow ?? WindowControllersManager.shared.lastKeyMainWindowController?.window
+              let parentWindow = targetWindow ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
         else {
             assertionFailure("Failed to present FaviconsFetcherOnboardingViewController")
             return

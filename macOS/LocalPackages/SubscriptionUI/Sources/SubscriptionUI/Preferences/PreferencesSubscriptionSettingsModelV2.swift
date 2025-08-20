@@ -23,19 +23,30 @@ import enum Combine.Publishers
 import class Combine.AnyCancellable
 import BrowserServicesKit
 import os.log
+import Persistence
 
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: PrivacyProSubscription.Status = .unknown
+    @Published private var hasActiveTrialOffer: Bool = false
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
+
+    private var isRebrandingOn: () -> Bool
+    @Published private(set) var rebrandingMessageDismissed: Bool = false
+
+    public var showRebrandingMessage: Bool {
+        return isRebrandingOn() && !rebrandingMessageDismissed
+    }
 
     private var subscriptionPlatform: PrivacyProSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
 
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
@@ -59,13 +70,17 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
-                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
-    ) {
+                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
+                keyValueStore: ThrowingKeyValueStoring,
+                isRebrandingOn: @escaping () -> Bool) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
+        self.keyValueStore = keyValueStore
+        self.isRebrandingOn = isRebrandingOn
+        self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
 
         Task {
-            await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
+            await self.updateSubscription(cachePolicy: .cacheFirst)
         }
 
         self.email = subscriptionManager.userEmail
@@ -79,26 +94,26 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
                 }
 
                 await self?.fetchEmail()
-                await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad)
+                await self?.updateSubscription(cachePolicy: .cacheFirst)
             }
         }
 
-        Publishers.CombineLatest($subscriptionStatus, subscriptionStateUpdate)
-            .map { status, state in
-
-                let hasAnyEntitlement = !state.userEntitlements.isEmpty
+        Publishers.CombineLatest3($subscriptionStatus, $hasActiveTrialOffer, subscriptionStateUpdate)
+            .map { status, hasTrialOffer, state in
 
                 Logger.subscription.debug("""
-Update subscription state:
-subscriptionStatus: \(status.rawValue)
-hasAnyEntitlement: \(hasAnyEntitlement)
+Update subscription state: \(state.debugDescription, privacy: .public)
+hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 """)
 
                 switch status {
                 case .expired, .inactive:
                     return PreferencesSubscriptionSettingsState.subscriptionExpired
                 case .autoRenewable, .notAutoRenewable, .gracePeriod:
-                    if hasAnyEntitlement {
+                    // Check for free trial first
+                    if hasTrialOffer {
+                        return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
+                    } else if state.hasAnyEntitlement {
                         return PreferencesSubscriptionSettingsState.subscriptionActive
                     } else {
                         return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
@@ -133,13 +148,19 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     enum ChangePlanOrBillingAction {
         case presentSheet(ManageSubscriptionSheet)
         case navigateToManageSubscription(() -> Void)
+        case showInternalSubscriptionAlert
     }
 
     @MainActor
     func changePlanOrBillingAction() async -> ChangePlanOrBillingAction {
         userEventHandler(.didClickChangePlanOrBilling)
 
-        switch subscriptionPlatform {
+        guard let platform = subscriptionPlatform else {
+            assertionFailure("Missing or unknown subscriptionPlatform")
+            return .navigateToManageSubscription { }
+        }
+
+        switch platform {
         case .apple:
             return .navigateToManageSubscription { [weak self] in
                 self?.changePlanOrBilling(for: .appStore)
@@ -150,9 +171,8 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             return .navigateToManageSubscription { [weak self] in
                 self?.changePlanOrBilling(for: .stripe)
             }
-        default:
-            assertionFailure("Missing or unknown subscriptionPlatform")
-            return .navigateToManageSubscription { }
+        case .unknown:
+            return .showInternalSubscriptionAlert
         }
     }
 
@@ -264,7 +284,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             }
 
             await self?.fetchEmail()
-            await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            await self?.updateSubscription(cachePolicy: .remoteFirst)
         }
     }
 
@@ -278,9 +298,10 @@ hasAnyEntitlement: \(hasAnyEntitlement)
         do {
             let subscription = try await subscriptionManager.getSubscription(cachePolicy: cachePolicy)
             Task { @MainActor in
-                updateDescription(for: subscription.expiresOrRenewsAt, status: subscription.status, period: subscription.billingPeriod)
+                updateDescription(for: subscription)
                 subscriptionPlatform = subscription.platform
                 subscriptionStatus = subscription.status
+                hasActiveTrialOffer = subscription.hasActiveTrialOffer
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")
@@ -288,16 +309,29 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     }
 
     @MainActor
-    func updateDescription(for date: Date, status: PrivacyProSubscription.Status, period: PrivacyProSubscription.BillingPeriod) {
-        let formattedDate = dateFormatter.string(from: date)
+    func updateDescription(for subscription: PrivacyProSubscription) {
+        let hasActiveTrialOffer = subscription.hasActiveTrialOffer
+        let status = subscription.status
+        let period = subscription.billingPeriod
+        let formattedDate = dateFormatter.string(from: subscription.expiresOrRenewsAt)
 
         switch status {
         case .autoRenewable:
-            self.subscriptionDetails = UserText.preferencesSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            if hasActiveTrialOffer {
+                self.subscriptionDetails = UserText.preferencesTrialSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            } else {
+                self.subscriptionDetails = UserText.preferencesSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            }
+
         case .expired, .inactive:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
+            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(isRebrandingOn: isRebrandingOn(), formattedDate: formattedDate)
         default:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiringCaption(billingPeriod: period, formattedDate: formattedDate)
+            if hasActiveTrialOffer {
+                self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)
+            } else {
+                self.subscriptionDetails = UserText.preferencesSubscriptionExpiringCaption(billingPeriod: period, formattedDate: formattedDate)
+            }
+
         }
     }
 
@@ -308,6 +342,11 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         return dateFormatter
     }()
+
+    public func dismissRebrandingMessage() {
+        rebrandingMessageDismissed = true
+        try? keyValueStore.set(true, forKey: rebrandingDismissedKey)
+    }
 }
 
 enum ManageSubscriptionSheet: Identifiable {

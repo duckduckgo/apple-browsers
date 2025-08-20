@@ -33,6 +33,7 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     @Published var passwordsSummary: DataImport.DataTypeSummary?
     @Published var bookmarksSummary: DataImport.DataTypeSummary?
+    @Published var creditCardsSummary: DataImport.DataTypeSummary?
 
     let importScreen: DataImportViewModel.ImportScreen
     private let syncService: DDGSyncing
@@ -57,22 +58,37 @@ final class DataImportSummaryViewModel: ObservableObject {
     init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
         self.passwordsSummary = try? summary[.passwords]?.get()
         self.bookmarksSummary = try? summary[.bookmarks]?.get()
+        self.creditCardsSummary = try? summary[.creditCards]?.get()
         self.importScreen = importScreen
         self.syncService = syncService
 
         fireSummaryPixels()
     }
 
+    /// Returns true only when ALL supported data types (passwords, bookmarks, and optionally credit cards)
+    /// have been imported successfully with zero failures and duplicates for specific UI layout
     func isAllSuccessful() -> Bool {
-       guard let passwords = passwordsSummary,
-             let bookmarks = bookmarksSummary,
-             passwords.failed == 0,
-             passwords.duplicate == 0,
-             bookmarks.failed == 0,
-             bookmarks.duplicate == 0
-       else { return false }
+        guard let passwords = passwordsSummary,
+              passwords.failed == 0,
+              passwords.duplicate == 0 else {
+            return false
+        }
 
-       return true
+        guard let bookmarks = bookmarksSummary,
+              bookmarks.failed == 0,
+              bookmarks.duplicate == 0 else {
+            return false
+        }
+
+        if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.autofillCreditCards) {
+            guard let creditCards = creditCardsSummary,
+                  creditCards.failed == 0,
+                  creditCards.duplicate == 0 else {
+                return false
+            }
+        }
+
+        return true
     }
 
     func fireSyncButtonShownPixel() {
@@ -91,7 +107,13 @@ final class DataImportSummaryViewModel: ObservableObject {
             Pixel.fire(pixel: .importResultBookmarksSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
                                                                                         PixelParameters.bookmarkCount: "\(bookmarks.successful)"])
         }
-
+        if let creditCards = creditCardsSummary {
+            let successBucket = AutofillPixelReporter.creditCardsBucketNameFrom(count: creditCards.successful)
+            let skippedBucket = AutofillPixelReporter.creditCardsBucketNameFrom(count: creditCards.duplicate + creditCards.failed)
+            Pixel.fire(pixel: .importResultCreditCardsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                                                                                          PixelParameters.savedCreditCards: successBucket,
+                                                                                          PixelParameters.skippedCreditCards: skippedBucket])
+        }
     }
 
     func dismiss() {

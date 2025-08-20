@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVKit
 import BrowserServicesKit
 import Core
 
@@ -37,8 +38,7 @@ enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertibl
     }
 }
 
-typealias OnboardingIntroExperimentManaging = OnboardingSetAsDefaultExperimentManaging
-typealias OnboardingManaging = OnboardingSettingsURLProvider & OnboardingStepsProvider & OnboardingIntroExperimentManaging
+typealias OnboardingManaging = OnboardingStepsProvider
 
 final class OnboardingManager {
     private var appDefaults: OnboardingDebugAppSettings
@@ -94,23 +94,6 @@ extension OnboardingManager: OnboardingNewUserProviderDebugging {
     }
 }
 
-// MARK: - Settings URL Provider
-
-protocol OnboardingSettingsURLProvider: AnyObject {
-    var settingsURLPath: String { get }
-}
-
-extension OnboardingSettingsURLProvider {
-
-    var settingsURLPath: String {
-        UIApplication.openSettingsURLString
-    }
-
-}
-
-extension OnboardingManager: OnboardingSettingsURLProvider {}
-
-
 // MARK: - Onboarding Steps Provider
 
 enum OnboardingIntroStep: Equatable {
@@ -150,56 +133,6 @@ extension OnboardingManager: OnboardingStepsProvider {
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool {
         onboardingSteps.contains(.addToDockPromo)
-    }
-
-}
-
-// MARK: - Set Default Browser Experiment
-
-protocol OnboardingSetAsDefaultExperimentManaging: AnyObject {
-    var isEnrolledInSetAsDefaultBrowserExperiment: Bool { get }
-    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort?
-}
-
-extension OnboardingManager: OnboardingSetAsDefaultExperimentManaging {
-
-    var isEnrolledInSetAsDefaultBrowserExperiment: Bool {
-        resolveSetAsDefaultBrowserExperimentCohort() != nil
-    }
-
-    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort? {
-        // The experiment runs only for users on iOS 18.3+ and for non returning users
-        guard #available(iOS 18.3, *), isNewUser else { return nil }
-
-        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingSetAsDefaultBrowser) as? OnboardingSetAsDefaultBrowserCohort
-    }
-
-}
-
-// MARK: - Settings URL Provider + Set As Default Browser Experiment
-
-extension OnboardingSettingsURLProvider where Self: OnboardingSetAsDefaultExperimentManaging {
-
-    // If running iOS 18.3 check if the user should be enrolled in the SetAsDefaultBrowser experiment.
-    // If the user is enrolled in the control group or SetAsDefaultBrowser is not running, deep link to DDG custom settings in the Settings app.
-    // If the user is enrolled in the treatment group, deep link to the Settings app for default app selection.
-    var settingsURLPath: String {
-        if #available(iOS 18.3, *) {
-            switch resolveSetAsDefaultBrowserExperimentCohort() {
-            case .none:
-                Logger.onboarding.debug("SetAsDefaultBrowser experiment not running")
-                return UIApplication.openSettingsURLString
-            case .control:
-                Logger.onboarding.debug("User enrolled in the control group of the SetAsDefaultBrowser experiment")
-                return UIApplication.openSettingsURLString
-            case .treatment:
-                Logger.onboarding.debug("User enrolled in the treatment group of the SetAsDefaultBrowser experiment")
-                return UIApplication.openDefaultApplicationsSettingsURLString
-            }
-        } else {
-            Logger.onboarding.debug("User running an iOS version lower than iOS 18.3. Returning DDG’s custom settings url in the Settings app.")
-            return UIApplication.openSettingsURLString
-        }
     }
 
 }

@@ -1,0 +1,15 @@
+{
+    navigation: {
+        description: 'Fired when a website navigation is performed.',
+        owners: ['ayoy'],
+        triggers: ['new_tab', 'page_load'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+    navigationToExternalURL: {
+        description: 'Fires when the browser is activated to open a link from another app. This can only happen when the browser is set as the default browser.',
+        owners: ['ayoy'],
+        triggers: ['other'],
+        suffixes: ['daily'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

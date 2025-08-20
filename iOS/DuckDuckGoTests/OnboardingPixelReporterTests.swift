@@ -684,38 +684,4 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    // MARK: - Set as Default Experiment
-
-    func testWhenMeasureDidSetDDGAsDefaultBrowserThenOnboardingDidSetDDGAsDefaultBrowserPixelFires() throws {
-        // GIVEN
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-
-        // WHEN
-        sut.measureDidSetDDGAsDefaultBrowser()
-
-        // THEN
-        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 1)
-        let firedPixel = try XCTUnwrap(OnboardingExperimentPixelFireMock.firedMetrics.first)
-        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
-        XCTAssertEqual(firedPixel.metric, "setAsDefaultBrowser")
-        XCTAssertEqual(firedPixel.conversionWindow, 0...0)
-        XCTAssertEqual(firedPixel.value, "1")
-    }
-
-    func testWhenMeasureDidNotSetDDGAsDefaultBrowserThenOnboardingDidNotSetDDGAsDefaultBrowserPixelFires() throws {
-        // GIVEN
-        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
-
-        // WHEN
-        sut.measureDidNotSetDDGAsDefaultBrowser()
-
-        // THEN
-        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 1)
-        let firedPixel = try XCTUnwrap(OnboardingExperimentPixelFireMock.firedMetrics.first)
-        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
-        XCTAssertEqual(firedPixel.metric, "rejectSetAsDefaultBrowser")
-        XCTAssertEqual(firedPixel.conversionWindow, 0...0)
-        XCTAssertEqual(firedPixel.value, "1")
-    }
-
 }

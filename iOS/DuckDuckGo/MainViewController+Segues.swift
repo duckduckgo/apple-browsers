@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SwiftUI
 import PrivacyDashboard
 import Subscription
+import DDGSync
 import os.log
 
 extension MainViewController {
@@ -33,7 +34,7 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)
@@ -87,7 +88,8 @@ extension MainViewController {
                                     bookmarksSearch: self.bookmarksCachingSearch,
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
-                                    appSettings: self.appSettings)
+                                    appSettings: self.appSettings,
+                                    keyValueStore: self.keyValueStore)
         }
         bookmarks.delegate = self
 
@@ -175,7 +177,8 @@ extension MainViewController {
                                       syncService: self.syncService,
                                       featureFlagger: self.featureFlagger,
                                       tabManager: self.tabManager,
-                                      aiChatSettings: self.aiChatSettings)
+                                      aiChatSettings: self.aiChatSettings,
+                                      appSettings: self.appSettings)
         }) else {
             assertionFailure()
             return
@@ -235,36 +238,70 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource?) {
+    func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
+                                     card: SecureVaultModels.CreditCard?,
+                                     showCardManagement: Bool = false,
+                                     source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.shouldPresentLoginsViewWithAccount(accountDetails: account, source: source)
-        }
-    }
-
-    func segueToSettingsAIChat() {
-        Logger.lifecycle.debug(#function)
-        hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .aiChat)
-        }
-    }
-
-    func segueToSettingsSync(with source: String? = nil) {
-        Logger.lifecycle.debug(#function)
-        hideAllHighlightsIfNeeded()
-        launchSettings {
-            if let source = source {
-                $0.shouldPresentSyncViewWithSource(source)
-            } else {
-                $0.presentLegacyView(.sync)
+        if showCardManagement {
+            launchSettings(configure: { viewModel, controller in
+                controller.decorateNavigationBar()
+                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: true, source: nil)
+            })
+        } else {
+            launchSettings {
+                $0.shouldPresentAutofillViewWith(accountDetails: account, card: card, showCreditCardManagement: showCardManagement, source: source)
             }
         }
     }
-    
+
+    func segueToSettingsAIChat(completion: (() -> Void)? = nil) {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: { _ in
+            completion?()
+        }, deepLinkTarget: .aiChat)
+    }
+
+    func segueToSettingsPrivateSearch(completion: (() -> Void)? = nil) {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: { _ in
+            completion?()
+        }, deepLinkTarget: .privateSearch)
+    }
+
+    func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        let launchSync: () -> Void = { [weak self] in
+            self?.launchSettings {
+                if let source = source {
+                    $0.shouldPresentSyncViewWithSource(source)
+                } else {
+                    $0.presentLegacyView(.sync(pairingInfo))
+                }
+            }
+        }
+        if let presentedViewController {
+            presentedViewController.dismiss(animated: false, completion: launchSync)
+        } else {
+            launchSync()
+        }
+    }
+
+    func segueToFeedback() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.presentLegacyView(.feedback)
+        }
+   }
+
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
-                        deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil) {
+                        deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil,
+                        configure: ((SettingsViewModel, SettingsHostingController) -> Void)? = nil) {
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,
                                                             syncDataProviders: syncDataProviders,
                                                             appSettings: appSettings,
@@ -272,7 +309,11 @@ extension MainViewController {
                                                             tabManager: tabManager,
                                                             syncPausedStateManager: syncPausedStateManager,
                                                             fireproofing: fireproofing,
-                                                            websiteDataManager: websiteDataManager)
+                                                            websiteDataManager: websiteDataManager,
+                                                            customConfigurationURLProvider: customConfigurationURLProvider,
+                                                            keyValueStore: keyValueStore,
+                                                            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                                                            daxDialogsManager: daxDialogsManager)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
@@ -290,24 +331,41 @@ extension MainViewController {
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger),
-                                                  experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger))
+                                                  themeManager: themeManager,
+                                                  experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+                                                  keyValueStore: keyValueStore,
+                                                  systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
         Pixel.fire(pixel: .settingsPresented)
 
-        if let navigationController = self.presentedViewController as? UINavigationController,
-           let settingsHostingController = navigationController.viewControllers.first as? SettingsHostingController {
-            navigationController.popToRootViewController(animated: false)
-            completion?(settingsHostingController.viewModel)
-        } else {
-            let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
+        func doLaunch() {
+            if let navigationController = self.presentedViewController as? UINavigationController,
+               let settingsHostingController = navigationController.viewControllers.first as? SettingsHostingController {
+                navigationController.popToRootViewController(animated: false)
+                completion?(settingsHostingController.viewModel)
+            } else {
+                assert(self.presentedViewController == nil)
 
-            // We are still presenting legacy views, so use a Navcontroller
-            let navController = SettingsUINavigationController(rootViewController: settingsController)
-            settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+                let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
 
-            present(navController, animated: true) {
-                completion?(settingsViewModel)
+                // We are still presenting legacy views, so use a Navcontroller
+                let navController = SettingsUINavigationController(rootViewController: settingsController)
+                settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+
+                // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
+                configure?(settingsViewModel, settingsController)
+
+                present(navController, animated: true) {
+                    completion?(settingsViewModel)
+                }
             }
+        }
+
+        if let controller = self.presentedViewController as? OmniBarEditingStateViewController {
+            controller.dismissAnimated {
+                doLaunch()
+            }
+        } else {
+            doLaunch()
         }
     }
 
@@ -320,7 +378,11 @@ extension MainViewController {
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing))
+            fireproofing: self.fireproofing,
+            customConfigurationURLProvider: customConfigurationURLProvider,
+            keyValueStore: self.keyValueStore,
+            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
+            daxDialogManager: self.daxDialogsManager))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
@@ -331,7 +393,7 @@ extension MainViewController {
 
     private func hideAllHighlightsIfNeeded() {
         Logger.lifecycle.debug(#function)
-        if !DaxDialogs.shared.shouldShowFireButtonPulse {
+        if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()
         }
     }
@@ -339,7 +401,7 @@ extension MainViewController {
 }
 
 // Exists to fire a did disappear notification for settings when the controller did disappear
-//  so that we get the event regarldess of where in the UI hierarchy it happens.
+//  so that we get the event regardless of where in the UI hierarchy it happens.
 class SettingsUINavigationController: UINavigationController {
 
     required init?(coder aDecoder: NSCoder) {

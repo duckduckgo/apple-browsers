@@ -404,7 +404,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
         let responder = ClosureNavigationResponder(decidePolicy: { _, _ in
             .allow
         }, navigationResponse: { [unowned self] _ in
-            self._webView.perform(NSSelectorFromString("_killWebContentProcess"))
+            self._webView.killWebContentProcess()
             return .next
         }, navigationDidFail: { nav, error in
             XCTAssertTrue(nav.isCurrent)
@@ -426,7 +426,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
             _=webView.load(req(urls.local1))
         }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations(timeout: 10)
     }
 
 }

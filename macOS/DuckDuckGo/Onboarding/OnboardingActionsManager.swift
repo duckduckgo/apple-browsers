@@ -87,7 +87,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private var cancellables = Set<AnyCancellable>()
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
-    static private(set) var isOnboardingFinished: Bool
+    static var isOnboardingFinished: Bool
 
     let configuration: OnboardingConfiguration = {
         var systemSettings: SystemSettings
@@ -110,12 +110,32 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         return OnboardingConfiguration(stepDefinitions: stepDefinitions, exclude: [], order: order, env: env, locale: preferredLocale, platform: platform)
     }()
 
-    init(navigationDelegate: OnboardingNavigating,
-         dockCustomization: DockCustomization,
-         defaultBrowserProvider: DefaultBrowserProvider,
-         appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences,
-         dataImportProvider: DataImportStatusProviding = BookmarksAndPasswordsImportStatusProvider()) {
+    convenience init(
+        navigationDelegate: OnboardingNavigating,
+        dockCustomization: DockCustomization,
+        defaultBrowserProvider: DefaultBrowserProvider,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
+        bookmarkManager: BookmarkManager
+    ) {
+        self.init(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager)
+        )
+    }
+
+    init(
+        navigationDelegate: OnboardingNavigating,
+        dockCustomization: DockCustomization,
+        defaultBrowserProvider: DefaultBrowserProvider,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
+        dataImportProvider: DataImportStatusProviding
+    ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider

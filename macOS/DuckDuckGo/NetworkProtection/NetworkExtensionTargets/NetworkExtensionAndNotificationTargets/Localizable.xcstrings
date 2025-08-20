@@ -3,7 +3,7 @@
   "strings" : {
     "network.protection.entitlement.expired.notification.body" : {
       "comment" : "The body of the notification when Privacy Pro subscription expired",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -32,7 +32,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Iscriviti a Privacy Pro per riconnettere la VPN di DuckDuckGo."
+            "value" : "Abbonati a Privacy Pro per riconnettere la VPN di DuckDuckGo."
           }
         },
         "nl" : {
@@ -63,7 +63,7 @@
     },
     "network.protection.entitlement.expired.notification.title" : {
       "comment" : "The title of the notification when Privacy Pro subscription expired",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -123,7 +123,7 @@
     },
     "network.protection.failure.notification.subtitle" : {
       "comment" : "The subtitle of the notification shown when DuckDuckGo VPN fails to reconnect",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -183,7 +183,7 @@
     },
     "network.protection.failure.notification.title" : {
       "comment" : "The title of the notification shown when DuckDuckGo VPN fails to reconnect",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -243,7 +243,7 @@
     },
     "network.protection.interrupted.notification.subtitle" : {
       "comment" : "The subtitle of the notification shown when DuckDuckGo VPN's connection is interrupted",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -303,7 +303,7 @@
     },
     "network.protection.interrupted.notification.title" : {
       "comment" : "The title of the notification shown when DuckDuckGo VPN's connection is interrupted",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -363,7 +363,7 @@
     },
     "network.protection.success.notification.subtitle" : {
       "comment" : "The subtitle of the notification shown when the VPN reconnects successfully",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -423,7 +423,7 @@
     },
     "network.protection.success.notification.subtitle.including.serverLocation" : {
       "comment" : "The body of the notification shown when DuckDuckGo VPN connects successfully with the city + state/country as formatted parameter",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -483,7 +483,7 @@
     },
     "network.protection.success.notification.title" : {
       "comment" : "The title of the notification shown when DuckDuckGo VPN connects successfully",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -543,7 +543,7 @@
     },
     "network.protection.superceded.action.reconnect.title" : {
       "comment" : "The title of the `Reconnect` notification action button shown when VPN connection is replaced by another app VPN connection taking over",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -554,12 +554,6 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reconnect"
-          }
-        },
-        "en-US" : {
-          "stringUnit" : {
-            "state" : "translated",
             "value" : "Reconnect"
           }
         },
@@ -609,7 +603,7 @@
     },
     "network.protection.superceded.notification.subtitle" : {
       "comment" : "The subtitle of the notification shown when VPN connection is replaced by another app VPN connection taking over",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -669,7 +663,7 @@
     },
     "network.protection.superceded.notification.title" : {
       "comment" : "The title of the notification shown when VPN connection is replaced by another app VPN connection taking over",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

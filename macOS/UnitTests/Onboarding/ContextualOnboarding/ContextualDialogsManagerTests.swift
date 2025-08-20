@@ -39,6 +39,20 @@ class ContextualDialogsManagerTests {
         XCTAssertEqual(manager.state, .onboardingCompleted)
     }
 
+    @Test("Contextual onboarding completion is published")
+    func testContextualOnboardingCompletedPublisher() {
+        // Given
+        XCTAssertTrue(manager.isContextualOnboardingCompleted)
+
+        // When
+        manager.state = .ongoing
+        XCTAssertFalse(manager.isContextualOnboardingCompleted)
+        manager.state = .onboardingCompleted
+
+        // Then
+        XCTAssertTrue(manager.isContextualOnboardingCompleted)
+    }
+
     // MARK: - NewTab
 
     @Test("The first time New Tab is shown will show tryASearch dialog")
@@ -306,11 +320,11 @@ class ContextualDialogsManagerTests {
 
 class MockTrackerMessageProvider: TrackerMessageProviding {
 
-    let expectation: XCTestExpectation
+    let expectation: XCTestExpectation?
     var message: NSAttributedString
     var trackerType: OnboardingTrackersType?
 
-    init(expectation: XCTestExpectation, message: NSAttributedString = NSAttributedString(string: "Trackers Detected"), trackerType: OnboardingTrackersType? = .blockedTrackers(entityNames: ["entity1", "entity2"])) {
+    init(expectation: XCTestExpectation? = nil, message: NSAttributedString = NSAttributedString(string: "Trackers Detected"), trackerType: OnboardingTrackersType? = .blockedTrackers(entityNames: ["entity1", "entity2"])) {
         self.expectation = expectation
         self.message = message
         self.trackerType = trackerType
@@ -318,7 +332,7 @@ class MockTrackerMessageProvider: TrackerMessageProviding {
 
     func trackerMessage(privacyInfo: PrivacyInfo?) -> NSAttributedString? {
         // Simulate fetching the tracker message
-        expectation.fulfill()
+        expectation?.fulfill()
         return message
     }
 

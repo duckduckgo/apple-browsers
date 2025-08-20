@@ -208,11 +208,20 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Ievadīt kodu manuāli";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Atver DuckDuckGo lietotni citā ierīcē un dodies uz %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Lai sinhronizētu, skenē šo kodu ar citu ierīci.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "No mobilā uz mobilo?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Atver DuckDuckGo citā ierīcē un noskenē šo kodu, lai sinhronizētu.";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Vai skenē ar DuckDuckGo citā ierīcē";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Kopīgot teksta kodu";

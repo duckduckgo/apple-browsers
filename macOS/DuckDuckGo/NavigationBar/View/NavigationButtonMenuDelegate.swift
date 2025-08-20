@@ -32,10 +32,12 @@ final class NavigationButtonMenuDelegate: NSObject {
 
     private let buttonType: ButtonType
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let historyCoordinator: HistoryCoordinating
 
-    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel) {
+    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel, historyCoordinator: HistoryCoordinating) {
         self.buttonType = buttonType
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.historyCoordinator = historyCoordinator
     }
 
 }
@@ -59,7 +61,7 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
 
         let listItemViewModel = BackForwardListItemViewModel(backForwardListItem: listItem,
                                                              faviconManagement: NSApp.delegateTyped.faviconManager,
-                                                             historyCoordinating: HistoryCoordinator.shared,
+                                                             historyCoordinating: historyCoordinator,
                                                              isCurrentItem: index == 0)
 
         item.title = listItemViewModel.title

@@ -80,8 +80,14 @@ platform :ios do
     sync_signing_adhoc(options)
 
     suffix = ""
+    plist_path = "../DuckDuckGo/Info.plist"
     if options[:suffix]
       suffix = "#{options[:suffix]}-"
+      # Set the suffix in the Info.plist for the main app bundle
+      sh("/usr/libexec/PlistBuddy -c \"Add :DDG_ALPHA_BUILD_SUFFIX string #{options[:suffix]}\" #{plist_path} || /usr/libexec/PlistBuddy -c \"Set :DDG_ALPHA_BUILD_SUFFIX #{options[:suffix]}\" #{plist_path}")
+    else
+      # Remove the suffix key if no suffix is provided
+      sh("/usr/libexec/PlistBuddy -c \"Delete :DDG_ALPHA_BUILD_SUFFIX\" #{plist_path} || true")
     end
 
     timestamp = Time.now.strftime("%Y-%m-%d-%H-%M")
@@ -151,8 +157,14 @@ platform :ios do
     sync_signing_alpha_adhoc(options)
 
     suffix = ""
+    plist_path = "../DuckDuckGo/Info.plist"
     if options[:suffix]
       suffix = "#{options[:suffix]}-"
+      # Set the suffix in the Info.plist for the main app bundle
+      sh("/usr/libexec/PlistBuddy -c \"Add :DDG_ALPHA_BUILD_SUFFIX string #{options[:suffix]}\" #{plist_path} || /usr/libexec/PlistBuddy -c \"Set :DDG_ALPHA_BUILD_SUFFIX #{options[:suffix]}\" #{plist_path}")
+    else
+      # Remove the suffix key if no suffix is provided
+      sh("/usr/libexec/PlistBuddy -c \"Delete :DDG_ALPHA_BUILD_SUFFIX\" #{plist_path} || true")
     end
 
     timestamp = Time.now.strftime("%Y-%m-%d-%H-%M")
@@ -246,25 +258,31 @@ platform :ios do
   desc 'Makes Alpha release build and uploads it to TestFlight'
   lane :release_alpha do |options|
     build_alpha(options)
+    upload_alpha(options)
+  end
 
-    upload_to_testflight(
-      api_key: get_api_key,
-      groups: options[:groups],
-      skip_waiting_for_build_processing: true
+  desc 'Makes Alpha release build only (without uploading)'
+  lane :build_alpha do |options|
+    sync_signing_alpha(options)
+
+    build_app(
+      export_method: "app-store",
+      configuration: "Alpha",
+      scheme: "iOS Browser Alpha",
+      export_options: "alphaExportOptions.plist",
+      derived_data_path: "DerivedData",
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation"
     )
   end
 
-  desc 'Latest build number for version'
-  lane :latest_build_number_for_version do |options|
-    build_number = latest_testflight_build_number(
+  desc 'Uploads pre-built Alpha app to TestFlight'
+  lane :upload_alpha do |options|
+    upload_to_testflight(
       api_key: get_api_key,
-      version: options[:version],
-      app_identifier: options[:app_identifier],
-      initial_build_number: -1,
-      username: get_username(options))
-    if options[:file_name]
-      File.write(options[:file_name], build_number)
-    end
+      groups: options[:groups],
+      skip_waiting_for_build_processing: true,
+      ipa: options[:ipa_path]
+    )
   end
 
   desc 'Increment build number based on version in App Store Connect'
@@ -296,19 +314,6 @@ platform :ios do
       export_method: "app-store",
       scheme: "iOS Browser",
       export_options: "appStoreExportOptions.plist",
-      derived_data_path: "DerivedData",
-      xcargs: "-skipPackagePluginValidation -skipMacroValidation"
-    )
-  end
-
-  private_lane :build_alpha do |options|
-    sync_signing_alpha(options)
-
-    build_app(
-      export_method: "app-store",
-      configuration: "Alpha",
-      scheme: "iOS Browser Alpha",
-      export_options: "alphaExportOptions.plist",
       derived_data_path: "DerivedData",
       xcargs: "-skipPackagePluginValidation -skipMacroValidation"
     )

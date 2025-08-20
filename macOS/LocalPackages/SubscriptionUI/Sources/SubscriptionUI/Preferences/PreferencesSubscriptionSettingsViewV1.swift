@@ -46,13 +46,15 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
                     expiredHeaderView
                 case .subscriptionPendingActivation:
                     pendingActivationHeaderView
+                case .subscriptionFreeTrialActive:
+                    StatusIndicatorView(status: .custom(UserText.freeTrialActiveStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
                 }
             }
             .padding(.bottom, 16)
 
             // Sections
             switch model.settingsState {
-            case .subscriptionActive:
+            case .subscriptionActive, .subscriptionFreeTrialActive:
                 activateSection
                 settingsSection
                 helpSection
@@ -103,7 +105,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(.subscriptionExpiredIcon)
-                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader)
+                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: false))
             }
             HStack {
                 Button(UserText.viewPlansExpiredButtonTitle) { model.purchaseAction() }
@@ -118,9 +120,9 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
     @ViewBuilder
     private var activateSection: some View {
         PreferencePaneSection {
-            TextMenuItemHeader(UserText.activateSectionTitle, bottomPadding: 0)
+            TextMenuItemHeader(UserText.activateSectionTitle(isRebrandingOn: false), bottomPadding: 0)
 
-            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))
+            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform, isRebrandingOn: false))
                 .foregroundColor(Color(.textSecondary))
 
             TextButton(UserText.activateSectionLearnMoreButton) {
@@ -213,7 +215,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
     private var removeConfirmationDialog: some View {
         SubscriptionDialog(imageName: "Privacy-Pro-128",
                            title: UserText.removeSubscriptionDialogTitle,
-                           description: UserText.removeSubscriptionDialogDescription,
+                           description: UserText.removeSubscriptionDialogDescription(isRebrandingOn: false),
                            buttons: {
             Button(UserText.removeSubscriptionDialogCancel) { showingRemoveConfirmationDialog = false }
             Button(action: {

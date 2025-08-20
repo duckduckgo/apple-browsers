@@ -19,6 +19,8 @@
 
 import Foundation
 import Suggestions
+import Bookmarks
+import AIChat
 
 enum OmniBarEditingEndResult {
     case suspended
@@ -73,11 +75,21 @@ protocol OmniBarDelegate: AnyObject {
     func selectedSuggestion() -> Suggestion?
     
     func onVoiceSearchPressed()
+    
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget)
 
     func onDidBeginEditing()
 
     func onDidEndEditing()
 
+    /// SwitchBar
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
+
+    func onSelectFavorite(_ favorite: BookmarkEntity)
+
+    func didRequestCurrentURL() -> URL?
+
+    func isSuggestionTrayVisible() -> Bool
 }
 
 extension OmniBarDelegate {
@@ -118,14 +130,6 @@ extension OmniBarDelegate {
         
     }
     
-    func onTextFieldWillBeginEditing(_ omniBar: DefaultOmniBarView) {
-        
-    }
-
-    func onTextFieldDidBeginEditing(_ omniBar: DefaultOmniBarView) {
-        
-    }
-    
     func onRefreshPressed() {
     
     }
@@ -139,4 +143,7 @@ extension OmniBarDelegate {
     func onForwardPressed() {
     }
     
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        onVoiceSearchPressed()
+    }
 }

@@ -255,7 +255,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
             return nil
         }
 
-        guard let mainWindowController = WindowControllersManager.shared.lastKeyMainWindowController else {
+        guard let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             assertionFailure("No main window controller")
             return nil
         }
@@ -275,8 +275,8 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, openWindowsFor extensionContext: WKWebExtensionContext) -> [any WKWebExtensionWindow] {
-        var windows = WindowControllersManager.shared.mainWindowControllers
-        if let focusedWindow = WindowControllersManager.shared.lastKeyMainWindowController {
+        var windows = Application.appDelegate.windowControllersManager.mainWindowControllers
+        if let focusedWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             // Ensure focusedWindow is the first item
             windows.removeAll { $0 === focusedWindow }
             windows.insert(focusedWindow, at: 0)
@@ -285,7 +285,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, focusedWindowFor extensionContext: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
-        return WindowControllersManager.shared.lastKeyMainWindowController
+        return Application.appDelegate.windowControllersManager.lastKeyMainWindowController
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, openNewWindowUsing configuration: WKWebExtension.WindowConfiguration, for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionWindow)? {
@@ -299,7 +299,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         )
 
         // Create new window
-        let mainWindow = WindowControllersManager.shared.openNewWindow(
+        let mainWindow = Application.appDelegate.windowControllersManager.openNewWindow(
             with: tabCollectionViewModel,
             burnerMode: burnerMode,
             droppingPoint: configuration.frame.origin,
@@ -324,7 +324,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         for existingTab in existingTabs {
             guard
                 let tab = existingTab as? Tab,
-                let sourceViewModel = WindowControllersManager.shared.windowController(for: tab)?
+                let sourceViewModel = Application.appDelegate.windowControllersManager.windowController(for: tab)?
                     .mainViewController.tabCollectionViewModel,
                 let currentIndex = sourceViewModel.tabCollection.tabs.firstIndex(of: tab)
             else {
@@ -337,7 +337,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, openNewTabUsing configuration: WKWebExtension.TabConfiguration, for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
-        if let tabCollectionViewModel = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
+        if let tabCollectionViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
            let url = configuration.url {
 
             let content = TabContent.contentFromURL(url, source: .ui)

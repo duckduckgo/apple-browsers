@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
+import BrowserServicesKit
 import Foundation
 import PixelKit
-import BrowserServicesKit
 
 internal class ChromiumDataImporter: DataImporter {
 
@@ -29,19 +30,22 @@ internal class ChromiumDataImporter: DataImporter {
     private var source: DataImport.Source {
         profile.browser.importSource
     }
+    private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
+    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement, featureFlagger: FeatureFlagger) {
         self.profile = profile
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.featureFlagger = featureFlagger
     }
 
-    convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter) {
+    convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, featureFlagger: FeatureFlagger) {
         self.init(profile: profile,
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
-                  faviconManager: NSApp.delegateTyped.faviconManager)
+                  faviconManager: NSApp.delegateTyped.faviconManager,
+                  featureFlagger: featureFlagger)
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -100,20 +104,28 @@ internal class ChromiumDataImporter: DataImporter {
             let bookmarkReader = ChromiumBookmarksReader(chromiumDataDirectoryURL: profile.profileURL)
             let bookmarkResult = bookmarkReader.readBookmarks()
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            guard case .success(var importedBookmarks) = bookmarkResult else {
+                summary[.bookmarks] = .failure(bookmarkResult.error!)
+                return summary
+            }
+
+            var markRootBookmarksAsFavoritesByDefault = true
+            if featureFlagger.isFeatureOn(.importChromeShortcuts) {
+                markRootBookmarksAsFavoritesByDefault = false
+                let newTabShortcuts = fetchShortcutsAsFavorites()
+                FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabShortcuts)
+            }
+
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkResult.map { bookmarks in
-                bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source))
-            }
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: nil)
 
-            if case .success = bookmarksSummary {
-                await importFavicons()
-            }
+            await importFavicons()
 
-            summary[.bookmarks] = bookmarksSummary.map { .init($0) }
+            summary[.bookmarks] = .success(.init(bookmarksSummary))
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
 
@@ -140,9 +152,49 @@ internal class ChromiumDataImporter: DataImporter {
                 result[pageURL] = favicons
             }
             await faviconManager.handleFaviconsByDocumentUrl(faviconsByDocument)
-            PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .favicons, source: source, sourceVersion: sourceVersion))
+            PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .favicons, source: source.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
         case .failure(let error):
-            PixelKit.fire(GeneralPixel.dataImportFailed(source: source, sourceVersion: sourceVersion, error: error))
+            PixelKit.fire(GeneralPixel.dataImportFailed(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, error: error), frequency: .dailyAndStandard)
+        }
+    }
+
+    private func fetchShortcutsAsFavorites() -> [ImportedBookmarks.BookmarkOrFolder] {
+        let sourceVersion = profile.installedAppsMajorVersionDescription()
+
+        do {
+            let preferences = try ChromiumPreferences(profileURL: profile.profileURL)
+            var favorites: [ImportedBookmarks.BookmarkOrFolder] = []
+            guard preferences.isNewTabShortcutsEnabled else {
+                PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, favoritesBucket: .none), frequency: .dailyAndStandard)
+                return favorites
+            }
+
+            switch preferences.newTabPageShortcutStyle {
+            case .autoGenerated:
+                let topSitesReader = ChromiumTopSitesReader(chromiumDataDirectoryURL: profile.profileURL)
+                let autoGeneratedShortcuts = try topSitesReader.readTopSites().get()
+                favorites = autoGeneratedShortcuts.prefix(8).map { shortcut in
+                    ImportedBookmarks.BookmarkOrFolder.bookmark(name: shortcut.title,
+                                                                urlString: shortcut.url,
+                                                                isDDGFavorite: true,
+                                                                favoritesIndex: shortcut.urlRank)
+                }
+            case .custom:
+                let customShortcuts = preferences.customShortcuts
+                favorites = customShortcuts.enumerated().map { (index, shortcut) in
+                    ImportedBookmarks.BookmarkOrFolder.bookmark(name: shortcut.title,
+                                                                urlString: shortcut.url,
+                                                                isDDGFavorite: true,
+                                                                favoritesIndex: index)
+                }
+            }
+
+            PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, favoritesBucket: .init(count: favorites.count)), frequency: .dailyAndStandard)
+
+            return favorites
+        } catch {
+            PixelKit.fire(GeneralPixel.favoritesImportFailed(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, error: error), frequency: .dailyAndStandard)
+            return []
         }
     }
 

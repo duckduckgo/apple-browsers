@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import Common
 
 struct AboutView: View {
 
@@ -35,15 +36,16 @@ struct AboutView: View {
 }
 
 struct AboutViewText: View {
+    @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {
         VStack(spacing: 12) {
-            Image("Logo")
+            Image(.logo)
                 .resizable()
                 .frame(width: 96, height: 96)
                 .padding(.top)
 
-            Image("TextDuckDuckGo")
+            Image(.textDuckDuckGo)
 
             Text(UserText.aboutProtectionTagline)
                 .daxHeadline()
@@ -62,7 +64,7 @@ struct AboutViewText: View {
                 .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(LocalizedStringKey(UserText.aboutText))
+            Text(LocalizedStringKey(UserText.aboutText(isSubscriptionRebrandingOn: viewModel.isSubscriptionRebrandingEnabled)))
                 .lineLimit(nil)
                 .multilineTextAlignment(.leading)
                 .foregroundColor(.primary)
@@ -84,8 +86,15 @@ struct AboutViewVersion: View {
 
     var body: some View {
         Section(header: Text("DuckDuckGo for iOS"), footer: Text(UserText.settingsSendCrashReportsDescription)) {
-            SettingsCellView(label: UserText.settingsVersion,
-                             accessory: .rightDetail(viewModel.state.version))
+#if (ALPHA && !DEBUG)
+            // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
+            let version = "\(viewModel.state.version) (Alpha)"
+            SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+            SettingsCellView(label: "Build", accessory: .rightDetail(AppVersion.shared.commitSHAShort))
+#else
+            let version = viewModel.state.version
+            SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+#endif
 
             // Send Crash Reports
             SettingsCellView(label: UserText.settingsSendCrashReports,

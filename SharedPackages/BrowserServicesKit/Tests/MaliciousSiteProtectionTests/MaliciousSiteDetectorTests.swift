@@ -28,12 +28,13 @@ class MaliciousSiteDetectorTests: XCTestCase {
     private var mockEventMapping: MockEventMapping!
     private var detector: MaliciousSiteDetector!
     private var isScamProtectionSupported = false
+    private var shouldRemoveWWWInCanonicalization = true
 
     override func setUp() async throws {
         mockAPIClient = MockMaliciousSiteProtectionAPIClient()
         mockDataManager = MockMaliciousSiteProtectionDataManager()
         mockEventMapping = MockEventMapping()
-        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, eventMapping: mockEventMapping, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } })
+        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, eventMapping: mockEventMapping, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } }, shouldRemoveWWWInCanonicalization: { self.shouldRemoveWWWInCanonicalization })
     }
 
     override func tearDown() async throws {
@@ -267,5 +268,45 @@ class MaliciousSiteDetectorTests: XCTestCase {
         default:
             XCTFail("Wrong event fired")
         }
+    }
+
+    // MARK: - WWW Canonicalization Tests
+
+    func testMaliciousDetectionWithWWWRemovalEnabled() async throws {
+        // GIVEN
+        shouldRemoveWWWInCanonicalization = true
+        let filter = Filter(hash: "255a8a793097aeea1f06a19c08cde28db0eb34c660c6e4e7480c9525d034b16d", regex: ".*malicious.*")
+        try await mockDataManager.store(FilterDictionary(revision: 0, items: [filter]), for: .filterSet(threatKind: .phishing))
+        try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["255a8a79"]), for: .hashPrefixes(threatKind: .phishing))
+
+        // WHEN
+        let wwwUrl = URL(string: "https://www.malicious.com/")!
+        let nonWwwUrl = URL(string: "https://malicious.com/")!
+
+        let wwwResult = await detector.evaluate(wwwUrl)
+        let nonWwwResult = await detector.evaluate(nonWwwUrl)
+
+        // THEN Both www and non-www URLs should match when removal is enabled
+        XCTAssertEqual(wwwResult, .phishing)
+        XCTAssertEqual(nonWwwResult, .phishing)
+    }
+
+    func testMaliciousDetectionWithWWWRemovalDisabled() async throws {
+        // GIVEN
+        shouldRemoveWWWInCanonicalization = false
+        let wwwFilter = Filter(hash: "255a8a793097aeea1f06a19c08cde28db0eb34c660c6e4e7480c9525d034b16d", regex: ".*malicious.*")
+        try await mockDataManager.store(FilterDictionary(revision: 0, items: [wwwFilter]), for: .filterSet(threatKind: .phishing))
+        try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["255a8a79"]), for: .hashPrefixes(threatKind: .phishing))
+
+        // WHEN
+        let wwwUrl = URL(string: "https://www.malicious.com/")!
+        let nonWwwUrl = URL(string: "https://malicious.com/")!
+
+        let wwwResult = await detector.evaluate(wwwUrl)
+        let nonWwwResult = await detector.evaluate(nonWwwUrl)
+
+        // THEN www and non-www URLs should be treated differently when removal is disabled
+        XCTAssertNil(wwwResult)
+        XCTAssertEqual(nonWwwResult, .phishing)
     }
 }

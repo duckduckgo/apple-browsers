@@ -27,7 +27,7 @@ final class AddEditBookmarkFolderDialogViewModelTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [BookmarkFolder.mock])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
     }
 
@@ -143,7 +143,7 @@ final class AddEditBookmarkFolderDialogViewModelTests: XCTestCase {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: #function)
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let sut = AddEditBookmarkFolderDialogViewModel(mode: .add(), bookmarkManager: bookmarkManager)
 
@@ -160,7 +160,7 @@ final class AddEditBookmarkFolderDialogViewModelTests: XCTestCase {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: #function)
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let sut = AddEditBookmarkFolderDialogViewModel(mode: .edit(folder: .mock, parentFolder: nil), bookmarkManager: bookmarkManager)
 
@@ -177,7 +177,7 @@ final class AddEditBookmarkFolderDialogViewModelTests: XCTestCase {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: #function)
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let sut = AddEditBookmarkFolderDialogViewModel(mode: .add(), bookmarkManager: bookmarkManager)
 
@@ -193,7 +193,7 @@ final class AddEditBookmarkFolderDialogViewModelTests: XCTestCase {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: #function)
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let sut = AddEditBookmarkFolderDialogViewModel(mode: .add(parentFolder: .mock), bookmarkManager: bookmarkManager)
 
@@ -209,7 +209,7 @@ final class AddEditBookmarkFolderDialogViewModelTests: XCTestCase {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: #function)
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let sut = AddEditBookmarkFolderDialogViewModel(mode: .edit(folder: folder, parentFolder: nil), bookmarkManager: bookmarkManager)
 
@@ -225,7 +225,7 @@ final class AddEditBookmarkFolderDialogViewModelTests: XCTestCase {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: #function)
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let sut = AddEditBookmarkFolderDialogViewModel(mode: .edit(folder: folder, parentFolder: .mock), bookmarkManager: bookmarkManager)
 

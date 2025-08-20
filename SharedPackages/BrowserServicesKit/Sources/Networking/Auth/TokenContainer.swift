@@ -135,11 +135,12 @@ public struct JWTRefreshToken: JWTPayload, Equatable {
     }
 }
 
-public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStringConvertible {
+public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStringConvertible, Hashable {
     case networkProtection = "Network Protection"
     case dataBrokerProtection = "Data Broker Protection"
     case identityTheftRestoration = "Identity Theft Restoration"
     case identityTheftRestorationGlobal = "Global Identity Theft Restoration"
+    case paidAIChat = "Duck.ai"
     case unknown
 
     public init(from decoder: Decoder) throws {

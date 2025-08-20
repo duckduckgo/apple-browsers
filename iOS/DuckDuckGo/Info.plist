@@ -156,6 +156,8 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>UIDesignRequiresCompatibility</key>
+	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -216,6 +218,7 @@
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
+		<string>audio</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
@@ -244,6 +247,21 @@
 	<string>https://duckduckgo.com</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>OSLogPreferences</key>
+	<dict>
+		<key>DEFAULT-OPTIONS</key>
+		<dict>
+			<key>Level</key>
+			<dict>
+				<key>Enable</key>
+				<string>Info</string>
+				<key>Persist</key>
+				<string>Info</string>
+			</dict>
+		</dict>
+	</dict>
+	<key>VPN_APP_GROUP</key>
+	<string>$(VPN_APP_GROUP)</string>
 	<key>VAULT_APP_GROUP</key>
 	<string>$(AppIdentifierPrefix)$(VAULT_APP_GROUP)</string>
 </dict>

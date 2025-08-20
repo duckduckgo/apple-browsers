@@ -1,0 +1,21 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Ai-Chat-Color-Gradient-16-1_svg__a)">
+    <path fill="#fff" fill-rule="evenodd" d="m10.674 12.787-.039.014-.037.017c-.837.384-2.376.803-4.114 1.19a98.524 98.524 0 0 1-4.033.798l.762-.88c.681-.784.487-1.896-.192-2.498C1.754 10.305 1 8.782 1 7.125 1 3.848 4.022 1 8 1s7 2.848 7 6.125c0 2.494-1.728 4.72-4.326 5.662Z" clip-rule="evenodd"/>
+    <path fill="url(#Ai-Chat-Color-Gradient-16-1_svg__b)" fill-opacity=".77" fill-rule="evenodd" d="m10.674 12.787-.039.014-.037.017c-.837.384-2.376.803-4.114 1.19a98.524 98.524 0 0 1-4.033.798l.762-.88c.681-.784.487-1.896-.192-2.498C1.754 10.305 1 8.782 1 7.125 1 3.848 4.022 1 8 1s7 2.848 7 6.125c0 2.494-1.728 4.72-4.326 5.662Z" clip-rule="evenodd"/>
+    <path stroke="url(#Ai-Chat-Color-Gradient-16-1_svg__c)" d="M8 .5c4.198 0 7.5 3.019 7.5 6.625 0 2.74-1.894 5.13-4.655 6.132l-.02.007-.018.009c-.892.409-2.48.836-4.214 1.223-1.29.288-2.636.546-3.786.754l-1.078.19a.207.207 0 0 1-.228-.286l.041-.063L2.836 13.6c.45-.52.366-1.257-.058-1.711l-.089-.087C1.328 10.595.5 8.94.5 7.125.5 3.519 3.802.5 8 .5Z"/>
+    <path fill="#fff" d="M7.632 2.787c.096-.383.64-.383.736 0l.438 1.753c.203.815.84 1.45 1.654 1.654l1.753.438c.383.096.383.64 0 .736l-1.753.438c-.815.203-1.45.84-1.654 1.654l-.438 1.753c-.096.383-.64.383-.736 0L7.194 9.46A2.273 2.273 0 0 0 5.54 7.806l-1.753-.438c-.383-.096-.383-.64 0-.736l1.753-.438A2.273 2.273 0 0 0 7.194 4.54l.438-1.753Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Ai-Chat-Color-Gradient-16-1_svg__b" x1="2.05" x2="7.897" y1="1.693" y2="14.852" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A276FF"/>
+      <stop offset="1" stop-color="#3969EF"/>
+    </linearGradient>
+    <linearGradient id="Ai-Chat-Color-Gradient-16-1_svg__c" x1="8" x2="8" y1="0" y2="15.944" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8D7ADE"/>
+      <stop offset="1" stop-color="#546AC1"/>
+    </linearGradient>
+    <clipPath id="Ai-Chat-Color-Gradient-16-1_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

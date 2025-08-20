@@ -136,6 +136,7 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
         return nil
     }
 
+    @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
 

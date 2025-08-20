@@ -25,6 +25,7 @@ import WebKit
 import SecureStorage
 import History
 import PrivacyStats
+import FeatureFlags
 import os.log
 
 final class Fire {
@@ -36,6 +37,7 @@ final class Fire {
     let downloadListCoordinator: DownloadListCoordinator
     let windowControllerManager: WindowControllersManager
     let faviconManagement: FaviconManagement
+    let fireproofDomains: FireproofDomains
     let autoconsentManagement: AutoconsentManagement?
     let stateRestorationManager: AppStateRestorationManager?
     let recentlyClosedCoordinator: RecentlyClosedCoordinating?
@@ -48,6 +50,7 @@ final class Fire {
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
+    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
 
     private var dispatchGroup: DispatchGroup?
 
@@ -55,10 +58,10 @@ final class Fire {
         case specificDomains(_ domains: Set<String>, shouldPlayFireAnimation: Bool)
         case all
 
-        var shouldPlayFireAnimation: Bool {
+        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
             switch self {
             case .all, .specificDomains(_, shouldPlayFireAnimation: true):
-                return true
+                return decider.shouldShowFireAnimation
             // We don't present the fire animation if user burns from the privacy feed
             case .specificDomains(_, shouldPlayFireAnimation: false):
                 return false
@@ -77,13 +80,13 @@ final class Fire {
                         selectedDomains: Set<String>,
                         customURLToOpen: URL?)
 
-        var shouldPlayFireAnimation: Bool {
+        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
             switch self {
             // We don't present the fire animation if user burns from the privacy feed
             case .none:
                 return false
             case .tab, .window, .allWindows:
-                return true
+                return decider.shouldShowFireAnimation
             }
         }
     }
@@ -91,35 +94,38 @@ final class Fire {
     @Published private(set) var burningData: BurningData?
 
     @MainActor
-    init(cacheManager: WebCacheManager = WebCacheManager.shared,
-         historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
-         permissionManager: PermissionManagerProtocol = PermissionManager.shared,
+    init(cacheManager: WebCacheManager? = nil,
+         historyCoordinating: HistoryCoordinating? = nil,
+         permissionManager: PermissionManagerProtocol? = nil,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
          windowControllerManager: WindowControllersManager? = nil,
          faviconManagement: FaviconManagement? = nil,
+         fireproofDomains: FireproofDomains? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,
          stateRestorationManager: AppStateRestorationManager? = nil,
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
          pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
          tld: TLD,
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+         bookmarkManager: BookmarkManager? = nil,
          syncService: DDGSyncing? = nil,
          syncDataProviders: SyncDataProviders? = nil,
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
-         getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil
+         getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
+         visualizeFireAnimationDecider: VisualizeFireAnimationDecider? = nil
     ) {
-        self.webCacheManager = cacheManager
-        self.historyCoordinating = historyCoordinating
-        self.permissionManager = permissionManager
+        self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
+        self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
+        self.permissionManager = permissionManager ?? NSApp.delegateTyped.permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
-        self.windowControllerManager = windowControllerManager ?? WindowControllersManager.shared
+        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
+        self.fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
-        self.bookmarkManager = bookmarkManager
+        self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.syncService = syncService ?? NSApp.delegateTyped.syncService
         self.syncDataProviders = syncDataProviders ?? NSApp.delegateTyped.syncDataProviders
         self.secureVaultFactory = secureVaultFactory
@@ -127,6 +133,7 @@ final class Fire {
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
+        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireAnimationDecider
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
         } else {
@@ -146,7 +153,7 @@ final class Fire {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation)
+        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation(decider: visualizeFireAnimationDecider))
 
         burnLastSessionState()
         burnDeletedBookmarks()
@@ -195,7 +202,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnAll(opening url: URL = .newtab, completion: (() -> Void)? = nil) {
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (() -> Void)? = nil) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -204,6 +211,12 @@ final class Fire {
         burningData = .all
 
         let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url)
+
+        // Close windows first if fire animation is disabled
+        let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
+        if shouldCloseWindowsFirst {
+            closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
+        }
 
         burnLastSessionState()
         burnDeletedBookmarks()
@@ -237,7 +250,10 @@ final class Fire {
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
-                self.closeWindows(entity: entity)
+                // Only close windows at the end if we didn't close them at the beginning
+                if !shouldCloseWindowsFirst {
+                    self.closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
+                }
 
                 self.burningData = nil
                 completion?()
@@ -305,7 +321,7 @@ final class Fire {
     // MARK: - Closing windows
 
     @MainActor
-    private func closeWindows(entity: BurningEntity) {
+    private func closeWindows(entity: BurningEntity, isBurnOnExit: Bool = false) {
 
         /// This function returns the dropping point of the closed window,
         /// useful for opening a new window after burning in the exact same place.
@@ -331,7 +347,7 @@ final class Fire {
             if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
-        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, ):
             newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
                 if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
@@ -346,7 +362,8 @@ final class Fire {
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if self.windowControllerManager.mainWindowControllers.count == 0 {
+            /// When we are burning on exit we do not need to open a new window.
+            if self.windowControllerManager.mainWindowControllers.count == 0 && !isBurnOnExit {
                 if case let .allWindows(_, _, customURL) = entity, let customURL {
                     WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
                 } else {
@@ -398,7 +415,7 @@ final class Fire {
     }
 
     private func burnHistory(of baseDomains: Set<String>, completion: @escaping (Set<URL>) -> Void) {
-        historyCoordinating.burnDomains(baseDomains, tld: ContentBlocking.shared.tld, completion: completion)
+        historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
     private func burnAllHistory(completion: @escaping () -> Void) {
@@ -438,7 +455,7 @@ final class Fire {
     // MARK: - Zoom levels
 
      private func burnZoomLevels() {
-         savedZoomLevelsCoordinating.burnZoomLevels(except: FireproofDomains.shared)
+         savedZoomLevelsCoordinating.burnZoomLevels(except: fireproofDomains)
      }
 
      private func burnZoomLevels(of baseDomains: Set<String>) {
@@ -448,7 +465,7 @@ final class Fire {
     // MARK: - Permissions
 
     private func burnPermissions(completion: @escaping () -> Void) {
-        self.permissionManager.burnPermissions(except: FireproofDomains.shared, completion: completion)
+        self.permissionManager.burnPermissions(except: fireproofDomains, completion: completion)
     }
 
     private func burnPermissions(of baseDomains: Set<String>, completion: @escaping () -> Void) {
@@ -479,8 +496,8 @@ final class Fire {
 
     private func burnFavicons(completion: @escaping () -> Void) {
         Task { @MainActor in
-            await self.faviconManagement.burn(except: FireproofDomains.shared,
-                                              bookmarkManager: LocalBookmarkManager.shared,
+            await self.faviconManagement.burn(except: fireproofDomains,
+                                              bookmarkManager: bookmarkManager,
                                               savedLogins: autofillDomains())
             completion()
         }
@@ -490,7 +507,7 @@ final class Fire {
     private func burnFavicons(for baseDomains: Set<String>, completion: @escaping () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burnDomains(baseDomains,
-                                                     exceptBookmarks: LocalBookmarkManager.shared,
+                                                     exceptBookmarks: bookmarkManager,
                                                      exceptSavedLogins: autofillDomains(),
                                                      exceptExistingHistory: historyCoordinating.history ?? [],
                                                      tld: tld)

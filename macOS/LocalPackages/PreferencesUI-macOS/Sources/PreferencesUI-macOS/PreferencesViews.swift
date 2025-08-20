@@ -48,6 +48,27 @@ public struct TextMenuItemHeader: View {
     }
 }
 
+public struct TextAndImageMenuItemHeader: View {
+    public let text: String
+    public let image: Image
+    public let bottomPadding: CGFloat
+
+    public init(_ text: String, image: Image, bottomPadding: CGFloat = 4) {
+        self.text = text
+        self.image = image
+        self.bottomPadding = bottomPadding
+    }
+
+    public var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            image
+            Text(text)
+                .font(Const.Fonts.preferencePaneSectionHeader)
+        }
+        .padding(.bottom, bottomPadding)
+    }
+}
+
 public struct TextMenuItemCaption: View {
     public let text: String
 

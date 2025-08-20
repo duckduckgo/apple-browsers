@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Foundation
 import History
 import os.log
 import PixelKit
+import WebKit
 
 /**
  * The delegate callbacks are triggered for events related to unpinned tabs only.
@@ -43,6 +45,7 @@ protocol TabCollectionViewModelDelegate: AnyObject {
 final class TabCollectionViewModel: NSObject {
 
     weak var delegate: TabCollectionViewModelDelegate?
+    var newTabPageTabPreloader: NewTabPageTabPreloading?
 
     /// Local tabs collection
     let tabCollection: TabCollection
@@ -125,7 +128,7 @@ final class TabCollectionViewModel: NSObject {
         var homePage: Tab.TabContent = .newtab
         if startupPreferences.launchToCustomHomePage,
            let customURL = URL(string: startupPreferences.formattedCustomHomePageURL) {
-            homePage = Tab.TabContent.contentFromURL(customURL, source: .bookmark)
+            homePage = Tab.TabContent.contentFromURL(customURL, source: .bookmark(isFavorite: false))
         }
         return homePage
     }
@@ -139,7 +142,7 @@ final class TabCollectionViewModel: NSObject {
         selectionIndex: TabIndex = .unpinned(0),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding?,
         burnerMode: BurnerMode = .regular,
-        startupPreferences: StartupPreferences = StartupPreferences.shared,
+        startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = TabsPreferences.shared
     ) {
         self.tabCollection = tabCollection
@@ -149,7 +152,7 @@ final class TabCollectionViewModel: NSObject {
         self.tabsPreferences = tabsPreferences
         super.init()
 
-        self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self)
+        self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self, forceActive: nil)
         subscribeToTabs()
         subscribeToPinnedTabsManager()
         subscribeToPinnedTabsSettingChanged()
@@ -418,7 +421,9 @@ final class TabCollectionViewModel: NSObject {
         if selectDisplayableTabIfPresent(content) {
             return
         }
-        insertOrAppend(tab: Tab(content: content, shouldLoadInBackground: true, burnerMode: burnerMode), selected: selected)
+
+        let tab = makeTab(for: content)
+        insertOrAppend(tab: tab, selected: selected)
     }
 
     func insertOrAppend(tab: Tab, selected: Bool) {
@@ -427,6 +432,13 @@ final class TabCollectionViewModel: NSObject {
         } else {
             append(tab: tab, selected: selected)
         }
+    }
+
+    private func makeTab(for content: Tab.TabContent) -> Tab {
+        if !isBurner, content == .newtab, let preloaded = newTabPageTabPreloader?.newTab() {
+            return preloaded
+        }
+        return Tab(content: content, shouldLoadInBackground: true, burnerMode: burnerMode)
     }
 
     // MARK: - Removal
@@ -740,7 +752,7 @@ final class TabCollectionViewModel: NSObject {
         pinnedTabsManagerProvider?.settingChangedPublisher
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self)
+                self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self, forceActive: nil)
             }.store(in: &cancellables)
     }
 

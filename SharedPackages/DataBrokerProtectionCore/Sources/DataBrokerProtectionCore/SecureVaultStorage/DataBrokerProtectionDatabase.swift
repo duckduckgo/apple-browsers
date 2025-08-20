@@ -29,11 +29,16 @@ public protocol DataBrokerProtectionRepository {
 
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
 
+    func saveBroker(dataBroker: DataBroker) throws -> Int64
+    func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
+    func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
     func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
+
+    func fetchAllDataBrokers() throws -> [DataBroker]
 
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
@@ -64,12 +69,19 @@ public protocol DataBrokerProtectionRepository {
     func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
     func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent]
     func hasMatches() throws -> Bool
+    func matchRemovedByUser(_ matchID: Int64) throws
 
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 
     func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
+
+    func fetchFirstEligibleJobDate() throws -> Date?
+
+    func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -367,6 +379,42 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func fetchAllDataBrokers() throws -> [DataBroker] {
+        do {
+            return try vault.fetchAllBrokers()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+            throw error
+        }
+    }
+
+    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+        do {
+            return try vault.save(broker: dataBroker)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveBroker dataBroker")
+            throw error
+        }
+    }
+
+    public func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {
+        do {
+            return try vault.save(profileQuery: profileQuery, profileId: profileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveProfileQuery profileQuery profileId")
+            throw error
+        }
+    }
+
+    public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
+        do {
+            try vault.save(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: lastRunDate, preferredRunDate: preferredRunDate)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveScanJob profileQuery profileQueryId lastRunDate preferredRunDate")
+            throw error
+        }
+    }
+
     public func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws {
         do {
             try vault.save(brokerId: optOut.brokerId,
@@ -403,6 +451,19 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             handleError(error, context: "DataBrokerProtectionDatabase.hasMatches")
             throw error
         }
+    }
+
+    public func matchRemovedByUser(_ matchID: Int64) throws {
+        guard let extractedProfile = try fetchExtractedProfile(with: matchID) else {
+            assertionFailure("Couldn't get extracted profile for matchID \(matchID)")
+            return
+        }
+
+        let event = HistoryEvent(extractedProfileId: matchID,
+                                 brokerId: extractedProfile.brokerId,
+                                 profileQueryId: extractedProfile.profileQueryId,
+                                 type: .matchRemovedByUser)
+        try add(event)
     }
 
     public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
@@ -620,5 +681,21 @@ extension DataBrokerProtectionDatabase {
                 }
             }
         }
+    }
+
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        try vault.fetchFirstEligibleJobDate()
+    }
+
+    public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
+        try vault.save(backgroundTaskEvent: event)
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        try vault.fetchBackgroundTaskEvents(since: date)
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        try vault.deleteBackgroundTaskEvents(olderThan: date)
     }
 }

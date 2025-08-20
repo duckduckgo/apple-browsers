@@ -23,9 +23,14 @@ import UserScript
 import Common
 import os.log
 
-enum DBPDeviceCapability: String, Codable {
-    case useUnifiedFeedback
-    case excludeVpnTraffic
+public struct DBPUIFeatureConfigurationResponse: Encodable {
+    public let useUnifiedFeedback: Bool
+    public let excludeVpnTraffic: Bool
+
+    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool) {
+        self.useUnifiedFeedback = useUnifiedFeedback
+        self.excludeVpnTraffic = excludeVpnTraffic
+    }
 }
 
 public protocol DBPUICommunicationDelegate: AnyObject {
@@ -42,7 +47,7 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool
     func startScanAndOptOut() -> Bool
     func getInitialScanState() async -> DBPUIInitialScanState
-    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState
+    func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState
     func getDataBrokers() async -> [DBPUIDataBroker]
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
@@ -90,7 +95,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     weak public var delegate: DBPUICommunicationDelegate?
 
     private enum Constants {
-        static let version = 10
+        static let version = 11
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -300,7 +305,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func maintenanceScanStatus(params: Any, origin: WKScriptMessage) async throws -> Encodable? {
-        guard let maintenanceScanStatus = await delegate?.getMaintananceScanState() else {
+        guard let maintenanceScanStatus = await delegate?.getMaintenanceScanState() else {
             return DBPUIStandardResponse(version: Constants.version, success: false, id: "NOT_FOUND", message: "No maintenance data found")
         }
 
@@ -321,8 +326,10 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-                DBPDeviceCapability.excludeVpnTraffic: vpnBypassService?.isSupported ?? false]
+        return DBPUIFeatureConfigurationResponse(
+            useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
+            excludeVpnTraffic: vpnBypassService?.isSupported ?? false
+        )
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

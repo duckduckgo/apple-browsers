@@ -328,7 +328,67 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         ), .fail)
     }
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], shownMessageIds: [String] = []) {
+    func testWhenAllFeatureFlagsEnabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["flag1", "flag2", "flag3"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag1", "flag2"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenAllFeatureFlagsEnabledExactMatchThenReturnMatch() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["flag1", "flag2"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag1", "flag2"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenSomeFeatureFlagsEnabledThenReturnFail() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["flag1"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag1", "flag2"], fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenNoFeatureFlagsEnabledThenReturnFail() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: [])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag1", "flag2"], fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenFeatureFlagsEnabledButDifferentFlagsThenReturnFail() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["flag3", "flag4"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag1", "flag2"], fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenFeatureFlagsEnabledAndMatchingAttributeIsEmptyThenReturnMatch() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["flag1", "flag2"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: [], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenNoFeatureFlagsEnabledAndMatchingAttributeIsEmptyThenReturnMatch() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: [])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: [], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenFeatureFlagsEnabledCaseInsensitiveThenReturnMatch() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["FLAG1", "flag2"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag1", "FLAG2"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenSingleFeatureFlagEnabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["flag1", "flag2", "flag3"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag2"], fallback: nil)),
+                       .match)
+    }
+
+    func testWhenSingleFeatureFlagEnabledDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(enabledFeatureFlags: ["flag1", "flag3"])
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: AllFeatureFlagsEnabledMatchingAttribute(value: ["flag2"], fallback: nil)),
+                       .fail)
+    }
+
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], shownMessageIds: [String] = [], enabledFeatureFlags: [String] = []) {
         matcher = CommonUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             variantManager: manager,
@@ -348,7 +408,8 @@ class CommonUserAttributeMatcherTests: XCTestCase {
             isDuckPlayerOnboarded: false,
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,
-            shownMessageIds: shownMessageIds
+            shownMessageIds: shownMessageIds,
+            enabledFeatureFlags: enabledFeatureFlags
         )
     }
 }

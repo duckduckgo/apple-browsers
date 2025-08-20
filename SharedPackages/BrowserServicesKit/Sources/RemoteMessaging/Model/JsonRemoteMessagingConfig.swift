@@ -114,6 +114,7 @@ public enum RemoteMessageResponse {
         case newForMacAndWindows = "NewForMacAndWindows"
         case privacyShield = "PrivacyShield"
         case aiChat = "Duck.ai"
+        case visualDesignUpdate = "VisualDesignUpdate"
     }
 
     public enum StatusError: Error {

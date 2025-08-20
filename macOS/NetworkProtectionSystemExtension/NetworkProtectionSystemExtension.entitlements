@@ -15,6 +15,10 @@
 		<string>$(NETP_APP_GROUP)</string>
 		<string>$(APP_CONFIGURATION_APP_GROUP)</string>
 	</array>
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-write:before:14.0</key>
+	<array>
+		<string>/Library/Keychains/</string>
+	</array>
 	<key>com.apple.security.network.client</key>
 	<true/>
 	<key>com.apple.security.network.server</key>

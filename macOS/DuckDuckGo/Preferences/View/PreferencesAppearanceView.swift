@@ -104,13 +104,11 @@ extension Preferences {
                 PreferencePaneSection(UserText.newTabBottomPopoverTitle) {
 
                     PreferencePaneSubSection {
+                        if model.isOmnibarAvailable {
+                            ToggleMenuItem(UserText.newTabOmnibarSectionTitle, isOn: $model.isOmnibarVisible).accessibilityIdentifier("Preferences.AppearanceView.showOmnibarToggle")
+                        }
                         ToggleMenuItem(UserText.newTabFavoriteSectionTitle, isOn: $model.isFavoriteVisible).accessibilityIdentifier("Preferences.AppearanceView.showFavoritesToggle")
-                        if model.isRecentActivityAvailable {
-                            ToggleMenuItem(UserText.newTabRecentActivitySectionTitle, isOn: $model.isRecentActivityVisible)
-                        }
-                        if model.isPrivacyStatsAvailable {
-                            ToggleMenuItem(UserText.newTabPrivacyStatsSectionTitle, isOn: $model.isPrivacyStatsVisible)
-                        }
+                        ToggleMenuItem(UserText.newTabProtectionsReportSectionTitle, isOn: $model.isProtectionsReportVisible)
                     }
 
                     PreferencePaneSubSection {

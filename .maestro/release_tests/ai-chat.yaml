@@ -1,6 +1,7 @@
 # bookmarks.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---
@@ -40,9 +41,9 @@ tags:
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
 - scrollUntilVisible: 
-    element: "Duck.ai"
+    element: "AI Features"
     direction: DOWN
-- tapOn: "Duck.ai"
+- tapOn: "AI Features"
 - tapOn:
     text: "1"
     index: 0

@@ -54,6 +54,8 @@ class TabSnapshotExtensionTests: XCTestCase {
         mockWebViewSnapshotRenderer = nil
         mockViewSnapshotRenderer = nil
         mockTabSnapshotStore = nil
+        mockWebViewPublisher = nil
+        mockContentPublisher = nil
         super.tearDown()
     }
 
@@ -199,6 +201,111 @@ class TabSnapshotExtensionTests: XCTestCase {
         await tabSnapshotExtension.renderWebViewSnapshot()
 
         XCTAssert(mockTabSnapshotStore.persistedSnapshotIDs.count == 0)
+    }
+
+    @MainActor
+    func testWhenURLIsDuckPlayerURL_ThenSnapshotIsRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://player/12345"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(tabSnapshotExtension.snapshot, snapshot)
+    }
+
+    @MainActor
+    func testWhenURLIsOnboardingURL_ThenSnapshotIsRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://onboarding"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(tabSnapshotExtension.snapshot, snapshot)
+    }
+
+    @MainActor
+    func testWhenURLIsHistoryURL_ThenSnapshotIsRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://history"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(tabSnapshotExtension.snapshot, snapshot)
+    }
+
+    @MainActor
+    func testWhenURLHasDuckScheme_AndIsNotDuckPlayerOrHistoryOrOnboardingURL_ThenSnapshotIsNotRendered() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://\(#function)"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        let snapshot = NSImage()
+        mockWebViewSnapshotRenderer.nextSnapshot = snapshot
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertNil(tabSnapshotExtension.snapshot)
+    }
+
+    @MainActor
+    func testWhenURLIsDuckPlayerURL_ThenWait1SecondToRenderSnapshot() async throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "duck://player/12345"))
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(url, source: .ui)
+        mockContentPublisher.send(content)
+        XCTAssertNil(mockWebViewSnapshotRenderer.lastDelay)
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 1.0)
+    }
+
+    @MainActor
+    func testWhenURLIsNotDuckPlayerURL_ThenWait1SecondToRenderSnapshot() async throws {
+        // GIVEN
+        let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
+        mockWebViewPublisher.send(webView)
+        let content = Tab.TabContent.contentFromURL(URL.aURL, source: .ui)
+        mockContentPublisher.send(content)
+        XCTAssertNil(mockWebViewSnapshotRenderer.lastDelay)
+
+        // WHEN
+        await tabSnapshotExtension.renderWebViewSnapshot()
+
+        // THEN
+        XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
     }
 
 }

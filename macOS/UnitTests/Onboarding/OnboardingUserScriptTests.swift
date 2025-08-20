@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class OnboardingUserScriptTests: XCTestCase {

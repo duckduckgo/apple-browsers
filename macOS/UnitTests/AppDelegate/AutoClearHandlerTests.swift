@@ -20,64 +20,95 @@ import Foundation
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
+import Combine
 
 @MainActor
 class AutoClearHandlerTests: XCTestCase {
 
     var handler: AutoClearHandler!
-    var preferences: DataClearingPreferences!
+    var dataClearingPreferences: DataClearingPreferences!
+    var startupPreferences: StartupPreferences!
     var fireViewModel: FireViewModel!
 
     override func setUp() {
         super.setUp()
         let persistor = MockFireButtonPreferencesPersistor()
-        preferences = DataClearingPreferences(persistor: persistor)
-        fireViewModel = FireViewModel(fire: Fire(tld: ContentBlocking.shared.tld))
+        dataClearingPreferences = DataClearingPreferences(
+            persistor: persistor,
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        let persistor2 = StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com")
+        let appearancePreferences = AppearancePreferences(
+            persistor: MockAppearancePreferencesPersistor(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        startupPreferences = StartupPreferences(persistor: persistor2,
+                                                appearancePreferences: appearancePreferences)
+
+        fireViewModel = FireViewModel(tld: Application.appDelegate.tld,
+                                      visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider())
         let fileName = "AutoClearHandlerTests"
         let fileStore = FileStoreMock()
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
-                                                                    shouldRestorePreviousSession: false)
-        handler = AutoClearHandler(preferences: preferences, fireViewModel: fireViewModel, stateRestorationManager: appStateRestorationManager)
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
+        handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
+                                   startupPreferences: startupPreferences,
+                                   fireViewModel: fireViewModel,
+                                   stateRestorationManager: appStateRestorationManager)
     }
 
     override func tearDown() {
         handler = nil
-        preferences = nil
+        dataClearingPreferences = nil
+        startupPreferences = nil
         fireViewModel = nil
         super.tearDown()
     }
 
     func testWhenBurningEnabledAndNoWarningRequiredThenTerminateLaterIsReturned() {
-            preferences.isAutoClearEnabled = true
-            preferences.isWarnBeforeClearingEnabled = false
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = false
 
-            let response = handler.handleAppTermination()
+        let response = handler.handleAppTermination()
 
-            XCTAssertEqual(response, .terminateLater)
-        }
+        XCTAssertEqual(response, .terminateLater)
+    }
 
-        func testWhenBurningDisabledThenNoTerminationResponse() {
-            preferences.isAutoClearEnabled = false
+    func testWhenBurningDisabledThenNoTerminationResponse() {
+        dataClearingPreferences.isAutoClearEnabled = false
 
-            let response = handler.handleAppTermination()
+        let response = handler.handleAppTermination()
 
-            XCTAssertNil(response)
-        }
+        XCTAssertNil(response)
+    }
 
-        func testWhenBurningEnabledAndFlagFalseThenBurnOnStartTriggered() {
-            preferences.isAutoClearEnabled = true
-            handler.resetTheCorrectTerminationFlag()
+    func testWhenBurningEnabledAndFlagFalseThenBurnOnStartTriggered() {
+        dataClearingPreferences.isAutoClearEnabled = true
+        handler.resetTheCorrectTerminationFlag()
 
-            XCTAssertTrue(handler.burnOnStartIfNeeded())
-        }
+        XCTAssertTrue(handler.burnOnStartIfNeeded())
+    }
 
-        func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
-            preferences.isAutoClearEnabled = false
-            handler.resetTheCorrectTerminationFlag()
+    func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
+        dataClearingPreferences.isAutoClearEnabled = false
+        handler.resetTheCorrectTerminationFlag()
 
-            XCTAssertFalse(handler.burnOnStartIfNeeded())
-        }
+        XCTAssertFalse(handler.burnOnStartIfNeeded())
+    }
 
+}
+
+final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true)
+        .eraseToAnyPublisher()
+
+    var shouldShowFireAnimation: Bool {
+        return true
+    }
 }

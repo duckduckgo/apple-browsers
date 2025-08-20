@@ -26,34 +26,51 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
     var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
     var handler: SubscriptionUserScriptHandler!
+    var mockNavigationDelegate: MockNavigationDelegate!
 
     override func setUp() async throws {
         subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        mockNavigationDelegate = await MockNavigationDelegate()
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
     }
 
     func testWhenInitializedForIOSThenHandshakeReportsIOS() async throws {
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
         XCTAssertEqual(handshake.platform, .ios)
     }
 
     func testWhenInitializedForMacOSThenHandshakeReportsMacOS() async throws {
-        handler = .init(platform: .macos, subscriptionManager: subscriptionManager)
+        handler = .init(platform: .macos,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
         XCTAssertEqual(handshake.platform, .macos)
     }
 
-    func testThatHandshakeReportsSupportForSubcriptionDetailsMessage() async throws {
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+    func testThatHandshakeReportsSupportForAllMessages() async throws {
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
-        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails])
+        XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .authUpdate])
     }
 
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
         struct SampleError: Error {}
         subscriptionManager.returnSubscription = .failure(SampleError())
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
     }
@@ -73,7 +90,10 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         )
 
         subscriptionManager.returnSubscription = .success(subscription)
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(
             isSubscribed: true,
@@ -89,7 +109,10 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         let subscription = PrivacyProSubscription(status: .expired)
 
         subscriptionManager.returnSubscription = .success(subscription)
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
     }
@@ -98,14 +121,171 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         let subscription = PrivacyProSubscription(status: .inactive)
 
         subscriptionManager.returnSubscription = .success(subscription)
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
     }
+
+    func testWhenAccessTokenIsAvailableThenGetAuthAccessTokenReturnsToken() async throws {
+        let expectedToken = "test_access_token"
+        subscriptionManager.accessTokenResult = .success(expectedToken)
+
+        let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
+        XCTAssertEqual(response.accessToken, expectedToken)
+    }
+
+    func testWhenAccessTokenIsNotAvailableThenGetAuthAccessTokenReturnsEmptyString() async throws {
+        struct SampleError: Error {}
+        subscriptionManager.accessTokenResult = .failure(SampleError())
+
+        let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
+        XCTAssertEqual(response.accessToken, "")
+    }
+
+    func testWhenPaidAIChatIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { true },
+                       navigationDelegate: mockNavigationDelegate)
+
+        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        XCTAssertTrue(response.usePaidDuckAi)
+    }
+
+    func testWhenPaidAIChatIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       paidAIChatFlagStatusProvider: { false },
+                       navigationDelegate: mockNavigationDelegate)
+
+        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        XCTAssertFalse(response.usePaidDuckAi)
+    }
+
+    @MainActor
+    func testBackToSettingsCallsNavigationDelegate() async throws {
+        let response = try await handler.backToSettings(params: [], message: WKScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSettingsCalled)
+    }
+
+    @MainActor
+    func testOpenSubscriptionActivationCallsNavigationDelegate() async throws {
+        let response = try await handler.openSubscriptionActivation(params: [], message: WKScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionActivationCalled)
+    }
+
+    @MainActor
+    func testOpenSubscriptionPurchaseCallsNavigationDelegate() async throws {
+        let origin = "some_origin"
+        let params = ["origin": origin]
+        let response = try await handler.openSubscriptionPurchase(params: params, message: WKScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
+        XCTAssertEqual(mockNavigationDelegate.purchaseOrigin, origin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
+    }
+
+    @MainActor
+    func testOpenSubscriptionPurchaseWithoutOriginCallsNavigationDelegate() async throws {
+        let response = try await handler.openSubscriptionPurchase(params: [:], message: WKScriptMessage())
+        XCTAssertNil(response)
+        XCTAssertTrue(mockNavigationDelegate.navigateToSubscriptionPurchaseCalled)
+        XCTAssertNil(mockNavigationDelegate.purchaseOrigin)
+        XCTAssertEqual(mockNavigationDelegate.purchaseFeaturePage, "duckai")
+    }
+
+    // MARK: - Auth Update Push Tests
+
+    func testThatSubscriptionDidChangeNotificationTriggersAuthUpdate() {
+        let mockBroker = MockUserScriptMessagePusher()
+        let mockWebView = WKWebView()
+        let mockUserScript = SubscriptionUserScript(handler: handler, debugHost: nil)
+
+        handler.setBroker(mockBroker)
+        handler.setWebView(mockWebView)
+        handler.setUserScript(mockUserScript)
+
+        NotificationCenter.default.post(name: .subscriptionDidChange, object: nil)
+        let result = XCTWaiter().wait(for: [mockBroker.pushExpectation], timeout: 1)
+        XCTAssertEqual(result, .completed)
+
+        XCTAssertEqual(mockBroker.lastPushedMethod, SubscriptionUserScript.MessageName.authUpdate.rawValue)
+    }
+
+    func testThatAccountDidSignInNotificationTriggersAuthUpdate() {
+        let mockBroker = MockUserScriptMessagePusher()
+        let mockWebView = WKWebView()
+        let mockUserScript = SubscriptionUserScript(handler: handler, debugHost: nil)
+
+        handler.setBroker(mockBroker)
+        handler.setWebView(mockWebView)
+        handler.setUserScript(mockUserScript)
+
+        NotificationCenter.default.post(name: .accountDidSignIn, object: nil)
+        let result = XCTWaiter().wait(for: [mockBroker.pushExpectation], timeout: 1)
+        XCTAssertEqual(result, .completed)
+
+        XCTAssertEqual(mockBroker.lastPushedMethod, SubscriptionUserScript.MessageName.authUpdate.rawValue)
+    }
+
+    func testThatAccountDidSignOutNotificationTriggersAuthUpdate() {
+        let mockBroker = MockUserScriptMessagePusher()
+        let mockWebView = WKWebView()
+        let mockUserScript = SubscriptionUserScript(handler: handler, debugHost: nil)
+
+        handler.setBroker(mockBroker)
+        handler.setWebView(mockWebView)
+        handler.setUserScript(mockUserScript)
+
+        NotificationCenter.default.post(name: .accountDidSignOut, object: nil)
+        let result = XCTWaiter().wait(for: [mockBroker.pushExpectation], timeout: 1)
+        XCTAssertEqual(result, .completed)
+
+        XCTAssertEqual(mockBroker.lastPushedMethod, SubscriptionUserScript.MessageName.authUpdate.rawValue)
+    }
+
 }
 
 private extension PrivacyProSubscription {
     init(status: Status) {
         self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [])
+    }
+}
+
+@MainActor
+class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
+    var navigateToSettingsCalled = false
+    var navigateToSubscriptionActivationCalled = false
+    var navigateToSubscriptionPurchaseCalled = false
+    var purchaseOrigin: String?
+    var purchaseFeaturePage: String?
+
+    func navigateToSettings() {
+        navigateToSettingsCalled = true
+    }
+
+    func navigateToSubscriptionActivation() {
+        navigateToSubscriptionActivationCalled = true
+    }
+
+    func navigateToSubscriptionPurchase(origin: String?, featurePage: String?) {
+        navigateToSubscriptionPurchaseCalled = true
+        purchaseOrigin = origin
+        purchaseFeaturePage = featurePage
+    }
+}
+
+class MockUserScriptMessagePusher: UserScriptMessagePushing {
+    var lastPushedMethod: String?
+    let pushExpectation = XCTestExpectation(description: "Push method called")
+
+    func push(method: String, params: Encodable?, for delegate: Subfeature, into webView: WKWebView) {
+        lastPushedMethod = method
+        pushExpectation.fulfill()
     }
 }

@@ -208,11 +208,20 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Introducir código manualmente";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Abre la aplicación DuckDuckGo en tu otro dispositivo y dirígete a %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Escanea este código con otro dispositivo para sincronizar.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "¿De móvil a móvil?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Abre DuckDuckGo en tu otro dispositivo y escanea este código para sincronizar.";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "O escanear con DuckDuckGo en tu otro dispositivo";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Compartir código de texto";

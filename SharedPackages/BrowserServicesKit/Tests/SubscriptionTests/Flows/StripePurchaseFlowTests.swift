@@ -71,7 +71,7 @@ final class StripePurchaseFlowTests: XCTestCase {
             XCTAssertEqual(success.options.count, SubscriptionMockFactory.productsItems.count)
             XCTAssertEqual(success.features.count, 3)
             let allFeatures = [Entitlement.ProductName.networkProtection, Entitlement.ProductName.dataBrokerProtection, Entitlement.ProductName.identityTheftRestoration]
-            let allNames = success.features.compactMap({ feature in feature.name})
+            let allNames = success.features.compactMap({ feature in feature.name })
 
             for feature in allFeatures {
                 XCTAssertTrue(allNames.contains(feature))
@@ -93,7 +93,10 @@ final class StripePurchaseFlowTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, .noProductsFound)
+            switch error {
+            case .noProductsFound: break
+            default: XCTFail("Expected noProductsFound")
+            }
         }
     }
 
@@ -163,7 +166,10 @@ final class StripePurchaseFlowTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
-            XCTAssertEqual(error, .accountCreationFailed)
+            switch error {
+            case .accountCreationFailed: break
+            default: XCTFail("Expected accountCreationFailed")
+            }
         }
     }
 

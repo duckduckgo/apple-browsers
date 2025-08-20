@@ -1,0 +1,21 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Siri-Color-16_svg__a)">
+    <path fill="url(#Siri-Color-16_svg__b)" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"/>
+    <path fill="url(#Siri-Color-16_svg__c)" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"/>
+    <path fill="#040B24" fill-opacity=".3" fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8Zm7-8a8 8 0 1 0 0 16A8 8 0 0 0 8 0Z" clip-rule="evenodd"/>
+    <path fill="#fff" fill-rule="evenodd" d="M15 8a7 7 0 1 1-13.999-.118L1 7.778h.003a7 7 0 0 1 13.978-.3c.012.097.019.196.019.3h-.004C15 7.85 15 7.926 15 8ZM2.001 7.89c.03-1.206.557-1.938 1.192-2.3a2.324 2.324 0 0 1 2.23-.01c.788.424 1.883 1.327 2.95 2.246l.6.52c.31.27.609.529.88.758.436.371.837.695 1.132.88.628.392 1.585.587 2.417.35.05-.015.099-.03.147-.048a6.002 6.002 0 0 1-10.734.736c.934.433 2.05.402 3 .09.855-.278 1.83-.881 2.637-1.505a.485.485 0 0 0 .068-.697.517.517 0 0 0-.711-.07c-.747.574-1.607 1.094-2.304 1.322-.82.268-1.713.252-2.374-.1-.606-.322-1.1-.97-1.13-2.172ZM14 8c0 .468-.116.771-.263.97a1.122 1.122 0 0 1-.61.402c-.532.152-1.2.022-1.612-.236-.225-.14-.572-.417-1.016-.794a99.921 99.921 0 0 1-.863-.744l-.61-.53c-1.047-.9-2.227-1.882-3.129-2.368a3.341 3.341 0 0 0-2.79-.173 6.002 6.002 0 0 1 10.506 1.349 2.458 2.458 0 0 0-.076-.024c-.75-.223-1.646-.11-2.292.294a9.74 9.74 0 0 0-.706.507.485.485 0 0 0-.069.697c.177.212.492.24.711.07a8.88 8.88 0 0 1 .594-.426c.394-.246.992-.328 1.478-.184a1.1 1.1 0 0 1 .542.334c.09.108.162.25.19.438.01.138.015.277.015.418Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <radialGradient id="Siri-Color-16_svg__c" cx="0" cy="0" r="1" gradientTransform="matrix(5 8 -8 5 4 3.5)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FEAA37"/>
+      <stop offset=".965" stop-color="#FEAA37" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="Siri-Color-16_svg__b" x1="1.25" x2="16" y1="14.25" y2="2.75" gradientUnits="userSpaceOnUse">
+      <stop offset=".085" stop-color="#2CC1FF"/>
+      <stop offset=".835" stop-color="#FF2C63"/>
+    </linearGradient>
+    <clipPath id="Siri-Color-16_svg__a">
+      <path fill="#fff" d="M0 16h16V0H0z"/>
+    </clipPath>
+  </defs>
+</svg>

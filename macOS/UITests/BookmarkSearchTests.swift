@@ -45,9 +45,7 @@ class BookmarkSearchTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
         app.resetBookmarks()
         enforceSingleWindow()
     }
@@ -203,7 +201,12 @@ class BookmarkSearchTests: UITestCase {
             searchInBookmarksManager(for: "Bookmark #1")
         }
 
-        let result = app.staticTexts["Bookmark #1"]
+        let query = app.staticTexts.matching(identifier: "Bookmark #1")
+        guard let result = query.allElementsBoundByIndex.last else {
+            XCTFail("Failed to find Bookmark #1")
+            return
+        }
+
         result.rightClick()
         let showInFolderMenuItem = app.menuItems["Show in Folder"]
         XCTAssertTrue(showInFolderMenuItem.exists)

@@ -319,4 +319,46 @@ final class APIServiceTests: XCTestCase {
 
         await fulfillment(of: [refreshCalledExpectation], timeout: 1.0)
     }
+
+    // MARK: - User agent
+
+    func testWhenAPIRequestsSetsUserAgent() async throws {
+        let requestUserAgent = "requestUserAgent"
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), requestUserAgent)
+            return (HTTPURLResponse.ok, nil)
+        }
+
+        let apiService = DefaultAPIService(urlSession: mockURLSession)
+        _ = try await apiService.fetch(request: request)
+    }
+
+    func testWhenAPIServiceSetsUserAgent() async throws {
+        let serviceUserAgent = "serviceUserAgent"
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2())!
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), serviceUserAgent)
+            return (HTTPURLResponse.ok, nil)
+        }
+
+        let apiService = DefaultAPIService(urlSession: mockURLSession, userAgent: serviceUserAgent)
+        _ = try await apiService.fetch(request: request)
+    }
+
+    func testWhenAPIRequestsSetsUserAgentItIsNotOverridenByAPIService() async throws {
+        let serviceUserAgent = "serviceUserAgent"
+        let requestUserAgent = "requestUserAgent"
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), requestUserAgent)
+            return (HTTPURLResponse.ok, nil)
+        }
+
+        let apiService = DefaultAPIService(urlSession: mockURLSession, userAgent: serviceUserAgent)
+        _ = try await apiService.fetch(request: request)
+    }
 }

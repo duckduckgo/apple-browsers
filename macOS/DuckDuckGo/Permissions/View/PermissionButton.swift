@@ -20,7 +20,7 @@ import Cocoa
 
 final class PermissionButton: AddressBarButton {
 
-    private var defaultImage: NSImage?
+    var defaultImage: NSImage?
     private var defaultTint: NSColor?
     @IBInspectable var activeImage: NSImage?
     @IBInspectable var activeTintColor: NSColor?

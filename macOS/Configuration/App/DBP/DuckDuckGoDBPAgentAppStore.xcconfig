@@ -41,23 +41,27 @@ PRODUCT_NAME_PREFIX = $(DBP_BACKGROUND_AGENT_PRODUCT_NAME)
 PRODUCT_NAME = $(DBP_BACKGROUND_AGENT_PRODUCT_NAME)
 PRODUCT_NAME[config=Review][arch=*][sdk=*] = $(DBP_BACKGROUND_AGENT_PRODUCT_NAME)
 PRODUCT_NAME[config=Release][arch=*][sdk=*] = $(DBP_BACKGROUND_AGENT_RELEASE_PRODUCT_NAME)
+PRODUCT_NAME[config=Alpha][arch=*][sdk=*] = $(DBP_BACKGROUND_AGENT_RELEASE_PRODUCT_NAME)
 
 PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] =
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckduckgo.mobile.ios.DBP.backgroundAgent.debug macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.DBP.backgroundAgent.review macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.DBP.backgroundAgent macos
+PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.DBP.backgroundAgent.alpha macos
 
-FEATURE_FLAGS = FEEDBACK
+FEATURE_FLAGS =
 
 GCC_PREPROCESSOR_DEFINITIONS[arch=*][sdk=*] = DBP=1 APPSTORE=1
 GCC_PREPROCESSOR_DEFINITIONS[config=CI][arch=*][sdk=*] = DBP=1 APPSTORE=1 DEBUG=1 CI=1 $(inherited)
 GCC_PREPROCESSOR_DEFINITIONS[config=Debug][arch=*][sdk=*] = DBP=1 APPSTORE=1 DEBUG=1 $(inherited)
 GCC_PREPROCESSOR_DEFINITIONS[config=Review][arch=*][sdk=*] = DBP=1 APPSTORE=1 REVIEW=1 $(inherited)
+GCC_PREPROCESSOR_DEFINITIONS[config=Alpha][arch=*][sdk=*] = DBP=1 APPSTORE=1 ALPHA=1 $(inherited)
 
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*][sdk=*] = APPSTORE $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=CI][arch=*][sdk=*] = DEBUG CI APPSTORE $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug][arch=*][sdk=*] = DEBUG APPSTORE $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Review][arch=*][sdk=*] = REVIEW APPSTORE $(FEATURE_FLAGS)
+SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Alpha][arch=*][sdk=*] = ALPHA APPSTORE $(FEATURE_FLAGS)
 
 SWIFT_OBJC_BRIDGING_HEADER =
 SKIP_INSTALL = YES

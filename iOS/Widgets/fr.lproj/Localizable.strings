@@ -104,7 +104,7 @@
 "widget.gallery.search.display.name" = "Rechercher";
 
 /* Description of VPN widget in widget gallery */
-"widget.gallery.vpn.description" = "Affichez et gérez votre connexion VPN. Nécessite un abonnement Privacy Pro.";
+"widget.gallery.vpn.description" = "Affichez et gérez votre connexion VPN. Nécessite un abonnement DuckDuckGo.";
 
 /* Display name for VPN widget in widget gallery */
 "widget.gallery.vpn.display.name" = "VPN";

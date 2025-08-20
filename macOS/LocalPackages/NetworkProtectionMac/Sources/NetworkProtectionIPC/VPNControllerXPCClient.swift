@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 import XPCHelper
 
 /// This protocol describes the client-side IPC interface for controlling the tunnel
@@ -42,6 +42,9 @@ protocol XPCClientInterfaceObjC {
     func vpnEnabledChanged(payload: Data)
 }
 
+/// Convenience typealias to offer a more friendly protocol name for testing purposes.
+public typealias VPNControllerXPCClientProtocol = XPCServerInterface
+
 public final class VPNControllerXPCClient {
 
     // MARK: - XPC Communication
@@ -65,7 +68,7 @@ public final class VPNControllerXPCClient {
         }
     }
 
-    private let xpcDelegate: TunnelControllerXPCClientDelegate
+    private let xpcDelegate: TunnelControllerXPCClientDelegate // swiftlint:disable:this weak_delegate
 
     public init(machServiceName: String) {
         let clientInterface = NSXPCInterface(with: XPCClientInterfaceObjC.self)

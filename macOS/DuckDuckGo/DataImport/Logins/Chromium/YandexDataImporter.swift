@@ -16,16 +16,18 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
+import Foundation
 
 final class YandexDataImporter: ChromiumDataImporter {
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter) {
+    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, featureFlagger: FeatureFlagger) {
         super.init(profile: profile,
                    loginImporter: nil,
                    bookmarkImporter: bookmarkImporter,
-                   faviconManager: NSApp.delegateTyped.faviconManager)
+                   faviconManager: NSApp.delegateTyped.faviconManager,
+                   featureFlagger: featureFlagger)
     }
 
     override var importableTypes: [DataImport.DataType] {

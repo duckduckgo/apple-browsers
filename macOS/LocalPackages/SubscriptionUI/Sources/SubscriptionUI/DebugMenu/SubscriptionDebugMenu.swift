@@ -336,10 +336,22 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func checkEntitlementsV2() {
         Task {
             do {
-                let features = try await subscriptionManagerV2.currentSubscriptionFeatures(forceRefresh: true)
-                let descriptions = features.map({ feature in
-                    "\(feature.entitlement.rawValue): Available: \(feature.isAvailableForUser)"
-                })
+                let productNames = Entitlement.ProductName.allCases
+                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                var descriptions: [String] = []
+
+                for productName in productNames {
+                    let featureEnabledDescription: String = await {
+                        guard let isFeatureEnabled = try? await subscriptionManagerV2.isFeatureEnabled(productName) else {
+                            return "error"
+                        }
+
+                        return String(describing: isFeatureEnabled)
+                    }()
+
+                    descriptions.append("\(productName.rawValue): \(featureEnabledDescription)")
+                }
+
                 showAlert(title: "Check Entitlements", message: descriptions.joined(separator: "\n"))
             } catch {
                 showAlert(title: "Check Entitlements", message: "Error: \(error)")
@@ -373,7 +385,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     func getSubscriptionDetailsV2() {
         Task {
             do {
-                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .remoteFirst)
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")

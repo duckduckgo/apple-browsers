@@ -1,7 +1,7 @@
 //
 //  NavigationRedirectsTests.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -935,79 +935,6 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         ])
     }
 
-    func testDeveloperRedirectAfterGoBack() throws {
-        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
-
-        responder(at: 0).onNavigationAction = { [urls] action, _ in
-            if action.url.matches(urls.local) {
-                return .redirect(action.mainFrameTarget!) { webView in
-                    webView.goBack()
-                    webView.load(req(urls.local3), withExpectedNavigationType: .custom(CustomNavigationType(rawValue: "redir")))
-                }
-            } else if action.url.matches(urls.local3) {
-                XCTAssertEqual(action.navigationType, .custom(.init(rawValue: "redir")))
-            }
-            return .allow
-        }
-
-        server.middleware = [{ [data] request in
-            return .ok(.data(data.html))
-        }]
-
-        try server.start(8084)
-
-        var eDidFinish = expectation(description: "onDidFinish")
-        responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
-        withWebView { webView in
-            _=webView.load(req(urls.local4))
-        }
-        waitForExpectations(timeout: 5)
-
-        eDidFinish = expectation(description: "onDidFinish 2")
-        withWebView { webView in
-            _=webView.load(req(urls.local2))
-        }
-        waitForExpectations(timeout: 5)
-
-        responder(at: 0).clear()
-        eDidFinish = expectation(description: "onDidFinish 3")
-        withWebView { webView in
-            _=webView.load(req(urls.local))
-        }
-        waitForExpectations(timeout: 5)
-
-        XCTAssertFalse(navAct(1).navigationAction.isTargetingNewWindow)
-        // sometimes NavigationAction #4 (goBack) Task is cancelled and doesn‘t get get to responder
-        responder(at: 0).history.removeAll(where: {
-            if case .navigationAction(let navAction, _, _) = $0 {
-                return navAction.navigationAction.identifier == 4
-            } else if case .willStart(let nav, _) = $0 {
-                return nav.navigationAction.navigationAction.identifier == 4
-            } else if case .didFail(let nav, _, _) = $0 {
-                // did fail event may be missing if
-                return nav.navigationAction.navigationAction.url.matches(urls.local4)
-            }
-            return false
-        })
-
-        assertHistory(ofResponderAt: 0, equalsTo: [
-            .navigationAction(NavAction(req(urls.local), .other, from: history[2], src: main(urls.local2))),
-            .didCancel(navAct(3), expected: 2),
-
-            // .navigationAction(NavAction(req(urls.local4, defaultHeaders.allowingExtraKeys), .redirect(.developer), from: history[2], src: main(urls.local2))),
-            // .willStart(Nav(action: navAct(4), redirects: [navAct(3)], .approved, isCurrent: false)),
-            // .didFail(Nav(action: NavAction(req(urls.local4, defaultHeaders.allowingExtraKeys), .redirect(.developer), from: history[2], src: main(urls.local2)), redirects: [navAct(3)], .failed(WKError(NSURLErrorCancelled)), isCurrent: false), NSURLErrorCancelled),
-
-            .navigationAction(NavAction(req(urls.local3), .custom(.init(rawValue: "redir")), from: history[2], src: main(urls.local2))),
-            .willStart(Nav(action: navAct(5), redirects: [navAct(3)], .approved, isCurrent: false)),
-            .didStart(Nav(action: navAct(5), redirects: [navAct(3)], .started)),
-            .response(Nav(action: navAct(5), redirects: [navAct(3)], .responseReceived, resp: .resp(urls.local3, data.html.count))),
-            .didCommit(Nav(action: navAct(5), redirects: [navAct(3)], .responseReceived, resp: resp(2), .committed)),
-            .didFinish(Nav(action: navAct(5), redirects: [navAct(3)], .finished, resp: resp(2), .committed))
-        ])
-        XCTAssertEqual(_webView.backForwardList.backList.count, 1)
-    }
-
     func testWhenServerRedirectIsInterruptedThenDidFailProvisionalIsCalled() throws {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
@@ -1343,7 +1270,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
     // somewhat arguable: I don‘t know how to simulate failing navigation after it has performed client redirect
     // but just in case it can be failed we‘re handling it the same way as the one competed normally
     func testClientRedirectWithFailingInitialNavigation() throws {
-        navigationDelegateProxy.finishEventsDispatchTime = .beforeWillStartNavigationAction
+        navigationDelegateProxy.didFailEventsDispatchTime = .beforeWillStartNavigationAction
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         let eDidFinish = expectation(description: "onDidFinish")
@@ -1384,6 +1311,295 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
             .didFinish(Nav(action: navAct(2), redirects: [navAct(1)], .finished, resp: resp(1), .committed))
         ])
+    }
+
+    @MainActor
+    func testClientRedirectInterruptedWithDeveloperRedirectDoesNotAppearInBackHistory() throws {
+        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
+
+        var developerRedirectExpectation: XCTestExpectation!
+        responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
+            if action.url.matches(urls.local3) {
+                // Developer-redirect during client-redirected navigation
+                return .redirect(action.mainFrameTarget!) { webView in
+                    webView.load(req(urls.local4))
+                    developerRedirectExpectation.fulfill()
+                }
+            }
+            return .allow
+        }
+
+        server.middleware = [{ [urls, data] request in
+            guard request.path == urls.local2.path else { return nil }
+            return .ok(.html(data.clientRedirectData.utf8String()!))
+        }, { [data] request in
+            return .ok(.data(data.html))
+        }]
+        try server.start(8084)
+
+        // Load initial page (client-redirect.html)
+        let eDidFinishInitial = expectation(description: "onDidFinish urls.local")
+        let eDidFinishLocal2 = expectation(description: "onDidFinish urls.local2")
+        let eDidFinishFinal = expectation(description: "onDidFinish urls.local4")
+
+        responder(at: 0).onDidFinish = { [urls] navigation in
+            if navigation.url.matches(urls.local) {
+                eDidFinishInitial.fulfill()
+            } else if navigation.url.matches(urls.local2) {
+                eDidFinishLocal2.fulfill()
+            } else if navigation.url.matches(urls.local4) {
+                eDidFinishFinal.fulfill()
+            }
+        }
+
+        withWebView { webView in
+            _=webView.load(req(urls.local))
+        }
+        wait(for: [eDidFinishInitial], timeout: 5)
+
+        // Click the link to js-redir page (urls.local2), which client-redirects to urls.local3,
+        // then developer-redirects to final destination (urls.local4)
+        developerRedirectExpectation = expectation(description: "Developer-redirected")
+
+        withWebView { webView in
+            _=webView.load(req(urls.local2))
+        }
+        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], timeout: 5)
+
+        withWebView { webView in
+            // Validate back/forward history
+            let backURLs = webView.backForwardList.backList.map(\.url)
+            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
+            let currentURL = webView.backForwardList.currentItem?.url
+
+            // js-redir page (urls.local2) should NOT appear in back history due to interrupted redirect
+            XCTAssertEqual(backURLs.map { $0.separatedString }, [urls.local.separatedString])
+
+            // Should have no forward history
+            XCTAssertEqual(forwardURLs, [], "Should have no forward history")
+
+            // Current URL should be final destination (urls.local4)
+            XCTAssertEqual(currentURL?.separatedString, urls.local4.separatedString, "Current URL should be final destination after redirect")
+        }
+    }
+
+    @MainActor
+    func testClientRedirectInterruptedWithCustomNavigationTypeDoesNotAppearInBackHistory() throws {
+        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
+
+        var developerRedirectExpectation: XCTestExpectation!
+        responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
+            if action.url.matches(urls.local3) {
+                // Developer-redirect during client-redirected navigation
+                return .redirect(action.mainFrameTarget!) { webView in
+                    webView.load(req(urls.local4), withExpectedNavigationType: .custom(CustomNavigationType(rawValue: "redir")))
+                    developerRedirectExpectation.fulfill()
+                }
+            }
+            return .allow
+        }
+
+        server.middleware = [{ [urls, data] request in
+            guard request.path == urls.local2.path else { return nil }
+            return .ok(.html(data.clientRedirectData.utf8String()!))
+        }, { [data] request in
+            return .ok(.data(data.html))
+        }]
+        try server.start(8084)
+
+        // Load initial page (client-redirect.html)
+        let eDidFinishInitial = expectation(description: "onDidFinish urls.local")
+        let eDidFinishLocal2 = expectation(description: "onDidFinish urls.local2")
+        let eDidFinishFinal = expectation(description: "onDidFinish urls.local4")
+
+        responder(at: 0).onDidFinish = { [urls] navigation in
+            if navigation.url.matches(urls.local) {
+                eDidFinishInitial.fulfill()
+            } else if navigation.url.matches(urls.local2) {
+                eDidFinishLocal2.fulfill()
+            } else if navigation.url.matches(urls.local4) {
+                eDidFinishFinal.fulfill()
+            }
+        }
+
+        withWebView { webView in
+            _=webView.load(req(urls.local))
+        }
+        wait(for: [eDidFinishInitial], timeout: 5)
+
+        // Click the link to js-redir page (urls.local2), which client-redirects to urls.local3,
+        // then developer-redirects to final destination (urls.local4)
+        developerRedirectExpectation = expectation(description: "Developer-redirected")
+
+        withWebView { webView in
+            _=webView.load(req(urls.local2))
+        }
+        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], timeout: 5)
+
+        withWebView { webView in
+            // Validate back/forward history
+            let backURLs = webView.backForwardList.backList.map(\.url)
+            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
+            let currentURL = webView.backForwardList.currentItem?.url
+
+            // js-redir page (urls.local2) should NOT appear in back history due to interrupted redirect
+            XCTAssertEqual(backURLs.map { $0.separatedString }, [urls.local.separatedString])
+
+            // Should have no forward history
+            XCTAssertEqual(forwardURLs, [], "Should have no forward history")
+
+            // Current URL should be final destination (urls.local4)
+            XCTAssertEqual(currentURL?.separatedString, urls.local4.separatedString, "Current URL should be final destination after redirect")
+        }
+    }
+
+    @MainActor
+    func testInterruptedClientRedirectInNewTabHasNoBackHistory() throws {
+        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
+
+        var developerRedirectExpectation: XCTestExpectation!
+        responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
+            if action.url.matches(urls.local3) {
+                // Developer-redirect during client-redirected navigation
+                return .redirect(action.mainFrameTarget!) { webView in
+                    webView.load(req(urls.local4))
+                    developerRedirectExpectation.fulfill()
+                }
+            }
+            return .allow
+        }
+
+        server.middleware = [{ [urls, data] request in
+            guard request.path == urls.local2.path else { return nil }
+            return .ok(.html(data.clientRedirectData.utf8String()!))
+        }, { [data] request in
+            return .ok(.data(data.html))
+        }]
+        try server.start(8084)
+
+        // Simulate ⌘-click by directly loading the redirect link in a fresh webView
+        developerRedirectExpectation = expectation(description: "Developer-redirected")
+        let eDidFinishLocal2 = expectation(description: "onDidFinish urls.local2")
+        let eDidFinishFinal = expectation(description: "onDidFinish urls.local4")
+
+        responder(at: 0).onDidFinish = { [urls] navigation in
+            if navigation.url.matches(urls.local2) {
+                eDidFinishLocal2.fulfill()
+            } else if navigation.url.matches(urls.local4) {
+                eDidFinishFinal.fulfill()
+            }
+        }
+
+        // Load the redirect URL directly (simulating ⌘-click on link)
+        // This creates a fresh navigation context with no prior history
+        // urls.local2 client-redirects to urls.local3, then developer-redirects to final destination (urls.local4)
+        withWebView { webView in
+            _=webView.load(req(urls.local2))
+        }
+        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], timeout: 5)
+
+        withWebView { webView in
+            // Validate new tab has no back history
+            let backURLs = webView.backForwardList.backList.map(\.url)
+            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
+            let currentURL = webView.backForwardList.currentItem?.url
+
+            // Should have no back history (empty back list)
+            XCTAssertEqual(backURLs, [], "New tab should have no back history")
+
+            // Should have no forward history
+            XCTAssertEqual(forwardURLs, [], "New tab should have no forward history")
+
+            // Current URL should be final destination (urls.local4)
+            XCTAssertEqual(currentURL?.separatedString, urls.local4.separatedString, "Current URL should be final destination after redirect")
+
+            // Back button should be effectively disabled (no back history)
+            XCTAssertFalse(webView.canGoBack, "Back button should be disabled in new tab")
+        }
+    }
+
+    @MainActor
+    func testDoubleClientRedirectBothInterruptedWithDeveloperRedirect() throws {
+        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
+
+        var firstDeveloperRedirectExpectation: XCTestExpectation!
+        var secondDeveloperRedirectExpectation: XCTestExpectation!
+        responder(at: 0).onNavigationAction = { @MainActor [urls] action, _ in
+            if action.url.matches(urls.local3) {
+                // First developer-redirect during first client-redirected navigation
+                return .redirect(action.mainFrameTarget!) { webView in
+                    webView.load(req(urls.local4))
+                    firstDeveloperRedirectExpectation.fulfill()
+                }
+            } else if action.url.matches(urls.local2) {
+                // Second developer-redirect during second client-redirected navigation
+                return .redirect(action.mainFrameTarget!) { webView in
+                    webView.load(req(urls.local6))
+                    secondDeveloperRedirectExpectation.fulfill()
+                }
+            }
+            return .allow
+        }
+
+        server.middleware = [{ [urls, data] request in
+            switch request.path {
+            case urls.local5.path:
+                // First client redirect page: redirects to urls.local3
+                return .ok(.html(data.clientRedirectData.utf8String()!))
+            case urls.local4.path:
+                // Second client redirect page: redirects to urls.local2
+                return .ok(.html(data.clientRedirectData2.utf8String()!))
+            default:
+                return .ok(.data(data.html))
+            }
+        }]
+        try server.start(8084)
+
+        // Set up expectations dictionary for all navigation URLs
+        var expectations: [String: XCTestExpectation] = [:]
+
+        responder(at: 0).onDidFinish = { navigation in
+            expectations[navigation.url.separatedString]?.fulfill() ?? { XCTFail("Unexpected navigation URL: \(navigation.url.separatedString)") }()
+        }
+
+        // Load initial page (client-redirect.html)
+        expectations[urls.local.separatedString] = expectation(description: "onDidFinish urls.local")
+        withWebView { webView in
+            _=webView.load(req(urls.local))
+        }
+        waitForExpectations(timeout: 5)
+
+        // Navigate to first client-redirect page (urls.local5), which client-redirects to urls.local3,
+        // then developer-redirects to urls.local4, which client-redirects to urls.local2,
+        // then developer-redirects to final destination (urls.local6)
+        firstDeveloperRedirectExpectation = expectation(description: "First Developer-redirect")
+        secondDeveloperRedirectExpectation = expectation(description: "Second Developer-redirect")
+
+        // Set up expectations for all URLs in the redirect chain (local3 and local2 would be interrupted by developer-redirect)
+        expectations[urls.local5.separatedString] = expectation(description: "onDidFinish urls.local5")
+        expectations[urls.local4.separatedString] = expectation(description: "onDidFinish urls.local4")
+        expectations[urls.local6.separatedString] = expectation(description: "onDidFinish urls.local6")
+
+        withWebView { webView in
+            _=webView.load(req(urls.local5))
+        }
+        waitForExpectations(timeout: 5)
+
+        withWebView { webView in
+            // Validate back/forward history
+            let backURLs = webView.backForwardList.backList.map(\.url)
+            let forwardURLs = webView.backForwardList.forwardList.map(\.url)
+            let currentURL = webView.backForwardList.currentItem?.url
+
+            // Both client-redirect pages (urls.local5 and urls.local5) should NOT appear in back history due to interrupted redirects
+            XCTAssertEqual(backURLs.map { $0.separatedString }, [urls.local.separatedString], "Back history should only contain initial page")
+
+            // Should have no forward history
+            XCTAssertEqual(forwardURLs, [], "Should have no forward history")
+
+            // Current URL should be final destination (urls.local6)
+            XCTAssertEqual(currentURL?.separatedString, urls.local6.separatedString, "Current URL should be final destination after double redirect")
+        }
     }
 
 }

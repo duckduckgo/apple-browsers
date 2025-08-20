@@ -60,6 +60,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Füge dein Abonnement zu diesem Gerät hinzu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add your subscription to this device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento a questo dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan dit apparaat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do tego urządzenia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição a este dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте подписку на это устройство"
+          }
+        }
+      }
+    },
+    "subscription.add.subscription.modal.title.deprecated" : {
+      "comment" : "Title of a view for adding subscription to the device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Dein Privacy Pro Abonnement zu diesem Gerät hinzufügen"
           }
         },
@@ -354,6 +414,66 @@
       }
     },
     "subscription.add.via.email.description" : {
+      "comment" : "Description of option for adding subscription using email address",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verknüpfe eine E-Mail-Adresse mit deinem Abonnement, um es zu diesem Gerät hinzuzufügen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Link an email address to your subscription to add it to this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincula una dirección de correo electrónico a tu suscripción para añadirla a este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Associez une adresse e-mail à votre abonnement pour l'ajouter à cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega un indirizzo e-mail al tuo abbonamento per aggiungerlo a questo dispositivo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppel een e-mailadres aan je abonnement om het aan dit apparaat toe te voegen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz adres e-mail z subskrypcją, aby dodać ją na tym urządzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Associa um endereço de e-mail à tua subscrição para a adicionares a este dispositivo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы добавить подписку на это устройство, привяжите к ней адрес электронной почты."
+          }
+        }
+      }
+    },
+    "subscription.add.via.email.description.deprecated" : {
       "comment" : "Description of option for adding subscription using email address",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -1680,6 +1800,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Dies hat zur Folge, dass du mit diesem Gerät nicht mehr auf dein DuckDuckGo-Abo zugreifen kannst. Dein Abonnement wird dadurch nicht gekündigt; es bleibt auf deinen anderen Geräten aktiv."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You will no longer be able to access your DuckDuckGo subscription on this device. This will not cancel your subscription, and it will remain active on your other devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya no podrás acceder a tu suscripción a DuckDuckGo en este dispositivo. Esto no cancelará tu suscripción, que seguirá activa en tus otros dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne pourrez plus accéder à votre abonnement DuckDuckGo sur cet appareil. Cela n'annulera pas votre abonnement et il restera actif sur vos autres appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non potrai più accedere al tuo abbonamento DuckDuckGo su questo dispositivo. Questo non annulla il tuo abbonamento, che rimane attivo sugli altri tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt niet langer toegang tot je DuckDuckGo-abonnement op dit apparaat. Je abonnement wordt niet opgezegd en het blijft actief op je andere apparaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie będziesz już mieć dostępu do subskrypcji DuckDuckGo na tym urządzeniu. Nie spowoduje to anulowania Twojej subskrypcji, która pozostanie aktywna na pozostałych urządzeniach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perderás acesso à tua subscrição da DuckDuckGo neste dispositivo. Isto não irá cancelar a tua subscrição, e ela permanecerá ativa nos teus outros dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы утратите доступ к преимуществам подписки DuckDuckGo на этом устройстве. Сама же подписка не отменяется и по-прежнему будет работать на других устройствах."
+          }
+        }
+      }
+    },
+    "subscription.dialog.remove.description.deprecated" : {
+      "comment" : "Remove subscription from device dialog subtitle description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Dies hat zur Folge, dass du mit diesem Gerät nicht mehr auf dein Privacy-Pro-Abonnement zugreifen kannst. Dein Abonnement wird dadurch nicht gekündigt; es bleibt auf deinen anderen Geräten aktiv."
           }
         },
@@ -1853,6 +2033,66 @@
         }
       }
     },
+    "subscription.paid.ai.chat.title" : {
+      "comment" : "Title of the preferences pane for Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
       "extractionState" : "extracted_with_value",
@@ -1975,7 +2215,7 @@
     },
     "subscription.preferences.feedback.caption" : {
       "comment" : "Caption for the subscription feedback section",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2393,6 +2633,66 @@
         }
       }
     },
+    "subscription.preferences.paid.ai.chat.button" : {
+      "comment" : "Title for the preferences pane button to open Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть Duck.ai"
+          }
+        }
+      }
+    },
     "subscription.preferences.personal.information.removal.title" : {
       "comment" : "Title of the preferences pane for Personal Information Removal",
       "extractionState" : "extracted_with_value",
@@ -2520,6 +2820,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "DuckDuckGo abonnieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribe to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscríbete a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'abonner à DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbonati a DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonneren op DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrybuj DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscrever o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписаться на DuckDuckGo"
+          }
+        }
+      }
+    },
+    "subscription.preferences.purchase.button.deprecated" : {
+      "comment" : "Button to open a page where user can learn more and purchase the subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Privacy Pro kaufen"
           }
         },
@@ -2573,6 +2933,126 @@
         }
       }
     },
+    "subscription.preferences.purchase.free-trial.button" : {
+      "comment" : "Button to open a page where user can learn more and purchase the subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlos testen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova gratis"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj za darmo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробуйте бесплатно"
+          }
+        }
+      }
+    },
+    "subscription.preferences.purchase.free-trial.button.deprecated" : {
+      "comment" : "Button to open a page where user can learn more and try a free trial subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro kostenlos testen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Privacy Pro Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba Privacy Pro gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer Privacy Pro gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova Privacy Pro gratis"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer Privacy Pro gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj Privacy Pro bezpłatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar o Privacy Pro gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробуйте Privacy Pro бесплатно"
+          }
+        }
+      }
+    },
     "subscription.preferences.purchase.subscription.title" : {
       "comment" : "Title of the preferences pane for purchase subscription",
       "extractionState" : "extracted_with_value",
@@ -2580,55 +3060,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "DuckDuckGo Abonnement"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Privacy Pro"
+            "value" : "DuckDuckGo Subscription"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "Suscripción a DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "Abonnement DuckDuckGo"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "Abbonamento DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "DuckDuckGo-abonnement"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "Subskrypcja DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "Subscrição DuckDuckGo"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy Pro"
+            "value" : "Подписка DuckDuckGo"
           }
         }
       }
@@ -2760,55 +3240,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hilfe bei der Wiederherstellung gestohlener Konten und finanzieller Verluste im Falle eines Identitätsdiebstahls."
+            "value" : "Wiederherstellung gestohlener Konten und finanzieller Verluste im Falle eines Identitätsdiebstahls."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Get help restoring stolen accounts and financial losses in the event of identity theft."
+            "value" : "Restore stolen accounts and financial losses in the event of identity theft."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtén ayuda para restaurar cuentas robadas y pérdidas económicas en caso de robo de identidad."
+            "value" : "Restaura las cuentas robadas y las pérdidas económicas en caso de robo de identidad."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtenez de l'aide pour restituer les comptes volés et les pertes financières en cas d'usurpation d'identité."
+            "value" : "Restituer les comptes volés et les pertes financières en cas d'usurpation d'identité."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ottieni aiuto per ripristinare gli account rubati e le perdite finanziarie in caso di furto di identità."
+            "value" : "Ripristina gli account rubati e le perdite finanziarie in caso di furto di identità."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Krijg hulp bij het herstellen van gestolen accounts en financiële verliezen in geval van identiteitsdiefstal."
+            "value" : "Herstel gestolen rekeningen en financiële verliezen in geval van identiteitsdiefstal."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otrzymaj pomoc dotyczącą przywracania skradzionych kont i rekompensaty strat finansowych w przypadku kradzieży tożsamości."
+            "value" : "Przywróć skradzione konta i rekompensuj straty finansowe w przypadku kradzieży tożsamości."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtém ajuda para restaurar contas roubadas e perdas financeiras em caso de roubo de identidade."
+            "value" : "Restaura contas roubadas e perdas financeiras em caso de roubo de identidade."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Помощь по возврату учетных записей и денежных средств в случае «кражи личности»."
+            "value" : "Возврат учетных записей и денежных средств в случае «кражи личности»."
           }
         }
       }
@@ -2869,6 +3349,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Identity Theft Restoration"
+          }
+        }
+      }
+    },
+    "subscription.preferences.services.paid.ai.chat.description" : {
+      "comment" : "Description for the Duck.ai premium service listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatte privat mit fortschrittlichen KI-Modellen, die exklusiv für Abonnenten sind."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat privately with advanced AI models exclusive to subscribers."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatea en privado con modelos avanzados de IA exclusivos para suscriptores."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discutez en privé avec des modèles d'IA avancés réservés aux abonnés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatta privatamente con modelli AI avanzati esclusivi per gli abbonati."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat privé met geavanceerde AI-modellen die exclusief voor abonnees zijn."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czatuj prywatnie z zaawansowanymi modelami sztucznej inteligencji dostępnymi wyłącznie dla subskrybentów."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversa em privado com modelos de IA avançados exclusivos para subscritores."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приватный чат с продвинутыми ИИ-моделями — только по подписке."
+          }
+        }
+      }
+    },
+    "subscription.preferences.services.paid.ai.chat.title" : {
+      "comment" : "Title for the duck.ai premium listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
           }
         }
       }
@@ -3366,6 +3966,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Verwende diese E-Mail-Adresse, um dein Abonnement auf andere Geräte zu übertragen. Rufe im DuckDuckGo-Browser die Einstellungen > DuckDuckGo-Abo > Ich habe ein Abonnement auf."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use this email to add your subscription to other devices. In the DuckDuckGo browser, go to Settings > DuckDuckGo Subscription > I Have a Subscription."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa este correo electrónico para añadir tu suscripción a otros dispositivos. En el navegador DuckDuckGo, dirígete a Ajustes > Subscripción a DuckDuckGo > Tengo una suscripción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servez-vous de cet e-mail pour ajouter votre abonnement à d'autres appareils. Dans le navigateur DuckDuckGo, accédez à Réglages > Abonnement DuckDuckGo > J'ai un abonnement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa questa email per aggiungere l'abbonamento ad altri dispositivi. Nel browser DuckDuckGo, vai su Impostazioni > Abbonamento DuckDuckGo > Ho un abbonamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik dit e-mailadres om je abonnement toe te voegen aan andere apparaten. Ga in de DuckDuckGo-browser naar Instellingen > DuckDuckGo-abonnement > Ik heb een abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj tego adresu e-mail, aby dodać subskrypcję do innych urządzeń. W przeglądarce DuckDuckGo wybierz kolejno Ustawienia > Subskrypcja DuckDuckGo > Mam subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliza este e-mail para adicionar a tua subscrição a outros dispositivos. No navegador DuckDuckGo, acede a Definições > Subscrição da DuckDuckGo > Tenho uma subscrição."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Используйте этот адрес электронной почты, чтобы добавить подписку на другие устройства. Для этого в браузере DuckDuckGo откройте раздел «Настройки > Подписка DuckDuckGo > У меня уже есть подписка»."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.activate.with.email.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences activate section when email is added to subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Verwende diese E-Mail-Adresse, um dein Abonnement auf andere Geräte zu übertragen. Gehe im DuckDuckGo-Browser zu Einstellungen > Privacy Pro > Ich habe ein Abonnement."
           }
         },
@@ -3659,6 +4319,126 @@
         }
       }
     },
+    "subscription.preferences.subscription.active.renewing.trial.monthly.caption" : {
+      "comment" : "Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine kostenlose Testphase endet am %@ und wird an diesem Tag automatisch in ein kostenpflichtiges Monatsabo umgewandelt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & automatically converts to a monthly paid subscription on that day."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu prueba gratuita finaliza el %@ y ese día pasará automáticamente a una suscripción mensual de pago."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre essai gratuit se termine le %@ et sera automatiquement converti en abonnement mensuel payant ce jour-là."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prova gratuita termina il %@ e lo stesso giorno si converte automaticamente in un abbonamento mensile a pagamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis proefperiode eindigt op %@ en wordt op die dag automatisch omgezet in een maandelijks betaald abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatny okres próbny kończy się %@ i tego dnia automatycznie przekształca się w miesięczną płatną subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O teu período de teste gratuito termina a %@ e será automaticamente convertido numa subscrição mensal paga nesse dia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатный пробный период завершится %@. В тот же день вы автоматически перейдете на платную ежемесячную подписку."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.active.renewing.trial.yearly.caption" : {
+      "comment" : "Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine kostenlose Testphase endet am %@ und wird an diesem Tag automatisch in ein kostenpflichtiges Jahresabo umgewandelt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & automatically converts to an annual paid subscription on that day."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu prueba gratuita finaliza el %@ y ese día se convertirá automáticamente en una suscripción anual de pago."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre essai gratuit se termine le %@ et sera automatiquement converti en abonnement annuel payant ce jour-là."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prova gratuita termina il %@ e lo stesso giorno si converte automaticamente in un abbonamento annuale a pagamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis proefperiode eindigt op %@ en wordt op die dag automatisch omgezet in een jaarlijks betaald abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatny okres próbny kończy się %@ i tego samego dnia automatycznie przekształca się w roczną płatną subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O teu período de teste gratuito termina a %@ e será automaticamente convertido numa subscrição anual paga nesse dia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш бесплатный пробный период завершится %@. В тот же день вы автоматически перейдете на платную годовую подписку."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.active.renewing.unknown.caption" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is active and will renew, the parameter is date of renewal.",
       "extractionState" : "extracted_with_value",
@@ -3906,6 +4686,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Füge dein Abonnement über dein Apple-Konto oder durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add your subscription to your other devices via Apple Account or by linking an email."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a tus otros dispositivos mediante la cuenta de Apple o vinculando un correo electrónico."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à vos autres appareils via un compte Apple ou en associant une adresse e-mail."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento ai tuoi altri dispositivi tramite l'account Apple o collegando un'email."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan je andere apparaten via een Apple-account of door een e-mailadres te koppelen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do innych urządzeń za pośrednictwem konta Apple lub poprzez połączenie adresu e-mail."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição aos teus outros dispositivos através da Conta Apple ou associando um e-mail."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписку можно добавить на другие устройства с помощью аккаунта Apple или путем привязки адреса электронной почты."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.add.to.device.no.email.app.store.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Füge Privacy Pro über dein Apple-Konto oder durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu."
           }
         },
@@ -3960,6 +4800,66 @@
       }
     },
     "subscription.preferences.subscription.add.to.device.no.email.stripe.caption" : {
+      "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge dein Abonnement durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add your subscription to your other devices by linking an email."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a tus otros dispositivos vinculando un correo electrónico."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à vos autres appareils en associant une adresse e-mail."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento agli altri dispositivi collegando un indirizzo e-mail."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan je andere apparaten door een e-mailadres te koppelen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do innych urządzeń poprzez połączenie adresu e-mail."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição aos teus outros dispositivos associando um e-mail."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте подписку на другие устройства, привязав к ней адрес электронной почты."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.add.to.device.no.email.stripe.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4026,6 +4926,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Füge dein Abonnement zu anderen Geräten hinzu"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Your Subscription to Other Devices"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade tu suscripción a otros dispositivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez votre abonnement à d'autres appareils"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi il tuo abbonamento ad altri dispositivi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg je abonnement toe aan andere apparaten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj subskrypcję do innych urządzeń"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona a tua subscrição a outros dispositivos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавление подписки на другие устройства"
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.add.to.device.title.deprecated" : {
+      "comment" : "Title for the subscription preferences section for adding subscription to other devices",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Privacy Pro zu anderen Geräten hinzufügen"
           }
         },
@@ -4086,6 +5046,66 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Dein DuckDuckGo-Abo ist am %@ abgelaufen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your DuckDuckGo subscription expired on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu suscripción a DuckDuckGo caducó el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre abonnement DuckDuckGo a expiré le %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo abbonamento DuckDuckGo è scaduto il %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je DuckDuckGo-abonnement is verlopen op %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja subskrypcja DuckDuckGo wygasła w dniu %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua subscrição da DuckDuckGo expirou a %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Срок действия вашей подписки DuckDuckGo истек %@."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.expired.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Dein Privacy Pro-Abonnement ist am %@ abgelaufen."
           }
         },
@@ -4139,6 +5159,66 @@
         }
       }
     },
+    "subscription.preferences.subscription.expired.trial.caption" : {
+      "comment" : "Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine kostenlose Testphase endet am %@ und wird nicht in ein kostenpflichtiges Abonnement umgewandelt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & will not convert to a paid subscription."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu prueba gratuita finaliza el %@ y no se convertirá en una suscripción de pago."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre essai gratuit se termine le %@ et ne sera pas converti en abonnement payant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prova gratuita termina il %@ e non si convertirà in un abbonamento a pagamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis proefperiode eindigt op %@ en wordt niet omgezet naar een betaald abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatny okres próbny kończy się %@ i nie zostanie przekształcony w płatną subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O teu período de teste gratuito termina a %@ e não será convertido numa subscrição paga."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш бесплатный пробный период завершится %@ без перехода на платную подписку."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.footer.title" : {
       "comment" : "Title for the subscription preferences pane footer",
       "extractionState" : "extracted_with_value",
@@ -4146,55 +5226,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brauchst du Hilfe mit Privacy Pro?"
+            "value" : "Benötigst du Hilfe mit deinem DuckDuckGo-Abo?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Need help with Privacy Pro?"
+            "value" : "Need help with your DuckDuckGo subscription?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Necesitas ayuda con Privacy Pro?"
+            "value" : "¿Necesitas ayuda con tu suscripción a DuckDuckGo?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Besoin d'aide pour l'utilisation de Privacy Pro ?"
+            "value" : "Besoin d'aide concernant votre abonnement DuckDuckGo ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hai bisogno di aiuto con Privacy Pro?"
+            "value" : "Hai bisogno di aiuto con l'abbonamento DuckDuckGo?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hulp nodig met Privacy Pro?"
+            "value" : "Hulp nodig bij je DuckDuckGo-abonnement?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Potrzebujesz pomocy z Privacy Pro?"
+            "value" : "Potrzebujesz pomocy z subskrypcją DuckDuckGo?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precisas de ajuda com o Privacy Pro?"
+            "value" : "Precisas de ajuda com a tua subscrição DuckDuckGo?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нужна помощь с Privacy Pro?"
+            "value" : "Нужна помощь с подпиской DuckDuckGo?"
           }
         }
       }
@@ -4206,115 +5286,235 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erhalte Antworten auf häufig gestellte Fragen oder kontaktiere den Privacy-Pro-Support über unsere Hilfeseiten. Die Verfügbarkeit von Funktionen variiert je nach Land."
+            "value" : "Erhalte Antworten auf häufig gestellte Fragen oder kontaktiere den Abonnement-Support über unsere Hilfeseiten. Die Verfügbarkeit von Funktionen variiert je nach Land."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Get answers to frequently asked questions or contact Privacy Pro support from our help pages. Feature availability varies by country."
+            "value" : "Get answers to frequently asked questions or contact subscription support from our help pages. Feature availability varies by country."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtén respuestas a las preguntas más frecuentes o ponte en contacto con el servicio de asistencia de Privacy Pro en nuestras páginas de ayuda. La disponibilidad de las funciones varía según el país."
+            "value" : "Obtén respuestas a las preguntas más frecuentes o ponte en contacto con el servicio de asistencia para suscripciones en nuestras páginas de ayuda. La disponibilidad de las funciones varía según el país."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trouvez les réponses aux questions fréquemment posées ou contactez l'assistance de Privacy Pro sur nos pages d'aide. La disponibilité des fonctionnalités varie selon les pays."
+            "value" : "Trouvez les réponses aux questions fréquemment posées ou contactez l'assistance abonnement sur nos pages d'aide. La disponibilité des fonctionnalités varie selon les pays."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ottieni risposte alle domande frequenti o contatta l'assistenza di Privacy Pro dalle nostre pagine di assistenza. La disponibilità delle funzioni varia in base al paese."
+            "value" : "Ottieni risposte alle domande frequenti o contatta l'assistenza per gli abbonamenti dalle nostre pagine di assistenza. La disponibilità delle funzioni varia in base al paese."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Krijg antwoorden op veelgestelde vragen of neem contact op met de klantenservice van Privacy Pro via onze hulppagina's. De beschikbaarheid van functies verschilt per land."
+            "value" : "Krijg via onze hulppagina's antwoorden op veelgestelde vragen of neem er contact op met de klantenservice voor abonnementen. De beschikbaarheid van functies verschilt per land."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uzyskaj odpowiedzi na często zadawane pytania lub skontaktuj się z pomocą techniczną Privacy Pro na naszych stronach pomocy. Dostępność funkcji różni się w zależności od kraju."
+            "value" : "Uzyskaj odpowiedzi na często zadawane pytania lub skontaktuj się z pomocą techniczną ds. subskrypcji na naszych stronach pomocy. Dostępność funkcji różni się w zależności od kraju."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obtém respostas a perguntas frequentes ou contacta o apoio técnico do Privacy Pro a partir das nossas páginas de ajuda. A disponibilidade das funcionalidades varia consoante o país."
+            "value" : "Obtém respostas a perguntas frequentes ou contacta o apoio técnico da subscrição a partir das nossas páginas de ajuda. A disponibilidade das funcionalidades varia consoante o país."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На страницах справки вы найдете ответы на распространенные вопросы, а также контакты поддержки Privacy Pro. Доступность функций зависит от страны."
+            "value" : "На страницах справочного раздела вы найдете ответы на распространенные вопросы, а также контактную информацию по тарифам. Доступность функций зависит от страны."
           }
         }
       }
     },
     "subscription.preferences.subscription.inactive.header" : {
       "comment" : "Header for the subscription preferences pane when the subscription is inactive",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Schütze deine Verbindung und Identität mit Privacy Pro"
+            "value" : "Sichere dein WLAN, und chatte privat mit fortschrittlichen KI-Modellen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Protect your connection and identity with Privacy Pro"
+            "value" : "Secure your Wi-Fi, and chat privately with advanced AI models"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Protege tu conexión e identidad con Privacy Pro"
+            "value" : "Protege tu Wi-Fi y chatea de forma privada con modelos avanzados de IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Protégez votre connexion et votre identité avec Privacy Pro"
+            "value" : "Sécurisez votre Wi-Fi et discutez en toute confidentialité grâce à des modèles d'IA avancés"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Proteggi la tua connessione e la tua identità con Privacy Pro"
+            "value" : "Proteggi la rete Wi-Fi e chatta privatamente con modelli AI avanzati"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bescherm je verbinding en identiteit met Privacy Pro"
+            "value" : "Beveilig je wifi en chat privé met geavanceerde AI-modellen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chroń połączenie i tożsamość dzięki subskrypcji Privacy Pro"
+            "value" : "Zabezpiecz Wi-Fi i czatuj prywatnie z zaawansowanymi modelami AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Protege a tua ligação e identidade com o Privacy Pro"
+            "value" : "Protege a tua rede Wi-Fi e conversa em privado com modelos de IA avançados"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Тариф Privacy Pro для защиты соединения и личных данных"
+            "value" : "Защита Wi-Fi плюс приватные чаты с продвинутыми моделями ИИ"
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.header.no.duck.ai.us" : {
+      "comment" : "Header for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schütze deine Verbindung und Identität mit einem Abonnement."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Protect your connection and identity with one subscription."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege tu conexión e identidad con una suscripción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protégez votre connexion et votre identité avec un seul abonnement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteggi la connessione e l'identità con un unico abbonamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bescherm je verbinding en identiteit met één abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chroń połączenie i tożsamość za pomocą jednej subskrypcji."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege a tua ligação e identidade com uma subscrição."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита соединения и личных данных по одной подписке"
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.header.us" : {
+      "comment" : "Header for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sichere dein WLAN, und chatte privat mit fortschrittlichen KI-Modellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Secure your Wi-Fi, and chat privately with advanced AI models"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege tu Wi-Fi y chatea de forma privada con modelos avanzados de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sécurisez votre Wi-Fi et discutez en toute confidentialité grâce à des modèles d'IA avancés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteggi la rete Wi-Fi e chatta privatamente con modelli AI avanzati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beveilig je wifi en chat privé met geavanceerde AI-modellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zabezpiecz Wi-Fi i czatuj prywatnie z zaawansowanymi modelami AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege a tua rede Wi-Fi e conversa em privado com modelos de IA avançados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Безопасный Wi-Fi и приватные чаты с продвинутыми моделями ИИ"
           }
         }
       }
@@ -4326,55 +5526,115 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zwei Premium-Schutzmaßnahmen in einem Abonnement."
+            "value" : "Abonnenten erhalten unser VPN, fortschrittliche KI-Modelle in Duck.ai und Identity Theft Restoration."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Two premium protections in one subscription."
+            "value" : "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dos protecciones prémium en una sola suscripción."
+            "value" : "Los suscriptores obtienen nuestra VPN, modelos avanzados de IA en Duck.ai y Identity Theft Restoration."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deux protections haut de gamme dans un seul abonnement."
+            "value" : "Les abonnés bénéficient de notre VPN, de modèles d'IA avancés dans Duck.ai et d'Identity Theft Restoration."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Due protezioni premium in un unico abbonamento."
+            "value" : "Gli abbonati ricevono la nostra VPN, modelli avanzati di intelligenza artificiale in Duck.ai e Identity Theft Restoration."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twee premiumbeveiligingen in één abonnement."
+            "value" : "Abonnees krijgen onze VPN, geavanceerde AI-modellen in Duck.ai en Identity Theft Restoration."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dwa zabezpieczenia premium w jednej subskrypcji."
+            "value" : "Subskrybenci otrzymują usługi VPN oraz Identity Theft Restoration i zaawansowane modele sztucznej inteligencji w Duck.ai."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duas proteções premium numa só subscrição."
+            "value" : "Os subscritores obtêm a nossa VPN, a modelos de IA avançados no Duck.ai e à Identity Theft Restoration."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Два вида премиум-защиты по одной подписке."
+            "value" : "Подписка открывает доступ к VPN, продвинутым моделям ИИ в Duck.ai и функции восстановления после кражи данных."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.row.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnenten erhalten unser VPN und Identity Theft Restoration."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribers get our VPN and Identity Theft Restoration."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los suscriptores obtienen nuestra VPN y Identity Theft Restoration."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les abonnés bénéficient de notre VPN et d'Identity Theft Restoration."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli abbonati ricevono i nostri servizi di VPN e Identity Theft Restoration."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnees krijgen onze VPN en Identity Theft Restoration."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrybenci otrzymują usługi VPN oraz Identity Theft Restoration."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os subscritores obtêm a nossa VPN e a Identity Theft Restoration."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка открывает доступ к VPN и функции восстановления после кражи данных."
           }
         }
       }
@@ -4382,6 +5642,66 @@
     "subscription.preferences.subscription.inactive.us.caption" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
       "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnenten erhalten unser VPN und fortschrittliche KI-Modelle in Duck.ai, Personal Information Removal und Identity Theft Restoration."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribers get our VPN, advanced AI models in Duck.ai, Personal Information Removal, and Identity Theft Restoration."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los suscriptores obtienen nuestra VPN, modelos avanzados de IA en Duck.ai, Personal Information Removal y Identity Theft Restoration."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les abonnés bénéficient de notre VPN, de modèles d'IA avancés dans Duck.ai, de Personal Information Removal et d'Identity Theft Restoration."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli abbonati ricevono la nostra VPN, modelli avanzati di intelligenza artificiale in Duck.ai, Personal Information Removal e Identity Theft Restoration."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnees krijgen onze VPN en geavanceerde AI-modellen in Duck.ai, Personal Information Removal en Identity Theft Restoration."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrybenci otrzymują VPN, zaawansowane modele sztucznej inteligencji w Duck.ai, usługi Personal Information Removal oraz Identity Theft Restoration."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os subscritores obtêm a nossa VPN e os modelos avançados de IA no Duck.ai, a Personal Information Removal e a Identity Theft Restoration."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка открывает доступ к VPN, продвинутым моделям ИИ в Duck.ai, а также функциям удаления личной информации и восстановления после кражи данных."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.us.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4435,6 +5755,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Три вида премиум-защиты по одной подписке."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.us.caption.no.duck.ai" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnenten erhalten unser VPN, Personal Information Removal und Identity Theft Restoration."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los suscriptores obtienen nuestra VPN, Personal Information Removal y Identity Theft Restoration."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les abonnés bénéficient de notre VPN, de Personal Information Removal et d'Identity Theft Restoration."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli abbonati ricevono la nostra VPN, Personal Information Removal e Identity Theft Restoration."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnees krijgen onze VPN, Personal Information Removal en Identity Theft Restoration."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subskrybenci otrzymują usługi VPN, Personal Information Removal oraz Identity Theft Restoration."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os subscritores obtêm a nossa VPN, a Personal Information Removal e a Identity Theft Restoration."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подписка открывает доступ к VPN, а также функциям удаления личной информации и восстановления после кражи данных."
           }
         }
       }
@@ -4499,6 +5879,66 @@
         }
       }
     },
+    "subscription.preferences.subscription.rebranding.message" : {
+      "comment" : "Message informing users that Privacy Pro is now called the DuckDuckGo subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro heißt jetzt einfach DuckDuckGo-Abo"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Privacy Pro is now just called the DuckDuckGo subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro ahora se llama simplemente suscripción a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro s'appelle désormais simplement l'abonnement DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro ora si chiama semplicemente abbonamento DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro heet nu gewoon het DuckDuckGo-abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro obecnie nazywa się po prostu subskrypcją DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Privacy Pro chama-se agora subscrição da DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.activating" : {
       "comment" : "Title for the status indicator informing that user's subscription is still activating",
       "extractionState" : "extracted_with_value",
@@ -4559,14 +5999,122 @@
         }
       }
     },
+    "subscription.preferences.subscription.settings.free-trial.active" : {
+      "comment" : "Title for the status indicator informing that user is currently on a Free Trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlose Testphase aktiv"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Free Trial Active"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba gratuita activa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essai gratuit actif"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova gratuita attiva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis proefversie actief"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktywny bezpłatny okres próbny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Período de teste gratuito ativo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатный пробный доступ активирован"
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.section.title" : {
       "comment" : "Title for the subscription preferences settings section",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnementeinstellungen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Subscription Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de suscripción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres d'abonnement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni dell'abbonamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnementinstellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia subskrypcji"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definições de Subscrição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки подписки"
           }
         }
       }

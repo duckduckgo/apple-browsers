@@ -208,11 +208,20 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Ръчно въвеждане на код";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Отворете приложението DuckDuckGo на другото си устройство и отидете на %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Сканирайте този код с друго устройство, за да синхронизирате.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "От мобилно към мобилно устройство?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Отворете DuckDuckGo на другото си устройство и сканирайте този код, за да синхронизирате.";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Или сканирайте с DuckDuckGo на другото си устройство";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Споделяне на текстов код";

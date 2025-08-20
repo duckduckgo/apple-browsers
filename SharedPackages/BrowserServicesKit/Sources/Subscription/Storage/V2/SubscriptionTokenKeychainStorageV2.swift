@@ -35,18 +35,39 @@ public enum KeychainErrorAuthVersion: String {
 
 public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
-    private let keychainType: KeychainType
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
+    private let keychainManager: any KeychainManaging
 
-    public init(keychainType: KeychainType = .dataProtection(.unspecified),
+    public init(keychainManager: any KeychainManaging,
                 errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
-        self.keychainType = keychainType
         self.errorEventsHandler = errorEventsHandler
+        self.keychainManager = keychainManager
     }
 
-    public func getTokenContainer() throws -> Networking.TokenContainer? {
+    /*
+     Uses just kSecAttrService as the primary key, since we don't want to store
+     multiple accounts/tokens at the same time
+     */
+    enum SubscriptionKeychainField: String, CaseIterable {
+        case tokenContainer = "subscription.v2.tokens"
+
+        var keyValue: String {
+            "com.duckduckgo" + "." + rawValue
+        }
+    }
+
+    public static func defaultAttributes(keychainType: KeychainType) -> [CFString: Any] {
+        var attributes: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ]
+        attributes.merge(keychainType.queryAttributes()) { $1 }
+        return attributes
+    }
+
+    public func getTokenContainer() throws -> TokenContainer? {
         do {
-            guard let data = try retrieveData(forField: .tokenContainer) else {
+            guard let data = try keychainManager.retrieveData(forKey: SubscriptionKeychainField.tokenContainer.keyValue) else {
                 Logger.subscriptionKeychain.debug("TokenContainer not found")
                 return nil
             }
@@ -62,19 +83,19 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         }
     }
 
-    public func saveTokenContainer(_ tokenContainer: Networking.TokenContainer?) throws {
+    public func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
         do {
             guard let tokenContainer else {
                 Logger.subscriptionKeychain.debug("Remove TokenContainer")
-                try self.deleteItem(forField: .tokenContainer)
+                try keychainManager.deleteItem(forKey: SubscriptionKeychainField.tokenContainer.keyValue)
                 return
             }
 
-            if let data = CodableHelper.encode(tokenContainer) {
-                try self.store(data: data, forField: .tokenContainer)
-            } else {
-                throw AccountKeychainAccessError.failedToDecodeKeychainData
+            guard let data = CodableHelper.encode(tokenContainer) else {
+                throw AccountKeychainAccessError.failedToEncodeKeychainData // Fixed error name
             }
+
+            try keychainManager.store(data: data, forKey: SubscriptionKeychainField.tokenContainer.keyValue)
         } catch {
             Logger.subscriptionKeychain.fault("Failed to set TokenContainer: \(error, privacy: .public)")
             if let error = error as? AccountKeychainAccessError {
@@ -85,96 +106,5 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
             }
             throw error
         }
-    }
-}
-
-extension SubscriptionTokenKeychainStorageV2 {
-
-    /*
-     Uses just kSecAttrService as the primary key, since we don't want to store
-     multiple accounts/tokens at the same time
-     */
-    enum SubscriptionKeychainField: String, CaseIterable {
-        case tokenContainer = "subscription.v2.tokens"
-
-        var keyValue: String {
-            "com.duckduckgo" + "." + rawValue
-        }
-    }
-
-    func retrieveData(forField field: SubscriptionKeychainField) throws -> Data? {
-        var query = defaultAttributes()
-        query[kSecAttrService] = field.keyValue
-        query[kSecMatchLimit] = kSecMatchLimitOne
-        query[kSecReturnData] = true
-
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-
-        if status == errSecSuccess {
-            if let existingItem = item as? Data {
-                return existingItem
-            } else {
-                throw AccountKeychainAccessError.failedToDecodeKeychainData
-            }
-        } else if status == errSecItemNotFound {
-            return nil
-        } else {
-            throw AccountKeychainAccessError.keychainLookupFailure(status)
-        }
-    }
-
-    func store(data: Data, forField field: SubscriptionKeychainField) throws {
-        var query = defaultAttributes()
-        query[kSecAttrService] = field.keyValue
-        query[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
-        query[kSecValueData] = data
-
-        let status = SecItemAdd(query as CFDictionary, nil)
-
-        switch status {
-        case errSecSuccess:
-            return
-        case errSecDuplicateItem:
-            let updateStatus = updateData(data, forField: field)
-
-            if updateStatus != errSecSuccess {
-                throw AccountKeychainAccessError.keychainSaveFailure(status)
-            }
-        default:
-            throw AccountKeychainAccessError.keychainSaveFailure(status)
-        }
-    }
-
-    private func updateData(_ data: Data, forField field: SubscriptionKeychainField) -> OSStatus {
-        var query = defaultAttributes()
-        query[kSecAttrService] = field.keyValue
-
-        let newAttributes = [
-            kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock
-        ] as [CFString: Any]
-
-        return SecItemUpdate(query as CFDictionary, newAttributes as CFDictionary)
-    }
-
-    func deleteItem(forField field: SubscriptionKeychainField, useDataProtectionKeychain: Bool = true) throws {
-        var query = defaultAttributes()
-        query[kSecAttrService] = field.keyValue
-
-        let status = SecItemDelete(query as CFDictionary)
-
-        if status != errSecSuccess && status != errSecItemNotFound {
-            throw AccountKeychainAccessError.keychainDeleteFailure(status)
-        }
-    }
-
-    private func defaultAttributes() -> [CFString: Any] {
-        var attributes: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrSynchronizable: false
-        ]
-        attributes.merge(keychainType.queryAttributes()) { $1 }
-        return attributes
     }
 }

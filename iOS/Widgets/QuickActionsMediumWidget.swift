@@ -20,6 +20,8 @@
 import SwiftUI
 import WidgetKit
 import AppIntents
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 @available(iOS 17.0, *)
 struct QuickActionsMediumWidget: Widget {
@@ -65,7 +67,7 @@ struct QuickActionsMediumEntry: TimelineEntry {
 struct QuickActionsMediumWidgetView: View {
     var entry: QuickActionsMediumEntry
 
-    private let shortcuts: [ShortcutOption] = [.duckAI,
+    private let shortcuts: [ShortcutOption] = [.voiceSearch,
                                                .passwords,
                                                .favorites,
                                                .emailProtection]
@@ -75,8 +77,10 @@ struct QuickActionsMediumWidgetView: View {
             VStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
-                    Link(destination: DeepLinks.voiceSearch) {
-                        CircleIconView(image: Image(.microphoneSolid24))
+                    if entry.isAIChatEnabled {
+                        Link(destination: DeepLinks.openAIChat) {
+                            CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
+                        }
                     }
                 }
 
@@ -108,7 +112,7 @@ private struct QuickActionView: View {
         VStack {
             ZStack {
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(designSystemColor: .container))
+                    .fill(Color(designSystemColor: .controlsFillPrimary))
                     .frame(width: 60, height: 60)
                 
                 shortcut.icon

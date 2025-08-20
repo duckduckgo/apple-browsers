@@ -23,6 +23,7 @@ import UniformTypeIdentifiers
 import Core
 import BrowserServicesKit
 import Common
+import DesignResourcesKit
 
 protocol DataImportViewModelDelegate: AnyObject {
     func dataImportViewModelDidRequestImportFile(_ viewModel: DataImportViewModel)
@@ -35,10 +36,13 @@ final class DataImportViewModel: ObservableObject {
     enum ImportScreen: String {
         case passwords
         case bookmarks
+        case settings
+        case promo
+        case inBrowserPromo = "in_browser_promo"
 
         var documentTypes: [UTType] {
             switch self {
-            case .passwords: return [.zip, .commaSeparatedText]
+            case .passwords, .settings, .promo, .inBrowserPromo: return [.zip, .commaSeparatedText]
             case .bookmarks: return [.zip, .html]
             }
         }
@@ -78,9 +82,9 @@ final class DataImportViewModel: ObservableObject {
             switch (state.browser, state.importScreen) {
             case (.safari, .bookmarks):
                 return attributedInstructionsForSafariBookmarks()
-            case (.safari, .passwords):
+            case (.safari, _):
                 return attributedInstructionsForSafariPasswords()
-            case (.chrome, .passwords), (.chrome, .bookmarks):
+            case (.chrome, _):
                 return attributedInstructionsForChrome()
             }
         }
@@ -147,37 +151,37 @@ final class DataImportViewModel: ObservableObject {
 
         var image: Image {
             switch importScreen {
-            case .passwords:
-                return Image(.passwordsImport128)
             case .bookmarks:
                 return Image(.bookmarksImport96)
+            default:
+                return Image(.passwordsImport128)
             }
         }
 
         var title: String {
             switch importScreen {
-            case .passwords:
-                return UserText.dataImportPasswordsTitle
             case .bookmarks:
                 return UserText.dataImportBookmarksTitle
+            default:
+                return UserText.dataImportPasswordsTitle
             }
         }
 
         var subtitle: String {
             switch importScreen {
-            case .passwords:
-                return UserText.dataImportPasswordsSubtitle
             case .bookmarks:
                 return UserText.dataImportBookmarksSubtitle
+            default:
+                return UserText.dataImportPasswordsSubtitle
             }
         }
 
         var buttonTitle: String {
             switch importScreen {
-            case .passwords:
-                return UserText.dataImportPasswordsFileButton
             case .bookmarks:
                 return UserText.dataImportBookmarksFileButton
+            default:
+                return UserText.dataImportPasswordsSelectFileButton
             }
         }
 
@@ -214,21 +218,23 @@ final class DataImportViewModel: ObservableObject {
         switch type {
         case .zip:
             do {
-               let contents = try ImportArchiveReader().readContents(from: url)
+                let contents = try ImportArchiveReader().readContents(from: url, featureFlagger: AppDependencyProvider.shared.featureFlagger)
 
                 switch contents.type {
-                case .both:
-                    delegate?.dataImportViewModelDidRequestPresentDataPicker(self, contents: contents)
                 case .passwordsOnly:
                     importZipArchive(from: contents, for: [.passwords])
                 case .bookmarksOnly:
                     importZipArchive(from: contents, for: [.bookmarks])
+                case .creditCardsOnly:
+                    importZipArchive(from: contents, for: [.creditCards])
                 case .none:
                     DispatchQueue.main.async { [weak self] in
                         self?.isLoading = false
                         ActionMessageView.present(message: UserText.dataImportFailedNoDataInZipErrorMessage)
                     }
                     Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+                default:
+                    delegate?.dataImportViewModelDidRequestPresentDataPicker(self, contents: contents)
                 }
             } catch {
                 DispatchQueue.main.async { [weak self] in
@@ -313,6 +319,9 @@ final class DataImportViewModel: ObservableObject {
         case .zip:
             fileName = UserText.dataImportFileTypeZip
             Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+        case .json:
+            // JSON files aren't supported for standalone import (only as part of a zip archive)
+            return
         }
 
         DispatchQueue.main.async {

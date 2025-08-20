@@ -18,7 +18,7 @@
 
 import Foundation
 import LoginItems
-import NetworkProtection
+import VPN
 import os.log
 
 extension LoginItem {
@@ -34,7 +34,7 @@ extension LoginItem {
 }
 
 extension LoginItemsManager {
-    static var networkProtectionLoginItems: Set<LoginItem> {
+    static var vpnLoginItems: Set<LoginItem> {
         var items: Set<LoginItem> = [.vpnMenu]
 #if NETP_SYSTEM_EXTENSION
         items.insert(.notificationsAgent)

@@ -17,6 +17,36 @@
 //
 
 import PixelKit
+import DDGSync
+
+enum SyncFeatureUsagePixels: PixelKitEventV2 {
+    private enum ParameterKeys {
+        static let connectedDevices = "connected_devices"
+    }
+
+    case syncDisabled
+    case syncDisabledAndDeleted(connectedDevices: Int)
+
+    var name: String {
+        switch self {
+        case .syncDisabled: return "sync_disabled"
+        case .syncDisabledAndDeleted: return "sync_disabledanddeleted"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .syncDisabledAndDeleted(let connectedDevices):
+            return [ParameterKeys.connectedDevices: String(connectedDevices)]
+        case .syncDisabled:
+            return nil
+        }
+    }
+
+    var error: (any Error)? {
+        nil
+    }
+}
 
 enum SyncSwitchAccountPixelKitEvent: PixelKitEventV2 {
     case syncAskUserToSwitchAccount
@@ -47,5 +77,61 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEventV2 {
 
     var withoutMacPrefix: NonStandardEvent {
         NonStandardEvent(self)
+    }
+}
+
+enum SyncSetupPixelKitEvent: PixelKitEventV2 {
+
+    enum ParameterKey {
+        static let source = "source"
+    }
+
+    case syncSetupBarcodeScreenShown(SyncSetupSource)
+    case syncSetupBarcodeCodeCopied(SyncSetupSource)
+    case syncSetupManualCodeEntryScreenShown
+    case syncSetupManualCodeEnteredSuccess(SyncSetupSource)
+    case syncSetupManualCodeEnteredFailed
+    case syncSetupEndedAbandoned(SyncSetupSource)
+    case syncSetupEndedSuccessful(SyncSetupSource)
+
+    var name: String {
+        switch self {
+        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
+        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
+        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
+        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
+        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
+        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        }
+    }
+
+    var parameters: [String: String]? {
+        guard let source else { return nil }
+        return [ParameterKey.source: source.rawValue]
+    }
+
+    var error: (any Error)? {
+        nil
+    }
+
+    var withoutMacPrefix: NonStandardEvent {
+        NonStandardEvent(self)
+    }
+
+    private var source: SyncSetupSource? {
+        switch self {
+        case
+            .syncSetupBarcodeScreenShown(let source),
+            .syncSetupBarcodeCodeCopied(let source),
+            .syncSetupManualCodeEnteredSuccess(let source),
+            .syncSetupEndedAbandoned(let source),
+            .syncSetupEndedSuccessful(let source):
+            return source
+        case
+            .syncSetupManualCodeEntryScreenShown,
+            .syncSetupManualCodeEnteredFailed:
+            return nil
+        }
     }
 }

@@ -18,6 +18,7 @@
 
 import CommonCrypto
 import CryptoKit
+import Foundation
 
 struct Cryptography {
 

@@ -76,11 +76,11 @@ public struct DefaultAuthEndpointService: AuthEndpointService {
         self.apiService = apiService
     }
 
-    public init(currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment) {
+    public init(currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment, userAgent: String) {
         self.currentServiceEnvironment = currentServiceEnvironment
         let baseURL = currentServiceEnvironment == .production ? URL(string: "https://quack.duckduckgo.com/api/auth")! : URL(string: "https://quackdev.duckduckgo.com/api/auth")!
         let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
-        self.apiService = DefaultSubscriptionAPIService(baseURL: baseURL, session: session)
+        self.apiService = DefaultSubscriptionAPIService(baseURL: baseURL, userAgent: userAgent, session: session)
     }
 
     public func getAccessToken(token: String) async -> Result<AccessTokenResponse, APIServiceError> {

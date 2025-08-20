@@ -46,7 +46,6 @@ struct Background: BackgroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
-        services.keyValueFileStoreTestService.onBackground()
         services.dbpService.onBackground()
         services.vpnService.suspend()
         services.authenticationService.suspend()
@@ -75,6 +74,7 @@ extension Background {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
         ThemeManager.shared.updateUserInterfaceStyle()
         services.autoClearService.resume()
+        services.systemSettingsPiPTutorialService.resume()
     }
 
     /// Called when the app transitions from launching or foreground to background

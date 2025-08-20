@@ -1,6 +1,7 @@
 # backgrounding.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---
@@ -58,7 +59,8 @@ tags:
 - tapOn: "Cancel"
 - tapOn: "Browsing menu"
 - tapOn: "Settings"
-- assertVisible: "Default Browser"
+- assertVisible:
+    id: "Settings.ListItem.Field_DefaultBrowser"
 - tapOn: "Done"
 
 - assertVisible: "Bookmarks"

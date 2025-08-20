@@ -20,12 +20,76 @@ import Foundation
 import os.log
 
 public extension Logger {
-    fileprivate static let subsystem = "com.duckduckgo.macos.browser.databroker-protection"
+    static let dbpSubsystem = "PIR"
 
-    static var dataBrokerProtection = { Logger(subsystem: subsystem, category: "Data Broker Protection") }()
-    static var action = { Logger(subsystem: subsystem, category: "Action") }()
-    static var service = { Logger(subsystem: subsystem, category: "Service") }()
-    static var backgroundAgent = { Logger(subsystem: subsystem, category: "Background Agent") }()
-    static var backgroundAgentMemoryManagement = { Logger(subsystem: subsystem, category: "Background Agent Memory Management") }()
-    static var pixel = { Logger(subsystem: subsystem, category: "Pixel") }()
+    static var dataBrokerProtection = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.dataBrokerProtection.rawValue)
+    }()
+    static var action = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.action.rawValue)
+    }()
+    static var service = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.service.rawValue)
+    }()
+    static var backgroundAgent = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgent.rawValue)
+    }()
+    static var backgroundAgentMemoryManagement = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgentMemoryManagement.rawValue)
+    }()
+    static var pixel = {
+        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.pixel.rawValue)
+    }()
+
+    func log(_ context: PIRActionLogContext, message: String? = nil) {
+        self.log("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
+
+    func info(_ context: PIRActionLogContext, message: String? = nil) {
+        self.info("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
+
+    func error(_ context: PIRActionLogContext, message: String? = nil) {
+        self.error("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
+
+    func debug(_ context: PIRActionLogContext, message: String? = nil) {
+        self.debug("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")
+    }
+}
+
+public enum DataBrokerProtectionLoggerCategory: String, CaseIterable, Identifiable {
+    case dataBrokerProtection = "Data Broker Protection"
+    case action = "Action"
+    case service = "Service"
+    case backgroundAgent = "Background Agent"
+    case backgroundAgentMemoryManagement = "Background Agent Memory Management"
+    case pixel = "Pixel"
+
+    public var id: String { rawValue }
+}
+
+public struct PIRActionLogContext {
+    let stepType: StepType?
+    let broker: DataBroker?
+    let attemptId: UUID?
+    let action: Action?
+
+    public init(stepType: StepType? = nil, broker: DataBroker? = nil, attemptId: UUID? = nil, action: Action? = nil) {
+        self.stepType = stepType
+        self.broker = broker
+        self.attemptId = attemptId
+        self.action = action
+    }
+
+    public var formattedContext: String {
+        let context = [
+            stepType.map { "Step: \($0.rawValue)" },
+            broker.map { "Broker: \($0.name) \($0.version)" },
+            attemptId.map { "Attempt: \($0.uuidString)" },
+            action.map { "Action: \($0.actionType.rawValue) - \($0.id)" },
+        ].compacted()
+
+        return "[\(context.joined(separator: ", "))]"
+    }
 }

@@ -16,17 +16,22 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
+import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockWebViewSnapshotRenderer: WebViewSnapshotRendering {
 
     var nextSnapshot: NSImage?
     var lastWebView: WKWebView?
+    var lastDelay: TimeInterval?
 
     @MainActor
-    func renderSnapshot(webView: WKWebView) async -> NSImage? {
+    func renderSnapshot(webView: WKWebView, delay: TimeInterval) async -> NSImage? {
         lastWebView = webView
+        lastDelay = delay
         return nextSnapshot
     }
 

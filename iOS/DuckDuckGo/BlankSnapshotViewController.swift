@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Suggestions
 import BrowserServicesKit
+import DesignResourcesKitIcons
 
 protocol BlankSnapshotViewRecoveringDelegate: AnyObject {
     
@@ -44,6 +45,7 @@ class BlankSnapshotViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettings
     let voiceSearchHelper: VoiceSearchHelperProtocol
+    let appSettings: AppSettings
 
     var viewCoordinator: MainViewCoordinator!
 
@@ -52,27 +54,30 @@ class BlankSnapshotViewController: UIViewController {
     init(addressBarPosition: AddressBarPosition,
          aiChatSettings: AIChatSettings,
          voiceSearchHelper: VoiceSearchHelperProtocol,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         appSettings: AppSettings) {
         self.addressBarPosition = addressBarPosition
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
+        self.appSettings = appSettings
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = TabSwitcherButton()
+        tabSwitcherButton = TabSwitcherStaticButton()
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
-                                                              featureFlagger: featureFlagger)
+                                                              featureFlagger: featureFlagger,
+                                                              appSettings: appSettings)
         if addressBarPosition.isBottom {
             viewCoordinator.moveAddressBarToPosition(.bottom)
             viewCoordinator.hideToolbarSeparator()
@@ -85,18 +90,15 @@ class BlankSnapshotViewController: UIViewController {
             viewCoordinator.constraints.navigationBarContainerTop.constant = 40
             configureTabBar()
         } else {
-            if !ExperimentalThemingManager().isExperimentalThemingEnabled {
-                viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-                viewCoordinator.menuToolbarButton.customView = menuButton
-                menuButton.setState(.menuImage, animated: false)
-                viewCoordinator.menuToolbarButton.customView = menuButton
-            }
+            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+            viewCoordinator.menuToolbarButton.customView = menuButton
+            menuButton.setState(.menuImage, animated: false)
+            viewCoordinator.menuToolbarButton.customView = menuButton
         }
 
         addTapInterceptor()
         decorate()
     }
-
 
     private func addTapInterceptor() {
         let interceptView = UIView(frame: view.bounds)
@@ -123,10 +125,7 @@ class BlankSnapshotViewController: UIViewController {
     }
 
     private func configureTabBar() {
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        guard let controller = storyboard.instantiateViewController(withIdentifier: "TabsBar") as? TabsBarViewController else {
-            fatalError("Failed to instantiate tabs bar controller")
-        }
+        let controller = TabsBarViewController.createFromXib()
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(controller.view)
@@ -170,6 +169,7 @@ extension BlankSnapshotViewController: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
         cell.omniBar = viewCoordinator.omniBar
+        cell.omniBar?.barView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
         return cell
     }
 
@@ -214,6 +214,10 @@ extension BlankSnapshotViewController {
         viewCoordinator.toolbar.tintColor = theme.barTintColor
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
+
+        // We don't want this to appear as a real button to users using acessibility devices and our UI tests
+        viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = false
+        viewCoordinator.toolbarTabSwitcherButton.accessibilityLabel = nil
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
      }

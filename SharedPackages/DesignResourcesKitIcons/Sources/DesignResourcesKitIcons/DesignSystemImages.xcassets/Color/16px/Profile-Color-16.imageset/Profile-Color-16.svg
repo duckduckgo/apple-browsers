@@ -1,0 +1,14 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Profile-Color-16_svg__a)">
+    <path fill="#96E38A" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Z"/>
+    <path fill="#4CBA3C" fill-rule="evenodd" d="M2.634 13.326C3.324 11.113 5.466 9.5 8 9.5s4.675 1.613 5.366 3.826A7.605 7.605 0 0 1 8 15.506a7.604 7.604 0 0 1-5.366-2.18Z" clip-rule="evenodd"/>
+    <path fill="#4CBA3C" d="M10.5 6a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>
+    <path fill="#1A690D" fill-rule="evenodd" d="M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0-1a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" clip-rule="evenodd"/>
+    <path fill="#1A690D" fill-rule="evenodd" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16Zm5.641-3.855a7 7 0 1 0-11.282 0 6.363 6.363 0 0 1 2.14-2.161A6.691 6.691 0 0 1 7.994 9a6.692 6.692 0 0 1 3.495.976 6.362 6.362 0 0 1 2.153 2.17Zm-.695.809a5.341 5.341 0 0 0-1.98-2.125A5.692 5.692 0 0 0 7.994 10a5.691 5.691 0 0 0-2.97.836 5.34 5.34 0 0 0-1.97 2.118A6.978 6.978 0 0 0 8 15a6.98 6.98 0 0 0 4.946-2.046Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Profile-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

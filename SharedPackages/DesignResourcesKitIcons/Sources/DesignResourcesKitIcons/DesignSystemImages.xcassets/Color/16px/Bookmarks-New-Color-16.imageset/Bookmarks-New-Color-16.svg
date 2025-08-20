@@ -1,0 +1,25 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill="url(#Bookmarks-New-Color-16_svg__a)" d="M11.739 3.5H8.26A2.761 2.761 0 0 0 5.5 6.261v7.693a1.38 1.38 0 0 0 2.134 1.157l1.613-1.05a1.38 1.38 0 0 1 1.506 0l1.613 1.05a1.38 1.38 0 0 0 2.134-1.157V6.261A2.761 2.761 0 0 0 11.739 3.5Z"/>
+  <path fill="url(#Bookmarks-New-Color-16_svg__b)" d="M9.093 13.571a1.88 1.88 0 0 1 1.933.072l1.613 1.05.055.033A.881.881 0 0 0 14 13.954V6.261a2.26 2.26 0 0 0-2.145-2.258L11.739 4H8.26A2.261 2.261 0 0 0 6 6.261v7.693a.88.88 0 0 0 1.36.738l1.614-1.05.12-.07Zm5.907.383c0 1.446-1.554 2.334-2.788 1.648l-.118-.071-1.614-1.05a.881.881 0 0 0-.905-.034l-.055.034-1.614 1.05C6.656 16.345 5 15.447 5 13.954V6.261A3.261 3.261 0 0 1 8.261 3h3.478l.167.004A3.261 3.261 0 0 1 15 6.261v7.693Z"/>
+  <path fill="#14307E" d="M11.747 3H8.261A3.261 3.261 0 0 0 5 6.261v7.209l1.52-.99a.88.88 0 0 1 .96 0l1.614 1.05c1.25.815 2.906-.083 2.906-1.576V4.261c0-.447-.09-.873-.253-1.261Z" opacity=".2"/>
+  <path fill="url(#Bookmarks-New-Color-16_svg__c)" d="M7.739.5H4.26A2.761 2.761 0 0 0 1.5 3.261v7.693a1.38 1.38 0 0 0 2.134 1.157l1.613-1.05a1.38 1.38 0 0 1 1.506 0l1.613 1.05a1.38 1.38 0 0 0 2.134-1.157V3.261A2.761 2.761 0 0 0 7.739.5Z"/>
+  <path fill="url(#Bookmarks-New-Color-16_svg__d)" d="M5.093 10.571a1.88 1.88 0 0 1 1.933.072l1.613 1.05.055.033A.881.881 0 0 0 10 10.954V3.261a2.26 2.26 0 0 0-2.145-2.258L7.739 1H4.26A2.261 2.261 0 0 0 2 3.261v7.693a.88.88 0 0 0 1.36.738l1.614-1.05.12-.07Zm5.907.383c0 1.446-1.554 2.334-2.788 1.648l-.118-.071-1.614-1.05a.88.88 0 0 0-.905-.034l-.055.034-1.614 1.05C2.656 13.345 1 12.447 1 10.954V3.261A3.261 3.261 0 0 1 4.261 0H7.74l.167.004A3.261 3.261 0 0 1 11 3.261v7.693Z"/>
+  <defs>
+    <linearGradient id="Bookmarks-New-Color-16_svg__a" x1="10" x2="10" y1="3.5" y2="16.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FABF9"/>
+      <stop offset="1" stop-color="#7295F6"/>
+    </linearGradient>
+    <linearGradient id="Bookmarks-New-Color-16_svg__b" x1="10" x2="10" y1="3.5" y2="16.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3969EF"/>
+      <stop offset="1" stop-color="#1E42A4"/>
+    </linearGradient>
+    <linearGradient id="Bookmarks-New-Color-16_svg__c" x1="6" x2="6" y1=".5" y2="13.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FABF9"/>
+      <stop offset="1" stop-color="#7295F6"/>
+    </linearGradient>
+    <linearGradient id="Bookmarks-New-Color-16_svg__d" x1="6" x2="6" y1=".5" y2="13.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3969EF"/>
+      <stop offset="1" stop-color="#1E42A4"/>
+    </linearGradient>
+  </defs>
+</svg>

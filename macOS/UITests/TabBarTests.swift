@@ -23,9 +23,7 @@ class TabBarTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
 
         app.typeKey("n", modifierFlags: .command)
         resetPinnedTabs()
@@ -139,6 +137,26 @@ class TabBarTests: UITestCase {
 
         /// Asserts that the tab to the right is shown
         XCTAssertTrue(app.staticTexts["Sample text for Page #4"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    func testContextMenuOpens_withRightClickOnTab() {
+        let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
+        tab.rightClick()
+
+        let contextMenu = tab.children(matching: .menu).firstMatch
+
+        XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on right click")
+    }
+
+    func testContextMenuOpens_withContextClickOnTab() {
+        let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
+        XCUIElement.perform(withKeyModifiers: .control) {
+            tab.click()
+        }
+
+        let contextMenu = tab.children(matching: .menu).firstMatch
+
+        XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on control click")
     }
 
     // MARK: - Utilities

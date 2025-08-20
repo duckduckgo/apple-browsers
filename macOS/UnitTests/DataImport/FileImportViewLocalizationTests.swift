@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-import SwiftUI
-@testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
+import Foundation
+import SwiftUI
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 13.0, *)
 class FileImportViewLocalizationTests: XCTestCase {

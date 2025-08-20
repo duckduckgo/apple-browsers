@@ -24,9 +24,7 @@ class PinnedTabsTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
 
         app.typeKey("n", modifierFlags: .command)
     }
@@ -119,7 +117,7 @@ class PinnedTabsTests: UITestCase {
         app.typeKey("]", modifierFlags: [.command, .shift])
         let toolbar = app.toolbars.firstMatch
         let toolbarCoordinate = toolbar.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        let startPoint = toolbarCoordinate.withOffset(CGVector(dx: 120, dy: 15))
+        let startPoint = toolbarCoordinate.withOffset(CGVector(dx: 128, dy: -15))
         let endPoint = toolbarCoordinate.withOffset(CGVector(dx: 0, dy: 0))
         startPoint.press(forDuration: 0, thenDragTo: endPoint)
 
@@ -145,7 +143,7 @@ class PinnedTabsTests: UITestCase {
         pageFourMenuItem.hover()
         app.typeKey(XCUIKeyboardKey.return, modifierFlags: [])
 
-        sleep(2)
+        sleep(1)
 
         /// Goes to Page #2 to check the state
         app.typeKey("[", modifierFlags: [.command, .shift])
@@ -159,10 +157,11 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func assertPinnedTabsRestoredState() {
-        let newApp = XCUIApplication()
-        newApp.launchEnvironment["UITEST_MODE"] = "1"
-        newApp.launch()
-        sleep(10) // This was increased from two to ten, because slower VMs needed more time to re-launch the app.
+        let newApp = XCUIApplication.setUp()
+        XCTAssertTrue(
+            newApp.windows.firstMatch.waitForExistence(timeout: 10),
+            "App window didn't become available in a reasonable timeframe."
+        )
 
         /// Goes to Page #2 to check the state
         newApp.typeKey("[", modifierFlags: [.command, .shift])

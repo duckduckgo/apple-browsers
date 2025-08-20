@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - sync
 name: 06_delete_account
 ---
@@ -13,6 +14,10 @@ name: 06_delete_account
 - tapOn: Settings
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
+
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
 
 # Create account
 - runFlow:

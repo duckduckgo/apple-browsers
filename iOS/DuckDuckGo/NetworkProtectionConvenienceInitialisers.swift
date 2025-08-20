@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import UIKit
 import Common
 import NetworkExtension

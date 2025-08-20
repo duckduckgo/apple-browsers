@@ -20,11 +20,16 @@
 
 import Combine
 import Common
+import os.log
 import Swifter
 import WebKit
 import XCTest
 
 @testable import Navigation
+
+@objc private protocol WebProcessPoolPrivate: AnyObject {
+    @objc(_setWebProcessCountLimit:) static func setWebProcessCountLimit(_ webProcessCountLimit: UInt)
+}
 
 @available(macOS 12.0, iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
@@ -33,12 +38,13 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     var navigationDelegate: DistributedNavigationDelegate { navigationDelegateProxy.delegate }
     var testSchemeHandler: TestNavigationSchemeHandler! = TestNavigationSchemeHandler()
-    var server: HttpServer!
+    var server: SafeHttpServer!
 
     var currentHistoryItemIdentityCancellable: AnyCancellable!
     var history = [UInt64: HistoryItemIdentity]()
 
     var _webView: WKWebView!
+    @discardableResult
     func withWebView<T>(do block: (WKWebView) throws -> T) rethrows -> T {
         let webView = _webView ?? {
             let webView = makeWebView()
@@ -49,28 +55,46 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             try block(webView)
         }
     }
-    var usedWebViews = [WKWebView]()
-    var usedDelegates = [NavigationDelegateProxy]()
 
-    let data = DataSource()
-    let urls = URLs()
+    static let data = DataSource()
+    var data: DataSource { Self.data }
+    static let urls = URLs()
+    var urls: URLs { Self.urls }
 
     override func setUp() {
         NavigationAction.resetIdentifier()
-        server = HttpServer()
+
+        server?.stop()
+        server = SafeHttpServer()
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        self.navigationDelegate.responders.forEach { responder in
+            (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
+                XCTFail("[\(testName)] unexpected event received: \($0)")
+            })
+        }
+
+        unsafeBitCast(WKProcessPool.self, to: WebProcessPoolPrivate.Type.self).setWebProcessCountLimit(5)
     }
 
     override func tearDown() {
         self.testSchemeHandler = nil
         server.stop()
-        self.navigationDelegate.responders.forEach { ($0 as? NavigationResponderMock)?.reset() }
+        server = nil
+        self.navigationDelegate.responders.forEach { responder in
+            (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
+                XCTFail("[\(testName)] event received after test completed: \($0)")
+            })
+        }
         if let _webView {
-            usedWebViews.append(_webView)
+            if let navigationDelegateProxy {
+                let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
+                objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
+            }
             self._webView = nil
         }
-        self.usedDelegates.append(navigationDelegateProxy)
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        navigationDelegateProxy = nil
+        currentHistoryItemIdentityCancellable = nil
+        history.removeAll()
     }
 
 }
@@ -113,6 +137,8 @@ extension DistributedNavigationDelegateTestsBase {
         let local2 = URL(string: "http://localhost:8084/2")!
         let local3 = URL(string: "http://localhost:8084/3")!
         let local4 = URL(string: "http://localhost:8084/4")!
+        let local5 = URL(string: "http://localhost:8084/5")!
+        let local6 = URL(string: "http://localhost:8084/6")!
 
         let localHashed = URL(string: "http://localhost:8084#")!
         let localHashed1 = URL(string: "http://localhost:8084#navlink")!
@@ -418,9 +444,8 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func navAct(_ idx: UInt64, file: StaticString = #file, line: UInt = #line) -> NavAction {
-        return responder(at: 0).navigationActionsCache.dict[idx] ?? {
-            fatalError("No navigation action at index #\(idx): \(file):\(line)")
-        }()
+        return responder(at: 0).navigationActionsCache.dict[idx] ??
+            .init(.init(url: URL(string: "no-navigation-action-at-\(idx)")!), .other, src: .mainFrame(for: WKWebView()), targ: nil)
     }
     func resp(_ idx: Int) -> NavResponse {
         return responder(at: 0).navigationResponses[idx]
@@ -461,18 +486,20 @@ extension DistributedNavigationDelegateTestsBase {
         var rhs = rhs
         var lastEventLine = line
         let rhsMap = rhs.enumerated().reduce(into: [Int: TestsNavigationEvent]()) { $0[$1.offset] = $1.element }
+        var idx2subst = 0
         for idx in 0..<max(lhs.count, rhs.count) {
             let event1 = lhs.indices.contains(idx) ? lhs[idx] : nil
             var idx2: Int! = (event1 != nil ? rhs.firstIndex(where: { event2 in compare("", event1, event2) == nil }) : nil)
             if let idx2 {
                 // events are equal
                 rhs.remove(at: idx2)
+                idx2subst += 1
                 continue
             } else if let originalEvent2 = rhsMap[idx], originalEvent2.type == event1?.type,
                       let idx = rhs.firstIndex(where: { event2 in compare("", originalEvent2, event2) == nil }) {
                 idx2 = idx
             } else {
-                idx2 = idx
+                idx2 = idx - idx2subst
             }
 
             let event2 = rhs.indices.contains(idx2) ? rhs.remove(at: idx2) : nil
@@ -501,8 +528,9 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func printEncoded(responder idx: Int = 0) {
-        print("Responder #\(idx) history encoded:")
-        print(encodedResponderHistory(at: idx))
+        Logger.navigation.error("Responder #\(idx) history encoded:")
+        let encodedHistory = encodedResponderHistory(at: idx)
+        Logger.navigation.error("\(encodedHistory)")
     }
 
 }

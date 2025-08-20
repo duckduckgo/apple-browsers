@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import NetworkProtection
+import VPN
 import Subscription
 import Core
 import Networking
@@ -41,6 +41,8 @@ struct NetworkProtectionRootView: View {
         feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                          apiService: DefaultAPIService(),
                                                          vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
+                                                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
                                                          source: .vpn)
     }
 

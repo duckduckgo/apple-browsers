@@ -1,0 +1,27 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#DE5833" d="M21.375 17a4.375 4.375 0 1 1-8.75 0 4.375 4.375 0 0 1 8.75 0Z"/>
+  <path fill="#fff" d="M19 16.375h.032a.625.625 0 0 1 0 1.25H15a.625.625 0 1 1 0-1.25h4Z"/>
+  <path fill="url(#Microphone-Remove-24_svg__a)" d="M17 12a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/>
+  <path fill="#DDD" d="M10 2.75A3.25 3.25 0 0 1 13.25 6v5c0 .413-.08.807-.22 1.17a6.28 6.28 0 0 0-1.408 1.645A3.25 3.25 0 0 1 6.75 11V6A3.25 3.25 0 0 1 10 2.75Z"/>
+  <path fill="url(#Microphone-Remove-24_svg__b)" d="M3.422 9.995c.344.02.607.316.587.66l-.003.077c-.036.79.085 1.579.356 2.322l.027.072a6 6 0 0 0 1.246 1.991l.053.056A6 6 0 0 0 9.995 17h.076a6 6 0 0 0 .68-.049l-.001.05c0 .409.04.809.115 1.196-.08.01-.16.019-.24.026v2.527H12c.341.454.044 1.25-.524 1.25H4.75a.625.625 0 0 1 0-1.25h4.625v-2.527a7.254 7.254 0 0 1-2.165-.531l-.085-.037a7.248 7.248 0 0 1-2.335-1.613l-.064-.067a7.25 7.25 0 0 1-1.506-2.407l-.032-.086a7.252 7.252 0 0 1-.427-2.899l.003-.031a.626.626 0 0 1 .658-.557Z"/>
+  <path fill="url(#Microphone-Remove-24_svg__c)" fill-rule="evenodd" d="M10.124 2A3.875 3.875 0 0 1 14 5.875v5.25c0 .136-.006.27-.02.402a6.27 6.27 0 0 0-2.856 3.342 3.869 3.869 0 0 1-.998.131h-.25A3.875 3.875 0 0 1 6 11.125v-5.25A3.875 3.875 0 0 1 9.875 2h.25Zm-.25 1.25A2.625 2.625 0 0 0 7.25 5.875v5.25a2.625 2.625 0 0 0 2.625 2.625h.25a2.625 2.625 0 0 0 2.624-2.625v-5.25a2.625 2.625 0 0 0-2.625-2.625h-.25Z" clip-rule="evenodd"/>
+  <path fill="url(#Microphone-Remove-24_svg__d)" d="M16.58 10.007c.184-.01.33.054.437.16.246.247-.07.575-.418.597a6.221 6.221 0 0 0-.603.067c-.011-.386.125-.798.584-.824Z"/>
+  <defs>
+    <linearGradient id="Microphone-Remove-24_svg__a" x1="17" x2="17" y1="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BC4726"/>
+      <stop offset="1" stop-color="#9A3216"/>
+    </linearGradient>
+    <linearGradient id="Microphone-Remove-24_svg__b" x1="10" x2="10" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#444"/>
+    </linearGradient>
+    <linearGradient id="Microphone-Remove-24_svg__c" x1="10" x2="10" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#444"/>
+    </linearGradient>
+    <linearGradient id="Microphone-Remove-24_svg__d" x1="10" x2="10" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#444"/>
+    </linearGradient>
+  </defs>
+</svg>

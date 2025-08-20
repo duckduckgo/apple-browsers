@@ -40,6 +40,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
         tld: tld)
 
     private lazy var secureVault: (any AutofillSecureVault)? = {
+        // Only access the vault if it's already been migrated, as the extension should never be allowed to trigger migrations
         if findKeychainItemsWithV4() {
             return try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
         } else {
@@ -53,18 +54,22 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
                                                                                               credentialIdentityStoreManager: credentialIdentityStoreManager)
 
     private lazy var autofillPixelReporter: AutofillPixelReporter? = {
-        guard let sharedUserDefaults = UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"), sharedUserDefaults.bool(forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey) else {
+        guard let sharedUserDefaults = UserDefaults.autofillGroupDefaults, sharedUserDefaults.bool(forKey: AutofillUsageStore.Keys.autofillDauMigratedKey) else {
             return nil
         }
 
-        return AutofillPixelReporter(
+        let usageStore = AutofillUsageStore(
             standardUserDefaults: .standard,
-            appGroupUserDefaults: UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"),
+            appGroupUserDefaults: sharedUserDefaults
+        )
+
+        return AutofillPixelReporter(
+            usageStore: usageStore,
             autofillEnabled: true,
             eventMapping: EventMapping<AutofillPixelEvent> { event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    Pixel.fire(pixel: .autofillActiveUser)
+                    Pixel.fire(pixel: .autofillActiveUser, withAdditionalParameters: params ?? [:])
                 case .autofillLoginsStacked:
                     Pixel.fire(pixel: .autofillLoginsStacked, withAdditionalParameters: params ?? [:])
                 default:
@@ -240,7 +245,7 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
     }
 
     private func findKeychainItemsWithV4() -> Bool {
-        var itemsWithV4: [String] = []
+        var itemsWithV4: [[String: Any]] = []
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -256,18 +261,19 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
             for item in items {
                 if let service = item[kSecAttrService as String] as? String,
                    service.contains("v4") {
-                    itemsWithV4.append(service)
+                    itemsWithV4.append(item)
                 }
             }
         } else {
             Logger.autofill.debug("No items found or error: \(status)")
         }
 
-        return !itemsWithV4.isEmpty
+        // Ensure all 3 keychain items have been migrated to v4
+        return itemsWithV4.count >= 3
     }
 
     private func reportFillEvent() {
-        guard let autofillPixelReporter = autofillPixelReporter else { return }
+        guard autofillPixelReporter != nil else { return }
 
         NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
     }

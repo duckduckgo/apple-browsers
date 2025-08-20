@@ -147,9 +147,12 @@ jobs:
             macOS/fastlane
             macOS/scripts
 
-      - name: Set up fastlane
+      - name: Setup Ruby and dependencies
         if: ${{ env.success || env.failure }} # Don't execute when cancelled
-        run: bundle install
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Send Mattermost message
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

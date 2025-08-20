@@ -167,16 +167,31 @@ extension WKNavigationAction: WebViewNavigationAction {
     }
 #endif
 
+    private var currentURL: URL? {
+        guard let targetFrame else { return nil }
+        if targetFrame.isMainFrame,
+           let url = targetFrame.webView?.committedURL {
+            // same-document Navigation Action targetFrame would return
+            // the target frame of the original non-same-document Navigation
+            // this got broken in macOS 15.5
+            return url
+        }
+        return targetFrame.safeRequest?.url
+    }
+
     public var isSameDocumentNavigation: Bool {
-        guard let currentURL = targetFrame?.safeRequest?.url,
-              let newURL = self.request.url,
+        guard let currentURL, let newURL = self.request.url,
               !currentURL.isEmpty,
               !newURL.isEmpty
         else { return false }
 
         switch navigationType {
         case .linkActivated, .other:
-            return self.isRedirect != true && newURL.absoluteString.hashedSuffix != nil && currentURL.isSameDocument(newURL)
+            let isSameDocumentNavigation = self.isRedirect != true
+            && newURL.absoluteString.hashedSuffix != nil
+            && currentURL.isSameDocument(newURL)
+
+            return isSameDocumentNavigation
         case .backForward:
             return (newURL.absoluteString.hashedSuffix != nil || currentURL.absoluteString.hashedSuffix != nil) && currentURL.isSameDocument(newURL)
         case .reload, .formSubmitted, .formResubmitted:

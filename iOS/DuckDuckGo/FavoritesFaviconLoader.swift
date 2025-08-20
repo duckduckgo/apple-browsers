@@ -58,13 +58,13 @@ actor FavoritesFaviconLoader: FavoritesFaviconLoading {
         let color = UIColor.forDomain(domain)
         let icon = FaviconsHelper.createFakeFavicon(
             forDomain: domain,
-            size: 64,
+            size: size,
             backgroundColor: color,
             bold: false
         )
 
         if let icon {
-            return Favicon(image: icon, isUsingBorder: false, isFake: true)
+            return Favicon(image: icon, isUsingBorder: true, isFake: true)
         } else {
             return .empty
         }

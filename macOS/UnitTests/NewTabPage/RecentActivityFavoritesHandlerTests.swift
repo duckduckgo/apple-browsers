@@ -24,8 +24,13 @@ final class RecentActivityFavoritesHandlerTests: XCTestCase {
     var handler: LocalBookmarkManager!
 
     @MainActor func makeHandler() {
-        handler = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        handler = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         handler.loadBookmarks()
+    }
+
+    override func tearDown() {
+        bookmarkStoreMock = nil
+        handler = nil
     }
 
     func testWhenURLIsBookmarkedThenBookmarkIsReturned() async throws {

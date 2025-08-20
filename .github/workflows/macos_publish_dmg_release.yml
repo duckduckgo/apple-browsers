@@ -78,7 +78,8 @@ jobs:
 
     # Allow to run even if the tag-public-release job was skipped (e.g. for internal releases)
     # or failed (for public releases or hotfixes), because tagging doesn't block publishing the release
-    if: always()
+    # but still allow the workflow to be cancelled
+    if: ${{ !cancelled() }}
 
     runs-on: macos-15-xlarge
     timeout-minutes: 10
@@ -132,8 +133,11 @@ jobs:
             echo "::notice::Branch ${branch} doesn't exist on the remote repository, staying on main."
           fi
 
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
@@ -258,6 +262,17 @@ jobs:
           version: ${{ steps.verify-tag.outputs.release-version }}
           platform: "macos"
 
+      - name: Create Asana notification task
+        if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
+        continue-on-error: true
+        uses: ./.github/actions/send-release-notification-task
+        with:
+          platform: macos
+          tag: ${{ env.TAG }}
+          asana-project: ${{ vars.APPLE_DEPLOYMENTS_ASANA_PROJECT_ID }}
+          asana-section: ${{ vars.APPLE_DEPLOYMENTS_SECTION_ID }}
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+
       - name: Update Asana for the release
         id: update-asana
         if: ${{ env.RELEASE_TYPE != 'internal' }}
@@ -334,7 +349,8 @@ jobs:
             task_url:"${{ env.asana-task-url }}" \
             template_name:"${{ steps.asana-templates.outputs.task-template }}" \
             github_handle:"${{ github.actor }}" \
-            is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+            is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
+            due_date:"$(date +%Y-%m-%d)"
 
       - name: Create Asana task to handle Asana paperwork
         id: create-asana-paperwork-task
@@ -347,7 +363,8 @@ jobs:
             task_url:"${{ env.asana-task-url }}" \
             template_name:"update-asana-for-public-release" \
             github_handle:"${{ github.actor }}" \
-            is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+            is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
+            due_date:"$(date +%Y-%m-%d)"
 
       - name: Upload patch to the Asana task
         id: upload-patch

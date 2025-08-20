@@ -33,7 +33,8 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     var account: AccountManaging { get }
     var api: RemoteAPIRequestCreating { get }
     var payloadCompressor: SyncPayloadCompressing { get }
-    var keyValueStore: KeyValueStoring { get }
+    var keyValueStore: ThrowingKeyValueStoring { get }
+    var legacyKeyValueStore: KeyValueStoring { get }
     var secureStore: SecureStoring { get }
     var crypter: CryptingInternal { get }
     var scheduler: SchedulingInternal { get }

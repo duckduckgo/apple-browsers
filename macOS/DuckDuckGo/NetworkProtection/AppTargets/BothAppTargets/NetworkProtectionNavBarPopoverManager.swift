@@ -24,7 +24,7 @@ import Common
 import FeatureFlags
 import Foundation
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -47,11 +47,11 @@ protocol NetworkProtectionIPCClient {
 }
 
 extension VPNControllerXPCClient: NetworkProtectionIPCClient {
-    public var ipcStatusObserver: any NetworkProtection.ConnectionStatusObserver { connectionStatusObserver }
-    public var ipcServerInfoObserver: any NetworkProtection.ConnectionServerInfoObserver { serverInfoObserver }
-    public var ipcConnectionErrorObserver: any NetworkProtection.ConnectionErrorObserver { connectionErrorObserver }
-    public var ipcDataVolumeObserver: any NetworkProtection.DataVolumeObserver { dataVolumeObserver }
-    public var ipcVPNEnabledObserver: any NetworkProtection.VPNEnabledObserver { vpnEnabledObserver }
+    public var ipcStatusObserver: any VPN.ConnectionStatusObserver { connectionStatusObserver }
+    public var ipcServerInfoObserver: any VPN.ConnectionServerInfoObserver { serverInfoObserver }
+    public var ipcConnectionErrorObserver: any VPN.ConnectionErrorObserver { connectionErrorObserver }
+    public var ipcDataVolumeObserver: any VPN.DataVolumeObserver { dataVolumeObserver }
+    public var ipcVPNEnabledObserver: any VPN.VPNEnabledObserver { vpnEnabledObserver }
 }
 
 @MainActor
@@ -78,7 +78,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         self.vpnUIPresenting = vpnUIPresenting
         self.proxySettings = proxySettings
 
-        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: .shared)
+        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: Application.appDelegate.windowControllersManager)
 
         activeSitePublisher = ActiveSiteInfoPublisher(
             activeDomainPublisher: activeDomainPublisher.eraseToAnyPublisher(),

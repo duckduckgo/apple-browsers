@@ -109,15 +109,3 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
         XCTAssertFalse(subscriptionFeatureFlagMapping.isFeatureOn(.usePrivacyProROWRegionOverride))
     }
 }
-
-final class MockInternalUserDecider: InternalUserDecider {
-    var isInternalUser: Bool = false
-
-    var isInternalUserPublisher: AnyPublisher<Bool, Never> {
-        Just(false).eraseToAnyPublisher()
-    }
-
-    func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-        return false
-    }
-}

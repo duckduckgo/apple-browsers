@@ -105,6 +105,7 @@ public enum RemoteMessageModelType: Codable, Equatable {
 public enum NavigationTarget: String, Codable, Equatable {
     case duckAISettings = "duckai.settings"
     case settings
+    case feedback
 }
 
 public enum RemoteAction: Codable, Equatable {
@@ -125,4 +126,5 @@ public enum RemotePlaceholder: String, Codable {
     case newForMacAndWindows = "RemoteMessageNewForMacAndWindows"
     case privacyShield = "RemoteMessagePrivacyShield"
     case aiChat = "RemoteDuckAi"
+    case visualDesignUpdate = "RemoteVisualDesignUpdate"
 }

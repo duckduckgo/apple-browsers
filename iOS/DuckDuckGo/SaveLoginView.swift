@@ -21,6 +21,7 @@ import SwiftUI
 import DuckUI
 import BrowserServicesKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SaveLoginView: View {
     enum LayoutType {
@@ -123,9 +124,9 @@ struct SaveLoginView: View {
         return useScrollView
     }
 
-    @ViewBuilder private func featuresListItem(imageResource: ImageResource, title: String, subtitle: String) -> some View {
+    @ViewBuilder private func featuresListItem(image: Image, title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: Const.Size.featuresListItemHorizontalSpacing) {
-            Image(imageResource).frame(width: Const.Size.featuresListItemImageWidthHeight, height: Const.Size.featuresListItemImageWidthHeight)
+            image.frame(width: Const.Size.featuresListItemImageWidthHeight, height: Const.Size.featuresListItemImageWidthHeight)
             VStack(alignment: .leading, spacing: Const.Size.featuresListItemVerticalSpacing) {
                 Text(title)
                     .daxSubheadSemibold()
@@ -160,17 +161,17 @@ struct SaveLoginView: View {
                 .frame(height: 1)
             VStack(alignment: .leading, spacing: Const.Size.featuresListVerticalSpacing) {
                 featuresListItem(
-                    imageResource: .autofillColor24,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.autofill),
                     title: UserText.autofillOnboardingKeyFeaturesSignInsTitle,
                     subtitle: UserText.autofillOnboardingKeyFeaturesSignInsDescription
                 )
                 featuresListItem(
-                    imageResource: .lockColor24,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.lock),
                     title: UserText.autofillOnboardingKeyFeaturesSecureStorageTitle,
                     subtitle: viewModel.secureStorageDescription
                 )
                 featuresListItem(
-                    imageResource: .syncColor24,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.sync),
                     title: UserText.autofillOnboardingKeyFeaturesSyncTitle,
                     subtitle: UserText.autofillOnboardingKeyFeaturesSyncDescription
                 )

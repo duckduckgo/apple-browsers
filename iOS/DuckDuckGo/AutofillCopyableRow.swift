@@ -35,11 +35,11 @@ struct AutofillCopyableRow: View {
     var secondaryActionTitle: String?
     var secondaryAction: (() -> Void)?
     
-    var buttonImageName: String?
+    var buttonImage: UIImage?
     var buttonAccessibilityLabel: String?
     var buttonAction: (() -> Void)?
     
-    var secondaryButtonImageName: String?
+    var secondaryButtonImage: UIImage?
     var secondaryButtonAccessibilityLabel: String?
     var secondaryButtonAction: (() -> Void)?
     
@@ -68,10 +68,10 @@ struct AutofillCopyableRow: View {
                 }
                 .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 8))
                 
-                if secondaryButtonImageName != nil {
+                if secondaryButtonImage != nil {
                     Spacer(minLength: textFieldImageSize * 2 + 8)
                 } else {
-                    Spacer(minLength: buttonImageName != nil ? textFieldImageSize : 8)
+                    Spacer(minLength: buttonImage != nil ? textFieldImageSize : 8)
                 }
             }
             .copyable(isSelected: selectedCell == id,
@@ -84,7 +84,7 @@ struct AutofillCopyableRow: View {
                 self.selectedCell = nil
             }
             
-            if let buttonImageName = buttonImageName, let buttonAccessibilityLabel = buttonAccessibilityLabel {
+            if let buttonImage = buttonImage, let buttonAccessibilityLabel = buttonAccessibilityLabel {
                 let differenceBetweenImageSizeAndTapAreaPerEdge = (36 - textFieldImageSize) / 2.0
                 HStack(alignment: .center, spacing: 0) {
                     Spacer()
@@ -97,7 +97,7 @@ struct AutofillCopyableRow: View {
                             Spacer()
                             HStack {
                                 Spacer()
-                                Image(buttonImageName)
+                                Image(uiImage: buttonImage)
                                     .resizable()
                                     .frame(width: textFieldImageSize, height: textFieldImageSize)
                                     .foregroundColor(Color(designSystemColor: .textPrimary).opacity(0.84))
@@ -112,7 +112,7 @@ struct AutofillCopyableRow: View {
                     .contentShape(Rectangle())
                     .frame(width: 36, height: 36)
                     
-                    if let secondaryButtonImageName = secondaryButtonImageName,
+                    if let secondaryButtonImage = secondaryButtonImage,
                        let secondaryButtonAccessibilityLabel = secondaryButtonAccessibilityLabel {
                         Button {
                             secondaryButtonAction?()
@@ -122,7 +122,7 @@ struct AutofillCopyableRow: View {
                                 Spacer()
                                 HStack {
                                     Spacer()
-                                    Image(secondaryButtonImageName)
+                                    Image(uiImage: secondaryButtonImage)
                                         .resizable()
                                         .frame(width: textFieldImageSize, height: textFieldImageSize)
                                         .foregroundColor(Color(designSystemColor: .textPrimary).opacity(0.84))

@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import os.log
+import Networking
 
 public enum APIServiceError: Swift.Error, LocalizedError {
     case decodingError
@@ -26,6 +27,7 @@ public enum APIServiceError: Swift.Error, LocalizedError {
     case serverError(statusCode: Int, error: String?)
     case unknownServerError
     case connectionError
+    case invalidToken
 
     public var errorDescription: String? {
         switch self {
@@ -39,6 +41,8 @@ public enum APIServiceError: Swift.Error, LocalizedError {
             return "Unknown server error"
         case .connectionError:
             return "Connection error"
+        case .invalidToken:
+            return "Invalid Token"
         }
     }
 
@@ -59,26 +63,25 @@ public protocol SubscriptionAPIService {
 public enum APICachePolicy {
     case reloadIgnoringLocalCacheData
     case returnCacheDataElseLoad
-    case returnCacheDataDontLoad
 
     public var subscriptionCachePolicy: SubscriptionCachePolicy {
         switch self {
         case .reloadIgnoringLocalCacheData:
-            return .reloadIgnoringLocalCacheData
+            return .remoteFirst
         case .returnCacheDataElseLoad:
-            return .returnCacheDataElseLoad
-        case .returnCacheDataDontLoad:
-            return .returnCacheDataDontLoad
+            return .cacheFirst
         }
     }
 }
 
 public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
     private let baseURL: URL
+    private let userAgent: String
     private let session: URLSession
 
-    public init(baseURL: URL, session: URLSession) {
+    public init(baseURL: URL, userAgent: String, session: URLSession) {
         self.baseURL = baseURL
+        self.userAgent = userAgent
         self.session = session
     }
 
@@ -99,6 +102,8 @@ public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
                     Logger.subscription.error("Service error: APIServiceError.decodingError")
                     return .failure(.decodingError)
                 }
+            } else if httpResponse.statusCode == 401 {
+                return .failure(.invalidToken)
             } else {
                 var errorString: String?
 
@@ -120,9 +125,9 @@ public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
         let url = baseURL.appendingPathComponent(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = method
-        if let headers = headers {
-            request.allHTTPHeaderFields = headers
-        }
+        request.allHTTPHeaderFields = headers ?? [:]
+        request.allHTTPHeaderFields?[HTTPHeaderKey.userAgent] = userAgent
+
         if let body = body {
             request.httpBody = body
         }

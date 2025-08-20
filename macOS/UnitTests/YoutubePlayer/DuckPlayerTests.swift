@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import NewTabPage
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -36,16 +37,21 @@ final class DuckPlayerTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        duckPlayer = nil
+        super.tearDown()
+    }
+
     func testThatImageForFaviconViewReturnsHardcodedFaviconForDuckPlayer() {
         let duckPlayerFaviconView = FaviconView(url: duckPlayerURL())
         let otherFaviconView = FaviconView(url: URL(string: "http://example.com")!)
 
         duckPlayer.mode = .enabled
-        XCTAssertEqual(duckPlayer.image(for: duckPlayerFaviconView)?.tiffRepresentation, NSImage.duckPlayer.tiffRepresentation)
+        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage.duckPlayer)
         XCTAssertNil(duckPlayer.image(for: otherFaviconView))
 
         duckPlayer.mode = .alwaysAsk
-        XCTAssertEqual(duckPlayer.image(for: duckPlayerFaviconView)?.tiffRepresentation, NSImage.duckPlayer.tiffRepresentation)
+        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage.duckPlayer)
         XCTAssertNil(duckPlayer.image(for: otherFaviconView))
 
         duckPlayer.mode = .disabled

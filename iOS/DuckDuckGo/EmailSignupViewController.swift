@@ -388,6 +388,20 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
                             completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
         // no-op
     }
+    
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                            withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op
+    }
+    
+    func secureVaultManager(_: SecureVaultManager,
+                            didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                            withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op
+    }
 
     func secureVaultManager(_: SecureVaultManager,
                             promptUserWithGeneratedPassword password: String,
@@ -395,6 +409,12 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
         // no-op
     }
     
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToImportCredentialsForDomain domain: String,
+                            completionHandler: @escaping (Bool) -> Void) {
+        // no-op
+    }
+
     // Used on macOS to request authentication for individual autofill items
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager,
                             isAuthenticatedFor type: BrowserServicesKit.AutofillType,
@@ -435,7 +455,7 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
         
         completionHandler(runtimeConfig)
     }
-
+  
     func secureVaultManager(_: SecureVaultManager, didReceivePixel pixel: AutofillUserScript.JSPixel) {
         guard !pixel.isEmailPixel else {
             // The iOS app uses a native email autofill UI, and sends its pixels separately. Ignore pixels sent from the JS layer.
@@ -455,8 +475,7 @@ extension EmailSignupViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.backgroundColor
 
-        navigationController?.navigationBar.barTintColor = theme.barBackgroundColor
-        navigationController?.navigationBar.tintColor = theme.navigationBarTintColor
+        decorateNavigationBar()
     }
 
 }

@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Subscription
+import AppKit
 import BrowserServicesKit
 import Common
+import Foundation
+import Subscription
 
 protocol SubscriptionRedirectManager: AnyObject {
     func redirectURL(for url: URL) -> URL?
@@ -34,7 +35,7 @@ final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          baseURL: URL,
-         tld: TLD = ContentBlocking.shared.tld,
+         tld: TLD = Application.appDelegate.tld,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.subscriptionManager = subscriptionManager
         self.baseURL = baseURL

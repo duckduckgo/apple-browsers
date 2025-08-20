@@ -53,6 +53,10 @@ final class CapturingNewTabPageFavoritesActionsHandler: FavoritesActionsHandling
     var deleteBookmarkCalls: [MockNewTabPageFavorite] = []
     var moveCalls: [MoveCall] = []
 
+    func open(_ url: URL, sender: NewTabPage.LinkOpenSender, target: NewTabPage.LinkOpenTarget, setBurner: Bool?, in window: NSWindow?) {
+        openCalls.append(.init(url, sender))
+    }
+
     func open(_ url: URL, sender: NewTabPage.LinkOpenSender, target: NewTabPage.LinkOpenTarget, in window: NSWindow?) {
         openCalls.append(.init(url, sender))
     }

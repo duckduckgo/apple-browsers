@@ -22,7 +22,18 @@ import Core
 import DesignResourcesKit
 import BrowserServicesKit
 
-class ThemeManager {
+protocol ThemeManaging {
+    var currentTheme: Theme { get }
+    var currentInterfaceStyle: UIUserInterfaceStyle { get }
+
+    func setThemeStyle(_ style: ThemeStyle)
+
+    func updateUserInterfaceStyle(window: UIWindow?)
+    func updateUserInterfaceStyle()
+}
+
+class ThemeManager: ThemeManaging {
+
     enum ImageSet {
         case light
         case dark
@@ -40,23 +51,11 @@ class ThemeManager {
     public static let shared = ThemeManager()
 
     private var appSettings: AppSettings
-    private let featureFlagger: FeatureFlagger
 
     private(set) var currentTheme: Theme = DefaultTheme()
 
     init(settings: AppSettings = AppUserDefaults(), featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         appSettings = settings
-        self.featureFlagger = featureFlagger
-
-        updateColorScheme()
-    }
-
-    public func updateColorScheme() {
-        if !ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled {
-            DesignSystemPalette.current = .default
-        } else {
-            DesignSystemPalette.current = .experimental
-        }
     }
 
     public func setThemeStyle(_ style: ThemeStyle) {
@@ -81,5 +80,11 @@ class ThemeManager {
 
     var currentInterfaceStyle: UIUserInterfaceStyle {
         UIApplication.shared.firstKeyWindow?.traitCollection.userInterfaceStyle ?? .light
+    }
+}
+
+extension ThemeManaging {
+    func updateUserInterfaceStyle() {
+        updateUserInterfaceStyle(window: UIApplication.shared.firstKeyWindow)
     }
 }

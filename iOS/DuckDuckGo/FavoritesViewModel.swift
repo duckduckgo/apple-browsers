@@ -50,6 +50,7 @@ class FavoritesViewModel: ObservableObject {
 
     @Published private(set) var allFavorites: [FavoriteItem] = []
     @Published private(set) var isCollapsed: Bool = true
+    @Published var canEditFavorites = true
 
     // In memory only so that when settings is dismissed we can show the prompt.
     //  Missing icons will trigger the prompt from elsewhere too so we don't need to persist this.
@@ -65,14 +66,12 @@ class FavoritesViewModel: ObservableObject {
     private let dailyPixelFiring: DailyPixelFiring.Type
 
     let isNewTabPageCustomizationEnabled: Bool
-    let isExperimentalAppearanceEnabled: Bool
-
+   
     var isEmpty: Bool {
         allFavorites.filter(\.isFavorite).isEmpty
     }
 
     init(isNewTabPageCustomizationEnabled: Bool = false,
-         isExperimentalAppearanceEnabled: Bool = false,
          favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
          faviconsCache: FavoritesFaviconCaching = Favicons.shared,
@@ -82,7 +81,6 @@ class FavoritesViewModel: ObservableObject {
         self.pixelFiring = pixelFiring
         self.dailyPixelFiring = dailyPixelFiring
         self.isNewTabPageCustomizationEnabled = isNewTabPageCustomizationEnabled
-        self.isExperimentalAppearanceEnabled = isExperimentalAppearanceEnabled
         self.isCollapsed = isNewTabPageCustomizationEnabled
         self.faviconsCache = faviconsCache
 
@@ -139,7 +137,7 @@ class FavoritesViewModel: ObservableObject {
         onFaviconMissing()
     }
 
-    var onFavoriteURLSelected: ((URL) -> Void)?
+    var onFavoriteURLSelected: ((BookmarkEntity) -> Void)?
     func favoriteSelected(_ favorite: Favorite) {
         guard let url = favorite.urlObject else { return }
 
@@ -149,7 +147,11 @@ class FavoritesViewModel: ObservableObject {
             faviconsCache.populateFavicon(for: host, intoCache: .fireproof, fromCache: .tabs)
         }
 
-        onFavoriteURLSelected?(url)
+        guard let entity = favoriteDataSource.bookmarkEntity(for: favorite) else {
+            return
+        }
+
+        onFavoriteURLSelected?(entity)
     }
 
     var onFavoriteDeleted: ((BookmarkEntity) -> Void)?

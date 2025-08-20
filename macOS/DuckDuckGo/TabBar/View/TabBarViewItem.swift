@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Cocoa
+import AppKit
 import Combine
+import WebKit
 
 struct OtherTabBarViewItemsState {
 
@@ -53,6 +54,7 @@ extension TabViewModel: TabBarViewModel {
 protocol TabBarViewItemDelegate: AnyObject {
 
     @MainActor func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool)
+    @MainActor func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem)
 
     @MainActor func tabBarViewItemCanBeDuplicated(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool
@@ -98,7 +100,7 @@ final class TabBarItemCellView: NSView {
         init(width: CGFloat) {
             switch width {
             case 0..<61: self = .withoutTitle
-            case 61..<120: self = .withoutCloseButton
+            case 61..<88: self = .withoutCloseButton
             default: self = .full
             }
         }
@@ -119,7 +121,7 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
-    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
@@ -130,7 +132,6 @@ final class TabBarItemCellView: NSView {
     fileprivate let crashIndicatorButton = {
         let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
         crashIndicatorButton.bezelStyle = .shadowlessSquare
-        crashIndicatorButton.cornerRadius = 2
         crashIndicatorButton.normalTintColor = .audioTabIcon
         crashIndicatorButton.mouseDownColor = .buttonMouseDown
         crashIndicatorButton.mouseOverColor = .buttonMouseOver
@@ -144,7 +145,6 @@ final class TabBarItemCellView: NSView {
     fileprivate let audioButton = {
         let audioButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.audioButtonAction))
         audioButton.bezelStyle = .shadowlessSquare
-        audioButton.cornerRadius = 2
         audioButton.normalTintColor = .audioTabIcon
         audioButton.mouseDownColor = .buttonMouseDown
         audioButton.mouseOverColor = .buttonMouseOver
@@ -168,7 +168,6 @@ final class TabBarItemCellView: NSView {
     fileprivate lazy var permissionButton = {
         let permissionButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.permissionButtonAction))
         permissionButton.bezelStyle = .shadowlessSquare
-        permissionButton.cornerRadius = 2
         permissionButton.normalTintColor = .button
         permissionButton.mouseDownColor = .buttonMouseDown
         permissionButton.mouseOverColor = .buttonMouseOver
@@ -180,12 +179,12 @@ final class TabBarItemCellView: NSView {
     fileprivate lazy var closeButton = {
         let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
         closeButton.bezelStyle = .shadowlessSquare
-        closeButton.cornerRadius = 2
         closeButton.normalTintColor = .button
         closeButton.mouseDownColor = .buttonMouseDown
         closeButton.mouseOverColor = .buttonMouseOver
         closeButton.imagePosition = .imageOnly
         closeButton.imageScaling = .scaleNone
+        closeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
         return closeButton
     }()
 
@@ -203,7 +202,6 @@ final class TabBarItemCellView: NSView {
 
     fileprivate let mouseOverView = {
         let mouseOverView = MouseOverView()
-        mouseOverView.mouseOverColor = .tabMouseOver
         return mouseOverView
     }()
 
@@ -273,11 +271,12 @@ final class TabBarItemCellView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = !visualStyle.tabStyleProvider.shouldShowSShapedTab
 
-        mouseOverView.cornerRadius = 8
+        mouseOverView.cornerRadius = visualStyle.tabStyleProvider.standardTabCornerRadius
         mouseOverView.maskedCorners = [
             .layerMinXMaxYCorner,
             .layerMaxXMaxYCorner
         ]
+        mouseOverView.mouseOverColor = visualStyle.tabStyleProvider.hoverTabColor
 
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {
             addSubview(leftRampView)
@@ -286,13 +285,36 @@ final class TabBarItemCellView: NSView {
             mouseOverView.layer?.addSublayer(borderLayer)
         }
 
-        titleTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
+        titleTextField.textColor = .labelColor
 
         addSubview(mouseOverView)
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             roundedBackgroundColorView.cornerRadius = 6
             addSubview(roundedBackgroundColorView)
         }
+
+        faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+        titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
+
+        closeButton.toolTip = UserText.closeTab
+        closeButton.setAccessibilityLabel(UserText.closeTab)
+        closeButton.setAccessibilityIdentifier("TabBarViewItem.closeButton")
+        closeButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
+        permissionButton.setAccessibilityIdentifier("TabBarViewItem.permissionButton")
+        // Accessibility label and toolTip are updated in `updateUsedPermissions`
+        permissionButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
+        audioButton.setAccessibilityIdentifier("TabBarViewItem.muteButton")
+        // Accessibility Title and toolTip are updated in `updateAudioPlayState`
+        audioButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
+        crashIndicatorButton.setAccessibilityIdentifier("TabBarViewItem.crashButton")
+        crashIndicatorButton.toolTip = UserText.tabCrashPopoverTitle
+        crashIndicatorButton.setAccessibilityTitle(UserText.tabCrashPopoverTitle)
+        crashIndicatorButton.setAccessibilityLabel(UserText.tabCrashPopoverMessage)
+        crashIndicatorButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+
         addSubview(faviconImageView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
@@ -349,7 +371,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private func layoutForNormalMode() {
-        var minX: CGFloat = 9
+        var minX: CGFloat = 12
         if faviconImageView.isShown {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconImageView.frame.maxX + 4
@@ -371,6 +393,8 @@ final class TabBarItemCellView: NSView {
         if permissionButton.isShown {
             permissionButton.frame = NSRect(x: maxX - 20, y: bounds.midY - 12, width: 24, height: 24)
         }
+
+        minX += visualStyle.tabStyleProvider.tabSpacing
 
         titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
         updateTitleTextFieldMask()
@@ -435,6 +459,102 @@ final class TabBarItemCellView: NSView {
     }
 }
 
+extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
+
+    @objc func isAccessibilityElement() -> Bool {
+        true
+    }
+
+    @objc func isAccessibilityEnabled() -> Bool {
+        true
+    }
+
+    @objc func accessibilityIdentifier() -> String {
+        return "TabBarViewItem"
+    }
+
+    @objc func accessibilityRole() -> NSAccessibility.Role {
+        .radioButton
+    }
+
+    @objc func accessibilityRoleDescription() -> String? {
+        "Tab"
+    }
+
+    @objc func accessibilityParent() -> Any? {
+        collectionView
+    }
+
+    @objc func accessibilityTitle() -> String? {
+        guard let tabViewModel else { return nil }
+        return tabViewModel.title
+    }
+
+    @objc func accessibilityURL() -> NSURL? {
+        guard let tabViewModel else { return nil }
+        let url = tabViewModel.tabContent.userEditableUrl
+        return url as NSURL?
+    }
+
+    @objc func accessibilityValue() -> NSNumber? {
+        NSNumber(value: isSelected)
+    }
+
+    @objc func isAccessibilitySelected() -> NSNumber? {
+        NSNumber(value: isSelected)
+    }
+
+    @objc func setAccessibilityValue(_ value: Any?) {
+        let newValue = (value as? String) == "1"
+        let isSelected = self.isSelected
+
+        switch (isSelected, newValue) {
+        case (false, true):
+            selectTab()
+        case (true, false):
+            // we can‘t unselect the Tab
+            break
+        default: break
+        }
+    }
+
+    @objc func setAccessibilitySelected(_ newValue: Bool) {
+        let isSelected = self.isSelected
+
+        switch (isSelected, newValue) {
+        case (false, true):
+            selectTab()
+        case (true, false):
+            // we can‘t unselect the Tab
+            break
+        default: break
+        }
+    }
+
+    @objc func accessibilityPerformPress() -> Bool {
+        if !isSelected {
+            selectTab()
+            return true
+        }
+        return false
+    }
+
+    @objc func accessibilityPerformShowMenu() -> Bool {
+        self.view.accessibilityPerformShowMenu()
+    }
+
+    @objc func accessibilityCustomActions() -> [NSAccessibilityCustomAction] {
+        return [
+            .init(name: "Close Tab", target: self, selector: #selector(closeButtonAction))
+        ]
+    }
+
+    private func selectTab() {
+        delegate?.tabBarViewItemSelectTab(self)
+    }
+
+}
+
 @MainActor
 final class TabBarViewItem: NSCollectionViewItem {
 
@@ -474,10 +594,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
     }
 
+    weak var fireproofDomains: FireproofDomains?
+
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
 
-    private let tabVisualProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     weak var delegate: TabBarViewItemDelegate?
     var tabViewModel: TabBarViewModel? {
@@ -488,8 +610,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
         return tabViewModel
     }
-
-    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
 
     private(set) var isMouseOver = false
 
@@ -547,6 +667,16 @@ final class TabBarViewItem: NSCollectionViewItem {
             /// given that is drawn out of bounds
             view.wantsLayer = true
             view.layer?.zPosition = isSelected ? 1 : 0
+
+            if isSelected && visualStyle.tabStyleProvider.applyTabShadow {
+                view.layer?.shadowColor = NSColor.shadowPrimary.cgColor
+                view.layer?.shadowOffset = CGSize(width: 0, height: -2)
+                view.layer?.shadowRadius = 6
+                view.layer?.masksToBounds = false
+                view.layer?.shadowOpacity = 1
+            } else {
+                view.layer?.shadowOpacity = 0
+            }
 
             updateSubviews()
             updateUsedPermissions()
@@ -737,11 +867,12 @@ final class TabBarViewItem: NSCollectionViewItem {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
                 cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
+                cell.roundedBackgroundColorView.isHidden = true
             } else {
-                if tabVisualProvider.isRoundedBackgroundPresentOnHover {
+                if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
                     cell.mouseOverView.mouseOverColor = nil
                     cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
-                    cell.roundedBackgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
+                    cell.roundedBackgroundColorView.backgroundColor = visualStyle.tabStyleProvider.hoverTabColor
                     cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
                 } else {
                     cell.mouseOverView.mouseOverColor = .tabMouseOver
@@ -765,7 +896,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
 
         // Adjust colors for burner window
-        if isBurner && cell.faviconImageView.image === TabViewModel.Favicon.burnerHome {
+        if isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle {
             cell.faviconImageView.contentTintColor = .textColor
         } else {
             cell.faviconImageView.contentTintColor = nil
@@ -779,22 +910,51 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
     private func updateUsedPermissions() {
         cell.needsLayout = true
+        let permission: PermissionType
+        let isActive: Bool
         if usedPermissions.camera.isActive {
             cell.permissionButton.image = .cameraTabActive
+            permission = .camera
+            isActive = true
         } else if usedPermissions.microphone.isActive {
             cell.permissionButton.image = .microphoneActive
+            permission = .microphone
+            isActive = true
         } else if usedPermissions.camera.isPaused {
             cell.permissionButton.image = .cameraTabBlocked
+            permission = .camera
+            isActive = false
         } else if usedPermissions.microphone.isPaused {
             cell.permissionButton.image = .microphoneIcon
+            permission = .microphone
+            isActive = false
         } else {
             cell.permissionButton.isHidden = true
             return
         }
+
+        let toolTip = String(format: isActive ? UserText.permissionMuteFormat : UserText.permissionUnmuteFormat, permission.localizedDescription.lowercased(), currentURL?.host ?? "")
+        cell.permissionButton.toolTip = toolTip
+        cell.permissionButton.setAccessibilityTitle(toolTip)
+
         cell.permissionButton.isHidden = false
     }
 
     private func updateSeparatorView() {
+        let shouldHideForHover = visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
+        let rightItemIsHovered: Bool = {
+            guard visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover,
+                  let indexPath = collectionView?.indexPath(for: self),
+                  let rightItem = collectionView?.item(at: IndexPath(item: indexPath.item + 1, section: indexPath.section)) as? TabBarViewItem
+            else { return false }
+            return rightItem.isMouseOver
+        }()
+
+        if shouldHideForHover || rightItemIsHovered {
+            cell.rightSeparatorView.isHidden = true
+            return
+        }
+
         let newIsHidden = isSelected || isDragged || isLeftToSelected
         if cell.rightSeparatorView.isHidden != newIsHidden {
             cell.rightSeparatorView.isHidden = newIsHidden
@@ -824,10 +984,14 @@ final class TabBarViewItem: NSCollectionViewItem {
         case .muted(isPlayingAudio: true):
             cell.audioButton.image = .audioMute
             cell.audioButton.isHidden = false
+            cell.audioButton.toolTip = UserText.unmuteTab
+            cell.audioButton.setAccessibilityTitle(UserText.unmuteTab)
 
         case .unmuted(isPlayingAudio: true):
             cell.audioButton.image = .audio
             cell.audioButton.isHidden = false
+            cell.audioButton.toolTip = UserText.muteTab
+            cell.audioButton.setAccessibilityTitle(UserText.muteTab)
         }
     }
 
@@ -928,11 +1092,15 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addFireproofMenuItem(to menu: NSMenu) {
+        guard let fireproofDomains else {
+            assertionFailure("TabBarViewItem.fireproofDomains is not set")
+            return
+        }
         var menuItem = NSMenuItem(title: UserText.fireproofSite, action: #selector(fireproofSiteAction(_:)), keyEquivalent: "")
         menuItem.isEnabled = false
 
         if let url = currentURL, url.canFireproof {
-            if FireproofDomains.shared.isFireproof(fireproofDomain: url.host ?? "") {
+            if fireproofDomains.isFireproof(fireproofDomain: url.host ?? "") {
                 menuItem = NSMenuItem(title: UserText.removeFireproofing, action: #selector(removeFireproofingAction(_:)), keyEquivalent: "")
             }
             menuItem.isEnabled = true
@@ -1016,8 +1184,14 @@ extension TabBarViewItem: MouseClickViewDelegate {
             return event
         } : nil
 
-        delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
-        self.isMouseOver = isMouseOver
+        // Notify the tab to the left to update its separator when this tab is hovered/unhovered
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            if let indexPath = collectionView?.indexPath(for: self),
+               indexPath.item > 0,
+               let leftItem = collectionView?.item(at: IndexPath(item: indexPath.item - 1, section: indexPath.section)) as? TabBarViewItem {
+                leftItem.updateSeparatorView()
+            }
+        }
     }
 
     func mouseClickView(_ mouseClickView: MouseClickView, otherMouseDownEvent: NSEvent) {
@@ -1071,7 +1245,9 @@ extension TabBarViewItem: MouseClickViewDelegate {
             .init(width: TabBarViewItem.Width.maximum, title: "Bookmarks", favicon: .bookmarksFolder, selected: false),
         ],
         [
-            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: .aDark, selected: true),
+            .init(width: TabBarViewItem.Width.maximum, title: "Something in the tab title to get shrunk", favicon: .aDark, usedPermissions: [
+                .camera: .paused,
+            ], audioState: .muted(isPlayingAudio: true)),
             .init(width: TabBarViewItem.Width.maximum, title: "Somewhere all we go now to get totally drunk", favicon: nil),
             .init(width: TabBarViewItem.Width.maximum, title: "Long Previewable Title with Permissions", favicon: .h, usedPermissions: [
                 .camera: .paused,
@@ -1196,9 +1372,9 @@ extension TabBarViewItem {
         var collectionViews = [NSCollectionView]()
 
         init(sections: [[TabBarViewModelMock]],
-             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
             self.sections = sections
-            self.tabVisualProvider = visualStyleManager.style.tabStyleProvider
+            self.tabVisualProvider = visualStyle.tabStyleProvider
             super.init(nibName: nil, bundle: nil)
         }
 
@@ -1275,6 +1451,7 @@ extension TabBarViewItem {
         }
 
         func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool) {}
+        func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {}
         func tabBarViewItemCanBeDuplicated(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool { false }

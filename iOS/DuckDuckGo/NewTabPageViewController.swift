@@ -25,9 +25,15 @@ import Core
 
 final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
+    var isShowingLogo: Bool {
+        favoritesModel.isEmpty
+    }
+
+    private lazy var borderView = StyledTopBottomBorderView()
+
     private let variantManager: VariantManager
     private let newTabDialogFactory: any NewTabDaxDialogProvider
-    private let newTabDialogTypeProvider: NewTabDialogSpecProvider
+    private let daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
@@ -39,38 +45,36 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private let pixelFiring: PixelFiring.Type
     private let messageNavigationDelegate: MessageNavigationDelegate
 
-    private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
+    private let appSettings: AppSettings
+    private let appWidthObserver: AppWidthObserver
 
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
-         isExperimentalAppearanceEnabled: Bool,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          privacyProDataReporting: PrivacyProDataReporting? = nil,
          variantManager: VariantManager,
          newTabDialogFactory: any NewTabDaxDialogProvider,
-         newTabDialogTypeProvider: NewTabDialogSpecProvider,
-         privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
+         daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         messageNavigationDelegate: MessageNavigationDelegate) {
+         messageNavigationDelegate: MessageNavigationDelegate,
+         appSettings: AppSettings,
+         appWidthObserver: AppWidthObserver = .shared) {
 
         self.associatedTab = tab
         self.variantManager = variantManager
         self.newTabDialogFactory = newTabDialogFactory
-        self.newTabDialogTypeProvider = newTabDialogTypeProvider
-        self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
-        self.pixelFiring = pixelFiring
+        self.daxDialogsManager = daxDialogsManager
         self.messageNavigationDelegate = messageNavigationDelegate
+        self.appSettings = appSettings
+        self.appWidthObserver = appWidthObserver
 
-        newTabPageViewModel = NewTabPageViewModel(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
+        newTabPageViewModel = NewTabPageViewModel()
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
         sectionsSettingsModel = NewTabPageSectionsSettingsModel()
         favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
-                                            isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         shortcutsModel = ShortcutsModel()
@@ -79,14 +83,14 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
                                                 navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
         if isNewTabPageCustomizationEnabled {
-            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(CustomizableNewTabPageView(viewModel: self.newTabPageViewModel,
                                                         messagesModel: self.messagesModel,
                                                         favoritesViewModel: self.favoritesModel,
                                                         shortcutsModel: self.shortcutsModel,
                                                         shortcutsSettingsModel: self.shortcutsSettingsModel,
                                                         sectionsSettingsModel: self.sectionsSettingsModel)))
         } else {
-            super.init(rootView: AnyView(SimpleNewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
                                                               messagesModel: self.messagesModel,
                                                               favoritesViewModel: self.favoritesModel)))
         }
@@ -98,7 +102,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        registerForSettingsDidDisappear()
+        registerForNotifications()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -116,14 +120,45 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
         presentNextDaxDialog()
 
-        pixelFiring.fire(.homeScreenShown, withAdditionalParameters: [:])
-        sendDailyDisplayPixel()
+        if !favoritesModel.isEmpty {
+            borderView.insertSelf(into: view)
+            updateBorderView()
+        }
     }
 
-    func registerForSettingsDidDisappear() {
-        NotificationCenter.default.addObserver(self, selector: #selector(onSettingsDidDisappear), name: .settingsDidDisappear, object: nil)
+    func setFavoritesEditable(_ editable: Bool) {
+        newTabPageViewModel.canEditFavorites = editable
+        favoritesModel.canEditFavorites = editable
     }
 
+    func hideBorderView() {
+        borderView.isHidden = true
+    }
+
+    func widthChanged() {
+        updateBorderView()
+    }
+
+    func updateBorderView() {
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        borderView.isBottomVisible = !appWidthObserver.isLargeWidth
+    }
+
+    func registerForNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onSettingsDidDisappear),
+                                               name: .settingsDidDisappear,
+                                               object: nil)
+
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAddressBarPositionChanged),
+                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+    }
+
+    @objc func onAddressBarPositionChanged() {
+        updateBorderView()
+    }
 
     @objc func onSettingsDidDisappear() {
         if self.favoritesModel.hasMissingIcons {
@@ -140,10 +175,10 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
             delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(self)
         }
 
-        favoritesModel.onFavoriteURLSelected = { [weak self] url in
+        favoritesModel.onFavoriteURLSelected = { [weak self] favorite in
             guard let self else { return }
 
-            delegate?.newTabPageDidOpenFavoriteURL(self, url: url)
+            delegate?.newTabPageDidSelectFavorite(self, favorite: favorite)
         }
 
         favoritesModel.onFavoriteEdit = { [weak self] favorite in
@@ -155,6 +190,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         favoritesModel.onFavoriteDeleted = { [weak self] favorite in
             guard let self else { return }
 
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
             delegate?.newTabPageDidDeleteFavorite(self, favorite: favorite)
         }
     }
@@ -188,7 +224,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     func launchNewSearch() {
         // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
-        guard !privacyProPromotionCoordinating.isShowingPrivacyProPromotion else { return }
+        guard !daxDialogsManager.isShowingPrivacyProPromotion else { return }
         chromeDelegate?.omniBar.beginEditing()
     }
 
@@ -220,28 +256,10 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         chromeDelegate?.omniBar.beginEditing()
     }
 
-    func reloadFavorites() {
-
-    }
-
     // MARK: - Onboarding
 
     private func presentNextDaxDialog() {
-        showNextDaxDialogNew(dialogProvider: newTabDialogTypeProvider, factory: newTabDialogFactory)
-    }
-
-    // MARK: - Private
-
-    private func sendDailyDisplayPixel() {
-
-        let favoritesCount = favoritesModel.allFavorites.count
-        let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
-
-        DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
-            "FavoriteCount": bucket.value,
-            "Shortcuts": sectionsSettingsModel.enabledItems.contains(.shortcuts) ? "1" : "0",
-            "Favorites": sectionsSettingsModel.enabledItems.contains(.favorites) ? "1" : "0"
-        ])
+        showNextDaxDialogNew(dialogProvider: daxDialogsManager, factory: newTabDialogFactory)
     }
 
     // MARK: -

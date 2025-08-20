@@ -50,7 +50,7 @@ struct BrokenSiteReportMocks {
                          variant: "",
                          cookieConsentInfo: nil,
                          debugFlags: "",
-                         privacyExperiments: [:],
+                         privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
@@ -76,7 +76,7 @@ struct BrokenSiteReportMocks {
                          userRefreshCount: 0,
                          cookieConsentInfo: nil,
                          debugFlags: "",
-                         privacyExperiments: [:],
+                         privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil)
 #endif
     }
@@ -110,7 +110,7 @@ struct BrokenSiteReportMocks {
                          variant: "",
                          cookieConsentInfo: nil,
                          debugFlags: "",
-                         privacyExperiments: [:],
+                         privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://somethingelse.zz")!,
@@ -136,7 +136,7 @@ struct BrokenSiteReportMocks {
                          userRefreshCount: 0,
                          cookieConsentInfo: nil,
                          debugFlags: "",
-                         privacyExperiments: [:],
+                         privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil)
 #endif
     }
@@ -170,7 +170,7 @@ struct BrokenSiteReportMocks {
                          variant: "",
                          cookieConsentInfo: nil,
                          debugFlags: "",
-                         privacyExperiments: [:],
+                         privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://www.subdomain.example.com/some/pathname?t=param#aaa")!,
@@ -196,7 +196,7 @@ struct BrokenSiteReportMocks {
                          userRefreshCount: 0,
                          cookieConsentInfo: nil,
                          debugFlags: "",
-                         privacyExperiments: [:],
+                         privacyExperiments: "experiment1:control,experiment2:treatment",
                          isPirEnabled: nil)
 #endif
     }

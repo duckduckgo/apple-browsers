@@ -36,15 +36,18 @@ import WebKit
 final class NewTabPageWebViewModel: NSObject {
     let newTabPageUserScript: NewTabPageUserScript
     let webView: WebView
+    private let newTabPageLoadMetrics: NewTabPageLoadMetrics
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, activeRemoteMessageModel: ActiveRemoteMessageModel) {
+    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, activeRemoteMessageModel: ActiveRemoteMessageModel, newTabPageLoadMetrics: NewTabPageLoadMetrics) {
         newTabPageUserScript = NewTabPageUserScript()
         actionsManager.registerUserScript(newTabPageUserScript)
 
         let configuration = WKWebViewConfiguration()
         configuration.applyNewTabPageWebViewConfiguration(with: featureFlagger, newTabPageUserScript: newTabPageUserScript)
         webView = WebView(frame: .zero, configuration: configuration)
+
+        self.newTabPageLoadMetrics = newTabPageLoadMetrics
 
         super.init()
 
@@ -65,7 +68,7 @@ final class NewTabPageWebViewModel: NSObject {
             }
             .store(in: &cancellables)
 
-        NotificationCenter.default.publisher(for: .newTabPageModeDidChange)
+        NotificationCenter.default.publisher(for: .newTabPageSectionsAvailabilityDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.webView.reload()
@@ -84,6 +87,10 @@ final class NewTabPageWebViewModel: NSObject {
 extension NewTabPageWebViewModel: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         navigationAction.request.url == .newtab ? .allow : .cancel
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        newTabPageLoadMetrics.onNTPDidPresent()
     }
 }
 

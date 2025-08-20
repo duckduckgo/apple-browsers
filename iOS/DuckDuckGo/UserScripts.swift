@@ -38,6 +38,8 @@ final class UserScripts: UserScriptsProvider {
     let autoconsentUserScript: AutoconsentUserScript
     let aiChatUserScript: AIChatUserScript
     let subscriptionUserScript: SubscriptionUserScript
+    let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
+    let serpSettingsUserScript: SERPSettingsUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -65,7 +67,7 @@ final class UserScripts: UserScriptsProvider {
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
-        
+
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
         contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                         properties: sourceProvider.contentScopeProperties,
@@ -80,12 +82,18 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
+        serpSettingsUserScript = SERPSettingsUserScript()
+
+        subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-        )
+            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+            navigationDelegate: subscriptionNavigationHandler,
+            debugHost: aiChatDebugSettings.messagePolicyHostname)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -116,13 +124,16 @@ final class UserScripts: UserScriptsProvider {
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {
         if let duckPlayer {
-            
             // Initialize scripts if nativeUI is disabled
             if !duckPlayer.settings.nativeUI {
                 youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
                 youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
                 youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
                 youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+            } else {
+                // Initialize DuckPlayer UserScript
+                let duckPlayerUserScript = DuckPlayerUserScriptYouTube(duckPlayer: duckPlayer)
+                contentScopeUserScriptIsolated.registerSubfeature(delegate: duckPlayerUserScript)
             }
         }
     }

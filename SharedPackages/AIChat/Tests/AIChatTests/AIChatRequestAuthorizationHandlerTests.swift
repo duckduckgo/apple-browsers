@@ -16,12 +16,15 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import XCTest
 import WebKit
 @testable import AIChat
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     var messagePolicyHostname: String?
+    var customURL: String?
+    func reset() {}
 }
 
 final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
@@ -176,3 +179,4 @@ final class MockWKFrameInfo: WKFrameInfo {
         return mockIsMainFrame
     }
 }
+#endif

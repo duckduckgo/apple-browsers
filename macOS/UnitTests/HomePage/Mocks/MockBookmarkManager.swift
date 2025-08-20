@@ -20,7 +20,8 @@ import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 @testable import BrowserServicesKit
 
-class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
+class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, RecentActivityFavoritesHandling {
+
     var bookmarksReturnedForSearch = [BaseBookmarkEntity]()
     var wasSearchByQueryCalled = false
     var isLoading = false
@@ -41,6 +42,14 @@ class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
     func isUrlFavorited(url: URL) -> Bool {
         return false
     }
+
+    func getFavorite(for url: URL) -> Bookmark? {
+        nil
+    }
+
+    func markAsFavorite(_ bookmark: Bookmark) {}
+    func unmarkAsFavorite(_ bookmark: Bookmark) {}
+    func addNewFavorite(for url: URL) {}
 
     var isUrlBookmarked = false
     func isUrlBookmarked(url: URL) -> Bool {
@@ -132,7 +141,7 @@ class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
 
     func moveFavorites(with objectUUIDs: [String], toIndex: Int?, completion: @escaping (Error?) -> Void) {}
 
-    func importBookmarks(_ bookmarks: DuckDuckGo_Privacy_Browser.ImportedBookmarks, source: DuckDuckGo_Privacy_Browser.BookmarkImportSource) -> BrowserServicesKit.BookmarksImportSummary {
+    func importBookmarks(_ bookmarks: DuckDuckGo_Privacy_Browser.ImportedBookmarks, source: DuckDuckGo_Privacy_Browser.BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true, maxFavoritesCount: Int?) -> BrowserServicesKit.BookmarksImportSummary {
         BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
     }
 
@@ -156,4 +165,15 @@ class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
 
     func restore(_ entities: [RestorableBookmarkEntity], undoManager: UndoManager) {}
 
+    func resetBookmarks(completion: @escaping () -> Void) {}
+}
+
+extension MockBookmarkManager: HistoryViewBookmarksHandling {
+    func addNewBookmarks(for websiteInfos: [DuckDuckGo_Privacy_Browser.WebsiteInfo]) {
+        makeBookmarks(for: websiteInfos, inNewFolderNamed: nil, withinParentFolder: .root)
+    }
+
+    func addNewFavorite(for url: URL, title: String) {
+        makeBookmark(for: url, title: title, isFavorite: true)
+    }
 }

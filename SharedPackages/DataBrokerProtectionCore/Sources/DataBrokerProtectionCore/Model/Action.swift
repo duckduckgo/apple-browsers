@@ -27,6 +27,7 @@ public enum ActionType: String, Codable, Sendable {
     case emailConfirmation
     case getCaptchaInfo
     case solveCaptcha
+    case condition
 }
 
 public enum DataSource: String, Codable, Sendable {

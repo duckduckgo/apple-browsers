@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - sync
 name: 03_recover_account
 
@@ -14,6 +15,10 @@ name: 03_recover_account
 - tapOn: "Settings"
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
+
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
 
 # Create account
 - runFlow:

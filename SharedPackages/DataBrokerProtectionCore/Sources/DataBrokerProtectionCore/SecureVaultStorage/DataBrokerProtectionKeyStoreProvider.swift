@@ -157,7 +157,8 @@ private extension DataBrokerProtectionKeyStoreProvider {
             return nil
 
         default:
-            throw SecureStorageError.keystoreReadError(status: status)
+            let field = queryAttributes[kSecAttrAccount as String] as? String ?? "<unknown>"
+            throw SecureStorageError.keystoreReadError(field: field, serviceName: serviceName, status: status)
         }
     }
 

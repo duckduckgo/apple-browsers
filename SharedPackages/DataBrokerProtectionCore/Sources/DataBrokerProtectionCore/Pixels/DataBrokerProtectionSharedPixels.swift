@@ -84,6 +84,20 @@ public enum DataBrokerProtectionSharedPixels {
         public static let optOutSubmitSuccessRate = "optout_submit_success_rate"
         public static let childParentRecordDifference = "child-parent-record-difference"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
+        public static let actionTypeKey = "action_type"
+        public static let keystoreField = "keystore_field"
+        public static let started = "num_started"
+        public static let orphaned = "num_orphaned"
+        public static let completed = "num_completed"
+        public static let terminated = "num_terminated"
+        public static let durationMinMs = "duration_min_ms"
+        public static let durationMaxMs = "duration_max_ms"
+        public static let durationMedianMs = "duration_median_ms"
+        public static let numTotal = "num_total"
+        public static let numStalled = "num_stalled"
+        public static let totalByBroker = "total_by_broker"
+        public static let stalledByBroker = "stalled_by_broker"
+
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
@@ -93,23 +107,15 @@ public enum DataBrokerProtectionSharedPixels {
     case cocoaError(error: Error, functionOccurredIn: String)
     case miscError(error: Error, functionOccurredIn: String)
     case secureVaultInitError(error: Error)
-    case secureVaultKeyStoreReadError(error: Error)
+    case secureVaultKeyStoreReadError(error: Error, field: String, serviceName: String)
     case secureVaultKeyStoreUpdateError(error: Error)
     case secureVaultError(error: Error)
+    case secureVaultDatabaseRecreated
+    case failedToOpenDatabase(error: Error)
     case parentChildMatches(parent: String, child: String, value: Int)
 
     // Stage Pixels
     case optOutStart(dataBroker: String, attemptId: UUID)
-    case optOutEmailGenerate(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutCaptchaParse(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutCaptchaSend(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutCaptchaSolve(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutEmailReceive(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutEmailConfirm(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutValidate(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double)
-    case optOutFillForm(dataBroker: String, attemptId: UUID, duration: Double)
 
     // Process Pixels
     case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, tries: Int, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String)
@@ -117,9 +123,27 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, stage: String, tries: Int, emailPattern: String?, actionID: String?, vpnConnectionState: String, vpnBypassStatus: String)
 
     // Scan/Search pixels
+#if os(iOS)
+    case scanStarted(dataBroker: String)
+#endif
     case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
     case scanFailed(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
     case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
+    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, actionId: String, actionType: String)
+
+    // Stage Pixels
+    case optOutEmailGenerate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutCaptchaParse(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutCaptchaSend(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutCaptchaSolve(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutEmailReceive(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutEmailConfirm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutValidate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutFillForm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutConditionFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutConditionNotFound(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
+    case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double)
 
     // KPIs - engagement
     case dailyActiveUser
@@ -129,6 +153,9 @@ public enum DataBrokerProtectionSharedPixels {
     // KPIs - events
     case weeklyReportScanning(hadNewMatch: Bool, hadReAppereance: Bool, scanCoverage: String)
     case weeklyReportRemovals(removals: Int)
+    case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double)
+    case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
+    case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
     case scanningEventNewMatch
     case scanningEventReAppearance
 
@@ -179,8 +206,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutEmailReceive: return "dbp_optout_stage_email-receive"
         case .optOutEmailConfirm: return "dbp_optout_stage_email-confirm"
         case .optOutValidate: return "dbp_optout_stage_validate"
-        case .optOutFinish: return "dbp_optout_stage_finish"
         case .optOutFillForm: return "dbp_optout_stage_fill-form"
+        case .optOutConditionFound: return "dbp_optout_stage_condition-found"
+        case .optOutConditionNotFound: return "dbp_optout_stage_condition-not-found"
+        case .optOutFinish: return "dbp_optout_stage_finish"
 
             // Process Pixels
         case .optOutSubmitSuccess: return "dbp_optout_process_submit-success"
@@ -188,9 +217,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutFailure: return "dbp_optout_process_failure"
 
             // Scan/Search pixels: https://app.asana.com/0/1203581873609357/1205337273100855/f
+#if os(iOS)
+        case .scanStarted: return "dbp_scan_started"
+#endif
         case .scanSuccess: return "dbp_search_stage_main_status_success"
         case .scanFailed: return "dbp_search_stage_main_status_failure"
         case .scanError: return "dbp_search_stage_main_status_error"
+        case .scanStage: return "dbp_scan_stage"
 
             // Debug Pixels
         case .httpError: return "dbp_data_broker_http_error"
@@ -203,6 +236,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .secureVaultKeyStoreReadError: return "dbp_secure_vault_keystore_read_error"
         case .secureVaultKeyStoreUpdateError: return "dbp_secure_vault_keystore_update_error"
         case .secureVaultError: return "dbp_secure_vault_error"
+        case .secureVaultDatabaseRecreated: return "dbp_secure_vault_database_recreated"
+        case .failedToOpenDatabase: return "dbp_failed-to-open-database_error"
 
             // KPIs - engagement
         case .dailyActiveUser: return "dbp_engagement_dau"
@@ -211,6 +246,9 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
         case .weeklyReportScanning: return "dbp_event_weekly-report_scanning"
         case .weeklyReportRemovals: return "dbp_event_weekly-report_removals"
+        case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
+        case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
+        case .weeklyReportStalledOptOuts: return "dbp_event_weekly-report_stalled-optouts"
         case .scanningEventNewMatch: return "dbp_event_scanning-events_new-match"
         case .scanningEventReAppearance: return "dbp_event_scanning-events_re-appearance"
 
@@ -271,26 +309,27 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return ["parent": parent, "child": child, "value": String(value)]
         case .optOutStart(let dataBroker, let attemptId):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString]
-        case .optOutEmailGenerate(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutCaptchaParse(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutCaptchaSend(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutCaptchaSolve(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutSubmit(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutEmailReceive(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutEmailConfirm(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutValidate(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
+        case .optOutEmailGenerate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutCaptchaParse(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutCaptchaSend(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutCaptchaSolve(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutSubmit(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutEmailReceive(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutEmailConfirm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutValidate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutFillForm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutConditionFound(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId),
+             .optOutConditionNotFound(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let actionId):
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.durationParamKey: String(duration),
+                    Consts.dataBrokerVersionKey: dataBrokerVersion,
+                    Consts.triesKey: String(tries),
+                    Consts.actionIDKey: actionId]
         case .optOutFinish(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
-        case .optOutFillForm(let dataBroker, let attemptId, let duration):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.durationParamKey: String(duration)]
         case .optOutSubmitSuccess(let dataBroker, let attemptId, let duration, let tries, let pattern, let vpnConnectionState, let vpnBypassStatus):
             var params = [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
             if let pattern = pattern {
@@ -310,10 +349,44 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             }
 
             return params
+#if os(iOS)
+        case .scanStarted(let dataBroker):
+            return [Consts.dataBrokerParamKey: dataBroker]
+#endif
+        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
+            return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
+            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
+            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.errorCategoryKey: category, Consts.errorDetailsKey: details, Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let actionId, let actionType):
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: dataBrokerVersion,
+                    Consts.triesKey: String(tries),
+                    Consts.actionIDKey: actionId,
+                    Consts.actionTypeKey: actionType]
         case .weeklyReportScanning(let hadNewMatch, let hadReAppereance, let scanCoverage):
             return [Consts.hadNewMatch: hadNewMatch ? "1" : "0", Consts.hadReAppereance: hadReAppereance ? "1" : "0", Consts.scanCoverage: scanCoverage.description]
         case .weeklyReportRemovals(let removals):
             return [Consts.removals: String(removals)]
+        case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs):
+            return [Consts.started: String(started),
+                    Consts.orphaned: String(orphaned),
+                    Consts.completed: String(completed),
+                    Consts.terminated: String(terminated),
+                    Consts.durationMinMs: String(durationMinMs),
+                    Consts.durationMaxMs: String(durationMaxMs),
+                    Consts.durationMedianMs: String(durationMedianMs)]
+        case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+            return [Consts.numTotal: String(numTotal),
+                    Consts.numStalled: String(numStalled),
+                    Consts.totalByBroker: totalByBroker,
+                    Consts.stalledByBroker: stalledByBroker]
+        case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+            return [Consts.numTotal: String(numTotal),
+                    Consts.numStalled: String(numStalled),
+                    Consts.totalByBroker: totalByBroker,
+                    Consts.stalledByBroker: stalledByBroker]
         case .optOutJobAt7DaysConfirmed(let dataBroker),
                 .optOutJobAt7DaysUnconfirmed(let dataBroker),
                 .optOutJobAt14DaysConfirmed(let dataBroker),
@@ -324,20 +397,16 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .dailyActiveUser,
                 .weeklyActiveUser,
                 .monthlyActiveUser,
-
                 .scanningEventNewMatch,
                 .scanningEventReAppearance,
                 .secureVaultInitError,
-                .secureVaultKeyStoreReadError,
                 .secureVaultKeyStoreUpdateError,
-                .secureVaultError:
+                .secureVaultError,
+                .secureVaultDatabaseRecreated,
+                .failedToOpenDatabase:
             return [:]
-        case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
-        case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
-        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.errorCategoryKey: category, Consts.errorDetailsKey: details, Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .secureVaultKeyStoreReadError(_, let field, _):
+            return [Consts.keystoreField: field]
         case .generateEmailHTTPErrorDaily(let statusCode, let environment, let wasOnWaitlist):
             return [Consts.environmentKey: environment,
                     Consts.httpCode: String(statusCode),
@@ -417,12 +486,14 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
         super.init { _, _, _, _ in
         }
 
-        self.eventMapper = { event, _, _, _ in
+        self.eventMapper = { event, _, parameters, _ in
             switch event {
             case .generateEmailHTTPErrorDaily:
-                self.pixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
-                self.pixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+            case .secureVaultDatabaseRecreated:
+                self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _),
                     .actionFailedError(let error, _, _, _, _),
                     .otherError(let error, _, _):
@@ -433,9 +504,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
-                    .secureVaultKeyStoreReadError(let error),
-                    .secureVaultKeyStoreUpdateError(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
+                    .secureVaultKeyStoreReadError(let error, _, _),
+                    .secureVaultKeyStoreUpdateError(let error),
+                    .failedToOpenDatabase(let error):
+                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,
@@ -451,14 +523,20 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .optOutFillForm,
                     .optOutSuccess,
                     .optOutFailure,
+                    .optOutConditionFound,
+                    .optOutConditionNotFound,
                     .scanSuccess,
                     .scanFailed,
                     .scanError,
+                    .scanStage,
                     .dailyActiveUser,
                     .weeklyActiveUser,
                     .monthlyActiveUser,
                     .weeklyReportScanning,
                     .weeklyReportRemovals,
+                    .weeklyReportBackgroundTaskSession,
+                    .weeklyReportStalledScans,
+                    .weeklyReportStalledOptOuts,
                     .optOutJobAt7DaysConfirmed,
                     .optOutJobAt7DaysUnconfirmed,
                     .optOutJobAt14DaysConfirmed,
@@ -480,6 +558,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .weeklyChildBrokerOrphanedOptOuts:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+#if os(iOS)
+            case .scanStarted:
+                self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+#endif
 
             }
         }

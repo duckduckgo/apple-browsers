@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct PasteCodeView: View {
 
@@ -37,7 +38,10 @@ public struct PasteCodeView: View {
     @ViewBuilder
     func pasteButton() -> some View {
         Button(action: model.pasteCode) {
-            Label(UserText.pasteButton, image: "SyncPaste")
+            HStack {
+                Text(UserText.pasteButton)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.paste)
+            }
         }
     }
 
@@ -70,7 +74,7 @@ public struct PasteCodeView: View {
                     .padding(.horizontal)
                 } else if model.invalidCode {
                     HStack {
-                        Image("SyncAlert")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.alertRecolorable)
                         Text(UserText.manuallyEnterCodeValidatingCodeFailedAction)
                             .foregroundColor(.white.opacity(0.36))
                     }
@@ -125,7 +129,9 @@ public struct PasteCodeView: View {
     public var body: some View {
         pastCodeWiewWithNoModifier()
             .modifier(BackButtonModifier())
-
+            .onAppear {
+                model.delegate?.codeEntryScreenShown()
+            }
     }
 
 }
@@ -163,7 +169,7 @@ struct PasteButtonStyle: ButtonStyle {
             .padding(.horizontal)
             .frame(height: 44)
             .background(configuration.isPressed ? backgroundColor.opacity(0.7) : backgroundColor.opacity(1))
-            .cornerRadius(8)
+            .cornerRadius(12)
             .daxButton()
 
     }

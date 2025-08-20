@@ -25,7 +25,7 @@ import Crashes
 import DDGSync
 import Kingfisher
 import LinkPresentation
-import NetworkProtection
+import VPN
 import Persistence
 import SwiftUI
 import UIKit
@@ -42,13 +42,15 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
 
     weak var delegate: DiagnosticReportDataSourceDelegate?
     var fireproofing: Fireproofing?
+    var tabManager: TabManager?
 
     @UserDefaultsWrapper(key: .lastConfigurationRefreshDate, defaultValue: .distantPast)
     private var lastRefreshDate: Date
 
-    convenience init(delegate: DiagnosticReportDataSourceDelegate, fireproofing: Fireproofing) {
+    convenience init(delegate: DiagnosticReportDataSourceDelegate, tabManager: TabManager, fireproofing: Fireproofing) {
         self.init(placeholderItem: "")
         self.delegate = delegate
+        self.tabManager = tabManager
         self.fireproofing = fireproofing
     }
 
@@ -108,11 +110,10 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
 
         let group = DispatchGroup()
         group.enter()
-        DispatchQueue.main.async {
-            WKWebsiteDataStore.current().httpCookieStore.getAllCookies { httpCookies in
-                cookies = httpCookies
-                group.leave()
-            }
+
+        Task {
+            cookies = await DDGWebsiteDataStoreProvider.current().httpCookieStore.allCookies()
+            group.leave()
         }
 
         var timeout = [String]()
@@ -131,7 +132,7 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
     func tabsReport() -> String {
         """
         ### Tabs Report
-        Tabs: \(TabsModel.get()?.count ?? -1)
+        Tabs: \(tabManager?.count ?? -1)
         """
     }
 

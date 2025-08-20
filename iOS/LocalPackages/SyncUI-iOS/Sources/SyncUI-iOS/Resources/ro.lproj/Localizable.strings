@@ -208,11 +208,20 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Introdu manual codul";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Deschide aplicația DuckDuckGo pe celălalt dispozitiv și mergi la %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Scanează acest cod cu un alt dispozitiv pentru a sincroniza.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "De la mobil la mobil?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Deschide DuckDuckGo pe celălalt dispozitiv și scanează acest cod pentru a sincroniza.";
+
+/* Scan or See Code View - Scan Code Instructions Title */
+"scan.or.see.code.scan.code.qr.instructions.title" = "Sau scanează cu DuckDuckGo pe celălalt dispozitiv";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Distribuie codul textului";

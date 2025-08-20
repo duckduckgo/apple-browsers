@@ -23,6 +23,7 @@ import os.log
 private enum AttributesKey: String, CaseIterable {
     case locale
     case osApi
+    case formFactor
     case isInternalUser
     case appId
     case appVersion
@@ -52,11 +53,13 @@ private enum AttributesKey: String, CaseIterable {
     case duckPlayerEnabled
     case messageShown
     case isCurrentFreemiumPIRUser
+    case allFeatureFlagsEnabled
 
     func matchingAttribute(jsonMatchingAttribute: AnyDecodable) -> MatchingAttribute {
         switch self {
         case .locale: return LocaleMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .osApi: return OSMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .formFactor: return FormFactorMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isInternalUser: return IsInternalUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .appId: return AppIdMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .appVersion: return AppVersionMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
@@ -88,6 +91,7 @@ private enum AttributesKey: String, CaseIterable {
         case .duckPlayerEnabled: return DuckPlayerEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .messageShown: return MessageShownMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentFreemiumPIRUser: return FreemiumPIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
     }
 }
@@ -252,6 +256,8 @@ struct JsonToRemoteMessageModelMapper {
             return .privacyShield
         case .aiChat:
             return .aiChat
+        case .visualDesignUpdate:
+            return .visualDesignUpdate
         case .none:
             return .announce
         }

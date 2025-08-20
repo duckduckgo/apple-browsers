@@ -20,9 +20,10 @@ import BrowserServicesKit
 import Combine
 import Common
 import DDGSync
+import Foundation
 import Persistence
-import SyncDataProviders
 import PixelKit
+import SyncDataProviders
 
 final class SyncDataProviders: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter
@@ -53,6 +54,7 @@ final class SyncDataProviders: DataProvidersSource {
         settingsAdapter.setUpProviderIfNeeded(
             metadataDatabase: syncMetadataDatabase.db,
             metadataStore: syncMetadata,
+            appearancePreferences: appearancePreferences,
             metricsEventsHandler: metricsEventsHandler
         )
 
@@ -92,11 +94,18 @@ final class SyncDataProviders: DataProvidersSource {
         }
     }
 
-    init(bookmarksDatabase: CoreDataDatabase, secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory, syncErrorHandler: SyncErrorHandler) {
+    init(
+        bookmarksDatabase: CoreDataDatabase,
+        bookmarkManager: BookmarkManager,
+        secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
+        appearancePreferences: AppearancePreferences,
+        syncErrorHandler: SyncErrorHandler
+    ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.secureVaultFactory = secureVaultFactory
+        self.appearancePreferences = appearancePreferences
         self.syncErrorHandler = syncErrorHandler
-        bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, syncErrorHandler: syncErrorHandler)
+        bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, bookmarkManager: bookmarkManager, appearancePreferences: appearancePreferences, syncErrorHandler: syncErrorHandler)
         credentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: secureVaultFactory, syncErrorHandler: syncErrorHandler)
         settingsAdapter = SyncSettingsAdapter(syncErrorHandler: syncErrorHandler)
     }
@@ -130,4 +139,5 @@ final class SyncDataProviders: DataProvidersSource {
     private let syncMetadataDatabase: SyncMetadataDatabase = SyncMetadataDatabase()
     private let bookmarksDatabase: CoreDataDatabase
     private let secureVaultFactory: AutofillVaultFactory
+    private let appearancePreferences: AppearancePreferences
 }

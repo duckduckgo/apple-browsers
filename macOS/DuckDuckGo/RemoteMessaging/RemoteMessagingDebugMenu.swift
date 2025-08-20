@@ -84,7 +84,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
             return
         }
 
-        let database = NSApp.delegateTyped.remoteMessagingClient.database
+        let database = NSApp.delegateTyped.remoteMessagingClient.remoteMessagingDatabase
         let context = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let fetchRequest = RemoteMessageManagedObject.fetchRequest()
         fetchRequest.returnsObjectsAsFaults = false
@@ -117,7 +117,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
 
     @objc func openRemoteMessagesConfig() {
         Task { @MainActor in
-            WindowControllersManager.shared.showTab(with: .contentFromURL(RemoteMessagingClient.Constants.endpoint, source: .appOpenUrl))
+            Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(RemoteMessagingClient.Constants.endpoint, source: .appOpenUrl))
         }
     }
 

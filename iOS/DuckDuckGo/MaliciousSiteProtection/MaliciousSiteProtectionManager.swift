@@ -37,7 +37,8 @@ final class MaliciousSiteProtectionManager {
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,
         preferencesManager: MaliciousSiteProtectionPreferencesReading,
         maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger,
-        supportedThreatsProvider: @escaping SupportedThreatsProvider
+        supportedThreatsProvider: @escaping SupportedThreatsProvider,
+        shouldRemoveWWWInCanonicalization: @escaping () -> Bool
     ) {
         self.dataFetcher = dataFetcher
         self.preferencesManager = preferencesManager
@@ -47,7 +48,8 @@ final class MaliciousSiteProtectionManager {
             service: api.service,
             dataManager: dataManager,
             eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
-            supportedThreatsProvider: supportedThreatsProvider
+            supportedThreatsProvider: supportedThreatsProvider,
+            shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization
         )
     }
 }
@@ -58,7 +60,7 @@ extension MaliciousSiteProtectionManager: MaliciousSiteProtectionDatasetsFetchin
 
     @MainActor
     @discardableResult
-    func startFetching() -> Task<Void, Error> {
+    func startFetching() -> Task<Void, Never> {
         dataFetcher.startFetching()
     }
     

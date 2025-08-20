@@ -20,6 +20,9 @@
 import SwiftUI
 import UIKit
 import Networking
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import Common
 
 struct SettingsOthersView: View {
 
@@ -29,9 +32,16 @@ struct SettingsOthersView: View {
         Section {
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
+#if (ALPHA && !DEBUG)
+                // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
+                let version = "v\(viewModel.state.version) (\(AppVersion.shared.commitSHAShort))"
+#else
+                let version = "v\(viewModel.state.version)"
+#endif
+
                 SettingsCellView(label: UserText.settingsAboutSection,
-                                 image: Image("LogoIcon"),
-                                 accessory: .rightDetail("v\(viewModel.state.version)"))
+                                 image: Image(.logoIcon),
+                                 accessory: .rightDetail(version))
             }
 
             // Share Feedback
@@ -39,6 +49,8 @@ struct SettingsOthersView: View {
                 let formViewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                  apiService: DefaultAPIService(),
                                                                  vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                 dbpMetadataCollector: DefaultDBPMetadataCollector(),
+                                                                 isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
                                                                  source: .settings)
                 NavigationLink {
                     UnifiedFeedbackCategoryView(UserText.subscriptionFeedback, options: UnifiedFeedbackFlowCategory.allCases, selection: $viewModel.selectedFeedbackFlow) {
@@ -60,18 +72,18 @@ struct SettingsOthersView: View {
                     }
                 } label: {
                     SettingsCellView(label: UserText.subscriptionFeedback,
-                                     image: Image("SettingsFeedback"))
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.feedback))
                 }
             } else {
                 SettingsCellView(label: UserText.settingsFeedback,
-                                 image: Image("SettingsFeedback"),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.feedback),
                                  action: { viewModel.presentLegacyView(.feedback) },
                                  isButton: true)
             }
 
             // DuckDuckGo on Other Platforms
             SettingsCellView(label: UserText.duckduckgoOnOtherPlatforms,
-                             image: Image("SettingsOtherPlatforms"),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.downloads),
                              action: { viewModel.openOtherPlatforms() },
                              webLinkIndicator: true,
                              isButton: true)

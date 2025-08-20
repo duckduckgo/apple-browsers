@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Navigation
+import BrowserServicesKit
 import Combine
 import Common
+import Foundation
+import Navigation
+import WebKit
 
 #if SPARKLE
 
@@ -149,7 +151,29 @@ extension ReleaseNotesValues {
         let currentVersion = "\(AppVersion().versionNumber) (\(AppVersion().buildNumber))"
         let lastUpdate = UInt((updateController.lastUpdateCheckDate ?? Date()).timeIntervalSince1970)
 
+        // Fall back to cached release notes if necessary
+        // This happens when there's no connectivity,
+        // or when the appcast hasn't finished loading by the time the Release Notes screen shows up
         guard let latestUpdate = updateController.latestUpdate else {
+            let keyValueStore = Application.appDelegate.keyValueStore
+            if let data = try? keyValueStore.object(forKey: UpdateController.Constants.pendingUpdateInfoKey) as? Data,
+               let cached = try? JSONDecoder().decode(UpdateController.PendingUpdateInfo.self, from: data) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMMM dd yyyy"
+                let releaseTitle = formatter.string(from: cached.date)
+
+                self.init(status: .loaded,
+                          currentVersion: currentVersion,
+                          latestVersion: "\(cached.version) \(cached.build)",
+                          lastUpdate: lastUpdate,
+                          releaseTitle: releaseTitle,
+                          releaseNotes: cached.releaseNotes,
+                          releaseNotesPrivacyPro: cached.releaseNotesPrivacyPro,
+                          downloadProgress: nil,
+                          automaticUpdate: updateController.areAutomaticUpdatesEnabled)
+                return
+            }
+
             self.init(status: updateController.updateProgress.toStatus,
                       currentVersion: currentVersion,
                       lastUpdate: lastUpdate,
@@ -174,6 +198,17 @@ extension ReleaseNotesValues {
             downloadProgress = progress.toDownloadProgress
         }
 
+        // Hack: this is a bit of a hack to get the action button in our Release Notes to show
+        // the appropriate action.  This code only executes if autor-restarts are NOT allowed
+        // which means we're on the new update behavior.
+        //
+        // The rationale for this change is explained here:
+        // https://app.asana.com/1/137249556945/task/1210262960023979/comment/1210277947927308?focus=true
+        //
+        // This was done to provide a quick solution to an issue found during a ship review.
+        //
+        let automaticUpdate = updateController.useLegacyAutoRestartLogic ? updateController.areAutomaticUpdatesEnabled : updateController.isAtRestartCheckpoint
+
         self.init(status: status,
                   currentVersion: currentVersion,
                   latestVersion: latestUpdate.versionString,
@@ -182,7 +217,7 @@ extension ReleaseNotesValues {
                   releaseNotes: latestUpdate.releaseNotes,
                   releaseNotesPrivacyPro: latestUpdate.releaseNotesPrivacyPro,
                   downloadProgress: downloadProgress,
-                  automaticUpdate: updateController.areAutomaticUpdatesEnabled)
+                  automaticUpdate: automaticUpdate)
     }
 }
 

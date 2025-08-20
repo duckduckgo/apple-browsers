@@ -106,10 +106,9 @@ extension Preferences {
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})
                         .pickerStyle(.radioGroup)
-                        .disabled(dataClearingModel.isAutoClearEnabled)
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
-                        if dataClearingModel.isAutoClearEnabled {
+                        if dataClearingModel.isAutoClearEnabled && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
@@ -157,7 +156,7 @@ extension Preferences {
                                 ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
                                     Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
                                 }
-                            }
+                            }.accessibilityIdentifier("PreferencesGeneralView.pinnedTabsModePicker")
                         }
                         .alert(isPresented: $showWarningAlert) {
                             Alert(
@@ -248,32 +247,6 @@ extension Preferences {
 
                         ToggleMenuItem(UserText.downloadsAlwaysAsk,
                                        isOn: $downloadsModel.alwaysRequestDownloadLocation).accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
-                    }
-                }
-
-                // SECTION: Phishing Detection
-                if featureFlagger.maliciousSiteProtectionFeatureFlags().isMaliciousSiteProtectionEnabled {
-                    let toggleText = featureFlagger.isFeatureOn(.scamSiteProtection) ? UserText.maliciousSiteDetectionIsEnabled : UserText.maliciousSiteDetectionIsEnabledDeprecated
-                    PreferencePaneSection(UserText.maliciousSiteDetectionHeader, spacing: 0) {
-                        PreferencePaneSubSection {
-                            ToggleMenuItem(toggleText,
-                                           isOn: $maliciousSiteDetectionModel.isEnabled)
-                            .onChange(of: maliciousSiteDetectionModel.isEnabled) { newValue in
-                                PixelKit.fire(MaliciousSiteProtection.Event.settingToggled(to: newValue))
-                            }
-                        }
-                        TextButton(UserText.learnMore) {
-                            tabsModel.openNewTab(with: .maliciousSiteProtectionLearnMore)
-                        }
-                        .padding(.leading, 19)
-                        .padding(.top, 0)
-
-                        Text(UserText.maliciousDetectionEnabledWarning)
-                            .opacity(maliciousSiteDetectionModel.isEnabled ? 0 : 1)
-                            .font(.footnote)
-                            .foregroundColor(.red)
-                            .padding(.leading, 19)
-                            .padding(.top, 5)
                     }
                 }
             }

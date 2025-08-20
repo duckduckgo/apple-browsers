@@ -26,9 +26,21 @@ final class FireproofDomainsViewController: NSViewController {
         static let cellIdentifier = NSUserInterfaceItemIdentifier(rawValue: "FireproofDomainCell")
     }
 
-    static func create() -> FireproofDomainsViewController {
+    static func create(fireproofDomains: FireproofDomains, faviconManager: FaviconManagement) -> FireproofDomainsViewController {
         let storyboard = NSStoryboard(name: Constants.storyboardName, bundle: nil)
-        return storyboard.instantiateController(identifier: Constants.identifier)
+        return storyboard.instantiateController(identifier: Constants.identifier) { coder in
+            self.init(coder: coder, fireproofDomains: fireproofDomains, faviconManager: faviconManager)
+        }
+    }
+
+    init?(coder: NSCoder, fireproofDomains: FireproofDomains, faviconManager: FaviconManagement) {
+        self.fireproofDomains = fireproofDomains
+        self.faviconManager = faviconManager
+        super.init(coder: coder)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
     @IBOutlet var tableView: NSTableView!
@@ -37,12 +49,13 @@ final class FireproofDomainsViewController: NSViewController {
     @IBOutlet var doneButton: NSButton!
     @IBOutlet var fireproofSitesLabel: NSTextField!
 
-    private let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
+    private let fireproofDomains: FireproofDomains
+    private let faviconManager: FaviconManagement
 
     private var allFireproofDomains = [String]()
     private var filteredFireproofDomains: [String]?
 
-    private var fireproofDomains: [String] {
+    private var visibleFireproofDomains: [String] {
         return filteredFireproofDomains ?? allFireproofDomains
     }
 
@@ -66,7 +79,7 @@ final class FireproofDomainsViewController: NSViewController {
     }
 
     fileprivate func reloadData() {
-        allFireproofDomains = FireproofDomains.shared.fireproofDomains.sorted { (lhs, rhs) -> Bool in
+        allFireproofDomains = fireproofDomains.fireproofDomains.sorted { (lhs, rhs) -> Bool in
             return lhs < rhs
         }
 
@@ -84,13 +97,13 @@ final class FireproofDomainsViewController: NSViewController {
             return
         }
 
-        let selectedDomain = fireproofDomains[tableView.selectedRow]
-        FireproofDomains.shared.remove(domain: selectedDomain)
+        let selectedDomain = visibleFireproofDomains[tableView.selectedRow]
+        fireproofDomains.remove(domain: selectedDomain)
         reloadData()
     }
 
     @IBAction func removeAllDomains(_ sender: NSButton) {
-        FireproofDomains.shared.clearAll()
+        fireproofDomains.clearAll()
         reloadData()
     }
 
@@ -99,18 +112,18 @@ final class FireproofDomainsViewController: NSViewController {
 extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDelegate {
 
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return fireproofDomains.count
+        return visibleFireproofDomains.count
     }
 
     func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
-        return fireproofDomains[row]
+        return visibleFireproofDomains[row]
     }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: Constants.cellIdentifier, owner: nil) as? NSTableCellView {
-            let domain = fireproofDomains[row]
+            let domain = visibleFireproofDomains[row]
             cell.textField?.stringValue = domain
-            cell.imageView?.image = faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
+            cell.imageView?.image = faviconManager.getCachedFavicon(for: domain, sizeCategory: .small)?.image
 
             return cell
         }

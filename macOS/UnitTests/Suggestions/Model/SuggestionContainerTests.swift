@@ -19,10 +19,11 @@
 import Combine
 import Common
 import History
+import InlineSnapshotTesting
 import NetworkingTestingUtils
 import os.log
-import InlineSnapshotTesting
 import Suggestions
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -33,13 +34,16 @@ final class SuggestionContainerTests: XCTestCase {
         MockURLProtocol.requestHandler = nil
     }
 
+    @MainActor
     func testWhenGetSuggestionsIsCalled_ThenContainerAsksAndHoldsSuggestionsFromLoader() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
+                                                      featureFlagger: MockFeatureFlagger(),
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -61,13 +65,16 @@ final class SuggestionContainerTests: XCTestCase {
         XCTAssertEqual(suggestionContainer.result?.all, result.topHits + result.duckduckgoSuggestions + result.localSuggestions)
     }
 
+    @MainActor
     func testWhenStopGettingSuggestionsIsCalled_ThenNoSuggestionsArePublished() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
+                                                      featureFlagger: MockFeatureFlagger(),
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -79,19 +86,22 @@ final class SuggestionContainerTests: XCTestCase {
         XCTAssertNil(suggestionContainer.result)
     }
 
+    @MainActor
     func testSuggestionLoadingCacheClearing() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
+                                                      featureFlagger: MockFeatureFlagger(),
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
         XCTAssertNil(suggestionContainer.suggestionDataCache)
         let e = expectation(description: "Suggestions updated")
-        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.testsServer, withParameters: [:]) { data, error in
+        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.duckDuckGo, withParameters: [:]) { data, error in
             XCTAssertNotNil(suggestionContainer.suggestionDataCache)
             e.fulfill()
 
@@ -192,10 +202,14 @@ final class SuggestionContainerTests: XCTestCase {
                                                                         tabCollectionViewModels: tabCollectionViewModels,
                                                                         selectedWindow: selectedWindow)
 
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
+
         // Tested object
         let suggestionContainer = SuggestionContainer(urlSession: .mock(),
                                                       historyProvider: HistoryProviderMock(history: input.history),
                                                       bookmarkProvider: BookmarkProviderMock(bookmarks: input.bookmarks),
+                                                      featureFlagger: mockFeatureFlagger,
                                                       burnerMode: tabCollectionViewModels[selectedWindow].burnerMode,
                                                       isUrlIgnored: testScenario.input.isURLIgnored,
                                                       windowControllersManager: windowControllersManagerMock)
@@ -362,6 +376,8 @@ extension SuggestionContainerTests {
     }
 
     class WindowControllersManagerMock: WindowControllersManagerProtocol {
+        var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+
         var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
         var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
@@ -387,15 +403,21 @@ extension SuggestionContainerTests {
         func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) {
         }
 
+        func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
+        }
+
         var allTabCollectionViewModels: [TabCollectionViewModel] = []
         var selectedWindowIndex: Int
         var selectedTab: Tab? {
             allTabCollectionViewModels[selectedWindowIndex].selectedTab
         }
 
-        func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> DuckDuckGo_Privacy_Browser.MainWindow? {
+        func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
             nil
         }
+
+        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
+        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 
         init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
             self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
@@ -545,7 +567,7 @@ private extension URLSession {
 private extension Suggestion {
 
     func expectedSuggestion(query: String) -> SuggestionContainerTests.TestExpectations.ExpectedSuggestion? {
-        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, visualStyle: VisualStyle.legacy)
+        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, visualStyle: VisualStyle.current)
         switch self {
         case .phrase(phrase: let phrase):
             return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: URL.makeSearchUrl(from: phrase)?.absoluteString, tabId: nil, score: 0)

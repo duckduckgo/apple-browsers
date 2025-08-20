@@ -21,6 +21,7 @@ import SwiftUI
 import Foundation
 import DesignResourcesKit
 import Core
+import DataBrokerProtection_iOS
 
 struct SubscriptionFlowView: View {
         
@@ -59,10 +60,17 @@ struct SubscriptionFlowView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        NavigationLink(destination: LazyView(SubscriptionPIRView().navigationViewStyle(.stack)),
-                       isActive: $isShowingDBP,
-                       label: { EmptyView() })
-        
+        if viewModel.isPIREnabled,
+           let dbpManager = DataBrokerProtectionIOSManager.shared {
+            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager).navigationViewStyle(.stack)),
+                           isActive: $isShowingDBP,
+                           label: { EmptyView() })
+        } else {
+            NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
+                           isActive: $isShowingDBP,
+                           label: { EmptyView() })
+        }
+
         baseView
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarLeading) {
@@ -232,7 +240,7 @@ struct SubscriptionFlowView: View {
     private func setUpAppearances() {
         let navAppearance = UINavigationBar.appearance()
         navAppearance.backgroundColor = UIColor(designSystemColor: .background)
-        navAppearance.barTintColor = UIColor(designSystemColor: .container)
+        navAppearance.barTintColor = UIColor(designSystemColor: .controlsFillPrimary)
         navAppearance.shadowImage = UIImage()
         navAppearance.tintColor = UIColor(designSystemColor: .textPrimary)
     }

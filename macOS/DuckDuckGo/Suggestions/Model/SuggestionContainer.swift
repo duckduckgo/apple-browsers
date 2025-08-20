@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Combine
 import Common
@@ -25,7 +26,13 @@ import os.log
 import PixelKit
 import Suggestions
 
-final class SuggestionContainer {
+protocol SuggestionContainerProtocol {
+
+    func getSuggestions(for query: String, useCachedData: Bool, completion: ((SuggestionResult?) -> Void)?)
+
+}
+
+final class SuggestionContainer: SuggestionContainerProtocol {
 
     static let maximumNumberOfSuggestions = 9
 
@@ -57,30 +64,32 @@ final class SuggestionContainer {
 
     private let urlSession: URLSession
 
-    init(openTabsProvider: OpenTabsProvider? = nil, suggestionLoading: SuggestionLoading? = nil, urlSession: URLSession? = nil, historyProvider: HistoryProvider, bookmarkProvider: BookmarkProvider, startupPreferences: StartupPreferences = .shared, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger, burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool,
-         windowControllersManager: WindowControllersManagerProtocol? = nil) {
-        let windowControllersManager = windowControllersManager ?? WindowControllersManager.shared
+    @MainActor
+    init(
+        openTabsProvider: OpenTabsProvider? = nil,
+        suggestionLoading: SuggestionLoading? = nil,
+        urlSession: URLSession? = nil,
+        historyProvider: HistoryProvider,
+        bookmarkProvider: BookmarkProvider,
+        startupPreferences: StartupPreferences? = nil,
+        featureFlagger: FeatureFlagger? = nil,
+        burnerMode: BurnerMode,
+        isUrlIgnored: @escaping (URL) -> Bool,
+        windowControllersManager: WindowControllersManagerProtocol? = nil
+    ) {
+        let windowControllersManager = windowControllersManager ?? NSApp.delegateTyped.windowControllersManager
         self.openTabsProvider = openTabsProvider ?? Self.defaultOpenTabsProvider(burnerMode: burnerMode, windowControllersManager: windowControllersManager)
         self.bookmarkProvider = bookmarkProvider
         self.historyProvider = historyProvider
-        self.startupPreferences = startupPreferences
-        self.featureFlagger = featureFlagger
+        self.startupPreferences = startupPreferences ?? NSApp.delegateTyped.startupPreferences
+        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
         self.loading = suggestionLoading ?? SuggestionLoader(urlFactory: URL.makeURL(fromSuggestionPhrase:), isUrlIgnored: isUrlIgnored)
         self.urlSession = urlSession ?? URLSession(configuration: .ephemeral)
         self.burnerMode = burnerMode
         self.windowControllersManager = windowControllersManager
     }
 
-    @MainActor
-    convenience init(burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool, windowControllersManager: WindowControllersManagerProtocol? = nil) {
-        self.init(historyProvider: HistoryCoordinator.shared,
-                  bookmarkProvider: LocalBookmarkManager.shared,
-                  burnerMode: burnerMode,
-                  isUrlIgnored: isUrlIgnored,
-                  windowControllersManager: windowControllersManager)
-    }
-
-    func getSuggestions(for query: String, useCachedData: Bool = false) {
+    func getSuggestions(for query: String, useCachedData: Bool = false, completion: ((SuggestionResult?) -> Void)? = nil) {
         latestQuery = query
 
         // Don't use cache by default
@@ -91,11 +100,15 @@ final class SuggestionContainer {
         loading.getSuggestions(query: query, usingDataSource: self) { [weak self] result, error in
             dispatchPrecondition(condition: .onQueue(.main))
 
-            guard let self, self.latestQuery == query else { return }
+            guard let self, self.latestQuery == query else {
+                completion?(nil)
+                return
+            }
             guard let result else {
                 self.result = nil
                 Logger.general.error("Suggestions: Failed to get suggestions - \(String(describing: error))")
                 PixelKit.fire(DebugEvent(GeneralPixel.suggestionsFetchFailed, error: error))
+                completion?(nil)
                 return
             }
 
@@ -105,6 +118,7 @@ final class SuggestionContainer {
             }
 
             self.result = result
+            completion?(result)
         }
     }
 
@@ -123,7 +137,7 @@ final class SuggestionContainer {
                         || model.tab.content.urlForWebView?.isSettingsURL == true
                         || model.tab.content.urlForWebView == .bookmarks,
                       let url = model.tab.content.userEditableUrl,
-                      url != selectedTab?.content.userEditableUrl, // doesn‘t match currently selected
+                      url != selectedTab?.content.userEditableUrl, // doesn't match currently selected
                       usedUrls.insert(url.nakedString ?? "").inserted == true /* if did not contain */ else { return nil }
 
                 return OpenTab(tabId: model.tab.id, title: model.title, url: url)
@@ -140,14 +154,18 @@ struct OpenTab: BrowserTab, Hashable {
     let url: URL
 
 }
+
 extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         history ?? []
     }
 }
-extension LocalBookmarkManager: SuggestionContainer.BookmarkProvider {
+
+struct SuggestionsBookmarkProvider: SuggestionContainer.BookmarkProvider {
+    let bookmarkManager: BookmarkManager
+
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Suggestions.Bookmark] {
-        list?.bookmarks() ?? []
+        bookmarkManager.list?.bookmarks() ?? []
     }
 }
 extension SuggestionContainer: SuggestionLoadingDataSource {
@@ -186,9 +204,13 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         if !isHistoryOpened {
             result.append(.init(title: UserText.mainMenuHistory, url: .history))
         }
-        result += PreferencePaneIdentifier.allCases.map {
+        result += PreferencePaneIdentifier.allCases.compactMap { pane in
+            // Skip Duck AI if feature flag is off
+            if pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat) {
+                return nil
+            }
             // preference panes URLs
-            .init(title: UserText.settings + " → " + $0.displayName, url: .settingsPane($0))
+            return .init(title: UserText.settings + " → " + pane.displayName, url: .settingsPane(pane))
         }
         result += {
             guard startupPreferences.launchToCustomHomePage,

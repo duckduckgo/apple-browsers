@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - adClick
 
 ---
@@ -23,7 +24,7 @@ tags:
 - assertVisible:
     text: "Publisher site"
 - tapOn:
-    point: "6%,10%" # Shield icon.
+    id: "privacy-icon-shield.button"
 - assertVisible:
     text: "View Tracker Companies"
 - tapOn:

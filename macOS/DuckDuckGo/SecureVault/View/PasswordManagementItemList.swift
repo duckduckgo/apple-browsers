@@ -21,6 +21,7 @@ import SwiftUI
 import BrowserServicesKit
 import Combine
 import SwiftUIExtensions
+import DesignResourcesKitIcons
 
 struct ScrollOffsetKey: PreferenceKey {
     typealias Value = CGFloat
@@ -470,13 +471,20 @@ private struct PasswordManagementAddButton: View {
                 Text(UserText.pmAddItem)
 
                 Menu {
-                    createMenuItem(imageName: "LoginGlyph", text: UserText.pmNewLogin, category: .logins)
-                    createMenuItem(imageName: "IdentityGlyph", text: UserText.pmNewIdentity, category: .identities)
-                    createMenuItem(imageName: "CreditCardGlyph", text: UserText.pmNewCard, category: .cards)
-               } label: {
+                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.keyLogin),
+                                   text: UserText.pmNewLogin,
+                                   category: .logins)
+                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.profile),
+                                   text: UserText.pmNewIdentity,
+                                   category: .identities)
+                    createMenuItem(image: Image(nsImage: DesignSystemImages.Glyphs.Size16.creditCard),
+                                   text: UserText.pmNewCard,
+                                   category: .cards)
+                } label: {
                     Text("")
                 }
                 .modifier(HideMenuIndicatorModifier())
+//                .modifier(FlexibleButtonSizingModifier()) // Xcode 26: When we transition to Xcode 26, we will need this modifier to fix the layout in macOS 26.
             }
             .padding(.vertical, -4)
         case .logins:
@@ -489,13 +497,13 @@ private struct PasswordManagementAddButton: View {
 
     }
 
-    private func createMenuItem(imageName: String, text: String, category: SecureVaultSorting.Category) -> some View {
+    private func createMenuItem(image: Image, text: String, category: SecureVaultSorting.Category) -> some View {
 
         Button {
             model.onAddItemClickedFor(category)
         } label: {
             HStack {
-                Image(imageName)
+                image
                 Text(text)
             }
         }
@@ -528,3 +536,17 @@ private struct HideMenuIndicatorModifier: ViewModifier {
     }
 
 }
+
+// Xcode 26: When we transition to Xcode 26, we will need this modifier to fix the layout in macOS 26.
+// private struct FlexibleButtonSizingModifier: ViewModifier {
+//
+//    func body(content: Content) -> some View {
+//        if #available(macOS 26, *) {
+//            content
+//                .buttonSizing(.flexible)
+//        } else {
+//            content
+//        }
+//    }
+//
+// }

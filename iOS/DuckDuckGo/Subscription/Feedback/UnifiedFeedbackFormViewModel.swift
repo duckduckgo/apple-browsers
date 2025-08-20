@@ -21,6 +21,7 @@ import Combine
 import SwiftUI
 import Networking
 import Subscription
+import BrowserServicesKit
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
     private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
@@ -32,6 +33,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case vpn
         case pir
         case itr
+        case duckAi
         case unknown
     }
 
@@ -137,8 +139,10 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let apiService: any Networking.APIService
     private let vpnMetadataCollector: any UnifiedMetadataCollector
+    private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
+    private let isPaidAIChatFeatureEnabled: () -> Bool
 
     let source: String
 
@@ -147,25 +151,34 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          apiService: any Networking.APIService,
          vpnMetadataCollector: any UnifiedMetadataCollector,
+         dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadatCollector: any UnifiedMetadataCollector = DefaultMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
+         isPaidAIChatFeatureEnabled: @escaping () -> Bool,
          source: Source = .unknown) {
         self.viewState = .feedbackPending
         self.subscriptionManager = subscriptionManager
         self.apiService = apiService
         self.vpnMetadataCollector = vpnMetadataCollector
+        self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadatCollector
         self.feedbackSender = feedbackSender
+        self.isPaidAIChatFeatureEnabled = isPaidAIChatFeatureEnabled
         self.source = source.rawValue
 
         Task {
-            let features = await subscriptionManager.currentSubscriptionFeatures()
+            // This requires follow-up work:
+            // https://app.asana.com/1/137249556945/task/1210799126744217
+            let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
 
             if features.contains(.networkProtection) {
                 availableCategories.append(.vpn)
             }
             if features.contains(.dataBrokerProtection) {
                 availableCategories.append(.pir)
+            }
+            if features.contains(.paidAIChat) && isPaidAIChatFeatureEnabled() {
+                availableCategories.append(.duckAi)
             }
             if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {
                 availableCategories.append(.itr)
@@ -234,6 +247,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             case .vpn: return VPNFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .pir: return PIRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .itr: return ITRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
+            case .duckAi: return PaidAIChatFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             }
         }()
 
@@ -269,6 +283,14 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                           subcategory: selectedSubcategory,
                                                           description: feedbackFormText,
                                                           metadata: metadata as? VPNMetadata)
+        case .pir:
+            let metadata = await dbpMetadataCollector.collectMetadata()
+            try await submitIssue(metadata: metadata)
+            try await feedbackSender.sendReportIssuePixel(source: source,
+                                                          category: selectedCategory,
+                                                          subcategory: selectedSubcategory,
+                                                          description: feedbackFormText,
+                                                          metadata: metadata as? DBPFeedbackMetadata)
         default:
             let metadata = await defaultMetadataCollector.collectMetadata()
             try await submitIssue(metadata: metadata)

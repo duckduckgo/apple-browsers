@@ -66,13 +66,13 @@ private struct ExpandButtonDivider: View {
     VStack {
         Button(action: {},
                label: {
-            Image(.chevronDown)
+            Image(.activateViaApple16)
                 .resizable()
         }).buttonStyle(ToggleExpandButtonStyle())
 
         Button(action: {},
                label: {
-            Image(.chevronUp)
+            Image(.activateViaEmail16)
                 .resizable()
         }).buttonStyle(ToggleExpandButtonStyle())
     }

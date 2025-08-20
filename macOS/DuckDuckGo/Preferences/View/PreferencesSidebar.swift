@@ -24,10 +24,11 @@ extension Preferences {
 
     struct SidebarSectionHeader: View {
         let section: PreferencesSectionIdentifier
+        let isSubscriptionRebrandingOn: Bool
 
         var body: some View {
             Group {
-                if let name = section.displayName {
+                if let name = section.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn) {
                     Text(name)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 3)
@@ -44,28 +45,46 @@ extension Preferences {
         let isSelected: Bool
         let isEnabled: Bool
         let action: () -> Void
+        let settingsIconProvider: SettingsIconsProviding
+        let isSubscriptionRebrandingOn: Bool
+        let isNew: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
-        init(pane: PreferencePaneIdentifier, isSelected: Bool, isEnabled: Bool = true, status: PrivacyProtectionStatus?, action: @escaping () -> Void) {
+        init(pane: PreferencePaneIdentifier,
+             isSelected: Bool,
+             isEnabled: Bool = true,
+             status: PrivacyProtectionStatus?,
+             settingsIconProvider: SettingsIconsProviding,
+             isSubscriptionRebrandingOn: Bool,
+             isNew: Bool = false,
+             action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
             self.isEnabled = isEnabled
             self.action = action
             self.protectionStatus = status ?? PrivacyProtectionStatus()
+            self.settingsIconProvider = settingsIconProvider
+            self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
+            self.isNew = isNew
         }
 
         var body: some View {
             Button(action: action) {
-                HStack(spacing: 6) {
-                    Image(pane.preferenceIconName).frame(width: 16, height: 16)
+                HStack(alignment: .center, spacing: 6) {
+                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider, isSubscriptionRebrandingOn: isSubscriptionRebrandingOn))
+                        .frame(width: 16, height: 16)
                         .if(!isEnabled) {
                             $0.grayscale(1.0).opacity(0.5)
                         }
 
-                    Text(pane.displayName).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
+                    Text(pane.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
                         .if(!isEnabled) {
                             $0.opacity(0.5)
                         }
+
+                    if isNew {
+                        NewBadgeView()
+                    }
 
                     Spacer()
 
@@ -81,6 +100,18 @@ extension Preferences {
             .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
             .disabled(!isEnabled)
+        }
+    }
+
+    struct NewBadgeView: View {
+        var body: some View {
+            Text(UserText.newBadge.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .alertYellow))
+                .foregroundColor(.black)
+                .cornerRadius(4)
         }
     }
 
@@ -124,8 +155,8 @@ extension Preferences {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(model.sections) { section in
-                            SidebarSectionHeader(section: section.id)
-                            sidebarSection(section)
+                            SidebarSectionHeader(section: section.id, isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled)
+                            sidebarSection(section, settingsIconProvider: model.settingsIconProvider)
                         }
                     }.padding(.bottom, 16)
                 }
@@ -139,14 +170,19 @@ extension Preferences {
         }
 
         @ViewBuilder
-        private func sidebarSection(_ section: PreferencesSection) -> some View {
+        private func sidebarSection(_ section: PreferencesSection,
+                                    settingsIconProvider: SettingsIconsProviding) -> some View {
             ForEach(section.panes) { pane in
                 PaneSidebarItem(pane: pane,
                                 isSelected: model.selectedPane == pane,
                                 isEnabled: model.isSidebarItemEnabled(for: pane),
-                                status: model.protectionStatus(for: pane)) {
-                    model.selectPane(pane)
-                }
+                                status: model.protectionStatus(for: pane),
+                                settingsIconProvider: settingsIconProvider,
+                                isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled,
+                                isNew: model.isPaneNew(pane: pane),
+                                action: {
+                                    model.selectPane(pane)
+                                })
             }
             if section != model.sections.last {
                 Color(NSColor.separatorColor)

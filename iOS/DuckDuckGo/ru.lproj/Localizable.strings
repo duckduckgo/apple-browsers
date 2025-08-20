@@ -59,10 +59,7 @@
 "action.title.downloads" = "Загрузки";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Чат с ИИ";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Запустить AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Редактировать закладку";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Доступ к любимым сайтам в одно касание.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Функции ИИ";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Существующие закладки дублироваться не будут.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Синхронизация приостановлена. Чтобы возобновить ее, выполните повторную привязку, используя другое устройство или код восстановления.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Синхронизировать";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "Устройство «%@» получит доступ к вашим синхронизированным данным из DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Синхронизировать новое устройство?";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Узнать больше";
@@ -259,9 +268,6 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Разблокируйте DuckDuckGo.";
 
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Вы точно хотите удалить все закладки? Это действие нельзя отменить.";
-
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Войти";
 
@@ -306,6 +312,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Если DuckDuckGo обнаружит всплывающее окно выбора куки-файлов на каком-либо сайте, мы попытаемся автоматически выбрать минимум куки, максимально защитив ваши данные, а затем закроем окно. Некоторые сайты не позволяют контролировать настройки куки-файлов. В этом случае мы можем их только скрыть.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Карта сохранена";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Карта удалена";
@@ -394,6 +403,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Для хранения карт нужна защита устройства";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Не сохранять";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Сохранить карту";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Реквизиты карт надежно хранятся на вашем устройстве.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Хотите, чтобы DuckDuckGo сохранил реквизиты карты?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Чтобы заполнить реквизиты, выполните авторизацию";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Использовать сохраненную карту?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Хранение реквизитов платежных карт можно отключить в любой момент.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -454,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Синхронизировать с компьютером";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Как импортировать пароли";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Как синхронизировать пароли из настольного браузера";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Выключить";
@@ -914,10 +944,22 @@
 "broken.site.report.success.toast" = "Ваш отчет поможет улучшить DuckDuckGo для всех.";
 
 /* No comment provided by engineer. */
+"Broker JSON:" = "Брокер JSON:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "Брокер: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "Брокеры";
+
+/* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Отмена допускается только один раз";
 
 /* Close All Tabs */
 "close.all.tabs" = "Закрыть все вкладки";
+
+/* No comment provided by engineer. */
+"Cohort: %@" = "Когорта: %@";
 
 /* No comment provided by engineer. */
 "Confirm" = "Подтвердить";
@@ -1034,7 +1076,13 @@
 "crash.report.dialog.title" = "Автоматически отправлять отчеты о сбоях?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Текущее количество отклонений: %@";
+
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "СОБСТВЕННОЕ СОДЕРЖИМОЕ ЯЧЕЙКИ";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "Пользовательский URL: %@";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортировать файл с закладками...";
@@ -1072,9 +1120,6 @@
 /* Step 2 for instructions to export passwords from Safari */
 "data.import.instructions.safari.step2.passwords" = "Выберите вариант **Экспорт**, а на следующем экране — **Пароли** и **Сохранить в «Загрузки»**.";
 
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Импортировать файл с паролями...";
-
 /* Step 1 for instructions to import passwords from Chrome */
 "data.import.passwords.instructions.chrome.step1" = "В браузере Chrome откройте **Менеджер паролей Google** и выберите вариант **Настройки**.";
 
@@ -1098,6 +1143,9 @@
 
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Как экспортировать пароли из Safari:";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Выбрать файл...";
 
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Выберите файл с паролями, экспортированными из браузера Safari или Chrome. Обычно он имеет формат ZIP или CSV.";
@@ -1125,6 +1173,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Импортирование завершено.";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Платежные карты";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Пропущенные дубликаты";
@@ -1169,7 +1220,7 @@
 "Debug" = "Отладка";
 
 /* No comment provided by engineer. */
-"Delete All" = "Удалить все";
+"Delete" = "Удалить";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "устройстве";
@@ -1255,8 +1306,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Работа проигрывателя Duck Player пострадала в результате недавних изменений на YouTube. Мы уже ищем решение и благодарим вас за понимание.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai — дополнительная функция, позволяющая анонимно беседовать с популярными сторонними чат-моделями на базе искусственного интеллекта. Содержимое чатов не применяется для обучения ИИ.\n[Подробнее...](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Адресная строка";
@@ -1265,16 +1316,43 @@
 "duckai.settings.enable.browsing-menu-toggle" = "Меню браузера";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Tabs Screen";
+"duckai.settings.enable.tab-switcher-toggle" = "Экран вкладок";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Голосовой поиск";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Узнать больше";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
 "DuckDuckGo for iOS" = "DuckDuckGo для iOS";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "Добавьте подписку DuckDuckGo на это устройство";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "Чтобы добавить подписку на это устройство, используйте адрес электронной почты.";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "Добавление подписки на другие устройства";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Подписку можно добавить на другие устройства с помощью Apple ID или путем привязки адреса электронной почты. **[Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "Используйте этот адрес электронной почты, чтобы добавить подписку на другие устройства. Для этого в приложении DuckDuckGo откройте раздел «Настройки > Подписка DuckDuckGo > У меня уже есть подписка». **[Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "На страницах справочного раздела вы найдете ответы на распространенные вопросы, а также контактную информацию по тарифам.";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "Чтобы настроить функцию Personal Information Removal, активируйте подписку DuckDuckGo на компьютере.";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "Вы утратите доступ к преимуществам подписки DuckDuckGo на этом устройстве. Сама же подписка не отменяется и по-прежнему будет работать на других устройствах.";
 
 /* Text displayed when DuckPlayer is always enabled */
 "duckPlayer.alwaysEnabled.label" = "Всегда";
@@ -1282,17 +1360,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Спрашивать каждый раз";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Проигрыватель Duck Player блокирует целевую рекламу и хранит вашу историю просмотров в тайне.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никогда";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Проигрыватель Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Открывать видео из YouTube здесь";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Проигрыватель Duck Player блокирует целевую рекламу и защищает вашу историю просмотров.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "Меньше рекламы и больше приватности при просмотре YouTube-роликов";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Видео без целевой рекламы";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Воспроизвести в Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Видео без целевой рекламы";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Воспроизвести в Duck Player";
@@ -1354,6 +1441,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Проигрыватель Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Открывать видео из YouTube здесь";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Опции Duck Player";
 
@@ -1363,20 +1453,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Разрешить мне выбрать";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Открывать автоматически";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Не показывать";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Открыть Настройки";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Duck Player можно в любой момент отключить в настройках.";
+"duckplayer.toast.turn.off.anytime" = "Duck Player можно отключить в любой момент";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Смотреть на YouTube";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Видео без целевой рекламы";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Чтобы вернуться на YouTube, закройте Duck Player.\nНе для вас? Выключите его внизу!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Меньше рекламы и больше приватности при просмотре YouTube-роликов";
+"duckplayer.welcome.message.text" = "Вы просматриваете в Duck Player!\nЗдесь нет целевой рекламы.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита электронной почты";
@@ -1454,6 +1553,9 @@
 "empty.search" = "Ничего не найдено";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Внесено: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1506,6 +1608,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Только избранное с телефона";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Функция: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Блокировка рекламы и всплывающих окон";
@@ -1602,6 +1707,9 @@
 
 /* Title of the feedback form */
 "feedback.form.title" = "Помогите нам улучшить Privacy Pro";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
 
 /* Category for Identity Theft Restoration feedback */
 "feedback.general.category.itr" = "Identity Theft Restoration";
@@ -1795,6 +1903,18 @@
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Код: %1$@ | %2$@ | %3$@";
 
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Импорт паролей";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "Больше не спрашивать";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Быстрый и безопасный способ перенести пароли из другого браузера.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Импорт паролей в DuckDuckGo";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Включите VPN в приложении DuckDuckGo.";
 
@@ -1869,6 +1989,9 @@
 
 /* No comment provided by engineer. */
 "keyCommandShowAllTabs" = "Показать все вкладки";
+
+/* No comment provided by engineer. */
+"Loading brokers..." = "Загружаются брокеры...";
 
 /* Summary text for the macOS browser waitlist */
 "mac-browser.waitlist.summary" = "Приложение DuckDuckGo для Mac — это высокая скорость, функциональность и беспрецедентная конфиденциальность.";
@@ -1958,7 +2081,7 @@
 "network.protection.addwidget.tip.title" = "Специальный VPN-виджет";
 
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN отключен ввиду окончания подписки. Чтобы вновь подключиться к DuckDuckGo VPN, оформите подписку Privacy Pro.";
+"network.protection.entitlement.expired.notification.body" = "VPN отключен ввиду окончания подписки. Оформите подписку, чтобы подключиться снова.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "Подключиться к DuckDuckGo VPN не удалось. Повторите попытку позже.";
@@ -2189,7 +2312,7 @@
 "new.tab.page.settings.title" = "Страница новой вкладки";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Чат с ИИ";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Закладки";
@@ -2206,6 +2329,12 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Чтобы добавить сайт к странице новой вкладки, откройте меню ••• и выберите пункт **Добавить в избранное**.";
 
+/* No comment provided by engineer. */
+"No results found" = "Ничего не найдено";
+
+/* No comment provided by engineer. */
+"OK" = "Хорошо";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Kуки-файлы выбраны";
 
@@ -2220,6 +2349,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Конфиденциальный поиск по умолчанию";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "платной подписке";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
 
 /* The message of the option to set the address bar to the bottom. */
 "onboarding.highlights.addressBarPosition.bottom.message" = "Легко использовать";
@@ -2255,7 +2390,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Блокировка всплывающих окон куки";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Блокирует рекламу с отслеживанием";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Блокировка целевой рекламы";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Стирает данные браузера одним нажатием";
@@ -2287,15 +2422,6 @@
 /* The title of the onboarding dialog that promotes Privacy Pro */
 "onboarding.privacypro.promo.title" = "Кстати, пока не забыл...";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
-"onboarding.privacypro.promo.vpn.message" = "В DuckDuckGo также есть встроенный %1$@!\n\nДля его активации требуется %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "платная подписка Privacy Pro";
-
-/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
-"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
-
 /* The title of the button to skip the onboarding and start browsing. */
 "onboarding.skip.cta.confirmSkip" = "Начать просмотр";
 
@@ -2307,6 +2433,18 @@
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Понятно. Тогда мы пропустим остальные советы.";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "Ознакомление бесплатное!";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGo также предлагает надежный сервис %1$@ по %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "платной подписке";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + еще два вида дополнительной защиты";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Добавить виджет";
@@ -2340,6 +2478,21 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Приложение для открытия этой ссылки не найдено";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "Выполняется отказ...";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Нет доступа к моделям Duck.ai, предоставляемым только по подписке";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Не могу воспользоваться Duck.ai по подписке в других браузерах";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "ВЫБЕРИТЕ КАТЕГОРИЮ";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "Другие отзывы о Duck.ai";
 
 /* Activate button */
 "pm.activate" = "Активировать";
@@ -2409,6 +2562,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Отправить отзыв";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Блокировщик мошенничества";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "При отключении этой функции ваши личные данные могут оказаться под угрозой.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Предупреждать о мошеннических, фишинговых и вредоносных сайтах. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "По возможности автоматически переводит ссылки на более безопасный протокол HTTPS. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Усовершенствованное шифрование";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Всегда включено";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Защита от угроз";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Функции повышенной защиты DuckDuckGo пресекают распространенные угрозы, одновременно обеспечивая вам безопасное соединение.\n[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Некоторые закладки или пароли не синхронизируются из-за неверного формата или превышения ограничений по длине.";
@@ -2488,6 +2665,9 @@
 /* Privacy Icon accessibility title */
 "privacy.icon.shield" = "Значок конфиденциальности";
 
+/* No comment provided by engineer. */
+"Profile Information" = "Данные профиля";
+
 /* Deny action */
 "prompt.custom.url.scheme.dontopen" = "Отменить";
 
@@ -2501,13 +2681,19 @@
 "prompt.custom.url.scheme.title" = "Открыть в другом приложении?";
 
 /* No comment provided by engineer. */
+"Relatives: %@" = "Родственники: %@";
+
+/* No comment provided by engineer. */
 "Reset" = "Сбросить";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Сбросить счетчик отклонения таблеток";
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
+
+/* No comment provided by engineer. */
+"Results" = "Результаты";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Введите поисковый запрос или адрес сайта";
@@ -2533,17 +2719,26 @@
 /* Title of the picker where the user can chose the category of the feedback they want ot send. */
 "send.browser.feedback.select-category" = "ВЫБЕРИТЕ КАТЕГОРИЮ";
 
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "Задать собственный URL-адрес для чата с ИИ";
+
 /* Settings cell for About DDG */
 "settings.about.ddg" = "Несколько слов о DuckDuckGo";
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "О нас";
 
+/* About page subscription sentence: deprecated */
+"settings.about.subscription.sentence.deprecated" = "Кроме того, вместе с браузером мы предлагаем встроенную подписку «три в одном» [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/). Ее обладателям предоставляются расширенные возможности: быстрая и удобная служба [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) для защиты работы онлайн, обнаружение и удаление личной информации с сайтов поиска людей, а также служба восстановления украденных идентификационных данных.";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "Кроме того, мы предлагаем [подписку DuckDuckGo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), интегрированную в наш браузер. Подписчики могут воспользоваться расширенными возможностями — быстрой и удобной службой [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) для защиты онлайн, передовыми моделями ИИ в чате Duck.ai, службой по удалению личной информации с сайтов поиска людей, а также восстановлением украденных идентификационных данных.";
+
 /* about tagline */
 "settings.about.tagline" = "Защита. Конфиденциальность. Спокойствие.";
 
-/* about page */
-"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGo — независимая компания, которая обеспечивает защиту личной информации в интернете тем, кто хочет вернуть себе контроль над собственными данными.\n\nМы считаем, что лучший способ защитить личную информацию от хакеров, мошенников и навязчивых компаний — полностью пресечь ее сбор. Вот почему миллионы людей [выбирают DuckDuckGo вместо Chrome и других браузеров](ddgQuickLink://duckduckgo.com/compare-privacy) для поиска и просмотра сайтов. Наша встроенная поисковая система работает точно так же, как Google, только не отслеживает ваши запросы. А попытки других компаний собрать ваши данные пресекаются такими защитными функциями, как блокировка рекламных трекеров и куки-файлов. К тому же наш браузер работает бесплатно: мы получаем доход от [показа рекламных объявлений](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), а не от продажи ваших персональных данных. \n\n%@ \n\nЕсли вы хотите вернуть себе контроль над личной информацией, выбирайте браузер, созданный для защиты, а не сбора данных.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Универсальный доступ";
@@ -2564,7 +2759,16 @@
 "settings.address.full.url" = "Показывать полный адрес сайта";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Ярлыки";
+"settings.aichat.shortcuts" = "Ярлыки Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Пробная адресная строка";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Выполнить поиск в интернете или задать вопрос ИИ-ассистенту Duck.ai можно прямо из адресной строки.";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Настройки Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Всегда включено";
@@ -2605,6 +2809,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоудаление данных";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Завершение настройки";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Защита от всплывающих окон куки";
 
@@ -2629,6 +2836,9 @@
 /* Settings cell to link users to other products by DuckDuckGo */
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo для других платформ";
 
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "Срок действия вашей подписки Privacy Pro истек";
+
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Оказывается, чтобы избавиться от трекеров и скрыть свой адрес, вовсе не нужно менять почтовый сервис.\n[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
 
@@ -2639,13 +2849,19 @@
 "settings.emailProtection.description" = "Блокировка почтовых трекеров и скрытие адреса";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Включить Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Общайтесь в приватном чате с популярными сторонними моделями искусственного интеллекта";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Включите защиту электронной почты";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Включить голосовой поиск";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Выберите, как часто вы хотите видеть ответы от ИИ в результатах поиска.";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Оставьте нам отзыв";
@@ -2667,6 +2883,12 @@
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Значок приложения";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Импорт паролей";
+
+/* Copy for budge on settings item to show an item is new */
+"settings.item.badge.new" = "новый";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
@@ -2728,6 +2950,9 @@
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Автоматически отправлять отчеты о сбоях в DuckDuckGo.";
 
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Сделать браузером по умолчанию";
+
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Настроить положение адресной строки";
 
@@ -2737,20 +2962,38 @@
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "Этот процесс занимает больше времени, чем обычно. Вернитесь сюда чуть позже.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Удаляет ваши данные с сайтов, которые занимаются их продажей";
 
 /* Data Broker protection cell title for privacy pro */
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "Подписка открывает доступ к VPN и функции восстановления после кражи данных.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Подписка открывает доступ к VPN, а также функциям удаления личной информации и восстановления после кражи данных.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Подписка открывает доступ к VPN, продвинутым моделям ИИ в Duck.ai и функции восстановления после кражи данных.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Подписка открывает доступ к VPN, продвинутым моделям ИИ в Duck.ai, а также функциям удаления личной информации и восстановления после кражи данных.";
+
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "У меня уже есть подписка";
 
-/* Subscription expired description */
-"settings.subscription.expired.comment" = "Чтобы использовать Privacy Pro, подпишитесь заново";
-
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Срок действия вашей подписки Privacy Pro истек";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "Подписка DuckDuckGo";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Восстанавливает контроль над украденными личными данными";
@@ -2764,14 +3007,23 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Настройки подписки";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Включает услуги: VPN и и Identity Theft Restoration (восстановление данных после «кражи личности»).";
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "Подписка DuckDuckGo";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "Подписаться на DuckDuckGo";
 
 /* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe" = "Тариф Privacy Pro для защиты соединения и личных данных";
+"settings.subscription.subscribe.title" = "Защита Wi-Fi плюс приватные чаты с продвинутыми моделями ИИ";
 
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Включает услуги: VPN, Personal Information Removal (удаление личной информации) и Identity Theft Restoration (восстановление данных после «кражи личности»).";
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Защита Wi-Fi-соединения и личных данных";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "Попробуйте бесплатно";
+
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free.no.ai.chat" = "Попробуйте Privacy Pro бесплатно";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2842,6 +3094,9 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
 
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Подфункция: %@";
+
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавление на устройство";
 
@@ -2881,9 +3136,6 @@
 /* View title for activating subscription */
 "subscription.activate.view.title" = "У меня уже есть подписка";
 
-/* Resend activation instructions button */
-"subscription.add.device.resend.instructions" = "Отправить заново";
-
 /* Add email to an existing subscription */
 "subscription.add.email" = "Чтобы активировать подписку на других устройствах, добавьте адрес электронной почты. Он будет использоваться только для подтверждения подписки.";
 
@@ -2898,9 +3150,6 @@
 
 /* Footer for section for activating subscription on other devices when email is added */
 "subscription.add.to.devices.with.email.footer" = "Чтобы добавить подписку на других устройствах, укажите этот адрес электронной почты в приложении DuckDuckGo. Для этого откройте раздел «Настройки > Privacy Pro > У меня есть подписка». **[Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Subscription availability message on Apple devices */
-"subscription.available.apple" = "Подписка Privacy Pro доступна на любом устройстве, где выполнен вход в тот же аккаунт Apple.";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Ваша подписка приобретена в магазине приложений Google Play Store. Чтобы продлить ее, откройте настройки подписок в Google Play Store на устройстве, где выполнен вход в ту же учетную запись Google, через которую была изначально оформлена подписка.";
@@ -2919,6 +3168,15 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Вы уверены?";
+
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "Приватный чат с ИИ-моделями, доступными только по подписке.\n[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Открыть Duck.ai";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Подписка, закрепленная за этой учетной записью, утратила активный статус.";
@@ -2995,6 +3253,9 @@
 /* Progress view title when restoring past subscription purchase */
 "subscription.progress.view.restoring.subscription" = "Восстановление подписки...";
 
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Пакет Privacy Pro теперь называется просто подпиской DuckDuckGo.";
+
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Удалить с этого устройства";
 
@@ -3033,6 +3294,9 @@
 
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "Готово!";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "Подписка DuckDuckGo";
 
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Подписка оформлена";
@@ -3245,7 +3509,7 @@
 "vpn.access-revoked.alert.action.subscribe" = "Подписаться";
 
 /* Alert message for the alert when the Privacy Pro subscription expiress */
-"vpn.access-revoked.alert.message" = "Чтобы вновь подключиться к DuckDuckGo VPN, оформите подписку Privacy Pro.";
+"vpn.access-revoked.alert.message" = "Оформите подписку, чтобы подключиться снова.";
 
 /* Alert title for the alert when the Privacy Pro subscription expires */
 "vpn.access-revoked.alert.title" = "VPN отключен ввиду окончания подписки";
@@ -3365,10 +3629,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Стоп-списки на уровне DNS блокируют более 150 тысяч доменов, на которые поступили жалобы за размещение вредоносного ПО, фишинговые атаки и онлайн-мошенничество. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Блокировка и фильтрация контента";
+"vpn.settings.dns.server.content.blocking.header" = "Блокировка вредоносного контента";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Блокировать опасные домены";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Блокировщик мошенничества";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";
@@ -3486,6 +3750,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Продолжить";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Платежные карты";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Пароли";

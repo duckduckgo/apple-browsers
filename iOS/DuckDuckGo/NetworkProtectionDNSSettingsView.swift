@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import NetworkProtection
+import VPN
 
 struct NetworkProtectionDNSSettingsView: View {
     @StateObject var viewModel = NetworkProtectionDNSSettingsViewModel(settings: AppDependencyProvider.shared.vpnSettings, controller: AppDependencyProvider.shared.networkProtectionTunnelController)

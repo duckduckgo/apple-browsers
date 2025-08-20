@@ -40,7 +40,15 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
         try super.setUpWithError()
 
         cancellables = []
-        appearance = AppearancePreferences(persistor: AppearancePreferencesPersistorMock())
+        appearance = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+    }
+
+    override var allowedNonNilVariables: Set<String> {
+        ["selectedTabSubject", "tabContents"]
     }
 
     override func tearDownWithError() throws {
@@ -71,7 +79,7 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
 
     // Appearance `showBookmarksBars` false
     @MainActor
-    func testWhenSelectedTaContentAndShowBookmarksBarIsFalseThenIsBookmarksBarVisibleIsFalse() throws {
+    func testWhenSelectedTabContentAndShowBookmarksBarIsFalseThenIsBookmarksBarVisibleIsFalse() throws {
         // GIVEN
         appearance.showBookmarksBar = false
 

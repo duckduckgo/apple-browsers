@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Arrow-Circle-Right-12_svg__a)">
+    <path fill="#000" d="M6 0a6 6 0 1 1 0 12A6 6 0 0 1 6 0Zm0 1a5 5 0 1 0 0 10A5 5 0 0 0 6 1Zm.265 2.418a.47.47 0 0 1 .663.001l1.719 1.725.083.092a1.219 1.219 0 0 1-.083 1.628L6.928 8.59l-.035.032a.47.47 0 0 1-.661-.659l.032-.035 1.449-1.453H3.802a.469.469 0 1 1 0-.938h3.913l-1.45-1.455a.47.47 0 0 1 0-.663Z"/>
+  </g>
+  <defs>
+    <clipPath id="Arrow-Circle-Right-12_svg__a">
+      <path fill="#fff" d="M0 0h12v12H0z"/>
+    </clipPath>
+  </defs>
+</svg>

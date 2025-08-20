@@ -24,13 +24,13 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
+private var fm: FileManager { FileManager.default }
 final class DownloadListCoordinatorTests: XCTestCase {
     var store: DownloadListStoreMock!
     var downloadManager: FileDownloadManagerMock!
     var coordinator: DownloadListCoordinator!
     var webView: DownloadsWebViewMock!
 
-    let fm = FileManager.default
     var testFile: String!
     var destURL: URL!
     var tempURL: URL!
@@ -38,12 +38,49 @@ final class DownloadListCoordinatorTests: XCTestCase {
     var chooseDestinationBlock: ((String?, URL?, [UTType], @escaping (URL?, UTType?) -> Void) -> Void)?
 
     override func setUp() {
-        self.store = DownloadListStoreMock()
-        self.downloadManager = FileDownloadManagerMock()
-        self.webView = DownloadsWebViewMock()
-        self.testFile = UUID().uuidString + ".pdf"
-        self.destURL = fm.temporaryDirectory.appendingPathComponent(testFile)
-        self.tempURL = fm.temporaryDirectory.appendingPathComponent(testFile).deletingPathExtension().appendingPathExtension("duckload")
+        autoreleasepool {
+            self.store = DownloadListStoreMock()
+            self.downloadManager = FileDownloadManagerMock()
+            self.webView = DownloadsWebViewMock()
+            self.testFile = UUID().uuidString + ".pdf"
+            self.destURL = fm.temporaryDirectory.appendingPathComponent(testFile)
+            self.tempURL = fm.temporaryDirectory.appendingPathComponent(testFile).deletingPathExtension().appendingPathExtension("duckload")
+        }
+    }
+
+    override func tearDown() {
+        autoreleasepool {
+            if let coordinator {
+                let activeItems = coordinator.downloadListItems.filter { item in
+                    if let progress = item.progress, !progress.isCancelled { true } else { false }
+                }
+                if !activeItems.isEmpty {
+                    var expectations = activeItems.reduce(into: [:]) { expectations, item in
+                        expectations[item.identifier] = expectation(description: "\(item) tearDown cancellation")
+                    }
+                    let cancellable = coordinator.updates.sink {
+                        if $0.isDownloadCompletedUpdate {
+                            expectations[$0.item.identifier]?.fulfill()
+                            expectations[$0.item.identifier] = nil
+                        }
+                    }
+                    activeItems.forEach { $0.progress?.cancel() }
+
+                    waitForExpectations(timeout: 5)
+                    withExtendedLifetime(cancellable) {}
+                }
+            }
+
+            self.store = nil
+            self.downloadManager = nil
+            self.coordinator = nil
+            self.webView = nil
+
+            self.testFile = nil
+            self.destURL = nil
+            self.tempURL = nil
+            self.chooseDestinationBlock = nil
+        }
     }
 
     func setUpCoordinator() {
@@ -61,7 +98,6 @@ final class DownloadListCoordinatorTests: XCTestCase {
     @MainActor
     func addDownload(tempURL: URL? = nil, destURL: URL? = nil, isBurner: Bool = false) -> (WKDownloadMock, WebKitDownloadTask, UUID) {
         let download = WKDownloadMock(url: .duckDuckGo)
-        let fm = FileManager.default
         let destURL = destURL ?? self.destURL!
         XCTAssertTrue(fm.createFile(atPath: destURL.path, contents: nil))
         let destFile = try! FilePresenter(url: destURL)
@@ -71,8 +107,20 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-            let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false, fireWindowSession: .init())
+            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+            let mainViewController = MainViewController(
+                tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
+                autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+                aiChatSidebarProvider: AIChatSidebarProvider(),
+                fireCoordinator: fireCoordinator
+            )
+            let mainWindowController = MainWindowController(
+                mainViewController: mainViewController,
+                popUp: false,
+                fireWindowSession: .init(),
+                fireViewModel: fireCoordinator.fireViewModel,
+                visualStyle: NSApp.delegateTyped.visualStyle
+            )
             fireWindowSession = FireWindowSessionRef(window: mainWindowController.window)
         }
         let task = WebKitDownloadTask(download: download, destination: .resume(destination: destFile, tempFile: tempFile), fireWindowSession: fireWindowSession)
@@ -103,7 +151,6 @@ final class DownloadListCoordinatorTests: XCTestCase {
         let e1 = expectation(description: "fetch called")
         store.fetchBlock = { completionHandler in
             e1.fulfill()
-            let fm = FileManager()
             for item in items where item != .testRemovedItem {
                 XCTAssertTrue(fm.createFile(atPath: item.destinationURL!.path, contents: nil))
                 if let tempURL = item.tempURL {
@@ -311,7 +358,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         let resumeCalled = expectation(description: "resume called")
         webView.resumeDownloadBlock = { [testFile, tempURL] data in
             resumeCalled.fulfill()
-            let resumeData = try? data.map(DownloadResumeData.init(resumeData:))
+            let resumeData = try? DownloadResumeData(resumeData: data)
             XCTAssertEqual(resumeData?.localPath, tempURL!.path)
             XCTAssertEqual(resumeData?.tempFileName, testFile!.dropping(suffix: "." + testFile!.pathExtension).appendingPathExtension("duckload"))
             return WKDownloadMock(url: .duckDuckGo)
@@ -369,7 +416,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         let resumeCalled = expectation(description: "resume called")
         webView.resumeDownloadBlock = { [testFile, tempURL] data in
             resumeCalled.fulfill()
-            let resumeData = try? data.map(DownloadResumeData.init(resumeData:))
+            let resumeData = try? DownloadResumeData(resumeData: data)
             XCTAssertEqual(resumeData?.localPath, tempURL!.path)
             XCTAssertEqual(resumeData?.tempFileName, testFile!.dropping(suffix: "." + testFile!.pathExtension).appendingPathExtension("duckload"))
             return WKDownloadMock(url: .duckDuckGo)
@@ -435,7 +482,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         }
         webView.startDownloadBlock = { request in
             startCalled.fulfill()
-            XCTAssertEqual(request?.url, item.downloadURL)
+            XCTAssertEqual(request.url, item.downloadURL)
             return WKDownloadMock(url: .duckDuckGo)
         }
 
@@ -609,7 +656,7 @@ private struct TestError: Error, Equatable {}
 private extension Data {
     static let resumeData: Data = {
         let dict = [
-            "NSURLSessionResumeInfoLocalPath": FileManager.default.temporaryDirectory.appendingPathComponent("downloaded file.duckload"),
+            "NSURLSessionResumeInfoLocalPath": fm.temporaryDirectory.appendingPathComponent("downloaded file.duckload"),
             "NSURLSessionResumeInfoTempFileName": "downloaded file.pdf"
         ]
         let archiver = NSKeyedArchiver(requiringSecureCoding: false)
@@ -628,7 +675,7 @@ private extension DownloadListItem {
                                            fileName: "testItem.pdf",
                                            progress: nil,
                                            fireWindowSession: nil,
-                                           destinationURL: FileManager.default.temporaryDirectory.appendingPathComponent("testItem.pdf"),
+                                           destinationURL: fm.temporaryDirectory.appendingPathComponent("testItem.pdf"),
                                            destinationFileBookmarkData: nil,
                                            tempURL: nil,
                                            tempFileBookmarkData: nil,
@@ -642,7 +689,7 @@ private extension DownloadListItem {
                                                  fileName: "oldItem.pdf",
                                                  progress: nil,
                                                  fireWindowSession: nil,
-                                                 destinationURL: FileManager.default.temporaryDirectory.appendingPathComponent("oldItem.pdf"),
+                                                 destinationURL: fm.temporaryDirectory.appendingPathComponent("oldItem.pdf"),
                                                  destinationFileBookmarkData: nil,
                                                  tempURL: nil,
                                                  tempFileBookmarkData: nil,
@@ -656,7 +703,7 @@ private extension DownloadListItem {
                                             fileName: "outdated_fileName",
                                             progress: nil,
                                             fireWindowSession: nil,
-                                            destinationURL: FileManager.default.temporaryDirectory.appendingPathComponent("olderItem.pdf"),
+                                            destinationURL: fm.temporaryDirectory.appendingPathComponent("olderItem.pdf"),
                                             destinationFileBookmarkData: nil,
                                             tempURL: nil,
                                             tempFileBookmarkData: nil,
@@ -684,9 +731,9 @@ private extension DownloadListItem {
                                                  fileName: "testFailedItem.pdf",
                                                  progress: nil,
                                                  fireWindowSession: nil,
-                                                 destinationURL: FileManager.default.temporaryDirectory.appendingPathComponent("testFailedItem.pdf"),
+                                                 destinationURL: fm.temporaryDirectory.appendingPathComponent("testFailedItem.pdf"),
                                                  destinationFileBookmarkData: nil,
-                                                 tempURL: FileManager.default.temporaryDirectory.appendingPathComponent("testFailedItem.duckload"),
+                                                 tempURL: fm.temporaryDirectory.appendingPathComponent("testFailedItem.duckload"),
                                                  tempFileBookmarkData: nil,
                                                  error: .failedToCompleteDownloadTask(underlyingError: TestError(), resumeData: .resumeData, isRetryable: false))
 

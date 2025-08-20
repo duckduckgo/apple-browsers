@@ -22,11 +22,9 @@ import WidgetKit
 import Core
 import Networking
 import Configuration
+import Persistence
 
 struct AppConfiguration {
-
-    @UserDefaultsWrapper(key: .privacyConfigCustomURL, defaultValue: nil)
-    private var privacyConfigCustomURL: String?
 
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
@@ -41,47 +39,57 @@ struct AppConfiguration {
         NewTabPageIntroMessageConfiguration().disableIntroMessageForReturningUsers()
 
         contentBlockingConfiguration.prepareContentBlocking()
-        configureAPIRequestUserAgent()
+        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+
         onboardingConfiguration.migrateToNewOnboarding()
+        clearTemporaryDirectory()
         try persistentStoresConfiguration.configure()
-        setConfigurationURLProvider()
+        migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
     }
 
-    private func configureAPIRequestUserAgent() {
-        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
+    /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
+    ///  and the widgets needs to be reloaded after.
+    /// Moves settings from `UserDefaults.standard` to the shared container.
+    private func migrateAIChatSettings() {
+        AIChatSettingsMigration.migrate(from: UserDefaults.standard, to: {
+            let sharedUserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName)
+            if sharedUserDefaults == nil {
+                Pixel.fire(pixel: .debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration)
+            }
+            return sharedUserDefaults ?? UserDefaults()
+        })
     }
 
-    private func setConfigurationURLProvider() {
-        if isDebugBuild, let privacyConfigCustomURL, let url = URL(string: privacyConfigCustomURL) {
-            Configuration.setURLProvider(CustomConfigurationURLProvider(customPrivacyConfigurationURL: url))
-        } else {
-            Configuration.setURLProvider(AppConfigurationURLProvider())
+    private func clearTemporaryDirectory() {
+        let tmp = FileManager.default.temporaryDirectory
+        do {
+            try FileManager.default.removeItem(at: tmp)
+            Logger.general.info("🧹 Removed temp directory at: \(tmp.path)")
+            // https://app.asana.com/1/137249556945/project/1201392122292466/task/1210925187026095?focus=true
+            try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true, attributes: nil)
+            Logger.general.info("📁 Recreated temp directory at: \(tmp.path)")
+        } catch {
+            Logger.general.error("❌ Failed to reset tmp dir: \(error.localizedDescription)")
         }
     }
 
-    func finalize(with reportingService: ReportingService,
-                  autoClearService: AutoClearService,
-                  mainViewController: MainViewController) {
-        removeLeftoverStatesIfNeeded(autoClearService: autoClearService, mainViewController: mainViewController)
+    @MainActor
+    func finalize(reportingService: ReportingService,
+                  mainViewController: MainViewController,
+                  launchTaskManager: LaunchTaskManager,
+                  keyValueStore: ThrowingKeyValueStoring) {
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
             onVariantAssigned(reportingService: reportingService)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
         startAutomationServerIfNeeded(mainViewController: mainViewController)
-        configureUserBrowsingUserAgent() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
-    }
-
-    private func configureUserBrowsingUserAgent() {
-        _ = DefaultUserAgentManager.shared
-    }
-
-    private func removeLeftoverStatesIfNeeded(autoClearService: AutoClearService, mainViewController: MainViewController) {
-        if !autoClearService.isClearingEnabled {
-            mainViewController.tabManager.removeLeftoverInteractionStates()
-        }
+        UserAgentConfiguration(
+            store: keyValueStore,
+            launchTaskManager: launchTaskManager
+        ).configure() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
     }
 
     private func startAutomationServerIfNeeded(mainViewController: MainViewController) {

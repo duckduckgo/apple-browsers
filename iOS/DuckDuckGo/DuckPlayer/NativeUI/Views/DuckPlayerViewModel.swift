@@ -44,7 +44,7 @@ final class DuckPlayerViewModel: ObservableObject {
         static let playsInlineParameter = "playsinline"
         /// Controls whether video autoplays when loaded
         static let autoplayParameter = "autoplay"
-        // Used to enable features in URL parameters        
+        // Used to enable features in URL parameters
         static let enabled = "1"
         static let disabled = "0"
         // Used to set the start time of the video
@@ -56,9 +56,9 @@ final class DuckPlayerViewModel: ObservableObject {
         static let colorSchemeValue = "white"
     }
 
-    /// A publisher to notify when Youtube navigation is required.
-    /// Emits the videoID that should be opened in YouTube.
-    let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
+    /// A publisher to notify when external navigation is required.
+    /// Emits the URL that should be opened in the browser.
+    let youtubeNavigationRequestPublisher = PassthroughSubject<URL, Never>()
 
     /// A publisher to notify when the settings button is pressed.    
     let settingsRequestPublisher = PassthroughSubject<Void, Never>()
@@ -71,6 +71,9 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// DuckPlayer settings instance for accessing user preferences
     private var duckPlayerSettings: DuckPlayerSettings
+
+    /// The current timestamp of the video
+    @Published var currentTimeStamp: TimeInterval = 0
 
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
@@ -101,6 +104,15 @@ final class DuckPlayerViewModel: ObservableObject {
         source == .youtube
     }
 
+    // Controls visibility
+    var controlsVisible: Bool {
+        get {
+            duckPlayerSettings.duckPlayerControlsVisible
+        }
+        set {
+            duckPlayerSettings.duckPlayerControlsVisible = newValue
+        }
+    }
     var cancellables = Set<AnyCancellable>()
 
     /// The DuckPlayer instance
@@ -122,11 +134,17 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
     @Published var isLandscape: Bool = false
+    
+    /// Indicates whether the webview is currently loading content
+    @Published var isLoading: Bool = true
 
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
+
+    // Pixel handling
+    var pixelHandler: DuckPlayerPixelFiring.Type
 
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
@@ -135,13 +153,16 @@ final class DuckPlayerViewModel: ObservableObject {
     init(videoID: String,
          timestamp: TimeInterval? = nil,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-         source: DuckPlayer.VideoNavigationSource = .other) {
+         source: DuckPlayer.VideoNavigationSource = .other,
+         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
         self.videoID = videoID
         self.duckPlayerSettings = duckPlayerSettings
         self.timestamp = timestamp ?? 0
         self.source = source
         self.autoOpenOnYoutube = duckPlayerSettings.nativeUIYoutubeMode == .auto
+        self.pixelHandler = pixelHandler
         self.url = getVideoURL()
+
     }
 
     /// Gets the current video URL with the current timestamp
@@ -151,22 +172,33 @@ final class DuckPlayerViewModel: ObservableObject {
         var components = URLComponents(url: videoURL, resolvingAgainstBaseURL: true)
         let seconds = Int(timestamp)
         var queryItems = components?.queryItems ?? []
-        queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
+        if seconds >= 5 {
+            queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
+        }
         components?.queryItems = queryItems
         return components?.url
     }
 
-    /// Handles navigation requests to YouTube
-    /// - Parameter url: The YouTube video URL to navigate to
+    /// Handles navigation requests to external URLs
+    /// - Parameter url: The URL to navigate to
     func handleYouTubeNavigation(_ url: URL) {
-        if let (videoID, _) = url.youtubeVideoParams {
-            youtubeNavigationRequestPublisher.send(videoID)
+        // Check if tapped video is the same as currently playing
+        if let tappedVideoID = url.youtubeVideoParams?.videoID,
+           tappedVideoID == videoID {
+            // Same video - just close DuckPlayer (no publisher events needed)
+            // User is already on the correct video and wants to dismiss the player
+            return
+        } else {
+            // Different video/URL - navigate to the URL
+            youtubeNavigationRequestPublisher.send(url)
         }
     }
 
     /// Opens the current video in the YouTube app or website
     func openInYouTube() {
-        youtubeNavigationRequestPublisher.send(videoID)
+        pixelHandler.fire(.duckPlayerNativeWatchOnYoutube)
+        let url: URL = .youtube(videoID)
+        youtubeNavigationRequestPublisher.send(url)
     }
 
     /// Called when the view first appears
@@ -187,11 +219,19 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Called when the view disappears
     /// Removes orientation monitoring
     func onDisappear() {
-        dismissPublisher.send(timestamp)
-        stopObservingTimestamp()
+        dismissPublisher.send(currentTimeStamp)
         NotificationCenter.default.removeObserver(self,
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)
+        
+        // Clean up any remaining references
+        cancellables.removeAll()
+    }
+    
+    deinit {
+        // Ensure all observers are removed
+        NotificationCenter.default.removeObserver(self)
+        cancellables.removeAll()
     }
 
     /// Updates the current interface orientation state
@@ -214,34 +254,8 @@ final class DuckPlayerViewModel: ObservableObject {
 
     // Opens the settings view
     func openSettings() {
+        pixelHandler.fire(.duckPlayerNativeDuckPlayerSettingsOpened)
         settingsRequestPublisher.send()
-    }
-
-    /// Starts observing the video timestamp
-    /// - Parameter webView: The WKWebView instance playing the video
-    /// - Parameter coordinator: The coordinator instance managing the webview
-    func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
-        self.webView = webView
-        self.coordinator = coordinator
-
-        timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            Task {
-                if let timestamp = await self.coordinator?.getCurrentTimestamp(webView) {
-                    await MainActor.run {
-                        self.timestamp = timestamp
-                    }
-                }
-            }
-        }
-    }
-
-    /// Stops observing the video timestamp
-    func stopObservingTimestamp() {
-        timestampUpdateTimer?.invalidate()
-        timestampUpdateTimer = nil
-        webView = nil
-        coordinator = nil
     }
 
     // MARK: - Public Methods
@@ -249,6 +263,10 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Hides the welcome message
     func hideWelcomeMessage() {
         duckPlayerSettings.welcomeMessageShown = true
+    }
+
+    func updateTimeStamp(timeStamp: TimeInterval) {
+        currentTimeStamp = timeStamp
     }
 
     // MARK: - Private Methods

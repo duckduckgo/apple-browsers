@@ -99,6 +99,34 @@ final class PrivacyStatsUtils {
     }
 
     /**
+     * Returns total count of blocked trackers across all companies for past 7 days.
+     */
+    static func load7DaysTotalBlockedTrackersCount(in context: NSManagedObjectContext) throws -> Int64 {
+        let startDate = Date().privacyStatsOldestPackTimestamp
+        return try loadTotalBlockedTrackersCount(since: startDate, in: context)
+    }
+
+    private static func loadTotalBlockedTrackersCount(since startDate: Date, in context: NSManagedObjectContext) throws -> Int64 {
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: DailyBlockedTrackersEntity.Const.entityName)
+        request.predicate = NSPredicate(format: "%K >= %@", #keyPath(DailyBlockedTrackersEntity.timestamp), startDate as NSDate)
+
+        // Expression description for the sum of count
+        let countExpression = NSExpression(forKeyPath: #keyPath(DailyBlockedTrackersEntity.count))
+        let sumExpression = NSExpression(forFunction: "sum:", arguments: [countExpression])
+
+        let sumExpressionDescription = NSExpressionDescription()
+        sumExpressionDescription.name = "totalCount"
+        sumExpressionDescription.expression = sumExpression
+        sumExpressionDescription.expressionResultType = .integer64AttributeType
+
+        request.propertiesToFetch = [sumExpressionDescription]
+        request.resultType = .dictionaryResultType
+
+        let results = try context.fetch(request) as? [[String: Any]]
+        return (results?.first?["totalCount"] as? Int64) ?? 0
+    }
+
+    /**
      * Deletes stats older than 7 days for all companies.
      */
     static func deleteOutdatedPacks(in context: NSManagedObjectContext) throws {

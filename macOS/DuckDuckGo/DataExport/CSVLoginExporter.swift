@@ -50,7 +50,7 @@ final class CSVLoginExporter {
                 }
             }
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             throw error
         }
 
@@ -66,7 +66,7 @@ final class CSVLoginExporter {
             let notes = credential.account.notes ?? ""
 
             // Ensure that exported passwords escape any quotes they contain
-            let escapedPassword = password.replacingOccurrences(of: "\"", with: "\\\"")
+            let escapedPassword = password.replacingOccurrences(of: "\"", with: "\"\"")
 
             return "\"\(title)\",\"\(domain)\",\"\(username)\",\"\(escapedPassword)\",\"\(notes)\""
         }

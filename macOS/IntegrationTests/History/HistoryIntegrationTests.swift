@@ -58,7 +58,7 @@ class HistoryIntegrationTests: XCTestCase {
         }
 
         await withCheckedContinuation { continuation in
-            HistoryCoordinator.shared.burnAll {
+            NSApp.delegateTyped.historyCoordinator.burnAll {
                 continuation.resume(returning: ())
             }
         }
@@ -66,10 +66,14 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     override func tearDown() async throws {
-        window?.close()
-        window = nil
-        WebTrackingProtectionPreferences.shared.isGPCEnabled = true
-        schemeHandler = nil
+        autoreleasepool {
+            window?.close()
+            window = nil
+            WebTrackingProtectionPreferences.shared.isGPCEnabled = true
+            schemeHandler = nil
+            contentBlockingMock = nil
+            privacyFeaturesMock = nil
+        }
     }
 
     // MARK: - Tests
@@ -90,10 +94,10 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.setUrl(url, source: .link)?.result.get()
         _=try await titleChangedPromise1.value
 
-        XCTAssertEqual(HistoryCoordinator.shared.history?.count, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.title, "Title 1")
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.numberOfVisits, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.blockedTrackingEntities.isEmpty, true)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.count, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.title, "Title 1")
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.numberOfVisits, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.blockedTrackingEntities.isEmpty, true)
 
         let titleChangedPromise2 = tab.$title
             .filter { $0 == "Title 2" }
@@ -105,10 +109,10 @@ class HistoryIntegrationTests: XCTestCase {
         try await tab.webView.evaluateJavaScript("(function() { document.title = 'Title 2'; })()") as Void?
         _=try await titleChangedPromise2.value
 
-        XCTAssertEqual(HistoryCoordinator.shared.history?.count, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.title, "Title 2")
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.numberOfVisits, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.blockedTrackingEntities.isEmpty, true)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.count, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.title, "Title 2")
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.numberOfVisits, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.blockedTrackingEntities.isEmpty, true)
     }
 
     @MainActor
@@ -148,12 +152,12 @@ class HistoryIntegrationTests: XCTestCase {
         try await tab.webView.evaluateJavaScript("(function() { document.getElementById('link').click(); })()") as Void?
         _=try await titleChangedPromise.value
 
-        XCTAssertEqual(HistoryCoordinator.shared.history?.count, 2)
-        let first = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[0] })
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.count, 2)
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[0] })
         XCTAssertEqual(first?.numberOfVisits, 1)
         XCTAssertEqual(first?.title, "Title 1")
 
-        let second = HistoryCoordinator.shared.history?.first(where: { $0.url != urls[0] })
+        let second = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url != urls[0] })
         XCTAssertEqual(second?.numberOfVisits, 1)
         XCTAssertEqual(second?.title, "Title 2")
     }
@@ -172,10 +176,10 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.setUrl(urls[1], source: .link)?.result.get()
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
 
-        let first = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[0] })
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[0] })
         XCTAssertEqual(first?.numberOfVisits, 2)
 
-        let second = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[1] })
+        let second = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[1] })
         XCTAssertEqual(second?.numberOfVisits, 1)
     }
 
@@ -193,10 +197,10 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.goBack()?.result.get()
         _=try await tab.goForward()?.result.get()
 
-        let first = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[0] })
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[0] })
         XCTAssertEqual(first?.numberOfVisits, 1)
 
-        let second = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[1] })
+        let second = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[1] })
         XCTAssertEqual(second?.numberOfVisits, 1)
     }
 
@@ -239,7 +243,7 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.setUrl(url, source: .link)?.result.get()
         _=try await trackerPromise.value
 
-        let first = HistoryCoordinator.shared.history?.first
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first
         XCTAssertEqual(first?.trackersFound, true)
         XCTAssertEqual(first?.numberOfTrackersBlocked, 2)
         XCTAssertEqual(first?.blockedTrackingEntities, ["Google Ads (Google)"])
@@ -286,7 +290,7 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.setUrl(url, source: .link)?.result.get()
         _=try await trackerPromise.value
 
-        let first = HistoryCoordinator.shared.history?.first
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first
         XCTAssertEqual(first?.trackersFound, true)
         XCTAssertEqual(first?.numberOfTrackersBlocked, 3)
         XCTAssertEqual(first?.blockedTrackingEntities, ["Google Ads (Google)"])

@@ -96,10 +96,7 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testSetupForAppStore() async throws {
         // Given
-        storePurchaseManager.onUpdateAvailableProducts = {
-            self.storePurchaseManager.areProductsAvailable = true
-        }
-
+        self.storePurchaseManager.areProductsAvailable = true
         // When
         // triggered on DefaultSubscriptionManager's init
         try await Task.sleep(seconds: 0.5)
@@ -236,5 +233,115 @@ final class SubscriptionManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(stagingPurchaseURL, SubscriptionURL.purchase.subscriptionURL(environment: .staging))
+    }
+
+    // MARK: - Tests for Free Trial Eligibility
+
+    func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsEligible() throws {
+        // Given
+        storePurchaseManager.isEligibleForFreeTrialResult = false
+        let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                                       accountManager: accountManager,
+                                                                       subscriptionEndpointService: subscriptionService,
+                                                                       authEndpointService: authService,
+                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                       subscriptionEnvironment: stripeEnvironment)
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testWhenPlatformIsAppStoreAndUserIsEligibleForFreeTrialThenReturnsEligible() throws {
+        // Given
+        storePurchaseManager.isEligibleForFreeTrialResult = true
+        let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                                       accountManager: accountManager,
+                                                                       subscriptionEndpointService: subscriptionService,
+                                                                       authEndpointService: authService,
+                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                       subscriptionEnvironment: appStoreEnvironment)
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testWhenPlatformIsAppStoreAndUserIsNotEligibleForFreeTrialThenReturnsNotEligible() throws {
+        // Given
+        storePurchaseManager.isEligibleForFreeTrialResult = false
+        let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                                       accountManager: accountManager,
+                                                                       subscriptionEndpointService: subscriptionService,
+                                                                       authEndpointService: authService,
+                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                       subscriptionEnvironment: appStoreEnvironment)
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    // MARK: - Tests for canPurchasePublisher
+
+    func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
+        // Given
+        let expectation = expectation(description: "Publisher should emit value")
+        var receivedValue: Bool?
+
+        // When
+        let cancellable = subscriptionManager.canPurchasePublisher
+            .sink { value in
+                receivedValue = value
+                expectation.fulfill()
+            }
+
+        // Simulate store purchase manager emitting a value
+        storePurchaseManager.areProductsAvailableSubject.send(true)
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 0.5)
+        XCTAssertTrue(receivedValue ?? false)
+
+        // Clean up
+        cancellable.cancel()
+    }
+
+    func testCanPurchasePublisherEmitsMultipleValues() async throws {
+        // Given
+        let expectation1 = expectation(description: "Publisher should emit first value")
+        let expectation2 = expectation(description: "Publisher should emit second value")
+        var receivedValues: [Bool] = []
+
+        // When
+        let cancellable = subscriptionManager.canPurchasePublisher
+            .sink { value in
+                receivedValues.append(value)
+                if receivedValues.count == 1 {
+                    expectation1.fulfill()
+                } else if receivedValues.count == 2 {
+                    expectation2.fulfill()
+                }
+            }
+
+        // Simulate store purchase manager emitting multiple values
+        storePurchaseManager.areProductsAvailableSubject.send(true)
+        storePurchaseManager.areProductsAvailableSubject.send(false)
+
+        // Then
+        await fulfillment(of: [expectation1, expectation2], timeout: 0.5)
+        XCTAssertEqual(receivedValues, [true, false])
+
+        // Clean up
+        cancellable.cancel()
     }
 }

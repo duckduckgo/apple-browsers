@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 import Onboarding
 import SwiftUIExtensions
@@ -318,7 +319,7 @@ struct OnboardingSecondaryCTAButton: View {
 
 #Preview("Try Fire Button") {
     DaxDialogView(logoPosition: .left) {
-        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
+        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
     }
     .padding()
 }
@@ -328,6 +329,6 @@ struct OnboardingSecondaryCTAButton: View {
         let firstString = UserText.ContextualOnboarding.onboardingTryFireButtonMessage
         return NSMutableAttributedString(string: firstString)
     }()
-    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
+    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
         .padding()
 }

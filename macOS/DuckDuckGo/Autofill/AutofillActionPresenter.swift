@@ -58,6 +58,6 @@ private extension DefaultAutofillActionPresenter {
 
     @MainActor
     var window: NSWindow? {
-        WindowControllersManager.shared.lastKeyMainWindowController?.window
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
     }
 }

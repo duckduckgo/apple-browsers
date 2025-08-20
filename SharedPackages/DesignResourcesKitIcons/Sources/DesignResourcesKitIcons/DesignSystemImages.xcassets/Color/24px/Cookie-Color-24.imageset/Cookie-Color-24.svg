@@ -1,0 +1,14 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="url(#Cookie-Color-24_svg__a)" fill-rule="evenodd" d="M12 2.625c.372 0 .664.302.71.671a9.255 9.255 0 0 0 7.993 7.993c.37.047.672.339.672.711a9.375 9.375 0 1 1-18.75 0A9.375 9.375 0 0 1 12 2.625Z" clip-rule="evenodd"/>
+  <path fill="url(#Cookie-Color-24_svg__b)" fill-rule="evenodd" d="M2 12C2 6.477 6.477 2 12 2c.74 0 1.25.591 1.33 1.217a8.63 8.63 0 0 0 7.453 7.452C21.409 10.75 22 11.26 22 12c0 5.523-4.477 10-10 10S2 17.523 2 12Zm10-8.75A8.75 8.75 0 1 0 20.75 12c0-.01-.002-.023-.02-.042a.18.18 0 0 0-.106-.049 9.88 9.88 0 0 1-8.533-8.533.18.18 0 0 0-.05-.105c-.018-.019-.031-.021-.041-.021Zm-1.25 3.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm5.667 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm-8.75-5.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm.083 5.583a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm5.583 1a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1.583-4.666a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
+  <defs>
+    <linearGradient id="Cookie-Color-24_svg__a" x1="12" x2="12" y1="2.75" y2="21.25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE8A3"/>
+      <stop offset="1" stop-color="#FC3"/>
+    </linearGradient>
+    <linearGradient id="Cookie-Color-24_svg__b" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E2A412"/>
+      <stop offset="1" stop-color="#C18010"/>
+    </linearGradient>
+  </defs>
+</svg>

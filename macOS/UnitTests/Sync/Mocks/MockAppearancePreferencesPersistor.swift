@@ -34,7 +34,11 @@ class MockAppearancePreferencesPersistor: AppearancePreferencesPersistor {
 
     var favoritesDisplayMode: String?
 
+    var isOmnibarVisible: Bool = true
+
     var isFavoriteVisible: Bool = true
+
+    var isProtectionsReportVisible: Bool = true
 
     var isContinueSetUpVisible: Bool = true
 
@@ -43,10 +47,6 @@ class MockAppearancePreferencesPersistor: AppearancePreferencesPersistor {
     var continueSetUpCardsNumberOfDaysDemonstrated: Int = 0
 
     var continueSetUpCardsClosed: Bool = false
-
-    var isRecentActivityVisible: Bool = true
-
-    var isPrivacyStatsVisible: Bool = false
 
     var isSearchBarVisible: Bool = true
 

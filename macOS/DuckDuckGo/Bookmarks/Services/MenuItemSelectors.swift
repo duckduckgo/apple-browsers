@@ -28,6 +28,7 @@ import AppKit
 
     func openBookmarkInNewTab(_ sender: NSMenuItem)
     func openBookmarkInNewWindow(_ sender: NSMenuItem)
+    func openBookmarkInNewFireWindow(_ sender: NSMenuItem)
     func toggleBookmarkAsFavorite(_ sender: NSMenuItem)
     func editBookmark(_ sender: NSMenuItem)
     func copyBookmark(_ sender: NSMenuItem)

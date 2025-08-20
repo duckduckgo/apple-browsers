@@ -1,0 +1,14 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+# Load constants
+- runFlow:
+    file: constants.yaml
+
+- tapOn: ${output.settingsLabel}
+
+- waitForAnimationToEnd
+
+- tapOn: ${output.doneLabel}
+
+- waitForAnimationToEnd

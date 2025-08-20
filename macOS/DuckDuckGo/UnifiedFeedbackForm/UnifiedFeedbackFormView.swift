@@ -25,7 +25,7 @@ struct UnifiedFeedbackFormView: View {
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                Text(UserText.feedbackFormTitle)
+                Text(UserText.feedbackFormTitle(isSubscriptionRebrandingEnabled: viewModel.isSubscriptionRebrandingEnabled))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.secondary)
             }
@@ -112,6 +112,10 @@ private struct FeedbackFormBodyView: View {
                 }
             case .itr:
                 CategoryPicker(options: ITRFeedbackSubcategory.allCases, selection: $viewModel.selectedSubcategory) {
+                    issueDescriptionView()
+                }
+            case .duckAi:
+                CategoryPicker(options: PaidAIChatFeedbackSubcategory.allCases, selection: $viewModel.selectedSubcategory) {
                     issueDescriptionView()
                 }
             }

@@ -36,7 +36,7 @@ enum NewTabPagePixel: PixelKitEventV2 {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case newTabPageShown(favorites: Bool, recentActivity: Bool?, privacyStats: Bool?, customBackground: Bool)
+    case newTabPageShown(favorites: Bool, protections: ProtectionsReportMode, customBackground: Bool)
 
     /**
      * Event Trigger: Favorites section on NTP is hidden.
@@ -65,32 +65,18 @@ enum NewTabPagePixel: PixelKitEventV2 {
     case privacyFeedHistoryLinkOpened
 
     /**
-     * Event Trigger: Recent Activity section on NTP is hidden.
+     * Event Trigger: Protections Report section on NTP is hidden.
      *
      * > Related links:
-     * [Privacy Triage](https://app.asana.com/0/69071770703008/1209254338283658/f)
-     * [Detailed Pixels description](https://app.asana.com/0/72649045549333/1209247985805453/f)
+     * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210276198897188?focus=true)
+     * [Detailed Pixels description](https://app.asana.com/1/137249556945/project/1201048563534612/task/1210247335076370?focus=true)
      *
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      * - The pixel is fired from `AppearancePreferences` so an anomaly may mean a bug in the code
      *   causing the setter to be called too many times.
      */
-    case recentActivitySectionHidden
-
-    /**
-     * Event Trigger: Recent Activity section on NTP is hidden.
-     *
-     * > Related links:
-     * [Privacy Triage](https://app.asana.com/0/69071770703008/1209254338283658/f)
-     * [Detailed Pixels description](https://app.asana.com/0/72649045549333/1209247985805453/f)
-     *
-     * Anomaly Investigation:
-     * - Anomaly in this pixel may mean an increase/drop in app use.
-     * - The pixel is fired from `AppearancePreferences` so an anomaly may mean a bug in the code
-     *   causing the setter to be called too many times.
-     */
-    case blockedTrackingAttemptsSectionHidden
+    case protectionsSectionHidden
 
     /**
      * Event Trigger: "Show Less" button is clicked in Privacy Stats table on the New Tab Page, to collapse the table.
@@ -152,44 +138,74 @@ enum NewTabPagePixel: PixelKitEventV2 {
 
     case newTabPageExceptionReported
 
+    // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
+    case searchSubmitted
+    case promptSubmitted
+    case omnibarModeChanged(mode: OmnibarMode)
+    case omnibarHidden
+    case omnibarShown
+
+    // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
+    case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int)
+
+    // MARK: -
+
+    enum ProtectionsReportMode: String {
+        case recentActivity = "recent-activity", blockedTrackingAttempts = "blocked-tracking-attempts", collapsed, hidden
+    }
+
+    // MARK: -
+
     var name: String {
         switch self {
         case .newTabPageShown: return "m_mac_newtab_shown"
         case .favoriteSectionHidden: return "m_mac_favorite-section-hidden"
         case .privacyFeedHistoryLinkOpened: return "m_mac_privacy_feed_history_link_opened"
-        case .recentActivitySectionHidden: return "m_mac_recent-activity-section-hidden"
-        case .blockedTrackingAttemptsSectionHidden: return "m_mac_blocked-tracking-attempts-section-hidden"
+        case .protectionsSectionHidden: return "m_mac_protections-section-hidden"
         case .blockedTrackingAttemptsShowLess: return "m_mac_new-tab-page_blocked-tracking-attempts_show-less"
         case .blockedTrackingAttemptsShowMore: return "m_mac_new-tab-page_blocked-tracking-attempts_show-more"
         case .privacyStatsCouldNotLoadDatabase: return "new-tab-page_privacy-stats_could-not-load-database"
         case .privacyStatsDatabaseError: return "new-tab-page_privacy-stats_database_error"
         case .newTabPageExceptionReported: return "new-tab-page_exception-reported"
+        case .searchSubmitted: return "new-tab-page_search_submitted"
+        case .promptSubmitted: return "new-tab-page_prompt_submitted"
+        case .omnibarModeChanged: return "new-tab-page_omnibar_mode_changed"
+        case .omnibarHidden: return "new-tab-page_omnibar_hidden"
+        case .omnibarShown: return "new-tab-page_omnibar_shown"
+        case .newTabPageLoadingTime: return "new-tab-page_loading_time"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case .newTabPageShown(let favorites, let recentActivity, let privacyStats, let customBackground):
-            var parameters = [
+        case .newTabPageShown(let favorites, let protections, let customBackground):
+            return [
                 "favorites": String(favorites),
+                "protections": protections.rawValue,
                 "background": customBackground ? "custom" : "default"
             ]
-            if let recentActivity {
-                parameters["recent-activity"] = String(recentActivity)
-            }
-            if let privacyStats {
-                parameters["blocked-tracking-attempts"] = String(privacyStats)
-            }
-            return parameters
+        case .omnibarModeChanged(let mode):
+            return [
+                "mode": mode.rawValue
+            ]
+        case .newTabPageLoadingTime(let duration, let osMajorVersion):
+            // "loadingTime" is reported in **milliseconds**
+            return [
+                "loadingTime": String(Int(duration * 1000)),
+                "osMajorVersion": "\(osMajorVersion)"
+            ]
         case .favoriteSectionHidden,
-                .recentActivitySectionHidden,
-                .blockedTrackingAttemptsSectionHidden,
+                .protectionsSectionHidden,
                 .blockedTrackingAttemptsShowLess,
                 .blockedTrackingAttemptsShowMore,
                 .privacyFeedHistoryLinkOpened,
                 .privacyStatsCouldNotLoadDatabase,
                 .privacyStatsDatabaseError,
-                .newTabPageExceptionReported:
+                .newTabPageExceptionReported,
+                .searchSubmitted,
+                .promptSubmitted,
+                .omnibarHidden,
+                .omnibarShown:
             return nil
         }
     }
@@ -197,4 +213,10 @@ enum NewTabPagePixel: PixelKitEventV2 {
     var error: (any Error)? {
         nil
     }
+
+    enum OmnibarMode: String {
+        case search
+        case duckAI = "duck_ai"
+    }
+
 }

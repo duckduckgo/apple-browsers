@@ -17,6 +17,8 @@
 //
 
 import Common
+import Foundation
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CapturingFaviconImageCache: FaviconImageCaching {

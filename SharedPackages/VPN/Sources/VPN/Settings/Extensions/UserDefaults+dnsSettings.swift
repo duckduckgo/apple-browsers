@@ -74,7 +74,7 @@ extension UserDefaults {
     }
 
     var isBlockRiskyDomainsOn: Bool {
-            dnsSettingStorageValue.isBlockRiskyDomainsOn
+        dnsSettingStorageValue.isBlockRiskyDomainsOn
     }
 
     var customDnsServers: [String] {

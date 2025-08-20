@@ -296,7 +296,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         options[NetworkProtectionOptionKey.selectedEnvironment] = settings.selectedEnvironment.rawValue as NSString
 
         var dnsSettings = settings.dnsSettings
-        // Always use the user's stored value for blockRiskyDomains, defaulting to true if unset.
         if let data = try? JSONEncoder().encode(dnsSettings) {
             options[NetworkProtectionOptionKey.dnsSettings] = NSData(data: data)
         }

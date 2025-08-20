@@ -269,21 +269,12 @@ extension XCUIApplication {
         let toggleIdentifier = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         let scrollView = prefs.scrollViews.containing(.checkBox, identifier: toggleIdentifier).firstMatch
         scrollView.swipeUp()
-        let control = prefs.descendants(matching: .checkBox)
+        let checkbox = prefs.descendants(matching: .checkBox)
             .matching(NSPredicate(format: "identifier == %@", toggleIdentifier))
             .firstMatch
-        XCTAssertTrue(control.exists, "Always ask toggle should exist in Preferences")
+        XCTAssertTrue(checkbox.exists, "Always ask toggle should exist in Preferences")
 
-        if let valueString = control.value as? String {
-            let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { control.click() }
-        } else if let valueNumber = control.value as? NSNumber {
-            let isOn = valueNumber.intValue != 0
-            if isOn != enabled { control.click() }
-        } else {
-            // Fallback: click once and trust UI state
-            control.click()
-        }
+        checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
     /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
@@ -293,16 +284,7 @@ extension XCUIApplication {
         let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
         XCTAssertTrue(checkbox.exists, "Switch-to-new-tab toggle should exist in Preferences")
 
-        if let valueString = checkbox.value as? String {
-            let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { checkbox.click() }
-        } else if let valueNumber = checkbox.value as? NSNumber {
-            let isOn = valueNumber.intValue != 0
-            if isOn != enabled { checkbox.click() }
-        } else {
-            // Fallback: click once and trust UI state
-            checkbox.click()
-        }
+        checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
     /// Sets the "Automatically open the Downloads panel when downloads complete" preference
@@ -312,15 +294,7 @@ extension XCUIApplication {
         let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
         XCTAssertTrue(checkbox.exists, "Downloads panel toggle should exist in Preferences")
 
-        if let valueString = checkbox.value as? String {
-            let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { checkbox.click() }
-        } else if let valueNumber = checkbox.value as? NSNumber {
-            let isOn = valueNumber.intValue != 0
-            if isOn != enabled { checkbox.click() }
-        } else {
-            checkbox.click()
-        }
+        checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
 }

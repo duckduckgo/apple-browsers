@@ -28,10 +28,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication.setUp()
-        app.enforceSingleWindow()
         webView = app.webViews.firstMatch
-
-        XCTAssertTrue(app.addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     override func tearDown() {
@@ -39,33 +36,45 @@ class MaliciousSiteProtectionUITests: UITestCase {
         app = nil
     }
 
+    private func setScamBlockerEnabled(_ enabled: Bool) {
+        app.openPreferencesWindow()
+        let settingsWindow = app.preferencesWindow
+        XCTAssertTrue(settingsWindow.waitForExistence(timeout: 5.0))
+        let threatProtectionButton = settingsWindow.buttons["PreferencesSidebar.threatProtectionButton"]
+        XCTAssertTrue(threatProtectionButton.waitForExistence(timeout: 10.0))
+        threatProtectionButton.click()
+        let scamToggle = settingsWindow.checkBoxes["Warn on sites flagged for scams, phishing, or malware"]
+        XCTAssertTrue(scamToggle.waitForExistence(timeout: 10.0))
+        scamToggle.toggleCheckboxIfNeeded(to: enabled)
+        app.closePreferencesWindow()
+
+        app.enforceSingleWindow()
+    }
+
     // MARK: - Phishing Protection Tests
 
     func testMaliciousSiteProtection_PhishingSite_ShowsWarningAndBypassWorks() throws {
-        // Navigate to a known phishing test page (matches integration test)
+        setScamBlockerEnabled(true)
         let phishingURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         addressBarTextField.pasteURL(phishingURL, pressingEnter: true)
 
-        // The special error page should appear with actions
         let advancedButton = app.buttons["Advanced..."]
         XCTAssertTrue(advancedButton.waitForExistence(timeout: 30.0), "Advanced... button should be visible on phishing warning")
-
-        // Open advanced options and accept the risk to proceed
         advancedButton.click()
 
         let acceptRisk = app.staticTexts["Accept Risk and Visit Site"]
         XCTAssertTrue(acceptRisk.waitForExistence(timeout: 10.0), "Accept Risk and Visit Site should be shown after Advanced…")
         acceptRisk.click()
 
-        // Verify actual phishing page content loads (same pattern as PrivacyDashboard test)
         let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Phishing page'"))
             .firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: 30.0), "Phishing test page should load after accepting risk")
+        XCTAssertTrue(pageContent.waitForExistence(timeout: 20.0), "Phishing page content should load after bypass")
     }
 
     func testMaliciousSiteProtection_MalwareSite_ShowsWarningAndGoBackWorks() throws {
+        setScamBlockerEnabled(true)
         // Establish a known previous page to validate Go Back
         let safeURL = URL(string: "https://example.com")!
         app.activateAddressBar()
@@ -105,6 +114,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     }
 
     func testMaliciousSiteProtection_SafeSite_LoadsNormally() throws {
+        setScamBlockerEnabled(true)
         // Navigate to a safe site that should load normally
         let safeURL = URL(string: "https://example.com")!
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
@@ -124,67 +134,86 @@ class MaliciousSiteProtectionUITests: UITestCase {
         XCTAssertFalse(warningContent.exists, "Safe site should not show malicious site warnings")
     }
 
-    // MARK: - Protection Settings Tests (Enhanced from integration test patterns)
+    func testMaliciousSiteProtection_Disabled_AllowsPhishingSiteWithoutWarning() throws {
+        setScamBlockerEnabled(false)
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!, pressingEnter: true)
+        let warningTitle = app.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] 'This site may be unsafe' OR value CONTAINS[c] 'may be malicious'"))
+        let didNotShowWarning = warningTitle.firstMatch.waitForExistence(timeout: 5.0) == false
+        XCTAssertTrue(didNotShowWarning, "Warning should not be shown when Scam Blocker is disabled")
+    }
 
-    func testMaliciousSiteProtection_Settings_AccessibleAndConfigurable() throws {
-        // Open application settings
-        app.typeKey(",", modifierFlags: [.command])
+    func testMaliciousSiteProtection_Disabled_AllowsMalwareSiteWithoutWarning() throws {
+        setScamBlockerEnabled(false)
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(URL(string: "http://privacy-test-pages.site/security/badware/malware.html")!, pressingEnter: true)
+        let warningTitle = app.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] 'This site may be unsafe' OR value CONTAINS[c] 'may be malicious'"))
+        let didNotShowWarning = warningTitle.firstMatch.waitForExistence(timeout: 5.0) == false
+        XCTAssertTrue(didNotShowWarning, "Warning should not be shown when Scam Blocker is disabled")
+    }
 
-        // Settings window should open
-        let settingsWindow = app.windows.containing(NSPredicate(format: "title CONTAINS 'Settings' OR title CONTAINS 'Preferences'")).firstMatch
-        XCTAssertTrue(settingsWindow.waitForExistence(timeout: 10.0), "Settings window should open")
+    func testMaliciousSiteProtection_PhishingSite_LeaveThisSiteNavigatesBack() throws {
+        setScamBlockerEnabled(true)
 
-        // Open Threat Protection pane explicitly via sidebar identifier
-        let threatProtectionButton = settingsWindow.buttons["PreferencesSidebar.threatProtectionButton"]
-        XCTAssertTrue(threatProtectionButton.waitForExistence(timeout: 10.0), "Threat Protection sidebar button should exist")
-        threatProtectionButton.click()
-
-        // Wait for the pane to load by checking either the header or the warning caption text
-        let paneHeader = settingsWindow.staticTexts.containing(NSPredicate(format: "value ==[c] 'Scam Blocker'")).firstMatch
-        let warningCaptionTop = settingsWindow.staticTexts.containing(NSPredicate(format: "value ==[c] 'Disabling this feature can put your personal information at risk.'")).firstMatch
-        XCTAssertTrue(paneHeader.waitForExistence(timeout: 5.0) || warningCaptionTop.waitForExistence(timeout: 5.0),
-                      "Threat Protection pane should load (header or warning caption should appear)")
-
-        // Verify Scam Blocker toggle by identifier to avoid localization sensitivity
-        let scamToggle = settingsWindow.checkBoxes["PreferencesThreatProtectionView.scamBlockerToggle"]
-
-        // Scroll the pane in case the control is off-screen
-        let paneScroll = settingsWindow.scrollViews.firstMatch
-        _ = paneScroll.waitForExistence(timeout: 3.0)
-        var attempts = 0
-        while !scamToggle.exists && attempts < 6 {
-            if paneScroll.exists { paneScroll.swipeUp() }
-            attempts += 1
-        }
-
-        XCTAssertTrue(scamToggle.waitForExistence(timeout: 10.0), "Scam Blocker toggle should be present in Threat Protection pane")
-
-        // Find the warning caption that becomes visible when protection is disabled
-        let warningCaptionText = "Disabling this feature can put your personal information at risk."
-        let warningCaption = settingsWindow.staticTexts
-            .containing(NSPredicate(format: "value ==[c] %@", warningCaptionText))
+        // Load safe baseline in first tab
+        let safeURL = URL(string: "https://example.com")!
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(safeURL, pressingEnter: true)
+        let safeContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] 'Example Domain'"))
             .firstMatch
-        // Do not assert existence yet; it may be hidden until toggled off
+        XCTAssertTrue(safeContent.waitForExistence(timeout: 15))
 
-        // Disable protection: warning should appear and become hittable
-        scamToggle.click()
-        _ = warningCaption.waitForExistence(timeout: 5.0)
-        let visiblePredicate = NSPredicate(format: "exists == true AND hittable == true")
-        let visibleExpectation = expectation(for: visiblePredicate, evaluatedWith: warningCaption)
-        wait(for: [visibleExpectation], timeout: 5.0)
+        // Navigate to phishing page to trigger warning
+        let phishingURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!
+        app.openNewTab()
+        // On new tab, address bar is already active
+        addressBarTextField.pasteURL(phishingURL, pressingEnter: true)
 
-        // Re-enable protection: warning should become non-hittable (hidden)
-        scamToggle.click()
-        let hiddenPredicate = NSPredicate(format: "hittable == false")
-        let hiddenExpectation = expectation(for: hiddenPredicate, evaluatedWith: warningCaption)
-        wait(for: [hiddenExpectation], timeout: 5.0)
+        let leaveSiteButton = app.buttons["Leave This Site"].firstMatch
+        XCTAssertTrue(leaveSiteButton.waitForExistence(timeout: 30.0))
+        leaveSiteButton.click()
 
-        // Close settings
-        app.typeKey(.escape, modifierFlags: [])
+        // After leaving, a New Tab page should replace the warning tab; total tabs should be 2 (Example + New Tab)
+        let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
+        XCTAssertTrue(tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertEqual(tabs.count, 2, "There should be two tabs after leaving: Example and New Tab")
+
+        // Wait for the New Tab page to load and assert Customize button exists
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    func testMaliciousSiteProtection_ScamSite_LeaveThisSiteNavigatesBack() throws {
+        setScamBlockerEnabled(true)
+
+        // Load safe baseline in first tab
+        let safeURL = URL(string: "https://example.com")!
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(safeURL, pressingEnter: true)
+        let safeContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] 'Example Domain'"))
+            .firstMatch
+        XCTAssertTrue(safeContent.waitForExistence(timeout: 15))
+
+        // Navigate to scam page to trigger warning
+        let scamURL = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
+        app.openNewTab()
+        // On new tab, address bar is already active
+        addressBarTextField.pasteURL(scamURL, pressingEnter: true)
+
+        let leaveSiteButton = app.buttons["Leave This Site"].firstMatch
+        XCTAssertTrue(leaveSiteButton.waitForExistence(timeout: 30.0))
+        leaveSiteButton.click()
+
+        // After leaving, a New Tab page should replace the warning tab; total tabs should be 2 (Example + New Tab)
+        let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
+        XCTAssertTrue(tabs.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertEqual(tabs.count, 2, "There should be two tabs after leaving: Example and New Tab")
+
+        // Wait for the New Tab page to load and assert Customize button exists
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     func testMaliciousSiteProtection_BasicFunctionality_WorksCorrectly() throws {
-        // This test validates that malicious site protection functionality works without modifying settings
+        setScamBlockerEnabled(true)
         // Navigate to DuckDuckGo (known safe site) to establish baseline
         let safeURL = URL(string: "https://duckduckgo.com")!
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
@@ -206,6 +235,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     // MARK: - Navigation Protection Tests
 
     func testMaliciousSiteProtection_BackNavigation_WorksWithProtection() throws {
+        setScamBlockerEnabled(true)
         // Navigate to a safe page first using example.com (known safe)
         let safeURL = URL(string: "https://example.com")!
         app.activateAddressBar()
@@ -245,6 +275,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     // MARK: - Privacy Dashboard Integration Tests
 
     func testMaliciousSiteProtection_PrivacyDashboard_ShowsThreatInfo() throws {
+        setScamBlockerEnabled(true)
         // Navigate to a test page (safe or protected)
         let testURL = URL(string: "https://example.com")!
         app.activateAddressBar()
@@ -278,6 +309,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     // MARK: - Redirect Protection Tests
 
     func testMaliciousSiteProtection_NavigationFlow_WorksCorrectly() throws {
+        setScamBlockerEnabled(true)
         // Test basic navigation flow with malicious site protection active
         // Start with a known safe page
         let startURL = URL(string: "https://example.com")!
@@ -302,6 +334,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     // MARK: - Scam Detection Tests (Missing from original UI tests)
 
     func testMaliciousSiteProtection_ScamSite_ShowsWarningAndAdvancedVisible() throws {
+        setScamBlockerEnabled(true)
         // Navigate to a scam test page (matches integration test)
         let scamURL = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         app.activateAddressBar()
@@ -321,6 +354,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     // MARK: - Bad SSL Warning Test
     // Uses badssl.com pages to trigger SSL errors and assert special error page UI
     func testMaliciousSiteProtection_BadSSL_ShowsWarningAndButtonsWork() throws {
+        setScamBlockerEnabled(true)
         // Navigate to an expired certificate page
         let badSSL = URL(string: "https://expired.badssl.com/")!
         app.activateAddressBar()
@@ -346,9 +380,39 @@ class MaliciousSiteProtectionUITests: UITestCase {
         XCTAssertTrue(safeContent.waitForExistence(timeout: 15.0))
     }
 
+    func testMaliciousSiteProtection_BadSSL_VisitThisSite_BypassesWarning() throws {
+        setScamBlockerEnabled(true)
+
+        // Navigate to an SSL error page
+        let badSSL = URL(string: "https://expired.badssl.com/")!
+        app.activateAddressBar()
+        addressBarTextField.pasteURL(badSSL, pressingEnter: true)
+
+        // On our SSL warning, expand Advanced options first, then bypass
+        let advancedButton = app.buttons["Advanced..."]
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: 30.0), "Advanced… button should be visible on SSL warning")
+        advancedButton.click()
+
+        let acceptRisk = app.staticTexts["Accept Risk and Visit Site"]
+        XCTAssertTrue(acceptRisk.waitForExistence(timeout: 10.0), "Accept Risk and Visit Site should be shown after Advanced…")
+        acceptRisk.click()
+
+        // Verify the page actually loads (expired.badssl.com content present)
+        let webContent1 = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] 'expired.'")).firstMatch
+        let webContent2 = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] 'badssl.com'")).firstMatch
+        XCTAssertTrue(webContent1.waitForExistence(timeout: 30.0), "expired.badssl.com page should load after bypass")
+        XCTAssertTrue(webContent2.exists, "badssl.com content should be available")
+
+        // And address bar reflects the expected host
+        app.activateAddressBar()
+        let current = (addressBarTextField.value as? String) ?? ""
+        XCTAssertTrue(current.contains("expired.badssl.com"), "Address bar should show expired.badssl.com after bypass")
+    }
+
     // MARK: - Redirect Chain Protection Tests (Missing from original UI tests)
 
     func testMaliciousSiteProtection_PhishingRedirectChain_Blocked() throws {
+        setScamBlockerEnabled(true)
         // Test navigation behavior with potential redirect scenarios
         let redirectURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing-redirect/")!
         app.activateAddressBar()
@@ -372,6 +436,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     }
 
     func testMaliciousSiteProtection_MalwareRedirectChain_Blocked() throws {
+        setScamBlockerEnabled(true)
         // Test navigation behavior with potential malware redirect scenarios
         let redirectURL = URL(string: "http://privacy-test-pages.site/security/badware/malware-redirect/")!
         app.activateAddressBar()
@@ -397,6 +462,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
     // MARK: - State Transition Tests (Missing from original UI tests)
 
     func testMaliciousSiteProtection_ThreatToSafeNavigation_ClearsError() throws {
+        setScamBlockerEnabled(true)
         // Test navigation flow from potentially dangerous to safe sites
         // First navigate to a test threat page
         let phishingURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!
@@ -431,8 +497,8 @@ class MaliciousSiteProtectionUITests: UITestCase {
     // MARK: - Multiple Threat Types Test (Enhanced)
 
     func testMaliciousSiteProtection_MultipleThreatTypes_HandledCorrectly() throws {
+        setScamBlockerEnabled(true)
         // Test that protection works consistently across different threat scenarios
-        // Use a simple test approach without complex loops or branching
 
         // Test phishing protection
         let phishingURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!

@@ -124,4 +124,23 @@ extension XCUIElement {
         )
         self.hover()
     }
+
+    /// Toggles a checkbox or switch element to the desired boolean value if needed.
+    /// Supports value types: String ("1"/"on"), NSNumber (non-zero), or falls back to single click.
+    func toggleCheckboxIfNeeded(to enabled: Bool) {
+        XCTAssertTrue(self.exists, "Control should exist before toggling")
+        if let valueString = self.value as? String {
+            let isOn = valueString == "1" || valueString.lowercased() == "on"
+            if isOn != enabled { self.click() }
+            return
+        }
+        if let valueNumber = self.value as? NSNumber {
+            let isOn = valueNumber.intValue != 0
+            if isOn != enabled { self.click() }
+            return
+        }
+        // Fallback
+        self.click()
+    }
+    
 }

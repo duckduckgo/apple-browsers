@@ -1,8 +1,8 @@
 //
-//  VPNAutoShortcuts.swift
+//  AppShortcuts.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import AppIntents
 import Foundation
 
 @available(iOS 17.0, *)
-struct VPNAutoShortcutsiOS17: AppShortcutsProvider {
+struct AppShortcuts: AppShortcutsProvider {
 
     @AppShortcutsBuilder
     static var appShortcuts: [AppShortcut] {
@@ -57,5 +57,29 @@ struct VPNAutoShortcutsiOS17: AppShortcutsProvider {
                         "Stop the VPN connection with \(.applicationName)"
                     ],
                     systemImageName: "globe")
+        AppShortcut(intent: ClipboardSearchIntent(),
+                    phrases: [
+                        "Open clipboard link privately in \(.applicationName)",
+                        "Open link on clipboard privately in \(.applicationName)",
+                        "Open clipboard link safely in \(.applicationName)",
+                        "Open link on clipboard safely in \(.applicationName)",
+                        "View clipboard link privately in \(.applicationName)",
+                        "View link on clipboard privately in \(.applicationName)",
+                        "View clipboard link safely in \(.applicationName)",
+                        "View link on clipboard safely in \(.applicationName)"
+                    ],
+                    shortTitle: "Open Clipboard Link Privately",
+                    systemImageName: "link"
+        )
+        AppShortcut(intent: SearchInAppIntent(),
+                    phrases: [
+                        "Search safely in \(.applicationName)",
+                        "Search privately in \(.applicationName)",
+                        "Search with \(.applicationName)",
+                        "Happy searching with \(.applicationName)!"
+                    ],
+                    shortTitle: "Search Privately",
+                    systemImageName: "magnifyingglass"
+        )
     }
 }

@@ -520,6 +520,16 @@ enum GeneralPixel: PixelKitEventV2 {
     // Enhanced statistics
     case usageSegments
 
+    // UserScript
+    /**
+     * Event Trigger: BrowserServicesKit.UserScript.loadJS fails to load the contents of a JS file.
+     *
+     * Anomaly Investigation:
+     * - App crashes after this pixel is fired.
+     * - Useful for investigating the underlying error causing the failure.
+     */
+    case userScriptLoadJSFailed(jsFile: String, path: String)
+
     var name: String {
         switch self {
         case .crash(let appIdentifier):
@@ -1224,6 +1234,9 @@ enum GeneralPixel: PixelKitEventV2 {
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
 
+            // UserScript
+        case .userScriptLoadJSFailed: return "user_script_load_js_failed"
+
         }
     }
 
@@ -1414,6 +1427,13 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .updaterAborted(let reason):
             return ["reason": reason]
+
+        case let .userScriptLoadJSFailed(jsFile, path):
+            return [
+                PixelKit.Parameters.jsFile: jsFile,
+                PixelKit.Parameters.path: path
+            ]
+
         default: return nil
         }
     }

@@ -23,7 +23,6 @@ import UserScript
 import PrivacyDashboard
 import PixelKit
 import os.log
-
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)
 }
@@ -60,7 +59,10 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         do {
             source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
         } catch {
-            // TODO: Fire pixel
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to load JS for AutoconsentUserScript: \(error.localizedDescription)")
         }
         self.config = config

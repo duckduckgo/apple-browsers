@@ -23,6 +23,7 @@ import Navigation
 import Foundation
 import UserScript
 import WebKit
+import PixelKit
 
 /**
  * This is a wrapper class for a hardcoded script evaluated on the Internal Feedback Form page.
@@ -61,7 +62,10 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
             ])
             super.init()
         } catch {
-            // TODO: Fire pixel
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to load JS for InternalFeedbackFormUserScript: \(error)")
         }
     }

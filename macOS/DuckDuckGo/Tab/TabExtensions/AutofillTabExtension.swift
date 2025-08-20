@@ -22,6 +22,7 @@ import Combine
 import Foundation
 import PixelKit
 import SecureStorage
+import enum UserScript.UserScriptError
 
 final class AutofillTabExtension: TabExtension {
 
@@ -220,7 +221,11 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
 
             completionHandler(runtimeConfiguration)
         } catch {
-            // Fire a pixel to track the error
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
         }
     }
 

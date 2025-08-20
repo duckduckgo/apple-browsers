@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import enum UserScript.UserScriptError
 
 protocol ScriptSourceProviding {
 
@@ -96,7 +97,11 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
             .withJSLoading()
             .build()
         } catch {
-            // TODO: Fire pixel
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                let params = [PixelParameters.jsFile: jsFile, PixelParameters.path: filePath]
+                Pixel.fire(pixel: .userScriptLoadJSFailed, error: error, withAdditionalParameters: params)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error)")
         }
     }
@@ -114,8 +119,12 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                              tld: AppDependencyProvider.shared.storageCache.tld,
                                                              trackerDataManager: ContentBlocking.shared.trackerDataManager)
         } catch {
-            // TODO: Fire pixel
-            fatalError("Failed to build DefaultContentBlockerUserScriptConfig: \(error)")
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                let params = [PixelParameters.jsFile: jsFile, PixelParameters.path: filePath]
+                Pixel.fire(pixel: .userScriptLoadJSFailed, error: error, withAdditionalParameters: params)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
+            fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error)")
         }
     }
 
@@ -136,7 +145,11 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
             return surrogatesConfig
         } catch {
-            // TODO: Fire pixel
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                let params = [PixelParameters.jsFile: jsFile, PixelParameters.path: filePath]
+                Pixel.fire(pixel: .userScriptLoadJSFailed, error: error, withAdditionalParameters: params)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error)")
         }
     }

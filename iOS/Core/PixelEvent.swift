@@ -942,7 +942,7 @@ extension Pixel {
          * - App crashes after this pixel is fired.
          * - Useful for investigating the underlying error causing the failure.
          */
-        case userScriptLoadJSFailed(jsFile: String, path: String)
+        case userScriptLoadJSFailed
 
         // MARK: - Default Browser
 

@@ -24,7 +24,7 @@ import ContentScopeScripts
 import Combine
 import os.log
 import PixelKit
-import UserScript
+import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -405,6 +405,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             group.leave()
                         } catch let UserScriptError.failedToLoadJS(jsFile, filePath, error) {
                             // TODO: Fire pixel with EventMapping
+                            try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                             fatalError("Failed to load JS file \(jsFile) at path \(filePath): \(error)")
                         } catch {
                             self.error = error
@@ -461,6 +462,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
             } catch let UserScriptError.failedToLoadJS(jsFile, filePath, error) {
                 // TODO: Fire pixel with EventMapping
+                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
                 fatalError("Failed to load JS file \(jsFile) at path \(filePath): \(error)")
             } catch {
                 showAlert(for: error)

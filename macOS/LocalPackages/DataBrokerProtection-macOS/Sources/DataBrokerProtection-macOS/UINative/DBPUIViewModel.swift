@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Common
 import os.log
 import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
 
 protocol DBPUIScanOps: AnyObject {
     func updateCacheWithCurrentScans() async
@@ -72,7 +73,10 @@ public final class DBPUIViewModel {
                                                       webUISettings: webUISettings,
                                                       vpnBypassService: vpnBypassService)
         } catch {
-            // TODO: Fire pixel with EventMapping
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                // TODO: Fire pixel with EventMapping
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to apply DBPUI configuration: \(error)")
         }
         dataManager.communicator.scanDelegate = self

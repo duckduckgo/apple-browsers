@@ -95,8 +95,11 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
-            // TODO: Fire pixel
-            fatalError("Failed to initialize ContentScopeUserScript: \(error)")
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
+            fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
         }
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)

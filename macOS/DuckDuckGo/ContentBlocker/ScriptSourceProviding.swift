@@ -25,6 +25,8 @@ import History
 import HistoryView
 import NewTabPage
 import TrackerRadarKit
+import PixelKit
+import enum UserScript.UserScriptError
 
 protocol ScriptSourceProviding {
 
@@ -150,7 +152,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             .withJSLoading()
             .build()
         } catch {
-            // TODO: Fire pixel
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
         }
     }
@@ -171,7 +176,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
                                                              tld: tld,
                                                              trackerDataManager: trackerDataManager)
         } catch {
-            // TODO: Fire pixel
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to initialize DefaultContentBlockerUserScriptConfig: \(error.localizedDescription)")
         }
     }
@@ -196,7 +204,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
                                                          tld: tld,
                                                          isDebugBuild: isDebugBuild)
         } catch {
-            // TODO: Fire pixel
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                PixelKit.fire(DebugEvent(GeneralPixel.userScriptLoadJSFailed(jsFile: jsFile, path: filePath), error: error), frequency: .dailyAndStandard)
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to initialize DefaultSurrogatesUserScriptConfig: \(error.localizedDescription)")
         }
     }

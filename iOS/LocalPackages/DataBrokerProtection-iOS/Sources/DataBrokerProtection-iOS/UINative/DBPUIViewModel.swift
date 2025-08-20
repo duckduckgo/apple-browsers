@@ -25,6 +25,7 @@ import Common
 import os.log
 import DataBrokerProtectionCore
 import Subscription
+import enum UserScript.UserScriptError
 
 public protocol DBPUIViewModelDelegate: AnyObject {
     func isUserAuthenticated() -> Bool
@@ -81,7 +82,10 @@ public final class DBPUIViewModel {
                                                       webUISettings: webUISettings,
                                                       vpnBypassService: nil)
         } catch {
-            // TODO: Fire pixel with EventMapping
+            if case let UserScriptError.failedToLoadJS(jsFile, filePath, error) = error {
+                // TODO: Fire pixel with EventMapping
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
             fatalError("Failed to apply DBPUI configuration: \(error)")
         }
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")

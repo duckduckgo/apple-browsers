@@ -88,6 +88,31 @@ extension AppDelegate {
         }
     }
 
+    @objc func openFile(_ sender: Any?) {
+        DispatchQueue.main.async {
+            var window: NSWindow?
+
+            // If no window is opened, we open one when the user taps to open a file.
+            if Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window == nil {
+                window = Application.appDelegate.windowControllersManager.openNewWindow()
+            } else {
+                window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
+            }
+
+            guard let window = window else {
+                Logger.general.error("No key window available for file picker")
+                return
+            }
+
+            let openPanel = NSOpenPanel.openFilePanel()
+            openPanel.beginSheetModal(for: window) { response in
+                guard response == .OK, let selectedURL = openPanel.url else { return }
+
+                Application.appDelegate.windowControllersManager.show(url: selectedURL, source: .ui, newTab: true)
+            }
+        }
+    }
+
     @objc func closeAllWindows(_ sender: Any?) {
         DispatchQueue.main.async {
             WindowsManager.closeWindows()

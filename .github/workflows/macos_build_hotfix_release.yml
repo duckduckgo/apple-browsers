@@ -51,14 +51,7 @@ jobs:
 
     needs: assert_release_branch
     uses: ./.github/workflows/macos_pr_checks.yml
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GH_RO_PAT: ${{ secrets.GH_RO_PAT }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   update_asana:
 
@@ -110,18 +103,7 @@ jobs:
     with:
       asana-task-url: ${{ github.event.inputs.asana-task-url }}
       destination: appstore
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   tag_and_merge:
     name: Tag and Merge Branch
@@ -132,6 +114,4 @@ jobs:
       branch: ${{ github.ref_name }}
       base-branch: ${{ github.event.inputs.current-internal-release-branch || 'main' }}
       prerelease: true # Pre-release for now, and the actual release will be done as part of publish_dmg_release that's called later
-    secrets:
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GHA_ELEVATED_PERMISSIONS_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+    secrets: inherit

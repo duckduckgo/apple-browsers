@@ -280,7 +280,7 @@ extension WindowControllersManager {
                   let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel else { fallthrough }
             tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: source), selected: selected)
         case .newWindow(let selected):
-            WindowsManager.openNewWindow(with: url, source: source, isBurner: setBurner ?? (windowController?.mainViewController.isBurner ?? false), showWindow: selected)
+            WindowsManager.openNewWindow(with: url, source: source, isBurner: setBurner, showWindow: selected)
         }
     }
 

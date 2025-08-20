@@ -120,12 +120,16 @@ final class WindowsManager {
         if let burnerMode = burnerMode {
             return burnerMode
         } else {
-            // Use user preference for default window type
-            if let appDelegate = NSApp.delegate as? AppDelegate {
-                return appDelegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled ? BurnerMode(isBurner: true) : .regular
-            } else {
-                return .regular
-            }
+            return burnerModeByDefault()
+        }
+    }
+
+    private class func burnerModeByDefault() -> BurnerMode {
+        // Use user preference for default window type
+        if let appDelegate = NSApp.delegate as? AppDelegate {
+            return appDelegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled ? BurnerMode(isBurner: true) : .regular
+        } else {
+            return .regular
         }
     }
 
@@ -150,8 +154,12 @@ final class WindowsManager {
     }
 
     @discardableResult
-    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> NSWindow? {
-        openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint, showWindow: showWindow)
+    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool? = nil, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> NSWindow? {
+        if let isBurner = isBurner {
+            return openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint, showWindow: showWindow)
+        } else {
+            return openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: burnerModeByDefault()), droppingPoint: droppingPoint, showWindow: showWindow)
+        }
     }
 
     @discardableResult

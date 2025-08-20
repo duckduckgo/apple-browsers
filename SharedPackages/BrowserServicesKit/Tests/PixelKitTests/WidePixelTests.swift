@@ -85,7 +85,6 @@ final class WidePixelTests: XCTestCase {
 
     func makeTestError(domain: String = "TestDomain", code: Int = 999) -> NSError {
         return NSError(domain: domain, code: code, userInfo: [
-            NSLocalizedDescriptionKey: "Test error",
             NSUnderlyingErrorKey: NSError(domain: "UnderlyingDomain", code: 123)
         ])
     }

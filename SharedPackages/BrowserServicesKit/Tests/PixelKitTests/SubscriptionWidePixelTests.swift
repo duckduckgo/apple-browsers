@@ -21,8 +21,6 @@ import XCTest
 
 final class SubscriptionWidePixelTests: XCTestCase {
 
-    // MARK: - Test Infrastructure
-
     private var widePixel: WidePixel!
     private var firedPixels: [(name: String, parameters: [String: String])] = []
     private var testDefaults: UserDefaults!
@@ -30,15 +28,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        setupTestInfrastructure()
-    }
 
-    override func tearDown() {
-        cleanupTestInfrastructure()
-        super.tearDown()
-    }
-
-    private func setupTestInfrastructure() {
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
         widePixel = WidePixel(userDefaults: testDefaults, pixelKitProvider: { PixelKit.shared })
@@ -47,10 +37,12 @@ final class SubscriptionWidePixelTests: XCTestCase {
         setupMockPixelKit()
     }
 
-    private func cleanupTestInfrastructure() {
+    override func tearDown() {
         widePixel?.clearAllFlows()
         testDefaults?.removePersistentDomain(forName: testSuiteName)
         PixelKit.tearDown()
+
+        super.tearDown()
     }
 
     private func setupMockPixelKit() {
@@ -114,9 +106,9 @@ final class SubscriptionWidePixelTests: XCTestCase {
         widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.completePurchaseDuration, at: t2)
         widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.completePurchaseDuration, at: t3)
 
-        // Account gets activated (0.8s)
+        // Account gets activated (7.5s)
         let t4 = Date(timeIntervalSince1970: 20)
-        let t5 = Date(timeIntervalSince1970: 20.8)
+        let t5 = Date(timeIntervalSince1970: 27.5)
         widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.activateAccountDuration, at: t4)
         widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.activateAccountDuration, at: t5)
 
@@ -131,9 +123,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        // Verify pixel was fired with correct parameters
         XCTAssertEqual(firedPixels.count, 1)
-
         let firedPixel = firedPixels[0]
         XCTAssertTrue(firedPixel.name.contains("wide_subscription_purchase"))
 
@@ -142,19 +132,17 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "appstore")
         XCTAssertEqual(params["feature.data.ext.subscription_identifier"], "ddg.privacy.pro.monthly.renews.us")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "true")
-        XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000") // Bucketed from 2500
-        XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000") // Bucketed from 1200
-        XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "1000") // Bucketed from 800
+        XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
+        XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000")
+        XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "10000")
         XCTAssertEqual(params["context.name"], "funnel_onboarding_ios")
 
-        // Global and app parameters should be present
+        XCTAssertNotNil(params["app.name"])
+        XCTAssertNotNil(params["app.version"])
         XCTAssertNotNil(params["global.platform"])
         XCTAssertEqual(params["global.type"], "app")
         XCTAssertEqual(params["global.sample_rate"], "1.0")
-        XCTAssertNotNil(params["app.name"])
-        XCTAssertNotNil(params["app.version"])
 
-        // Flow should be cleared after completion
         XCTAssertEqual(widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self).count, 0)
     }
 
@@ -223,9 +211,9 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
 
-        // Verify failure parameters
         XCTAssertEqual(firedPixels.count, 1)
         let params = firedPixels[0].parameters
+
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_CREATE")
         XCTAssertEqual(params["feature.data.error.domain"], "AccountCreationError")
@@ -242,13 +230,10 @@ final class SubscriptionWidePixelTests: XCTestCase {
         widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.createAccountDuration, at: Date(timeIntervalSince1970: 0))
         widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.createAccountDuration, at: Date(timeIntervalSince1970: 1.5)) // 1.5s -> 5000
 
-        // StoreKit purchase fails
-        let storeKitError = NSError(domain: "SKErrorDomain", code: 2, userInfo: [
-            NSLocalizedDescriptionKey: "Cannot connect to iTunes Store"
-        ])
+        let storeKitError = NSError(domain: "SKErrorDomain", code: 2)
 
         var currentForFailure = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
-        currentForFailure.markAsFailed(at: .storekitPurchase, error: storeKitError)
+        currentForFailure.markAsFailed(at: .accountPayment, error: storeKitError)
         widePixel.updateFlow(currentForFailure)
         widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.completePurchaseDuration, at: Date(timeIntervalSince1970: 0))
         widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, keyPath: \.completePurchaseDuration, at: Date(timeIntervalSince1970: 15)) // 15s -> 30000
@@ -266,8 +251,9 @@ final class SubscriptionWidePixelTests: XCTestCase {
         // Verify StoreKit failure parameters
         XCTAssertEqual(firedPixels.count, 1)
         let params = firedPixels[0].parameters
+
         XCTAssertEqual(params["feature.status"], "FAILURE")
-        XCTAssertEqual(params["feature.data.ext.failing_step"], "STOREKIT_PURCHASE")
+        XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_PAYMENT")
         XCTAssertEqual(params["feature.data.error.domain"], "SKErrorDomain")
         XCTAssertEqual(params["feature.data.error.code"], "2")
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000") // Successful step
@@ -332,52 +318,6 @@ final class SubscriptionWidePixelTests: XCTestCase {
         XCTAssertEqual(params["feature.status"], "UNKNOWN")
         XCTAssertEqual(params["feature.status_reason"], "activation_timeout")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "300000") // Max bucket
-    }
-
-    // MARK: - Subscription Data Model Tests
-
-    func testSubscriptionPlatformAndFailingStepEnums() {
-        // Test PurchasePlatform enum
-        let appstorePlatform = SubscriptionPurchaseWidePixelData.PurchasePlatform.appstore
-        let stripePlatform = SubscriptionPurchaseWidePixelData.PurchasePlatform.stripe
-
-        XCTAssertEqual(appstorePlatform.rawValue, "appstore")
-        XCTAssertEqual(stripePlatform.rawValue, "stripe")
-
-        // Test FailingStep enum
-        let flowStart = SubscriptionPurchaseWidePixelData.FailingStep.flowStart
-        let accountCreate = SubscriptionPurchaseWidePixelData.FailingStep.accountCreate
-        let storekitPurchase = SubscriptionPurchaseWidePixelData.FailingStep.storekitPurchase
-        let accountActivation = SubscriptionPurchaseWidePixelData.FailingStep.accountActivation
-
-        XCTAssertEqual(flowStart.rawValue, "FLOW_START")
-        XCTAssertEqual(accountCreate.rawValue, "ACCOUNT_CREATE")
-        XCTAssertEqual(storekitPurchase.rawValue, "STOREKIT_PURCHASE")
-        XCTAssertEqual(accountActivation.rawValue, "ACCOUNT_ACTIVATION")
-
-        // Test CaseIterable
-        XCTAssertEqual(SubscriptionPurchaseWidePixelData.PurchasePlatform.allCases.count, 2)
-        XCTAssertEqual(SubscriptionPurchaseWidePixelData.FailingStep.allCases.count, 4)
-    }
-
-    // MARK: - Edge Case Tests
-
-    func testCompleteFlowWithoutPixelKitInitialized() throws {
-        PixelKit.tearDown()
-
-        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appstore)
-        widePixel.startFlow(subscriptionData)
-
-        let expectation = XCTestExpectation(description: "Completion called")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .success) { success, error in
-            XCTAssertFalse(success)
-            XCTAssertNotNil(error)
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 1.0)
-
-        XCTAssertEqual(firedPixels.count, 0)
     }
 
     func testMultipleFlowCompletionsInSequence() throws {

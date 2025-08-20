@@ -71,7 +71,7 @@ extension SubscriptionPurchaseWidePixelData {
     public enum FailingStep: String, Codable, CaseIterable {
         case flowStart = "FLOW_START"
         case accountCreate = "ACCOUNT_CREATE"
-        case storekitPurchase = "STOREKIT_PURCHASE"
+        case accountPayment = "ACCOUNT_PAYMENT"
         case accountActivation = "ACCOUNT_ACTIVATION"
     }
 

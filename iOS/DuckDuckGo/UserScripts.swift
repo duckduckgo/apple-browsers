@@ -39,6 +39,7 @@ final class UserScripts: UserScriptsProvider {
     let aiChatUserScript: AIChatUserScript
     let subscriptionUserScript: SubscriptionUserScript
     let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
+    let serpSettingsUserScript: SERPSettingsUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -81,6 +82,7 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
+        serpSettingsUserScript = SERPSettingsUserScript()
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         subscriptionUserScript = SubscriptionUserScript(
@@ -91,6 +93,7 @@ final class UserScripts: UserScriptsProvider {
             debugHost: aiChatDebugSettings.messagePolicyHostname)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()

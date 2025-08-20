@@ -71,6 +71,9 @@ class DownloadsUITests: UITestCase {
 
         // Trigger a download that should prompt for a save location (Content-Disposition: attachment)
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         let attachmentURL = URL.testsDownload(size: "5MB").absoluteString
         openSiteForDownloadingFile(url: attachmentURL)
 
@@ -123,6 +126,9 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         // Start a larger download to ensure progress/UI tracking
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
 
         // Open Downloads popover and assert it's visible
@@ -153,6 +159,9 @@ class DownloadsUITests: UITestCase {
                                      openDownloadsPopupOnCompletion: true,
                                      switchToNewTabWhenOpened: false)
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         clearAllDownloadsIfPresent()
 
         let headers1 = ["Content-Disposition": "attachment; filename=test-file-1.bin"]
@@ -191,6 +200,9 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         // For binary content, either a web view loads or a save dialog appears
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1KB").absoluteString)
         let saveDialog = app.sheets.firstMatch
         XCTAssertTrue(saveDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Save dialog should appear for binary content when 'Always ask' is enabled")
@@ -207,6 +219,9 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
 
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         clearAllDownloadsIfPresent()
 
         // Trigger a small download that will show the save panel
@@ -229,6 +244,9 @@ class DownloadsUITests: UITestCase {
                                      openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
 
         let saveSheet = app.sheets.firstMatch
@@ -250,6 +268,9 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         // Start a long download
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
 
         // Immediately close window and open a new one; browser should remain stable
@@ -285,6 +306,9 @@ class DownloadsUITests: UITestCase {
                                      openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         app.pasteURL(url, pressingEnter: true)
 
         XCTAssertTrue(webView.waitForExistence(timeout: 10.0))
@@ -324,6 +348,9 @@ class DownloadsUITests: UITestCase {
         """
         let url = URL.testsServer.appendingTestParameters(data: pageHTML.utf8data)
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         app.pasteURL(url, pressingEnter: true)
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 10.0))
@@ -349,6 +376,9 @@ class DownloadsUITests: UITestCase {
             .appendingPathComponent("download/")
             .appendingPathComponent("1MB")
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         openSiteForDownloadingFile(url: url.absoluteString)
         openDownloadsPopup()
         let popover = app.popovers.firstMatch
@@ -377,6 +407,9 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         // Start a long download and attempt to quit; expect a sheet and cancel it
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
         // Ensure download actually started before quitting
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
@@ -470,7 +503,9 @@ class DownloadsUITests: UITestCase {
 
         // Load launcher and trigger popup (new background tab)
         app.openNewTab()
-        app.activateAddressBar()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         app.pasteURL(launcherURL, pressingEnter: true)
         let openLink = app.webViews.firstMatch.links["Open Popup"]
         XCTAssertTrue(openLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -516,6 +551,9 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         // Ensure a clean state then complete a small download to have a row
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         clearAllDownloadsIfPresent()
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
         verifyDownloadPopupIsShown()
@@ -567,6 +605,9 @@ class DownloadsUITests: UITestCase {
         let url = URL.testsServer.appendingTestParameters(data: pageHTML.utf8data)
 
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         app.pasteURL(url, pressingEnter: true)
         let link = app.webViews.firstMatch.links["Open Download"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -633,6 +674,9 @@ class DownloadsUITests: UITestCase {
         """
         let url = URL.testsServer.appendingTestParameters(data: pageHTML.utf8data)
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         app.pasteURL(url, pressingEnter: true)
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 10.0))
@@ -650,18 +694,27 @@ class DownloadsUITests: UITestCase {
 
     private func downloadFile() {
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         // Use a small ZIP so WebKit downloads it (not rendered inline)
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
     }
 
     private func downloadLargeFile() {
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         // Larger file to keep download in-progress reliably
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
     }
 
     private func downloadFileWithCustomSaveName() {
         app.openNewTab()
+        // wait for the New Tab page to load
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         // Use Content-Disposition so server dictates the filename (no save panel dependency)
         // Use local tests server to provide Content-Disposition filename
         let customNameHeaders = ["Content-Disposition": "attachment; filename=another-name-for-file.zip"]

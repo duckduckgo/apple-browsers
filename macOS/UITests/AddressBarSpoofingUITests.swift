@@ -1,7 +1,7 @@
 //
 //  AddressBarSpoofingUITests.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ class AddressBarSpoofingUITests: UITestCase {
         // JavaScript execution should complete within a reasonable timeframe
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after exploit attempt")
-        
+
         // Check that address bar was not spoofed to duckduckgo.com:8443
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertNotEqual(addressBarValue, "https://duckduckgo.com:8443/",
@@ -78,7 +78,7 @@ class AddressBarSpoofingUITests: UITestCase {
         // Wait for exploit attempt to complete by ensuring address bar is ready for inspection
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after exploit attempt")
-        
+
         // Verify address bar protection and content
         let addressBarValue = addressBarTextField.value as? String ?? ""
 
@@ -113,16 +113,16 @@ class AddressBarSpoofingUITests: UITestCase {
         // Check address bar state after exploit attempt
         app.activateAddressBar()
         let addressBarValue = addressBarTextField.value as? String ?? ""
-        
+
         // The exploit should be blocked - address bar should not show duckduckgo.com
         let addressBarNotSpoofed = !addressBarValue.contains("duckduckgo.com")
-        
+
         // Test the actual browser behavior: the exploit currently works and shows "Not DDG." content
         // but the address bar protection should prevent showing duckduckgo.com
         XCTAssertTrue(addressBarNotSpoofed, "Address bar should not show spoofed duckduckgo.com URL, got: \(addressBarValue)")
-        
+
         // Verify the address bar shows the original site (not spoofed)
-        XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site") || addressBarValue.isEmpty, 
+        XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site") || addressBarValue.isEmpty,
                       "Address bar should show original URL or be empty, got: \(addressBarValue)")
     }
 
@@ -142,7 +142,7 @@ class AddressBarSpoofingUITests: UITestCase {
         // Verify basic auth is stripped from address bar
         app.activateAddressBar()
         let addressBarValue = addressBarTextField.value as? String ?? ""
-        
+
         // The browser should strip basic auth credentials, showing clean URL
         XCTAssertEqual(addressBarValue, "https://example.com/",
                        "Basic auth credentials should be stripped from address bar, got: \(addressBarValue)")
@@ -205,7 +205,7 @@ class AddressBarSpoofingUITests: UITestCase {
         // Verify address bar shows correct destination after form submission
         app.activateAddressBar()
         let addressBarValue = addressBarTextField.value as? String ?? ""
-        
+
         // The form should navigate to duckduckgo.com (duck.co redirects there)
         XCTAssertEqual(addressBarValue, "https://duckduckgo.com/",
                        "Address bar should show duckduckgo.com after form submission, got: \(addressBarValue)")
@@ -292,7 +292,7 @@ class AddressBarSpoofingUITests: UITestCase {
         // Wait for long-loading rewrite attempt to complete by ensuring address bar is accessible
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 8.0), "Address bar should be accessible after long-loading exploit attempt")
-        
+
         // Verify address bar protection against long loading request rewrite
         let addressBarValue = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site"),
@@ -333,7 +333,7 @@ class AddressBarSpoofingUITests: UITestCase {
         // Wait for spoof attempt to complete by ensuring address bar is accessible  
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after spoof attempt")
-        
+
         // Step 4: Verify address bar is NOT spoofed to "https://broken.third-party.site"
         let addressBarValue = addressBarTextField.value as? String ?? ""
 

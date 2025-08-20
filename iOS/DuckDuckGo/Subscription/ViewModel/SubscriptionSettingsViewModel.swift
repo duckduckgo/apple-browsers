@@ -36,6 +36,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     struct State {
         var subscriptionDetails: String = ""
         var subscriptionEmail: String?
+        var isShowingInternalSubscriptionNotice: Bool = false
         var isShowingRemovalNotice: Bool = false
         var shouldDismissView: Bool = false
         var isShowingGoogleView: Bool = false
@@ -170,15 +171,21 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     
     func manageSubscription() {
         Logger.subscription.debug("User action: \(#function)")
-        switch state.subscriptionInfo?.platform {
+
+        guard let platform = state.subscriptionInfo?.platform else {
+            assertionFailure("Invalid subscription platform")
+            return
+        }
+
+        switch platform {
         case .apple:
             Task { await manageAppleSubscription() }
         case .google:
             displayGoogleView(true)
         case .stripe:
             Task { await manageStripeSubscription() }
-        default:
-            return
+        case .unknown:
+            manageInternalSubscription()
         }
     }
     
@@ -236,7 +243,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             state.isShowingStripeView = value
         }
     }
-    
+
+    func displayInternalSubscriptionNotice(_ value: Bool) {
+        if value != state.isShowingInternalSubscriptionNotice {
+            state.isShowingInternalSubscriptionNotice = value
+        }
+    }
+
     func displayRemovalNotice(_ value: Bool) {
         if value != state.isShowingRemovalNotice {
             state.isShowingRemovalNotice = value
@@ -307,7 +320,15 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             self.displayStripeView(true)
         }
     }
-    
+
+    private func manageInternalSubscription() {
+        Logger.subscription.log("Managing Internal Subscription")
+
+        Task { @MainActor in
+            self.displayInternalSubscriptionNotice(true)
+        }
+    }
+
     @MainActor
     private func openURL(_ url: URL) {
         if UIApplication.shared.canOpenURL(url) {

@@ -29,9 +29,13 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
         // Step 1: Load custom remote config
         let menuBarsQuery = app.menuBars
+        let internalUserMenuItem = menuBarsQuery.menuItems["Set Internal User State"]
+        if internalUserMenuItem.exists {
+            internalUserMenuItem.click()
+        }
         menuBarsQuery.menuBarItems["Debug"].click()
         menuBarsQuery.menuItems["Remote Configuration"].click()
-        menuBarsQuery.menuItems["setCustomConfigurationURL:"].click()
+        menuBarsQuery.menuItems["Set custom configuration URL…"].click()
 
         let configURL = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
         let textField = app.dialogs["alert"].children(matching: .textField).element
@@ -53,21 +57,10 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         )
 
         // Step 3: Check test passes
-        let tableRow = app.windows["Conditional Matching experiments"]
-            .webViews["Conditional Matching experiments"]
-            .tables.children(matching: .tableRow).element(boundBy: 2)
-
-        let firstCell = tableRow.children(matching: .cell).element(boundBy: 1).staticTexts.element
-        let secondCell = tableRow.children(matching: .cell).element(boundBy: 2).staticTexts.element
-
-        let existsPredicate = NSPredicate(format: "exists == true")
-
-        expectation(for: existsPredicate, evaluatedWith: firstCell, handler: nil)
-        expectation(for: existsPredicate, evaluatedWith: secondCell, handler: nil)
-
-        waitForExpectations(timeout: 5, handler: nil)
-
-        XCTAssertEqual(firstCell.label, secondCell.label, "The two numbers do not match.")
+        let suiteStatusLabel = app.staticTexts["Test suite status: "]
+        let suiteStatusValue = app.staticTexts["pass"]
+        XCTAssertTrue(suiteStatusLabel.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Label not found")
+        XCTAssertTrue(suiteStatusValue.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test Suite Status Value not pass")
     }
 
 }

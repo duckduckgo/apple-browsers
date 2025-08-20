@@ -42,11 +42,14 @@ final class TabViewCell: UICollectionViewCell {
         static let cellHeaderHeight: CGFloat = 36.0 + 4.0 // height + top padding
         static let cellLogoSize: CGFloat = 68.0
 
-        static let previewCornerRadius: CGFloat = 8.0
+        static let previewCornerRadius: CGFloat = 8
 
         static let selectedBorderWidth: CGFloat = 2.0
         static let unselectedBorderWidth: CGFloat = 0.0
         static let previewPadding: CGFloat = 4.0
+
+        static let removeButtonTextSpacingRegular: CGFloat = -12
+        static let removeButtonTextSpacingHighlighted: CGFloat = 2
     }
 
     var removeThreshold: CGFloat {
@@ -90,7 +93,7 @@ final class TabViewCell: UICollectionViewCell {
 
     @IBOutlet weak var favicon: UIImageView!
     @IBOutlet weak var title: UILabel!
-    @IBOutlet weak var removeButton: EnlargedHitAreaButton!
+    @IBOutlet weak var removeButton: BrowserChromeButton!
     @IBOutlet weak var unread: UIImageView!
     @IBOutlet weak var selectionIndicator: UIImageView!
 
@@ -105,6 +108,8 @@ final class TabViewCell: UICollectionViewCell {
     @IBOutlet var previewBottomConstraint: NSLayoutConstraint?
     @IBOutlet var previewTrailingConstraint: NSLayoutConstraint?
 
+    @IBOutlet weak var textButtonSpacing: NSLayoutConstraint?
+
     /// Note that `backgroundView` and `selectedBackgroundView` are provided by UICollectionViewCell and we don't use them for legacy and design reasons, so ignore them.
     func setupSubviews() {
         layer.masksToBounds = false
@@ -113,22 +118,47 @@ final class TabViewCell: UICollectionViewCell {
 
         preview?.layer.cornerRadius = Constants.previewCornerRadius
         preview?.layer.masksToBounds = true
+        preview?.layer.cornerCurve = .continuous
 
         backgroundColor = .clear
-        
+
         background?.layer.cornerRadius = Constants.cellCornerRadius
+        background?.layer.cornerCurve = .continuous
         background?.backgroundColor = .clear
 
         border.layer.cornerRadius = Constants.borderRadius
+        border.layer.cornerCurve = .continuous
 
         layer.cornerRadius = Constants.cellCornerRadius
+        layer.cornerCurve = .continuous
 
         unread.tintColor = UIColor(designSystemColor: .accent)
 
         favicon.layer.cornerRadius = 4
+        favicon.layer.cornerCurve = .continuous
         favicon.layer.masksToBounds = true
+        favicon.image = DesignSystemImages.Glyphs.Size24.globe
 
-        removeButton.additionalHitTestSize = 4
+        removeButton.type = .tabSwitcher
+        removeButton.setImage(DesignSystemImages.Glyphs.Size16.close)
+        removeButton.addTarget(self, action: #selector(removeButtonValueChange), for: .allTouchEvents)
+    }
+
+    @objc private func removeButtonValueChange() {
+        // When highlighted, set larger spacing between text and close button
+        // to adjust for the highlight area, otherwise set text as close to the
+        // icon as possible.
+        // Delay so that quick tapping regurarly is not causing glitch in the text.
+        UIView.animate(withDuration: 0.15,
+                       delay: 0.0,
+                       options: [.beginFromCurrentState, .curveEaseOut]) {
+            if self.removeButton.state == .highlighted {
+                self.textButtonSpacing?.constant = Constants.removeButtonTextSpacingHighlighted
+            } else {
+                self.textButtonSpacing?.constant = Constants.removeButtonTextSpacingRegular
+            }
+            self.layoutIfNeeded()
+        }
     }
 
     private func applyShadows() {
@@ -344,7 +374,6 @@ final class TabViewCell: UICollectionViewCell {
 
         updateCurrentTabBorder()
 
-        removeButton.setImage(DesignSystemImages.Glyphs.Size16.closeSolidAlt, for: .normal)
         if let link = tab.link {
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")
             title.accessibilityLabel = UserText.openTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")

@@ -28,15 +28,16 @@ class AIChatTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 
     override func tearDownWithError() throws {
+        try super.tearDownWithError()
         app.terminate()
     }
 

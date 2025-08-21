@@ -22,20 +22,28 @@ class DownloadsUITests: UITestCase {
 
     private var app: XCUIApplication!
     private var webView: XCUIElement!
+    private var popover: XCUIElement!
+    private var cleanupPaths: Set<String> = []
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 
         webView = app.webViews.firstMatch
+        popover = app.popovers.firstMatch
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     override func tearDown() {
+        cleanupTrackedFiles()
+        cleanupPaths.removeAll()
         webView = nil
+        popover = nil
         app = nil
+        super.tearDown()
     }
 
     // MARK: - Test Cases
@@ -92,16 +100,10 @@ class DownloadsUITests: UITestCase {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
                                      openDownloadsPopupOnCompletion: true,
                                      switchToNewTabWhenOpened: false)
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        openFireWindow()
-        downloadFile(onFireWindow: true)
-        openDownloadsPopup()
-        let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        let sizeLabel = popover.staticTexts
-            .containing(NSPredicate(format: "value MATCHES[c] '1.0 MB'"))
-            .firstMatch
-        XCTAssertTrue(sizeLabel.waitForExistence(timeout: 15.0))
+        app.enforceSingleWindow()
+        app.openFireWindow()
+        let fireName = triggerDownloadWithUniqueName(size: "1MB")
+        assertDownloadListed(filename: fireName, sizeLabelRegex: "1.0 MB")
     }
 
     /// Closing a Fire window with an in‑progress download should present a warning
@@ -109,14 +111,38 @@ class DownloadsUITests: UITestCase {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
                                      openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        openFireWindow()
+        app.enforceSingleWindow()
+        app.openFireWindow()
+
         downloadLargeFile(onFireWindow: true)
         // Wait for the download to actually start (Downloads button becomes available)
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
         _ = downloadsButton.waitForExistence(timeout: 10.0)
-        closeWindowWithInProgressDownload()
+        // Attempt to close window → expect warning
+        app.closeWindow()
         verifyDownloadInProgressWarning()
+        // Cancel the warning and ensure download still present
+        let sheet = app.sheets.firstMatch
+        sheet.buttons["Don’t Close"].click()
+
+        // Verify download is in progress and present
+        openDownloadsPopup()
+        let progressPredicate = NSPredicate(format: "value MATCHES[c] '.* of .*( – .*|)'")
+        let namePredicate = NSPredicate(format: "value MATCHES[c] '.MMA.+10GB.*'")
+        XCTAssertTrue(popover.staticTexts.containing(namePredicate).firstMatch.waitForExistence(timeout: 15.0))
+        XCTAssertTrue(popover.staticTexts.containing(progressPredicate).firstMatch.waitForExistence(timeout: 10.0))
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Try closing again and accept the warning to stop download
+        app.closeWindow()
+        verifyDownloadInProgressWarning()
+
+        sheet.buttons["Close"].click()
+
+        // Reopen main window and verify download was cancelled
+        app.enforceSingleWindow()
+        openDownloadsPopup()
+        XCTAssertTrue(popover.staticTexts.containing(namePredicate).firstMatch.waitForNonExistence(timeout: 3.0))
     }
 
     /// Starts a larger download and verifies progress by asserting the Stop action is available in the context menu.
@@ -128,13 +154,11 @@ class DownloadsUITests: UITestCase {
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
 
-        openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
+        downloadLargeFile()
 
         // Open Downloads popover and assert it's visible
-        openDownloadsPopup()
-        let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let table = popover.tables.firstMatch
         XCTAssertTrue(table.waitForExistence(timeout: 10.0))
         let firstRow = table.cells.firstMatch
@@ -144,12 +168,10 @@ class DownloadsUITests: UITestCase {
         let stopItem = app.menuItems.containing(NSPredicate(format: "title ==[c] 'Stop'"))
             .firstMatch
         XCTAssertTrue(stopItem.waitForExistence(timeout: 5.0))
-        app.typeKey(.escape, modifierFlags: [])
 
-        // Additionally, assert detail label shows progress text like "x of y" while in progress
+        // Additionally assert progress text and filename
         let progressPredicate = NSPredicate(format: "value MATCHES[c] '.* of .*( – .*|)'")
-        let progressLabel = popover.staticTexts.containing(progressPredicate).firstMatch
-        XCTAssertTrue(progressLabel.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(popover.staticTexts.containing(progressPredicate).firstMatch.waitForExistence(timeout: 10.0))
     }
 
     /// Triggers two distinct downloads and verifies the Downloads UI is available for multiple items.
@@ -161,27 +183,23 @@ class DownloadsUITests: UITestCase {
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
         clearAllDownloadsIfPresent()
 
-        let headers1 = ["Content-Disposition": "attachment; filename=test-file-1.bin"]
-        let url1 = URL.testsServer.appendingTestParameters(headers: headers1)
-            .appendingPathComponent("download/")
-            .appendingPathComponent("1MB")
-        openSiteForDownloadingFile(url: url1.absoluteString)
+        let baseName = "same-name-\(UUID().uuidString).bin"
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        
+        // Track both completed downloads (original and " 1.bin" suffix)
+        trackForCleanup(downloadsDir.appendingPathComponent(baseName).path)
+        trackForCleanup(downloadsDir.appendingPathComponent(baseName.replacingOccurrences(of: ".bin", with: " 1.bin")).path)
+        
+        openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB", filename: baseName).absoluteString)
         // Briefly allow processing of the first trigger
         _ = app.windows.firstMatch.waitForExistence(timeout: 1.0)
 
-        let headers2 = ["Content-Disposition": "attachment; filename=test-file-2.bin"]
-        let url2 = URL.testsServer.appendingTestParameters(headers: headers2)
-            .appendingPathComponent("download/")
-            .appendingPathComponent("1MB")
-        openSiteForDownloadingFile(url: url2.absoluteString)
+        openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB", filename: baseName).absoluteString)
 
         // Open Downloads popover and assert two download rows are present
         openDownloadsPopup()
-        let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let table = popover.tables.firstMatch
         XCTAssertTrue(table.waitForExistence(timeout: 10.0))
         let twoRowsExpectation = XCTNSPredicateExpectation(
@@ -190,28 +208,11 @@ class DownloadsUITests: UITestCase {
         )
         let waiterResult = XCTWaiter.wait(for: [twoRowsExpectation], timeout: 15.0)
         XCTAssertEqual(waiterResult, .completed)
+        assertDownloadListed(filename: baseName)
+        assertDownloadListed(filename: baseName.replacingOccurrences(of: ".bin", with: " 1.bin"))
     }
 
-    /// With "Always ask" ON, binary content should surface a save dialog instead of loading inline.
-    func testUnsupportedMimeType_HandledGracefully() {
-        // Enable "Always ask"
-        configureDownloadPreferences(alwaysAskWhereToSave: true,
-                                     openDownloadsPopupOnCompletion: false,
-                                     switchToNewTabWhenOpened: false)
-        // For binary content, either a web view loads or a save dialog appears
-        app.openNewTab()
-        // wait for the New Tab page to load
-        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        openSiteForDownloadingFile(url: URL.testsDownload(size: "1KB").absoluteString)
-        let saveDialog = app.sheets.firstMatch
-        XCTAssertTrue(saveDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Save dialog should appear for binary content when 'Always ask' is enabled")
-        let cancel = saveDialog.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 2.0))
-        cancel.click()
-    }
-
-    /// When using the save panel, a custom unique filename should be saved and displayed in the Downloads popover.
+    /// When using the save panel, a custom filename should be saved and displayed in the Downloads popover.
     func testSavePanel_UniqueFilename_SavedAndListed() {
         // Enable save panel behavior and clear existing downloads
         configureDownloadPreferences(alwaysAskWhereToSave: true,
@@ -221,20 +222,21 @@ class DownloadsUITests: UITestCase {
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
         clearAllDownloadsIfPresent()
 
         // Trigger a small download that will show the save panel
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
 
-        // Save with a unique filename
         let uniqueName = "ui-" + UUID().uuidString + ".bin"
-        saveFileAs(uniqueName)
+        let targetDir = FileManager.default.temporaryDirectory.appendingPathComponent("ddg-uitests-downloads", isDirectory: true)
+        try? FileManager.default.createDirectory(at: targetDir, withIntermediateDirectories: true)
+        trackForCleanup(targetDir.path)
+        saveFileAs(uniqueName, in: targetDir)
 
-        let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        let nameLabel = popover.staticTexts[uniqueName].firstMatch
-        XCTAssertTrue(nameLabel.waitForExistence(timeout: 15.0))
+        assertDownloadListed(filename: uniqueName)
+
+        // Verify file exists at chosen directory
+        waitForFile(at: targetDir.appendingPathComponent(uniqueName), timeout: 15.0)
     }
 
     /// Cancelling the save dialog should cancel the download and leave the list empty.
@@ -246,6 +248,7 @@ class DownloadsUITests: UITestCase {
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
 
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
 
@@ -261,6 +264,251 @@ class DownloadsUITests: UITestCase {
         verifyNoRecentDownloads()
     }
 
+    /// When save panel is shown and a location is chosen, the file is saved there.
+    func testSavePanel_SavesToSelectedLocation_CreatesFile() throws {
+        configureDownloadPreferences(alwaysAskWhereToSave: true,
+                                     openDownloadsPopupOnCompletion: false,
+                                     switchToNewTabWhenOpened: false)
+
+        app.openNewTab()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
+
+        // Trigger a small download that will show the save panel
+        openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
+
+        // Before saving, verify suggested filename matches the download name (1MB.bin)
+        let saveSheet = app.sheets.firstMatch
+        XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        let filenameField = saveSheet.textFields.firstMatch
+        XCTAssertTrue(filenameField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        let initialName = filenameField.value as? String
+        XCTAssertEqual(initialName, "1MB.bin")
+
+        let uniqueName = "ui-" + UUID().uuidString + ".bin"
+        XCTAssertNotEqual(initialName, uniqueName)
+        let targetDir = FileManager.default.temporaryDirectory.appendingPathComponent("ddg-uitests-downloads-2", isDirectory: true)
+        try FileManager.default.createDirectory(at: targetDir, withIntermediateDirectories: true)
+        trackForCleanup(targetDir.path)
+        saveFileAs(uniqueName, in: targetDir)
+        waitForFile(at: targetDir.appendingPathComponent(uniqueName), timeout: 15.0)
+    }
+
+    /// Navigating to unrenderable content (no attachment disposition) should still start a download.
+    func testUnrenderableMimeType_Navigated_TriggersDownload() {
+        configureDownloadPreferences(alwaysAskWhereToSave: false,
+                                     openDownloadsPopupOnCompletion: true,
+                                     switchToNewTabWhenOpened: false)
+
+        // Simulate navigating to a page that has binary content with an unrenderable MIME type
+        let uniqueName = "inline-binary-\(UUID().uuidString).bin"
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        trackForCleanup(downloadsDir.appendingPathComponent(uniqueName).path)
+        
+        let binaryData = "Some binary content".data(using: .utf8)!
+        let url = URL.testsServer.appendingPathComponent(uniqueName).appendingTestParameters(
+            data: binaryData,
+            headers: ["Content-Type": "application/x-weird-binary"]
+        )
+
+        app.openNewTab()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        app.pasteURL(url, pressingEnter: true)
+
+        assertDownloadListed(filename: uniqueName)
+    }
+
+    /// Restoring windows/tabs after app restart should not re-trigger a past download.
+    func testTabRestoration_DoesNotRestartDownloadOnAppRestart() {
+        // Configure once up front with restore enabled
+        configureDownloadPreferences(alwaysAskWhereToSave: false,
+                                     openDownloadsPopupOnCompletion: true,
+                                     switchToNewTabWhenOpened: false,
+                                     restorePreviousSession: true)
+
+        app.openNewTab()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
+
+        triggerDownloadWithUniqueName(size: "1MB")
+
+        let table = popover.tables.firstMatch
+
+        // Expect exactly one item + "Open Downloads folder"
+        let oneDownloadExpectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "count == %d", 2),
+            object: table.cells
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [oneDownloadExpectation], timeout: 15.0), .completed)
+
+        // Quit and relaunch
+        app.typeKey("q", modifierFlags: [.command])
+        app.launch()
+        _ = app.wait(for: .runningForeground, timeout: 5.0)
+        app.enforceSingleWindow()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Verify count did not increase
+        openDownloadsPopup()
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertEqual(table.cells.count, 2)
+    }
+
+    /// Restoring a page where JS triggers a download after 500ms must NOT start the download again on restoration.
+    func testTabRestoration_JSDelayedDownload_DoesNotReTrigger() {
+        // Configure once with restore enabled; avoid duplicate preference writes
+        configureDownloadPreferences(alwaysAskWhereToSave: false,
+                                     openDownloadsPopupOnCompletion: true,
+                                     switchToNewTabWhenOpened: false,
+                                     restorePreviousSession: true)
+
+        app.openNewTab()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
+
+        // Page that schedules a delayed download via JS timer to a unique file
+        let uniqueName = "delayed-\(UUID().uuidString).bin"
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        trackForCleanup(downloadsDir.appendingPathComponent(uniqueName).path)
+        
+        let delayedURL = URL.testsDownload(size: "1MB", filename: uniqueName).absoluteString
+        let pageHTML = """
+        <html><head><title>Delayed DL</title></head>
+        <body>
+          <script>
+            setTimeout(function(){ window.location.href = '\(delayedURL.escapedJavaScriptString())'; }, 500);
+          </script>
+          Page loaded!
+        </body></html>
+        """
+        let url = URL.testsServer.appendingTestParameters(data: pageHTML.utf8data)
+
+        // Already configured above with restorePreviousSession = true
+        openSiteForDownloadingFile(url: url.absoluteString)
+
+        // Wait for the delayed download to start and appear
+        openDownloadsPopup()
+        // We don't depend on exact name; ensure at least one item appears
+        let table = popover.tables.firstMatch
+        XCTAssertTrue(table.waitForExistence(timeout: 10.0))
+        // Expect exactly one item + "Open Downloads folder"
+        let oneDownloadExpectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "count == %d", 2),
+            object: table.cells
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [oneDownloadExpectation], timeout: 15.0), .completed)
+
+        // Quit and relaunch to restore session
+        app.typeKey("q", modifierFlags: [.command])
+        app.launch()
+        _ = app.wait(for: .runningForeground, timeout: 5.0)
+
+        XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        sleep(2)
+
+        // Verify no NEW download was added after restoration (still exactly one)
+        openDownloadsPopup()
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertEqual(table.cells.count, 2)
+    }
+
+    /// Reopening a closed tab (Cmd+Shift+T) should not re-trigger the download for that page.
+    func testReopenClosedTab_DoesNotRestartDownload() {
+        configureDownloadPreferences(alwaysAskWhereToSave: false,
+                                     openDownloadsPopupOnCompletion: true,
+                                     switchToNewTabWhenOpened: false)
+
+        app.openNewTab()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
+
+        app.openNewTab()
+        triggerDownloadWithUniqueName(size: "1MB")
+
+        // Assert a single item exists
+        let table = popover.tables.firstMatch
+        // Expect exactly one item + "Open Downloads folder"
+        let oneDownloadExpectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "count == %d", 2),
+            object: table.cells
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [oneDownloadExpectation], timeout: 15.0), .completed)
+
+        // Close the current tab and immediately reopen last closed tab
+        app.closeCurrentTab()
+        app.typeKey("t", modifierFlags: [.command, .shift])
+
+        // Wait a short moment for potential retrigger (should not happen)
+        openDownloadsPopup()
+        _ = table.waitForExistence(timeout: 3.0)
+        XCTAssertEqual(table.cells.count, 2)
+    }
+
+    /// Option+click should download an HTML link instead of opening it.
+    func testOptionClick_DownloadsLinkedHTMLFile() {
+        configureDownloadPreferences(alwaysAskWhereToSave: false,
+                                     openDownloadsPopupOnCompletion: true,
+                                     switchToNewTabWhenOpened: false)
+
+        // Linked HTML target
+        let uniqueLinkedName = "linked-\(UUID().uuidString).html"
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        trackForCleanup(downloadsDir.appendingPathComponent(uniqueLinkedName).path)
+        
+        let linkedURL = URL.testsDownload(size: "1KB", filename: uniqueLinkedName)
+
+        // Page containing the link
+        let pageHTML = """
+        <html>
+          <head><title>Link Host</title></head>
+          <body>
+            <a id="html-link" href="\(linkedURL.absoluteString.escapedJavaScriptString())">HTML Link</a>
+          </body>
+        </html>
+        """
+        let pageURL = URL.testsServer.appendingTestParameters(data: pageHTML.utf8data)
+
+        app.openNewTab()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        app.pasteURL(pageURL, pressingEnter: true)
+
+        let link = app.webViews.firstMatch.links["HTML Link"].firstMatch
+        XCTAssertTrue(link.waitForExistence(timeout: 10.0))
+        XCUIApplication.perform(withKeyModifiers: [.option]) {
+            link.click()
+        }
+
+        // The saved name should derive from the target lastPathComponent
+        assertDownloadListed(filename: uniqueLinkedName)
+    }
+
+    /// Custom downloads location: set to a temp folder and verify completed files are saved there
+    func testCustomDownloadsLocation_FilesGoIntoSelectedDirectory() {
+        // Set a custom target directory using the unified helper
+        let customDir = FileManager.default.temporaryDirectory.appendingPathComponent("ddg-custom-downloads", isDirectory: true)
+        try? FileManager.default.createDirectory(at: customDir, withIntermediateDirectories: true)
+        trackForCleanup(customDir.path)
+        configureDownloadPreferences(alwaysAskWhereToSave: false,
+                                     openDownloadsPopupOnCompletion: true,
+                                     switchToNewTabWhenOpened: false,
+                                     restorePreviousSession: false,
+                                     downloadsLocation: customDir)
+
+        // Start a download and verify it lands in the customDir
+        app.openNewTab()
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        let unique = UUID().uuidString
+        let url = URL.testsDownload(size: "1MB", filename: "custom-dir-file-\(unique).bin")
+        app.pasteURL(url, pressingEnter: true)
+
+        // Wait for completion in downloads UI
+        assertDownloadListed(filename: "custom-dir-file-\(unique).bin")
+
+        // Verify exists in customDir
+        let expected = customDir.appendingPathComponent("custom-dir-file-\(unique).bin")
+        waitForFile(at: expected, timeout: 15.0)
+    }
+
     /// Window close during a long download should not destabilize the browser; Downloads UI remains accessible.
     func testWindowCloseDuringDownload_BrowserStable() {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
@@ -270,7 +518,14 @@ class DownloadsUITests: UITestCase {
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
 
+        // Track both the final and in-progress files
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let filename = "5GB.bin"
+        trackForCleanup(downloadsDir.appendingPathComponent(filename).path)
+        trackForCleanup(downloadsDir.appendingPathComponent(filename + ".duckload").path)
+        
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
 
         // Immediately close window and open a new one; browser should remain stable
@@ -282,8 +537,6 @@ class DownloadsUITests: UITestCase {
         openDownloadsPopup()
         verifyDownloadPopupIsShown()
         // Verify presence by checking a size label is shown in the popover
-        let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let sizePredicate = NSPredicate(format: "value MATCHES[c] '.*(KB|MB|GB).*'")
         let sizeLabel = popover.staticTexts.containing(sizePredicate).firstMatch
         XCTAssertTrue(sizeLabel.waitForExistence(timeout: 15.0))
@@ -308,12 +561,12 @@ class DownloadsUITests: UITestCase {
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
 
-        app.pasteURL(url, pressingEnter: true)
+        openSiteForDownloadingFile(url: url.absoluteString)
 
-        XCTAssertTrue(webView.waitForExistence(timeout: 10.0))
         let link = webView.links["Download via Data URL"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         link.tap()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -352,10 +605,8 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         app.pasteURL(url, pressingEnter: true)
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 10.0))
         let link = webView.links["Download via Blob"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         link.tap()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -370,21 +621,23 @@ class DownloadsUITests: UITestCase {
                                      openDownloadsPopupOnCompletion: true,
                                      switchToNewTabWhenOpened: false)
         // Complete a small download with a distinct name
-        let fileName = "persist-test-1mb.bin"
-        let headers = ["Content-Disposition": "attachment; filename=\(fileName)"]
-        let url = URL.testsServer.appendingTestParameters(headers: headers)
-            .appendingPathComponent("download/")
-            .appendingPathComponent("1MB")
+        let fileName = "persist-test-1mb-\(UUID().uuidString).bin"
+        let url = URL.testsDownload(size: "1MB", filename: fileName)
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
+
+        // Track both the final and in-progress files
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        trackForCleanup(downloadsDir.appendingPathComponent(fileName).path)
+        trackForCleanup(downloadsDir.appendingPathComponent(fileName + ".duckload").path)
 
         openSiteForDownloadingFile(url: url.absoluteString)
         openDownloadsPopup()
-        let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let sizeLabel = popover.staticTexts.containing(NSPredicate(format: "value MATCHES[c] '1.0 MB'")).firstMatch
         XCTAssertTrue(sizeLabel.waitForExistence(timeout: 15.0))
+        assertDownloadListed(filename: fileName)
 
         // Restart app and verify the same file is listed
         app.typeKey("q", modifierFlags: [.command])
@@ -396,7 +649,6 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         openDownloadsPopup()
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(sizeLabel.exists)
     }
 
@@ -409,8 +661,9 @@ class DownloadsUITests: UITestCase {
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
 
-        openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
+        downloadLargeFile()
         // Ensure download actually started before quitting
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
         XCTAssertTrue(downloadsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -427,10 +680,10 @@ class DownloadsUITests: UITestCase {
         dontQuit.click()
 
         // Validate download is still running (Stop item visible in context menu)
-        openDownloadsPopup()
-        let pop = app.popovers.firstMatch
-        XCTAssertTrue(pop.waitForExistence(timeout: 5.0))
-        let table = pop.tables.firstMatch
+        if !popover.exists {
+            openDownloadsPopup()
+        }
+        let table = popover.tables.firstMatch
         XCTAssertTrue(table.waitForExistence(timeout: 5.0))
         let firstRow = table.cells.firstMatch
         XCTAssertTrue(firstRow.waitForExistence(timeout: 5.0))
@@ -555,12 +808,17 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         clearAllDownloadsIfPresent()
+
+        // Track both the final and in-progress files
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let filename = "1MB.bin"
+        trackForCleanup(downloadsDir.appendingPathComponent(filename).path)
+        trackForCleanup(downloadsDir.appendingPathComponent(filename + ".duckload").path)
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
         verifyDownloadPopupIsShown()
 
         // Wait until a completed row (size text) appears, then right-click that row
-        let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: 10.0))
         let sizeLabel = popover.staticTexts.containing(NSPredicate(format: "value MATCHES[c] '1.0 MB'"))
         XCTAssertTrue(sizeLabel.firstMatch.waitForExistence(timeout: 20.0))
         let table = popover.tables.firstMatch
@@ -572,14 +830,12 @@ class DownloadsUITests: UITestCase {
         let showInFinder = app.menuItems.containing(NSPredicate(format: "title CONTAINS[c] 'Show in Finder'"))
         XCTAssertTrue(showInFinder.firstMatch.waitForExistence(timeout: 5.0))
         showInFinder.firstMatch.click()
-        // Re-open and remove the item
+
         openDownloadsPopup()
-        let table2 = popover.tables.firstMatch
-        XCTAssertTrue(table2.waitForExistence(timeout: 5.0))
-        let firstRow2 = table2.cells.firstMatch
-        XCTAssertTrue(firstRow2.waitForExistence(timeout: 5.0))
-        firstRow2.click()
-        firstRow2.rightClick()
+        XCTAssertTrue(table.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 5.0))
+        firstRow.click()
+        firstRow.rightClick()
         let removeItem = app.menuItems.containing(NSPredicate(format: "title CONTAINS[c] 'Remove from List'"))
         XCTAssertTrue(removeItem.firstMatch.waitForExistence(timeout: 5.0))
         removeItem.firstMatch.click()
@@ -593,7 +849,11 @@ class DownloadsUITests: UITestCase {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
                                      openDownloadsPopupOnCompletion: true,
                                      switchToNewTabWhenOpened: false)
-        let downloadURL = URL.testsDownload(size: "1MB").absoluteString
+        let filename = "auto-tab-close-\(UUID().uuidString).bin"
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        trackForCleanup(downloadsDir.appendingPathComponent(filename).path)
+
+        let downloadURL = URL.testsDownload(size: "1MB", filename: filename).absoluteString
         let pageHTML = """
         <html>
           <head><title>Auto Open Via Click</title></head>
@@ -630,67 +890,72 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile()
         // Open downloads and cancel the first row
         openDownloadsPopup()
-        let pop = app.popovers.firstMatch
-        XCTAssertTrue(pop.waitForExistence(timeout: 10.0))
-        let table = pop.tables.firstMatch
+        let table = popover.tables.firstMatch
         XCTAssertTrue(table.waitForExistence(timeout: 5.0))
         let firstRow = table.cells.firstMatch
         XCTAssertTrue(firstRow.waitForExistence(timeout: 5.0))
         firstRow.click()
         // Right-click and choose Stop to cancel
         firstRow.rightClick()
-        let stopItem = pop.menuItems.containing(NSPredicate(format: "title ==[c] 'Stop'")).firstMatch
+        let stopItem = popover.menuItems.containing(NSPredicate(format: "title ==[c] 'Stop'")).firstMatch
         XCTAssertTrue(stopItem.waitForExistence(timeout: 3.0))
         stopItem.click()
 
         // Now right-click again and click Restart Download
         firstRow.rightClick()
-        let restartItem = pop.menuItems.containing(NSPredicate(format: "title ==[c] 'Restart Download'")).firstMatch
+        let restartItem = popover.menuItems.containing(NSPredicate(format: "title ==[c] 'Restart Download'")).firstMatch
         XCTAssertTrue(restartItem.waitForExistence(timeout: 3.0))
         restartItem.click()
 
         // Assert popover remains open (do not toggle with Cmd+J)
-        XCTAssertTrue(pop.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Progress should resume: right-click again and ensure the Stop action is available
         firstRow.rightClick()
-        let stopAfterRestart = pop.menuItems.containing(NSPredicate(format: "title ==[c] 'Stop'"))
-            .firstMatch
-        XCTAssertTrue(stopAfterRestart.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(stopItem.waitForExistence(timeout: 5.0))
         app.typeKey(.escape, modifierFlags: [])
     }
 
     /// Two links on a served page should yield two download entries; Downloads UI must be accessible.
     func testMultipleDownloads_FromServedPage_ShowsTwoItems() {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
-                                     openDownloadsPopupOnCompletion: true,
+                                     openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)
+        // Create unique filenames for both downloads
+                let fileNameA = "file-a-\(UUID().uuidString).bin"
+        let fileNameB = "file-b-\(UUID().uuidString).bin"
+        
+        // Track files in default downloads directory
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        trackForCleanup(downloadsDir.appendingPathComponent(fileNameA).path)
+        trackForCleanup(downloadsDir.appendingPathComponent(fileNameB).path)
+        
         // Page with two direct download links
         let pageHTML = """
         <html><head><title>Two Downloads</title></head>
         <body>
-          <a href="\(URL.testsDownload(size: "1MB").absoluteString)">File A</a>
-          <a href="\(URL.testsDownload(size: "5MB").absoluteString)">File B</a>
+          <a href="\(URL.testsDownload(size: "1MB", filename: fileNameA).absoluteString)">File A</a>
+          <a href="\(URL.testsDownload(size: "5MB", filename: fileNameB).absoluteString)">File B</a>
         </body></html>
         """
         let url = URL.testsServer.appendingTestParameters(data: pageHTML.utf8data)
         app.openNewTab()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        clearAllDownloadsIfPresent()
 
-        app.pasteURL(url, pressingEnter: true)
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 10.0))
-        webView.links["File A"].tap()
-        webView.links["File B"].tap()
-        verifyDownloadPopupIsShown()
+        openSiteForDownloadingFile(url: url.absoluteString)
+        let linkA = webView.links["File A"].firstMatch
+        let linkB = webView.links["File B"].firstMatch
+        XCTAssertTrue(linkA.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(linkB.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        linkA.tap()
+        linkB.tap()
+
+        // Verify both files appear with correct sizes
+        assertDownloadListed(filename: fileNameA, sizeLabelRegex: "1.0 MB")
+        assertDownloadListed(filename: fileNameB, sizeLabelRegex: "5.0 MB")
     }
 
     // MARK: - Helper Methods
-
-    private func setupSingleWindow() {
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Ensure a single window
-        app.typeKey("n", modifierFlags: .command)
-    }
 
     private func downloadFile(onFireWindow: Bool = false) {
         app.openNewTab()
@@ -701,6 +966,11 @@ class DownloadsUITests: UITestCase {
             XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         }
 
+        for filename in ["1MB.bin", "1MB 1.bin", "1MB 2.bin"] {
+            let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+            let finalPath = downloadsDir.appendingPathComponent(filename).path
+            trackForCleanup(finalPath)
+        }
         // Use a small ZIP so WebKit downloads it (not rendered inline)
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
     }
@@ -715,30 +985,16 @@ class DownloadsUITests: UITestCase {
         }
 
         // Larger file to keep download in-progress reliably
-        openSiteForDownloadingFile(url: "https://mmatechnical.com/Download/Download-Test-File/(MMA)-10GB.zip")
-    }
-
-    private func downloadFileWithCustomSaveName() {
-        app.openNewTab()
-        // wait for the New Tab page to load
-        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        // Use Content-Disposition so server dictates the filename (no save panel dependency)
-        // Use local tests server to provide Content-Disposition filename
-        let customNameHeaders = ["Content-Disposition": "attachment; filename=another-name-for-file.zip"]
-        let customNameURL = URL.testsServer.appendingTestParameters(headers: customNameHeaders)
-            .appendingPathComponent("download/")
-            .appendingPathComponent("1MB")
-        openSiteForDownloadingFile(url: customNameURL.absoluteString)
-        // Wait for downloads button to appear indicating a download started
-        let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
-        XCTAssertTrue(downloadsButton.waitForExistence(timeout: 10.0))
-        // Open downloads UI for verification
-        verifyDownloadPopupIsShown()
-    }
-
-    private func openFireWindow() {
-        app.typeKey("n", modifierFlags: [.command, .shift])
+        let url = "https://mmatechnical.com/Download/Download-Test-File/(MMA)-10GB.zip"
+        openSiteForDownloadingFile(url: url)
+        
+        // Track both the final file and the temporary .duckload file
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let filename = url.components(separatedBy: "/").last ?? "(MMA)-10GB.zip"
+        let finalPath = downloadsDir.appendingPathComponent(filename).path
+        let tempPath = downloadsDir.appendingPathComponent(filename + ".duckload").path
+        trackForCleanup(finalPath)
+        trackForCleanup(tempPath)
     }
 
     private func openSiteForDownloadingFile(url: String) {
@@ -746,35 +1002,73 @@ class DownloadsUITests: UITestCase {
         app.pasteURL(URL(string: url)!, pressingEnter: true)
     }
 
-    private func saveFileAs(_ fileName: String) {
+    /// Save panel variant that first navigates to a target directory using Go To Folder, then saves
+    private func saveFileAs(_ fileName: String, in directoryURL: URL) {
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        // Type desired filename and confirm save
+
+        // Open Go To Folder (Cmd+Shift+G)
+        app.typeKey("g", modifierFlags: [.command, .shift])
+        app.typeKey("a", modifierFlags: [.command])
+
+        // Enter path and confirm
+        app.typeText(directoryURL.path)
+        sleep(1)
+        app.typeKey(.return, modifierFlags: [])
+
+        // Enter filename and save
         app.typeKey("a", modifierFlags: [.command])
         app.typeText(fileName)
         let saveButton = saveSheet.buttons["Save"].firstMatch
         XCTAssertTrue(saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         saveButton.click()
+        
+        // Track the saved file for cleanup
+        let filePath = directoryURL.appendingPathComponent(fileName).path
+        trackForCleanup(filePath)
     }
 
     private func verifyDownloadPopupIsShown() {
-        let downloadsPopover = app.popovers.firstMatch
-        let clearButton = downloadsPopover.buttons["DownloadsViewController.clearDownloadsButton"]
+        let clearButton = popover.buttons["DownloadsViewController.clearDownloadsButton"]
 
         XCTAssertTrue(clearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Downloads popover should be visible after Cmd+J")
     }
 
-    private func verifyDownloadPopupIsNotEmpty() {
-        openDownloadsPopup()
-        let downloadsPopover = app.popovers.firstMatch
-        XCTAssertTrue(downloadsPopover.waitForExistence(timeout: 10.0))
-        XCTAssertFalse(app.staticTexts["No recent downloads"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    /// Builds a tests-server download URL with desired filename and size.
+    private func makeDownloadURL(filename: String, size: String = "1MB") -> URL {
+        URL.testsDownload(size: size, filename: filename)
     }
 
-    private func verifyCustomFileIsPresentInDownloads() {
-        XCTAssertTrue(app.windows.staticTexts["another-name-for-file.zip"]
-            .waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    /// Triggers a download for given size and optional filename (generates UUID-based when not provided).
+    /// Returns the filename used.
+    @discardableResult
+    private func triggerDownloadWithUniqueName(size: String = "1MB", filename: String? = nil) -> String {
+        let usedName = filename ?? ("ui-" + UUID().uuidString + ".bin")
+        let url = makeDownloadURL(filename: usedName, size: size)
+        openSiteForDownloadingFile(url: url.absoluteString)
+        
+        // Track both the final file and the temporary .duckload file
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let finalPath = downloadsDir.appendingPathComponent(usedName).path
+        let tempPath = downloadsDir.appendingPathComponent(usedName + ".duckload").path
+        trackForCleanup(finalPath)
+        trackForCleanup(tempPath)
+        
+        return usedName
+    }
+
+    /// Opens the Downloads popover (if needed) and asserts both size label (optional) and filename exist.
+    private func assertDownloadListed(filename: String, sizeLabelRegex: String? = nil) {
+        if !popover.exists {
+            openDownloadsPopup()
+        }
+        if let sizeRegex = sizeLabelRegex {
+            let sizePredicate = NSPredicate(format: "value MATCHES[c] %@", sizeRegex)
+            let size = popover.staticTexts.containing(sizePredicate).firstMatch
+            XCTAssertTrue(size.waitForExistence(timeout: 15.0))
+        }
+        XCTAssertTrue(popover.staticTexts[filename].waitForExistence(timeout: 15.0))
     }
 
     private func clearDownloads() {
@@ -784,11 +1078,9 @@ class DownloadsUITests: UITestCase {
     }
 
     private func clearAllDownloadsIfPresent() {
-        let popover = app.popovers.firstMatch
         if !popover.exists {
             openDownloadsPopup()
         }
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let clearButton = popover.buttons["DownloadsViewController.clearDownloadsButton"]
         XCTAssertTrue(clearButton.waitForExistence(timeout: 2.0))
         clearButton.click()
@@ -797,19 +1089,10 @@ class DownloadsUITests: UITestCase {
 
     private func verifyNoRecentDownloads() {
         // Ensure popover is open; if not, open it. Avoid toggling an already open popover.
-        var popover = app.popovers.firstMatch
         if !popover.exists {
             openDownloadsPopup()
-            popover = app.popovers.firstMatch
         }
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(popover.staticTexts["No recent downloads"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-    }
-
-    // Settings manipulation methods removed to prevent Settings windows opening during tests
-
-    private func closeWindowWithInProgressDownload() {
-        app.typeKey("w", modifierFlags: [.shift, .command]) // Close window
     }
 
     private func verifyDownloadInProgressWarning() {
@@ -820,20 +1103,94 @@ class DownloadsUITests: UITestCase {
 
     private func openDownloadsPopup() {
         app.typeKey("j", modifierFlags: [.command])
+        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
-
-    // MARK: - Helpers
 
     // Unified preferences configuration for Downloads tests
     private func configureDownloadPreferences(alwaysAskWhereToSave: Bool,
                                               openDownloadsPopupOnCompletion: Bool,
-                                              switchToNewTabWhenOpened: Bool) {
+                                              switchToNewTabWhenOpened: Bool,
+                                              restorePreviousSession: Bool = false,
+                                              downloadsLocation: URL? = nil) {
         app.openPreferencesWindow()
+        let prefs = app.preferencesWindow
+
         app.preferencesGoToGeneralPane()
         app.setAlwaysAskWhereToSaveFiles(enabled: alwaysAskWhereToSave)
         app.setOpenDownloadsPopupOnCompletion(enabled: openDownloadsPopupOnCompletion)
         app.setSwitchToNewTabWhenOpened(enabled: switchToNewTabWhenOpened)
+        app.preferencesSetRestorePreviousSession(enabled: restorePreviousSession, in: prefs)
+
+        if !alwaysAskWhereToSave {
+            // Verify NSPathControl shows the correct location by inspecting the control and last item
+            let pathControl = prefs.otherElements["PreferencesGeneralView.downloadsLocation.pathControl"].firstMatch
+            XCTAssertTrue(pathControl.exists, "Downloads location path control should exist")
+
+            var selectedPath: String? {
+                guard let value = pathControl.value as? String else { return nil }
+                let fileURL = URL(fileURLWithPath: value)
+                let standardizedPath = fileURL.standardizedFileURL.path
+                return standardizedPath
+            }
+
+            let desiredDir = downloadsLocation ?? FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+            if selectedPath != desiredDir.standardizedFileURL.path {
+                app.setDownloadsLocation(to: desiredDir)
+                // Track custom downloads directory for cleanup
+                trackForCleanup(desiredDir.path)
+            }
+
+            XCTAssertEqual(selectedPath, desiredDir.standardizedFileURL.path)
+        }
+
         app.closePreferencesWindow()
+    }
+
+    private func waitForFile(at url: URL, timeout: TimeInterval) {
+        let expectation = expectation(description: "File exists at path")
+        let start = Date()
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { timer in
+            if FileManager.default.fileExists(atPath: url.path) {
+                expectation.fulfill()
+                timer.invalidate()
+                return
+            }
+            if Date().timeIntervalSince(start) > timeout {
+                timer.invalidate()
+            }
+        }
+        RunLoop.current.add(timer, forMode: .default)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout + 1.0)
+        XCTAssertEqual(result, .completed, "Expected file to exist at \(url.path)")
+    }
+    
+    private func trackForCleanup(_ path: String) {
+        cleanupPaths.insert(path)
+    }
+
+    private func cleanupTrackedFiles() {
+        guard !cleanupPaths.isEmpty else { return }
+        
+        let paths = Array(cleanupPaths)
+        let pathsQuery = paths.joined(separator: ",")
+        let cleanupURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: pathsQuery)
+        
+        let session = URLSession(configuration: .ephemeral)
+        let request = URLRequest(url: cleanupURL, cachePolicy: .reloadIgnoringLocalCacheData)
+        
+        let expectation = expectation(description: "Cleanup request completed")
+        let task = session.dataTask(with: request) { _, response, error in
+            if let error = error {
+                self.record(.init(type: .system, compactDescription: "Cleanup request failed: \(error)"))
+            } else if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                self.record(.init(type: .system, compactDescription: "Cleanup request returned status \(httpResponse.statusCode)"))
+            }
+            expectation.fulfill()
+        }
+        task.resume()
+        
+        // Wait but don't fail the test if cleanup is slow
+        _ = XCTWaiter.wait(for: [expectation], timeout: 5.0)
     }
 
 }

@@ -63,6 +63,7 @@ class BookmarksAndFavoritesTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
@@ -101,8 +102,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         folderNameTextField = app.textFields["bookmark.add.name.textfield"]
 
         resetBookmarks()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 
     func test_bookmarks_canBeAddedTo_withMainMenuBookmarkThisPage() {
@@ -587,8 +587,7 @@ class BookmarksAndFavoritesTests: UITestCase {
             bookmarksDialogAddToFavoritesCheckbox.click() // Favorite the bookmark
         }
         app.typeKey(.escape, modifierFlags: []) // Exit dialog
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // New window
+        app.enforceSingleWindow()
 
         let unwrappedPageTitle = try XCTUnwrap(pageTitle, "It wasn't possible to unwrap pageTitle")
         let firstFavoriteInGridMatchingTitle = app.links[unwrappedPageTitle].firstMatch
@@ -607,15 +606,13 @@ class BookmarksAndFavoritesTests: UITestCase {
 
     func test_bookmark_canBeRemovedViaAddressBarIconClick() {
         toggleShowBookmarksBarAlwaysOn()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         openSiteToBookmark(bookmarkingViaDialog: true, escapingDialog: true)
 
         addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
         defaultBookmarkOtherButton.clickAfterExistenceTestSucceeds()
         app.typeKey(.escape, modifierFlags: []) // Exit dialog
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
 
         XCTAssertTrue(
             app.staticTexts[pageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
@@ -624,8 +621,7 @@ class BookmarksAndFavoritesTests: UITestCase {
     }
 
     func test_bookmark_canBeRemovedFromBookmarksTabViaHoverAndContextMenu() {
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         openSiteToBookmark(bookmarkingViaDialog: true, escapingDialog: true)
 
         bookmarksMenu.clickAfterExistenceTestSucceeds()
@@ -633,8 +629,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         bookmarkTableCellViewFavIconImageView.hoverAfterExistenceTestSucceeds()
         bookmarkTableCellViewMenuButton.clickAfterExistenceTestSucceeds()
         contextualMenuDeleteBookmarkMenuItem.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
 
         XCTAssertTrue(
             app.staticTexts[pageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
@@ -802,8 +797,7 @@ private extension BookmarksAndFavoritesTests {
         if showFavoritesPreferenceToggleIsChecked == false { // If untoggled,
             showFavoritesPreferenceToggle.click() // Toggle "show favorites"
         }
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close settings and everything else
-        app.typeKey("n", modifierFlags: .command) // New window
+        app.enforceSingleWindow()
     }
 
     /// Open the initial site to be bookmarked, bookmarking it and/or escaping out of the dialog only if needed

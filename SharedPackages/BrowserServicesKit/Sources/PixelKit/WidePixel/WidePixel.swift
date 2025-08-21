@@ -226,8 +226,7 @@ public final class WidePixel: WidePixelManaging {
         #elseif os(iOS)
         return "m_ios_wide_\(name)"
         #else
-        assertionFailure("Unsupported platform")
-        return "m_unknown_wide_\(name)"
+        fatalError("Unsupported platform, please define a new pixel name if you're adding a new platform")
         #endif
     }
 

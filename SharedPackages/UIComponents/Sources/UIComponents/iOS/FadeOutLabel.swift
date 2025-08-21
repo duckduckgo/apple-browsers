@@ -35,10 +35,17 @@ public class FadeOutLabel: UILabel {
     }
 
     public override func drawText(in rect: CGRect) {
-        let gradientColors = [primaryColor.cgColor, UIColor.clear.cgColor]
-        if let gradientColor = drawGradientColor(in: rect, colors: gradientColors) {
-            super.textColor = gradientColor
+
+        // Fade out only when the content exceeds the width of target rect
+        if intrinsicContentSize.width > rect.width {
+            let gradientColors = [primaryColor.cgColor, UIColor.clear.cgColor]
+            if let gradientColor = drawGradientColor(in: rect, colors: gradientColors) {
+                super.textColor = gradientColor
+            }
+        } else {
+            super.textColor = primaryColor
         }
+
         super.drawText(in: rect)
     }
 

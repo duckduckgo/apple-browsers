@@ -150,3 +150,16 @@ jobs:
       internal-release-bump: true
       release-type: internal
     secrets: inherit
+
+  report_failure:
+    name: Report Failure
+    if: failure()
+    needs: [ validate_input_conditions, increment_build_number, tag_and_merge ]
+    uses: ./.github/workflows/report_failed_release_workflow.yml
+    with:
+      asana-task-id: ${{ needs.validate_input_conditions.outputs.asana-task-id }}
+      branch: ${{ needs.validate_input_conditions.outputs.release-branch }}
+      commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
+      platform: ios
+      workflow-name: "bump internal release"
+    secrets: inherit

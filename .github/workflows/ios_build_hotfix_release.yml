@@ -67,6 +67,7 @@ jobs:
     timeout-minutes: 10
 
     outputs:
+      asana_task_id: ${{ steps.task-id.outputs.asana_task_id }}
       commit_sha: ${{ steps.set-commit-sha.outputs.commit_sha }}
 
     steps:
@@ -129,4 +130,17 @@ jobs:
       base-branch: ${{ github.event.inputs.current-internal-release-branch || 'main' }}
       commit-sha: ${{ needs.update_asana.outputs.commit_sha }}
       release-type: internal # Pre-release for now, after submitting to app store we will run ios-tag-release-update-asana again manually with 'hotfix' release type to finish up
+    secrets: inherit
+
+  report_failure:
+    name: Report Failure
+    if: failure()
+    needs: [ update_asana, tag_and_merge ]
+    uses: ./.github/workflows/report_failed_release_workflow.yml
+    with:
+      asana-task-id: ${{ needs.update_asana.outputs.asana_task_id }}
+      branch: ${{ github.ref_name }}
+      commit-sha: ${{ needs.update_asana.outputs.commit_sha }}
+      platform: ios
+      workflow-name: "build hotfix release"
     secrets: inherit

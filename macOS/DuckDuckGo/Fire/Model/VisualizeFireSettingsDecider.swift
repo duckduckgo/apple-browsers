@@ -1,5 +1,5 @@
 //
-//  VisualizeFireAnimationDecider.swift
+//  VisualizeFireSettingsDecider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,12 +19,17 @@ import BrowserServicesKit
 import FeatureFlags
 import Combine
 
-protocol VisualizeFireAnimationDecider {
+protocol VisualizeFireSettingsDecider {
+    /// Fire animation setting
     var shouldShowFireAnimation: Bool { get }
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Open Fire Window By Default setting
+    var isOpenFireWindowByDefaultEnabled: Bool { get }
+    var shouldShowOpenFireWindoyByDefaultPublisher: AnyPublisher<Bool, Never> { get }
 }
 
-final class DefaultVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+final class DefaultVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
     private let featureFlagger: FeatureFlagger
     private let dataClearingPreferences: DataClearingPreferences
 
@@ -51,6 +56,28 @@ final class DefaultVisualizeFireAnimationDecider: VisualizeFireAnimationDecider 
                     return isFireAnimationEnabled
                 } else {
                     return true
+                }
+            }
+            .eraseToAnyPublisher()
+    }
+
+    var isOpenFireWindowByDefaultEnabled: Bool {
+        if featureFlagger.isFeatureOn(.openFireWindowByDefault) {
+            return dataClearingPreferences.openFireWindowByDefault
+        } else {
+            return false
+        }
+    }
+
+    var shouldShowOpenFireWindoyByDefaultPublisher: AnyPublisher<Bool, Never> {
+        dataClearingPreferences.$openFireWindowByDefault
+            .map { [weak self] openFireWindowByDefault in
+                guard let self = self else { return true }
+
+                if self.featureFlagger.isFeatureOn(.openFireWindowByDefault) {
+                    return openFireWindowByDefault
+                } else {
+                    return false
                 }
             }
             .eraseToAnyPublisher()

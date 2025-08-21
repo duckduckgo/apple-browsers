@@ -43,7 +43,7 @@ final class AuthenticationService {
 
     func suspend() {
         if privacyStore.authenticationEnabled {
-            overlayWindowManager.displayBlankSnapshotWindow()
+            overlayWindowManager.displayBlankSnapshotWindow(for: .authentication)
         }
     }
 
@@ -56,7 +56,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
         guard shouldAuthenticate else {
             return
         }
-        overlayWindowManager.removeOverlay()
+        overlayWindowManager.removeAnyOverlay()
         let authenticationViewController = showAuthenticationScreen()
         await authenticate(with: authenticationViewController)
     }
@@ -69,7 +69,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
     private func authenticate(with authenticationViewController: AuthenticationViewController) async {
         let didAuthenticate = await authenticator.authenticate(reason: UserText.appUnlock)
         if didAuthenticate {
-            overlayWindowManager.removeOverlay()
+            overlayWindowManager.removeAnyOverlay()
             authenticationViewController.dismiss(animated: true)
         } else {
             authenticationViewController.showUnlockInstructions()

@@ -28,6 +28,7 @@ jobs:
     outputs:
       release_branch_name: ${{ steps.make_release_branch.outputs.release_branch_name }}
       asana_task_url: ${{ steps.make_release_branch.outputs.asana_task_url }}
+      commit_sha: ${{ steps.make_release_branch.outputs.commit_sha }}
 
     steps:
 
@@ -79,6 +80,7 @@ jobs:
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
     secrets: inherit
 
   tag_and_merge:
@@ -87,6 +89,8 @@ jobs:
     uses: ./.github/workflows/ios_tag_release_update_asana.yml
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
+      base-branch: ${{ github.ref_name }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
       release-type: internal
     secrets: inherit

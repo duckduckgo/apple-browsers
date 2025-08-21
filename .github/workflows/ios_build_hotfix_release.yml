@@ -66,6 +66,9 @@ jobs:
     runs-on: macos-14-xlarge
     timeout-minutes: 10
 
+    outputs:
+      commit_sha: ${{ steps.set-commit-sha.outputs.commit_sha }}
+
     steps:
 
       - name: Check out the code
@@ -74,6 +77,11 @@ jobs:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ github.ref_name }}
           submodules: recursive
+
+      - name: Set commit SHA output
+        id: set-commit-sha
+        run: |
+          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby
@@ -103,10 +111,11 @@ jobs:
 
   prepare_release:
     name: Prepare Release
-    needs: run_tests
+    needs: [ run_tests, update_asana ]
     uses: ./.github/workflows/ios_release.yml
     with:
       asana-task-url: ${{ github.event.inputs.asana-task-url }}
+      commit-sha: ${{ needs.update_asana.outputs.commit_sha }}
       destination: appstore
     secrets: inherit
 
@@ -118,5 +127,6 @@ jobs:
       asana-task-url: ${{ github.event.inputs.asana-task-url }}
       branch: ${{ github.ref_name }}
       base-branch: ${{ github.event.inputs.current-internal-release-branch || 'main' }}
+      commit-sha: ${{ needs.update_asana.outputs.commit_sha }}
       release-type: internal # Pre-release for now, after submitting to app store we will run ios-tag-release-update-asana again manually with 'hotfix' release type to finish up
     secrets: inherit

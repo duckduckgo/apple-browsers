@@ -80,6 +80,9 @@ jobs:
     runs-on: macos-15-xlarge
     timeout-minutes: 10
 
+    outputs:
+      commit_sha: ${{ steps.increment-build-number.outputs.commit_sha }}
+
     steps:
 
       - name: Check out the code
@@ -95,6 +98,7 @@ jobs:
           cache-key-prefix: macos-ruby
 
       - name: Increment build number
+        id: increment-build-number
         env:
           APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -102,7 +106,7 @@ jobs:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          bundle exec fastlane run bump_build_number platform:"macos"
+          bundle exec fastlane run bump_build_number platform:macos
 
   prepare_release:
     name: Prepare Release
@@ -111,15 +115,17 @@ jobs:
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
     secrets: inherit
 
   tag_and_merge:
     name: Tag and Merge Branch
-    needs: [ create_release_branch, prepare_release ]
+    needs: [ create_release_branch, increment_build_number, prepare_release ]
     uses: ./.github/workflows/macos_tag_release.yml
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       base-branch: ${{ github.ref_name }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
       prerelease: true
     secrets: inherit

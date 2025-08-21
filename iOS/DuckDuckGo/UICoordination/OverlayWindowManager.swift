@@ -88,6 +88,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
         overlay.isHidden = true
         overlayWindow = nil
         window.makeKeyAndVisible()
+        activeReasons = []
     }
 
     func removeBlankSnapshotWindow(for reason: BlankSnapshotOverlayReason) {

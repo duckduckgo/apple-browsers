@@ -21,6 +21,12 @@ import UIKit
 // Based on https://stackoverflow.com/a/53847223/73479
 public class FadeOutLabel: UILabel {
 
+    @available(*, unavailable, renamed: "primaryColor", message: "Use primaryColor to set the color instead. This one gets overridden on redraw.")
+    override public var textColor: UIColor! {
+        // This allows overriding
+        didSet {}
+    }
+
     public var primaryColor: UIColor = .black {
         didSet {
             setNeedsDisplay()
@@ -30,7 +36,7 @@ public class FadeOutLabel: UILabel {
     public override func drawText(in rect: CGRect) {
         let gradientColors = [primaryColor.cgColor, UIColor.clear.cgColor]
         if let gradientColor = drawGradientColor(in: rect, colors: gradientColors) {
-            self.textColor = gradientColor
+            super.textColor = gradientColor
         }
         super.drawText(in: rect)
     }
@@ -56,5 +62,5 @@ public class FadeOutLabel: UILabel {
         guard let image = gradientImage else { return nil }
         return UIColor(patternImage: image)
     }
-    
+
 }

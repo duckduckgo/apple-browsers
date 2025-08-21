@@ -29,13 +29,14 @@ class FireWindowTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
 
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
+        app.enforceSingleWindow()
     }
 
     func testFireWindowDoesNotStoreHistory() {
@@ -47,9 +48,10 @@ class FireWindowTests: UITestCase {
 
     func testFireWindowStateIsNotSavedAfterRestart() {
         openNormalWindow()
-        app.typeKey(",", modifierFlags: [.command]) // Open settings
-        settingsGeneralButton.click(forDuration: 0.5, thenDragTo: settingsGeneralButton)
-        reopenAllWindowsFromLastSessionPreference.clickAfterExistenceTestSucceeds()
+        // Open settings and enable session restore using helper
+        app.openPreferencesWindow()
+        app.preferencesSetRestorePreviousSession(enabled: true)
+        app.closePreferencesWindow()
 
         openThreeSitesOnNormalWindow()
         openFireWindow()

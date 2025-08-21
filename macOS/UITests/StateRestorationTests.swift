@@ -36,6 +36,7 @@ class StateRestorationTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         firstPageTitle = UITests.randomPageTitle(length: titleStringLength)
@@ -47,20 +48,20 @@ class StateRestorationTests: UITestCase {
         openANewWindowPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
 
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 
     override func tearDownWithError() throws {
+        try super.tearDownWithError()
         app.terminate()
     }
 
     func test_tabStateAtRelaunch_shouldContainTwoSitesVisitedInPreviousSession_whenReopenAllWindowsFromLastSessionIsSet() {
-        addressBarTextField.typeURL(URL(string: "duck://settings")!) // Open settings
-        settingsGeneralButton.click(forDuration: 0.5, thenDragTo: settingsGeneralButton)
-        reopenAllWindowsFromLastSessionPreference.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
-        app.typeKey("n", modifierFlags: .command)
+        // Open settings and enable session restore using helper
+        app.openPreferencesWindow()
+        app.preferencesSetRestorePreviousSession(enabled: true)
+        app.closePreferencesWindow()
+        app.enforceSingleWindow()
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
@@ -92,11 +93,11 @@ class StateRestorationTests: UITestCase {
     }
 
     func test_tabStateAtRelaunch_shouldContainNoSitesVisitedInPreviousSession_whenReopenAllWindowsFromLastSessionIsUnset() {
-        addressBarTextField.typeURL(URL(string: "duck://settings")!) // Open settings
-        settingsGeneralButton.click(forDuration: 0.5, thenDragTo: settingsGeneralButton)
-        openANewWindowPreference.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
-        app.typeKey("n", modifierFlags: .command)
+        // Open settings and disable session restore using helper
+        app.openPreferencesWindow()
+        app.preferencesSetRestorePreviousSession(enabled: false)
+        app.closePreferencesWindow()
+        app.enforceSingleWindow()
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."

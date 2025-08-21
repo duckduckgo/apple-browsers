@@ -41,6 +41,7 @@ class DuckPlayerTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
@@ -150,7 +151,7 @@ class DuckPlayerTests: UITestCase {
 
         // Click Link
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(organicVideo.waitForExistence(timeout: 30))
         organicVideo.click()
         sleep(2)
 
@@ -199,7 +200,7 @@ class DuckPlayerTests: UITestCase {
         openURL(url: Self.searchURL)
 
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(organicVideo.waitForExistence(timeout: 30))
         organicVideo.click()
         sleep(2)
 
@@ -248,7 +249,7 @@ class DuckPlayerTests: UITestCase {
         openURL(url: Self.searchURL)
 
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(organicVideo.waitForExistence(timeout: 30))
         organicVideo.click()
 
         sleep(2)

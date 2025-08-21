@@ -78,20 +78,20 @@ public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
 public struct WidePixelGlobalData: Codable {
     public var platform: String
     public let type: String
-    public var sampleRate: Double
+    public var sampleRate: Float
 
     public init() {
         self.init(sampleRate: 1.0)
     }
 
-    public init(platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Double) {
+    public init(platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Float) {
         if sampleRate > 1.0 || sampleRate < 0.0 {
             assertionFailure("Sample rate must be between 0-1")
         }
 
         self.platform = platform
         self.type = "app" // Don't allow type to be overridden
-        self.sampleRate = sampleRate
+        self.sampleRate = sampleRate.clamped(to: 0...1)
     }
 }
 
@@ -123,7 +123,7 @@ public struct WidePixelAppData: Codable {
         #if os(iOS)
         self.formFactor = formFactor ?? DevicePlatform.formFactor
         #else
-        self.formFactor = formFactor
+        self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overriden for testing
         #endif
     }
 }

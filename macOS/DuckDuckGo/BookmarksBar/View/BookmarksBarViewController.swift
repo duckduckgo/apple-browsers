@@ -51,7 +51,7 @@ final class BookmarksBarViewController: NSViewController {
     private let appereancePreferences: AppearancePreferencesPersistor
     private let visualStyle: VisualStyleProviding
 
-    let syncButtonModel: SyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
+    let syncButtonModel: DismissableSyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
     private var cancellables = Set<AnyCancellable>()
 

@@ -1,5 +1,5 @@
 //
-//  SyncDeviceButtonModel.swift
+//  DismissableSyncDeviceButtonModel.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import AppKit
 import DDGSync
 
 @MainActor
-public final class SyncDeviceButtonModel: ObservableObject {
+public final class DismissableSyncDeviceButtonModel: ObservableObject {
     enum SyncDevicePromoSource: CaseIterable {
         case bookmarksBar
         case bookmarkAdded
@@ -192,7 +192,7 @@ public final class SyncDeviceButtonModel: ObservableObject {
     }
 }
 
-extension SyncDeviceButtonModel {
+extension DismissableSyncDeviceButtonModel {
     convenience init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring) {
         let authStatePublisher: AnyPublisher<SyncAuthState, Never>
         if let syncService = NSApp.delegateTyped.syncService {

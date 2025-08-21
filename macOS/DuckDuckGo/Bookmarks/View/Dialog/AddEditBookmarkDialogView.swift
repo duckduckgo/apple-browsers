@@ -20,9 +20,9 @@ import SwiftUI
 
 struct AddEditBookmarkDialogView: ModalView {
     @ObservedObject private var viewModel: AddEditBookmarkDialogCoordinatorViewModel<AddEditBookmarkDialogViewModel, AddEditBookmarkFolderDialogViewModel>
-    @ObservedObject private var syncButtonModel: SyncDeviceButtonModel
+    @ObservedObject private var syncButtonModel: DismissableSyncDeviceButtonModel
 
-    init(viewModel: AddEditBookmarkDialogCoordinatorViewModel<AddEditBookmarkDialogViewModel, AddEditBookmarkFolderDialogViewModel>, syncButtonModel: SyncDeviceButtonModel) {
+    init(viewModel: AddEditBookmarkDialogCoordinatorViewModel<AddEditBookmarkDialogViewModel, AddEditBookmarkFolderDialogViewModel>, syncButtonModel: DismissableSyncDeviceButtonModel) {
         self.viewModel = viewModel
         self.syncButtonModel = syncButtonModel
     }

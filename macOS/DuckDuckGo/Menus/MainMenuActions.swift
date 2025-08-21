@@ -706,7 +706,7 @@ extension AppDelegate {
     @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
         SyncPromoManager().resetPromos()
-        SyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
+        DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {

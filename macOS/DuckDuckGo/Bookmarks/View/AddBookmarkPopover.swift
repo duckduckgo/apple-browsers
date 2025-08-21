@@ -58,7 +58,7 @@ final class AddBookmarkPopover: NSPopover {
     private func setupBookmarkAddController() {
         guard let bookmark else { return }
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
-        let syncButtonViewModel = SyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard)
+        let syncButtonViewModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard)
         contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonViewModel))
         viewModel.buttonClicked = { [weak self] in
             self?.performClose(nil)

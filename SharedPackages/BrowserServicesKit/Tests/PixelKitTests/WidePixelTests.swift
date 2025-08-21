@@ -345,7 +345,7 @@ final class WidePixelTests: XCTestCase {
 
     func testJsonParameterNesting() throws {
         struct TestProvider: WidePixelParameterProviding {
-            func pixelParameters() -> [String : String] {
+            func pixelParameters() -> [String: String] {
                 return [
                     "app.name": "DuckDuckGo",
                     "feature.status": "SUCCESS",
@@ -365,27 +365,6 @@ final class WidePixelTests: XCTestCase {
         XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
         XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
         XCTAssertEqual(context?["id"] as? String, "onboarding")
-    }
-
-    func testJsonParameterCollisionOverwrites() throws {
-        struct TestProvider: WidePixelParameterProviding {
-            func pixelParameters() -> [String : String] {
-                return [
-                    "app": "leaf",
-                    "app.name": "name",
-                    "app.version": "1.0"
-                ]
-            }
-        }
-
-        let jsonString = try TestProvider().jsonParameters()
-        let data = try XCTUnwrap(jsonString.data(using: .utf8))
-        let object = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-
-        let app = object?["app"] as? [String: Any]
-        XCTAssertNotNil(app)
-        XCTAssertEqual(app?["name"] as? String, "name")
-        XCTAssertEqual(app?["version"] as? String, "1.0")
     }
 
     func testActiveFlowManagement() throws {

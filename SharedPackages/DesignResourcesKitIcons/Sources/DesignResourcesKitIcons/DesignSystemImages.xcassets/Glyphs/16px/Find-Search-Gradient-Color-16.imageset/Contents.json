@@ -3,6 +3,16 @@
     {
       "filename" : "Find-Search-Gradient-Color-16.svg",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Find-Search-Gradient-Color-16-1.svg",
+      "idiom" : "universal"
     }
   ],
   "info" : {

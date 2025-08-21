@@ -142,5 +142,5 @@ extension XCUIElement {
         // Fallback
         self.click()
     }
-    
+
 }

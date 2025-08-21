@@ -3655,6 +3655,8 @@
 		EEE11C5F2C7F54AD000ABD7E /* AutofillLoginImportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE11C5D2C7F54AD000ABD7E /* AutofillLoginImportState.swift */; };
 		EEE50C292C38249C003DD7FF /* OptionalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE50C282C38249C003DD7FF /* OptionalExtension.swift */; };
 		EEE50C2A2C38249C003DD7FF /* OptionalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE50C282C38249C003DD7FF /* OptionalExtension.swift */; };
+		EEEE20102E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */; };
+		EEEE20112E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */; };
 		EEEFA3462D145328006A3F8A /* SyncPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA3452D145322006A3F8A /* SyncPixels.swift */; };
 		EEEFA3472D145328006A3F8A /* SyncPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA3452D145322006A3F8A /* SyncPixels.swift */; };
 		EEF12E6F2A2111880023E6BF /* MacPacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */; };
@@ -5751,6 +5753,7 @@
 		EEE0E1CE2C32F6530058E148 /* mock_login_data_large.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mock_login_data_large.csv; sourceTree = "<group>"; };
 		EEE11C5D2C7F54AD000ABD7E /* AutofillLoginImportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginImportState.swift; sourceTree = "<group>"; };
 		EEE50C282C38249C003DD7FF /* OptionalExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptionalExtension.swift; sourceTree = "<group>"; };
+		EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportFlowLauncher.swift; sourceTree = "<group>"; };
 		EEEFA3452D145322006A3F8A /* SyncPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPixels.swift; sourceTree = "<group>"; };
 		EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPacketTunnelProvider.swift; sourceTree = "<group>"; };
 		EEF53E172950CED5002D78F4 /* JSAlertViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertViewModelTests.swift; sourceTree = "<group>"; };
@@ -7645,6 +7648,7 @@
 		4B723DEC26B0002B00E14D75 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */,
 				B66CA41D2AD910B300447CF0 /* DataImportView.swift */,
 				B6BCC51D2AFCD9ED002C5499 /* DataImportSourcePicker.swift */,
 				B6BCC53A2AFD15DF002C5499 /* DataImportProfilePicker.swift */,
@@ -13633,6 +13637,7 @@
 				37197EA92942443D00394917 /* WebView.swift in Sources */,
 				3706FC8E293F65D500E42796 /* PinnedTabsView.swift in Sources */,
 				B6B5F58A2B03673B008DB58A /* BrowserImportMoreInfoView.swift in Sources */,
+				EEEE20102E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */,
 				3706FC93293F65D500E42796 /* PreferencesViewController.swift in Sources */,
 				376597872E32E3370039EF74 /* NewTabPageTabPreloader.swift in Sources */,
 				3706FC94293F65D500E42796 /* FireproofDomains.swift in Sources */,
@@ -15585,6 +15590,7 @@
 				F1CA67062C7DCA2300264E6A /* Logger+BitWarden.swift in Sources */,
 				4B4D60B62A0C847D00BCD287 /* NetworkProtectionNavBarButtonModel.swift in Sources */,
 				FD23FD2D2886A81D007F6985 /* AutoconsentManagement.swift in Sources */,
+				EEEE20112E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */,
 				9FBB0C052CBD223D0006B6A6 /* ViewHighlighter.swift in Sources */,
 				379857F02D721DA0008773F6 /* HistoryViewOnboardingView.swift in Sources */,
 				4B4D60D32A0C84F700BCD287 /* UserText+NetworkProtection.swift in Sources */,

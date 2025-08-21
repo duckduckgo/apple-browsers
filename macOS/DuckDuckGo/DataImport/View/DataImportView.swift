@@ -21,49 +21,6 @@ import SwiftUI
 import BrowserServicesKit
 import Common
 
-protocol DataImportFlowLaunching {
-    @MainActor
-    func launchDataImport(
-        model: DataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
-    )
-}
-
-final class DataImportFlowLauncher: DataImportFlowLaunching {
-    @MainActor
-    func launchDataImport(
-        model: DataImportViewModel,
-        title: String,
-        isDataTypePickerExpanded: Bool
-    ) {
-        launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded, in: nil)
-    }
-
-    @MainActor
-    func launchDataImport(
-        model: DataImportViewModel = DataImportViewModel(),
-        title: String = UserText.importDataTitle,
-        isDataTypePickerExpanded: Bool,
-        in window: NSWindow? = nil,
-        completion: (() -> Void)? = nil
-    ) {
-        let syncFeatureVisibility: DataImportView.SyncFeatureVisibility
-        if let deviceSyncLauncher = DeviceSyncCoordinator() {
-            syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
-        } else {
-            syncFeatureVisibility = .hide
-        }
-        DataImportView(
-            model: model,
-            importFlowLauncher: self,
-            title: title,
-            isDataTypePickerExpanded: isDataTypePickerExpanded,
-            syncFeatureVisibility: syncFeatureVisibility
-        ).show(in: window, completion: completion)
-    }
-}
-
 @MainActor
 struct DataImportView: ModalView {
     enum SyncFeatureVisibility {

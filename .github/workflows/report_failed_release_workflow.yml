@@ -1,28 +1,6 @@
 name: Report Failed Release Workflow
 
 on:
-  workflow_dispatch:
-    inputs:
-      asana-task-id:
-        description: "Asana release task ID"
-        required: true
-        type: string
-      branch:
-        description: "Branch"
-        required: true
-        type: string
-      commit-sha:
-        description: "Commit SHA"
-        required: false
-        type: string
-      platform:
-        description: "Platform (ios/macos)"
-        required: true
-        type: string
-      workflow-name:
-        description: "Workflow name"
-        required: true
-        type: string
   workflow_call:
     inputs:
       asana-task-id:

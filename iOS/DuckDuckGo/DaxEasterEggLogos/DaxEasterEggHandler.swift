@@ -42,18 +42,9 @@ public protocol DaxEasterEggHandling: AnyObject {
     /// Delegate that receives processed logo URLs
     var delegate: DaxEasterEggDelegate? { get set }
     
-    /// Triggers logo extraction by calling the UserScript's JavaScript function.
+    /// Triggers logo extraction by executing JavaScript directly on the web view.
     /// Should only be called on DuckDuckGo search pages.
     func extractLogosForCurrentPage()
-    
-    /// Processes a raw logo URL extracted by JavaScript.
-    /// Converts relative paths to absolute URLs and handles the "themed|" prefix format.
-    ///
-    /// - Parameters:
-    ///   - logoURL: Raw logo URL from JavaScript (format: "themed|/path")
-    ///   - pageURL: URL of the page where logo was extracted
-    func didExtractLogo(_ logoURL: String?, from pageURL: String)
-    
 }
 
 /// Handler that manages extraction and processing of dynamic logos from DuckDuckGo search pages.
@@ -80,11 +71,13 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
         
         Logger.daxEasterEgg.debug("extractLogosForCurrentPage - executing JavaScript directly on URL: \(webView.url?.absoluteString ?? "no-url")")
         
-        // Execute logo extraction JavaScript directly without UserScript dependency
-        executeLogoExtraction(webView: webView)
+        Task { [weak self, weak webView] in
+            guard let self = self, let webView = webView else { return }
+            await self.executeLogoExtraction(webView: webView)
+        }
     }
     
-    private func executeLogoExtraction(webView: WKWebView) {
+    private func executeLogoExtraction(webView: WKWebView) async {
         let extractionJS = """
         (function() {
             try {
@@ -117,29 +110,27 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
         })();
         """
         
-        webView.evaluateJavaScript(extractionJS) { [weak self] result, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                Logger.daxEasterEgg.error("executeLogoExtraction - JavaScript error: \(error)")
-                self.didExtractLogo(nil, from: webView.url?.absoluteString ?? "")
-                return
-            }
-            
-            let logoURL = result as? String
+        do {
+            let logoURL: String? = try await webView.evaluateJavaScript(extractionJS)
             Logger.daxEasterEgg.debug("executeLogoExtraction - extracted logo: \(logoURL ?? "nil")")
-            self.didExtractLogo(logoURL, from: webView.url?.absoluteString ?? "")
+            await didExtractLogo(logoURL, from: webView.url?.absoluteString ?? "")
+        } catch {
+            Logger.daxEasterEgg.error("executeLogoExtraction - JavaScript error: \(error)")
+            await didExtractLogo(nil, from: webView.url?.absoluteString ?? "")
         }
     }
     
-    public func didExtractLogo(_ logoURL: String?, from pageURL: String) {
+    private func didExtractLogo(_ logoURL: String?, from pageURL: String) async {
         Logger.daxEasterEgg.debug("didExtractLogo - Raw: \(logoURL ?? "nil"), Page: \(pageURL)")
         
         // Process the logo URL (convert relative to absolute, handle "themed|" prefix)
         let processedURL = processLogoURL(logoURL)
         
         Logger.daxEasterEgg.debug("didExtractLogo - Processed: \(processedURL ?? "nil")")
-        delegate?.daxEasterEggHandler(self, didFindLogoURL: processedURL, for: pageURL)
+        
+        await MainActor.run {
+            delegate?.daxEasterEggHandler(self, didFindLogoURL: processedURL, for: pageURL)
+        }
     }
     
     private func processLogoURL(_ rawURL: String?) -> String? {

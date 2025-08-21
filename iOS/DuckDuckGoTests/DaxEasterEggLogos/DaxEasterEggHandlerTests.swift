@@ -40,98 +40,9 @@ final class DaxEasterEggHandlerTests: XCTestCase {
         mockWebView = nil
     }
     
-    // MARK: - URL Processing Tests
-    
-    func testDidExtractLogo_WithValidThemedURL_ProcessesCorrectly() {
-        // Given
-        let rawURL = "themed|/dist/logos/dynamic/terminator.png"
-        let pageURL = "https://duckduckgo.com/?q=terminator"
-        
-        // When
-        handler.didExtractLogo(rawURL, from: pageURL)
-        
-        // Then
-        XCTAssertEqual(mockDelegate.receivedLogoURL, "https://duckduckgo.com/dist/logos/dynamic/terminator.png")
-        XCTAssertEqual(mockDelegate.receivedPageURL, pageURL)
-        XCTAssertEqual(mockDelegate.callCount, 1)
-    }
-    
-    func testDidExtractLogo_WithAbsoluteURL_ProcessesCorrectly() {
-        // Given
-        let rawURL = "themed|https://duckduckgo.com/logos/predator.png"
-        let pageURL = "https://duckduckgo.com/?q=predator"
-        
-        // When
-        handler.didExtractLogo(rawURL, from: pageURL)
-        
-        // Then
-        XCTAssertEqual(mockDelegate.receivedLogoURL, "https://duckduckgo.com/logos/predator.png")
-        XCTAssertEqual(mockDelegate.receivedPageURL, pageURL)
-    }
-    
-    func testDidExtractLogo_WithInvalidFormat_PassesNil() {
-        // Given
-        let rawURL = "invalid-format-no-pipe"
-        let pageURL = "https://duckduckgo.com/?q=test"
-        
-        // When
-        handler.didExtractLogo(rawURL, from: pageURL)
-        
-        // Then
-        XCTAssertNil(mockDelegate.receivedLogoURL)
-        XCTAssertEqual(mockDelegate.receivedPageURL, pageURL)
-    }
-    
-    func testDidExtractLogo_WithNilURL_PassesNil() {
-        // Given
-        let pageURL = "https://duckduckgo.com/?q=test"
-        
-        // When
-        handler.didExtractLogo(nil, from: pageURL)
-        
-        // Then
-        XCTAssertNil(mockDelegate.receivedLogoURL)
-        XCTAssertEqual(mockDelegate.receivedPageURL, pageURL)
-    }
-    
-    func testDidExtractLogo_WithMalformedThemedURL_PassesNil() {
-        // Given
-        let rawURL = "themed|"  // Missing path
-        let pageURL = "https://duckduckgo.com/?q=test"
-        
-        // When
-        handler.didExtractLogo(rawURL, from: pageURL)
-        
-        // Then
-        XCTAssertNil(mockDelegate.receivedLogoURL)
-        XCTAssertEqual(mockDelegate.receivedPageURL, pageURL)
-    }
-    
-    func testDidExtractLogo_WithURLEncodedInput_DecodesCorrectly() {
-        // Given
-        let rawURL = "themed%7C%2Fdist%2Flogos%2Fdynamic%2Fterminator.png"  // URL encoded "themed|/dist/logos/dynamic/terminator.png"
-        let pageURL = "https://duckduckgo.com/?q=terminator"
-        
-        // When
-        handler.didExtractLogo(rawURL, from: pageURL)
-        
-        // Then
-        XCTAssertEqual(mockDelegate.receivedLogoURL, "https://duckduckgo.com/dist/logos/dynamic/terminator.png")
-    }
     
     // MARK: - Delegate Tests
     
-    func testDidExtractLogo_WithNoDelegate_DoesNotCrash() {
-        // Given
-        handler.delegate = nil
-        let rawURL = "themed|/dist/logos/dynamic/test.png"
-        let pageURL = "https://duckduckgo.com/?q=test"
-        
-        // When/Then - should not crash
-        XCTAssertNoThrow {
-            self.handler.didExtractLogo(rawURL, from: pageURL)
-        }
-    }
     
     func testDelegate_IsWeakReference() {
         // Given

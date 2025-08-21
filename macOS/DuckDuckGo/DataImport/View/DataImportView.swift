@@ -321,9 +321,7 @@ struct DataImportView: ModalView {
             if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
                 Button("Sync from Another Device") {
                     dismiss.callAsFunction()
-                    syncLauncher.startDeviceSyncFlow {
-                        importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
-                    }
+                    syncLauncher.startDeviceSyncFlow(completion: nil)
                 }
             }
             Spacer()

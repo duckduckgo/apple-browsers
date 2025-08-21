@@ -141,4 +141,5 @@ jobs:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
       commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
       workflow-name: "Code Freeze"
+      working-directory: macOS
     secrets: inherit

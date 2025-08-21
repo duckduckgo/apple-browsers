@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: 570540c2e080a49ece617a1b3edacaa0c868a7a8
+  revision: 6cbc4f64bb74e7ba0a25d265b3f197f0a00dafc4
   branch: dominik/report-workflow-failure
   specs:
     fastlane-plugin-ddg_apple_automation (2.9.0)
@@ -27,8 +27,8 @@ GEM
       oauth2 (>= 1.4, < 3)
     atomos (0.1.3)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1149.0)
-    aws-sdk-core (3.229.0)
+    aws-partitions (1.1150.0)
+    aws-sdk-core (3.230.0)
       aws-eventstream (~> 1, >= 1.3.0)
       aws-partitions (~> 1, >= 1.992.0)
       aws-sigv4 (~> 1.9)

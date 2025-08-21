@@ -45,6 +45,7 @@ class PermissionsTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 
@@ -68,8 +69,7 @@ class PermissionsTests: UITestCase {
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
 
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe before starting the test."
@@ -213,8 +213,7 @@ class PermissionsTests: UITestCase {
         )
         let permissionContextMenuAlwaysDeny = app.menuItems["PermissionContextMenu.alwaysDeny"]
         permissionContextMenuAlwaysDeny.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         addressBarTextField.typeURL(permissionsSiteURL)
         for _ in 1 ... 4 {
             cameraButton.clickAfterExistenceTestSucceeds()
@@ -370,8 +369,7 @@ class PermissionsTests: UITestCase {
 
         let permissionContextMenuAlwaysDeny = app.menuItems["PermissionContextMenu.alwaysDeny"]
         permissionContextMenuAlwaysDeny.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         addressBarTextField.typeURL(permissionsSiteURL)
         for _ in 1 ... 4 {
             microphoneButton.clickAfterExistenceTestSucceeds()
@@ -460,8 +458,7 @@ class PermissionsTests: UITestCase {
 
         let permissionContextMenuAlwaysDeny = app.menuItems["PermissionContextMenu.alwaysDeny"]
         permissionContextMenuAlwaysDeny.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         addressBarTextField.typeURL(permissionsSiteURL)
         for _ in 1 ... 4 {
             locationButton.clickAfterExistenceTestSucceeds()

@@ -78,13 +78,23 @@ extension XCUIApplication {
 
     /// Opens a new tab via keyboard shortcut
     func openNewTab() {
-         typeKey("t", modifierFlags: .command)
-     }
+        typeKey("t", modifierFlags: .command)
+    }
+
+    /// Opens a Fire window via keyboard shortcut (Cmd+Shift+N)
+    func openFireWindow() {
+        typeKey("n", modifierFlags: [.command, .shift])
+    }
 
     /// Closes current tab via keyboard shortcut
     func closeCurrentTab() {
-         typeKey("w", modifierFlags: .command)
-     }
+        typeKey("w", modifierFlags: .command)
+    }
+
+    /// Closes the current window via keyboard shortcut (Cmd+Shift+W)
+    func closeWindow() {
+        typeKey("w", modifierFlags: [.command, .shift])
+    }
 
     /// Activate address bar for input
     /// On new tab pages, the address bar is already activated by default
@@ -262,6 +272,25 @@ extension XCUIApplication {
         if general.waitForExistence(timeout: 2.0) { general.click() }
     }
 
+    /// Sets startup behavior to reopen all windows from last session (or not)
+    func preferencesSetRestorePreviousSession(enabled: Bool) {
+        let prefs = preferencesWindow
+        preferencesGoToGeneralPane()
+        preferencesSetRestorePreviousSession(enabled: enabled, in: prefs)
+    }
+
+    func preferencesSetRestorePreviousSession(enabled: Bool, in prefs: XCUIElement) {
+        let reopen = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"].firstMatch
+        let openNew = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"].firstMatch
+        if enabled {
+            XCTAssertTrue(reopen.waitForExistence(timeout: 2.0), "Reopen last session radio button should exist")
+            if reopen.isSelected == false { reopen.click() }
+        } else {
+            XCTAssertTrue(openNew.waitForExistence(timeout: 2.0), "Open new window radio button should exist")
+            if openNew.isSelected == false { openNew.click() }
+        }
+    }
+
     /// Sets the "Always ask where to save files" toggle to a specific state
     func setAlwaysAskWhereToSaveFiles(enabled: Bool) {
         let prefs = preferencesWindow
@@ -323,4 +352,25 @@ extension XCUIApplication {
         }
     }
 
+    // MARK: - Downloads Location
+
+    /// Change the downloads directory using the Preferences UI and the system "Go to Folder" panel
+    func setDownloadsLocation(to directoryURL: URL) {
+        let prefs = preferencesWindow
+        let changeButton = prefs.buttons["Change…"].firstMatch
+        XCTAssertTrue(changeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Change… button should exist in Preferences")
+        changeButton.click()
+
+        // Open "Go to the folder" panel
+        typeKey("g", modifierFlags: [.command, .shift])
+        typeKey("a", modifierFlags: [.command, .shift])
+
+        // Type path and confirm
+        typeText(directoryURL.path)
+        sleep(1)
+        typeKey(.return, modifierFlags: [])
+
+        // Confirm selection
+        typeKey(.return, modifierFlags: [])
+    }
 }

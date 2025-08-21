@@ -56,11 +56,11 @@ private func parseSizeString(_ sizeString: String) -> Int64? {
     case nil:
         return number
     case "kb":
-        return number * 1_024
+        return number * 1_000
     case "mb":
-        return number * 1_024 * 1_024
+        return number * 1_000 * 1_000
     case "gb":
-        return number * 1_024 * 1_024 * 1_024
+        return number * 1_000 * 1_000 * 1_000
     default:
         return nil
     }
@@ -85,6 +85,43 @@ server.middleware = [{ request in
     let status = params["status"].flatMap(Int.init) ?? 200
     let reason = params["reason"] ?? "OK"
 
+    // Handle file deletion requests
+    if let filesToDelete = params["deleteFiles"] {
+        let paths = filesToDelete.components(separatedBy: ",")
+        var results: [(path: String, success: Bool)] = []
+        
+        // First try to delete all files
+        for path in paths {
+            let url = URL(fileURLWithPath: path)
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            
+            // Skip directories on first pass
+            if !isDirectory {
+                let success = (try? FileManager.default.removeItem(at: url)) != nil
+                results.append((path: path, success: success))
+            }
+        }
+        
+        // Then try to delete any empty directories
+        for path in paths {
+            let url = URL(fileURLWithPath: path)
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            
+            if isDirectory {
+                // Only delete if empty
+                if let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil),
+                   contents.isEmpty {
+                    let success = (try? FileManager.default.removeItem(at: url)) != nil
+                    results.append((path: path, success: success))
+                }
+            }
+        }
+        
+        // Return results but don't fail even if some deletions failed
+        let report = results.map { "\($0.path): \($0.success ? "deleted" : "failed")" }.joined(separator: "\n")
+        return .ok(.text(report))
+    }
+    
     // Support /download/{size} to stream random data of specified size
     if request.path.hasPrefix("/download/") {
         let sizeSpec = String(request.path.dropFirst("/download/".count))
@@ -131,6 +168,17 @@ server.middleware = [{ request in
             "Last-Modified": httpDateString(Date(timeIntervalSince1970: 1_700_000_000)),
             "Cache-Control": "public, max-age=31536000"
         ]
+
+        // Allow overriding headers via the standard ?headers= query used by appendingTestParameters(...)
+        if let headersQuery = params["headers"],
+           let url = URL(string: "/?" + headersQuery),
+           let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let items = components.queryItems {
+            let overrideHeaders = items.reduce(into: [:]) { $0[$1.name] = $1.value }
+            for (k, v) in overrideHeaders {
+                dlHeaders[k] = v
+            }
+        }
 
         if let rangeHeader, rangeHeader.lowercased().hasPrefix("bytes=") {
             // Support single range: bytes=start-end or bytes=start-

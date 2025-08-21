@@ -70,7 +70,6 @@ final class AuthenticationServiceTests {
         await authenticationService.authenticate()
 
         // Then
-        #expect(mockOverlayWindowManager.removeNonAuthenticationOverlayCalled)
         #expect(mockOverlayWindowManager.removeOverlayCalled)
         #expect(mockOverlayWindowManager.displayOverlayCalled)
         #expect(mockAuthenticator.authenticateCalled)
@@ -87,7 +86,6 @@ final class AuthenticationServiceTests {
         await authenticationService.authenticate()
 
         // Then
-        #expect(!mockOverlayWindowManager.removeNonAuthenticationOverlayCalled)
         #expect(!mockOverlayWindowManager.removeOverlayCalled)
         #expect(!mockOverlayWindowManager.displayOverlayCalled)
         #expect(!mockAuthenticator.authenticateCalled)
@@ -103,7 +101,6 @@ final class AuthenticationServiceTests {
         await authenticationService.authenticate()
 
         // Then
-        #expect(!mockOverlayWindowManager.removeNonAuthenticationOverlayCalled)
         #expect(!mockOverlayWindowManager.removeOverlayCalled)
         #expect(!mockOverlayWindowManager.displayOverlayCalled)
         #expect(!mockAuthenticator.authenticateCalled)

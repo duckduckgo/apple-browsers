@@ -56,7 +56,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
         guard shouldAuthenticate else {
             return
         }
-        overlayWindowManager.removeBlankSnapshotWindow(for: .authentication)
+        overlayWindowManager.removeAnyOverlay()
         let authenticationViewController = showAuthenticationScreen()
         await authenticate(with: authenticationViewController)
     }

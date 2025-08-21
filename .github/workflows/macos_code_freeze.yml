@@ -150,7 +150,7 @@ jobs:
     with:
       asana-task-id: "1211112466075936"
       branch: "dominik/report-workflow-failure"
-      commit-sha: "b642b649e165ac3a8c8a380de448ddaa99fb558d"
+      commit-sha: b642b649e165ac3a8c8a380de448ddaa99fb558d
+      platform: macos
       workflow-name: "code freeze"
-      working-directory: macOS
     secrets: inherit

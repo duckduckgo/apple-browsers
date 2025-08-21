@@ -56,4 +56,18 @@ public enum DevicePlatform {
             return "unknown"
         }
     }
+
+    public static var currentPlatform: DevicePlatform {
+        #if os(iOS)
+        return .iOS
+        #elseif os(macOS)
+        return .macOS
+        #else
+        return .unknown
+        #endif
+    }
+
+    case macOS
+    case iOS
+    case unknown
 }

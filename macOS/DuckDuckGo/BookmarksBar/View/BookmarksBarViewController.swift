@@ -51,7 +51,7 @@ final class BookmarksBarViewController: NSViewController {
     private let appereancePreferences: AppearancePreferencesPersistor
     private let visualStyle: VisualStyleProviding
 
-    let syncButtonModel: SyncDeviceButtonModel = .init()
+    let syncButtonModel: SyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -135,6 +135,9 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     private func setUpSyncButton() {
+        if appereancePreferences.showBookmarksBar {
+            syncButtonModel.viewDidLoad()
+        }
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = .textPrimary

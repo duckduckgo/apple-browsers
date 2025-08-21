@@ -31,7 +31,9 @@ struct AddEditBookmarkDialogView: ModalView {
         Group {
             switch viewModel.viewState {
             case .bookmark:
-                addEditBookmarkView
+                addEditBookmarkView.onAppear {
+                    syncButtonModel.viewDidLoad()
+                }
             case .folder:
                 addFolderView
             }

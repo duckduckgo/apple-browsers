@@ -51745,6 +51745,9 @@
         }
       }
     },
+    "Or Sync from DuckDuckGo on another device" : {
+
+    },
     "page.crash.header" : {
       "comment" : "Error page heading text shown when a Web Page process had crashed",
       "extractionState" : "extracted_with_value",
@@ -58796,55 +58799,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Passwörter importieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Import Passwords"
+            "value" : "Import From Another Browser"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Importar contraseñas"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Importer les mots de passe"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Importa password"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wachtwoorden importeren"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Importuj hasła"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Importar palavras-passe"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Импорт паролей"
           }
         }
@@ -59266,6 +59269,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Нет примечаний"
+          }
+        }
+      }
+    },
+    "pm.empty.secondary.button.title" : {
+      "comment" : "Import passwords button title for default empty state\nSync passwords button title for default empty state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set up Sync"
           }
         }
       }
@@ -76935,6 +76950,15 @@
           }
         }
       }
+    },
+    "Sync Bookmarks" : {
+
+    },
+    "Sync Bookmarks Across Devices" : {
+
+    },
+    "Sync from Another Device" : {
+
     },
     "sync.promo.bookmarks.message" : {
       "comment" : "Message for the Sync Promotion banner when user has bookmarks that can be synced",

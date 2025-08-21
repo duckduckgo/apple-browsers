@@ -29,7 +29,7 @@ runs:
       with:
         pixel-name: ${{ inputs.download-pixel-name }}
         query-params: |
-          size_mb: ${{ steps.parse.outputs.download_size }}
+          size: ${{ steps.parse.outputs.download_size }}
 
     - name: Send Installation Size Pixel
       if: ${{ inputs.installation-pixel-name != '' }}
@@ -37,4 +37,4 @@ runs:
       with:
         pixel-name: ${{ inputs.installation-pixel-name }}
         query-params: |
-          size_mb: ${{ steps.parse.outputs.installation_size }}
+          size: ${{ steps.parse.outputs.installation_size }}

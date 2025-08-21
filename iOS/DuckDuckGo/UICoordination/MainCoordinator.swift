@@ -155,7 +155,6 @@ final class MainCoordinator {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,
-                                   privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                    tld: provider.storageCache.tld) {
         case .failure(let error):
             throw TerminationError.historyDatabase(error)

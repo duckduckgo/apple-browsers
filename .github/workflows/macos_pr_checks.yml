@@ -26,7 +26,6 @@ on:
         type: string
       skip-asana:
         description: "Skip Asana task creation on tests failure"
-        required: false
         type: boolean
         default: true
     secrets:
@@ -477,7 +476,7 @@ jobs:
             package-lock.json
             iOS/package-lock.json
             macOS/package-lock.json
-      - name: Install dependencies 
+      - name: Install dependencies
         run: npm ci
       - name: Build content-scope-scripts bundle
         run: npm run build-content-scope-scripts

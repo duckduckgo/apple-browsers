@@ -23,6 +23,10 @@ on:
         description: "Is this a pre-release? (a.k.a. internal release)"
         required: true
         type: boolean
+      ignore-unreleased-changes:
+        description: "Whether to ignore unreleased changes when tagging a public release"
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       asana-task-url:
@@ -37,13 +41,20 @@ on:
         description: "Branch name"
         required: false
         type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
       prerelease:
         description: "Is this a pre-release? (a.k.a. internal release)"
         required: true
         type: boolean
+      ignore-unreleased-changes:
+        description: "Whether to ignore unreleased changes when tagging a public release"
+        type: boolean
+        default: false
       internal-release-bump:
         description: "Is this an internal release bump? (the subsequent internal release of the current week)"
-        required: false
         default: false
         type: boolean
     secrets:
@@ -65,6 +76,7 @@ jobs:
       BRANCH: ${{ inputs.branch || github.ref_name }}
       prerelease: ${{ github.event.inputs.prerelease || inputs.prerelease }}
       internal-release-bump: ${{ inputs.internal-release-bump || 'false' }}
+      ignore-unreleased-changes: ${{ github.event.inputs.ignore-unreleased-changes || inputs.ignore-unreleased-changes }}
 
     outputs:
       tag: ${{ steps.tag-release.outputs.tag }}
@@ -74,8 +86,9 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v4
       with:
+        fetch-depth: 0 # Fetch all history and tags in order to look up tags
         submodules: recursive
-        ref: ${{ env.BRANCH }}
+        ref: ${{ inputs.commit-sha || env.BRANCH }}
 
     - name: Assert release branch
       run: |
@@ -84,6 +97,13 @@ jobs:
           *hotfix/*) ;;
           *) echo "👎 Not a release or hotfix branch"; exit 1 ;;
         esac
+
+    - name: Validate commit SHA
+      if: inputs.commit-sha
+      run: |
+        # Consider moving this check to the plugin
+        git merge-base --is-ancestor "${{ inputs.commit-sha }}" "origin/${{ env.BRANCH }}" \
+          || (echo "👎 Commit ${{ inputs.commit-sha }} does not belong to ${{ env.BRANCH }} branch" && exit 1)
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -104,9 +124,22 @@ jobs:
           asana_task_url:"${{ env.asana-task-url }}" \
           base_branch:"${{ env.BASE_BRANCH }}" \
           github_handle:${{ github.actor }} \
+          ignore_untagged_commits:"${{ env.ignore-unreleased-changes }}" \
           is_internal_release_bump:"${{ env.internal-release-bump }}" \
           is_prerelease:"${{ env.prerelease }}" \
           is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+
+    - name: Store stop_workflow flag
+      if: steps.tag-release.outputs.stop_workflow == 'true'
+      run: touch ${{ github.workspace }}/.github/stop_workflow
+
+    - name: Upload stop_workflow flag artifact
+      uses: actions/upload-artifact@v4
+      if: steps.tag-release.outputs.stop_workflow == 'true'
+      with:
+        name: stop_workflow
+        path: ${{ github.workspace }}/.github/stop_workflow
+        retention-days: 1
 
     - name: Store created tag in a file artifact
       run: echo ${{ steps.tag-release.outputs.tag }} > ${{ github.workspace }}/.github/tag

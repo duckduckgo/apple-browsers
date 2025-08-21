@@ -424,27 +424,25 @@ final class WidePixelTests: XCTestCase {
         XCTAssertNil(retrievedData.subscriptionIdentifier)
     }
 
-    func testPerContextSamplingSingleFireForSamePixelAndContext() throws {
+    func testSamplingDecisionAtStartSkipsPersistenceWhenNotSampled() throws {
         let contextID = UUID().uuidString
 
-        var dataA = makeTestSubscriptionData(contextID: contextID)
-        var dataB = makeTestSubscriptionData(contextID: contextID)
+        var notSampled = makeTestSubscriptionData(contextID: contextID)
+        notSampled.globalData.sampleRate = 0.0
 
-        dataA.globalData.sampleRate = 0.5
-        dataB.globalData.sampleRate = 0.5
+        widePixel.startFlow(notSampled)
 
-        widePixel.startFlow(dataA)
-        widePixel.startFlow(dataB)
+        XCTAssertNil(widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: contextID))
 
-        let expectationA = XCTestExpectation(description: "A")
-        let expectationB = XCTestExpectation(description: "B")
+        let exp = expectation(description: "complete")
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: contextID, status: .success) { success, error in
+            XCTAssertTrue(success)
+            XCTAssertNil(error)
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
 
-        widePixel.completeFlow(dataA, status: .success) { _, _ in expectationA.fulfill() }
-        widePixel.completeFlow(dataB, status: .success) { _, _ in expectationB.fulfill() }
-
-        wait(for: [expectationA, expectationB], timeout: 1.0)
-
-        XCTAssertTrue(self.capturedPixels.count == 0 || self.capturedPixels.count == 1)
+        XCTAssertEqual(capturedPixels.count, 0)
     }
 
     // MARK: - Test Utilities

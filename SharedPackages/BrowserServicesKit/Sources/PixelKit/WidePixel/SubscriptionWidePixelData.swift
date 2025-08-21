@@ -64,7 +64,7 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
 extension SubscriptionPurchaseWidePixelData {
 
     public enum PurchasePlatform: String, Codable, CaseIterable {
-        case appstore
+        case appStore = "app_store"
         case stripe
     }
 

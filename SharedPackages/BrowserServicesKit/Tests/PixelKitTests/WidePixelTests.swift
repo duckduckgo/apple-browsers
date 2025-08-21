@@ -68,7 +68,7 @@ final class WidePixelTests: XCTestCase {
     // MARK: - Test Utilities
 
     func makeTestSubscriptionData(
-        platform: SubscriptionPurchaseWidePixelData.PurchasePlatform = .appstore,
+        platform: SubscriptionPurchaseWidePixelData.PurchasePlatform = .appStore,
         contextID: String = UUID().uuidString,
         contextName: String? = nil,
         subscriptionIdentifier: String? = nil,
@@ -105,7 +105,7 @@ final class WidePixelTests: XCTestCase {
 
     func testFlowPersistenceAndDataIntegrity() throws {
         let subscriptionData = makeTestSubscriptionData(
-            platform: .appstore,
+            platform: .appStore,
             contextName: "test-flow",
             subscriptionIdentifier: "test-subscription-id"
         )
@@ -114,7 +114,7 @@ final class WidePixelTests: XCTestCase {
 
         let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)
 
-        XCTAssertEqual(retrievedData.purchasePlatform, .appstore)
+        XCTAssertEqual(retrievedData.purchasePlatform, .appStore)
         XCTAssertEqual(retrievedData.contextData.id, subscriptionData.contextData.id)
         XCTAssertEqual(retrievedData.contextData.name, "test-flow")
         XCTAssertEqual(retrievedData.subscriptionIdentifier, "test-subscription-id")
@@ -250,13 +250,17 @@ final class WidePixelTests: XCTestCase {
         let data = makeTestSubscriptionData()
         widePixel.startFlow(data)
 
-        widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: \.createAccountDuration)
+        var started = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
+        started.createAccountDuration = WidePixel.MeasuredInterval.startingNow()
+        widePixel.updateFlow(started)
 
         let dataAfterStart = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
         XCTAssertNotNil(dataAfterStart.createAccountDuration?.start)
         XCTAssertNil(dataAfterStart.createAccountDuration?.end)
 
-        widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: \.createAccountDuration)
+        var stopped = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
+        stopped.createAccountDuration?.complete()
+        widePixel.updateFlow(stopped)
 
         let dataAfterStop = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
         XCTAssertNotNil(dataAfterStop.createAccountDuration?.start)
@@ -268,11 +272,11 @@ final class WidePixelTests: XCTestCase {
         widePixel.startFlow(data)
 
         XCTAssertNil(data.createAccountDuration)
-        widePixel.startMeasuring(&data, keyPath: \.createAccountDuration)
+        data.createAccountDuration = WidePixel.MeasuredInterval.startingNow()
         XCTAssertNotNil(data.createAccountDuration?.start)
         XCTAssertNil(data.createAccountDuration?.end)
 
-        widePixel.stopMeasuring(&data, keyPath: \.createAccountDuration)
+        data.createAccountDuration?.complete()
         XCTAssertNotNil(data.createAccountDuration?.start)
         XCTAssertNotNil(data.createAccountDuration?.end)
     }
@@ -284,14 +288,16 @@ final class WidePixelTests: XCTestCase {
         // Test very short duration
         let shortStart = Date()
         let shortEnd = shortStart.addingTimeInterval(0.001)
-        widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: \.createAccountDuration, at: shortStart)
-        widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: \.createAccountDuration, at: shortEnd)
+        var short = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
+        short.createAccountDuration = WidePixel.MeasuredInterval(start: shortStart, end: shortEnd)
+        widePixel.updateFlow(short)
 
         // Test very long duration
         let longStart = Date(timeIntervalSince1970: 0)
         let longEnd = longStart.addingTimeInterval(3600 * 24)
-        widePixel.startMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: \.completePurchaseDuration, at: longStart)
-        widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: \.completePurchaseDuration, at: longEnd)
+        var long = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
+        long.completePurchaseDuration = WidePixel.MeasuredInterval(start: longStart, end: longEnd)
+        widePixel.updateFlow(long)
 
         let typed = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
         var parameters: [String: String] = [:]
@@ -316,7 +322,10 @@ final class WidePixelTests: XCTestCase {
         let data = makeTestSubscriptionData()
         widePixel.startFlow(data)
 
-        widePixel.stopMeasuring(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id, keyPath: \.createAccountDuration)
+        let now = Date()
+        var updated = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
+        updated.createAccountDuration = WidePixel.MeasuredInterval(start: now, end: now)
+        widePixel.updateFlow(updated)
 
         let dataAfterStop = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: data.contextData.id)
         XCTAssertNotNil(dataAfterStop.createAccountDuration?.start)
@@ -331,7 +340,7 @@ final class WidePixelTests: XCTestCase {
         let contextID = UUID().uuidString
 
         let subscriptionData = SubscriptionPurchaseWidePixelData(
-            purchasePlatform: .appstore,
+            purchasePlatform: .appStore,
             failingStep: .accountCreate,
             subscriptionIdentifier: "ddg.privacy.pro.monthly",
             freeTrialEligible: true,
@@ -367,7 +376,7 @@ final class WidePixelTests: XCTestCase {
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
         // Feature parameters
-        XCTAssertEqual(parameters["feature.data.ext.purchase_platform"], "appstore")
+        XCTAssertEqual(parameters["feature.data.ext.purchase_platform"], "app_store")
         XCTAssertEqual(parameters["feature.data.ext.failing_step"], "ACCOUNT_CREATE")
         XCTAssertEqual(parameters["feature.data.ext.subscription_identifier"], "ddg.privacy.pro.monthly")
         XCTAssertEqual(parameters["feature.data.ext.free_trial_eligible"], "true")
@@ -390,7 +399,7 @@ final class WidePixelTests: XCTestCase {
         XCTAssertEqual(parameters["global.sample_rate"], "1.0")
 
         // Feature metadata
-        XCTAssertEqual(parameters["feature.name"], "subscription_purchase")
+        XCTAssertEqual(parameters["feature.name"], SubscriptionPurchaseWidePixelData.pixelName)
         XCTAssertNil(parameters["feature.status"])
     }
 
@@ -421,7 +430,7 @@ final class WidePixelTests: XCTestCase {
     func testMultipleFlowIsolation() throws {
         let flows = (0..<3).map { i in
             makeTestSubscriptionData(
-                platform: i % 2 == 0 ? .appstore : .stripe,
+                platform: i % 2 == 0 ? .appStore : .stripe,
                 contextName: "isolation-\(i)"
             )
         }
@@ -473,7 +482,7 @@ final class WidePixelTests: XCTestCase {
 
     func testFlowRestartWithSameContextID() throws {
         let contextID = UUID().uuidString
-        let data1 = makeTestSubscriptionData(platform: .appstore, contextID: contextID, contextName: "first")
+        let data1 = makeTestSubscriptionData(platform: .appStore, contextID: contextID, contextName: "first")
 
         widePixel.startFlow(data1)
 

@@ -27,7 +27,7 @@ public protocol WidePixelData: Codable, WidePixelParameterProviding {
     var globalData: WidePixelGlobalData { get set }
 }
 
-public enum WidePixelStatus: Codable {
+public enum WidePixelStatus: Codable, Equatable {
     case success
     case failure
     case cancelled

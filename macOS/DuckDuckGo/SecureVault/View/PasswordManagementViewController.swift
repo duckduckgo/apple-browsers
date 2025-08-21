@@ -169,6 +169,7 @@ final class PasswordManagementViewController: NSViewController {
     private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
     private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+    private let syncButtonModel = SyncDeviceButtonModel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -225,6 +226,12 @@ final class PasswordManagementViewController: NSViewController {
         }
         emptyStateMessageContainer.addSubview(hostingView)
         emptyStateMessageHeight.constant = hostingView.intrinsicContentSize.height
+
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] shouldShow in
+            if !shouldShow {
+                self?.emptyStateSyncButton.isHidden = true
+            }
+        }.store(in: &cancellables)
     }
 
     private func setupStrings() {
@@ -1084,7 +1091,7 @@ final class PasswordManagementViewController: NSViewController {
             setUpEmptyStateMessageView()
         }
         emptyStateImportButton.isHidden = hideButton
-        emptyStateSyncButton.isHidden = hideButton
+        emptyStateSyncButton.isHidden = hideButton && !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
         emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
         emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitle

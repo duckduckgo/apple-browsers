@@ -3657,6 +3657,8 @@
 		EEE50C2A2C38249C003DD7FF /* OptionalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE50C282C38249C003DD7FF /* OptionalExtension.swift */; };
 		EEEE20102E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */; };
 		EEEE20112E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */; };
+		EEEE20162E57BE7A0071A566 /* SyncDeviceButtonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE20152E57BE710071A566 /* SyncDeviceButtonModel.swift */; };
+		EEEE20172E57BE7A0071A566 /* SyncDeviceButtonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE20152E57BE710071A566 /* SyncDeviceButtonModel.swift */; };
 		EEEFA3462D145328006A3F8A /* SyncPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA3452D145322006A3F8A /* SyncPixels.swift */; };
 		EEEFA3472D145328006A3F8A /* SyncPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA3452D145322006A3F8A /* SyncPixels.swift */; };
 		EEF12E6F2A2111880023E6BF /* MacPacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */; };
@@ -5754,6 +5756,7 @@
 		EEE11C5D2C7F54AD000ABD7E /* AutofillLoginImportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginImportState.swift; sourceTree = "<group>"; };
 		EEE50C282C38249C003DD7FF /* OptionalExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptionalExtension.swift; sourceTree = "<group>"; };
 		EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportFlowLauncher.swift; sourceTree = "<group>"; };
+		EEEE20152E57BE710071A566 /* SyncDeviceButtonModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDeviceButtonModel.swift; sourceTree = "<group>"; };
 		EEEFA3452D145322006A3F8A /* SyncPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPixels.swift; sourceTree = "<group>"; };
 		EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPacketTunnelProvider.swift; sourceTree = "<group>"; };
 		EEF53E172950CED5002D78F4 /* JSAlertViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertViewModelTests.swift; sourceTree = "<group>"; };
@@ -6714,6 +6717,7 @@
 		3775913429AB99DA00E26367 /* Sync */ = {
 			isa = PBXGroup;
 			children = (
+				EEEE20152E57BE710071A566 /* SyncDeviceButtonModel.swift */,
 				EE137E8D2E40F5C70065B5E0 /* DeviceSyncCoordinator.swift */,
 				EEEFA3452D145322006A3F8A /* SyncPixels.swift */,
 				C1935A162C88F9AA001AD72D /* Promotion */,
@@ -12824,6 +12828,7 @@
 				C1935A1C2C88F9ED001AD72D /* SyncPromoViewModel.swift in Sources */,
 				84F1C8D02C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */,
 				3797C7A42C62C38800DA77FB /* NewTabPageCustomizationModel.swift in Sources */,
+				EEEE20162E57BE7A0071A566 /* SyncDeviceButtonModel.swift in Sources */,
 				3706FAEC293F65D500E42796 /* ContentScopeFeatureFlagging.swift in Sources */,
 				3706FAEE293F65D500E42796 /* SaveIdentityPopover.swift in Sources */,
 				B6E6B9E42BA1F5F1008AA7E1 /* FilePresenter.swift in Sources */,
@@ -14693,6 +14698,7 @@
 				7BDBAD1A2CBFF633000379B7 /* TipKitDebugOptionsUIActionHandling.swift in Sources */,
 				845B43312DB699D300D46001 /* SwiftUIContextMenuRetainCycleFix.swift in Sources */,
 				7BDBAD1B2CBFF633000379B7 /* Logger+TipKit.swift in Sources */,
+				EEEE20172E57BE7A0071A566 /* SyncDeviceButtonModel.swift in Sources */,
 				4BA1A6B3258B080A00F6F690 /* EncryptionKeyGeneration.swift in Sources */,
 				37B11B3928095E6600CBB621 /* TabLazyLoader.swift in Sources */,
 				BBC7BDAC2D5BB0890037A4AE /* BannerView.swift in Sources */,

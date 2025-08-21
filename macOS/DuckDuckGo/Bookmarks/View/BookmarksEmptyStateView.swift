@@ -19,6 +19,7 @@
 import SwiftUIExtensions
 
 public struct BookmarksEmptyStateView: View {
+    @ObservedObject private var syncButtonModel = SyncDeviceButtonModel()
     let content: BookmarksEmptyStateContent
     let onImportClicked: () -> Void
     let onSyncClicked: () -> Void
@@ -55,7 +56,7 @@ public struct BookmarksEmptyStateView: View {
                     }
                     .buttonStyle(DefaultActionButtonStyle(enabled: true))
                 }
-                if !content.shouldHideSyncButton {
+                if !content.shouldHideSyncButton, syncButtonModel.shouldShowSyncButton {
                     Button("Sync Bookmarks") {
                         onSyncClicked()
                     }

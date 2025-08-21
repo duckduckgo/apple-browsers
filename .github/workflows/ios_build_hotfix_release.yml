@@ -111,7 +111,7 @@ jobs:
 
   prepare_release:
     name: Prepare Release
-    needs: run_tests
+    needs: [ run_tests, update_asana ]
     uses: ./.github/workflows/ios_release.yml
     with:
       asana-task-url: ${{ github.event.inputs.asana-task-url }}

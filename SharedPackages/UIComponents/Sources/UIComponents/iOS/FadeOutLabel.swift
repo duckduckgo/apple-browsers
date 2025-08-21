@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
+
 import UIKit
 
 // Based on https://stackoverflow.com/a/53847223/73479
@@ -63,3 +65,4 @@ public class FadeOutLabel: UILabel {
     }
 
 }
+#endif

@@ -32,11 +32,6 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
 
     private let defaults: UserDefaults
 
-    private struct Envelope: Codable {
-        let featureDataJSON: Data
-        let featureDataType: String
-    }
-
     public init(userDefaults: UserDefaults = UserDefaults(suiteName: WidePixelUserDefaultsStorage.suiteName) ?? .standard) {
         self.defaults = userDefaults
     }
@@ -45,11 +40,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         let key = storageKey(T.self, contextID: data.contextData.id)
 
         do {
-            let envelope = Envelope(
-                featureDataJSON: try JSONEncoder().encode(data),
-                featureDataType: String(describing: T.self)
-            )
-            let encoded = try JSONEncoder().encode(envelope)
+            let encoded = try JSONEncoder().encode(data)
             defaults.set(encoded, forKey: key)
         } catch {
             throw WidePixelError.serializationFailed(error)
@@ -61,12 +52,11 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         guard let data = defaults.data(forKey: key) else {
             throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with context ID \(contextID)")
         }
-        let envelope = try JSONDecoder().decode(Envelope.self, from: data)
-        let expected = String(describing: T.self)
-        guard envelope.featureDataType == expected else {
-            throw WidePixelError.typeMismatch(expected: expected, actual: envelope.featureDataType)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw WidePixelError.serializationFailed(error)
         }
-        return try JSONDecoder().decode(T.self, from: envelope.featureDataJSON)
     }
 
     public func update<T: WidePixelData>(_ data: T) throws {

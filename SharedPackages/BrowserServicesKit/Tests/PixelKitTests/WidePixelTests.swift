@@ -304,12 +304,15 @@ final class WidePixelTests: XCTestCase {
         parameters["global.sample_rate"] = "1.0"
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
+
         if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
         parameters["feature.name"] = SubscriptionPurchaseWidePixelData.pixelName
+
         if let name = typed.contextData.name { parameters["context.name"] = name }
         if let data = typed.contextData.data {
             for (key, value) in data { parameters["context.data.\(key)"] = value }
         }
+
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
         XCTAssertEqual(parameters["feature.data.ext.account_creation_latency_ms_bucketed"], "1000")
@@ -330,8 +333,6 @@ final class WidePixelTests: XCTestCase {
         XCTAssertNotNil(dataAfterStop.createAccountDuration?.end)
         XCTAssertEqual(dataAfterStop.createAccountDuration?.start, dataAfterStop.createAccountDuration?.end)
     }
-
-    // MARK: - Parameter Flattening Tests
 
     func testComprehensiveParameterFlattening() throws {
         let testError = makeTestError(domain: "TestErrorDomain", code: 12345)
@@ -401,8 +402,6 @@ final class WidePixelTests: XCTestCase {
         XCTAssertNil(parameters["feature.status"])
     }
 
-    // MARK: - Storage Management Tests
-
     func testActiveFlowManagement() throws {
         let data1 = makeTestSubscriptionData(contextName: "flow-1")
         let data2 = makeTestSubscriptionData(contextName: "flow-2")
@@ -417,7 +416,7 @@ final class WidePixelTests: XCTestCase {
     func testMultipleFlowIsolation() throws {
         let flows = (0..<3).map { i in
             makeTestSubscriptionData(
-                platform: i % 2 == 0 ? .appStore : .stripe,
+                platform: i % 2 == 0 ? .appStore : .stripe, // Have both App Store and Stripe flows
                 contextName: "isolation-\(i)"
             )
         }
@@ -426,12 +425,10 @@ final class WidePixelTests: XCTestCase {
             widePixel.startFlow(flow)
         }
 
-        // Update middle flow
         var updatedFlow = flows[1]
         updatedFlow.freeTrialEligible = true
         widePixel.updateFlow(updatedFlow)
 
-        // Verify isolation
         let unchangedFlow1 = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: flows[0].contextData.id)
         let changedFlow = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: flows[1].contextData.id)
         let unchangedFlow3 = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, contextID: flows[2].contextData.id)
@@ -456,7 +453,7 @@ final class WidePixelTests: XCTestCase {
         XCTAssertNil(retrievedData.contextData.name)
         XCTAssertNil(retrievedData.contextData.data)
 
-        let expectation = XCTestExpectation(description: "Completion with nil values")
+        let expectation = XCTestExpectation(description: "completeFlow")
         widePixel.completeFlow(retrievedData, status: .success) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
@@ -474,7 +471,7 @@ final class WidePixelTests: XCTestCase {
         widePixel.startFlow(data1)
 
         var updated1 = data1
-        updated1.subscriptionIdentifier = "first-id"
+        updated1.subscriptionIdentifier = "subscription"
         widePixel.updateFlow(updated1)
 
         let data2 = makeTestSubscriptionData(platform: .stripe, contextID: contextID, contextName: "second")

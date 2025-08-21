@@ -44,6 +44,7 @@ class BookmarkSearchTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.resetBookmarks()
@@ -102,8 +103,7 @@ class BookmarkSearchTests: UITestCase {
     // MARK: - Utilities
 
     private func enforceSingleWindow() {
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 
     private func addBookmarkAndOpenBookmarksPanel(bookmarkPageTitle: String, in folder: String? = nil) {

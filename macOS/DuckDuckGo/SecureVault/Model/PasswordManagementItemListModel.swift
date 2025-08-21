@@ -313,11 +313,11 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     var emptyStateImportButtonText: String {
-        sortDescriptor.category == .logins ? UserText.pmEmptyStateDefaultButtonTitle : "Import From Another Browser"
+        sortDescriptor.category == .logins ? UserText.pmEmptyStateDefaultButtonTitle : UserText.pmEmptyStateDefaultButtonTitleAllItems
     }
 
     var emptyStateSyncButtonText: String {
-        ""
+        sortDescriptor.category == .logins ? UserText.pmEmptyStateSecondaryButtonTitle : UserText.pmEmptyStateSecondaryButtonTitleAllItems
     }
 
     var emptyStateMessageLinkURL: URL {

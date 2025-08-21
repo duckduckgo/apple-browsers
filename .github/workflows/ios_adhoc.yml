@@ -84,6 +84,15 @@ jobs:
             bundle exec fastlane ${lane_to_use}
           fi
 
+      - name: Check App Thinning Size Report
+        run: |
+          if [[ -f "App Thinning Size Report.txt" ]]; then
+            echo "=== App Thinning Size Report ==="
+            cat "App Thinning Size Report.txt"
+          else
+            echo "App Thinning Size Report.txt not found"
+          fi
+
       - name: Report job duration
         if: success() || (always() && steps.archive-and-upload.outcome == 'failure')
         uses: ./.github/actions/measure-duration

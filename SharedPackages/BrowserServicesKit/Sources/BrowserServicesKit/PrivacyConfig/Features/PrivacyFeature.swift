@@ -123,6 +123,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case defaultBrowserTutorial
 
     case widgetReporting
+
+    // Local inactivity provisional notifications delivered to Notification Center.
+    // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
+    case inactivityNotification
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

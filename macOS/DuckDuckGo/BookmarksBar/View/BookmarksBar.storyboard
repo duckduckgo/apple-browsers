@@ -23,13 +23,13 @@
                                 </constraints>
                             </customView>
                             <scrollView wantsLayer="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="0.0" horizontalPageScroll="0.0" verticalLineScroll="0.0" verticalPageScroll="0.0" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="D39-Of-BIh">
-                                <rect key="frame" x="170" y="4" width="506" height="24"/>
+                                <rect key="frame" x="176" y="4" width="500" height="24"/>
                                 <clipView key="contentView" drawsBackground="NO" id="yvk-6W-sd0">
-                                    <rect key="frame" x="0.0" y="0.0" width="506" height="24"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="500" height="24"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <collectionView selectable="YES" id="vwg-NL-UPk" customClass="BookmarksBarCollectionView" customModule="DuckDuckGo_Privacy_Browser">
-                                            <rect key="frame" x="0.0" y="0.0" width="506" height="24"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="500" height="24"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES"/>
                                             <collectionViewLayout key="collectionViewLayout" id="YNm-eM-CbC"/>
                                             <color key="primaryBackgroundColor" name="NavigationBarBackgroundColor"/>
@@ -90,7 +90,7 @@
                                             <imageReference key="image" image="square.and.arrow.down" catalog="system" symbolScale="medium"/>
                                         </imageCell>
                                     </imageView>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jeg-Iv-FxB">
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jeg-Iv-FxB">
                                         <rect key="frame" x="22" y="5" width="37" height="15"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="15" id="L4P-aC-UPW"/>
@@ -133,10 +133,10 @@
                                 </constraints>
                             </customView>
                             <customView verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5Hg-Gg-2dA" userLabel="Sync Button">
-                                <rect key="frame" x="8" y="4" width="162" height="24"/>
+                                <rect key="frame" x="8" y="4" width="168" height="24"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="LYf-UU-FXO">
-                                        <rect key="frame" x="4" y="4" width="16" height="16"/>
+                                        <rect key="frame" x="6" y="4" width="16" height="16"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="16" id="0bI-o1-bDR"/>
                                             <constraint firstAttribute="width" constant="16" id="Nuh-rO-bbX"/>
@@ -145,26 +145,19 @@
                                             <imageReference key="image" image="Sync-16" symbolScale="medium"/>
                                         </imageCell>
                                     </imageView>
-                                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="q2n-v7-67h">
-                                        <rect key="frame" x="22" y="4" width="117" height="16"/>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="q2n-v7-67h">
+                                        <rect key="frame" x="24" y="4" width="117" height="16"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Sync Bookmarks..." id="OG3-9a-y7F">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </textFieldCell>
                                     </textField>
-                                    <box horizontalCompressionResistancePriority="800" boxType="custom" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="oAl-b6-hcP">
-                                        <rect key="frame" x="137" y="0.0" width="1" height="24"/>
-                                        <view key="contentView" id="gTm-HH-WbE">
-                                            <rect key="frame" x="0.0" y="0.0" width="1" height="24"/>
-                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                        </view>
-                                        <constraints>
-                                            <constraint firstAttribute="width" priority="800" constant="1" id="tag-rp-vsE"/>
-                                        </constraints>
+                                    <box clipsToBounds="YES" horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="Rv3-Ka-5rz">
+                                        <rect key="frame" x="141" y="0.0" width="5" height="24"/>
                                     </box>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2sg-KO-1Lc" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="138" y="0.0" width="24" height="24"/>
+                                        <rect key="frame" x="144" y="0.0" width="24" height="24"/>
                                         <buttonCell key="cell" type="bevel" bezelStyle="rounded" image="Close-16" imagePosition="overlaps" alignment="center" imageScaling="proportionallyDown" inset="2" id="uNL-jD-6uA">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -189,7 +182,7 @@
                                         </connections>
                                     </button>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="mPS-TE-78s" customClass="MouseOverView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="162" height="24"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="168" height="24"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
                                                 <color key="value" name="ButtonMouseOverColor"/>
@@ -211,19 +204,19 @@
                                     <constraint firstItem="q2n-v7-67h" firstAttribute="leading" secondItem="LYf-UU-FXO" secondAttribute="trailing" priority="750" constant="4" id="2bE-wf-5qA"/>
                                     <constraint firstAttribute="height" priority="750" constant="24" id="3Jg-7j-886"/>
                                     <constraint firstItem="q2n-v7-67h" firstAttribute="centerY" secondItem="LYf-UU-FXO" secondAttribute="centerY" priority="750" id="DLO-sI-8KT"/>
+                                    <constraint firstItem="q2n-v7-67h" firstAttribute="trailing" secondItem="Rv3-Ka-5rz" secondAttribute="leading" constant="-4" id="KlU-hx-9xs"/>
                                     <constraint firstItem="LYf-UU-FXO" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" priority="750" id="LKL-bO-INh"/>
-                                    <constraint firstItem="LYf-UU-FXO" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="leading" priority="750" constant="4" id="Wx8-ed-mWR"/>
+                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" id="SvL-pD-Ci0"/>
+                                    <constraint firstItem="LYf-UU-FXO" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="leading" priority="750" constant="6" id="Wx8-ed-mWR"/>
                                     <constraint firstItem="2sg-KO-1Lc" firstAttribute="centerY" secondItem="LYf-UU-FXO" secondAttribute="centerY" priority="750" id="ZTH-G6-ZjR"/>
                                     <constraint firstAttribute="width" priority="250" id="bux-Bx-dHX"/>
-                                    <constraint firstItem="oAl-b6-hcP" firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="leading" priority="800" id="cox-z9-Vfb"/>
                                     <constraint firstAttribute="trailing" secondItem="mPS-TE-78s" secondAttribute="trailing" priority="750" id="ff1-CS-Bpa"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="leading" priority="750" id="iFh-7H-I99"/>
                                     <constraint firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="trailing" priority="750" id="kbh-qM-mLm"/>
+                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="height" secondItem="5Hg-Gg-2dA" secondAttribute="height" id="leE-YK-JdN"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="top" secondItem="5Hg-Gg-2dA" secondAttribute="top" priority="750" id="lyJ-iR-qLK"/>
                                     <constraint firstAttribute="bottom" secondItem="mPS-TE-78s" secondAttribute="bottom" priority="750" id="mRk-hF-6T0"/>
-                                    <constraint firstAttribute="bottom" secondItem="oAl-b6-hcP" secondAttribute="bottom" id="ol6-gW-N65"/>
-                                    <constraint firstItem="oAl-b6-hcP" firstAttribute="top" secondItem="5Hg-Gg-2dA" secondAttribute="top" id="tVw-Mq-SKh"/>
-                                    <constraint firstItem="q2n-v7-67h" firstAttribute="trailing" secondItem="oAl-b6-hcP" secondAttribute="leading" priority="800" id="xlG-BK-PQo"/>
+                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="leading" id="r9I-0g-gNJ"/>
                                 </constraints>
                             </customView>
                         </subviews>
@@ -259,7 +252,7 @@
                         <outlet property="importBookmarksMouseOverView" destination="Nr2-47-6rU" id="rCq-gq-9C4"/>
                         <outlet property="promptAnchor" destination="cjE-4p-vxI" id="IGH-2v-PGD"/>
                         <outlet property="syncButton" destination="5Hg-Gg-2dA" id="uLx-cZ-zqR"/>
-                        <outlet property="syncButtonDivider" destination="oAl-b6-hcP" id="34y-kR-M3f"/>
+                        <outlet property="syncButtonDivider" destination="Rv3-Ka-5rz" id="YXc-tn-qYk"/>
                         <outlet property="syncButtonIcon" destination="LYf-UU-FXO" id="UQI-0S-jDR"/>
                         <outlet property="syncButtonLabel" destination="q2n-v7-67h" id="Htt-mi-e2H"/>
                         <outlet property="syncButtonZeroWidthConstraint" destination="bux-Bx-dHX" id="nAr-fl-0dX"/>

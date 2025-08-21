@@ -346,8 +346,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         actionDelegate?.optionsButtonMenuRequestedDownloadsPopover(self)
     }
 
+    @MainActor
     @objc func startSync(_ sender: NSMenuItem) {
-        // TODO: Present sync
+        DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
     }
 
     @objc func openAutofillWithAllItems(_ sender: NSMenuItem) {

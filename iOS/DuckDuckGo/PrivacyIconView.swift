@@ -117,10 +117,14 @@ class PrivacyIconView: UIView {
     
     func setDaxEasterEggLogoURL(_ url: URL?) {
         let oldURL = daxLogoURL
+        
+        // Exit early if URL hasn't changed
+        guard oldURL != url else { return }
+        
         daxLogoURL = url
         
         if icon == .daxLogo {
-            // Add cross-fade animation when switching logo types (dynamic ↔ default)
+            // Only animate when switching logo types (dynamic ↔ default)
             let isChangingLogoType = (oldURL == nil) != (url == nil)
             
             if isChangingLogoType && staticImageView.image != nil {

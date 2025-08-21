@@ -1683,10 +1683,13 @@ extension TabViewController: WKNavigationDelegate {
     private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
         guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
         
-        // Clear any existing logo first for clean state
-        delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
-        
-        guard let url = webView.url, url.isDuckDuckGoSearch else { return }
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Only clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
         
         Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
         daxEasterEggHandler?.extractLogosForCurrentPage()

@@ -73,7 +73,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           bundle exec fastlane run asana_report_failed_workflow \
-            platform: macos \
             branch:"${{ inputs.branch }}" \
             commit_sha:"${{ inputs.commit-sha }}" \
             github_handle:"${{ github.actor }}" \

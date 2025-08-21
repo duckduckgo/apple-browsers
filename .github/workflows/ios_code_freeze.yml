@@ -98,8 +98,8 @@ jobs:
 
   report_failure:
     name: Report Failure
-    if: failure()
-    needs: [ create_release_branch, tag_and_merge ]
+    needs: [ create_release_branch, run_tests, prepare_release, tag_and_merge ]
+    if: always() && (needs.run_tests.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
     uses: ./.github/workflows/report_failed_release_workflow.yml
     with:
       asana-task-id: ${{ needs.create_release_branch.outputs.asana_task_id }}

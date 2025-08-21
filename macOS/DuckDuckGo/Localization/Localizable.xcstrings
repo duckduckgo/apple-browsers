@@ -56798,6 +56798,18 @@
         }
       }
     },
+    "pinning.hide-share-shortcut" : {
+      "comment" : "Menu item for hiding the share shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Share Shortcut"
+          }
+        }
+      }
+    },
     "pinning.show-autofill-shortcut" : {
       "comment" : "Menu item for showing the passwords shortcut",
       "extractionState" : "extracted_with_value",
@@ -57034,6 +57046,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать ярлык VPN"
+          }
+        }
+      }
+    },
+    "pinning.show-share-shortcut" : {
+      "comment" : "Menu item for showing the share shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Share Shortcut"
           }
         }
       }

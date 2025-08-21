@@ -81,10 +81,10 @@ public struct WidePixelGlobalData: Codable {
     public var sampleRate: Double
 
     public init() {
-        self.init(platform: "TODO AFTER MERGING DEVICEPLATFORM CHANGES", sampleRate: 1.0)
+        self.init(sampleRate: 1.0)
     }
 
-    public init(platform: String, sampleRate: Double) {
+    public init(platform: String = DevicePlatform.currentPlatform.rawValue, sampleRate: Double) {
         if sampleRate > 1.0 || sampleRate < 0.0 {
             assertionFailure("Sample rate must be between 0-1")
         }

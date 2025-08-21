@@ -19,7 +19,7 @@
 import Foundation
 
 public struct SubscriptionPurchaseWidePixelData: WidePixelData {
-    public static let pixelName = "subscription_purchase"
+    public static let pixelName = "subscription_purchase_debug"
 
     public var globalData: WidePixelGlobalData
     public var contextData: WidePixelContextData

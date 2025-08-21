@@ -29,9 +29,6 @@ public protocol WidePixelManaging {
     func updateFlow<T: WidePixelData>(_ data: T)
     func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
 
-    func startMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, WidePixel.MeasuredInterval?>)
-    func stopMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, WidePixel.MeasuredInterval?>)
-
     func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
     func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: String) -> T?
     func clearAllFlows()
@@ -46,6 +43,21 @@ public final class WidePixel: WidePixelManaging {
         public init(start: Date? = nil, end: Date? = nil) {
             self.start = start
             self.end = end
+        }
+
+        /// Creates a new interval that starts timing now
+        public static func startingNow() -> MeasuredInterval {
+            return MeasuredInterval(start: Date())
+        }
+
+        /// Completes the timing interval with the current date
+        public mutating func complete() {
+            self.end = Date()
+        }
+
+        /// Completes the timing interval with a specific date
+        public mutating func complete(at date: Date) {
+            self.end = date
         }
     }
 
@@ -76,7 +88,7 @@ public final class WidePixel: WidePixelManaging {
     // MARK: - Public API
 
     public func startFlow<T: WidePixelData>(_ data: T) {
-        Self.logger.info("Starting wide pixel flow: \(T.pixelName, privacy: .public) with context ID: \(data.contextData.id, privacy: .public)")
+        Self.logger.info("Starting wide pixel flow '\(T.pixelName, privacy: .public)' with context ID: \(data.contextData.id, privacy: .public)")
         do {
             try Self.storageQueue.sync { try storage.save(data) }
         } catch {
@@ -93,7 +105,7 @@ public final class WidePixel: WidePixelManaging {
             return
         }
 
-        Self.logger.debug("Wide pixel flow updated: \(T.pixelName, privacy: .public) with context ID: \(contextID, privacy: .public)")
+        Self.logger.info("Wide pixel with context ID \(contextID, privacy: .public) updated: \(T.pixelName, privacy: .public)")
     }
 
     public func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: String) -> T? {
@@ -107,7 +119,7 @@ public final class WidePixel: WidePixelManaging {
     // MARK: - Flow Completion
 
     public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
-        Self.logger.info("Completing wide pixel flow: \(T.pixelName, privacy: .public) with context ID: \(data.contextData.id, privacy: .public)")
+        Self.logger.info("Completing wide pixel '\(T.pixelName, privacy: .public)' with status \(status.asString, privacy: .public) and context ID: \(data.contextData.id, privacy: .public)")
 
         do {
             try storage.update(data)
@@ -213,72 +225,6 @@ public final class WidePixel: WidePixelManaging {
         }
 
         completeFlow(currentData, status: status, onComplete: onComplete)
-    }
-
-    // MARK: - Duration Measurements
-
-    public func startMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
-        guard var typed: T = try? storage.load(contextID: contextID) else {
-            report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil)
-            return
-        }
-        var interval = typed[keyPath: keyPath] ?? MeasuredInterval()
-        if interval.start != nil { assertionFailure("startMeasuring called but start is already set"); return }
-        interval.start = Date()
-        typed[keyPath: keyPath] = interval
-        do { try Self.storageQueue.sync { try storage.save(typed) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
-    }
-
-    public func stopMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
-        guard var typed: T = try? storage.load(contextID: contextID) else {
-            report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil)
-            return
-        }
-        var interval = typed[keyPath: keyPath] ?? MeasuredInterval()
-        let now = Date()
-        if interval.start == nil { interval.start = now }
-        interval.end = now
-        typed[keyPath: keyPath] = interval
-        do { try Self.storageQueue.sync { try storage.save(typed) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
-    }
-
-    // MARK: - Test Helpers
-
-    func startMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>, at date: Date) {
-        guard var typed: T = try? storage.load(contextID: contextID) else { report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil); return }
-        var interval = typed[keyPath: keyPath] ?? MeasuredInterval()
-        if interval.start != nil { assertionFailure("startMeasurement called but start is already set"); return }
-        interval.start = date
-        typed[keyPath: keyPath] = interval
-        do { try Self.storageQueue.sync { try storage.save(typed) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
-    }
-
-    func stopMeasuring<T: WidePixelData>(_ type: T.Type, contextID: String, keyPath: WritableKeyPath<T, MeasuredInterval?>, at date: Date) {
-        guard var typed: T = try? storage.load(contextID: contextID) else { report(.loadFailed(pixelName: T.pixelName, error: WidePixelError.flowNotFound(pixelName: T.pixelName)), error: WidePixelError.flowNotFound(pixelName: T.pixelName), params: nil); return }
-        var interval = typed[keyPath: keyPath] ?? MeasuredInterval()
-        if interval.start == nil { interval.start = date }
-        interval.end = date
-        typed[keyPath: keyPath] = interval
-        do { try Self.storageQueue.sync { try storage.save(typed) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
-    }
-
-    // MARK: - Instance-based measuring
-
-    public func startMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
-        var interval = data[keyPath: keyPath] ?? MeasuredInterval()
-        if interval.start != nil { assertionFailure("startMeasuring called but start is already set"); return }
-        interval.start = Date()
-        data[keyPath: keyPath] = interval
-        do { try Self.storageQueue.sync { try storage.save(data) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
-    }
-
-    public func stopMeasuring<T: WidePixelData>(_ data: inout T, keyPath: WritableKeyPath<T, MeasuredInterval?>) {
-        var interval = data[keyPath: keyPath] ?? MeasuredInterval()
-        let now = Date()
-        if interval.start == nil { interval.start = now }
-        interval.end = now
-        data[keyPath: keyPath] = interval
-        do { try Self.storageQueue.sync { try storage.save(data) } } catch { report(.saveFailed(pixelName: T.pixelName, error: error), error: error, params: nil) }
     }
 
     // MARK: - Internal Helper Methods

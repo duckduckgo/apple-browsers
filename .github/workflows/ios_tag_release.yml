@@ -101,6 +101,7 @@ jobs:
     - name: Validate commit SHA
       if: inputs.commit-sha
       run: |
+        # Consider moving this check to the plugin
         git merge-base --is-ancestor "${{ inputs.commit-sha }}" "origin/${{ env.BRANCH }}" \
           || (echo "👎 Commit ${{ inputs.commit-sha }} does not belong to ${{ env.BRANCH }} branch" && exit 1)
 

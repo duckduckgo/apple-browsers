@@ -38,6 +38,7 @@ class AutocompleteTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
@@ -51,8 +52,7 @@ class AutocompleteTests: UITestCase {
         let siteTitleLength = 12
         siteTitleForBookmarkedSite = UITests.randomPageTitle(length: siteTitleLength)
         siteTitleForHistorySite = UITests.randomPageTitle(length: siteTitleLength)
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         try resetAndArrangeBookmarksAndHistory() // Manually reset to a clean state
     }
 
@@ -207,7 +207,6 @@ private extension AutocompleteTests {
             app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 }

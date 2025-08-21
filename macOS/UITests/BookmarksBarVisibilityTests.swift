@@ -37,6 +37,7 @@ class BookmarksBarVisibilityTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
@@ -51,8 +52,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         resetBookmarks()
         skipOnboarding()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // Open new window
+        app.enforceSingleWindow()
     }
 
     func test_bookmarksBar_remainsVisibleAfterAcceptingPrompt() throws {

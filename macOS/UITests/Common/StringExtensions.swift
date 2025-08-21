@@ -25,4 +25,8 @@ extension String {
             .replacingOccurrences(of: "\n", with: "\\n")
     }
 
+    func dropping(suffix: String) -> String {
+        return hasSuffix(suffix) ? String(dropLast(suffix.count)) : self
+    }
+
 }

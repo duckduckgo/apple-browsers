@@ -18,11 +18,14 @@
 
 import Combine
 
+@MainActor
 public final class SyncDeviceButtonModel: ObservableObject {
+    lazy var syncLauncher: SyncDeviceFlowLaunching? = DeviceSyncCoordinator()
+
     @Published var shouldShowSyncButton: Bool = true
 
     func syncButtonAction() {
-        // TODO: Show sync
+        syncLauncher?.startDeviceSyncFlow(completion: nil)
     }
 
     func dismissSyncButtonAction() {

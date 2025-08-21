@@ -51,6 +51,8 @@ final class BookmarksBarViewController: NSViewController {
     private let appereancePreferences: AppearancePreferencesPersistor
     private let visualStyle: VisualStyleProviding
 
+    let syncButtonModel: SyncDeviceButtonModel = .init()
+
     private var cancellables = Set<AnyCancellable>()
 
     private static let maxDragDistanceToExpandHoveredFolder: CGFloat = 4
@@ -129,7 +131,11 @@ final class BookmarksBarViewController: NSViewController {
 
         view.postsFrameChangedNotifications = true
 
-        syncButton.isHidden = !importBookmarksButton.isHidden
+        setUpSyncButton()
+    }
+
+    private func setUpSyncButton() {
+        syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = .textPrimary
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
@@ -139,6 +145,12 @@ final class BookmarksBarViewController: NSViewController {
         syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
         syncDismissButton.isHidden = true
         syncMouseOverView.delegate = self
+
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
+            self?.syncButton.isHidden = !$0
+            self?.syncButtonZeroWidthConstraint.priority = $0 ? .defaultLow : .required
+        }
+        .store(in: &cancellables)
     }
 
     private func setUpImportBookmarksButton() {
@@ -298,17 +310,14 @@ final class BookmarksBarViewController: NSViewController {
         DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, in: view.window)
     }
 
-    var showSync = true
     @IBOutlet weak var syncButtonZeroWidthConstraint: NSLayoutConstraint!
 
     @IBAction func syncClicked(_ sender: Any) {
-        // TODO: Present sync
+        syncButtonModel.syncButtonAction()
     }
 
     @IBAction func dismissSyncClicked(_ sender: Any) {
-        showSync = false
-        syncButton.isHidden = true
-        syncButtonZeroWidthConstraint.priority = .required
+        syncButtonModel.dismissSyncButtonAction()
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {

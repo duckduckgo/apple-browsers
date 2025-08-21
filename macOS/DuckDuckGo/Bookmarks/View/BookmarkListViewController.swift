@@ -59,7 +59,7 @@ final class BookmarkListViewController: NSViewController {
         let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks) { [weak self] in
             self?.onImportClicked()
         } onSyncClicked: {
-
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
         }
         return emptyStateView.embeddedInHostingView()
     }()
@@ -558,7 +558,7 @@ final class BookmarkListViewController: NSViewController {
         let emptyStateView = BookmarksEmptyStateView(content: mode) { [weak self] in
             self?.onImportClicked()
         } onSyncClicked: {
-
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
         }
         emptyStateHostingView.rootView = emptyStateView
         emptyStateHostingView.isHidden = false

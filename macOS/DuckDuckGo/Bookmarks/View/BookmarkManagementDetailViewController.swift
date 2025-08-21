@@ -392,7 +392,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         emptyStateHostingView.rootView = BookmarksEmptyStateView(content: mode, onImportClicked: { [weak self] in
             self?.onImport()
         }, onSyncClicked: {
-            // no-op for now
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
         })
         emptyStateHostingView.isHidden = false
         searchBar.isEnabled = mode != .noBookmarks

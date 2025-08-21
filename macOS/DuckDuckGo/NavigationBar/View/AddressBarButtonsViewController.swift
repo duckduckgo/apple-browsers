@@ -1710,13 +1710,9 @@ final class AddressBarButtonsViewController: NSViewController {
         // Cancel all subscriptions to prevent Combine from outliving view controller lifecycle
         cancellables.removeAll()
         permissionsCancellables.removeAll()
-        urlCancellable?.cancel()
         urlCancellable = nil
-        zoomLevelCancellable?.cancel()
         zoomLevelCancellable = nil
-        trackerAnimationTriggerCancellable?.cancel()
         trackerAnimationTriggerCancellable = nil
-        privacyEntryPointIconUpdateCancellable?.cancel()
         privacyEntryPointIconUpdateCancellable = nil
     }
 

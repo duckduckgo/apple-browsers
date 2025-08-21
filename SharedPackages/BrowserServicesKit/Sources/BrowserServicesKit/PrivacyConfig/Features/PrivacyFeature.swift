@@ -45,7 +45,6 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
-    case history
     case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro

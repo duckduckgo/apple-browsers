@@ -9,7 +9,6 @@ on:
     inputs:
       release-type:
         description: "Build type (product review or public release)"
-        required: true
         default: review
         type: choice
         options:
@@ -18,7 +17,6 @@ on:
         - alpha
       create-dmg:
         description: "Create DMG image"
-        required: true
         default: false
         type: boolean
       asana-task-url:
@@ -29,12 +27,10 @@ on:
     inputs:
       release-type:
         description: "Build type (product review or public release)"
-        required: false
         default: release
         type: string
       create-dmg:
         description: "Create DMG image"
-        required: true
         default: true
         type: boolean
       asana-task-url:
@@ -51,7 +47,6 @@ on:
         type: string
       skip-notify:
         description: "Skip Mattermost notification"
-        required: false
         default: false
         type: boolean
     secrets:

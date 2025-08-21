@@ -19,6 +19,7 @@
 import Combine
 import Persistence
 import AppKit
+import DDGSync
 
 @MainActor
 public final class SyncDeviceButtonModel: ObservableObject {
@@ -76,17 +77,66 @@ public final class SyncDeviceButtonModel: ObservableObject {
 
     @Published var shouldShowSyncButton: Bool = false
 
+    private var authState: SyncAuthState = .initializing {
+        didSet {
+            guard
+                case .inactive = authState,
+                !wasDimissed,
+                !wasPresentationCountLimitReached,
+                !hasPromoDateExpired else {
+                shouldShowSyncButton = false
+                return
+            }
+            shouldShowSyncButton = true
+        }
+    }
+
     private let source: SyncDevicePromoSource
     private let keyValueStore: KeyValueStoring
 
-    init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring) {
+    private var cancellables: Set<AnyCancellable> = []
+
+    private var wasDimissed: Bool {
+        guard let wasDismissed = keyValueStore.object(forKey: source.wasDismissedKey) as? Bool else {
+            return false
+        }
+        return wasDismissed
+    }
+
+    private var wasPresentationCountLimitReached: Bool {
+        guard let key = source.promoWasPresentedCountKey else {
+            return false
+        }
+        let count = keyValueStore.object(forKey: key) as? Int ?? 0
+        guard count < source.promoMaxPresentationCount else {
+            return true
+        }
+        return false
+    }
+
+    private var hasPromoDateExpired: Bool {
+        guard let key = source.promoFirstPresentedDateKey else {
+            return false
+        }
+        guard let firstSeenDate = keyValueStore.object(forKey: key) as? Date else {
+            return false
+        }
+
+        return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
+    }
+
+    init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring, authStatePublisher: AnyPublisher<SyncAuthState, Never>) {
         self.source = source
         self.keyValueStore = keyValueStore
+        authStatePublisher
+            .assign(to: \.authState, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     func viewDidLoad() {
         guard
-            !wasDimissed(),
+            case .inactive = authState,
+            !wasDimissed,
             !incrementPresentationCountLimitReturningLimitReached(),
             !setFirstSeenDateReturningHasExpired()
         else {
@@ -117,13 +167,6 @@ public final class SyncDeviceButtonModel: ObservableObject {
         }
     }
 
-    private func wasDimissed() -> Bool {
-        guard let wasDismissed = keyValueStore.object(forKey: source.wasDismissedKey) as? Bool else {
-            return false
-        }
-        return wasDismissed
-    }
-
     private func incrementPresentationCountLimitReturningLimitReached() -> Bool {
         guard let key = source.promoWasPresentedCountKey else {
             return false
@@ -146,5 +189,17 @@ public final class SyncDeviceButtonModel: ObservableObject {
         }
 
         return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
+    }
+}
+
+extension SyncDeviceButtonModel {
+    convenience init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring) {
+        let authStatePublisher: AnyPublisher<SyncAuthState, Never>
+        if let syncService = NSApp.delegateTyped.syncService {
+            authStatePublisher = syncService.authStatePublisher
+        } else {
+            authStatePublisher = Just<SyncAuthState>(.initializing).eraseToAnyPublisher()
+        }
+        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher)
     }
 }

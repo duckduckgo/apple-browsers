@@ -21,10 +21,9 @@ import UIKit
 // Based on https://stackoverflow.com/a/53847223/73479
 public class FadeOutLabel: UILabel {
 
-    @available(*, unavailable, renamed: "primaryColor", message: "Use primaryColor to set the color instead. This one gets overridden on redraw.")
     override public var textColor: UIColor! {
-        // This allows overriding
-        didSet {}
+        get { primaryColor }
+        set { primaryColor = newValue }
     }
 
     public var primaryColor: UIColor = .black {

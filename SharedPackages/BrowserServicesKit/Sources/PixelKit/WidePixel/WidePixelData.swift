@@ -27,13 +27,13 @@ public protocol WidePixelData: Codable, WidePixelParameterProviding {
     var globalData: WidePixelGlobalData { get set }
 }
 
-public enum WidePixelStatus: Codable, Equatable {
+public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
     case success
     case failure
     case cancelled
     case unknown(reason: String)
 
-    public var asString: String {
+    public var description: String {
         switch self {
         case .success: return "SUCCESS"
         case .failure: return "FAILURE"
@@ -49,7 +49,7 @@ public enum WidePixelStatus: Codable, Equatable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(asString, forKey: .type)
+        try container.encode(description, forKey: .type)
 
         if case let .unknown(reason) = self {
             try container.encode(reason, forKey: .reason)

@@ -112,7 +112,7 @@ public final class WidePixel: WidePixelManaging {
     // MARK: - Flow Completion
 
     public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
-        Self.logger.info("Completing wide pixel '\(T.pixelName, privacy: .public)' with status \(status.asString, privacy: .public) and context ID: \(data.contextData.id, privacy: .public)")
+        Self.logger.info("Completing wide pixel '\(T.pixelName, privacy: .public)' with status \(status.description, privacy: .public) and context ID: \(data.contextData.id, privacy: .public)")
 
         do {
             try storage.update(data)
@@ -159,7 +159,7 @@ public final class WidePixel: WidePixelManaging {
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
         parameters[WidePixelParameter.Feature.name] = T.pixelName
-        parameters[WidePixelParameter.Feature.status] = status.asString
+        parameters[WidePixelParameter.Feature.status] = status.description
 
         if case let .unknown(reason) = status {
             parameters[WidePixelParameter.Feature.statusReason] = reason

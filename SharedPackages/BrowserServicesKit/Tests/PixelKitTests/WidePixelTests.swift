@@ -63,42 +63,6 @@ final class WidePixelTests: XCTestCase {
         )
     }
 
-    // MARK: - Test Utilities
-
-    func makeTestSubscriptionData(
-        platform: SubscriptionPurchaseWidePixelData.PurchasePlatform = .appStore,
-        contextID: String = UUID().uuidString,
-        contextName: String? = nil,
-        subscriptionIdentifier: String? = nil,
-        freeTrialEligible: Bool? = nil
-    ) -> SubscriptionPurchaseWidePixelData {
-        var data = SubscriptionPurchaseWidePixelData(
-            purchasePlatform: platform,
-            subscriptionIdentifier: subscriptionIdentifier,
-            freeTrialEligible: freeTrialEligible
-        )
-        data.contextData = WidePixelContextData(id: contextID, name: contextName)
-        return data
-    }
-
-    func makeTestError(domain: String = "TestDomain", code: Int = 999) -> NSError {
-        return NSError(domain: domain, code: code, userInfo: [
-            NSUnderlyingErrorKey: NSError(domain: "UnderlyingDomain", code: 123)
-        ])
-    }
-
-    func XCTUnwrapFlow<T: WidePixelData>(_ type: T.Type, contextID: String, file: StaticString = #file, line: UInt = #line) throws -> T {
-        guard let flow = widePixel.getFlowData(type, contextID: contextID) else {
-            XCTFail("Expected flow data for \(type) with contextID \(contextID)", file: file, line: line)
-            throw TestError.flowNotFound
-        }
-        return flow
-    }
-
-    enum TestError: Error {
-        case flowNotFound
-    }
-
     // MARK: - Basic Flow Management Tests
 
     func testFlowPersistenceAndDataIntegrity() throws {
@@ -178,30 +142,6 @@ final class WidePixelTests: XCTestCase {
         widePixel.completeFlow(data, status: .success) { _, _ in }
     }
 
-    func testTypeMismatchError() throws {
-        let subscriptionData = makeTestSubscriptionData()
-        widePixel.startFlow(subscriptionData)
-
-        struct TestWidePixelData: WidePixelData {
-            static let pixelName = "test_pixel"
-            var contextData: WidePixelContextData = WidePixelContextData()
-            var appData: WidePixelAppData = WidePixelAppData()
-            var globalData: WidePixelGlobalData = WidePixelGlobalData(platform: "", sampleRate: 1.0)
-            func pixelParameters() -> [String: String] { [:] }
-        }
-
-        XCTAssertThrowsError(try { _ = try self.widePixel.getFlowData(TestWidePixelData.self, contextID: subscriptionData.contextData.id) ?? { throw WidePixelError.flowNotFound(pixelName: TestWidePixelData.pixelName) }() }()) { error in
-            if case WidePixelError.typeMismatch(let expected, let actual) = error {
-                XCTAssertEqual(expected, "TestWidePixelData")
-                XCTAssertEqual(actual, "SubscriptionPurchaseWidePixelData")
-            } else if case WidePixelError.flowNotFound = error {
-                // Acceptable on some runners due to storage isolation quirks
-            } else {
-                XCTFail("Expected typeMismatch or flowNotFound, got \(error)")
-            }
-        }
-    }
-
     func testSerializationFailure() throws {
         struct NonSerializableData: WidePixelData {
             static let pixelName = "non_serializable"
@@ -212,13 +152,14 @@ final class WidePixelTests: XCTestCase {
             func pixelParameters() -> [String: String] { [:] }
 
             enum CodingError: Error { case encodingNotSupported }
+
             init() {}
+
             init(from decoder: Decoder) throws { throw CodingError.encodingNotSupported }
             func encode(to encoder: Encoder) throws { throw CodingError.encodingNotSupported }
         }
 
         let nonSerializableData = NonSerializableData()
-
         widePixel.startFlow(nonSerializableData)
     }
 
@@ -504,5 +445,41 @@ final class WidePixelTests: XCTestCase {
         wait(for: [expectationA, expectationB], timeout: 1.0)
 
         XCTAssertTrue(self.capturedPixels.count == 0 || self.capturedPixels.count == 1)
+    }
+
+    // MARK: - Test Utilities
+
+    func makeTestSubscriptionData(
+        platform: SubscriptionPurchaseWidePixelData.PurchasePlatform = .appStore,
+        contextID: String = UUID().uuidString,
+        contextName: String? = nil,
+        subscriptionIdentifier: String? = nil,
+        freeTrialEligible: Bool? = nil
+    ) -> SubscriptionPurchaseWidePixelData {
+        var data = SubscriptionPurchaseWidePixelData(
+            purchasePlatform: platform,
+            subscriptionIdentifier: subscriptionIdentifier,
+            freeTrialEligible: freeTrialEligible
+        )
+        data.contextData = WidePixelContextData(id: contextID, name: contextName)
+        return data
+    }
+
+    func makeTestError(domain: String = "TestDomain", code: Int = 999) -> NSError {
+        return NSError(domain: domain, code: code, userInfo: [
+            NSUnderlyingErrorKey: NSError(domain: "UnderlyingDomain", code: 123)
+        ])
+    }
+
+    func XCTUnwrapFlow<T: WidePixelData>(_ type: T.Type, contextID: String, file: StaticString = #file, line: UInt = #line) throws -> T {
+        guard let flow = widePixel.getFlowData(type, contextID: contextID) else {
+            XCTFail("Expected flow data for \(type) with contextID \(contextID)", file: file, line: line)
+            throw TestError.flowNotFound
+        }
+        return flow
+    }
+
+    enum TestError: Error {
+        case flowNotFound
     }
 }

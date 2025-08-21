@@ -84,14 +84,14 @@ jobs:
             bundle exec fastlane ${lane_to_use}
           fi
 
-      - name: Check App Thinning Size Report
-        run: |
-          if [[ -f "App Thinning Size Report.txt" ]]; then
-            echo "=== App Thinning Size Report ==="
-            cat "App Thinning Size Report.txt"
-          else
-            echo "App Thinning Size Report.txt not found"
-          fi
+      - name: Measure App Size
+        if: steps.archive-and-upload.outcome == 'success'
+        continue-on-error: true
+        uses: ./.github/actions/measure-app-size
+        with:
+          report-file: "App Thinning Size Report.txt"
+          download-pixel-name: "m_ci_apple_ios_adhoc_download_size"
+          installation-pixel-name: "m_ci_apple_ios_adhoc_installation_size"
 
       - name: Report job duration
         if: success() || (always() && steps.archive-and-upload.outcome == 'failure')

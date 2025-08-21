@@ -1,0 +1,83 @@
+name: Report Failed Release Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      asana-task-id:
+        description: "Asana release task ID"
+        required: true
+        type: string
+      branch:
+        description: "Branch"
+        required: true
+        type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
+      workflow-name:
+        description: "Workflow name"
+        required: true
+        type: string
+      working-directory:
+        description: "Working directory (iOS/macOS)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      asana-task-id:
+        description: "Asana release task ID"
+        required: true
+        type: string
+      branch:
+        description: "Branch"
+        required: true
+        type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
+      workflow-name:
+        description: "Workflow name"
+        required: true
+        type: string
+      working-directory:
+        description: "Working directory (iOS/macOS)"
+        required: true
+        type: string
+
+jobs:
+  report_failure:
+    name: Report Failure
+
+    runs-on: macos-15
+
+    steps:
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ inputs.branch }}
+
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          cache-key-prefix: macos-ruby
+
+      - name: Report failed workflow
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          bundle exec fastlane run asana_report_failed_workflow \
+            platform: macos \
+            branch:"${{ inputs.branch }}" \
+            commit_sha:"${{ inputs.commit-sha }}" \
+            github_handle:"${{ github.actor }}" \
+            is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
+            task_id:"${{ inputs.asana-task-id }}" \
+            workflow_name:"${{ inputs.workflow-name }}" \
+            workflow_url:"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"

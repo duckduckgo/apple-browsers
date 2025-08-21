@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: 6f2eb34bda722f01b98fecb3bc9ac5f6123062d6
+  revision: a36348bd5b883e60c830d05f7256609532e0d356
   branch: dominik/report-workflow-failure
   specs:
     fastlane-plugin-ddg_apple_automation (2.9.0)

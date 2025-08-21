@@ -703,8 +703,10 @@ extension AppDelegate {
         DuckPlayerPreferences.shared.reset()
     }
 
+    @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
         SyncPromoManager().resetPromos()
+        SyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {

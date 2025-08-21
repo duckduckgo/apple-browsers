@@ -35,7 +35,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
 
 }
 
-class TabsBarViewController: UIViewController {
+class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
 
     public static let viewDidLayoutNotification = Notification.Name("com.duckduckgo.app.TabsBarViewControllerViewDidLayout")
     
@@ -189,6 +189,7 @@ class TabsBarViewController: UIViewController {
     private func configureGestures() {
         longPressTabGesture.addTarget(self, action: #selector(handleLongPressTabGesture))
         longPressTabGesture.minimumPressDuration = 0.2
+        longPressTabGesture.delegate = self
         collectionView.addGestureRecognizer(longPressTabGesture)
     }
     
@@ -218,6 +219,16 @@ class TabsBarViewController: UIViewController {
             collectionView.cancelInteractiveMovement()
             releasePressedCell()
         }
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard let path = collectionView.indexPathForItem(at: touch.location(in: collectionView)),
+              let cell = collectionView.cellForItem(at: path) as? TabsBarCell else {
+            return true
+        }
+
+        // Don't recognize if pressing delete button
+        return cell.removeButton.hitTest(touch.location(in: cell.removeButton), with: nil) == nil
     }
 
     private func releasePressedCell() {

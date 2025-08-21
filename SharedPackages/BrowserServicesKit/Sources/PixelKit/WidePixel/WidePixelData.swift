@@ -114,11 +114,9 @@ public struct WidePixelAppData: Codable {
     public var version: String
     public var formFactor: String?
 
-    public init(
-        name: String = AppVersion.shared.name,
-        version: String = AppVersion.shared.versionAndBuildNumber,
-        formFactor: String? = nil
-    ) {
+    public init(name: String = AppVersion.shared.name,
+                version: String = AppVersion.shared.versionAndBuildNumber,
+                formFactor: String? = nil) {
         self.name = name
         self.version = version
 

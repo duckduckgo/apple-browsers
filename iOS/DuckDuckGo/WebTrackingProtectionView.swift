@@ -69,6 +69,7 @@ struct WebTrackingProtectionView: View {
             title: UserText.trackingProtectionFirstPartyCookiesTitle,
             description: UserText.trackingProtectionFirstPartyCookiesDescription,
             iconName: "Cookie-Blocked-16"
+
         ),
         SettingsFeature(
             title: UserText.trackingProtectionCNAMECloakingTitle,
@@ -93,6 +94,8 @@ struct WebTrackingProtectionView: View {
                                      status: .alwaysOn,
                                      explanation: nil)
     }
+
+    var test: String = "test"
 
     var body: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.mainStackSpacing) {
@@ -144,15 +147,19 @@ struct WebTrackingProtectionFeatureGrid: View {
                 Text(UserText.settingsAlwaysOn).textCase(.uppercase)
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
-                VStack(alignment: .leading, spacing: LayoutConstants.descriptionSpacing) {
-                    Text(UserText.webTrackingProtectionUpdatedDescription)
+                Text(LocalizedStringKey(UserText.webTrackingProtectionUpdatedDescription))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .daxFootnoteRegular()
-                    Button(UserText.learnMore) {
-                        viewModel.openWebTrackingProtectionLearnMore()
-                    }.buttonStyle(LinkButtonStyle())
-                }
+                    .tintIfAvailable(Color(designSystemColor: .accent))
+                    .environment(\.openURL, OpenURLAction { url in
+                        if url.scheme == "ddgQuickLink" {
+                            viewModel.openWebTrackingProtectionLearnMore()
+                            return .handled
+                        }
+                        return .systemAction
+                    })
             }
+            Text("testdd")
             .padding(.horizontal, LayoutConstants.horizontalPadding)
             .daxBodyRegular()
 
@@ -164,15 +171,5 @@ struct WebTrackingProtectionFeatureGrid: View {
         .listRowInsets(EdgeInsets())
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-    }
-}
-
-// Link button style for Learn More buttons
-struct LinkButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .daxFootnoteRegular()
-            .foregroundColor(Color(designSystemColor: .accent))
-            .opacity(configuration.isPressed ? LayoutConstants.buttonOpacityPressed : LayoutConstants.buttonOpacityNormal)
     }
 }

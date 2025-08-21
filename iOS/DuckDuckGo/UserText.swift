@@ -1265,7 +1265,7 @@ public struct UserText {
 
     public static let webTrackingProtection = NSLocalizedString("settings.web.tracking.protection", value: "Web Tracking Protection", comment: "The name of Settings category in Privacy Features related to configuration of the web tracking protection feature")
     public static let webTrackingProtectionAlwaysOn = NSLocalizedString("settings.web.tracking.protection.always.on", value: "Web tracking protections are always on", comment: "Header text explaining that web tracking protections are always enabled")
-    public static let webTrackingProtectionUpdatedDescription = NSLocalizedString("settings.web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections that help keep your data safe as you browse.", comment: "Updated description for web tracking protection settings")
+    public static let webTrackingProtectionUpdatedDescription = NSLocalizedString("settings.web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections that help keep your data safe as you browse. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)", comment: "Updated description for web tracking protection settings")
     
     // Web Tracking Protection Features
     public static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("settings.tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Title for third-party tracker blocking feature")

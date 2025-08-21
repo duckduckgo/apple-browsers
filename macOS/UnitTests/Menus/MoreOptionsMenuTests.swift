@@ -607,7 +607,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         let tabContentsSupportingSharing: [Tab.TabContent] = [
             .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
             .url(try XCTUnwrap("https://duckduckgo.com".url), credential: nil, source: .ui),
-            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui)
+            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui)
         ]
         for tabContent in tabContentsSupportingSharing {
             let tab = Tab(content: tabContent)
@@ -624,7 +625,6 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabDoesNotSupportSharingThenShareItemIsPresentAndDisabled() throws {
         let tabContentsNotSupportingSharing: [Tab.TabContent] = [
-            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
             .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
             .subscription(.aboutDuckDuckGo),
             .identityTheftRestoration(.aboutDuckDuckGo),

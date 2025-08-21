@@ -116,10 +116,39 @@ class PrivacyIconView: UIView {
     }
     
     func setDaxEasterEggLogoURL(_ url: URL?) {
+        let oldURL = daxLogoURL
         daxLogoURL = url
         
         if icon == .daxLogo {
-            updateShieldImageView(for: icon)
+            // Add cross-fade animation when switching logo types (dynamic ↔ default)
+            let isChangingLogoType = (oldURL == nil) != (url == nil)
+            
+            if isChangingLogoType && staticImageView.image != nil {
+                // Set the correct size properties for the destination before animation
+                if url != nil {
+                    // Going to dynamic: set final size properties first
+                    staticImageView.contentMode = .scaleAspectFit
+                    let scaleTransform = CGAffineTransform(scaleX: Self.daxLogoScaleFactor, y: Self.daxLogoScaleFactor)
+                    staticImageView.transform = scaleTransform.translatedBy(x: -1, y: -1)
+                    staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                } else {
+                    // Going to default: set final size properties first
+                    staticImageView.contentMode = .center
+                    staticImageView.transform = .identity
+                    staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                }
+                
+                // Now do pure crossfade with just image change
+                UIView.transition(with: staticImageView, duration: 0.25, options: .transitionCrossDissolve, animations: {
+                    if let url = url {
+                        self.staticImageView.kf.setImage(with: url, placeholder: PrivacyIcon.daxLogo.staticImage)
+                    } else {
+                        self.staticImageView.image = PrivacyIcon.daxLogo.staticImage
+                    }
+                }, completion: nil)
+            } else {
+                updateShieldImageView(for: icon)
+            }
         }
     }
     
@@ -131,7 +160,6 @@ class PrivacyIconView: UIView {
             delegate?.privacyIconViewDidTapDaxLogo(self, logoURL: daxLogoURL, currentImage: currentImage, sourceFrame: sourceFrame)
         }
     }
-    
     
     private(set) var icon: PrivacyIcon {
         willSet {

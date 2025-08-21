@@ -131,7 +131,6 @@ extension SubscriptionPurchaseWidePixelData {
         case 10000..<30000: return 30000
         case 30000..<60000: return 60000
         case 60000..<300000: return 300000
-        case 300000..<600000: return 600000
         default: return 600000
         }
     }

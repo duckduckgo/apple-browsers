@@ -1,0 +1,77 @@
+{
+    m_mac_netp_ev_terrible_latency: {
+        description: 'Sent as part of a regular latency check in the macOS VPN',
+        owners: ['diegoreymendez', 'samsymons'],
+        triggers: ['scheduled'],
+        suffixes: ['legacy_daily_count'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'location',
+                description: 'Location setting selection',
+                type: 'string',
+                enum: ['nearest', 'custom'],
+            },
+        ],
+    },
+    m_mac_netp_ev_poor_latency: {
+        description: 'Sent as part of a regular latency check in the macOS VPN',
+        owners: ['diegoreymendez', 'samsymons'],
+        triggers: ['scheduled'],
+        suffixes: ['legacy_daily_count'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'location',
+                description: 'Location setting selection',
+                type: 'string',
+                enum: ['nearest', 'custom'],
+            },
+        ],
+    },
+    m_mac_netp_ev_moderate_latency: {
+        description: 'Sent as part of a regular latency check in the macOS VPN',
+        owners: ['diegoreymendez', 'samsymons'],
+        triggers: ['scheduled'],
+        suffixes: ['legacy_daily_count'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'location',
+                description: 'Location setting selection',
+                type: 'string',
+                enum: ['nearest', 'custom'],
+            },
+        ],
+    },
+    m_mac_netp_ev_good_latency: {
+        description: 'Sent as part of a regular latency check in the macOS VPN',
+        owners: ['diegoreymendez', 'samsymons'],
+        triggers: ['scheduled'],
+        suffixes: ['legacy_daily_count'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'location',
+                description: 'Location setting selection',
+                type: 'string',
+                enum: ['nearest', 'custom'],
+            },
+        ],
+    },
+    m_mac_netp_ev_excellent_latency: {
+        description: 'Sent as part of a regular latency check in the macOS VPN',
+        owners: ['diegoreymendez', 'samsymons'],
+        triggers: ['scheduled'],
+        suffixes: ['legacy_daily_count'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'location',
+                description: 'Location setting selection',
+                type: 'string',
+                enum: ['nearest', 'custom'],
+            },
+        ],
+    },
+}

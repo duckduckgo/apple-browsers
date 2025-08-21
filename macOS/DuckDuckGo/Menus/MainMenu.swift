@@ -219,7 +219,7 @@ final class MainMenu: NSMenu {
 
             aiChatMenu
 
-            if featureFlagger.isFeatureOn(.openFileFeature) {
+            if featureFlagger.isFeatureOn(.openFileMenuAction) {
                 openFileMenuItem
             }
 

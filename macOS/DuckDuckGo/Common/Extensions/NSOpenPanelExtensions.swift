@@ -47,7 +47,7 @@ extension NSOpenPanel {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.html, .plainText, .pdf]
+        panel.allowedContentTypes = [.text, .pdf, .image, .webArchive]
 
         return panel
     }

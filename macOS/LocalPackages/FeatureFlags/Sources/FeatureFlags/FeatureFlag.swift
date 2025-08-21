@@ -160,7 +160,7 @@ public enum FeatureFlag: String, CaseIterable {
     case restoreSessionPrompt
 
     /// https://app.asana.com/1/137249556945/project/276630244458377/task/1211090698913983?focus=true
-    case openFileFeature
+    case openFileMenuAction
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -233,7 +233,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsAlternateStripePaymentFlow,
                 .openFireWindowByDefault,
                 .restoreSessionPrompt,
-                .openFileFeature:
+                .openFileMenuAction:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -356,7 +356,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .restoreSessionPrompt:
             return .disabled
-        case .openFileFeature:
+        case .openFileMenuAction:
             return .internalOnly()
         }
     }

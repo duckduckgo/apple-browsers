@@ -407,10 +407,6 @@ struct DataImportViewModel {
         let sendReport = reportSenderFactory()
         sendReport(reportModel)
     }
-
-    func startSync() {
-        // TODO: Start sync from here
-    }
 }
 
 @MainActor

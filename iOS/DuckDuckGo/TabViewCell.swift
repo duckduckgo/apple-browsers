@@ -21,6 +21,7 @@ import UIKit
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 protocol TabViewCellDelegate: AnyObject {
 
@@ -92,13 +93,13 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     @IBOutlet weak var favicon: UIImageView!
-    @IBOutlet weak var title: UILabel!
+    @IBOutlet weak var title: FadeOutLabel!
     @IBOutlet weak var removeButton: BrowserChromeButton!
     @IBOutlet weak var unread: UIImageView!
     @IBOutlet weak var selectionIndicator: UIImageView!
 
     // List view
-    @IBOutlet weak var link: UILabel?
+    @IBOutlet weak var link: FadeOutLabel?
 
     // Grid view
     @IBOutlet weak var preview: UIImageView?
@@ -436,7 +437,8 @@ final class TabViewCell: UICollectionViewCell {
         removeButton.tintColor = UIColor(designSystemColor: .icons)
 
         background.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
-        title.textColor = UIColor(designSystemColor: .textPrimary)
+        title.primaryColor = UIColor(designSystemColor: .textPrimary)
+        link?.primaryColor = UIColor(designSystemColor: .textSecondary)
 
         background.superview?.backgroundColor = .clear
     }

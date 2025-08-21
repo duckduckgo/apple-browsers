@@ -21,6 +21,7 @@ import UIKit
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 class TabsBarCell: UICollectionViewCell {
 
@@ -130,47 +131,6 @@ extension TabsBarCell: UIPointerInteractionDelegate {
     
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
         return .init(effect: .highlight(.init(view: contentView)))
-    }
-    
-}
-
-// Based on https://stackoverflow.com/a/53847223/73479
-class FadeOutLabel: UILabel {
-    
-    var primaryColor: UIColor = .black {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-
-    override func drawText(in rect: CGRect) {
-        let gradientColors = [primaryColor.cgColor, UIColor.clear.cgColor]
-        if let gradientColor = drawGradientColor(in: rect, colors: gradientColors) {
-            self.textColor = gradientColor
-        }
-        super.drawText(in: rect)
-    }
-
-    private func drawGradientColor(in rect: CGRect, colors: [CGColor]) -> UIColor? {
-        let currentContext = UIGraphicsGetCurrentContext()
-        currentContext?.saveGState()
-        defer { currentContext?.restoreGState() }
-
-        let size = rect.size
-        UIGraphicsBeginImageContextWithOptions(size, false, 0)
-        guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                        colors: colors as CFArray,
-                                        locations: [0.8, 1]) else { return nil }
-
-        let context = UIGraphicsGetCurrentContext()
-        context?.drawLinearGradient(gradient,
-                                    start: .zero,
-                                    end: CGPoint(x: size.width, y: 0),
-                                    options: [])
-        let gradientImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        guard let image = gradientImage else { return nil }
-        return UIColor(patternImage: image)
     }
     
 }

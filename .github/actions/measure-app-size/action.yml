@@ -1,0 +1,40 @@
+name: 'Measure iOS App Size'
+description: 'Extract download and installation sizes from iOS App Thinning Size Report and send pixel metrics'
+author: 'DuckDuckGo'
+
+inputs:
+  report-file:
+    description: 'Path to the App Thinning Size Report.txt file'
+    required: true
+  download-pixel-name:
+    description: 'Pixel name for download size metric'
+    required: false
+  installation-pixel-name:
+    description: 'Pixel name for installation size metric'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Parse App Thinning Size Report
+      id: parse
+      shell: bash
+      run: |
+        echo "Parsing App Thinning Size Report..."
+        ${{ github.action_path }}/parse_app_size.sh "${{ inputs.report-file }}"
+
+    - name: Send Download Size Pixel
+      if: ${{ inputs.download-pixel-name != '' }}
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: ${{ inputs.download-pixel-name }}
+        query-params: |
+          size_mb: ${{ steps.parse.outputs.download_size }}
+
+    - name: Send Installation Size Pixel
+      if: ${{ inputs.installation-pixel-name != '' }}
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: ${{ inputs.installation-pixel-name }}
+        query-params: |
+          size_mb: ${{ steps.parse.outputs.installation_size }}

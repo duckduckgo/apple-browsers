@@ -149,15 +149,15 @@ final class TabViewCell: UICollectionViewCell {
         // When highlighted, set larger spacing between text and close button
         // to adjust for the highlight area, otherwise set text as close to the
         // icon as possible.
-        // Delay so that quick tapping regurarly is not causing glitch in the text.
+
+        let spacing = removeButton.isHighlighted ? Constants.removeButtonTextSpacingHighlighted : Constants.removeButtonTextSpacingRegular
+
+        layoutIfNeeded()
+        textButtonSpacing?.constant = spacing
+        
         UIView.animate(withDuration: 0.15,
                        delay: 0.0,
-                       options: [.beginFromCurrentState, .curveEaseOut]) {
-            if self.removeButton.state == .highlighted {
-                self.textButtonSpacing?.constant = Constants.removeButtonTextSpacingHighlighted
-            } else {
-                self.textButtonSpacing?.constant = Constants.removeButtonTextSpacingRegular
-            }
+                       options: [.beginFromCurrentState, .curveEaseInOut]) {
             self.layoutIfNeeded()
         }
     }

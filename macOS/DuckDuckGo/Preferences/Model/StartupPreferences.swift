@@ -33,6 +33,18 @@ enum StartupWindowType: String, CaseIterable {
             return UserText.fireWindow
         }
     }
+
+    /// Returns the corresponding BurnerMode for this window type
+    /// - Parameter isFeatureEnabled: Whether the fire window by default feature is enabled
+    /// - Returns: The appropriate BurnerMode
+    func toBurnerMode(isFeatureEnabled: Bool) -> BurnerMode {
+        switch self {
+        case .window:
+            return .regular
+        case .fireWindow:
+            return isFeatureEnabled ? BurnerMode(isBurner: true) : .regular
+        }
+    }
 }
 
 protocol StartupPreferencesPersistor {
@@ -125,6 +137,13 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
             friendlyURL = String(friendlyURL[..<index]) + "..."
         }
         return friendlyURL
+    }
+
+    /// Determines the appropriate BurnerMode for new windows based on startup preferences and feature flags
+    /// - Parameter featureFlagger: The feature flag provider to check if fire window by default is enabled
+    /// - Returns: The appropriate BurnerMode for the startup window
+    func startupBurnerMode(featureFlagger: FeatureFlagger) -> BurnerMode {
+        return startupWindowType.toBurnerMode(isFeatureEnabled: featureFlagger.isFeatureOn(.openFireWindowByDefault))
     }
 
     func isValidURL(_ text: String) -> Bool {

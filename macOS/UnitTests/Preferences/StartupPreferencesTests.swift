@@ -100,6 +100,16 @@ class StartupPreferencesTests: XCTestCase {
         XCTAssertNil(StartupWindowType(rawValue: "invalid"))
     }
 
+    func testStartupWindowTypeToBurnerMode() {
+        // Test regular window always returns regular mode
+        XCTAssertEqual(StartupWindowType.window.toBurnerMode(isFeatureEnabled: false), .regular)
+        XCTAssertEqual(StartupWindowType.window.toBurnerMode(isFeatureEnabled: true), .regular)
+
+        // Test fire window depends on feature flag
+        XCTAssertEqual(StartupWindowType.fireWindow.toBurnerMode(isFeatureEnabled: false), .regular)
+        XCTAssertTrue(StartupWindowType.fireWindow.toBurnerMode(isFeatureEnabled: true).isBurner)
+    }
+
     // MARK: - StartupWindowType Persistence Tests
 
     func testWhenInitializedThenItLoadsStartupWindowType() {
@@ -214,6 +224,71 @@ class StartupPreferencesTests: XCTestCase {
             XCTAssertEqual(model.restorePreviousSession, restoreSession)
             XCTAssertEqual(model.startupWindowType, windowType)
         }
+    }
+
+    // MARK: - Startup Burner Mode Tests
+
+    func testStartupBurnerModeWithFeatureFlagDisabled() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [] // Feature flag disabled
+
+        // Test with fire window type - should return regular mode when feature flag is off
+        let persistor = StartupPreferencesPersistorMock(
+            launchToCustomHomePage: false,
+            customHomePageURL: "duckduckgo.com",
+            startupWindowType: .fireWindow
+        )
+        let model = StartupPreferences(persistor: persistor)
+
+        let burnerMode = model.startupBurnerMode(featureFlagger: featureFlagger)
+        XCTAssertEqual(burnerMode, .regular)
+    }
+
+    func testStartupBurnerModeWithFeatureFlagEnabled() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault] // Feature flag enabled
+
+        // Test with regular window type - should return regular mode
+        var persistor = StartupPreferencesPersistorMock(
+            launchToCustomHomePage: false,
+            customHomePageURL: "duckduckgo.com",
+            startupWindowType: .window
+        )
+        var model = StartupPreferences(persistor: persistor)
+        var burnerMode = model.startupBurnerMode(featureFlagger: featureFlagger)
+        XCTAssertEqual(burnerMode, .regular)
+
+        // Test with fire window type - should return burner mode when feature flag is on
+        persistor = StartupPreferencesPersistorMock(
+            launchToCustomHomePage: false,
+            customHomePageURL: "duckduckgo.com",
+            startupWindowType: .fireWindow
+        )
+        model = StartupPreferences(persistor: persistor)
+        burnerMode = model.startupBurnerMode(featureFlagger: featureFlagger)
+        XCTAssertTrue(burnerMode.isBurner)
+    }
+
+    func testStartupBurnerModeEdgeCases() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault]
+
+        let persistor = StartupPreferencesPersistorMock(
+            launchToCustomHomePage: false,
+            customHomePageURL: "duckduckgo.com",
+            startupWindowType: .fireWindow
+        )
+        let model = StartupPreferences(persistor: persistor)
+
+        // Test multiple calls return consistent results
+        let burnerMode1 = model.startupBurnerMode(featureFlagger: featureFlagger)
+        let burnerMode2 = model.startupBurnerMode(featureFlagger: featureFlagger)
+        XCTAssertEqual(burnerMode1.isBurner, burnerMode2.isBurner)
+
+        // Test state change
+        model.startupWindowType = .window
+        let regularMode = model.startupBurnerMode(featureFlagger: featureFlagger)
+        XCTAssertEqual(regularMode, .regular)
     }
 
 }

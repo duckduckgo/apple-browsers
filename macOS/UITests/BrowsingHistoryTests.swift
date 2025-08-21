@@ -33,6 +33,7 @@ class BrowsingHistoryTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         historyMenuBarItem = app.menuBarItems["History"]
@@ -40,8 +41,7 @@ class BrowsingHistoryTests: UITestCase {
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
         fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
 
         XCTAssertTrue(
             historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -108,8 +108,7 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[historyPageTitleExpectedToBeFirstInTodayHistory].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // New window
+        app.enforceSingleWindow()
         XCTAssertTrue(
             historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
@@ -142,8 +141,7 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // New window
+        app.enforceSingleWindow()
         XCTAssertTrue(
             historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."

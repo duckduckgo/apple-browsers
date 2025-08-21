@@ -40,6 +40,7 @@ class BookmarksBarTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
@@ -52,10 +53,10 @@ class BookmarksBarTests: UITestCase {
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
+        app.enforceSingleWindow()
         app.typeKey("n", modifierFlags: [.command]) // Guarantee a single window
         resetBookmarksAndAddOneBookmark()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
+        app.enforceSingleWindow()
         app.typeKey("n", modifierFlags: [.command])
         openSettingsAndSetShowBookmarksBarToUnchecked()
         openSecondWindowAndVisitSite()
@@ -118,7 +119,7 @@ class BookmarksBarTests: UITestCase {
             "The \"Show Bookmarks Bar Always\" button didn't become available in a reasonable timeframe."
         )
         showBookmarksBarNewTabOnly.click()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
+        app.enforceSingleWindow()
         app.typeKey("n", modifierFlags: [.command]) // open one new window
 
         XCTAssertTrue(
@@ -139,7 +140,7 @@ class BookmarksBarTests: UITestCase {
     func test_bookmarksBar_whenShowBookmarksBarIsUnchecked_isNeverShownInWindowsAndTabs() throws {
         // This tests begins in the state that "show bookmarks bar" is unchecked, so that isn't set within the test
 
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
+        app.enforceSingleWindow()
         app.typeKey("n", modifierFlags: [.command]) // Open new window
         XCTAssertTrue(
             bookmarksBarCollectionView.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),

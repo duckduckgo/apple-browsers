@@ -34,6 +34,7 @@ class PrintingTests: UITestCase {
     }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchEnvironment["UITEST_MODE"] = "1"
@@ -51,14 +52,13 @@ class PrintingTests: UITestCase {
         saveDialog = app.sheets.containing(.button, identifier: "Save").firstMatch
 
         app.launch()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // New window
+        app.enforceSingleWindow()
     }
 
     override func tearDown() {
+        super.tearDown()
         app?.terminate()
         app = nil
-        super.tearDown()
     }
 
     // MARK: - Test Cases

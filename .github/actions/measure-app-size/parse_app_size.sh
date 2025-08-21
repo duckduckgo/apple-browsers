@@ -85,6 +85,10 @@ parse_app_size_from_line() {
     INSTALLATION_SIZE=$(echo "$app_size_line" | sed -n "s/$UNCOMPRESSED_SIZE_REGEX/\1/p")
     
     if [ -n "$DOWNLOAD_SIZE" ] && [ -n "$INSTALLATION_SIZE" ]; then
+        # Remove spaces from sizes to avoid URL encoding issues (space becomes +)
+        DOWNLOAD_SIZE=$(echo "$DOWNLOAD_SIZE" | sed 's/ //')
+        INSTALLATION_SIZE=$(echo "$INSTALLATION_SIZE" | sed 's/ //')
+        
         echo ""
         echo "Results:"
         echo "--------"
@@ -92,8 +96,8 @@ parse_app_size_from_line() {
         echo "Installation size (uncompressed): $INSTALLATION_SIZE"
         
         # Extract numeric values without units for backward compatibility
-        DOWNLOAD_SIZE_VALUE=$(echo "$DOWNLOAD_SIZE" | sed 's/ [A-Z]*//')
-        INSTALLATION_SIZE_VALUE=$(echo "$INSTALLATION_SIZE" | sed 's/ [A-Z]*//')
+        DOWNLOAD_SIZE_VALUE=$(echo "$DOWNLOAD_SIZE" | sed 's/[A-Z]*//')
+        INSTALLATION_SIZE_VALUE=$(echo "$INSTALLATION_SIZE" | sed 's/[A-Z]*//')
         
         echo ""
         echo "Environment variables:"

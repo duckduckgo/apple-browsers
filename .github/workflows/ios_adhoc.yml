@@ -89,7 +89,7 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/measure-app-size
         with:
-          report-file: "App Thinning Size Report.txt"
+          report-file: "iOS/App Thinning Size Report.txt"
           download-pixel-name: "m_ci_apple_ios_adhoc_download_size"
           installation-pixel-name: "m_ci_apple_ios_adhoc_installation_size"
 

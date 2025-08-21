@@ -343,6 +343,51 @@ final class WidePixelTests: XCTestCase {
         XCTAssertNil(parameters["feature.status"])
     }
 
+    func testJsonParameterNesting() throws {
+        struct TestProvider: WidePixelParameterProviding {
+            func pixelParameters() -> [String : String] {
+                return [
+                    "app.name": "DuckDuckGo",
+                    "feature.status": "SUCCESS",
+                    "context.id": "onboarding",
+                ]
+            }
+        }
+
+        let jsonString = try TestProvider().jsonParameters()
+        let data = try XCTUnwrap(jsonString.data(using: .utf8))
+        let object = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+
+        let app = object?["app"] as? [String: Any]
+        let feature = object?["feature"] as? [String: Any]
+        let context = object?["context"] as? [String: Any]
+
+        XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
+        XCTAssertEqual(feature?["status"] as? String, "SUCCESS")
+        XCTAssertEqual(context?["id"] as? String, "onboarding")
+    }
+
+    func testJsonParameterCollisionOverwrites() throws {
+        struct TestProvider: WidePixelParameterProviding {
+            func pixelParameters() -> [String : String] {
+                return [
+                    "app": "leaf",
+                    "app.name": "name",
+                    "app.version": "1.0"
+                ]
+            }
+        }
+
+        let jsonString = try TestProvider().jsonParameters()
+        let data = try XCTUnwrap(jsonString.data(using: .utf8))
+        let object = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+
+        let app = object?["app"] as? [String: Any]
+        XCTAssertNotNil(app)
+        XCTAssertEqual(app?["name"] as? String, "name")
+        XCTAssertEqual(app?["version"] as? String, "1.0")
+    }
+
     func testActiveFlowManagement() throws {
         let data1 = makeTestSubscriptionData(contextName: "flow-1")
         let data2 = makeTestSubscriptionData(contextName: "flow-2")

@@ -16,8 +16,57 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 public protocol WidePixelParameterProviding {
     func pixelParameters() -> [String: String]
+    func jsonParameters() throws -> String
+}
+
+extension WidePixelParameterProviding {
+    // Wide pixels will eventually support being sent as JSON to a POST endpoint.
+    // This extension can be used for all wide pixel data objects to handle this.
+    public func jsonParameters() throws -> String {
+        let object = nestedDictionary(from: pixelParameters())
+        let data = try JSONSerialization.data(withJSONObject: object, options: [])
+
+        guard let json = String(data: data, encoding: .utf8) else {
+            assertionFailure("Failed to create JSON string")
+            return "{}"
+        }
+
+        return json
+    }
+
+    private func nestedDictionary(from parameters: [String: String]) -> [String: Any] {
+        var root: [String: Any] = [:]
+
+        for key in parameters.keys.sorted() {
+            guard let value = parameters[key] else {
+                continue
+            }
+
+            let parts = key.split(separator: ".").map(String.init)
+            assign(value: value, path: parts, dict: &root)
+        }
+
+        return root
+    }
+
+    private func assign(value: String, path: [String], dict: inout [String: Any]) {
+        guard let first = path.first else {
+            return
+        }
+
+        if path.count == 1 {
+            dict[first] = value
+            return
+        }
+
+        var child = dict[first] as? [String: Any] ?? [:]
+        assign(value: value, path: Array(path.dropFirst()), dict: &child)
+        dict[first] = child
+    }
 }
 
 public enum WidePixelParameter {

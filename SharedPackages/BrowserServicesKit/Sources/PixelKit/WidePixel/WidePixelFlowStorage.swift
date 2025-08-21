@@ -22,14 +22,14 @@ public protocol WidePixelStoring {
     func save<T: WidePixelData>(_ data: T) throws
     func load<T: WidePixelData>(contextID: String) throws -> T
     func update<T: WidePixelData>(_ data: T) throws
-    func clearContext(_ contextID: String)
-    func removeAll()
-    func getActiveFlowNames() -> [String]
-    func allFlowData<T: WidePixelData>(for type: T.Type) -> [T]
+    func delete<T: WidePixelData>(_ data: T)
+    func allWidePixels<T: WidePixelData>(for type: T.Type) -> [T]
     func percentile(for contextID: String) -> Float
 }
 
 public final class WidePixelUserDefaultsStorage: WidePixelStoring {
+    public static let suiteName = "com.duckduckgo.wide-pixel.storage"
+
     private let defaults: UserDefaults
 
     private struct Envelope: Codable {
@@ -37,7 +37,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         let featureDataType: String
     }
 
-    public init(userDefaults: UserDefaults) {
+    public init(userDefaults: UserDefaults = UserDefaults(suiteName: WidePixelUserDefaultsStorage.suiteName) ?? .standard) {
         self.defaults = userDefaults
     }
 
@@ -77,45 +77,24 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         try save(data)
     }
 
-    public func clearContext(_ contextID: String) {
-        let suffix = ".\(contextID)"
-        let allKeys = Array(defaults.dictionaryRepresentation().keys)
-        for key in allKeys where key.hasSuffix(suffix) {
-            defaults.removeObject(forKey: key)
-        }
+    public func delete<T: WidePixelData>(_ data: T) {
+        let key = storageKey(T.self, contextID: data.contextData.id)
+        defaults.removeObject(forKey: key)
     }
 
-    public func removeAll() {
-        let allKeys = Array(defaults.dictionaryRepresentation().keys)
-        for key in allKeys {
-            let parts = key.components(separatedBy: ".")
-            if parts.count == 2, UUID(uuidString: parts[1]) != nil {
-                defaults.removeObject(forKey: key)
-            }
-        }
-    }
-
-    public func getActiveFlowNames() -> [String] {
-        let allKeys = Array(defaults.dictionaryRepresentation().keys)
-        var flowNames: Set<String> = []
-        for key in allKeys {
-            let parts = key.components(separatedBy: ".")
-            if parts.count == 2, UUID(uuidString: parts[1]) != nil {
-                flowNames.insert(parts[0])
-            }
-        }
-        return Array(flowNames)
-    }
-
-    public func allFlowData<T: WidePixelData>(for type: T.Type) -> [T] {
+    public func allWidePixels<T: WidePixelData>(for type: T.Type) -> [T] {
         let allKeys = Array(defaults.dictionaryRepresentation().keys)
         var results: [T] = []
+
         for key in allKeys {
-            let parts = key.components(separatedBy: ".")
-            if parts.count == 2 && parts[0] == T.pixelName, let decoded: T = (try? load(contextID: parts[1])) {
+            guard key.hasPrefix("\(T.pixelName).") else { continue }
+            let contextID = String(key.dropFirst(T.pixelName.count + 1))
+            guard !contextID.isEmpty, UUID(uuidString: contextID) != nil else { continue }
+            if let decoded: T = (try? load(contextID: contextID)) {
                 results.append(decoded)
             }
         }
+
         return results
     }
 
@@ -126,12 +105,14 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
             return stored
         }
 
-        let value = Float.random(in: 0..<1)
+        let value = Float.random(in: 0...1)
         defaults.set(value, forKey: key)
+
         return value
     }
 
     private func storageKey<T: WidePixelData>(_ type: T.Type, contextID: String) -> String {
         return "\(T.pixelName).\(contextID)"
     }
+
 }

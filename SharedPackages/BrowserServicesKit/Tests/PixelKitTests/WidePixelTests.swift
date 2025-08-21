@@ -32,14 +32,12 @@ final class WidePixelTests: XCTestCase {
 
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        widePixel = WidePixel(userDefaults: testDefaults)
-        widePixel.clearAllFlows()
+        widePixel = WidePixel(storage: WidePixelUserDefaultsStorage(userDefaults: testDefaults))
         capturedPixels.removeAll()
         setupMockPixelKit()
     }
 
     override func tearDown() {
-        widePixel?.clearAllFlows()
         testDefaults?.removePersistentDomain(forName: testSuiteName)
         PixelKit.tearDown()
 
@@ -416,17 +414,6 @@ final class WidePixelTests: XCTestCase {
         XCTAssertEqual(allFlows.count, 2)
     }
 
-    func testClearAllFlows() throws {
-        for i in 0..<5 {
-            let data = makeTestSubscriptionData(contextName: "clear-test-\(i)")
-            widePixel.startFlow(data)
-        }
-
-        XCTAssertEqual(widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self).count, 5)
-        widePixel.clearAllFlows()
-        XCTAssertEqual(widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self).count, 0)
-    }
-
     func testMultipleFlowIsolation() throws {
         let flows = (0..<3).map { i in
             makeTestSubscriptionData(
@@ -508,7 +495,6 @@ final class WidePixelTests: XCTestCase {
         dataA.globalData.sampleRate = 0.5
         dataB.globalData.sampleRate = 0.5
 
-        widePixel.clearAllFlows()
         widePixel.startFlow(dataA)
         widePixel.startFlow(dataB)
 

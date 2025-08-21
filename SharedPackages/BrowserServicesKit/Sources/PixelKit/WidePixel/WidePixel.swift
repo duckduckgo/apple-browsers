@@ -28,10 +28,6 @@ public protocol WidePixelManaging {
     func startFlow<T: WidePixelData>(_ data: T)
     func updateFlow<T: WidePixelData>(_ data: T)
     func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
-
-    func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
-    func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: String) -> T?
-    func clearAllFlows()
 }
 
 public final class WidePixel: WidePixelManaging {
@@ -45,42 +41,29 @@ public final class WidePixel: WidePixelManaging {
             self.end = end
         }
 
-        /// Creates a new interval that starts timing now
         public static func startingNow() -> MeasuredInterval {
             return MeasuredInterval(start: Date())
         }
 
-        /// Completes the timing interval with the current date
-        public mutating func complete() {
-            self.end = Date()
-        }
-
-        /// Completes the timing interval with a specific date
-        public mutating func complete(at date: Date) {
+        public mutating func complete(at date: Date = Date()) {
             self.end = date
         }
     }
 
-    // MARK: - Storage Configuration
-
-    public static let storageKeyPrefix = "com.duckduckgo.wide-pixel.storage"
     private static let logger = Logger(subsystem: "PixelKit", category: "Wide Pixel")
     private static let storageQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.storage-queue", qos: .utility)
 
-    private let defaults: UserDefaults
     private let storage: WidePixelStoring
     private let pixelKitProvider: () -> PixelKit?
     private let sampler: WidePixelSampling
     private let eventMapping: EventMapping<WidePixelEvent>?
 
-    public init(userDefaults: UserDefaults = UserDefaults(suiteName: WidePixel.storageKeyPrefix) ?? .standard,
+    public init(storage: WidePixelStoring = WidePixelUserDefaultsStorage(),
                 pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
                 sampler: WidePixelSampling? = nil,
-                storage: WidePixelStoring? = nil,
                 events: EventMapping<WidePixelEvent>? = nil) {
-        self.defaults = userDefaults
         self.pixelKitProvider = pixelKitProvider
-        self.storage = storage ?? WidePixelUserDefaultsStorage(userDefaults: userDefaults)
+        self.storage = storage
         self.sampler = sampler ?? DefaultWidePixelSampler(storage: self.storage)
         self.eventMapping = events
     }
@@ -113,7 +96,7 @@ public final class WidePixel: WidePixelManaging {
     }
 
     public func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T] {
-        return Self.storageQueue.sync { storage.allFlowData(for: T.self) }
+        return Self.storageQueue.sync { storage.allWidePixels(for: T.self) }
     }
 
     // MARK: - Flow Completion
@@ -132,7 +115,7 @@ public final class WidePixel: WidePixelManaging {
             }
 
             let parameters = try generateFinalParameters(from: current, status: status)
-            clearFlow(for: data.contextData.id)
+            storage.delete(current)
 
             try firePixel(named: T.pixelName, parameters: parameters, onComplete: onComplete)
 
@@ -140,7 +123,7 @@ public final class WidePixel: WidePixelManaging {
         } catch {
             Self.logger.error("Failed to complete wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
             report(.completeFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
-            clearFlow(for: data.contextData.id)
+            storage.delete(data)
             onComplete(false, error)
         }
     }
@@ -153,7 +136,8 @@ public final class WidePixel: WidePixelManaging {
     }
 
     private func handleDroppedFlow(for contextID: String, sampleRate: Double) {
-        clearFlow(for: contextID)
+        // Best-effort cleanup for any stored flow with this contextID across known types is not feasible here
+        // without the concrete type; rely on completion paths to call delete where appropriate.
         Self.logger.info("Wide pixel dropped due to sample rate (\(sampleRate, privacy: .public)) for context ID: \(contextID, privacy: .public)")
     }
 
@@ -229,10 +213,6 @@ public final class WidePixel: WidePixelManaging {
 
     // MARK: - Internal Helper Methods
 
-    func clearFlow(for contextID: String) {
-        Self.storageQueue.sync { storage.clearContext(contextID) }
-    }
-
     private static func generatePixelName(for name: String) -> String {
         #if os(macOS)
         return "m_mac_wide_\(name)"
@@ -242,12 +222,6 @@ public final class WidePixel: WidePixelManaging {
         assertionFailure("Unsupported platform")
         return "m_unknown_wide_\(name)"
         #endif
-    }
-
-    // MARK: - Utility Methods
-
-    public func clearAllFlows() {
-        Self.storageQueue.sync { storage.removeAll() }
     }
 
     // MARK: - Event Mapping

@@ -31,14 +31,12 @@ final class SubscriptionWidePixelTests: XCTestCase {
 
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        widePixel = WidePixel(userDefaults: testDefaults, pixelKitProvider: { PixelKit.shared })
-        widePixel.clearAllFlows()
+        widePixel = WidePixel(storage: WidePixelUserDefaultsStorage(userDefaults: testDefaults), pixelKitProvider: { PixelKit.shared })
         firedPixels.removeAll()
         setupMockPixelKit()
     }
 
     override func tearDown() {
-        widePixel?.clearAllFlows()
         testDefaults?.removePersistentDomain(forName: testSuiteName)
         PixelKit.tearDown()
 

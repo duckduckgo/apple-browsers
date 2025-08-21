@@ -239,14 +239,14 @@
                                                                         <constraint firstItem="ARc-nQ-K4S" firstAttribute="centerY" secondItem="Pi3-M0-EFe" secondAttribute="centerY" id="odp-cH-vcx"/>
                                                                     </constraints>
                                                                 </view>
-                                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="GWb-qh-pxh">
-                                                                    <rect key="frame" x="32" y="0.0" width="223" height="54"/>
+                                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="GWb-qh-pxh" userLabel="Title with buttons container">
+                                                                    <rect key="frame" x="32" y="0.0" width="267" height="54"/>
                                                                     <subviews>
                                                                         <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="2" translatesAutoresizingMaskIntoConstraints="NO" id="hxp-c9-zS4">
-                                                                            <rect key="frame" x="0.0" y="8" width="223" height="38"/>
+                                                                            <rect key="frame" x="0.0" y="8" width="235" height="38"/>
                                                                             <subviews>
                                                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="751" text="Title" textAlignment="natural" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2GU-MM-UwX" customClass="FadeOutLabel" customModule="UIComponents">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="223" height="19.5"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="235" height="19.5"/>
                                                                                     <accessibility key="accessibilityConfiguration">
                                                                                         <accessibilityTraits key="traits" button="YES" staticText="YES"/>
                                                                                         <bool key="isElement" value="YES"/>
@@ -256,7 +256,7 @@
                                                                                     <nil key="highlightedColor"/>
                                                                                 </label>
                                                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="252" text="Link" textAlignment="natural" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LbT-NO-T0G" customClass="FadeOutLabel" customModule="UIComponents">
-                                                                                    <rect key="frame" x="0.0" y="21.5" width="223" height="16.5"/>
+                                                                                    <rect key="frame" x="0.0" y="21.5" width="235" height="16.5"/>
                                                                                     <accessibility key="accessibilityConfiguration">
                                                                                         <bool key="isElement" value="NO"/>
                                                                                     </accessibility>
@@ -266,48 +266,51 @@
                                                                                 </label>
                                                                             </subviews>
                                                                         </stackView>
+                                                                        <view contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="odB-to-BzS" userLabel="Trailing button container">
+                                                                            <rect key="frame" x="223" y="0.0" width="44" height="54"/>
+                                                                            <subviews>
+                                                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="irw-dX-LgB">
+                                                                                    <rect key="frame" x="10" y="15" width="24" height="24"/>
+                                                                                    <constraints>
+                                                                                        <constraint firstAttribute="height" constant="24" id="4vE-Nh-F55"/>
+                                                                                        <constraint firstAttribute="width" constant="24" id="o46-wF-4ma"/>
+                                                                                    </constraints>
+                                                                                </imageView>
+                                                                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ExX-zP-FAE" customClass="BrowserChromeButton" customModule="DuckDuckGo" customModuleProvider="target">
+                                                                                    <rect key="frame" x="0.0" y="5" width="44" height="44"/>
+                                                                                    <accessibility key="accessibilityConfiguration" label="Close Tab"/>
+                                                                                    <constraints>
+                                                                                        <constraint firstAttribute="width" secondItem="ExX-zP-FAE" secondAttribute="height" multiplier="1:1" id="Vdf-tK-uMI"/>
+                                                                                        <constraint firstAttribute="width" constant="44" id="eVA-5H-uBo"/>
+                                                                                        <constraint firstAttribute="height" constant="44" id="vTh-7a-ncm"/>
+                                                                                    </constraints>
+                                                                                    <color key="tintColor" name="icons"/>
+                                                                                    <state key="normal" image="Close-16"/>
+                                                                                    <buttonConfiguration key="configuration" style="gray" image="Close-16"/>
+                                                                                    <connections>
+                                                                                        <action selector="deleteTab" destination="Ml9-Ia-4eU" eventType="touchUpInside" id="uif-o1-Hwf"/>
+                                                                                    </connections>
+                                                                                </button>
+                                                                            </subviews>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="ExX-zP-FAE" secondAttribute="bottom" id="GEU-VS-Ekb"/>
+                                                                                <constraint firstItem="ExX-zP-FAE" firstAttribute="top" relation="greaterThanOrEqual" secondItem="odB-to-BzS" secondAttribute="top" id="XTr-FG-lDj"/>
+                                                                                <constraint firstItem="ExX-zP-FAE" firstAttribute="leading" secondItem="odB-to-BzS" secondAttribute="leading" id="c0i-kF-l0Z"/>
+                                                                                <constraint firstItem="irw-dX-LgB" firstAttribute="centerX" secondItem="odB-to-BzS" secondAttribute="centerX" id="huz-v2-vzg"/>
+                                                                                <constraint firstItem="irw-dX-LgB" firstAttribute="centerY" secondItem="odB-to-BzS" secondAttribute="centerY" id="ih2-RM-2hV"/>
+                                                                                <constraint firstItem="ExX-zP-FAE" firstAttribute="centerY" secondItem="odB-to-BzS" secondAttribute="centerY" id="zhc-Sn-ruq"/>
+                                                                                <constraint firstAttribute="trailing" secondItem="ExX-zP-FAE" secondAttribute="trailing" id="ziB-fo-Eq3"/>
+                                                                            </constraints>
+                                                                        </view>
                                                                     </subviews>
                                                                     <constraints>
-                                                                        <constraint firstAttribute="trailing" secondItem="hxp-c9-zS4" secondAttribute="trailing" id="HgA-br-yKb"/>
+                                                                        <constraint firstItem="odB-to-BzS" firstAttribute="top" secondItem="GWb-qh-pxh" secondAttribute="top" id="0Md-1N-KWU"/>
+                                                                        <constraint firstAttribute="bottom" secondItem="odB-to-BzS" secondAttribute="bottom" id="0Sw-67-ukT"/>
+                                                                        <constraint firstItem="odB-to-BzS" firstAttribute="leading" secondItem="hxp-c9-zS4" secondAttribute="trailing" constant="-12" id="CBK-DF-bXL"/>
                                                                         <constraint firstItem="hxp-c9-zS4" firstAttribute="top" secondItem="GWb-qh-pxh" secondAttribute="top" constant="8" id="jR0-rN-lzi"/>
+                                                                        <constraint firstAttribute="trailing" secondItem="odB-to-BzS" secondAttribute="trailing" id="qWj-tJ-Fs5"/>
                                                                         <constraint firstAttribute="bottom" secondItem="hxp-c9-zS4" secondAttribute="bottom" constant="8" id="udc-aj-sfh"/>
                                                                         <constraint firstItem="hxp-c9-zS4" firstAttribute="leading" secondItem="GWb-qh-pxh" secondAttribute="leading" id="vwn-FQ-v76"/>
-                                                                    </constraints>
-                                                                </view>
-                                                                <view contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="odB-to-BzS" userLabel="Trailing button container">
-                                                                    <rect key="frame" x="255" y="0.0" width="44" height="54"/>
-                                                                    <subviews>
-                                                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="irw-dX-LgB">
-                                                                            <rect key="frame" x="10" y="15" width="24" height="24"/>
-                                                                            <constraints>
-                                                                                <constraint firstAttribute="height" constant="24" id="4vE-Nh-F55"/>
-                                                                                <constraint firstAttribute="width" constant="24" id="o46-wF-4ma"/>
-                                                                            </constraints>
-                                                                        </imageView>
-                                                                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ExX-zP-FAE" customClass="BrowserChromeButton" customModule="DuckDuckGo" customModuleProvider="target">
-                                                                            <rect key="frame" x="0.0" y="5" width="44" height="44"/>
-                                                                            <accessibility key="accessibilityConfiguration" label="Close Tab"/>
-                                                                            <constraints>
-                                                                                <constraint firstAttribute="width" secondItem="ExX-zP-FAE" secondAttribute="height" multiplier="1:1" id="Vdf-tK-uMI"/>
-                                                                                <constraint firstAttribute="width" constant="44" id="eVA-5H-uBo"/>
-                                                                                <constraint firstAttribute="height" constant="44" id="vTh-7a-ncm"/>
-                                                                            </constraints>
-                                                                            <color key="tintColor" name="icons"/>
-                                                                            <state key="normal" image="Close-16"/>
-                                                                            <buttonConfiguration key="configuration" style="gray" image="Close-16"/>
-                                                                            <connections>
-                                                                                <action selector="deleteTab" destination="Ml9-Ia-4eU" eventType="touchUpInside" id="uif-o1-Hwf"/>
-                                                                            </connections>
-                                                                        </button>
-                                                                    </subviews>
-                                                                    <constraints>
-                                                                        <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="ExX-zP-FAE" secondAttribute="bottom" id="GEU-VS-Ekb"/>
-                                                                        <constraint firstItem="ExX-zP-FAE" firstAttribute="top" relation="greaterThanOrEqual" secondItem="odB-to-BzS" secondAttribute="top" id="XTr-FG-lDj"/>
-                                                                        <constraint firstItem="ExX-zP-FAE" firstAttribute="leading" secondItem="odB-to-BzS" secondAttribute="leading" id="c0i-kF-l0Z"/>
-                                                                        <constraint firstItem="irw-dX-LgB" firstAttribute="centerX" secondItem="odB-to-BzS" secondAttribute="centerX" id="huz-v2-vzg"/>
-                                                                        <constraint firstItem="irw-dX-LgB" firstAttribute="centerY" secondItem="odB-to-BzS" secondAttribute="centerY" id="ih2-RM-2hV"/>
-                                                                        <constraint firstItem="ExX-zP-FAE" firstAttribute="centerY" secondItem="odB-to-BzS" secondAttribute="centerY" id="zhc-Sn-ruq"/>
-                                                                        <constraint firstAttribute="trailing" secondItem="ExX-zP-FAE" secondAttribute="trailing" id="ziB-fo-Eq3"/>
                                                                     </constraints>
                                                                 </view>
                                                             </subviews>
@@ -376,6 +379,7 @@
                                             <outlet property="link" destination="LbT-NO-T0G" id="gbZ-zt-wiq"/>
                                             <outlet property="removeButton" destination="ExX-zP-FAE" id="Nd2-AR-xJL"/>
                                             <outlet property="selectionIndicator" destination="irw-dX-LgB" id="aPI-Mt-qeJ"/>
+                                            <outlet property="textButtonSpacing" destination="CBK-DF-bXL" id="5bF-1M-jll"/>
                                             <outlet property="title" destination="2GU-MM-UwX" id="OF3-LD-5dO"/>
                                             <outlet property="unread" destination="qrJ-aX-XrW" id="upS-3J-42I"/>
                                         </connections>

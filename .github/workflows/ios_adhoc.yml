@@ -90,8 +90,9 @@ jobs:
         uses: ./.github/actions/measure-app-size
         with:
           report-file: "iOS/App Thinning Size Report.txt"
-          download-pixel-name: "m_ci_apple_ios_adhoc_download_size"
-          installation-pixel-name: "m_ci_apple_ios_adhoc_installation_size"
+          download-size-pixel-name: "m_ci_apple_ios_adhoc_download_size"
+          installation-size-pixel-name: "m_ci_apple_ios_adhoc_installation_size"
+          app-version: ${{ env.output_name }}
 
       - name: Report job duration
         if: success() || (always() && steps.archive-and-upload.outcome == 'failure')

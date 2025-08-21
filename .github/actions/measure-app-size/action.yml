@@ -6,10 +6,10 @@ inputs:
   report-file:
     description: 'Path to the App Thinning Size Report.txt file'
     required: true
-  download-pixel-name:
+  download-size-pixel-name:
     description: 'Pixel name for download size metric'
     required: false
-  installation-pixel-name:
+  installation-size-pixel-name:
     description: 'Pixel name for installation size metric'
     required: false
   app-version:
@@ -30,20 +30,20 @@ runs:
         ${{ github.action_path }}/parse_app_size.sh "${{ inputs.report-file }}"
 
     - name: Send Download Size Pixel
-      if: ${{ inputs.download-pixel-name != '' }}
+      if: ${{ inputs.download-size-pixel-name != '' }}
       uses: ./.github/actions/send-pixel
       with:
-        pixel-name: ${{ inputs.download-pixel-name }}
+        pixel-name: ${{ inputs.download-size-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.download_size }}
           app_version: ${{ inputs.app-version }}
           build_number: ${{ inputs.build-number }}
 
     - name: Send Installation Size Pixel
-      if: ${{ inputs.installation-pixel-name != '' }}
+      if: ${{ inputs.installation-size-pixel-name != '' }}
       uses: ./.github/actions/send-pixel
       with:
-        pixel-name: ${{ inputs.installation-pixel-name }}
+        pixel-name: ${{ inputs.installation-size-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.installation_size }}
           app_version: ${{ inputs.app-version }}

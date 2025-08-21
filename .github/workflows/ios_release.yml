@@ -132,8 +132,8 @@ jobs:
       uses: ./.github/actions/measure-app-size
       with:
         report-file: "iOS/App Thinning Size Report.txt"
-        download-pixel-name: "m_ci_apple_ios_release_download_size"
-        installation-pixel-name: "m_ci_apple_ios_release_installation_size"
+        download-size-pixel-name: "m_ci_apple_ios_release_download_size"
+        installation-size-pixel-name: "m_ci_apple_ios_release_installation_size"
         app-version: ${{ env.app_version }}
         build-number: ${{ env.build_number }}
 

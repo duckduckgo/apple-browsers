@@ -94,7 +94,7 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         app.typeKey("w", modifierFlags: [.command, .option, .shift])
         openFireWindow()
-        downloadFile()
+        downloadFile(onFireWindow: true)
         openDownloadsPopup()
         let popover = app.popovers.firstMatch
         XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -111,7 +111,7 @@ class DownloadsUITests: UITestCase {
                                      switchToNewTabWhenOpened: false)
         app.typeKey("w", modifierFlags: [.command, .option, .shift])
         openFireWindow()
-        downloadLargeFile()
+        downloadLargeFile(onFireWindow: true)
         // Wait for the download to actually start (Downloads button becomes available)
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
         _ = downloadsButton.waitForExistence(timeout: 10.0)
@@ -692,22 +692,30 @@ class DownloadsUITests: UITestCase {
         app.typeKey("n", modifierFlags: .command)
     }
 
-    private func downloadFile() {
+    private func downloadFile(onFireWindow: Bool = false) {
         app.openNewTab()
         // wait for the New Tab page to load
-        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if onFireWindow {
+            XCTAssertTrue(app.staticTexts["Fire Window"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        } else {
+            XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        }
 
         // Use a small ZIP so WebKit downloads it (not rendered inline)
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
     }
 
-    private func downloadLargeFile() {
+    private func downloadLargeFile(onFireWindow: Bool = false) {
         app.openNewTab()
         // wait for the New Tab page to load
-        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if onFireWindow {
+            XCTAssertTrue(app.staticTexts["Fire Window"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        } else {
+            XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        }
 
         // Larger file to keep download in-progress reliably
-        openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
+        openSiteForDownloadingFile(url: "https://mmatechnical.com/Download/Download-Test-File/(MMA)-10GB.zip")
     }
 
     private func downloadFileWithCustomSaveName() {

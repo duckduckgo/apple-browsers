@@ -37,6 +37,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 10
 
+    env:
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
     outputs:
       skip-release: ${{ steps.prepare-release-bump.outputs.skip_release }}
       asana-task-id: ${{ steps.prepare-release-bump.outputs.release_task_id }}
@@ -85,14 +88,7 @@ jobs:
     uses: ./.github/workflows/macos_pr_checks.yml
     with:
       branch: ${{ needs.validate_input_conditions.outputs.release-branch }}
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GH_RO_PAT: ${{ secrets.GH_RO_PAT }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   increment_build_number:
 
@@ -143,18 +139,7 @@ jobs:
       asana-task-url: ${{ needs.validate_input_conditions.outputs.asana-task-url }}
       branch: ${{ needs.validate_input_conditions.outputs.release-branch }}
       skip-appstore: ${{ needs.validate_input_conditions.outputs.skip-appstore == 'true' }}
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   tag_and_merge:
     name: Tag and Merge Branch
@@ -166,9 +151,7 @@ jobs:
       base-branch: ${{ github.event.inputs.base-branch || 'main' }}
       prerelease: true
       internal-release-bump: true
-    secrets:
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GHA_ELEVATED_PERMISSIONS_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+    secrets: inherit
 
   publish_release:
     name: Publish DMG Release
@@ -177,9 +160,4 @@ jobs:
     with:
       asana-task-url: ${{ needs.validate_input_conditions.outputs.asana-task-url }}
       branch: ${{ needs.validate_input_conditions.outputs.release-branch }}
-    secrets:
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-      GHA_ELEVATED_PERMISSIONS_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
-      SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+    secrets: inherit

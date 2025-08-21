@@ -9,7 +9,6 @@ on:
     inputs:
       destination:
         description: "Upload destination (App Store or TestFlight)"
-        required: true
         default: testflight
         type: choice
         options:
@@ -31,7 +30,6 @@ on:
         type: string
       destination:
         description: "Upload destination (TestFlight or App Store)"
-        required: false
         default: testflight
         type: string
     secrets:
@@ -116,7 +114,7 @@ jobs:
         echo "app_version=${app_version}" >> $GITHUB_ENV
         echo "build_number=${build_number}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
-        mv -f "$original_dsyms_path" "$dsyms_path" 
+        mv -f "$original_dsyms_path" "$dsyms_path"
 
     - name: Upload dSYMs artifact
       if: always()

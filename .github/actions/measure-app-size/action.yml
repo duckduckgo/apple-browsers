@@ -12,6 +12,12 @@ inputs:
   installation-pixel-name:
     description: 'Pixel name for installation size metric'
     required: false
+  app-version:
+    description: 'App version to include in pixel data'
+    required: false
+  build-number:
+    description: 'Build number to include in pixel data'
+    required: false
 
 runs:
   using: 'composite'
@@ -30,6 +36,8 @@ runs:
         pixel-name: ${{ inputs.download-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.download_size }}
+          app_version: ${{ inputs.app-version }}
+          build_number: ${{ inputs.build-number }}
 
     - name: Send Installation Size Pixel
       if: ${{ inputs.installation-pixel-name != '' }}
@@ -38,3 +46,5 @@ runs:
         pixel-name: ${{ inputs.installation-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.installation_size }}
+          app_version: ${{ inputs.app-version }}
+          build_number: ${{ inputs.build-number }}

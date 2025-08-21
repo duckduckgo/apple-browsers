@@ -136,6 +136,7 @@ jobs:
       asana-task-url: ${{ needs.validate_input_conditions.outputs.asana-task-url }}
       branch: ${{ needs.validate_input_conditions.outputs.release-branch }}
       commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
+      measure-app-size: true
     secrets: inherit
 
   tag_and_merge:

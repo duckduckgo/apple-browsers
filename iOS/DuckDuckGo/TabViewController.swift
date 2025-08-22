@@ -115,6 +115,7 @@ class TabViewController: UIViewController {
     }
     
     var daxEasterEggHandler: DaxEasterEggHandling?
+    var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
 
     let favicons = Favicons.shared
     let progressWorker = WebProgressWorker()
@@ -1450,6 +1451,9 @@ extension TabViewController: WKNavigationDelegate {
         let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
+        
+        // Check cache for instant logo display during back navigation
+        checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -1679,16 +1683,52 @@ extension TabViewController: WKNavigationDelegate {
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
     }
     
-    /// Trigger DaxEasterEgg extraction only on DuckDuckGo search pages
-    private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
+    /// Check cache for DaxEasterEgg logo on commit (instant display for back navigation)
+    private func checkDaxEasterEggCacheIfDuckDuckGoSearch(_ webView: WKWebView) {
         guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
         
         guard let url = webView.url, url.isDuckDuckGoSearch else {
-            // Only clear logo when navigating away from DuckDuckGo search
+            // Clear logo when navigating away from DuckDuckGo search
             if tabModel.daxEasterEggLogoURL != nil {
                 delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
             }
             return
+        }
+        
+        // Check cache for instant logo display
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on commit for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+        }
+    }
+    
+    /// Trigger DaxEasterEgg extraction with cache fallback on DuckDuckGo search pages
+    private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
+        
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
+        
+        // Check cache first - if found, use it and skip extraction
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on finish for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+            return
+        }
+        
+        // Cache miss - proceed with JavaScript extraction
+        // Ensure handler is created for new tabs that navigate directly to DuckDuckGo
+        if daxEasterEggHandler == nil {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
+            daxEasterEggHandler?.delegate = self
+            Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
         }
         
         Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
@@ -2786,7 +2826,7 @@ extension TabViewController: UserContentControllerDelegate {
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
-            daxEasterEggHandler = DaxEasterEggHandler(webView: webView)
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
             daxEasterEggHandler?.delegate = self
         }
 

@@ -24,7 +24,7 @@ import WebKit
 ///
 /// Implemented by components that need to display or process dynamic logos
 /// extracted from DuckDuckGo search pages (typically MainViewController).
-public protocol DaxEasterEggDelegate: AnyObject {
+protocol DaxEasterEggDelegate: AnyObject {
     /// Called when a dynamic logo URL has been extracted and processed.
     ///
     /// - Parameters:
@@ -38,7 +38,7 @@ public protocol DaxEasterEggDelegate: AnyObject {
 ///
 /// This protocol enables testability by allowing mock implementations during testing.
 /// The handler coordinates between JavaScript extraction and native processing.
-public protocol DaxEasterEggHandling: AnyObject {
+protocol DaxEasterEggHandling: AnyObject {
     /// Delegate that receives processed logo URLs
     var delegate: DaxEasterEggDelegate? { get set }
     
@@ -54,16 +54,18 @@ public protocol DaxEasterEggHandling: AnyObject {
 /// DuckDuckGo's "themed|" URL format.
 ///
 /// The handler is created on-demand when navigating to DuckDuckGo search pages.
-public class DaxEasterEggHandler: DaxEasterEggHandling {
+class DaxEasterEggHandler: DaxEasterEggHandling {
     
     public weak var delegate: DaxEasterEggDelegate?
     private weak var webView: WKWebView?
+    private let logoCache: DaxEasterEggLogoCaching
     
-    public init(webView: WKWebView) {
+    init(webView: WKWebView, logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()) {
         self.webView = webView
+        self.logoCache = logoCache
     }
     
-    public func extractLogosForCurrentPage() {
+    func extractLogosForCurrentPage() {
         guard let webView = webView else {
             Logger.daxEasterEgg.debug("extractLogosForCurrentPage - webView is nil")
             return
@@ -127,6 +129,13 @@ public class DaxEasterEggHandler: DaxEasterEggHandling {
         let processedURL = processLogoURL(logoURL)
         
         Logger.daxEasterEgg.debug("didExtractLogo - Processed: \(processedURL ?? "nil")")
+        
+        // Store successful extractions in cache for future use
+        if let processedURL = processedURL,
+           let url = URL(string: pageURL),
+           let searchQuery = url.searchQuery {
+            logoCache.storeLogo(processedURL, for: searchQuery)
+        }
         
         await MainActor.run {
             delegate?.daxEasterEggHandler(self, didFindLogoURL: processedURL, for: pageURL)

@@ -34,7 +34,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
     private var cancellables = Set<AnyCancellable>()
-    private var isProgrammaticBegin = false
 
 //    let editModeTransitioningDelegate = OmniBarEditingStateTransitioningDelegate()
 
@@ -61,21 +60,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            // Only call the delegate when user tapped (not when focus is programmatic)
-            if !isProgrammaticBegin {
-                omniDelegate?.onExperimentalAddressBarTapped()
-            }
+            omniDelegate?.onExperimentalAddressBarTapped()
             presentExperimentalEditingState(for: textField)
             return false
         }
 
         return super.textFieldShouldBeginEditing(textField)
-    }
-
-    override func beginEditing() {
-        isProgrammaticBegin = true
-        defer { isProgrammaticBegin = false }
-        super.beginEditing()
     }
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {

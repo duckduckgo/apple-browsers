@@ -22,6 +22,7 @@ import Foundation
 class SearchNonexistentDomainUITests: UITestCase {
 
     private var app: XCUIApplication!
+    private var webView: XCUIElement!
     private var addressBarTextField: XCUIElement!
 
     override func setUpWithError() throws {
@@ -33,14 +34,22 @@ class SearchNonexistentDomainUITests: UITestCase {
 
         // Use extension property instead of creating own reference
         addressBarTextField = app.addressBar
+        webView = app.webViews.firstMatch
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Note: On new tab page, address bar is already activated - no Cmd+L needed
     }
 
+    override func tearDown() {
+        webView = nil
+        addressBarTextField = nil
+        app = nil
+        super.tearDown()
+    }
+
     // MARK: - Test Cases
 
-    func testSearchNonexistentDomain_WithInvalidTLD_RedirectsToSearch() throws {
+    func testWhenInvalidTLDEntered_RedirectsToSearch() throws {
         // Test browser redirects invalid TLD to search (matches integration test behavior)
         let invalidDomain = "testsite.invalidtld"
 
@@ -49,8 +58,8 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for redirect to search - invalid TLD should trigger search redirect
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
+        let searchContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", invalidDomain)).firstMatch
+        XCTAssertTrue(searchContent.waitForExistence(timeout: 15.0), "Search results should contain the invalid domain")
 
         // Verify the URL changed to a search URL by checking address bar after navigation
         app.activateAddressBar()
@@ -61,15 +70,15 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertTrue(addressBarValue.contains(invalidDomain), "Search URL should contain the original search term")
     }
 
-    func testSearchNonexistentDomain_WithTypo_RedirectsToSearch() throws {
+    func testWhenTypoInDomainEntered_RedirectsToSearch() throws {
         // Test browser redirects invalid TLD to search (matches integration test: .coma is invalid TLD)
         let typoedDomain = "google.coma"
         addressBarTextField.typeText(typoedDomain)
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for redirect to search - invalid TLD should trigger search redirect
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
+        let searchContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", typoedDomain)).firstMatch
+        XCTAssertTrue(searchContent.waitForExistence(timeout: 15.0), "Search results should contain the invalid domain")
 
         // Verify the URL changed to a search URL by checking address bar after navigation
         app.activateAddressBar()
@@ -80,14 +89,14 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertTrue(addressBarValue.contains(typoedDomain), "Search URL should contain the original search term")
     }
 
-    func testSearchNonexistentDomain_WithRandomString_RedirectsToSearch() throws {
+    func testWhenRandomStringEntered_RedirectsToSearch() throws {
         // Test browser redirects random string input to search (matches integration test behavior)
         let randomString = "thisisnotadomainname"
         addressBarTextField.typeText(randomString)
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for redirect to search - should load DuckDuckGo search page
-        let webView = app.webViews.firstMatch
+
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
 
         // Verify the URL changed to a search URL by checking address bar after navigation
@@ -99,19 +108,19 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertTrue(addressBarValue.contains(randomString), "Search URL should contain the original search term")
     }
 
-    func testSearchNonexistentDomain_WithMisspelledPopularSite_ShowsSuggestions() throws {
+    func testWhenInvalidDomainWithCorrectTLDEntered_ShowsErrorWithoutSearchRedirect() throws {
         // Test browser handles misspelled domain (.com TLD = valid, so should show error page or suggestions, not redirect to search)
-        let misspelledSite = "facebok.com"
+        let misspelledSite = "facebok.nonexistent.invalid.domain.com"
         addressBarTextField.typeText(misspelledSite)
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for browser handling - look for an error/suggestions indicator in page content
-        let webView = app.webViews.firstMatch
+
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load (error page or actual page)")
 
         // Suggestions or error page text (robust predicate)
         let suggestionOrErrorText = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'did you mean' OR value CONTAINS[c] 'suggest' OR value CONTAINS[c] 'error' OR value CONTAINS[c] 'not found' OR value CONTAINS[c] 'server' OR value CONTAINS[c] 'connect'"))
+            .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))
             .firstMatch
         XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: 10.0), "Should show suggestions or an error page for misspelled popular site")
 
@@ -119,18 +128,18 @@ class SearchNonexistentDomainUITests: UITestCase {
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0))
         let addressBarValue = addressBarTextField.value as? String ?? ""
-        XCTAssertFalse(addressBarValue.isEmpty)
+        XCTAssertEqual(addressBarValue, "http://facebok.nonexistent.invalid.domain.com/")
     }
 
-    func testSearchNonexistentDomain_AddressBarHistory_RecordsSearchRedirect() throws {
+    func testWhenInvalidDomainRedirected_AddressBarHistoryRecordsSearchURL() throws {
         // Test browser history functionality after invalid domain search redirect
         let invalidDomain = "nonexistent.invalid"
         addressBarTextField.typeText(invalidDomain)
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for redirect to search - invalid TLD should trigger search redirect
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
+        let searchContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", invalidDomain)).firstMatch
+        XCTAssertTrue(searchContent.waitForExistence(timeout: 15.0), "Search results should contain the invalid domain")
 
         // Verify history was recorded - address bar should contain search URL
         app.activateAddressBar()
@@ -141,14 +150,15 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertTrue(addressBarValue.contains(invalidDomain), "Search URL should contain the original search term")
     }
 
-    func testValidDomain_DoesNotRedirectToSearch() throws {
+    func testWhenValidDomainEntered_NavigatesWithoutSearchRedirect() throws {
         // Test navigation to a valid domain
         let validDomain = "example.com"
         addressBarTextField.typeText(validDomain)
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for navigation to complete by checking for page content
-        let webView = app.webViews.firstMatch
+        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
+
         let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
         XCTAssertTrue(pageContent.waitForExistence(timeout: 15.0), "Should navigate to example.com and show page content")
 
@@ -157,12 +167,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should remain accessible after valid domain navigation")
     }
 
-    func testMalformedScheme_HttpSingleSlash_NormalizesToDoubleSlash() throws {
+    func testWhenHttpSingleSlashEntered_NormalizesToDoubleSlash() throws {
         // http:/ should normalize to http:// prior to navigation
         addressBarTextField.typeText("http:/localhost:8085")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
-        let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
 
         app.activateAddressBar()
@@ -171,12 +180,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertTrue(value.contains("http://localhost:8085"), "Scheme should be normalized to http:// for single-slash input")
     }
 
-    func testSearchNonexistentDomain_LocalhostWithoutScheme_Navigates() throws {
+    func testWhenLocalhostWithoutSchemeEntered_NavigatesSuccessfully() throws {
         // Typing localhost (no scheme) should navigate, not redirect to search
         addressBarTextField.typeText("localhost")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
-        let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
 
         app.activateAddressBar()
@@ -186,12 +194,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
 
-    func testSearchNonexistentDomain_LocalhostWithPort_Navigates() throws {
+    func testWhenLocalhostWithPortEntered_NavigatesSuccessfully() throws {
         // Typing localhost with port (no scheme) should navigate to local server
         addressBarTextField.typeText("localhost:8085")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
-        let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
 
         app.activateAddressBar()
@@ -201,13 +208,14 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
 
-    func testSearchNonexistentDomain_LocalServerURL_Loads() throws {
+    func testWhenLocalServerURLEntered_LoadsContent() throws {
         // Full local server URL should load normally
-        let url = URL.testsServer
+        let testContent = "Local Server Test Content"
+        let url = URL.testsServer.appendingTestParameters(data: testContent.utf8data)
         addressBarTextField.pasteURL(url, pressingEnter: true)
 
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
+        let serverContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", testContent)).firstMatch
+        XCTAssertTrue(serverContent.waitForExistence(timeout: 15.0), "Should show test content from local server")
 
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0))
@@ -216,17 +224,15 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
 
-    func testSearchNonexistentDomain_InvalidWithHTTP_ShowsErrorOrNoSearchRedirect() throws {
+    func testWhenInvalidDomainWithHTTPEntered_ShowsErrorWithoutSearchRedirect() throws {
         // With scheme and invalid TLD, browser should not redirect to search; expect error page/suggestions
         let invalidURL = URL(string: "http://nonexistent.invalidtld")!
         addressBarTextField.pasteURL(invalidURL, pressingEnter: true)
 
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
 
         // Robust error/suggestion predicate
         let suggestionOrErrorText = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'error' OR value CONTAINS[c] 'not found' OR value CONTAINS[c] 'server' OR value CONTAINS[c] 'connect' OR value CONTAINS[c] 'did you mean' OR value CONTAINS[c] 'suggest'"))
+            .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))
             .firstMatch
         XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: 10.0))
 
@@ -235,16 +241,14 @@ class SearchNonexistentDomainUITests: UITestCase {
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
 
-    func testSearchNonexistentDomain_InvalidWithHTTPS_ShowsErrorOrNoSearchRedirect() throws {
+    func testWhenInvalidDomainWithHTTPSEntered_ShowsErrorWithoutSearchRedirect() throws {
         // With https and invalid TLD, should not redirect to search; expect error page/suggestions
         let invalidURL = URL(string: "https://nonexistent.invalidtld")!
         addressBarTextField.pasteURL(invalidURL, pressingEnter: true)
 
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
 
         let suggestionOrErrorText = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'error' OR value CONTAINS[c] 'not found' OR value CONTAINS[c] 'server' OR value CONTAINS[c] 'connect' OR value CONTAINS[c] 'did you mean' OR value CONTAINS[c] 'suggest'"))
+            .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))
             .firstMatch
         XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: 10.0))
 

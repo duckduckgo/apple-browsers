@@ -151,11 +151,11 @@ public struct StartupOptions {
     let simulateError: Bool
     let simulateCrash: Bool
     let simulateMemoryCrash: Bool
-    let vpnSettings: StoredOption<VPNSettingsSnapshot>
+    public let vpnSettings: StoredOption<VPNSettingsSnapshot>
 #if os(macOS)
-    let isAuthV2Enabled: StoredOption<Bool>
-    let authToken: StoredOption<String>
-    let tokenContainer: StoredOption<TokenContainer>
+    public let isAuthV2Enabled: StoredOption<Bool>
+    public let authToken: StoredOption<String>
+    public let tokenContainer: StoredOption<TokenContainer>
 #endif
     let enableTester: StoredOption<Bool>
 

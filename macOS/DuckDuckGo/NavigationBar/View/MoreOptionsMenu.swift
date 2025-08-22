@@ -95,6 +95,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
+    private let syncDeviceButtonModel: SyncDeviceButtonModel
+
     private weak var updateMenuItem: NSMenuItem?
 
     required init(coder: NSCoder) {
@@ -124,7 +126,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
-         isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled) {
+         isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
+         syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel()) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -148,6 +151,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.featureFlagger = featureFlagger
         self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
         self.isFireWindowDefault = isFireWindowDefault
+        self.syncDeviceButtonModel = syncDeviceButtonModel
 
         super.init(title: "")
 
@@ -551,9 +555,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withSubmenu(loginsSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
 
-        addItem(withTitle: "Sync & Backup", action: #selector(startSync), keyEquivalent: "")
-            .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.syncIcon)
+        if syncDeviceButtonModel.shouldShowSyncButton {
+            addItem(withTitle: "Sync & Backup", action: #selector(startSync), keyEquivalent: "")
+                .targetting(self)
+                .withImage(moreOptionsMenuIconsProvider.syncIcon)
+        }
 
         addItem(NSMenuItem.separator())
     }

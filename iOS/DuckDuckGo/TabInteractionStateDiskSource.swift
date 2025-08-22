@@ -123,9 +123,9 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
         guard let allCacheFiles = try? allCacheFiles() else {
             return []
         }
+        let excludedUIDs = Set(excludedTabs.compactMap { $0.uid })
         return allCacheFiles.filter { file in
-            let isExcluded = excludedTabs.contains { $0.uid == file.lastPathComponent }
-            return !isExcluded
+            !excludedUIDs.contains(file.lastPathComponent)
         }
     }
 

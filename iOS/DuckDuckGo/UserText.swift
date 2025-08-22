@@ -1272,8 +1272,8 @@ public struct UserText {
     public static let webTrackingProtectionUpdatedDescription = NSLocalizedString("settings.web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections, which are always active. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)", comment: "Updated description for web tracking protection settings")
 
     // Web Tracking Protection Features
-    public static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("settings.tracking.protection.third.party.trackers.title", value: "Blocks 3rd party trackers", comment: "Title for third-party tracker blocking feature")
-    public static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("settings.tracking.protection.third.party.trackers.description", value: "Helps block 3rd party cookies that track you from site to site by preventing 3rd party trackers from loading in the first place.", comment: "Description for third-party tracker blocking feature")
+    public static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("settings.tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Title for third-party tracker blocking feature")
+    public static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("settings.tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.", comment: "Description for third-party tracker blocking feature")
 
     public static let trackingProtectionTargetedAdsTitle = NSLocalizedString("settings.tracking.protection.targeted.ads.title", value: "Blocks targeted ads", comment: "Title for targeted ads blocking feature")
     public static let trackingProtectionTargetedAdsDescription = NSLocalizedString("settings.tracking.protection.targeted.ads.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description for targeted ads blocking feature")
@@ -1287,11 +1287,11 @@ public struct UserText {
     public static let trackingProtectionReferrerTitle = NSLocalizedString("settings.tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Title for referrer tracking protection feature")
     public static let trackingProtectionReferrerDescription = NSLocalizedString("settings.tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Description for Referer tracking protection feature")
 
-    public static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("settings.tracking.protection.first.party.cookies.title", value: "Expires 1st party cookies", comment: "Title for third-party cookie blocking feature")
-    public static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("settings.tracking.protection.first.party.cookies.description", value: "Automatically expires 1st party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Description for third-party cookie blocking feature")
+    public static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("settings.tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Title for third-party cookie blocking feature")
+    public static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("settings.tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Description for third-party cookie blocking feature")
 
     public static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("settings.tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Title for CNAME cloaking protection feature")
-    public static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("settings.tracking.protection.cname.cloaking.description", value: "Helps block 3rd party trackers that try to disguise themselves within a website using DNS.", comment: "Description for CNAME cloaking protection feature")
+    public static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("settings.tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Description for CNAME cloaking protection feature")
 
     public static let trackingProtectionGoogleAMPTitle = NSLocalizedString("settings.tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Title for Google AMP protection feature")
     public static let trackingProtectionGoogleAMPDescription = NSLocalizedString("settings.tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher’s site.", comment: "Description for Google AMP protection feature")
@@ -1784,7 +1784,7 @@ public struct UserText {
 
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
-    public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd party AI models", comment: "A description of what the AI Chat toggle does")
+    public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd-party AI models", comment: "A description of what the AI Chat toggle does")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 
@@ -1900,7 +1900,7 @@ public struct UserText {
 
             public enum Features {
                 public static let privateSearch = NSLocalizedString("onboarding.browsers.features.privateSearch.title", value: "Search privately by default", comment: "Message to highlight browser capability of private searches")
-                public static let trackerBlockers = NSLocalizedString("onboarding.highlights.browsers.features.trackerBlocker.title", value: "Block 3rd party trackers", comment: "Message to highlight browser capability of blocking 3rd party trackers")
+                public static let trackerBlockers = NSLocalizedString("onboarding.highlights.browsers.features.trackerBlocker.title", value: "Block 3rd-party trackers", comment: "Message to highlight browser capability of blocking 3rd-party trackers")
                 public static let cookiePopups = NSLocalizedString("onboarding.highlights.browsers.features.cookiePopups.title", value: "Block cookie pop-ups", comment: "Message to highlight how the browser allows you to block cookie pop-ups")
                 public static let creepyAds = NSLocalizedString("onboarding.highlights.browsers.features.creepyAds.title", value: "Block targeted ads", comment: "Message to highlight browser capability of blocking creepy ads")
                 public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")

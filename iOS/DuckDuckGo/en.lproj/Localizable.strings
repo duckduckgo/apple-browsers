@@ -2329,8 +2329,8 @@ https://duckduckgo.com/mac";
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Delete browsing data with one button";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Block 3rd party trackers";
+/* Message to highlight browser capability of blocking 3rd-party trackers */
+"onboarding.highlights.browsers.features.trackerBlocker.title" = "Block 3rd-party trackers";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Protections activated!";
@@ -2783,7 +2783,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.enable.aichat" = "Duck.ai";
 
 /* A description of what the AI Chat toggle does */
-"settings.enable.aichat.subtitle" = "Chat privately with popular 3rd party AI models";
+"settings.enable.aichat.subtitle" = "Chat privately with popular 3rd-party AI models";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Enable Email Protection";
@@ -2978,7 +2978,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.title" = "Settings";
 
 /* Description for CNAME cloaking protection feature */
-"settings.tracking.protection.cname.cloaking.description" = "Helps block 3rd party trackers that try to disguise themselves within a website using DNS.";
+"settings.tracking.protection.cname.cloaking.description" = "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.";
 
 /* Title for CNAME cloaking protection feature */
 "settings.tracking.protection.cname.cloaking.title" = "Protects against DNS CNAME cloaking";
@@ -2996,10 +2996,10 @@ Take back control of your personal information with the browser designed for dat
 "settings.tracking.protection.fingerprinting.title" = "Prevents fingerprint tracking";
 
 /* Description for third-party cookie blocking feature */
-"settings.tracking.protection.first.party.cookies.description" = "Automatically expires 1st party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.";
+"settings.tracking.protection.first.party.cookies.description" = "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.";
 
 /* Title for third-party cookie blocking feature */
-"settings.tracking.protection.first.party.cookies.title" = "Expires 1st party cookies";
+"settings.tracking.protection.first.party.cookies.title" = "Expires 1st-party cookies";
 
 /* Description for Google AMP protection feature */
 "settings.tracking.protection.google.amp.description" = "Replaces Google AMP links with the original publisher’s site.";
@@ -3032,10 +3032,10 @@ Take back control of your personal information with the browser designed for dat
 "settings.tracking.protection.targeted.ads.title" = "Blocks targeted ads";
 
 /* Description for third-party tracker blocking feature */
-"settings.tracking.protection.third.party.trackers.description" = "Helps block 3rd party cookies that track you from site to site by preventing 3rd party trackers from loading in the first place.";
+"settings.tracking.protection.third.party.trackers.description" = "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.";
 
 /* Title for third-party tracker blocking feature */
-"settings.tracking.protection.third.party.trackers.title" = "Blocks 3rd party trackers";
+"settings.tracking.protection.third.party.trackers.title" = "Blocks 3rd-party trackers";
 
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Unprotected Sites";

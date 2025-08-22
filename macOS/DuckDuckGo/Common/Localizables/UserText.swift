@@ -441,8 +441,8 @@ struct UserText {
     static let webTrackingProtectionAlwaysOn = NSLocalizedString("Always On", comment: "Web tracking protection Always on title")
     
     // Tracking Protection Features
-    static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("tracking.protection.third.party.trackers.title", value: "Blocks 3rd party trackers", comment: "Feature box title")
-    static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.third.party.trackers.description", value: "Helps block 3rd party cookies that track you from site to site by preventing 3rd party trackers from loading in the first place.", comment: "Feature description")
+    static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Feature box title")
+    static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.", comment: "Feature description")
     
     static let trackingProtectionTargetedAdsTitle = NSLocalizedString("tracking.protection.targeted.ads.title", value: "Blocks targeted ads", comment: "Feature box title")
     static let trackingProtectionTargetedAdsDescription = NSLocalizedString("tracking.protection.targeted.ads.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Feature description")
@@ -456,11 +456,11 @@ struct UserText {
     static let trackingProtectionReferrerTitle = NSLocalizedString("tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Feature box title")
     static let trackingProtectionReferrerDescription = NSLocalizedString("tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Feature box description")
     
-    static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("tracking.protection.first.party.cookies.title", value: "Expires 1st party cookies", comment: "Feature box title")
-    static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.first.party.cookies.description", value: "Automatically expires 1st party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
+    static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Feature box title")
+    static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
     
     static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Feature box title")
-    static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.cname.cloaking.description", value: "Helps block 3rd party trackers that try to disguise themselves within a website using DNS.", comment: "Feature box description")
+    static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Feature box description")
     
     static let trackingProtectionGoogleAMPTitle = NSLocalizedString("tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Feature box title")
     static let trackingProtectionGoogleAMPDescription = NSLocalizedString("tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher's site.", comment: "Feature box description")
@@ -504,7 +504,7 @@ struct UserText {
 
     // Duck.ai Settings
     static let aiChatTitle = NSLocalizedString("duckai.title", value: "Duck.ai", comment: "Title for Duck.ai feature")
-    static let aiChatDescription = NSLocalizedString("duckai.description", value: "Chat privately with popular 3rd party AI models", comment: "Description of Duck.ai feature in settings")
+    static let aiChatDescription = NSLocalizedString("duckai.description", value: "Chat privately with popular 3rd-party AI models", comment: "Description of Duck.ai feature in settings")
     static let aiChatEnableButton = NSLocalizedString("duckai.enable.button", value: "Enable Duck.ai", comment: "Button to enable Duck.ai feature")
     static let aiChatDisableButton = NSLocalizedString("duckai.disable.button", value: "Disable Duck.ai...", comment: "Button to disable Duck.ai feature")
     static let aiChatShortcutsSectionTitle = NSLocalizedString("duckai.shortcuts.section.title", value: "Duck.ai Shortcuts", comment: "Section title for Duck.ai shortcuts settings")

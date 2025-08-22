@@ -22521,55 +22521,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privat mit beliebten KI-Modellen von Drittanbietern chatten"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Chat privately with popular 3rd-party AI models"
+            "value" : "Chat privately with popular 3rd party AI models"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chatea en privado con modelos de IA populares de terceros"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Discutez en privé avec des modèles d'IA tiers populaires"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chatta privatamente con i più diffusi modelli di AI di terze parti"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chat privé met populaire AI-modellen van derden"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Czatuj prywatnie z popularnymi modelami AI innych firm"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Conversa em privado com modelos de IA populares de terceiros"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Общайтесь в приватном чате с популярными сторонними моделями искусственного интеллекта"
           }
         }
@@ -73429,6 +73429,18 @@
         }
       }
     },
+    "settings.web.tracking.protection.subtitle" : {
+      "comment" : "The subtitle of the web tracking protection grid section",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "How We Protect You"
+          }
+        }
+      }
+    },
     "share.menu.item" : {
       "comment" : "Menu item title",
       "extractionState" : "extracted_with_value",
@@ -80355,7 +80367,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS."
+            "value" : "Helps block 3rd party trackers that try to disguise themselves within a website using DNS."
           }
         }
       }
@@ -80427,7 +80439,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out."
+            "value" : "Automatically expires 1st party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out."
           }
         }
       }
@@ -80439,7 +80451,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Expires 1st-party cookies"
+            "value" : "Expires 1st party cookies"
           }
         }
       }
@@ -80499,7 +80511,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Removes tracking parameters in links to prevent 3rd-parties from tracking your behavior across sites."
+            "value" : "Removes tracking parameters in links to prevent 3rd parties from tracking your behavior across sites."
           }
         }
       }
@@ -80571,7 +80583,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place."
+            "value" : "Helps block 3rd party cookies that track you from site to site by preventing 3rd party trackers from loading in the first place."
           }
         }
       }
@@ -80583,7 +80595,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Blocks 3rd-party trackers"
+            "value" : "Blocks 3rd party trackers"
           }
         }
       }
@@ -81712,55 +81724,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Die Verwendung eines benutzerdefinierten DNS-Servers kann die Geschwindigkeit beim Browsen beeinträchtigen und deine Aktivitäten Dritten preisgeben, wenn der Server nicht sicher oder zuverlässig ist."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Using a custom DNS server can impact browsing speeds and expose your activity to third parties if the server isn't secure or reliable."
+            "value" : "Using a custom DNS server can impact browsing speeds and expose your activity to 3rd parties if the server isn't secure or reliable."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "El uso de un servidor DNS personalizado puede afectar a la velocidad de navegación y exponer tu actividad a terceros si el servidor no es seguro o fiable."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "L'utilisation d'un serveur DNS personnalisé peut avoir un impact sur la vitesse de navigation et exposer votre activité à des tiers si le serveur n'est pas sécurisé ou fiable."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "L'utilizzo di un server DNS personalizzato può incidere sulla velocità di navigazione ed esporre la tua attività a terzi se il server non è sicuro o affidabile."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Het gebruik van een aangepaste DNS-server kan de surfsnelheid beïnvloeden en je activiteiten blootstellen aan derden als de server niet veilig of betrouwbaar is."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Korzystanie z niestandardowego serwera DNS może mieć wpływ na prędkość przeglądania stron internetowych oraz narażać aktywność na dostęp nieupoważnionych osób, jeśli serwer nie jest bezpieczny lub sprawdzony."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "A utilização de um servidor DNS personalizado pode afetar as velocidades de navegação e expor a tua atividade a terceiros se o servidor não for seguro ou fiável."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Использование собственного DNS-сервера может снизить скорость просмотра веб-страниц и обнаружить ваши действия для третьих лиц, если сервер плохо защищен или работает ненадежно."
           }
         }
@@ -86360,7 +86372,7 @@
     },
     "web.tracking.protection.explenation" : {
       "comment" : "Privacy feature explanation in the browser settings",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -86414,6 +86426,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo автоматически блокирует скрытые трекеры, пока вы посещаете сайты."
+          }
+        }
+      }
+    },
+    "web.tracking.protection.subtitle" : {
+      "comment" : "Privacy feature explanation in the browser settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo automatically blocks hidden trackers as you browse the web."
           }
         }
       }
@@ -86485,7 +86509,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "The DuckDuckGo Browser provides a robust set of tracking protections, which are always active."
+            "value" : "The DuckDuckGo browser provides tracking protections, which are always active."
           }
         }
       }

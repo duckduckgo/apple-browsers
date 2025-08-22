@@ -27,7 +27,7 @@ extension Fire.BurningData {
      * We want to delay showing modal dialog by 1s while burn animation is being played
      * on the New Tab Page (i.e. when "specific domains" are burned without all-window fire animation).
      */
-    func shouldDelayShowingDialog(decider: VisualizeFireAnimationDecider) -> Bool {
+    func shouldDelayShowingDialog(decider: VisualizeFireSettingsDecider) -> Bool {
         switch self {
         case .specificDomains(_, false):
             return decider.shouldShowFireAnimation
@@ -64,7 +64,7 @@ final class FireViewModel {
     }
 
     @MainActor
-    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireAnimationDecider) {
+    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
         fire = Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
     }
 

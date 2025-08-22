@@ -59,7 +59,7 @@ final class AutoClearService: AutoClearServiceProtocol {
                 await autoClear.clearDataDueToTimeExpired(applicationState: .active)
             }
         } else {
-            overlayWindowManager.removeNonAuthenticationOverlay()
+            overlayWindowManager.removeBlankSnapshotWindow(for: .autoClearing)
         }
     }
 
@@ -67,7 +67,7 @@ final class AutoClearService: AutoClearServiceProtocol {
 
     func suspend() {
         if autoClear.isClearingEnabled {
-            overlayWindowManager.displayBlankSnapshotWindow()
+            overlayWindowManager.displayBlankSnapshotWindow(for: .autoClearing)
         }
         autoClear.startClearingTimer(Date().timeIntervalSince1970)
     }
@@ -77,7 +77,7 @@ final class AutoClearService: AutoClearServiceProtocol {
     @MainActor
     func waitForDataCleared() async {
         await autoClearTask?.value
-        overlayWindowManager.removeNonAuthenticationOverlay()
+        overlayWindowManager.removeBlankSnapshotWindow(for: .autoClearing)
     }
 
 }

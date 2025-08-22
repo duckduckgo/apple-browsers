@@ -79,9 +79,6 @@ jobs:
 
     needs: [tag-public-release]
 
-    # always run to produce the output needed by publish-to-sparkle
-    if: always()
-
     outputs:
       stop_workflow: ${{ steps.download-stop-workflow.outcome == 'success' }}
 
@@ -110,11 +107,11 @@ jobs:
 
     needs: [stop-workflow-if-needed]
 
-    # Run always, except for the case when stop-workflow-if-needed was not skipped and produced a non-true output.
+    # Run always (unless cancelled), except for the case when stop-workflow-if-needed was not skipped and produced a non-true output.
     # For internal releases, that job isn't run at all, so it doesn't produce an output. We want to publish the release then.
     # For public/hotfix releases, we want to publish the release unless the workflow should be stopped here, as indicated
     # by the stop_workflow flag.
-    if: needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
+    if: always() && !cancelled() && needs.stop-workflow-if-needed.outputs.stop_workflow != 'true'
 
     runs-on: macos-15-xlarge
     timeout-minutes: 10

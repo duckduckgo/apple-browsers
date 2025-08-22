@@ -96,7 +96,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         }
 
         assignFavoriteModelActions()
-        assignShorcutsModelActions()
+        assignShortcutsModelActions()
     }
 
     override func viewDidLoad() {
@@ -195,7 +195,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         }
     }
 
-    private func assignShorcutsModelActions() {
+    private func assignShortcutsModelActions() {
         shortcutsModel.onShortcutOpened = { [weak self] shortcut in
             guard let self else { return }
 
@@ -222,21 +222,10 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     weak var delegate: NewTabPageControllerDelegate?
     weak var shortcutsDelegate: NewTabPageControllerShortcutsDelegate?
 
-    func launchNewSearch() {
+    private func launchNewSearch() {
         // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
         guard !daxDialogsManager.isShowingPrivacyProPromotion else { return }
-        chromeDelegate?.omniBar.beginEditing()
-    }
-
-    func openedAsNewTab(allowingKeyboard: Bool) {
-        if allowingKeyboard && KeyboardSettings().onNewTab {
-
-            // The omnibar is inside a collection view so this needs a chance to do its thing
-            // which might also be async. Not great.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.launchNewSearch()
-            }
-        }
+        chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
     func dismiss() {
@@ -253,7 +242,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     func onboardingCompleted() {
         presentNextDaxDialog()
         // Show Keyboard when showing the first Dax tip
-        chromeDelegate?.omniBar.beginEditing()
+        chromeDelegate?.omniBar.beginEditing(animated: true)
     }
 
     // MARK: - Onboarding
@@ -308,7 +297,7 @@ extension NewTabPageViewController {
         let onManualDismiss: () -> Void = { [weak self] in
             self?.dismissHostingController(didFinishNTPOnboarding: true)
             // Show keyboard when manually dismiss the Dax tips.
-            self?.chromeDelegate?.omniBar.beginEditing()
+            self?.chromeDelegate?.omniBar.beginEditing(animated: true)
         }
 
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))

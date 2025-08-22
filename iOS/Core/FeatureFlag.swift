@@ -156,7 +156,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
     
-    /// Adds kgb=-1 parameter to search URLs when DuckAI is disabled
+    /// Adds kbg=-1 parameter to search URLs when DuckAI is disabled
     case duckAISearchParameter
 }
 

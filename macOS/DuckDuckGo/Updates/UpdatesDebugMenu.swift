@@ -24,6 +24,8 @@ final class UpdatesDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
+            NSMenuItem(title: "Expire current update", action: #selector(expireCurrentUpdate))
+                .targetting(self)
             NSMenuItem(title: "Reset last update check", action: #selector(resetLastUpdateCheck))
                 .targetting(self)
         }
@@ -34,6 +36,13 @@ final class UpdatesDebugMenu: NSMenu {
     }
 
     // MARK: - Menu State Update
+
+    @UserDefaultsWrapper(key: .updateValidityStartDate, defaultValue: nil)
+    var updateValidityStartDate: Date?
+
+    @objc func expireCurrentUpdate() {
+        updateValidityStartDate = .distantPast
+    }
 
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
     private var pendingUpdateSince: Date

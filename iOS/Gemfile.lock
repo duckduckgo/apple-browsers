@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: 7868ca07694180040978c4f8a7919f7a7585a18c
-  branch: dominik/report-workflow-failure
+  revision: e3d16afe384902170daf79716063692c8eea4566
+  tag: 2.10.0
   specs:
-    fastlane-plugin-ddg_apple_automation (2.9.0)
+    fastlane-plugin-ddg_apple_automation (2.10.0)
       asana
       climate_control
       httpparty

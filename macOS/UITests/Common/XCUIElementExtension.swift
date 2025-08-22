@@ -128,7 +128,7 @@ extension XCUIElement {
     func closeTab() throws {
         // Hover the tab to reveal its close ("x") button
         self.hover()
-        
+
         XCTAssertTrue(self.exists)
         let tabFrame = self.frame
 

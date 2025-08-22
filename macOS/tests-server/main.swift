@@ -89,24 +89,24 @@ server.middleware = [{ request in
     if let filesToDelete = params["deleteFiles"] {
         let paths = filesToDelete.components(separatedBy: ",")
         var results: [(path: String, success: Bool)] = []
-        
+
         // First try to delete all files
         for path in paths {
             let url = URL(fileURLWithPath: path)
             let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-            
+
             // Skip directories on first pass
             if !isDirectory {
                 let success = (try? FileManager.default.removeItem(at: url)) != nil
                 results.append((path: path, success: success))
             }
         }
-        
+
         // Then try to delete any empty directories
         for path in paths {
             let url = URL(fileURLWithPath: path)
             let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-            
+
             if isDirectory {
                 // Only delete if empty
                 if let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil),
@@ -116,12 +116,12 @@ server.middleware = [{ request in
                 }
             }
         }
-        
+
         // Return results but don't fail even if some deletions failed
         let report = results.map { "\($0.path): \($0.success ? "deleted" : "failed")" }.joined(separator: "\n")
         return .ok(.text(report))
     }
-    
+
     // Support /download/{size} to stream random data of specified size
     if request.path.hasPrefix("/download/") {
         let sizeSpec = String(request.path.dropFirst("/download/".count))

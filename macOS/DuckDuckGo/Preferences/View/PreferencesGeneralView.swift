@@ -110,6 +110,7 @@ extension Preferences {
                                             }
                                         }
                                         .pickerStyle(.menu)
+                                        .fixedSize()
                                         .disabled(startupModel.restorePreviousSession)
                                     }
                                 }

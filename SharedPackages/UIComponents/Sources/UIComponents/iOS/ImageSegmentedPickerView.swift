@@ -154,14 +154,9 @@ public struct ImageSegmentedPickerView: View {
                     .fill(viewModel.configuration.backgroundColor)
 
                 RoundedRectangle(cornerRadius: Constants.innerHeight / 2)
-                    .fill(Color.red)
+                    .fill(viewModel.configuration.selectedBackgroundColor)
                     .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
-
-                RoundedRectangle(cornerRadius: (Constants.innerHeight - 1) / 2)
-                    .fill(viewModel.configuration.selectedBackgroundColor)
-                    .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight - 1)
-                    .offset(x: currentOffset, y: 1)
                     .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
                     .animation(viewModel.scrollProgress == nil ? .easeInOut(duration: 0.2) : nil, value: currentOffset)
 

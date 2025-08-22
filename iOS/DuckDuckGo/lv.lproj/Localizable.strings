@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Pielāgo savu izlasi un bieži izmantotās funkcijas. Pārkārto elementus vai paslēp tos, lai lieki neaizņemtu vietu.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Tava jaunas cilnes lapa ir... atjaunota!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Izlase";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Saīsnes";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Rādīt, paslēpt un pārkārtot sadaļas jaunās cilnes lapā";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SADAĻAS";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "SAĪSNES";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Jaunas cilnes lapas pielāgošana";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Grāmatzīmes";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Lejupielādes";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Paroles";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Iestatījumi";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Jebkurā vietnē atver izvēlni ••• un izvēlies **Pievienot izlasei**, lai to pievienotu savai jaunas cilnes lapai.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nav atrasti rezultāti";
 

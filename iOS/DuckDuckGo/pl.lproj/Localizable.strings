@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Skróty";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Dostosuj ulubione elementy i podręczne funkcje. Zmień kolejność opcji lub ukryj je, aby zachować porządek.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Strona nowej karty ma nowy wygląd!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Ulubione";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Skróty";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Pokazuj, ukrywaj i zmieniaj kolejność sekcji na stronie nowej karty";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SEKCJE";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "Skróty";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Dostosuj stronę nowej karty";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Zakładki";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Pobrane";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Hasła";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Ustawienia";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "W dowolnej witrynie otwórz menu ••• i wybierz **Dodaj ulubione**, aby dodać je do strony nowej karty.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nie znaleziono wyników";
 

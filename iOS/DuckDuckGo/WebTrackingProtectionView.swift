@@ -96,8 +96,6 @@ struct WebTrackingProtectionView: View {
                                      explanation: UserText.webTrackingProtectionUpdatedDescription)
     }
 
-    var test: String = "test"
-
     var body: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.mainStackSpacing) {
             List {

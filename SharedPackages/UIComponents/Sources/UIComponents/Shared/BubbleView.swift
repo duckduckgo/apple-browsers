@@ -1,6 +1,5 @@
 //
 //  BubbleView.swift
-//  UIComponents
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

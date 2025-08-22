@@ -1,6 +1,5 @@
 //
 //  FeatureGridView.swift
-//  UIComponents
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -250,10 +249,8 @@ struct FeatureStaggeredGrid: View {
 
     private func columnFeatures(for columnIndex: Int) -> [FeatureGridItem] {
         var columnItems: [FeatureGridItem] = []
-        for (index, feature) in features.enumerated() {
-            if index % columns == columnIndex {
-                columnItems.append(feature)
-            }
+        for (index, feature) in features.enumerated() where index % columns == columnIndex {
+            columnItems.append(feature)
         }
         return columnItems
     }

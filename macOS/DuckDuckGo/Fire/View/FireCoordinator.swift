@@ -25,7 +25,7 @@ final class FireCoordinator {
 
     /// This is a lazy var in order to avoid initializing Fire directly at AppDelegate.init
     /// because of a significant number of dependencies that are still singletons.
-    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireAnimationDecider)
+    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider)
     private(set) var firePopover: FirePopover?
     private let tld: TLD
 

@@ -44223,6 +44223,18 @@
         }
       }
     },
+    "main-menu.file.open-file" : {
+      "comment" : "Main Menu File item",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open File…"
+          }
+        }
+      }
+    },
     "main-menu.file.open-location" : {
       "comment" : "Main Menu File item- Menu option that allows the user to connect to an address (type an address) on click the address bar of the browser is selected and the user can type.",
       "extractionState" : "extracted_with_value",
@@ -67117,6 +67129,18 @@
         }
       }
     },
+    "preferences.fire-window-section" : {
+      "comment" : "Section title for Fire Window preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fire Window"
+          }
+        }
+      }
+    },
     "preferences.general" : {
       "comment" : "Title of the option to show the General preferences",
       "extractionState" : "extracted_with_value",
@@ -67473,6 +67497,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "При запуске"
+          }
+        }
+      }
+    },
+    "preferences.open-fire-window-by-default" : {
+      "comment" : "Option to make all new windows Fire Windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Fire Window by default"
           }
         }
       }

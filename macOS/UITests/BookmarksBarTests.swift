@@ -22,10 +22,7 @@ class BookmarksBarTests: UITestCase {
     private var app: XCUIApplication!
     private var pageTitle: String!
     private var urlForBookmarksBar: URL!
-    private var settingsWindow: XCUIElement!
-    private var siteWindow: XCUIElement!
     private var defaultBookmarkDialogButton: XCUIElement!
-    private var resetBookMarksMenuItem: XCUIElement!
     private var showBookmarksBarPreferenceToggle: XCUIElement!
     private var showBookmarksBarPopup: XCUIElement!
     private var showBookmarksBarAlways: XCUIElement!
@@ -45,7 +42,6 @@ class BookmarksBarTests: UITestCase {
         app = XCUIApplication.setUp()
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         showBookmarksBarPreferenceToggle = app.checkBoxes["Preferences.AppearanceView.showBookmarksBarPreferenceToggle"]
-        resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         showBookmarksBarPopup = app.popUpButtons["Preferences.AppearanceView.showBookmarksBarPopUp"]
         showBookmarksBarAlways = app.menuItems["Preferences.AppearanceView.showBookmarksBarAlways"]
         showBookmarksBarNewTabOnly = app.menuItems["Preferences.AppearanceView.showBookmarksBarNewTabOnly"]
@@ -54,13 +50,10 @@ class BookmarksBarTests: UITestCase {
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
         app.enforceSingleWindow()
-        app.typeKey("n", modifierFlags: [.command]) // Guarantee a single window
         resetBookmarksAndAddOneBookmark()
-        app.enforceSingleWindow()
         app.typeKey("n", modifierFlags: [.command])
         openSettingsAndSetShowBookmarksBarToUnchecked()
         openSecondWindowAndVisitSite()
-        siteWindow = app.windows.containing(.webView, identifier: pageTitle).firstMatch
     }
 
     func test_bookmarksBar_whenShowBookmarksBarAlwaysIsSelected_alwaysDynamicallyAppearsOnWindow() throws {
@@ -130,7 +123,7 @@ class BookmarksBarTests: UITestCase {
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The Address Bar text field did not exist when it was expected."
         )
-        addressBarTextField.typeURL(urlForBookmarksBar)
+        addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
             bookmarksBarCollectionView.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "The bookmarksBarCollectionView should not exist on a tab that has been directed to a site, and is no longer new, when we have selected show bookmarks bar \"New Tab Only\" in the settings"
@@ -153,7 +146,7 @@ class BookmarksBarTests: UITestCase {
             "The bookmarksBarCollectionView should not exist on a new tab when we have unchecked \"Show Bookmarks Bar\" in the settings"
         )
         app.typeKey("l", modifierFlags: [.command]) // Get address bar focus
-        app.typeURL(urlForBookmarksBar)
+        addressBarTextField.pasteURL(urlForBookmarksBar)
 
         XCTAssertTrue(
             bookmarksBarCollectionView.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
@@ -164,7 +157,7 @@ class BookmarksBarTests: UITestCase {
 
 private extension BookmarksBarTests {
     func openSettingsAndSetShowBookmarksBarToUnchecked() {
-        addressBarTextField.typeURL(URL(string: "duck://settings")!)
+        app.openPreferencesWindow()
 
         let settingsAppearanceButton = app.buttons["PreferencesSidebar.appearanceButton"]
         XCTAssertTrue(
@@ -190,21 +183,12 @@ private extension BookmarksBarTests {
         app.typeKey("n", modifierFlags: [.command])
         app.typeKey("l", modifierFlags: [.command]) // Get address bar focus without addressing multiple address bars by identifier
 
-        app.typeURL(urlForBookmarksBar)
+        addressBarTextField.pasteURL(urlForBookmarksBar)
     }
 
     func resetBookmarksAndAddOneBookmark() {
-        XCTAssertTrue(
-            resetBookMarksMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
-        )
-
-        resetBookMarksMenuItem.click()
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        addressBarTextField.typeURL(urlForBookmarksBar)
+        app.resetBookmarks()
+        addressBarTextField.pasteURL(urlForBookmarksBar, pressingEnter: true)
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."

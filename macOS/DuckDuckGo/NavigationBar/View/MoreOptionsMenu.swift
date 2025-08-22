@@ -89,6 +89,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
+    private let isFireWindowDefault: Bool
 
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
@@ -121,7 +122,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+         isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -144,6 +146,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
         self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
+        self.isFireWindowDefault = isFireWindowDefault
 
         super.init(title: "")
 
@@ -285,7 +288,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     @objc func newWindow(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.newWindowActionClicked, frequency: .daily)
-        WindowsManager.openNewWindow()
+        WindowsManager.openNewWindow(burnerMode: .regular)
     }
 
     @MainActor
@@ -470,19 +473,31 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.newTabIcon)
 
-        // New Window
-        addItem(withTitle: UserText.newWindowMenuItem, action: #selector(newWindow(_:)), keyEquivalent: "n")
+        let newWindowItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(newWindow(_:)), keyEquivalent: "")
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.newWindowIcon)
 
-        // New Burner Window
-        let burnerWindowItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem,
-                                          action: #selector(newBurnerWindow(_:)),
-                                          target: self)
-        burnerWindowItem.keyEquivalent = "n"
-        burnerWindowItem.keyEquivalentModifierMask = [.command, .shift]
-        burnerWindowItem.image = moreOptionsMenuIconsProvider.newFireWindowIcon
-        addItem(burnerWindowItem)
+        let burnerWindowItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(newBurnerWindow(_:)), keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.newFireWindowIcon)
+
+        if isFireWindowDefault {
+            newWindowItem.keyEquivalent = "n"
+            newWindowItem.keyEquivalentModifierMask = [.command, .shift]
+            burnerWindowItem.keyEquivalent = "n"
+            burnerWindowItem.keyEquivalentModifierMask = [.command]
+
+            addItem(burnerWindowItem)
+            addItem(newWindowItem)
+        } else {
+            burnerWindowItem.keyEquivalent = "n"
+            burnerWindowItem.keyEquivalentModifierMask = [.command, .shift]
+            newWindowItem.keyEquivalent = "n"
+            newWindowItem.keyEquivalentModifierMask = [.command]
+
+            addItem(newWindowItem)
+            addItem(burnerWindowItem)
+        }
 
         // New Duck.ai Chat
         if aiChatMenuConfiguration.shouldDisplayApplicationMenuShortcut {

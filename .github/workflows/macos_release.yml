@@ -29,6 +29,10 @@ on:
         description: "Branch name"
         required: false
         type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
       skip-appstore:
         description: "Skip App Store release and only make a DMG build"
         default: false
@@ -71,6 +75,7 @@ jobs:
       create-dmg: true
       asana-task-url: ${{ inputs.asana-task-url }}
       branch: ${{ inputs.branch }}
+      commit-sha: ${{ inputs.commit-sha }}
     secrets: inherit
 
   appstore-release:
@@ -83,4 +88,5 @@ jobs:
       destination: ${{ inputs.destination }}
       asana-task-url: ${{ inputs.asana-task-url }}
       branch: ${{ inputs.branch }}
+      commit-sha: ${{ inputs.commit-sha }}
     secrets: inherit

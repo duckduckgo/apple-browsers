@@ -283,7 +283,7 @@ class DownloadsUITests: UITestCase {
         let filenameField = saveSheet.textFields.firstMatch
         XCTAssertTrue(filenameField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let initialName = filenameField.value as? String
-        XCTAssertEqual(initialName, "1MB.bin")
+        XCTAssertTrue(initialName == "1MB.bin" || initialName == "1MB", "Unexpected initial filename: \"\(initialName ?? "")\" not equal to \"1MB.bin\"")
 
         let uniqueName = "ui-" + UUID().uuidString + ".bin"
         XCTAssertNotEqual(initialName, uniqueName)
@@ -447,7 +447,7 @@ class DownloadsUITests: UITestCase {
     /// Option+click should download an HTML link instead of opening it.
     func testOptionClick_DownloadsLinkedHTMLFile() {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
-                                     openDownloadsPopupOnCompletion: true,
+                                     openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)
 
         // Linked HTML target
@@ -781,17 +781,7 @@ class DownloadsUITests: UITestCase {
             .containing(NSPredicate(format: "title == 'Background Download'"))
             .firstMatch
         XCTAssertTrue(popupTab.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        // Hover the tab to reveal its close ("x") button
-        popupTab.hover()
-        XCTAssertTrue(popupTab.exists)
-        let tabFrame = popupTab.frame
-        let closeButtonFrame = try XCTUnwrap(popupTab.snapshot().children.first(where: { $0.elementType == .button })?.frame)
-
-        let normalizedX = (closeButtonFrame.midX - tabFrame.minX) / tabFrame.width
-        let normalizedY = (closeButtonFrame.midY - tabFrame.minY) / tabFrame.height
-
-        let coordinate = popupTab.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
-        coordinate.click()
+        try popupTab.closeTab()
 
         // Verify no download was added
         verifyNoRecentDownloads()

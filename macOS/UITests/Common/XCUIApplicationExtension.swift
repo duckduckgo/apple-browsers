@@ -68,7 +68,7 @@ extension XCUIApplication {
     ///  2. Opening a new window
     func enforceSingleWindow() {
         let window = windows.firstMatch
-        if window.exists {
+        while window.exists {
             window.click()
             typeKey("w", modifierFlags: [.command, .option, .shift])
             _=window.waitForNonExistence(timeout: 5)
@@ -107,7 +107,6 @@ extension XCUIApplication {
     /// Reset the bookmarks so we can rely on a single bookmark's existence
     func resetBookmarks() {
         let resetMenuItem = menuItems[AccessibilityIdentifiers.resetBookmarksMenuItem]
-        typeKey("n", modifierFlags: [.command]) // Can't use debug menu without a window
         XCTAssertTrue(
             resetMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Reset bookmarks menu item didn't become available in a reasonable timeframe."

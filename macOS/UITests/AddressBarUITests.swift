@@ -30,7 +30,7 @@ class AddressBarUITests: UITestCase {
         app.enforceSingleWindow()
         webView = app.webViews.firstMatch
     }
-    
+
     override func tearDown() {
         webView = nil
         app = nil
@@ -348,49 +348,49 @@ class AddressBarUITests: UITestCase {
         app.activateAddressBar()
         app.typeText("hello world")
         app.typeKey(.enter, modifierFlags: [])
-        
+
         let helloWorldResult = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Hello, world!'")).firstMatch
         XCTAssertTrue(helloWorldResult.waitForExistence(timeout: 15.0), "Should show Hello, world! result")
 
         app.activateAddressBar()
         let searchURL = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(searchURL.hasPrefix("https://duckduckgo.com/?q=hello+world&"), "URL should be a DuckDuckGo search")
-        
+
         // Test email-like input
         app.openNewTab()
         app.activateAddressBar()
         app.typeText("test@example.com")
         app.typeKey(.enter, modifierFlags: [])
-        
+
         let emailResult = webView.staticTexts["test@example.com"]
         XCTAssertTrue(emailResult.waitForExistence(timeout: 15.0), "Should show search results for email")
-        
+
         app.activateAddressBar()
         let emailURL = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(emailURL.hasPrefix("https://duckduckgo.com/?q=test%40example.com&"), "URL should be a DuckDuckGo search")
-        
+
         // Test file protocol (should fail)
         app.openNewTab()
         app.activateAddressBar()
         addressBarTextField.typeText("file:///path/to/file")
         app.typeKey(.enter, modifierFlags: [])
-        
+
         let errorResult = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'load this page.'")).firstMatch
         XCTAssertTrue(errorResult.waitForExistence(timeout: 15.0), "Should show error for file protocol")
 
         app.activateAddressBar()
         let fileURL = addressBarTextField.value as? String ?? ""
         XCTAssertEqual(fileURL, "file:///path/to/file", "URL should remain unchanged")
-        
+
         // Test calculator expression
         app.openNewTab()
         app.activateAddressBar()
         addressBarTextField.typeText("2+2*8/(3-1.1)")
         app.typeKey(.enter, modifierFlags: [])
-        
+
         let calculatorResult = webView.staticTexts.containing(NSPredicate(format: "value BEGINSWITH '10.42105'")).firstMatch
         XCTAssertTrue(calculatorResult.waitForExistence(timeout: 15.0), "Should show calculator result")
-        
+
         app.activateAddressBar()
         let calcURL = addressBarTextField.value as? String ?? ""
         XCTAssertTrue(calcURL.hasPrefix("https://duckduckgo.com/?q=2%2B2*8%2F(3-1.1)&"), "URL should be a DuckDuckGo calculator search")

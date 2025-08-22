@@ -36,31 +36,11 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
         PixelFiringMock.tearDown()
     }
 
-    func testFiresPixelWhenExpandingList() {
-        let sut = createSUT()
-
-        XCTAssertTrue(sut.isCollapsed)
-        sut.toggleCollapse()
-
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.newTabPageFavoritesSeeMore.name)
-    }
-
-    func testFiresPixelWhenCollapsingList() {
-        let sut = createSUT()
-
-        sut.toggleCollapse()
-
-        XCTAssertFalse(sut.isCollapsed)
-        sut.toggleCollapse()
-
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.newTabPageFavoritesSeeLess.name)
-    }
-
     func testReturnsAllFavoritesWhenCustomizationDisabled() {
         favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
+        let sut = createSUT()
         
-        XCTAssertEqual(sut.prefixedFavorites(for: 1).items.count, 10)
+        XCTAssertEqual(sut.allFavorites.count, 10)
     }
 
     func testFiresPixelsOnFavoriteSelected() {
@@ -94,84 +74,8 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.homeScreenEditFavorite.name)
     }
 
-    func testFiresPixelOnTappingPlaceholder() {
-        let sut = createSUT()
-
-        sut.placeholderTapped()
-
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.newTabPageFavoritesPlaceholderTapped.name)
-    }
-
-    func testPrefixFavoritesCreatesRemainingPlaceholders() {
-        let sut = createSUT()
-
-        let slice = sut.prefixedFavorites(for: 3)
-
-        XCTAssertEqual(slice.items.filter(\.isPlaceholder).count, 2)
-        XCTAssertEqual(slice.items.count, 3)
-        XCTAssertFalse(slice.isCollapsible)
-    }
-
-    func testPrefixFavoritesDoesNotCreatePlaceholdersWhenCustomizationDisabled() {
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
-
-        let slice = sut.prefixedFavorites(for: 3)
-
-        XCTAssertTrue(slice.items.filter(\.isPlaceholder).isEmpty)
-        XCTAssertTrue(slice.items.isEmpty)
-        XCTAssertFalse(slice.isCollapsible)
-    }
-
-    func testPrefixFavoritesLimitsToTwoRows() {
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-        let sut = createSUT()
-
-        let slice = sut.prefixedFavorites(for: 4)
-
-        XCTAssertEqual(slice.items.count, 8)
-        XCTAssertTrue(slice.isCollapsible)
-    }
-
-    func testListNotCollapsibleWhenCustomizationDisabled() {
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
-
-        let favorites = sut.prefixedFavorites(for: 1)
-        XCTAssertFalse(favorites.isCollapsible)
-        XCTAssertFalse(sut.isCollapsed)
-    }
-
-    func testAddItemIsLastWhenFavoritesPresent() throws {
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-        let sut = createSUT()
-        
-        let lastItem = try XCTUnwrap(sut.allFavorites.last)
-
-        XCTAssertTrue(lastItem == .addFavorite)
-    }
-
-    func testAddItemIsFirstWhenFavoritesEmpty() throws {
-        let sut = createSUT()
-        
-        let firstItem = try XCTUnwrap(sut.allFavorites.first)
-        
-        XCTAssertTrue(firstItem == .addFavorite)
-    }
-
-    func testDoesNotAppendAddItemWhenCustomizationDisabled() {
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
-
-        XCTAssertNil(sut.allFavorites.first)
-
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-
-        XCTAssertNil(sut.allFavorites.first(where: { $0 == .addFavorite }))
-    }
-
-    private func createSUT(isNewTabPageCustomizationEnabled: Bool = true) -> FavoritesViewModel {
-        FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
-                           favoriteDataSource: favoriteDataSource,
+    private func createSUT() -> FavoritesViewModel {
+        FavoritesViewModel(favoriteDataSource: favoriteDataSource,
                            faviconLoader: MockFavoritesFaviconLoading(),
                            faviconsCache: MockFavoritesFaviconCaching(),
                            pixelFiring: PixelFiringMock.self,
@@ -201,15 +105,6 @@ private final class MockNewTabPageFavoriteDataSource: NewTabPageFavoriteDataSour
 private extension Favorite {
     static func stub() -> Favorite {
         Favorite(id: UUID().uuidString, title: "foo", domain: "bar")
-    }
-}
-
-private extension FavoriteItem {
-    var isPlaceholder: Bool {
-        switch self {
-        case .placeholder: return true
-        case .favorite, .addFavorite: return false
-        }
     }
 }
 

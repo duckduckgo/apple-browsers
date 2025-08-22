@@ -1,5 +1,5 @@
 //
-//  NewTabPageControllerDelegate.swift
+//  Favorite+Reorderable.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -17,12 +17,14 @@
 //  limitations under the License.
 //
 
-import Bookmarks
 import Foundation
+import UniformTypeIdentifiers
 
-protocol NewTabPageControllerDelegate: AnyObject {
-    func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidDeleteFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController)
+extension Favorite: Reorderable {
+
+    var trait: ReorderableTrait {
+        let itemProvider = NSItemProvider(object: (urlObject?.absoluteString ?? "") as NSString)
+        let metadata = MoveMetadata(itemProvider: itemProvider, type: .plainText)
+        return .movable(metadata)
+    }
 }

@@ -24,46 +24,16 @@ import Combine
 
 final class NewTabPageViewModel: ObservableObject {
 
-    @Published private(set) var isIntroMessageVisible: Bool
+    @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
-    @Published var isShowingSettings: Bool
-
     private(set) var isDragging: Bool = false
 
-    private var introDataStorage: NewTabPageIntroDataStoring
     private let pixelFiring: PixelFiring.Type
 
-    @Published var canEditFavorites = true
-
-    init(introDataStorage: NewTabPageIntroDataStoring = NewTabPageIntroDataUserDefaultsStorage(),
-         pixelFiring: PixelFiring.Type = Pixel.self) {
-        self.introDataStorage = introDataStorage
+    init(pixelFiring: PixelFiring.Type = Pixel.self) {
         self.pixelFiring = pixelFiring
 
-        isIntroMessageVisible = introDataStorage.newTabPageIntroMessageEnabled ?? false
         isOnboarding = false
-        isShowingSettings = false
-    }
-
-    func introMessageDisplayed() {
-        pixelFiring.fire(.newTabPageMessageDisplayed, withAdditionalParameters: [:])
-
-        introDataStorage.newTabPageIntroMessageSeenCount += 1
-        if introDataStorage.newTabPageIntroMessageSeenCount >= 3 {
-            introDataStorage.newTabPageIntroMessageEnabled = false
-        }
-    }
-
-    func dismissIntroMessage() {
-        pixelFiring.fire(.newTabPageMessageDismissed, withAdditionalParameters: [:])
-
-        introDataStorage.newTabPageIntroMessageEnabled = false
-        isIntroMessageVisible = false
-    }
-
-    func customizeNewTabPage() {
-        pixelFiring.fire(.newTabPageCustomize, withAdditionalParameters: [:])
-        isShowingSettings = true
     }
 
     func startOnboarding() {

@@ -23,7 +23,7 @@ import Bookmarks
 import BrowserServicesKit
 import Core
 
-final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
+final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage {
 
     var isShowingLogo: Bool {
         favoritesModel.isEmpty
@@ -31,16 +31,12 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private lazy var borderView = StyledTopBottomBorderView()
 
-    private let variantManager: VariantManager
     private let newTabDialogFactory: any NewTabDaxDialogProvider
     private let daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating
 
     private let newTabPageViewModel: NewTabPageViewModel
     private let messagesModel: NewTabPageMessagesModel
     private let favoritesModel: FavoritesViewModel
-    private let shortcutsModel: ShortcutsModel
-    private let shortcutsSettingsModel: NewTabPageShortcutsSettingsModel
-    private let sectionsSettingsModel: NewTabPageSectionsSettingsModel
     private let associatedTab: Tab
 
     private var hostingController: UIHostingController<AnyView>?
@@ -51,11 +47,9 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     private let appWidthObserver: AppWidthObserver
 
     init(tab: Tab,
-         isNewTabPageCustomizationEnabled: Bool,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          privacyProDataReporting: PrivacyProDataReporting? = nil,
-         variantManager: VariantManager,
          newTabDialogFactory: any NewTabDaxDialogProvider,
          daxDialogsManager: NewTabDialogSpecProvider & PrivacyProPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
@@ -64,7 +58,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          appWidthObserver: AppWidthObserver = .shared) {
 
         self.associatedTab = tab
-        self.variantManager = variantManager
         self.newTabDialogFactory = newTabDialogFactory
         self.daxDialogsManager = daxDialogsManager
         self.messageNavigationDelegate = messageNavigationDelegate
@@ -72,31 +65,17 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.appWidthObserver = appWidthObserver
 
         newTabPageViewModel = NewTabPageViewModel()
-        shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
-        sectionsSettingsModel = NewTabPageSectionsSettingsModel()
-        favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
-                                            favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
+        favoritesModel = FavoritesViewModel(favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
-        shortcutsModel = ShortcutsModel()
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 privacyProDataReporter: privacyProDataReporting,
                                                 navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
-        if isNewTabPageCustomizationEnabled {
-            super.init(rootView: AnyView(CustomizableNewTabPageView(viewModel: self.newTabPageViewModel,
-                                                        messagesModel: self.messagesModel,
-                                                        favoritesViewModel: self.favoritesModel,
-                                                        shortcutsModel: self.shortcutsModel,
-                                                        shortcutsSettingsModel: self.shortcutsSettingsModel,
-                                                        sectionsSettingsModel: self.sectionsSettingsModel)))
-        } else {
-            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
-                                                              messagesModel: self.messagesModel,
-                                                              favoritesViewModel: self.favoritesModel)))
-        }
+        super.init(rootView: NewTabPageView(viewModel: self.newTabPageViewModel,
+                                            messagesModel: self.messagesModel,
+                                            favoritesViewModel: self.favoritesModel))
 
         assignFavoriteModelActions()
-        assignShorcutsModelActions()
     }
 
     override func viewDidLoad() {
@@ -195,32 +174,12 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         }
     }
 
-    private func assignShorcutsModelActions() {
-        shortcutsModel.onShortcutOpened = { [weak self] shortcut in
-            guard let self else { return }
-
-            switch shortcut {
-            case .aiChat:
-                shortcutsDelegate?.newTabPageDidRequestAIChat(self)
-            case .bookmarks:
-                shortcutsDelegate?.newTabPageDidRequestBookmarks(self)
-            case .downloads:
-                shortcutsDelegate?.newTabPageDidRequestDownloads(self)
-            case .passwords:
-                shortcutsDelegate?.newTabPageDidRequestPasswords(self)
-            case .settings:
-                shortcutsDelegate?.newTabPageDidRequestSettings(self)
-            }
-        }
-    }
-
     // MARK: - NewTabPage
 
     var isDragging: Bool { newTabPageViewModel.isDragging }
 
     weak var chromeDelegate: BrowserChromeDelegate?
     weak var delegate: NewTabPageControllerDelegate?
-    weak var shortcutsDelegate: NewTabPageControllerShortcutsDelegate?
 
     func launchNewSearch() {
         // If we are displaying a Privacy Pro promotion on a new tab, do not activate search

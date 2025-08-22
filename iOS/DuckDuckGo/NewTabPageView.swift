@@ -80,7 +80,7 @@ private extension NewTabPageView {
                         .padding(.top, Metrics.nonGridSectionTopPadding)
                         .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
 
-                    favoritesSectionView(proxy: proxy)
+                    FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(sectionsViewPadding(in: proxy))
@@ -116,12 +116,6 @@ private extension NewTabPageView {
                 .frame(maxWidth: horizontalSizeClass == .regular ? Metrics.messageMaximumWidthPad : Metrics.messageMaximumWidth)
                 .transition(.scale.combined(with: .opacity))
         }
-    }
-
-    private func favoritesSectionView(proxy: GeometryProxy) -> some View {
-        FavoritesView(model: favoritesViewModel,
-                      isAddingFavorite: .constant(false),
-                      geometry: proxy)
     }
 
     private func sectionsViewPadding(in geometry: GeometryProxy) -> CGFloat {

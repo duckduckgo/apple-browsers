@@ -831,10 +831,6 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
     }
 
-    func printSomethig() {
-        print("printSomething")
-    }
-
     /// Dismisses the bottom sheet
     /// - Parameters:
     ///   - reset: Whether to reset the pill state

@@ -102,6 +102,11 @@ extension XCUIApplication {
         typeKey("l", modifierFlags: [.command])
     }
 
+    /// Address bar text field element
+    var addressBar: XCUIElement {
+        textFields[AccessibilityIdentifiers.addressBarTextField]
+    }
+
     // MARK: - Bookmarks
 
     /// Reset the bookmarks so we can rely on a single bookmark's existence

@@ -9,7 +9,7 @@ keywords: ["anti-patterns", "common mistakes", "singletons", "memory leaks", "as
 
 ## Singleton Anti-patterns
 
-### ❌ NEVER: Static Shared Instances Without Dependency Injection
+### ❌ NEVER: Static Shared Instances Without Dependency Injection (.shared instance pattern)
 ```swift
 // ❌ AVOID - Static shared instance without DI
 final class FeatureManager {
@@ -497,5 +497,33 @@ func processLargeDataSet() async {
     updateUI(with: result)
 }
 ```
+
+## Communication Anti-patterns
+
+### ❌ NEVER: Celebrate Partial Results or Progress
+```
+// ❌ AVOID - Celebrating when work is incomplete
+"✅ MISSION ACCOMPLISHED!" (when tests still failing)
+"🎯 Outstanding Achievement:" (when task isn't finished)
+"📊 FINAL RESULTS:" (when results aren't final)
+"✅ Successfully achieved X" (when Y tests still failing)
+
+// ✅ CORRECT - Focus on what's left to do
+"7 tests still failing. Continuing to fix remaining issues."
+"Progress made but task incomplete. Working on remaining failures."
+"X tests now passing, Y still need work."
+```
+
+**Never celebrate or summarize achievements when:**
+- Tests are still failing
+- Tasks are incomplete
+- User's request hasn't been fully satisfied
+- Work is in progress
+
+**Only summarize results when:**
+- ALL tests pass (100% success rate)
+- Task is completely finished
+- User's request is fully satisfied
+- No work remaining
 
 These anti-patterns should be actively avoided to maintain code quality, testability, and performance in the DuckDuckGo browser codebase.

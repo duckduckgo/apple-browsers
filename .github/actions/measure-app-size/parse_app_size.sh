@@ -95,17 +95,6 @@ parse_app_size_from_line() {
         echo "Download size (compressed): $DOWNLOAD_SIZE"
         echo "Installation size (uncompressed): $INSTALLATION_SIZE"
         
-        # Extract numeric values without units for backward compatibility
-        DOWNLOAD_SIZE_VALUE=$(echo "$DOWNLOAD_SIZE" | sed 's/[A-Z]*//')
-        INSTALLATION_SIZE_VALUE=$(echo "$INSTALLATION_SIZE" | sed 's/[A-Z]*//')
-        
-        echo ""
-        echo "Environment variables:"
-        echo "DOWNLOAD_SIZE=$DOWNLOAD_SIZE"
-        echo "INSTALLATION_SIZE=$INSTALLATION_SIZE"
-        echo "DOWNLOAD_SIZE_MB=$DOWNLOAD_SIZE_VALUE"
-        echo "INSTALLATION_SIZE_MB=$INSTALLATION_SIZE_VALUE"
-        
         return 0
     else
         echo "Error: Could not extract size values from line: $app_size_line"

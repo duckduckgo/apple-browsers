@@ -118,6 +118,9 @@ class DownloadsUITests: UITestCase {
         // Wait for the download to actually start (Downloads button becomes available)
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
         _ = downloadsButton.waitForExistence(timeout: 10.0)
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*")
+        app.typeKey(.escape, modifierFlags: [])
+
         // Attempt to close window → expect warning
         app.closeWindow()
         verifyDownloadInProgressWarning()
@@ -137,7 +140,8 @@ class DownloadsUITests: UITestCase {
 
         // Reopen main window and verify download was cancelled
         app.enforceSingleWindow()
-        assertDownloadListed(filenameRegex: ".MMA.+10GB.*")
+        // Verify no downloads are in the main window
+        verifyNoRecentDownloads()
     }
 
     /// Starts a larger download and verifies progress by asserting the Stop action is available in the context menu.

@@ -229,7 +229,6 @@ class SearchNonexistentDomainUITests: UITestCase {
         let invalidURL = URL(string: "http://nonexistent.invalidtld")!
         addressBarTextField.pasteURL(invalidURL, pressingEnter: true)
 
-
         // Robust error/suggestion predicate
         let suggestionOrErrorText = webView.staticTexts
             .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))
@@ -245,7 +244,6 @@ class SearchNonexistentDomainUITests: UITestCase {
         // With https and invalid TLD, should not redirect to search; expect error page/suggestions
         let invalidURL = URL(string: "https://nonexistent.invalidtld")!
         addressBarTextField.pasteURL(invalidURL, pressingEnter: true)
-
 
         let suggestionOrErrorText = webView.staticTexts
             .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))

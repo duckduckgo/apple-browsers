@@ -110,8 +110,8 @@ extension URL {
         if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
             /// Append the kbg disable parameter only when Duck AI features are not shown
             if !AIChatPreferences.shared.shouldShowAIFeatures {
-                url = url.appendingParameter(name: URL.DuckDuckGoParameters.kbg.rawValue,
-                                             value: URL.DuckDuckGoParameters.kbgDisabledValue.rawValue)
+                url = url.appendingParameter(name: URL.DuckDuckGoParameters.KBG.kbg,
+                                             value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
             }
         }
 
@@ -470,8 +470,11 @@ extension URL {
         case search = "q"
         case ia
         case iax
-        case kbg
-        case kbgDisabledValue = "-1"
+
+        enum KBG {
+            static let kbg = "kbg"
+            static let kbgDisabledValue = "-1"
+        }
 
         enum ATB {
             static let atb = "atb"

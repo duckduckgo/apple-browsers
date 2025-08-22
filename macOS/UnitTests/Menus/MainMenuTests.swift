@@ -321,7 +321,7 @@ class MainMenuTests: XCTestCase {
         let isFireWindowDefault = true
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -337,6 +337,31 @@ class MainMenuTests: XCTestCase {
 
         XCTAssertEqual(fileMenu.submenu?.item(at: 1)?.title, UserText.newBurnerWindowMenuItem)
         XCTAssertEqual(fileMenu.submenu?.item(at: 2)?.title, UserText.newWindowMenuItem)
+    }
+
+    @MainActor
+    func testMainMenuInitializedWithTrueOpenFileFlag_ThenOpenFileMenuItemIsVisible() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.openFileMenuAction]
+
+        let sut = MainMenu(
+            featureFlagger: featureFlagger,
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider()
+        )
+
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
+        let openFileMenuItem = fileMenu.submenu?.item(withTitle: UserText.mainMenuFileOpenFile)
+
+        XCTAssertNotNil(openFileMenuItem, "Open File menu item should exist in the file menu.")
+        XCTAssertFalse(openFileMenuItem?.isHidden ?? true, "Open File menu item should be visible when the openFileFeature feature flag is enabled.")
     }
 
     @MainActor

@@ -45,6 +45,7 @@ final class MainMenu: NSMenu {
     let newBurnerWindowMenuItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(AppDelegate.newBurnerWindow), keyEquivalent: "")
     let newTabMenuItem = NSMenuItem(title: UserText.mainMenuFileNewTab, action: #selector(AppDelegate.newTab), keyEquivalent: "t")
     let openLocationMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenLocation, action: #selector(AppDelegate.openLocation), keyEquivalent: "l")
+    let openFileMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenFile, action: #selector(AppDelegate.openFile), keyEquivalent: "o")
     let closeWindowMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseWindow, action: #selector(NSWindow.performClose), keyEquivalent: "W")
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
@@ -217,6 +218,10 @@ final class MainMenu: NSMenu {
             }
 
             aiChatMenu
+
+            if featureFlagger.isFeatureOn(.openFileMenuAction) {
+                openFileMenuItem
+            }
 
             openLocationMenuItem
             NSMenuItem.separator()

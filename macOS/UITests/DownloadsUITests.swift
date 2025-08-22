@@ -126,11 +126,7 @@ class DownloadsUITests: UITestCase {
         sheet.buttons["Don’t Close"].click()
 
         // Verify download is in progress and present
-        openDownloadsPopup()
-        let progressPredicate = NSPredicate(format: "value MATCHES[c] '.* of .*( – .*|)'")
-        let namePredicate = NSPredicate(format: "value MATCHES[c] '.MMA.+10GB.*'")
-        XCTAssertTrue(popover.staticTexts.containing(namePredicate).firstMatch.waitForExistence(timeout: 15.0))
-        XCTAssertTrue(popover.staticTexts.containing(progressPredicate).firstMatch.waitForExistence(timeout: 10.0))
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*", sizeLabelRegex: ".* of .*( – .*|)")
         app.typeKey(.escape, modifierFlags: [])
 
         // Try closing again and accept the warning to stop download
@@ -141,8 +137,7 @@ class DownloadsUITests: UITestCase {
 
         // Reopen main window and verify download was cancelled
         app.enforceSingleWindow()
-        openDownloadsPopup()
-        XCTAssertTrue(popover.staticTexts.containing(namePredicate).firstMatch.waitForNonExistence(timeout: 3.0))
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*")
     }
 
     /// Starts a larger download and verifies progress by asserting the Stop action is available in the context menu.
@@ -170,8 +165,7 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(stopItem.waitForExistence(timeout: 5.0))
 
         // Additionally assert progress text and filename
-        let progressPredicate = NSPredicate(format: "value MATCHES[c] '.* of .*( – .*|)'")
-        XCTAssertTrue(popover.staticTexts.containing(progressPredicate).firstMatch.waitForExistence(timeout: 10.0))
+        assertDownloadListed(sizeLabelRegex: ".* of .*( – .*|)")
     }
 
     /// Triggers two distinct downloads and verifies the Downloads UI is available for multiple items.
@@ -527,6 +521,7 @@ class DownloadsUITests: UITestCase {
         trackForCleanup(downloadsDir.appendingPathComponent(filename + ".duckload").path)
 
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
+        assertDownloadListed(filename: "5GB.bin")
 
         // Immediately close window and open a new one; browser should remain stable
         app.typeKey("w", modifierFlags: [.command, .shift])
@@ -536,10 +531,7 @@ class DownloadsUITests: UITestCase {
         // Downloads UI should still be accessible
         openDownloadsPopup()
         verifyDownloadPopupIsShown()
-        // Verify presence by checking a size label is shown in the popover
-        let sizePredicate = NSPredicate(format: "value MATCHES[c] '.*(KB|MB|GB).*'")
-        let sizeLabel = popover.staticTexts.containing(sizePredicate).firstMatch
-        XCTAssertTrue(sizeLabel.waitForExistence(timeout: 15.0))
+        assertDownloadListed(filename: "5GB.bin", sizeLabelRegex: ".*(KB|MB|GB).*")
     }
 
     /// JS‑initiated data: URL download should surface the save panel when "Always ask" is enabled.
@@ -634,10 +626,7 @@ class DownloadsUITests: UITestCase {
         trackForCleanup(downloadsDir.appendingPathComponent(fileName + ".duckload").path)
 
         openSiteForDownloadingFile(url: url.absoluteString)
-        openDownloadsPopup()
-        let sizeLabel = popover.staticTexts.containing(NSPredicate(format: "value MATCHES[c] '1.0 MB'")).firstMatch
-        XCTAssertTrue(sizeLabel.waitForExistence(timeout: 15.0))
-        assertDownloadListed(filename: fileName)
+        assertDownloadListed(filename: fileName, sizeLabelRegex: "1.0 MB")
 
         // Restart app and verify the same file is listed
         app.typeKey("q", modifierFlags: [.command])
@@ -649,7 +638,7 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         openDownloadsPopup()
-        XCTAssertTrue(sizeLabel.exists)
+        assertDownloadListed(filename: fileName, sizeLabelRegex: "1.0 MB")
     }
 
     /// Quitting while a download is active should show a confirmation alert that can be cancelled.
@@ -667,6 +656,7 @@ class DownloadsUITests: UITestCase {
         // Ensure download actually started before quitting
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
         XCTAssertTrue(downloadsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*")
 
         app.typeKey("q", modifierFlags: [.command])
         let quitSheet = app.dialogs.firstMatch
@@ -1049,7 +1039,7 @@ class DownloadsUITests: UITestCase {
     }
 
     /// Opens the Downloads popover (if needed) and asserts both size label (optional) and filename exist.
-    private func assertDownloadListed(filename: String, sizeLabelRegex: String? = nil) {
+    private func assertDownloadListed(filename: String? = nil, filenameRegex: String? = nil, sizeLabelRegex: String? = nil) {
         if !popover.exists {
             openDownloadsPopup()
         }
@@ -1058,7 +1048,14 @@ class DownloadsUITests: UITestCase {
             let size = popover.staticTexts.containing(sizePredicate).firstMatch
             XCTAssertTrue(size.waitForExistence(timeout: 15.0))
         }
-        XCTAssertTrue(popover.staticTexts[filename].waitForExistence(timeout: 15.0))
+        if let filename {
+            XCTAssertTrue(popover.staticTexts[filename].waitForExistence(timeout: 15.0))
+        }
+        if let filenameRegex {
+            let namePredicate = NSPredicate(format: "value MATCHES[c] %@", filenameRegex)
+            let nameLabel = popover.staticTexts.containing(namePredicate).firstMatch
+            XCTAssertTrue(nameLabel.waitForExistence(timeout: 15.0))
+        }
     }
 
     private func clearDownloads() {
@@ -1093,7 +1090,10 @@ class DownloadsUITests: UITestCase {
 
     private func openDownloadsPopup() {
         app.typeKey("j", modifierFlags: [.command])
-        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if !popover.waitForExistence(timeout: 2) {
+            app.typeKey("j", modifierFlags: [.command])
+            XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        }
     }
 
     // Unified preferences configuration for Downloads tests

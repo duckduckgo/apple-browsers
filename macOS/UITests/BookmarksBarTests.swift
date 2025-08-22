@@ -45,13 +45,12 @@ class BookmarksBarTests: UITestCase {
         showBookmarksBarPopup = app.popUpButtons["Preferences.AppearanceView.showBookmarksBarPopUp"]
         showBookmarksBarAlways = app.menuItems["Preferences.AppearanceView.showBookmarksBarAlways"]
         showBookmarksBarNewTabOnly = app.menuItems["Preferences.AppearanceView.showBookmarksBarNewTabOnly"]
-        bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        bookmarksBarCollectionView = app.windows.firstMatch.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
+        addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
         app.enforceSingleWindow()
         resetBookmarksAndAddOneBookmark()
-        app.typeKey("n", modifierFlags: [.command])
         openSettingsAndSetShowBookmarksBarToUnchecked()
         openSecondWindowAndVisitSite()
     }
@@ -113,7 +112,6 @@ class BookmarksBarTests: UITestCase {
         )
         showBookmarksBarNewTabOnly.click()
         app.enforceSingleWindow()
-        app.typeKey("n", modifierFlags: [.command]) // open one new window
 
         XCTAssertTrue(
             bookmarksBarCollectionView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -134,7 +132,6 @@ class BookmarksBarTests: UITestCase {
         // This tests begins in the state that "show bookmarks bar" is unchecked, so that isn't set within the test
 
         app.enforceSingleWindow()
-        app.typeKey("n", modifierFlags: [.command]) // Open new window
         XCTAssertTrue(
             bookmarksBarCollectionView.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "The bookmarksBarCollectionView should not exist on a new window when we have unchecked \"Show Bookmarks Bar\" in the settings"
@@ -145,7 +142,6 @@ class BookmarksBarTests: UITestCase {
             bookmarksBarCollectionView.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "The bookmarksBarCollectionView should not exist on a new tab when we have unchecked \"Show Bookmarks Bar\" in the settings"
         )
-        app.typeKey("l", modifierFlags: [.command]) // Get address bar focus
         addressBarTextField.pasteURL(urlForBookmarksBar)
 
         XCTAssertTrue(
@@ -181,8 +177,6 @@ private extension BookmarksBarTests {
 
     func openSecondWindowAndVisitSite() {
         app.typeKey("n", modifierFlags: [.command])
-        app.typeKey("l", modifierFlags: [.command]) // Get address bar focus without addressing multiple address bars by identifier
-
         addressBarTextField.pasteURL(urlForBookmarksBar)
     }
 

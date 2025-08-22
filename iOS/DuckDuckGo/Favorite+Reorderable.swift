@@ -1,5 +1,5 @@
 //
-//  ShortcutsModel.swift
+//  Favorite+Reorderable.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -18,19 +18,13 @@
 //
 
 import Foundation
-import Core
+import UniformTypeIdentifiers
 
-final class ShortcutsModel: ObservableObject {
+extension Favorite: Reorderable {
 
-    var onShortcutOpened: ((NewTabPageShortcut) -> Void)?
-    let pixelFiring: PixelFiring.Type
-
-    init(pixelFiring: PixelFiring.Type = Pixel.self) {
-        self.pixelFiring = pixelFiring
-    }
-
-    func openShortcut(_ shortcut: NewTabPageShortcut) {
-        pixelFiring.fire(.newTabPageShortcutClicked(shortcut.nameForPixel), withAdditionalParameters: [:])
-        onShortcutOpened?(shortcut)
+    var trait: ReorderableTrait {
+        let itemProvider = NSItemProvider(object: (urlObject?.absoluteString ?? "") as NSString)
+        let metadata = MoveMetadata(itemProvider: itemProvider, type: .plainText)
+        return .movable(metadata)
     }
 }

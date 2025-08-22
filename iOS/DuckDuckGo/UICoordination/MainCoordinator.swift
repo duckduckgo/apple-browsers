@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Subscription
 import Persistence
 import DDGSync
+import Configuration
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 
@@ -67,6 +68,7 @@ final class MainCoordinator {
          fireproofing: Fireproofing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
+         customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
          keyValueStore: ThrowingKeyValueStoring,
          defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
@@ -140,6 +142,7 @@ final class MainCoordinator {
                                         aiChatSettings: aiChatSettings,
                                         themeManager: ThemeManager.shared,
                                         keyValueStore: keyValueStore,
+                                        customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                         daxDialogsManager: daxDialogsManager)
     }
@@ -152,7 +155,6 @@ final class MainCoordinator {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,
-                                   privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                    tld: provider.storageCache.tld) {
         case .failure(let error):
             throw TerminationError.historyDatabase(error)

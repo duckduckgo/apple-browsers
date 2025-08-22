@@ -34,7 +34,7 @@ struct SettingsAIFeaturesView: View {
             VStack(alignment: .center) {
                 if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                     Image(.settingAIFeaturesHero)
-                        .padding(.top, -30)
+                        .padding(.top, -20)
                 } else {
                     Image(.settingsAIChatHero)
                         .padding(.top, -20)
@@ -74,7 +74,11 @@ struct SettingsAIFeaturesView: View {
 
                     if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                         Section {
-                            SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                            HStack {
+                                SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.aiChatSearchInputEnabledBinding)
+                                    .padding(.vertical, 8)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
                         } footer: {
                             Text(footerAttributedString)
                                 .environment(\.openURL, OpenURLAction { url in
@@ -113,8 +117,10 @@ struct SettingsAIFeaturesView: View {
                         SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
 
-                        SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                         accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                        if viewModel.state.voiceSearchEnabled {
+                            SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                             accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                        }
 
                         SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))

@@ -95,7 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
-    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
+    let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
@@ -147,7 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tld: tld,
         fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore,
-        visualizeFireAnimationDecider: visualizeFireAnimationDecider,
+        visualizeFireAnimationDecider: visualizeFireSettingsDecider,
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
         tabsPreferences: TabsPreferences.shared,
@@ -193,6 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     var configurationStore = ConfigurationStore()
     var configurationManager: ConfigurationManager
+    var configurationURLProvider: CustomConfigurationURLProviding
 
     // MARK: - VPN
 
@@ -619,7 +620,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared
         )
-        visualizeFireAnimationDecider = DefaultVisualizeFireAnimationDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
+        visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
@@ -671,8 +672,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         appContentBlocking = contentBlocking
 #endif
-
+        configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults.appConfiguration))
         configurationManager = ConfigurationManager(
+            fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents),
             store: configurationStore,
             trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
             privacyConfigurationManager: privacyConfigurationManager,
@@ -727,6 +729,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
+                configurationURLProvider: configurationURLProvider,
                 visualStyle: self.visualStyle
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
@@ -805,10 +808,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
-        Configuration.setURLProvider(AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        ))
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore, startupPreferences: startupPreferences)
 
@@ -1099,7 +1098,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
-        return ApplicationDockMenu(internalUserDecider: internalUserDecider)
+        return ApplicationDockMenu(internalUserDecider: internalUserDecider, isFireWindowDefault: visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled)
     }
 
     func application(_ sender: NSApplication, openFiles files: [String]) {
@@ -1403,7 +1402,7 @@ extension AppDelegate: UserScriptDependenciesProviding {
 
         return NewTabPageActionsManager(
             appearancePreferences: appearancePreferences,
-            visualizeFireAnimationDecider: visualizeFireAnimationDecider,
+            visualizeFireAnimationDecider: visualizeFireSettingsDecider,
             customizationModel: newTabPageCustomizationModel,
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,

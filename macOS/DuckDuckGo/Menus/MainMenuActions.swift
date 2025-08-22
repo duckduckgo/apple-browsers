@@ -59,7 +59,7 @@ extension AppDelegate {
 
     @objc func newWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            WindowsManager.openNewWindow()
+            WindowsManager.openNewWindow(burnerMode: .regular)
         }
     }
 
@@ -85,6 +85,31 @@ extension AppDelegate {
     @objc func openLocation(_ sender: Any?) {
         DispatchQueue.main.async {
             WindowsManager.openNewWindow()
+        }
+    }
+
+    @objc func openFile(_ sender: Any?) {
+        DispatchQueue.main.async {
+            var window: NSWindow?
+
+            // If no window is opened, we open one when the user taps to open a file.
+            if self.windowControllersManager.lastKeyMainWindowController?.window == nil {
+                window = self.windowControllersManager.openNewWindow()
+            } else {
+                window = self.windowControllersManager.lastKeyMainWindowController?.window
+            }
+
+            guard let window = window else {
+                Logger.general.error("No key window available for file picker")
+                return
+            }
+
+            let openPanel = NSOpenPanel.openFilePanel()
+            openPanel.beginSheetModal(for: window) { [weak self] response in
+                guard response == .OK, let selectedURL = openPanel.url else { return }
+
+                self?.windowControllersManager.show(url: selectedURL, source: .ui, newTab: true)
+            }
         }
     }
 
@@ -743,16 +768,8 @@ extension AppDelegate {
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
     }
 
-    private func setConfigurationUrl(_ configurationUrl: URL?) {
-        var configurationProvider = AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger,
-            customPrivacyConfiguration: configurationUrl
-        )
-        if configurationUrl == nil {
-            configurationProvider.resetToDefaultConfigurationUrl()
-        }
-        Configuration.setURLProvider(configurationProvider)
+    private func setPrivacyConfigurationUrl(_ configurationUrl: URL?) {
+        configurationURLProvider.setCustomURL(configurationUrl, for: .privacyConfiguration)
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
         if let configurationUrl {
             Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
@@ -761,12 +778,9 @@ extension AppDelegate {
         }
     }
 
-    @objc func setCustomConfigurationURL(_ sender: Any?) {
-        let currentConfigurationURL = AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        ).url(for: .privacyConfiguration).absoluteString
-        let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
+    @objc func setCustomPrivacyConfigurationURL(_ sender: Any?) {
+        let privacyConfigURL = configurationURLProvider.url(for: .privacyConfiguration).absoluteString
+        let alert = NSAlert.customConfigurationAlert(configurationUrl: privacyConfigURL)
         if alert.runModal() != .cancel {
             guard let textField = alert.accessoryView as? NSTextField,
                   let newConfigurationUrl = URL(string: textField.stringValue) else {
@@ -774,12 +788,12 @@ extension AppDelegate {
                 return
             }
 
-            setConfigurationUrl(newConfigurationUrl)
+            setPrivacyConfigurationUrl(newConfigurationUrl)
         }
     }
 
-    @objc func resetConfigurationToDefault(_ sender: Any?) {
-        setConfigurationUrl(nil)
+    @objc func resetPrivacyConfigurationToDefault(_ sender: Any?) {
+        setPrivacyConfigurationUrl(nil)
     }
 
     @objc func resetInstallStatistics() {

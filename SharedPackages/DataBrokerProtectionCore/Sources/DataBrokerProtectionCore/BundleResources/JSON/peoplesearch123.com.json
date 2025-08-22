@@ -1,7 +1,7 @@
 {
   "name": "PeopleSearch123",
   "url": "peoplesearch123.com",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.peoplesearch123.com/optOut/name/landing",
   "steps": [
@@ -207,5 +207,6 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "addedDatetime": 1738340502279
+  "addedDatetime": 1738340502279,
+  "removedAt": null
 }

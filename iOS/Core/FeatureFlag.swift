@@ -39,7 +39,6 @@ public enum FeatureFlag: String {
     case inputFocusApi
     case incontextSignup
     case autoconsentOnByDefault
-    case history
     case newTabPageSections
 
     // Duckplayer 'Web based' UI
@@ -84,9 +83,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
-
-    /// https://app.asana.com/0/1204186595873227/1206489252288889
-    case networkProtectionRiskyDomainsProtection
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
@@ -134,6 +130,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
+
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
+    case scheduledSetDefaultBrowserPromptsForInactiveUsers
 
     case subscriptionRebranding
 
@@ -189,7 +188,6 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom,
-             .networkProtectionRiskyDomainsProtection,
              .privacyProAuthV2,
              .scamSiteProtection,
              .maliciousSiteProtection,
@@ -211,7 +209,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
-             .createFireproofFaviconUpdaterSecureVaultInBackground:
+             .createFireproofFaviconUpdaterSecureVaultInBackground,
+             .scheduledSetDefaultBrowserPrompts,
+             .scheduledSetDefaultBrowserPromptsForInactiveUsers:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -266,8 +266,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.incontextSignup))
         case .autoconsentOnByDefault:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.onByDefault))
-        case .history:
-            return .remoteReleasable(.feature(.history))
         case .newTabPageSections:
             return .remoteDevelopment(.feature(.newTabPageImprovements))
         case .duckPlayer:
@@ -308,8 +306,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .networkProtectionRiskyDomainsProtection:
-            return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .setAsDefaultBrowserPiPVideoTutorial:
@@ -346,6 +342,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         case .scheduledSetDefaultBrowserPrompts:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
+        case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .supportsAlternateStripePaymentFlow:
@@ -355,7 +353,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
-            return .internalOnly()
+            return .enabled
         }
     }
 }

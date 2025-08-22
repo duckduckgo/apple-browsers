@@ -45,7 +45,6 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
-    case history
     case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
@@ -358,6 +357,9 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
 
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
     case scheduledDefaultBrowserPrompts // iOS
+
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
+    case scheduledDefaultBrowserPromptsInactiveUser // iOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {

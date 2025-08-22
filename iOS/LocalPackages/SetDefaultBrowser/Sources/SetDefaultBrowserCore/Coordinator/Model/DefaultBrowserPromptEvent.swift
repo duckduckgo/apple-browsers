@@ -18,8 +18,13 @@
 //
 
 public enum DefaultBrowserPromptEvent: Equatable {
-    case modalShown(numberOfModalShown: Int)
-    case modalDismissed
-    case modalDismissedPermanently
-    case modalActioned(numberOfModalShown: Int)
+    case activeModalShown(numberOfModalShown: Int)
+    case activeModalDismissed
+    case activeModalDismissedPermanently
+    case activeModalActioned(numberOfModalShown: Int)
+
+    case inactiveModalShown
+    case inactiveModalDismissed
+    case inactiveModalActioned
+    case inactiveModalMoreProtectionsAction
 }

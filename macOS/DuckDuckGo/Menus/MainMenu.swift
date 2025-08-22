@@ -41,9 +41,11 @@ final class MainMenu: NSMenu {
     let preferencesMenuItem = NSMenuItem(title: UserText.mainMenuAppPreferences, action: #selector(AppDelegate.openPreferences), keyEquivalent: ",").withAccessibilityIdentifier("MainMenu.preferencesMenuItem")
 
     // MARK: File
-    let newWindowMenuItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(AppDelegate.newWindow), keyEquivalent: "n")
+    let newWindowMenuItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(AppDelegate.newWindow), keyEquivalent: "")
+    let newBurnerWindowMenuItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(AppDelegate.newBurnerWindow), keyEquivalent: "")
     let newTabMenuItem = NSMenuItem(title: UserText.mainMenuFileNewTab, action: #selector(AppDelegate.newTab), keyEquivalent: "t")
     let openLocationMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenLocation, action: #selector(AppDelegate.openLocation), keyEquivalent: "l")
+    let openFileMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenFile, action: #selector(AppDelegate.openFile), keyEquivalent: "o")
     let closeWindowMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseWindow, action: #selector(NSWindow.performClose), keyEquivalent: "W")
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
@@ -86,7 +88,7 @@ final class MainMenu: NSMenu {
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
     var aiChatMenu = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: [.option, .command, "n"])
-    let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "N")
+    let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "")
 
     // MARK: Window
     let windowsMenu = NSMenu(title: UserText.mainMenuWindow)
@@ -120,6 +122,7 @@ final class MainMenu: NSMenu {
     private let appearancePreferences: AppearancePreferences
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let appVersion: AppVersion
+    private let configurationURLProvider: CustomConfigurationURLProviding
 
     // MARK: - Initialization
 
@@ -134,7 +137,9 @@ final class MainMenu: NSMenu {
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         appVersion: AppVersion = .shared) {
+         appVersion: AppVersion = .shared,
+         isFireWindowDefault: Bool,
+         configurationURLProvider: CustomConfigurationURLProviding) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -145,11 +150,12 @@ final class MainMenu: NSMenu {
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
+        self.configurationURLProvider = configurationURLProvider
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
             buildDuckDuckGoMenu()
-            buildFileMenu()
+            buildFileMenu(isFireWindowDefault: isFireWindowDefault)
             buildEditMenu()
             buildViewMenu()
             buildHistoryMenu()
@@ -197,14 +203,25 @@ final class MainMenu: NSMenu {
     }
 
     @MainActor
-    func buildFileMenu() -> NSMenuItem {
-        NSMenuItem(title: UserText.mainMenuFile) {
+    func buildFileMenu(isFireWindowDefault: Bool) -> NSMenuItem {
+        updateMenuShortcutsFor(isFireWindowDefault)
+
+        return NSMenuItem(title: UserText.mainMenuFile) {
             newTabMenuItem
 
-            newWindowMenuItem
-            NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(AppDelegate.newBurnerWindow), keyEquivalent: "N")
+            if isFireWindowDefault {
+                newBurnerWindowMenuItem
+                newWindowMenuItem
+            } else {
+                newWindowMenuItem
+                newBurnerWindowMenuItem
+            }
 
             aiChatMenu
+
+            if featureFlagger.isFeatureOn(.openFileMenuAction) {
+                openFileMenuItem
+            }
 
             openLocationMenuItem
             NSMenuItem.separator()
@@ -690,7 +707,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset MakeDuckDuckYours user settings", action: #selector(AppDelegate.resetMakeDuckDuckGoYoursUserSettings))
                 NSMenuItem(title: "Experiment Install Date more than 5 days ago", action: #selector(AppDelegate.changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_:)))
                 NSMenuItem(title: "Change Activation Date") {
-                    NSMenuItem(title: "Today", action: #selector(AppDelegate.changeInstallDateToToday), keyEquivalent: "N")
+                    NSMenuItem(title: "Today", action: #selector(AppDelegate.changeInstallDateToToday))
                     NSMenuItem(title: "Less Than a 5 days Ago", action: #selector(AppDelegate.changeInstallDateToLessThan5DayAgo(_:)))
                     NSMenuItem(title: "More Than 5 Days Ago", action: #selector(AppDelegate.changeInstallDateToMoreThan5DayAgoButLessThan9(_:)))
                     NSMenuItem(title: "More Than 9 Days Ago", action: #selector(AppDelegate.changeInstallDateToMoreThan9DaysAgo(_:)))
@@ -724,8 +741,8 @@ final class MainMenu: NSMenu {
                 configurationDateAndTimeMenuItem
                 NSMenuItem.separator()
                 NSMenuItem(title: "Reload Configuration Now", action: #selector(AppDelegate.reloadConfigurationNow))
-                NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomConfigurationURL))
-                NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetConfigurationToDefault))
+                NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomPrivacyConfigurationURL))
+                NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
             }
             NSMenuItem(title: "Remote Messaging Framework")
                 .submenu(RemoteMessagingDebugMenu())
@@ -864,12 +881,8 @@ final class MainMenu: NSMenu {
             dateString = "Last Update Time: -"
         }
         configurationDateAndTimeMenuItem.title = dateString
-        let urlProvider = AppConfigurationURLProvider(
-            privacyConfigurationManager: privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
 
-        customConfigurationUrlMenuItem.title = "Configuration URL:  \(urlProvider.url(for: .privacyConfiguration).absoluteString)"
+        customConfigurationUrlMenuItem.title = "Configuration URL:  \(configurationURLProvider.url(for: .privacyConfiguration).absoluteString)"
     }
 
     @objc private func toggleAutofillScriptDebugSettingsAction(_ sender: NSMenuItem) {
@@ -887,6 +900,41 @@ final class MainMenu: NSMenu {
             target: nil,
             event: NSApp.currentEvent
         )
+    }
+
+    @MainActor
+    func updateMenuItemsPositionForFireWindowDefault(_ isFireWindowDefault: Bool) {
+        guard let fileMenu = self.item(at: 1), fileMenu.title == UserText.mainMenuFile else {
+            return
+        }
+
+        fileMenu.submenu?.removeItem(newWindowMenuItem)
+        fileMenu.submenu?.removeItem(newBurnerWindowMenuItem)
+
+        if isFireWindowDefault {
+            fileMenu.submenu?.insertItem(newBurnerWindowMenuItem, at: 1)
+            fileMenu.submenu?.insertItem(newWindowMenuItem, at: 2)
+        } else {
+            fileMenu.submenu?.insertItem(newWindowMenuItem, at: 1)
+            fileMenu.submenu?.insertItem(newBurnerWindowMenuItem, at: 2)
+        }
+    }
+
+    @MainActor
+    func updateMenuShortcutsFor(_ isFireWindowDefault: Bool) {
+        if isFireWindowDefault {
+            // When Fire Window is default: CMD+N opens Fire Window, CMD+SHIFT+N opens Standard Window
+            newBurnerWindowMenuItem.keyEquivalent = "n"
+            newBurnerWindowMenuItem.keyEquivalentModifierMask = [.command]
+            newWindowMenuItem.keyEquivalent = "N"
+            newWindowMenuItem.keyEquivalentModifierMask = [.command, .shift]
+        } else {
+            // When Fire Window is not default: CMD+N opens Standard Window, CMD+SHIFT+N opens Fire Window
+            newWindowMenuItem.keyEquivalent = "n"
+            newWindowMenuItem.keyEquivalentModifierMask = [.command]
+            newBurnerWindowMenuItem.keyEquivalent = "N"
+            newBurnerWindowMenuItem.keyEquivalentModifierMask = [.command, .shift]
+        }
     }
 }
 

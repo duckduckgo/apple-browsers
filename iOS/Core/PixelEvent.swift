@@ -976,6 +976,10 @@ extension Pixel {
         case debugDefaultBrowserPromptFailedToRetrieveUserType
         /// Fired when it is not possible to save from the persistence store the type of user.
         case debugDefaultBrowserPromptFailedToSaveUserType
+        /// Fired when it is not possible to retrieve from the persistence store whether the inactive user modal was shown.
+        case debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown
+        /// Fired when it is not possible to save from the persistence store that the inactive user modal was shown.
+        case  debugDefaultBrowserPromptFailedToSaveInactiveModalShown
 
         /// Fired when the SAD modal sheet appears on screen.
         case defaultBrowserPromptModalShown
@@ -985,6 +989,14 @@ extension Pixel {
         case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
         /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalDoNotAskAgainButtonTapped
+        /// Fired when the SAD modal sheet for inactive users appears on screen.
+        case defaultBrowserPromptInactiveUserModalShown
+        /// Fired when the “Close” button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalClosedButtonTapped
+        /// Fired when the “Set As Default Browser" button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped
+        /// Fired when "Plus even more protections..." button of the SAD modal sheet for inactive users is tapped.
+        case defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped
 
         /// Fired when creating the app configurationuser defaults in ai chat settings migration failed.
         case debugFailedToCreateAppConfigurationUserDefaultsInAIChatSettingsMigration
@@ -2058,10 +2070,18 @@ extension Pixel.Event {
         case .debugDefaultBrowserPromptFailedToRetrieveUserType: return "m_debug_set-as-default-prompt_failed-to-retrieve-user-type"
         case .debugDefaultBrowserPromptFailedToSaveUserType: return "m_debug_set-as-default-prompt_failed-to-save-user-type"
 
+        case .debugDefaultBrowserPromptFailedToRetrieveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-retrieve-inactive-modal-shown"
+        case .debugDefaultBrowserPromptFailedToSaveInactiveModalShown: return "m_debug_set-as-default-prompt_failed-to-save-inactive-modal-shown"
+
         case .defaultBrowserPromptModalShown: return "m_set-as-default-prompt_modal-shown"
         case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
         case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
         case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
+
+        case .defaultBrowserPromptInactiveUserModalShown: return "m_set-as-default-prompt_inactive-user-modal-shown"
+        case .defaultBrowserPromptInactiveUserModalClosedButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-closed-button-action"
+        case .defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-set-as-default-browser-button-action"
+        case .defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped: return "m_set-as-default-prompt_inactive-user_modal-more-protections-button-action"
 
             // MARK: Debug Web View
 

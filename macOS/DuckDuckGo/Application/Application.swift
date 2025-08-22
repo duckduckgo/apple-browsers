@@ -19,11 +19,13 @@
 import AppKit
 import Common
 import Foundation
+import Combine
 
 @objc(Application)
 final class Application: NSApplication {
 
     public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
+    private var fireWindowPreferenceCancellable: AnyCancellable?
 
     override init() {
         super.init()
@@ -53,9 +55,19 @@ final class Application: NSApplication {
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             internalUserDecider: delegate.internalUserDecider,
             appearancePreferences: delegate.appearancePreferences,
-            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager
+            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+            isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
+            configurationURLProvider: delegate.configurationURLProvider
         )
         self.mainMenu = mainMenu
+
+        // Subscribe to Fire Window preference changes to update menu dynamically
+        fireWindowPreferenceCancellable = delegate.dataClearingPreferences.$openFireWindowByDefault
+            .dropFirst()
+            .sink { [weak mainMenu] isFireWindowDefault in
+                mainMenu?.updateMenuItemsPositionForFireWindowDefault(isFireWindowDefault)
+                mainMenu?.updateMenuShortcutsFor(isFireWindowDefault)
+            }
 
         // Makes sure Spotlight search is part of Help menu
         self.helpMenu = mainMenu.helpMenu

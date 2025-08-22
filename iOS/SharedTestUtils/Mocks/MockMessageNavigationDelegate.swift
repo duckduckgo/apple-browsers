@@ -20,7 +20,7 @@
 @testable import DuckDuckGo
 
 class MockMessageNavigationDelegate: MessageNavigationDelegate {
-    func segueToSettingsAIChat() {}
+    func segueToSettingsAIChat(completion: (() -> Void)?) {}
     func segueToSettings() {}
     func segueToFeedback() {}
 }

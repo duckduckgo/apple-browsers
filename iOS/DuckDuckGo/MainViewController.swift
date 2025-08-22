@@ -42,6 +42,7 @@ import AIChat
 import NetworkExtension
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
 
@@ -195,6 +196,7 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
 
@@ -260,6 +262,7 @@ class MainViewController: UIViewController {
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
         themeManager: ThemeManaging,
         keyValueStore: ThrowingKeyValueStoring,
+        customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging
     ) {
@@ -297,6 +300,7 @@ class MainViewController: UIViewController {
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
+        self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         super.init(nibName: nil, bundle: nil)
@@ -1693,6 +1697,7 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()
+        showBars() // In case the browser chrome bars are hidden when calling this method
     }
     
     func updateFindInPage() {
@@ -2595,23 +2600,22 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func openAIChatFromAddressBar() {
-        /// https://app.asana.com/0/1204167627774280/1209322943444951
 
-        if omniBar.isTextFieldEditing {
-            let textFieldValue = omniBar.text
-            omniBar.endEditing()
+        let isEditing = omniBar.isTextFieldEditing
+        let textFieldValue = omniBar.text
+        omniBar.endEditing()
 
-            /// Check if the URL in the text field is the same as the one loaded
-            /// If it is, open the chat normally (no auto-send)
-            /// If the URLs differ, open the chat with the new text and auto-send enabled
-            if let currentURLString = currentTab?.url?.absoluteString, currentURLString == textFieldValue {
+        OpenAIChatFromAddressBarHandling().determineOpeningStrategy(
+            isTextFieldEditing: isEditing,
+            textFieldValue: textFieldValue,
+            currentURL: currentTab?.url,
+            openWithPromptAndSend: {
+                openAIChat($0, autoSend: true)
+            },
+            open: {
                 openAIChat()
-            } else {
-                openAIChat(textFieldValue, autoSend: true)
             }
-        } else {
-            openAIChat()
-        }
+        )
 
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
     }
@@ -3110,6 +3114,7 @@ extension MainViewController: TabSwitcherDelegate {
             let newTab = Tab()
             tabManager.replaceTab(at: index, withNewTab: newTab)
             tabManager.selectTab(newTab)
+            showBars() // In case the browser chrome bars are hidden when calling this method
         } else {
             tabManager.remove(at: index)
         }

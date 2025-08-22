@@ -21,15 +21,16 @@ import Persistence
 import AppKit
 import DDGSync
 
-@MainActor
 public final class SyncDeviceButtonModel: ObservableObject {
     @Published var shouldShowSyncButton: Bool = false
 
     private var cancellables: Set<AnyCancellable> = []
 
-    init(authStatePublisher: AnyPublisher<SyncAuthState, Never>) {
+    init(authStatePublisher: AnyPublisher<SyncAuthState, Never>, initialAuthState: SyncAuthState) {
+        shouldShowSyncButton = initialAuthState == .inactive
         authStatePublisher
             .map { $0 == .inactive }
+            .receive(on: DispatchQueue.main)
             .assign(to: \.shouldShowSyncButton, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
@@ -38,11 +39,14 @@ public final class SyncDeviceButtonModel: ObservableObject {
 extension SyncDeviceButtonModel {
     convenience init() {
         let authStatePublisher: AnyPublisher<SyncAuthState, Never>
+        let initialAuthState: SyncAuthState
         if let syncService = NSApp.delegateTyped.syncService {
             authStatePublisher = syncService.authStatePublisher
+            initialAuthState = syncService.authState
         } else {
             authStatePublisher = Just<SyncAuthState>(.initializing).eraseToAnyPublisher()
+            initialAuthState = .initializing
         }
-        self.init(authStatePublisher: authStatePublisher)
+        self.init(authStatePublisher: authStatePublisher, initialAuthState: initialAuthState)
     }
 }

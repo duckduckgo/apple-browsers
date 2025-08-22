@@ -39,10 +39,6 @@ final class SwipeContainerViewController: UIViewController {
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - Custom Offset Animation (compact)
-    private var offsetDisplayLink: CADisplayLink?
-    private var offsetAnimation: (startTime: CFTimeInterval, duration: TimeInterval, fromX: CGFloat, toX: CGFloat)?
-
     // MARK: - UI Elements
 
     private(set) var swipeScrollView: UIScrollView!
@@ -86,7 +82,6 @@ final class SwipeContainerViewController: UIViewController {
     /// Updates the scroll view position and content size when bounds change
     private func updateLayout(viewBounds: CGRect) {
         guard swipeScrollView != nil else { return }
-        stopOffsetAnimation()
         let pageWidth = viewBounds.width
         swipeScrollView.contentSize = CGSize(width: pageWidth * 2, height: 0)
         updateScrollViewPosition(pageWidth: pageWidth, animated: false)
@@ -166,54 +161,14 @@ final class SwipeContainerViewController: UIViewController {
         guard let parentView = swipeScrollView.superview else { return }
 
         let pageWidth = pageWidth ?? parentView.bounds.width
-        let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : pageWidth
 
-        if animated {
-            startOffsetAnimation(toX: targetX, duration: 0.2)
-        } else {
-            stopOffsetAnimation()
-            swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: false)
-        }
+        let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : pageWidth
+        swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: animated)
     }
 
     private func updateScrollProgress(_ progress: CGFloat) {
         scrollProgress = progress
         delegate?.swipeContainerViewController(self, didUpdateScrollProgress: progress)
-    }
-
-    // MARK: - Content Offset Animation (CADisplayLink)
-
-    private func startOffsetAnimation(toX targetX: CGFloat, duration: TimeInterval) {
-        stopOffsetAnimation()
-        let fromX = swipeScrollView.contentOffset.x
-        offsetAnimation = (startTime: CACurrentMediaTime(), duration: max(0.01, duration), fromX: fromX, toX: targetX)
-        let link = CADisplayLink(target: self, selector: #selector(handleOffsetTick))
-        offsetDisplayLink = link
-        link.add(to: .main, forMode: .common)
-    }
-
-    private func stopOffsetAnimation() {
-        offsetDisplayLink?.invalidate()
-        offsetDisplayLink = nil
-        offsetAnimation = nil
-    }
-
-    @objc
-    private func handleOffsetTick() {
-        guard let anim = offsetAnimation else {
-            stopOffsetAnimation()
-            return
-        }
-        let elapsed = CACurrentMediaTime() - anim.startTime
-        let progress = min(1.0, elapsed / anim.duration)
-        let t = CGFloat(progress)
-        let eased = t * (2 - t) // easeOutQuad
-        let currentX = anim.fromX + (anim.toX - anim.fromX) * eased
-        swipeScrollView.setContentOffset(CGPoint(x: currentX, y: 0), animated: false)
-        if progress >= 1.0 {
-            stopOffsetAnimation()
-            swipeScrollView.setContentOffset(CGPoint(x: anim.toX, y: 0), animated: false)
-        }
     }
 }
 
@@ -228,10 +183,6 @@ extension SwipeContainerViewController: UIScrollViewDelegate {
         // Calculate progress (0 = search, 1 = aiChat)
         let progress = max(0, min(1, scrollView.contentOffset.x / pageWidth))
         updateScrollProgress(progress)
-    }
-
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        stopOffsetAnimation()
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {

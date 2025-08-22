@@ -155,9 +155,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
-
-    /// https://app.asana.com/1/137249556945/task/1211023044831113?focus=true
-    case experimentalAddressBarNonAnimatedNTP
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -357,8 +354,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
             return .enabled
-        case .experimentalAddressBarNonAnimatedNTP:
-            return .internalOnly()
         }
     }
 }

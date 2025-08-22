@@ -1002,9 +1002,7 @@ class MainViewController: UIViewController {
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
-            let animated = !featureFlagger.isFeatureOn(.experimentalAddressBarNonAnimatedNTP)
-
-            omniBar.beginEditing(animated: animated)
+            omniBar.beginEditing(animated: true)
         }
 
         syncService.scheduler.requestSyncImmediately()

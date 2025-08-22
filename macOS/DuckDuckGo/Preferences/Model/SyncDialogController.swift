@@ -170,7 +170,7 @@ final class SyncDialogController {
     }
 
     @MainActor
-    private func showDevicesSynced() {
+    private func showNowSyncing() {
         presentDialog(for: .nowSyncing)
     }
 
@@ -408,7 +408,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func recoveryCodeNextPressed() {
-        showDevicesSynced()
+        showNowSyncing()
     }
 
     func turnOnSync() {

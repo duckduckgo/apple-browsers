@@ -18,6 +18,9 @@ inputs:
   build-number:
     description: 'Build number to include in pixel data'
     required: false
+  suffix:
+    description: 'Optional suffix to append to version (applies only for ad-hoc builds)'
+    required: false
 
 runs:
   using: 'composite'
@@ -29,6 +32,14 @@ runs:
         echo "Parsing App Thinning Size Report..."
         ${{ github.action_path }}/parse_app_size.sh "${{ inputs.report-file }}"
 
+    - name: Build app version string
+      id: app-version
+      shell: bash
+      run: |
+        # Concatenate app version, build number, and optional suffix (e.g., 7.10.15.5 or 7.10.15.5.adhoc)
+        VERSION="${{ inputs.app-version }}.${{ inputs.build-number }}${{ inputs.suffix != '' && format('.{0}', inputs.suffix) || '' }}"
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
     - name: Send Download Size Pixel
       if: ${{ inputs.download-size-pixel-name != '' }}
       uses: ./.github/actions/send-pixel
@@ -36,7 +47,7 @@ runs:
         pixel-name: ${{ inputs.download-size-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.download_size }}
-          appVersion: ${{ inputs.app-version }}.${{ inputs.build-number }}
+          appVersion: ${{ steps.app-version.outputs.version }}
 
     - name: Send Installation Size Pixel
       if: ${{ inputs.installation-size-pixel-name != '' }}
@@ -45,4 +56,4 @@ runs:
         pixel-name: ${{ inputs.installation-size-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.installation_size }}
-          appVersion: ${{ inputs.app-version }}.${{ inputs.build-number }}
+          appVersion: ${{ steps.app-version.outputs.version }}

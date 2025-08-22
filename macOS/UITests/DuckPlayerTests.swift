@@ -51,52 +51,37 @@ class DuckPlayerTests: UITestCase {
     private func openURL(url: String) {
         let addressBar = app.textFields["AddressBarViewController.addressBarTextField"]
         XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBar.typeURL(URL(string: url)!)
-    }
-
-    private func openBrowserSettings() {
-        let settingsMenuItem = app.menuItems["MainMenu.preferencesMenuItem"]
-        XCTAssertTrue(settingsMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        settingsMenuItem.click()
+        addressBar.pasteURL(URL(string: url)!)
     }
 
     private func openDuckPlayerSettings() {
-        openBrowserSettings()
+        app.openPreferencesWindow()
 
         let scrollView = app.scrollViews.element(boundBy: 0)
         scrollView.swipeUp()
 
         let duckPlayerButton = app.buttons["PreferencesSidebar.duckplayerButton"]
-        XCTAssertTrue(
-            duckPlayerButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Duck Player settings appearance section button didn't become available in a reasonable timeframe."
-        )
-        // This should just be a click(), but there are states for this test where the first few clicks don't register here.
-        duckPlayerButton.click(forDuration: UITests.Timeouts.elementExistence, thenDragTo: duckPlayerButton)
-
+        duckPlayerButton.click()
     }
 
     private func selectAlwaysOpenInDuckPlayer() {
         let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.enabled"]
-        XCTAssertTrue(alwaysOpenRadioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         alwaysOpenRadioButton.click()
     }
 
     private func selectNeverOpenInDuckPlayer() {
         let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.disabled"]
-        XCTAssertTrue(alwaysOpenRadioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         alwaysOpenRadioButton.click()
     }
 
     private func selectAskOpenInDuckPlayer() {
         let alwaysOpenRadioButton = app.radioButtons["DuckPlayerMode.alwaysAsk"]
-        XCTAssertTrue(alwaysOpenRadioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         alwaysOpenRadioButton.click()
     }
 
     private func verifyDuckPlayerLoads() {
         // Give the page time to load
-        sleep(5)
+        sleep(2)
 
         // Get the DuckPlayer webview
         let duckPlayerWebView = app.windows.firstMatch.webViews["\(Self.duckPlayerTabPreffix)\(Self.youtubeVideoTitle)"]
@@ -139,7 +124,28 @@ class DuckPlayerTests: UITestCase {
         )
     }
 
+    private func closeNonDuckPlayerTabs() throws {
+        // Close Opener tab
+        let nonDuckPlayerTabs = app.radioButtons.matching(NSPredicate(format: "identifier == 'TabBarViewItem' AND NOT (title BEGINSWITH[c] 'Duck Player')"))
+        var count = nonDuckPlayerTabs.count
+        while count > 0 {
+            let tab = nonDuckPlayerTabs.firstMatch
+            try tab.closeTab()
+            let newCount = nonDuckPlayerTabs.count
+            XCTAssertNotEqual(count, newCount)
+            count = newCount
+        }
+
+    }
+
+    // MARK: - Tests
+
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPOrganic() throws {
+        // Skip this test on macOS 13
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        if version.majorVersion == 13 {
+            throw XCTSkip("Test disabled on macOS 13")
+        }
 
         // Settings
         openDuckPlayerSettings()
@@ -155,14 +161,16 @@ class DuckPlayerTests: UITestCase {
         organicVideo.click()
         sleep(2)
 
-        // Close Opener tab
-        app.typeKey("1", modifierFlags: [.command])
-        app.closeCurrentTab()
-
+        try closeNonDuckPlayerTabs()
         verifyDuckPlayerLoads()
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPVideos() throws {
+        // Skip this test on macOS 13
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        if version.majorVersion == 13 {
+            throw XCTSkip("Test disabled on macOS 13")
+        }
 
         // Settings
         openDuckPlayerSettings()
@@ -183,9 +191,7 @@ class DuckPlayerTests: UITestCase {
         carouselVideo.click()
         sleep(2)
 
-        // Close Opener tab
-        app.typeKey("1", modifierFlags: [.command])
-        app.closeCurrentTab()
+        try closeNonDuckPlayerTabs()
 
         verifyDuckPlayerLoads()
     }

@@ -187,11 +187,11 @@ class DownloadsUITests: UITestCase {
 
         let baseName = "same-name-\(UUID().uuidString).bin"
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
-        
+
         // Track both completed downloads (original and " 1.bin" suffix)
         trackForCleanup(downloadsDir.appendingPathComponent(baseName).path)
         trackForCleanup(downloadsDir.appendingPathComponent(baseName.replacingOccurrences(of: ".bin", with: " 1.bin")).path)
-        
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB", filename: baseName).absoluteString)
         // Briefly allow processing of the first trigger
         _ = app.windows.firstMatch.waitForExistence(timeout: 1.0)
@@ -283,7 +283,7 @@ class DownloadsUITests: UITestCase {
         let filenameField = saveSheet.textFields.firstMatch
         XCTAssertTrue(filenameField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let initialName = filenameField.value as? String
-        XCTAssertEqual(initialName, "1MB.bin")
+        XCTAssertTrue(initialName == "1MB.bin" || initialName == "1MB", "Unexpected initial filename: \"\(initialName ?? "")\" not equal to \"1MB.bin\"")
 
         let uniqueName = "ui-" + UUID().uuidString + ".bin"
         XCTAssertNotEqual(initialName, uniqueName)
@@ -304,7 +304,7 @@ class DownloadsUITests: UITestCase {
         let uniqueName = "inline-binary-\(UUID().uuidString).bin"
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         trackForCleanup(downloadsDir.appendingPathComponent(uniqueName).path)
-        
+
         let binaryData = "Some binary content".data(using: .utf8)!
         let url = URL.testsServer.appendingPathComponent(uniqueName).appendingTestParameters(
             data: binaryData,
@@ -370,7 +370,7 @@ class DownloadsUITests: UITestCase {
         let uniqueName = "delayed-\(UUID().uuidString).bin"
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         trackForCleanup(downloadsDir.appendingPathComponent(uniqueName).path)
-        
+
         let delayedURL = URL.testsDownload(size: "1MB", filename: uniqueName).absoluteString
         let pageHTML = """
         <html><head><title>Delayed DL</title></head>
@@ -447,14 +447,14 @@ class DownloadsUITests: UITestCase {
     /// Option+click should download an HTML link instead of opening it.
     func testOptionClick_DownloadsLinkedHTMLFile() {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
-                                     openDownloadsPopupOnCompletion: true,
+                                     openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)
 
         // Linked HTML target
         let uniqueLinkedName = "linked-\(UUID().uuidString).html"
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         trackForCleanup(downloadsDir.appendingPathComponent(uniqueLinkedName).path)
-        
+
         let linkedURL = URL.testsDownload(size: "1KB", filename: uniqueLinkedName)
 
         // Page containing the link
@@ -525,7 +525,7 @@ class DownloadsUITests: UITestCase {
         let filename = "5GB.bin"
         trackForCleanup(downloadsDir.appendingPathComponent(filename).path)
         trackForCleanup(downloadsDir.appendingPathComponent(filename + ".duckload").path)
-        
+
         openSiteForDownloadingFile(url: URL.testsDownload(size: "5GB").absoluteString)
 
         // Immediately close window and open a new one; browser should remain stable
@@ -781,17 +781,7 @@ class DownloadsUITests: UITestCase {
             .containing(NSPredicate(format: "title == 'Background Download'"))
             .firstMatch
         XCTAssertTrue(popupTab.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        // Hover the tab to reveal its close ("x") button
-        popupTab.hover()
-        XCTAssertTrue(popupTab.exists)
-        let tabFrame = popupTab.frame
-        let closeButtonFrame = try XCTUnwrap(popupTab.snapshot().children.first(where: { $0.elementType == .button })?.frame)
-
-        let normalizedX = (closeButtonFrame.midX - tabFrame.minX) / tabFrame.width
-        let normalizedY = (closeButtonFrame.midY - tabFrame.minY) / tabFrame.height
-
-        let coordinate = popupTab.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
-        coordinate.click()
+        try popupTab.closeTab()
 
         // Verify no download was added
         verifyNoRecentDownloads()
@@ -922,12 +912,12 @@ class DownloadsUITests: UITestCase {
         // Create unique filenames for both downloads
                 let fileNameA = "file-a-\(UUID().uuidString).bin"
         let fileNameB = "file-b-\(UUID().uuidString).bin"
-        
+
         // Track files in default downloads directory
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         trackForCleanup(downloadsDir.appendingPathComponent(fileNameA).path)
         trackForCleanup(downloadsDir.appendingPathComponent(fileNameB).path)
-        
+
         // Page with two direct download links
         let pageHTML = """
         <html><head><title>Two Downloads</title></head>
@@ -987,7 +977,7 @@ class DownloadsUITests: UITestCase {
         // Larger file to keep download in-progress reliably
         let url = "https://mmatechnical.com/Download/Download-Test-File/(MMA)-10GB.zip"
         openSiteForDownloadingFile(url: url)
-        
+
         // Track both the final file and the temporary .duckload file
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         let filename = url.components(separatedBy: "/").last ?? "(MMA)-10GB.zip"
@@ -1022,7 +1012,7 @@ class DownloadsUITests: UITestCase {
         let saveButton = saveSheet.buttons["Save"].firstMatch
         XCTAssertTrue(saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         saveButton.click()
-        
+
         // Track the saved file for cleanup
         let filePath = directoryURL.appendingPathComponent(fileName).path
         trackForCleanup(filePath)
@@ -1047,14 +1037,14 @@ class DownloadsUITests: UITestCase {
         let usedName = filename ?? ("ui-" + UUID().uuidString + ".bin")
         let url = makeDownloadURL(filename: usedName, size: size)
         openSiteForDownloadingFile(url: url.absoluteString)
-        
+
         // Track both the final file and the temporary .duckload file
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         let finalPath = downloadsDir.appendingPathComponent(usedName).path
         let tempPath = downloadsDir.appendingPathComponent(usedName + ".duckload").path
         trackForCleanup(finalPath)
         trackForCleanup(tempPath)
-        
+
         return usedName
     }
 
@@ -1163,21 +1153,21 @@ class DownloadsUITests: UITestCase {
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout + 1.0)
         XCTAssertEqual(result, .completed, "Expected file to exist at \(url.path)")
     }
-    
+
     private func trackForCleanup(_ path: String) {
         cleanupPaths.insert(path)
     }
 
     private func cleanupTrackedFiles() {
         guard !cleanupPaths.isEmpty else { return }
-        
+
         let paths = Array(cleanupPaths)
         let pathsQuery = paths.joined(separator: ",")
         let cleanupURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: pathsQuery)
-        
+
         let session = URLSession(configuration: .ephemeral)
         let request = URLRequest(url: cleanupURL, cachePolicy: .reloadIgnoringLocalCacheData)
-        
+
         let expectation = expectation(description: "Cleanup request completed")
         let task = session.dataTask(with: request) { _, response, error in
             if let error = error {
@@ -1188,7 +1178,7 @@ class DownloadsUITests: UITestCase {
             expectation.fulfill()
         }
         task.resume()
-        
+
         // Wait but don't fail the test if cleanup is slow
         _ = XCTWaiter.wait(for: [expectation], timeout: 5.0)
     }

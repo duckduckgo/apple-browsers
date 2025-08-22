@@ -143,4 +143,17 @@ extension XCUIElement {
         self.click()
     }
 
+    func closeTab() throws {
+        // Hover the tab to reveal its close ("x") button
+        self.hover()
+
+        XCTAssertTrue(self.exists)
+        let tabFrame = self.frame
+
+        let normalizedX = (tabFrame.width - 12) / tabFrame.width
+        let normalizedY = 0.5
+
+        let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
+        coordinate.click()
+    }
 }

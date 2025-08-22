@@ -106,6 +106,12 @@ extension URL {
            let atbWithVariant = LocalStatisticsStore().atbWithVariant {
             url = url.appendingParameter(name: URL.DuckDuckGoParameters.ATB.atb, value: atbWithVariant + "-wb")
         }
+
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            url = url.appendingParameter(name: URL.DuckDuckGoParameters.kbg.rawValue,
+                                         value: URL.DuckDuckGoParameters.kbgDisabledValue.rawValue)
+        }
+
         return url
     }
 
@@ -461,6 +467,8 @@ extension URL {
         case search = "q"
         case ia
         case iax
+        case kbg
+        case kbgDisabledValue = "-1"
 
         enum ATB {
             static let atb = "atb"

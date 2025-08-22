@@ -132,8 +132,8 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
 /// ```
 public struct ImageSegmentedPickerView: View {
     private enum Constants {
-        static let outerHeight: CGFloat = 40
-        static let innerHeight: CGFloat = 36
+        static let outerHeight: CGFloat = 38
+        static let innerHeight: CGFloat = 34
         static let innerHorizontalPadding: CGFloat = 2
     }
 

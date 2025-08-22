@@ -19,7 +19,7 @@
 import XCTest
 
 class FireWindowTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var settingsGeneralButton: XCUIElement!
     private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
 

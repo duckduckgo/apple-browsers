@@ -19,7 +19,7 @@
 import XCTest
 
 class AutocompleteTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var addBookmarkButton: XCUIElement!
     private var resetBookMarksMenuItem: XCUIElement!
     private var historyMenuBarItem: XCUIElement!

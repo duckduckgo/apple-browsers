@@ -19,7 +19,7 @@
 import XCTest
 
 class AddressBarKeyboardShortcutsTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var urlStringForAddressBar: String!
     private var urlForAddressBar: URL!
 

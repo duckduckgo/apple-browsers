@@ -19,7 +19,6 @@
 import XCTest
 
 class TabBarTests: UITestCase {
-    private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -49,7 +48,7 @@ class TabBarTests: UITestCase {
 
         /// Move to the next tab and closes it
         app.typeKey("]", modifierFlags: [.command, .shift])
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
 
         /// Asserts that the next child tab is shown
         XCTAssertTrue(app.staticTexts["Print"].waitForExistence(timeout: UITests.Timeouts.elementExistence))

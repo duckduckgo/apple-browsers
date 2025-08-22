@@ -20,7 +20,7 @@ import Foundation
 import XCTest
 
 class PrintingTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var pdfURL: URL!
     private var addressBarTextField: XCUIElement!
     private var printMenuItem: XCUIElement!

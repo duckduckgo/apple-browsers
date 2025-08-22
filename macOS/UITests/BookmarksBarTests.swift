@@ -19,7 +19,7 @@
 import XCTest
 
 class BookmarksBarTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var pageTitle: String!
     private var urlForBookmarksBar: URL!
     private var defaultBookmarkDialogButton: XCUIElement!
@@ -56,7 +56,7 @@ class BookmarksBarTests: UITestCase {
     }
 
     func test_bookmarksBar_whenShowBookmarksBarAlwaysIsSelected_alwaysDynamicallyAppearsOnWindow() throws {
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
             showBookmarksBarPreferenceToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The toggle for showing the bookmarks bar didn't become available in a reasonable timeframe."
@@ -87,7 +87,7 @@ class BookmarksBarTests: UITestCase {
     }
 
     func test_bookmarksBar_whenShowBookmarksNewTabOnlyIsSelected_onlyAppearsOnANewTabUntilASiteIsLoaded() throws {
-        app.typeKey("w", modifierFlags: [.command]) // Close site window
+        app.closeCurrentTab() // Close site window
         XCTAssertTrue(
             showBookmarksBarPreferenceToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The toggle for showing the bookmarks bar didn't become available in a reasonable timeframe."
@@ -183,6 +183,7 @@ private extension BookmarksBarTests {
     func resetBookmarksAndAddOneBookmark() {
         app.resetBookmarks()
         addressBarTextField.pasteURL(urlForBookmarksBar, pressingEnter: true)
+
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."

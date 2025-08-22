@@ -20,7 +20,6 @@ import XCTest
 
 class PinnedTabsTests: UITestCase {
     private static let failureObserver = TestFailureObserver()
-    private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         try super.setUpWithError()

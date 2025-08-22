@@ -19,14 +19,13 @@
 import XCTest
 
 class BookmarksAndFavoritesTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var pageTitle: String!
     private var urlForBookmarksBar: URL!
     private let titleStringLength = 12
 
     private var addressBarBookmarkButton: XCUIElement!
     private var addressBarTextField: XCUIElement!
-    private var bookmarkDialogBookmarkFolderDropdown: XCUIElement!
     private var bookmarkPageContextMenuItem: XCUIElement!
     private var bookmarkPageMenuItem: XCUIElement!
     private var bookmarkPageMainMenuItem: XCUIElement!
@@ -48,7 +47,6 @@ class BookmarksAndFavoritesTests: UITestCase {
     private var openBookmarksMenuItem: XCUIElement!
     private var optionsButton: XCUIElement!
     private var removeFavoritesContextMenuItem: XCUIElement!
-    private var resetBookMarksMenuItem: XCUIElement!
     private var settingsAppearanceButton: XCUIElement!
     private var showBookmarksBarPreferenceToggle: XCUIElement!
     private var showBookmarksBarAlways: XCUIElement!
@@ -70,7 +68,6 @@ class BookmarksAndFavoritesTests: UITestCase {
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
         addressBarBookmarkButton = app.buttons["AddressBarButtonsViewController.bookmarkButton"]
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        bookmarkDialogBookmarkFolderDropdown = app.popUpButtons["bookmark.add.folder.dropdown"]
         bookmarkPageContextMenuItem = app.menuItems["ContextMenuManager.bookmarkPageMenuItem"]
         bookmarkPageMenuItem = app.menuItems["MoreOptionsMenu.bookmarkPage"]
         bookmarkPageMainMenuItem = app.menuItems["Bookmark This Page…"]
@@ -92,7 +89,6 @@ class BookmarksAndFavoritesTests: UITestCase {
         openBookmarksMenuItem = app.menuItems["MoreOptionsMenu.openBookmarks"]
         optionsButton = app.buttons["NavigationBarViewController.optionsButton"]
         removeFavoritesContextMenuItem = app.menuItems["HomePage.Views.removeFavorite"]
-        resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         settingsAppearanceButton = app.buttons["PreferencesSidebar.appearanceButton"]
         showBookmarksBarAlways = app.menuItems["Preferences.AppearanceView.showBookmarksBarAlways"]
         showBookmarksBarPopup = app.popUpButtons["Preferences.AppearanceView.showBookmarksBarPopUp"]
@@ -101,7 +97,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         addNewFolderButton = app.buttons["bookmark.add.new.folder.button"]
         folderNameTextField = app.textFields["bookmark.add.name.textfield"]
 
-        resetBookmarks()
+        app.resetBookmarks()
         app.enforceSingleWindow()
     }
 
@@ -117,11 +113,11 @@ class BookmarksAndFavoritesTests: UITestCase {
             "The address bar bookmark button didn't appear with the expected title in a reasonable timeframe."
         )
         XCTAssertTrue(
-            bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The \"Add bookmark\" dialog's bookmark folder dropdown didn't appear with the expected title in a reasonable timeframe."
         )
         let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap(
-            bookmarkDialogBookmarkFolderDropdown.value as? String,
+            app.bookmarkDialogBookmarkFolderDropdown.value as? String,
             "It wasn't possible to get the value of the \"Add bookmark\" dialog's bookmark folder dropdown as String"
         )
         XCTAssertEqual( // Bookmark dialog must default to "Bookmarks" folder
@@ -160,11 +156,11 @@ class BookmarksAndFavoritesTests: UITestCase {
             "The address bar bookmark button didn't appear with the expected title in a reasonable timeframe."
         )
         XCTAssertTrue(
-            bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The \"Add bookmark\" dialog's bookmark folder dropdown didn't appear with the expected title in a reasonable timeframe."
         )
         let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap( // Bookmark dialog must default to "Bookmarks" folder
-            bookmarkDialogBookmarkFolderDropdown.value as? String,
+            app.bookmarkDialogBookmarkFolderDropdown.value as? String,
             "It wasn't possible to get the value of the \"Add bookmark\" dialog's bookmark folder dropdown as String"
         )
         XCTAssertEqual(
@@ -204,11 +200,11 @@ class BookmarksAndFavoritesTests: UITestCase {
             "The address bar bookmark button didn't appear with the expected title in a reasonable timeframe."
         )
         XCTAssertTrue(
-            bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The \"Add bookmark\" dialog's bookmark folder dropdown didn't appear with the expected title in a reasonable timeframe."
         )
         let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap(
-            bookmarkDialogBookmarkFolderDropdown.value as? String,
+            app.bookmarkDialogBookmarkFolderDropdown.value as? String,
             "It wasn't possible to get the value of the \"Add bookmark\" dialog's bookmark folder dropdown as String"
         )
         XCTAssertEqual( // Bookmark dialog must default to "Bookmarks" folder
@@ -244,11 +240,11 @@ class BookmarksAndFavoritesTests: UITestCase {
             "The \"Add bookmark\" dialog option button didn't appear with the expected title in a reasonable timeframe."
         )
         XCTAssertTrue(
-            bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The \"Add bookmark\" dialog's bookmark folder dropdown didn't appear with the expected title in a reasonable timeframe."
         )
         let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap(
-            bookmarkDialogBookmarkFolderDropdown.value as? String,
+            app.bookmarkDialogBookmarkFolderDropdown.value as? String,
             "It wasn't possible to get the value of the \"Add bookmark\" dialog's bookmark folder dropdown as String"
         )
 
@@ -715,10 +711,10 @@ class BookmarksAndFavoritesTests: UITestCase {
 
         // Verify that the new bookmark is added to the last used folder
         XCTAssertTrue(
-            bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The \"Add bookmark\" dialog's bookmark folder dropdown didn't appear with the expected title in a reasonable timeframe."
         )
-        let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap(bookmarkDialogBookmarkFolderDropdown.value as? String)
+        let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap(app.bookmarkDialogBookmarkFolderDropdown.value as? String)
         XCTAssertEqual(
             bookmarkDialogBookmarkFolderDropdownValue,
             folderName,
@@ -728,14 +724,6 @@ class BookmarksAndFavoritesTests: UITestCase {
 }
 
 private extension BookmarksAndFavoritesTests {
-    /// Reset the bookmarks so we can rely on a single bookmark's existence
-    func resetBookmarks() {
-        XCTAssertTrue(
-            resetBookMarksMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
-        )
-        resetBookMarksMenuItem.click()
-    }
 
     /// Make sure that we can reply on the bookmarks bar always appearing
     func toggleShowBookmarksBarAlwaysOn() {

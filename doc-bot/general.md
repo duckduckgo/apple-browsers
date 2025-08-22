@@ -92,6 +92,7 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 
 ### Specialized Development
 - `testing.md` - Testing patterns and requirements and xcodebuild commands
+- `ui-testing.md` - UI testing guidelines and best practices for macOS browser
 - `performance-optimization.md` - Performance best practices
 - `shared-packages.md` - Cross-platform package development
 - `analytics-patterns.md` - Pixel analytics and event tracking
@@ -186,6 +187,7 @@ Image(systemName: "bookmark")
 - **Analytics/Tracking**: `analytics-patterns.md` + `privacy-security.md`
 - **Advanced SwiftUI**: `swiftui-advanced.md`
 - **Testing**: `testing.md` + `anti-patterns.md`
+- **UI Testing**: `ui-testing.md` + `testing.md`
 - **Cross-platform code**: `shared-packages.md`
 - **WebView integration**: `webkit-browser.md` + `anti-patterns.md`
 - **macOS windows**: `macos-window-management.md` + `anti-patterns.md`

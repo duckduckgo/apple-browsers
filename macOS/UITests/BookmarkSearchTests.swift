@@ -19,7 +19,6 @@
 import XCTest
 
 class BookmarkSearchTests: UITestCase {
-    private var app: XCUIApplication!
 
     private enum AccessibilityIdentifiers {
         static let bookmarkButton = "AddressBarButtonsViewController.bookmarkButton"

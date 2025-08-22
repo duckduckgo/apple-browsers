@@ -19,7 +19,7 @@
 import XCTest
 
 class FindInPageTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var addressBarTextField: XCUIElement!
     private var loremIpsumWebView: XCUIElement!
     private var findInPageCloseButton: XCUIElement!

@@ -31,6 +31,25 @@ extension XCUIApplication {
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
+        static let backButton = "NavigationBarViewController.BackButton"
+        static let forwardButton = "NavigationBarViewController.ForwardButton"
+        static let downloadsButton = "NavigationBarViewController.downloadsButton"
+        static let bookmarksBar = "BookmarksBarViewController.bookmarksBarCollectionView"
+        static let mainMenuAddBookmarkMenuItem = "MainMenu.addBookmark"
+        static let mainMenuToggleBookmarksBarMenuItem = "MainMenu.toggleBookmarksBar"
+        static let historyMenu = "History"
+        static let bookmarksMenu = "Bookmarks"
+        static let mainMenuPinTabMenuItem = "Pin Tab"
+        static let mainMenuUnpinTabMenuItem = "Unpin Tab"
+        static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
+
+        static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
+        static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
+        static let addBookmarkAddToFavoritesCheckbox = "bookmark.add.add.to.favorites.button"
+        static let bookmarkDialogAddButton = "BookmarkDialogButtonsView.defaultButton"
+
+        static let addBookmarkFolderDropdown = "bookmark.add.folder.dropdown"
+
     }
 
     static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
@@ -91,11 +110,6 @@ extension XCUIApplication {
         typeKey("w", modifierFlags: .command)
     }
 
-    /// Closes the current window via keyboard shortcut (Cmd+Shift+W)
-    func closeWindow() {
-        typeKey("w", modifierFlags: [.command, .shift])
-    }
-
     /// Activate address bar for input
     /// On new tab pages, the address bar is already activated by default
     func activateAddressBar() {
@@ -104,7 +118,37 @@ extension XCUIApplication {
 
     /// Address bar text field element
     var addressBar: XCUIElement {
-        textFields[AccessibilityIdentifiers.addressBarTextField]
+        windows.firstMatch.textFields[XCUIApplication.AccessibilityIdentifiers.addressBarTextField]
+    }
+
+    /// Opens a new window
+    func openNewWindow() {
+        typeKey("n", modifierFlags: .command)
+    }
+
+    /// Opens a new fire window
+    func openFireWindow() {
+        typeKey("n", modifierFlags: [.command, .shift])
+    }
+
+    /// Closes the current window via keyboard shortcut (Cmd+Shift+W)
+    func closeWindow() {
+        typeKey("w", modifierFlags: [.command, .shift])
+    }
+
+    /// Closes all windows
+    func closeAllWindows() {
+        typeKey("w", modifierFlags: [.command, .option, .shift])
+    }
+
+    /// Opens downloads
+    func openDownloads() {
+        typeKey("j", modifierFlags: .command)
+    }
+
+    /// Opens preferences
+    func openPreferences() {
+        typeKey(",", modifierFlags: .command)
     }
 
     // MARK: - Bookmarks
@@ -346,4 +390,69 @@ extension XCUIApplication {
         // Confirm selection
         typeKey(.return, modifierFlags: [])
     }
+
+    var mainMenuPinTabMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuPinTabMenuItem]
+    }
+
+    var mainMenuUnpinTabMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuUnpinTabMenuItem]
+    }
+
+    var mainMenuAddBookmarkMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuAddBookmarkMenuItem]
+    }
+
+    var mainMenuToggleBookmarksBarMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuToggleBookmarksBarMenuItem]
+    }
+
+    var preferencesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.preferencesMenuItem]
+    }
+
+    var bookmarksBar: XCUIElement {
+        collectionViews[AccessibilityIdentifiers.bookmarksBar]
+    }
+
+    var backButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.backButton]
+    }
+
+    var forwardButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.forwardButton]
+    }
+
+    var downloadsButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.downloadsButton]
+    }
+
+    var historyMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.historyMenu]
+    }
+
+    var bookmarksMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.bookmarksMenu]
+    }
+
+    var preferencesGeneralButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.preferencesGeneralButton]
+    }
+
+    var switchToNewTabWhenOpenedCheckbox: XCUIElement {
+        checkBoxes[AccessibilityIdentifiers.switchToNewTabWhenOpenedCheckbox]
+    }
+
+    var bookmarksDialogAddToFavoritesCheckbox: XCUIElement {
+        checkBoxes[XCUIApplication.AccessibilityIdentifiers.addBookmarkAddToFavoritesCheckbox]
+    }
+
+    var addBookmarkAlertAddButton: XCUIElement {
+        buttons[XCUIApplication.AccessibilityIdentifiers.bookmarkDialogAddButton]
+    }
+
+    var bookmarkDialogBookmarkFolderDropdown: XCUIElement {
+        popUpButtons[XCUIApplication.AccessibilityIdentifiers.addBookmarkFolderDropdown]
+    }
+
 }

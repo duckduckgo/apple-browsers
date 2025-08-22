@@ -143,6 +143,15 @@ extension XCUIElement {
         self.click()
     }
 
+    public var tabs: XCUIElementQuery {
+        var element = self
+        if element is XCUIApplication {
+            element = windows.firstMatch
+        }
+
+        return element.tabGroups["TabBarViewController.CollectionView"].radioButtons
+    }
+
     func closeTab() throws {
         // Hover the tab to reveal its close ("x") button
         self.hover()
@@ -156,4 +165,12 @@ extension XCUIElement {
         let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
         coordinate.click()
     }
+
+    /// Performs a middle mouse click on the element
+    func middleClick() {
+        UITestCase.$shouldReplaceButtonWithMiddleMouseButton.withValue(true) {
+            rightClick()
+        }
+    }
+
 }

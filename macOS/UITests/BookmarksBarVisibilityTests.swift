@@ -19,7 +19,7 @@
 import XCTest
 
 class BookmarksBarVisibilityTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var pageTitle: String!
     private var urlForBookmarksBar: URL!
     private let titleStringLength = 12
@@ -27,7 +27,6 @@ class BookmarksBarVisibilityTests: UITestCase {
     private var addressBarTextField: XCUIElement!
     private var bookmarksBarCollectionView: XCUIElement!
     private var defaultBookmarkDialogButton: XCUIElement!
-    private var resetBookMarksMenuItem: XCUIElement!
     private var skipOnboardingMenuItem: XCUIElement!
     private var bookmarksBarPromptPopover: XCUIElement!
 
@@ -46,11 +45,10 @@ class BookmarksBarVisibilityTests: UITestCase {
         addressBarTextField = app.textFields["AddressBarViewController.addressBarTextField"]
         bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
-        resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         skipOnboardingMenuItem = app.menuItems["MainMenu.skipOnboarding"]
         bookmarksBarPromptPopover = app.popovers.containing(NSPredicate(format: "title == %@", "Show Bookmarks Bar?")).element
 
-        resetBookmarks()
+        app.resetBookmarks()
         skipOnboarding()
         app.enforceSingleWindow()
     }
@@ -207,14 +205,6 @@ class BookmarksBarVisibilityTests: UITestCase {
             bookmarksBarCollectionView.exists,
             "Bookmarks bar should be hidden in new tab after dismissing prompt popover."
         )
-    }
-
-    private func resetBookmarks() {
-        XCTAssertTrue(
-            resetBookMarksMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
-        )
-        resetBookMarksMenuItem.click()
     }
 
     private func skipOnboarding() {

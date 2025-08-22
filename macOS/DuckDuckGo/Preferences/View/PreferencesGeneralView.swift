@@ -127,6 +127,7 @@ extension Preferences {
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.preferNewTabsToWindows, isOn: $tabsModel.preferNewTabsToWindows)
                         ToggleMenuItem(UserText.switchToNewTabWhenOpened, isOn: $tabsModel.switchToNewTabWhenOpened)
+                            .accessibilityIdentifier("PreferencesGeneralView.switchToNewTabWhenOpened")
                     }
 
                     PreferencePaneSubSection {

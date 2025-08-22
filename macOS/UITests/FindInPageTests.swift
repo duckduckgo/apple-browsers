@@ -23,42 +23,36 @@ class FindInPageTests: UITestCase {
     private var addressBarTextField: XCUIElement!
     private var loremIpsumWebView: XCUIElement!
     private var findInPageCloseButton: XCUIElement!
-    private let minimumExpectedMatchingPixelsInFindHighlight = 150
+    private var loremIpsumFileURL: URL!
 
-    override class func setUp() {
+    override class func setUp()  {
         super.setUp()
         UITests.firstRun()
-        saveLocalHTML()
-    }
-
-    override class func tearDown() {
-        super.tearDown()
-        removeLocalHTML()
     }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
+
+        let bundle = Bundle(for: type(of: self))
+        loremIpsumFileURL = try XCTUnwrap(bundle.url(forResource: "lorem_ipsum", withExtension: "html"), "Could not find lorem_ipsum.html in test bundle")
+
         app = XCUIApplication.setUp()
         addressBarTextField = app.addressBar
         loremIpsumWebView = app.windows.webViews["Lorem Ipsum"]
         findInPageCloseButton = app.windows.buttons["FindInPageController.closeButton"]
+
         app.enforceSingleWindow()
+
+        addressBarTextField.pasteURL(loremIpsumFileURL, pressingEnter: true)
+        XCTAssertTrue(
+            loremIpsumWebView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Lorem ipsum'")).firstMatch
+                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The \"Lorem Ipsum\" web page didn't load in a reasonable timeframe."
+        )
     }
 
     func test_findInPage_canBeOpenedWithKeyCommand() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.pasteURL(Self.loremIpsumFileURL, pressingEnter: true)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
-
         app.typeKey("f", modifierFlags: .command)
 
         XCTAssertTrue(
@@ -68,17 +62,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_canBeOpenedWithMenuBarItem() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.pasteURL(Self.loremIpsumFileURL, pressingEnter: true)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         let findInPageMenuBarItem = app.menuItems["MainMenu.findInPage"]
         XCTAssertTrue(
             findInPageMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -94,17 +77,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_canBeOpenedWithMoreOptionsMenuItem() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.pasteURL(Self.loremIpsumFileURL, pressingEnter: true)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         let optionsButton = app.windows.buttons["NavigationBarViewController.optionsButton"]
         optionsButton.clickAfterExistenceTestSucceeds()
 
@@ -122,17 +94,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_canBeClosedWithEscape() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.pasteURL(Self.loremIpsumFileURL, pressingEnter: true)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -148,17 +109,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_canBeClosedWithShiftCommandF() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.pasteURL(Self.loremIpsumFileURL, pressingEnter: true)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -174,17 +124,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_canBeClosedWithHideFindMenuItem() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.pasteURL(Self.loremIpsumFileURL, pressingEnter: true)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -205,18 +144,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_showsCorrectNumberOfOccurrences() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.pasteURL(Self.loremIpsumFileURL, pressingEnter: true)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
-
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -233,15 +160,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_showsFocusAndOccurrenceHighlighting() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -262,15 +180,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findNext_menuItemGoesToNextOccurrence() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -295,15 +204,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findNext_nextArrowGoesToNextOccurrence() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -324,22 +224,11 @@ class FindInPageTests: UITestCase {
         )
 
         findInPageNextButton.click()
-        assertElement(statusField, hasValue: "2 of 4")
 
-        // Assert status increment only
         assertElement(statusField, hasValue: "2 of 4")
     }
 
     func test_findNext_commandGGoesToNextOccurrence() throws {
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
-        )
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(
-            loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Local \"Lorem Ipsum\" web page didn't load with the expected title in a reasonable timeframe. If this is unexpected, it can also be due to the timeout being too short."
-        )
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(
             findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -358,14 +247,13 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findInPage_cyclesThroughAllOccurrences_UsingNextWrapsToFirst() throws {
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeText("maximus\r")
+
         let statusField = app.textFields["FindInPageController.statusField"]
         XCTAssertTrue(statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
         assertElement(statusField, hasValue: "1 of 4")
         app.typeKey("g", modifierFlags: [.command])
         assertElement(statusField, hasValue: "2 of 4")
@@ -379,9 +267,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_findPrevious_viaMenuShortcutAndButton() throws {
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeText("maximus\r")
@@ -407,9 +292,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_clickingWebViewDeactivates_thenCmdFReactivatesAndKeepsText() throws {
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeText("maximus\r")
@@ -429,9 +311,6 @@ class FindInPageTests: UITestCase {
     }
 
     func test_hideAndReactivate_keepsTextAndNextWorks() throws {
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBarTextField.typeURL(Self.loremIpsumFileURL)
-        XCTAssertTrue(loremIpsumWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeKey("f", modifierFlags: .command)
         XCTAssertTrue(findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeText("maximus\r")
@@ -449,125 +328,5 @@ class FindInPageTests: UITestCase {
         app.typeKey("g", modifierFlags: [.command])
         assertElement(statusField, hasValue: "2 of 4")
     }
-}
 
-/// Helpers for the Find in Page tests
-private extension FindInPageTests {
-    /// A shared URL to reference the local HTML file
-    class var loremIpsumFileURL: URL {
-        let loremIpsumFileName = "lorem_ipsum.html"
-        return FileManager.default.temporaryDirectory.appendingPathComponent(loremIpsumFileName)
-    }
-
-    /// Save a local HTML file for testing find behavor against
-    class func saveLocalHTML() {
-        let loremIpsumHTML = """
-        <html><head>
-        <title>Lorem Ipsum</title></head><body><table><tr><td><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ac sem nisi. Cras fermentum mi vitae turpis efficitur malesuada. Donec eget maxima ligula, et tincidunt sapien. Suspendisse posuere diam maxima, dignissim ex at, fringilla elit. Maecenas enim tellus, ornare non pretium a, sodales nec lectus. Vestibulum quis augue orci. Donec eget mi sed magna consequat auctor a a nulla. Etiam condimentum, neque at congue semper, arcu sem commodo tellus, venenatis finibus ex magna vitae erat. Nunc non enim sit amet mi posuere egestas. Donec nibh nisl, pretium sit amet aliquet, porta id nibh. Pellentesque ullamcorper mauris quam, semper hendrerit mi dictum non. Nullam pulvinar, nulla a maximus egestas, velit mi volutpat neque, vitae placerat eros sapien vitae tellus. Pellentesque malesuada accumsan dolor, ut feugiat enim. Curabitur nunc quam, maximus venenatis augue vel, accumsan eros.</p>
-
-        <p>Donec consequat ultrices ante non maximus. Quisque eu semper diam. Nunc ullamcorper eget ex id luctus. Duis metus ex, dapibus sit amet vehicula eget, rhoncus eget lacus. Nulla maximus quis turpis vel pulvinar. Duis neque ligula, tristique et diam ut, fringilla sagittis arcu. Vestibulum suscipit semper lectus, quis placerat ex euismod eu. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae;</p>
-
-        <p>Maecenas odio orci, eleifend et ipsum nec, interdum dictum turpis. Nunc nec velit diam. Sed nisl risus, imperdiet sit amet tempor ut, laoreet sed lorem. Aenean egestas ullamcorper sem. Sed accumsan vehicula augue, vitae tempor augue tincidunt id. Morbi ullamcorper posuere lacus id tempus. Ut vel tincidunt quam, quis consectetur velit. Mauris id lorem vitae odio consectetur vehicula. Vestibulum viverra scelerisque porta. Vestibulum eu consequat urna. Etiam dignissim ullamcorper faucibus.</p></td></tr></table></body></html>
-        """
-        let loremIpsumData = Data(loremIpsumHTML.utf8)
-
-        do {
-            try loremIpsumData.write(to: loremIpsumFileURL, options: [])
-        } catch {
-            XCTFail("It wasn't possible to write out the required local HTML file for the tests: \(error.localizedDescription)")
-        }
-    }
-
-    /// Remove it when done
-    class func removeLocalHTML() {
-        do {
-            try FileManager.default.removeItem(at: loremIpsumFileURL)
-        } catch {
-            XCTFail("It wasn't possible to remove the required local HTML file for the tests: \(error.localizedDescription)")
-        }
-    }
-}
-
-private extension UInt8 {
-    func isCloseTo(_ colorValue: UInt8) -> Bool {
-        // Overflow-safe creation of range +/- 1 around value
-        let lowerBound: UInt8 = self != 0 ? self &- 1 : 0
-        let upperBound: UInt8 = self != 255 ? self &+ 1 : 255
-
-        switch colorValue {
-        case lowerBound ... upperBound:
-            return true
-        default:
-            return false
-        }
-    }
-}
-
-private extension NSImage {
-    /// Find matching pixels in an NSImage for a specific NSColor
-    /// - Parameter colorToMatch: the NSColor to match
-    /// - Returns: An array of Pixel structs
-    func matchingPixels(of colorToMatch: NSColor) throws -> [Pixel] {
-        let cgImage = try XCTUnwrap(
-            cgImage(forProposedRect: nil, context: nil, hints: nil),
-            "It wasn't possible to obtain the CGImage of the NSImage."
-        )
-        let bitmap = NSBitmapImageRep(cgImage: cgImage)
-        let colorSpace = bitmap.colorSpace
-        let colorToMatchWithColorSpace = try XCTUnwrap(
-            colorToMatch.usingColorSpace(colorSpace),
-            "It wasn't possible to get the color to match in the local colorspace."
-        ) // Compare the color we want to look for in the image after it is in the same colorspace as the image
-
-        var bitmapData: UnsafeMutablePointer<UInt8> = try XCTUnwrap(bitmap.bitmapData, "It wasn't possible to obtain the bitmapData of the bitmap.")
-        var redInImage, greenInImage, blueInImage, alphaInImage: UInt8
-
-        let redToMatch = UInt8(colorToMatchWithColorSpace.redComponent * 255.999999) // color components in 0-255 values in this colorspace
-        let greenToMatch = UInt8(colorToMatchWithColorSpace.greenComponent * 255.999999)
-        let blueToMatch = UInt8(colorToMatchWithColorSpace.blueComponent * 255.999999)
-
-        var pixels: [Pixel] = []
-
-        for yPoint in 0 ..< bitmap.pixelsHigh {
-            for xPoint in 0 ..< bitmap.pixelsWide {
-                redInImage = bitmapData.pointee
-                bitmapData = bitmapData.advanced(by: 1)
-                greenInImage = bitmapData.pointee
-                bitmapData = bitmapData.advanced(by: 1)
-                blueInImage = bitmapData.pointee
-                bitmapData = bitmapData.advanced(by: 1)
-                alphaInImage = bitmapData.pointee
-                bitmapData = bitmapData.advanced(by: 1)
-                if redInImage.isCloseTo(redToMatch), greenInImage.isCloseTo(greenToMatch),
-                   blueInImage.isCloseTo(blueToMatch)
-                { // We aren't matching alpha
-                    pixels.append(Pixel(
-                        red: redInImage,
-                        green: greenInImage,
-                        blue: blueInImage,
-                        alpha: alphaInImage,
-                        point: CGPoint(x: xPoint, y: yPoint)
-                    ))
-                }
-            }
-        }
-        return pixels
-    }
-}
-
-/// A struct of pixel color and coordinate values in 0-255 color values
-private struct Pixel: Hashable {
-    var red: UInt8
-    var green: UInt8
-    var blue: UInt8
-    var alpha: UInt8
-    var point: CGPoint
-}
-
-extension CGPoint: Hashable {
-    /// So we can do set operations with sets of CGPoints
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(x)
-        hasher.combine(y)
-    }
 }

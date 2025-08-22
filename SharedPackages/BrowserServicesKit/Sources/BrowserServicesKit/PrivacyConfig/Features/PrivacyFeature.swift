@@ -54,7 +54,6 @@ public enum PrivacyFeature: String {
     case brokenSitePrompt
     case remoteMessaging
     case additionalCampaignPixelParams
-    case newTabPageImprovements
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback

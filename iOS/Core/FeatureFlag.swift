@@ -39,7 +39,6 @@ public enum FeatureFlag: String {
     case inputFocusApi
     case incontextSignup
     case autoconsentOnByDefault
-    case newTabPageSections
 
     // Duckplayer 'Web based' UI
     case duckPlayer
@@ -266,8 +265,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.incontextSignup))
         case .autoconsentOnByDefault:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.onByDefault))
-        case .newTabPageSections:
-            return .remoteDevelopment(.feature(.newTabPageImprovements))
         case .duckPlayer:
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer))
         case .duckPlayerOpenInNewTab:

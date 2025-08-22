@@ -41,4 +41,15 @@ extension NSOpenPanel {
         canChooseDirectories = false
     }
 
+    static func openFilePanel() -> NSOpenPanel {
+        let panel = NSOpenPanel()
+
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.text, .pdf, .image, .webArchive]
+
+        return panel
+    }
+
 }

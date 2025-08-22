@@ -155,6 +155,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
+    
+    /// Adds kgb=-1 parameter to search URLs when DuckAI is disabled
+    case duckAISearchParameter
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -211,7 +214,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .scheduledSetDefaultBrowserPrompts,
-             .scheduledSetDefaultBrowserPromptsForInactiveUsers:
+             .scheduledSetDefaultBrowserPromptsForInactiveUsers,
+             .duckAISearchParameter:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -354,6 +358,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
             return .enabled
+        case .duckAISearchParameter:
+            return .internalOnly()
         }
     }
 }

@@ -92,15 +92,28 @@ public extension URL {
     func applyingSearchHeaderParams() -> URL {
         removingParameters(named: [Param.searchHeader]).appendingParameter(name: Param.searchHeader, value: ParamValue.searchHeader)
     }
+    
+    func applyingDuckAIParams(isAIChatEnabled: Bool) -> URL {
+        var url = removingParameters(named: [Param.kgb])
+        if !isAIChatEnabled {
+            url = url.appendingParameter(name: Param.kgb, value: ParamValue.kgbDisabled)
+        }
+        return url
+    }
 
     var hasCorrectSearchHeaderParams: Bool {
         guard let header = getParameter(named: Param.searchHeader) else { return false }
         return header == ParamValue.searchHeader
     }
+    
+    func hasCorrectDuckAIParams(isDuckAIEnabled: Bool) -> Bool {
+        let kgbValue = getParameter(named: Param.kgb)
+        return isDuckAIEnabled ? (kgbValue == nil) : (kgbValue == ParamValue.kgbDisabled)
+    }
 
     func removingInternalSearchParameters() -> URL {
         guard isDuckDuckGoSearch else { return self }
-        return removingParameters(named: [Param.atb, Param.source, Param.searchHeader])
+        return removingParameters(named: [Param.atb, Param.source, Param.searchHeader, Param.kgb])
     }
 
     fileprivate enum Param {
@@ -112,6 +125,7 @@ public extension URL {
         static let activityType = "at"
         static let partialHost = "pv1"
         static let searchHeader = "ko"
+        static let kgb = "kgb"
         static let vertical = "ia"
         static let verticalRewrite = "iar"
         static let verticalMaps = "iaxm"
@@ -124,6 +138,7 @@ public extension URL {
         static let source = "ddg_ios"
         static let appUsage = "app_use"
         static let searchHeader = "-1"
+        static let kgbDisabled = "-1"
         static let emailEnabled = "1"
         static let emailDisabled = "0"
         static let majorVerticals: Set<String> = ["images", "videos", "news"]

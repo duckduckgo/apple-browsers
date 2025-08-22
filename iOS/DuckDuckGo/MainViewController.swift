@@ -196,6 +196,8 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    
+
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
@@ -2788,6 +2790,10 @@ extension MainViewController: NewTabPageControllerShortcutsDelegate {
 }
 
 extension MainViewController: TabDelegate {
+    
+    var isAIChatEnabled: Bool {
+        return aiChatSettings.isAIChatEnabled
+    }
     
     func tab(_ tab: TabViewController,
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,

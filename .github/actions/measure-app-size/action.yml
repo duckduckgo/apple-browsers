@@ -36,8 +36,7 @@ runs:
         pixel-name: ${{ inputs.download-size-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.download_size }}
-          app_version: ${{ inputs.app-version }}
-          build_number: ${{ inputs.build-number }}
+          appVersion: ${{ inputs.app-version }}.${{ inputs.build-number }}
 
     - name: Send Installation Size Pixel
       if: ${{ inputs.installation-size-pixel-name != '' }}
@@ -46,5 +45,4 @@ runs:
         pixel-name: ${{ inputs.installation-size-pixel-name }}
         query-params: |
           size: ${{ steps.parse.outputs.installation_size }}
-          app_version: ${{ inputs.app-version }}
-          build_number: ${{ inputs.build-number }}
+          appVersion: ${{ inputs.app-version }}.${{ inputs.build-number }}

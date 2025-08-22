@@ -786,6 +786,8 @@
 		85F90B832E141FF200B50CB9 /* SettingsCellDemoDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */; };
 		85F98F92296F32BD00742F4A /* SyncSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F98F91296F32BD00742F4A /* SyncSettingsViewController.swift */; };
 		85F98F98296F4CB100742F4A /* SyncAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85F98F97296F4CB100742F4A /* SyncAssets.xcassets */; };
+		85F996CE2E54ADC0006B4641 /* OpenAIChatFromAddressBarHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F996CD2E54ADB9006B4641 /* OpenAIChatFromAddressBarHandling.swift */; };
+		85F996D02E54C268006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */; };
 		8C4724502217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C47244F2217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift */; };
 		8C4838B5221C8F7F008A6739 /* GestureToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C4838B4221C8F7F008A6739 /* GestureToolbarButton.swift */; };
 		980891A222369ADB00313A70 /* FeedbackUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980891A122369ADB00313A70 /* FeedbackUserText.swift */; };
@@ -2690,6 +2692,8 @@
 		85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCellDemoDebugView.swift; sourceTree = "<group>"; };
 		85F98F91296F32BD00742F4A /* SyncSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsViewController.swift; sourceTree = "<group>"; };
 		85F98F97296F4CB100742F4A /* SyncAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SyncAssets.xcassets; sourceTree = "<group>"; };
+		85F996CD2E54ADB9006B4641 /* OpenAIChatFromAddressBarHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIChatFromAddressBarHandling.swift; sourceTree = "<group>"; };
+		85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIChatFromAddressBarHandlingTests.swift; sourceTree = "<group>"; };
 		8C47244F2217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerLongPressBookmarkExtension.swift; sourceTree = "<group>"; };
 		8C4838B4221C8F7F008A6739 /* GestureToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureToolbarButton.swift; sourceTree = "<group>"; };
 		9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedTrackerDataTests.swift; sourceTree = "<group>"; };
@@ -4598,6 +4602,7 @@
 		310EEA2D2CFFCDB60043CA1A /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */,
 				8579791B2E4A3BF300A9F6DB /* AIChatSettingsMigrationTests.swift */,
 				3105BCF32DF2154800EB755E /* AIChatPixelMetricHandlerTests.swift */,
 				3105BCF42DF2154800EB755E /* MockAIChatPixelMetricHandler.swift */,
@@ -4611,6 +4616,7 @@
 		311C79E22CF790270021196A /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				85F996CD2E54ADB9006B4641 /* OpenAIChatFromAddressBarHandling.swift */,
 				852E766C2E4638AB00BA92F1 /* AIChatSettingsMigration.swift */,
 				31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */,
 				319082EF2DCCCAAC00721BD0 /* InputBox */,
@@ -9888,6 +9894,7 @@
 				56BE17D52DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift in Sources */,
 				D664C7C92B289AA200CBFA76 /* AsyncHeadlessWebView.swift in Sources */,
 				F1F5337C1F26A9EF00D80D4F /* UserText.swift in Sources */,
+				85F996CE2E54ADC0006B4641 /* OpenAIChatFromAddressBarHandling.swift in Sources */,
 				1E8AD1C727BE9B2900ABA377 /* DownloadsListDataSource.swift in Sources */,
 				85B7CD8D2DCA3308000C7B7B /* MessageNavigator.swift in Sources */,
 				8569E1702D52C9A4004A3CB7 /* TabSwitcherBarsStateHandler.swift in Sources */,
@@ -10611,6 +10618,7 @@
 				9F254ADC2CF6120E0063B308 /* MockSpecialErrorPageNavigationDelegate.swift in Sources */,
 				1CB7B82323CEA28300AA24EA /* DateExtensionTests.swift in Sources */,
 				D6D357012DC4385200B91D35 /* DuckPlayerViewModelTests.swift in Sources */,
+				85F996D02E54C268006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift in Sources */,
 				C14073882D8374520087E836 /* AutofillSettingsViewModelTests.swift in Sources */,
 				31C138A427A3352600FFD4B2 /* DownloadTests.swift in Sources */,
 				853A717820F645FB00FE60BC /* PixelTests.swift in Sources */,

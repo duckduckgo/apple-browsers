@@ -102,6 +102,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case startingTunnelWithoutAuthToken(internalError: Error?)
         case couldNotGenerateTunnelConfiguration(internalError: Error)
         case simulateTunnelFailureError
+        case settingsMissing
         case simulateSubscriptionExpiration
         case tokenReset
 
@@ -122,6 +123,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return "Failed to generate a tunnel configuration: \(internalError.localizedDescription)"
             case .simulateTunnelFailureError:
                 return "Simulated a tunnel error as requested"
+            case .settingsMissing:
+                return "VPN settings are missing or invalid"
             case .simulateSubscriptionExpiration:
                 return nil
             case .tokenReset:
@@ -137,8 +140,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .startingTunnelWithoutAuthToken: return 0
             case .couldNotGenerateTunnelConfiguration: return 1
             case .simulateTunnelFailureError: return 2
-            case .simulateSubscriptionExpiration: return 3
-            case .tokenReset: return 4
+            case .settingsMissing: return 3
+            case .simulateSubscriptionExpiration: return 4
+            case .tokenReset: return 5
                 // Subscription Errors - 100+
             case .vpnAccessRevoked: return 100
             case .vpnAccessRevokedDetectedByMonitorCheck: return 101
@@ -150,6 +154,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         public var errorUserInfo: [String: Any] {
             switch self {
             case .simulateTunnelFailureError,
+                    .settingsMissing,
                     .vpnAccessRevokedDetectedByMonitorCheck,
                     .simulateSubscriptionExpiration,
                     .tokenReset,
@@ -518,10 +523,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         loadKeyValidity(from: options)
         loadTesterEnabled(from: options)
 #if os(macOS)
-        loadSelectedEnvironment(from: options)
-        loadSelectedServer(from: options)
-        loadSelectedLocation(from: options)
-        loadDNSSettings(from: options)
+        try loadVPNSettings(from: options)
         loadAuthVersion(from: options)
         if !Self.isUsingAuthV2 {
             try await loadAuthToken(from: options)
@@ -536,10 +538,16 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     private func loadKeyValidity(from options: StartupOptions) {
-        switch options.keyValidity {
-        case .set(let validity):
-            Task { @MainActor in
-                await keyExpirationTester.setKeyValidity(validity)
+        switch options.vpnSettings {
+        case .set(let settingsSnapshot):
+            if case .custom(let validity) = settingsSnapshot.registrationKeyValidity {
+                Task { @MainActor in
+                    await keyExpirationTester.setKeyValidity(validity)
+                }
+            } else {
+                Task { @MainActor in
+                    await keyExpirationTester.setKeyValidity(nil)
+                }
             }
         case .useExisting:
             break
@@ -562,47 +570,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
 #if os(macOS)
-    private func loadSelectedEnvironment(from options: StartupOptions) {
-        switch options.selectedEnvironment {
-        case .set(let selectedEnvironment):
-            settings.selectedEnvironment = selectedEnvironment
+    private func loadVPNSettings(from options: StartupOptions) throws {
+        switch options.vpnSettings {
+        case .set(let settingsSnapshot):
+            settingsSnapshot.applyTo(settings)
         case .useExisting:
             break
         case .reset:
-            settings.selectedEnvironment = .default
-        }
-    }
-
-    private func loadSelectedServer(from options: StartupOptions) {
-        switch options.selectedServer {
-        case .set(let selectedServer):
-            settings.selectedServer = selectedServer
-        case .useExisting:
-            break
-        case .reset:
-            settings.selectedServer = .automatic
-        }
-    }
-
-    private func loadSelectedLocation(from options: StartupOptions) {
-        switch options.selectedLocation {
-        case .set(let selectedLocation):
-            settings.selectedLocation = selectedLocation
-        case .useExisting:
-            break
-        case .reset:
-            settings.selectedServer = .automatic
-        }
-    }
-
-    private func loadDNSSettings(from options: StartupOptions) {
-        switch options.dnsSettings {
-        case .set(let dnsSettings):
-            settings.dnsSettings = dnsSettings
-        case .useExisting:
-            break
-        case .reset:
-            settings.dnsSettings = .ddg(blockRiskyDomains: settings.isBlockRiskyDomainsOn)
+            // VPN settings are required - if we're in reset case, it means they were missing or invalid
+            throw TunnelError.settingsMissing
         }
     }
 

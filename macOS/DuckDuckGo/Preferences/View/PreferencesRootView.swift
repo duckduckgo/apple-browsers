@@ -120,7 +120,8 @@ enum Preferences {
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
+                                     startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
@@ -362,7 +363,7 @@ enum Preferences {
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:

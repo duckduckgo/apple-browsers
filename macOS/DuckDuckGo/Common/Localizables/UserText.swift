@@ -1541,11 +1541,17 @@ struct UserText {
     static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Your session won't be restored if data is deleted when exiting.",
+                                                                          value: "Your session won't be restored if Auto Clear is turned on, or if your last session was in Fire Window.",
                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Open Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
+    static let showStartupSettings = NSLocalizedString("show.startup.settings",
+                                                       value: "Show Startup Settings",
+                                                       comment: "Button in Data Clearing Settings. It navigates user to Startup Settings.")
+    static let fireWindowSessionRestoreWarning = NSLocalizedString("fire.window.session.restore.warning",
+                                                                  value: "Your session won't be restored if you're browsing in a Fire Window.",
+                                                                  comment: "Warning message explaining that session restoration is not available when using Fire Window")
     static let fireAnimationSectionHeader = NSLocalizedString("fire.animation.section.setting", value: "Animation", comment: "Section header in Data Clearing related to the Fire Animation.")
     static let showFireAnimationToggleText = NSLocalizedString("fire.animation.toggle.value", value: "Show inferno animation when deleting data", comment: "Checkbox to toggle the fire animation to be on or off")
 

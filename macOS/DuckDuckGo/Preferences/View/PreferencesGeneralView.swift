@@ -129,7 +129,7 @@ extension Preferences {
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
 
-                        if dataClearingModel.isAutoClearEnabled && startupModel.restorePreviousSession {
+                        if (dataClearingModel.isAutoClearEnabled || dataClearingModel.openFireWindowByDefault) && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {

@@ -129,6 +129,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         self.source = source
         self.keyValueStore = keyValueStore
         authStatePublisher
+            .receive(on: DispatchQueue.main)
             .assign(to: \.authState, onWeaklyHeld: self)
             .store(in: &cancellables)
     }

@@ -176,7 +176,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
-             .createFireproofFaviconUpdaterSecureVaultInBackground:
+             .createFireproofFaviconUpdaterSecureVaultInBackground,
+             .daxEasterEggLogos:
             true
         default:
             false
@@ -369,7 +370,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
-            return .remoteReleasable(.feature(.daxEasterEggLogos))
+            return .internalOnly()
         }
     }
 }

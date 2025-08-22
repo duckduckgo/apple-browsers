@@ -99,12 +99,14 @@ extension Preferences {
         ]
 
         var body: some View {
-            PreferencePane(UserText.webTrackingProtection, spacing: Layout.Spacing.preferencePane) {
+            PreferencePane(UserText.webTrackingProtection, spacing: 4) {
 
+                // SECTION 1: Status Indicator
                 PreferencePaneSection {
                     StatusIndicatorView(status: .alwaysOn, isLarge: true)
                 }
 
+                // SECTION 2: Description
                 PreferencePaneSection {
                     VStack(alignment: .leading, spacing: Layout.Spacing.section) {
                         TextMenuItemCaption(UserText.webTrackingProtectionUpdatedDescription)
@@ -113,14 +115,16 @@ extension Preferences {
                         }
                     }
                 }
+
+                // SECTION 3: Global privacy control
                 PreferencePaneSection {
                     ToggleMenuItem(UserText.gpcCheckboxTitle, isOn: $model.isGPCEnabled)
-                    VStack(alignment: .leading, spacing: Layout.Spacing.caption) {
+                    VStack(alignment: .leading, spacing: 1) {
                         TextMenuItemCaption(UserText.gpcExplanation)
                         TextButton(UserText.learnMore) {
                             model.openNewTab(with: .gpcLearnMore)
                         }
-                    }
+                    }.padding(.leading, 19)
                 }
 
                 PreferencePaneSection {

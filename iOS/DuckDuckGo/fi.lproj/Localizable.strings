@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Pikavalinnat";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Mukauta suosikkejasi ja muita usein käyttämiäsi ominaisuuksia. Luo uusi järjestys tai piilota kohteita pitääksesi selkeän ilmeen.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Uusi välilehti -sivusi on... uusi!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Suosikit";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Pikavalinnat";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Näytä, piilota ja järjestä uuden välilehden osiot uudelleen";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "OSIOT";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "PIKAVALINNAT";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Mukauta uuden välilehden sivua";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Kirjanmerkit";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Lataukset";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Salasanat";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Asetukset";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Avaa missä tahansa sivustossa •••-valikko ja lisää se uudelle välilehtisivulle valitsemalla **Lisää suosikki**.";
-
 /* No comment provided by engineer. */
 "No results found" = "Tuloksia ei löytynyt";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Yksityinen selaus oletuksena";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGosta on saatavilla myös %1$@, johon sisältyvät %2$@ ja %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "edistynyt, yksityinen tekoäly";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valinnainen maksullinen tilaus";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Hae tai anna osoite";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Kysy Duck.ai:lta";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Etsi";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Toissijainen / toinen toiminto";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näytä sivuston osoite kokonaan";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Oletus)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Kokeellinen)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Kokeile kokeellista vaihtoehtoa kysyäksesi Duck.ai:lta suoraan osoiteriviltä.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Haku ja Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Vain haku";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Hallitse Duck.ai:n pikakuvakkeita";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-pikakuvakkeet";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Katso vastaukset usein kysyttyihin kysymyksiin tai ota yhteyttä Privacy Pron tukeen ohjesivuiltamme.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Lähetä palautetta";
+/* Share Feedback Button */
+"subscription.feedback" = "Jaa palaute";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Peruuta";

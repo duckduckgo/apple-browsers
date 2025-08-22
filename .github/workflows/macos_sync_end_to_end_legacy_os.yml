@@ -18,18 +18,7 @@ jobs:
       release-type: review
       create-dmg: false
       branch: ${{ github.ref_name }}
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   sync-end-to-end-tests-older-macos:
     name: Sync E2E tests
@@ -122,7 +111,7 @@ jobs:
     - name: Extract and Copy app to /DerivedData
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
-        
+
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
         if [[ -n "${extracted_app}" ]]; then
@@ -132,7 +121,7 @@ jobs:
             mv "${extracted_app}" "DuckDuckGo Review.app"
           fi
         fi
-        
+
         cp -R "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run tests

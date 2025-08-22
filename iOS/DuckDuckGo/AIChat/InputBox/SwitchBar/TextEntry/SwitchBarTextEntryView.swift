@@ -131,6 +131,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
             self?.handler.clearText()
+            self?.handler.clearButtonTapped()
         }
     }
 
@@ -154,17 +155,17 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - UI Updates
 
     private func updateForCurrentMode() {
+        textView.keyboardType = .webSearch
+
         switch currentMode {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
-            textView.keyboardType = .webSearch
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none
             textView.autocorrectionType = .no
             textView.spellCheckingType = .no
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
-            textView.keyboardType = .default
             textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences
             textView.autocorrectionType = .default

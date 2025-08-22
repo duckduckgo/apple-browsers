@@ -27,7 +27,9 @@ jobs:
 
     outputs:
       release_branch_name: ${{ steps.make_release_branch.outputs.release_branch_name }}
+      asana_task_id: ${{ steps.make_release_branch.outputs.asana_task_id }}
       asana_task_url: ${{ steps.make_release_branch.outputs.asana_task_url }}
+      commit_sha: ${{ steps.make_release_branch.outputs.commit_sha }}
 
     steps:
 
@@ -70,14 +72,7 @@ jobs:
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
       skip-release: true
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GH_RO_PAT: ${{ secrets.GH_RO_PAT }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+    secrets: inherit
 
   prepare_release:
     name: Prepare Release
@@ -86,16 +81,9 @@ jobs:
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-    secrets:
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
-      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
+      measure-app-size: true
+    secrets: inherit
 
   tag_and_merge:
     name: Tag and Merge Branch
@@ -103,8 +91,21 @@ jobs:
     uses: ./.github/workflows/ios_tag_release_update_asana.yml
     with:
       asana-task-url: ${{ needs.create_release_branch.outputs.asana_task_url }}
+      base-branch: ${{ github.ref_name }}
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
       release-type: internal
-    secrets:
-      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-      GHA_ELEVATED_PERMISSIONS_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+    secrets: inherit
+
+  report_failure:
+    name: Report Failure
+    needs: [ create_release_branch, run_tests, prepare_release, tag_and_merge ]
+    if: always() && (needs.run_tests.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
+    uses: ./.github/workflows/report_failed_release_workflow.yml
+    with:
+      asana-task-id: ${{ needs.create_release_branch.outputs.asana_task_id }}
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.create_release_branch.outputs.commit_sha }}
+      platform: ios
+      workflow-name: "code freeze"
+    secrets: inherit

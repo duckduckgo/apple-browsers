@@ -28,6 +28,7 @@ import Core
 import Suggestions
 import SwiftUI
 import AIChat
+import RemoteMessaging
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
@@ -36,6 +37,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
+    func onDismissRequested()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -51,22 +53,23 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     var automaticallySelectsTextOnAppear = false
 
     // MARK: - Core Components
-    
+
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
 
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
-    
+
     // MARK: - Manager Components
-    
+
     private var swipeContainerManager: SwipeContainerManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private let daxLogoManager = DaxLogoManager()
+    private var notificationCancellable: AnyCancellable?
 
     // MARK: - Initialization
-    
+
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         super.init(nibName: nil, bundle: nil)
@@ -84,6 +87,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         setupView()
         installComponents()
         setupSubscriptions()
+        observeRemoteMessagesChanges()
 
         suggestionTrayManager?.showInitialSuggestions()
 
@@ -108,7 +112,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     // MARK: - Public Methods
-    
+
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
         if self.presentingViewController != nil {
             self.dismiss(animated: true, completion: completion)
@@ -120,11 +124,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     // MARK: - Private Methods
-    
+
     private func setupView() {
         view.backgroundColor = UIColor(designSystemColor: .background)
     }
-    
+
     private func installComponents() {
         installSwitchBarVC()
         installSwipeContainer()
@@ -174,7 +178,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             daxLogoManager.installInViewController(self, belowView: view)
         }
     }
-    
+
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
@@ -225,10 +229,21 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .store(in: &cancellables)
     }
 
+    private func observeRemoteMessagesChanges() {
+        notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.suggestionTrayManager?.showInitialSuggestions()
+                self.updateDaxVisibility()
+            }
+    }
+
     // MARK: - Action Handlers
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
         switchBarVC.unfocusTextField()
+        delegate?.onDismissRequested()
         dismissAnimated()
     }
 
@@ -251,11 +266,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 // MARK: - SwipeContainerManagerDelegate
 
 extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegate {
-    
+
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didSwipeToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
     }
-    
+
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didUpdateScrollProgress progress: CGFloat) {
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
@@ -267,35 +282,35 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
 // MARK: - SuggestionTrayManagerDelegate
 
 extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
-    
+
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectSuggestion suggestion: Suggestion) {
         delegate?.onSelectSuggestion(suggestion)
     }
-    
+
     func suggestionTrayManager(_ manager: SuggestionTrayManager, didSelectFavorite favorite: BookmarkEntity) {
         delegate?.onSelectFavorite(favorite)
     }
-    
+
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
         switchBarHandler.updateCurrentText(text)
     }
-    
+
 }
 
 // MARK: - NavigationActionBarManagerDelegate
 
 extension OmniBarEditingStateViewController: NavigationActionBarManagerDelegate {
-    
+
     func navigationActionBarManagerDidTapMicrophone(_ manager: NavigationActionBarManager) {
         handleMicrophoneButtonTapped()
     }
-    
+
     func navigationActionBarManagerDidTapNewLine(_ manager: NavigationActionBarManager) {
         let currentText = switchBarHandler.currentText
         let newText = currentText + "\n"
         switchBarHandler.updateCurrentText(newText)
     }
-    
+
     func navigationActionBarManagerDidTapSearch(_ manager: NavigationActionBarManager) {
         let currentText = switchBarHandler.currentText
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

@@ -36,6 +36,11 @@ on:
         description: "Upload destination (TestFlight or App Store)"
         default: testflight
         type: string
+      measure-app-size:
+        description: "Whether to measure and track app sizes"
+        required: false
+        default: false
+        type: boolean
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -119,6 +124,18 @@ jobs:
         echo "build_number=${build_number}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
         mv -f "$original_dsyms_path" "$dsyms_path"
+
+    - name: Measure App Size
+      id: measure-app-size
+      if: success() && inputs.measure-app-size == true
+      continue-on-error: true
+      uses: ./.github/actions/measure-app-size
+      with:
+        report-file: "iOS/App Thinning Size Report.txt"
+        download-size-pixel-name: "m_ci_apple_ios_release_download_size"
+        installation-size-pixel-name: "m_ci_apple_ios_release_installation_size"
+        app-version: ${{ env.app_version }}
+        build-number: ${{ env.build_number }}
 
     - name: Upload dSYMs artifact
       if: always()

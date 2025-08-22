@@ -27,6 +27,7 @@ jobs:
 
     outputs:
       release_branch_name: ${{ steps.make_release_branch.outputs.release_branch_name }}
+      asana_task_id: ${{ steps.make_release_branch.outputs.asana_task_id }}
       asana_task_url: ${{ steps.make_release_branch.outputs.asana_task_url }}
 
     steps:
@@ -128,4 +129,17 @@ jobs:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
       commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
       prerelease: true
+    secrets: inherit
+
+  report_failure:
+    name: Report Failure
+    needs: [ create_release_branch, run_tests, increment_build_number, prepare_release, tag_and_merge ]
+    if: always() && (needs.run_tests.result == 'failure' || needs.increment_build_number.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
+    uses: ./.github/workflows/report_failed_release_workflow.yml
+    with:
+      asana-task-id: ${{ needs.create_release_branch.outputs.asana_task_id }}
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
+      platform: macos
+      workflow-name: "code freeze"
     secrets: inherit

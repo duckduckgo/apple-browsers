@@ -167,3 +167,16 @@ jobs:
       asana-task-url: ${{ needs.validate_input_conditions.outputs.asana-task-url }}
       branch: ${{ needs.validate_input_conditions.outputs.release-branch }}
     secrets: inherit
+
+  report_failure:
+    name: Report Failure
+    needs: [ validate_input_conditions, run_tests, increment_build_number, prepare_release, tag_and_merge, publish_release ]
+    if: always() && (needs.run_tests.result == 'failure' || needs.increment_build_number.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure' || needs.publish_release.result == 'failure')
+    uses: ./.github/workflows/report_failed_release_workflow.yml
+    with:
+      asana-task-id: ${{ needs.validate_input_conditions.outputs.asana-task-id }}
+      branch: ${{ needs.validate_input_conditions.outputs.release-branch }}
+      commit-sha: ${{ needs.increment_build_number.outputs.commit_sha }}
+      platform: macos
+      workflow-name: "bump internal release"
+    secrets: inherit

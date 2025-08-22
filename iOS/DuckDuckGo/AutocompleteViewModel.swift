@@ -45,6 +45,7 @@ class AutocompleteViewModel: ObservableObject {
     @Published var topHits = [SuggestionModel]()
     @Published var ddgSuggestions = [SuggestionModel]()
     @Published var localResults = [SuggestionModel]()
+    @Published var supplementarySuggestions = [SuggestionModel]()
     @Published var query: String?
     @Published var isMessageVisible = true
     @Published var emptySuggestion: [SuggestionModel]?
@@ -53,10 +54,12 @@ class AutocompleteViewModel: ObservableObject {
     weak var delegate: AutocompleteViewModelDelegate?
 
     let isAddressBarAtBottom: Bool
+    let showAskAIChat: Bool
 
-    init(isAddressBarAtBottom: Bool, showMessage: Bool) {
+    init(isAddressBarAtBottom: Bool, showMessage: Bool, showAskAIChat: Bool) {
         self.isAddressBarAtBottom = isAddressBarAtBottom
         self.isMessageVisible = showMessage
+        self.showAskAIChat = showAskAIChat
     }
 
     func updateSuggestions(_ suggestions: SuggestionResult) {
@@ -65,6 +68,12 @@ class AutocompleteViewModel: ObservableObject {
         localResults = suggestions.localSuggestions.map { SuggestionModel(suggestion: $0) }
         if topHits.isEmpty && ddgSuggestions.isEmpty && localResults.isEmpty {
             topHits = [SuggestionModel(suggestion: .phrase(phrase: query ?? ""), canShowTapAhead: false)]
+        }
+
+        if showAskAIChat, let query {
+            supplementarySuggestions = [.init(suggestion: .askAIChat(value: query))]
+        } else {
+            supplementarySuggestions = []
         }
     }
 

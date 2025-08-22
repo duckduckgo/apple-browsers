@@ -159,6 +159,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
+    case askAIChatSuggestion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -171,7 +174,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
-             .createFireproofFaviconUpdaterSecureVaultInBackground:
+             .createFireproofFaviconUpdaterSecureVaultInBackground,
+             .askAIChatSuggestion:
             true
         default:
             false
@@ -216,7 +220,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .scheduledSetDefaultBrowserPrompts,
-             .scheduledSetDefaultBrowserPromptsForInactiveUsers:
+             .scheduledSetDefaultBrowserPromptsForInactiveUsers,
+             .askAIChatSuggestion:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -363,6 +368,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
             return .internalOnly()
+        case .askAIChatSuggestion:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.askAIChatSuggestion))
         }
     }
 }

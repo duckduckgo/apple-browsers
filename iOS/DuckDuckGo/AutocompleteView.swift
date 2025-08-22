@@ -53,12 +53,10 @@ struct AutocompleteView: View {
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
-            if let query = model.query {
-                SuggestionsSection(suggestions: [.init(suggestion: .askAIChat(value: query))],
-                                   query: query,
-                                   onSuggestionSelected: model.onSuggestionSelected,
-                                   onSuggestionDeleted: model.deleteSuggestion)
-            }
+            SuggestionsSection(suggestions: model.supplementarySuggestions,
+                               query: model.query,
+                               onSuggestionSelected: model.onSuggestionSelected,
+                               onSuggestionDeleted: model.deleteSuggestion)
 
         }
         .offset(x: 0, y: -28)

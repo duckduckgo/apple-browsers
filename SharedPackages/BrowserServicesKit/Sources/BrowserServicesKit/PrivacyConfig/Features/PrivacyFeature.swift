@@ -124,6 +124,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case defaultBrowserTutorial
 
     case widgetReporting
+
+    /// Add ask AI chat to end of autocomplete suggestions
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
+    case askAIChatSuggestion
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

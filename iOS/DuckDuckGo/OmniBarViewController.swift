@@ -54,7 +54,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - State
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
-    private var textFieldTapped = true
+    internal var textFieldTapped = true
 
     // MARK: - Animation
 

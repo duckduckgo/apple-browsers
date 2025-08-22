@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import PrivacyDashboard
 import Suggestions
 import Bookmarks
@@ -32,6 +33,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private lazy var omniBarView = DefaultOmniBarView.create()
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
+    private var cancellables = Set<AnyCancellable>()
 
     private var animateNextEditingTransition = true
 
@@ -59,7 +61,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            if textFieldTapped {
+                omniDelegate?.onExperimentalAddressBarTapped()
+            }
             presentExperimentalEditingState(for: textField, animated: animateNextEditingTransition)
+
             return false
         }
 
@@ -192,6 +198,13 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
         
+        switchBarHandler.clearButtonTappedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.omniDelegate?.onExperimentalAddressBarClearPressed()
+            }
+            .store(in: &cancellables)
+        
         self.editingStateViewController = editingStateViewController
 
         present(editingStateViewController, animated: animated)
@@ -258,6 +271,11 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
+    }
+
+    func onDismissRequested() {
+        // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
+        omniDelegate?.onExperimentalAddressBarCancelPressed()
     }
 }
 

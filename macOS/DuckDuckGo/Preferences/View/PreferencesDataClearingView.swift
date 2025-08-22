@@ -41,7 +41,17 @@ extension Preferences {
 
                 }
 
-                // SECTION 2: Enable/Disable Fire Animation
+                // SECTION 2: Fire Window Default
+                if model.shouldShowOpenFirewindowByDefaultSection {
+                    PreferencePaneSection(UserText.fireWindow) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.openFireWindowByDefault)
+                                .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
+                        }
+                    }
+                }
+
+                // SECTION 3: Enable/Disable Fire Animation
                 if model.shouldShowDisableFireAnimationSection {
                     PreferencePaneSection(UserText.fireAnimationSectionHeader) {
                         PreferencePaneSubSection {
@@ -50,7 +60,7 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Fireproof Site
+                // SECTION 4: Fireproof Site
                 PreferencePaneSection(UserText.fireproofSites) {
 
                     PreferencePaneSubSection {

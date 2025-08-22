@@ -33,10 +33,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    outputs:
+      asana_task_id: ${{ steps.task-id.outputs.asana_task_id }}
+
     steps:
 
       - name: Check out the code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Assert hotfix release branch
         run: |
@@ -44,6 +49,16 @@ jobs:
             refs/heads/hotfix/*) ;;
             *) echo "👎 Not a hotfix release branch"; exit 1 ;;
           esac
+
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
+
+      - name: Extract Asana Task ID
+        id: task-id
+        run: bundle exec fastlane run asana_extract_task_id task_url:"${{ github.event.inputs.asana-task-url }}"
 
   run_tests:
 
@@ -57,7 +72,7 @@ jobs:
 
     name: Update Asana tasks
 
-    needs: run_tests
+    needs: [assert_release_branch, run_tests]
     runs-on: macos-15
     timeout-minutes: 10
 
@@ -84,10 +99,6 @@ jobs:
           working-directory: macOS
           cache-key-prefix: macos-ruby
 
-      - name: Extract Asana Task ID
-        id: task-id
-        run: bundle exec fastlane run asana_extract_task_id task_url:"${{ github.event.inputs.asana-task-url }}"
-
       - name: Update Asana for the release
         id: update-asana
         continue-on-error: true
@@ -101,7 +112,7 @@ jobs:
             release_type:internal \
             github_handle:"${{ github.actor }}" \
             is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
-            release_task_id:"${{ steps.task-id.outputs.asana_task_id }}" \
+            release_task_id:"${{ needs.assert_release_branch.outputs.asana_task_id }}" \
             target_section_id:"${{ vars.MACOS_APP_BOARD_VALIDATION_SECTION_ID }}"
 
   prepare_release:
@@ -124,4 +135,17 @@ jobs:
       base-branch: ${{ github.event.inputs.current-internal-release-branch || 'main' }}
       commit-sha: ${{ needs.update_asana.outputs.commit_sha }}
       prerelease: true # Pre-release for now, and the actual release will be done as part of publish_dmg_release that's called later
+    secrets: inherit
+
+  report_failure:
+    name: Report Failure
+    needs: [ assert_release_branch, run_tests, update_asana, prepare_release, tag_and_merge ]
+    if: always() && (needs.run_tests.result == 'failure' || needs.update_asana.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
+    uses: ./.github/workflows/report_failed_release_workflow.yml
+    with:
+      asana-task-id: ${{ needs.assert_release_branch.outputs.asana_task_id }}
+      branch: ${{ github.ref_name }}
+      commit-sha: ${{ needs.update_asana.outputs.commit_sha }}
+      platform: macos
+      workflow-name: "build hotfix release"
     secrets: inherit

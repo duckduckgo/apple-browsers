@@ -108,8 +108,11 @@ extension URL {
         }
 
         if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
-            url = url.appendingParameter(name: URL.DuckDuckGoParameters.kbg.rawValue,
-                                         value: URL.DuckDuckGoParameters.kbgDisabledValue.rawValue)
+            /// Append the kbg disable parameter only when Duck AI features are not shown
+            if !AIChatPreferences.shared.shouldShowAIFeatures {
+                url = url.appendingParameter(name: URL.DuckDuckGoParameters.kbg.rawValue,
+                                             value: URL.DuckDuckGoParameters.kbgDisabledValue.rawValue)
+            }
         }
 
         return url

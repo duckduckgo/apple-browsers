@@ -965,13 +965,28 @@ class TabViewController: UIViewController {
         load(url: url.applyingSearchHeaderParams())
     }
     
-    private func shouldReissueSearch(for url: URL) -> Bool {
+        private func shouldReissueSearch(for url: URL) -> Bool {
         guard url.isDuckDuckGoSearch else { return false }
-        return !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        // Only check DuckAI params if the feature flag is enabled
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
+        }
+        
+        return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
-        let mobileSearch = url.applyingStatsParams()
+        var mobileSearch = url.applyingStatsParams()
+        
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
+        }
+        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
     

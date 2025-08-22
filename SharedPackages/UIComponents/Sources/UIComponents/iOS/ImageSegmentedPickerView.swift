@@ -47,7 +47,7 @@ public struct ImageSegmentedPickerConfiguration {
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
         backgroundColor: Color = .init(designSystemColor: .backdrop),
-        selectedBackgroundColor: Color = .init(designSystemColor: .backgroundTertiary)
+        selectedBackgroundColor: Color = .init(designSystemColor: .surface)
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor

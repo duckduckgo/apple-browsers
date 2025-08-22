@@ -21,6 +21,7 @@ import Combine
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import UIComponents
 
 // MARK: - Layout Constants
 
@@ -29,6 +30,7 @@ private enum Layout {
         static let preferencePane: CGFloat = 4
         static let caption: CGFloat = 1
         static let section: CGFloat = 0
+        static let featureGridPadding: CGFloat = 0
     }
 
     enum Grid {
@@ -44,52 +46,52 @@ extension Preferences {
 
         // Define all tracking protection features
         private let trackingProtectionFeatures = [
-            PreferencesFeature(
+            FeatureGridItem(
                 title: UserText.trackingProtectionThirdPartyTrackersTitle,
                 description: UserText.trackingProtectionThirdPartyTrackersDescription,
                 iconName: "Shield-16"
             ),
-            PreferencesFeature(
+            FeatureGridItem(
                 title: UserText.trackingProtectionTargetedAdsTitle,
                 description: UserText.trackingProtectionTargetedAdsDescription,
                 iconName: "Ads-Tracking-Blocked-16"
             ),
-            PreferencesFeature(
+            FeatureGridItem(
                 title: UserText.trackingProtectionLinkTrackingTitle,
                 description: UserText.trackingProtectionLinkTrackingDescription,
                 iconName: "Link-Blocked-16"
             ),
-            PreferencesFeature(
+            FeatureGridItem(
                 title: UserText.trackingProtectionFingerprintingTitle,
                 description: UserText.trackingProtectionFingerprintingDescription,
                 iconName: "Fingerprint-16"
             ),
-            PreferencesFeature(
+            FeatureGridItem(
                 title: UserText.trackingProtectionReferrerTitle,
                 description: UserText.trackingProtectionReferrerDescription,
                 iconName: "Profile-Lock-16"
             ),
-            PreferencesFeature(
-                title: UserText.trackingProtectionFirstPartyCookiesTitle,
-                description: UserText.trackingProtectionFirstPartyCookiesDescription,
-                iconName: "Cookie-Blocked-16"
-            ),
-            PreferencesFeature(
-                title: UserText.trackingProtectionCNAMECloakingTitle,
-                description: UserText.trackingProtectionCNAMECloakingDescription,
-                iconName: "Device-Laptop-Lock-16"
-            ),
-            PreferencesFeature(
+             FeatureGridItem(
                 title: UserText.trackingProtectionGoogleAMPTitle,
                 description: UserText.trackingProtectionGoogleAMPDescription,
                 iconName: "Eye-Blocked-16"
             ),
-            PreferencesFeature(
+            FeatureGridItem(
+                title: UserText.trackingProtectionCNAMECloakingTitle,
+                description: UserText.trackingProtectionCNAMECloakingDescription,
+                iconName: "Device-Laptop-Lock-16"
+            ),
+            FeatureGridItem(
+                title: UserText.trackingProtectionFirstPartyCookiesTitle,
+                description: UserText.trackingProtectionFirstPartyCookiesDescription,
+                iconName: "Cookie-Blocked-16"
+            ),
+            FeatureGridItem(
                 title: UserText.trackingProtectionGoogleSignInTitle,
                 description: UserText.trackingProtectionGoogleSignInDescription,
                 iconName: "Popup-Blocked-16"
             ),
-            PreferencesFeature(
+            FeatureGridItem(
                 title: UserText.trackingProtectionFacebookTitle,
                 description: UserText.trackingProtectionFacebookDescription,
                 iconName: "Eye-Blocked-16"
@@ -104,6 +106,14 @@ extension Preferences {
                 }
 
                 PreferencePaneSection {
+                    VStack(alignment: .leading, spacing: Layout.Spacing.section) {
+                        TextMenuItemCaption(UserText.webTrackingProtectionUpdatedDescription)
+                        TextButton(UserText.learnMore) {
+                            model.openNewTab(with: .webTrackingProtection)
+                        }
+                    }
+                }
+                PreferencePaneSection {
                     ToggleMenuItem(UserText.gpcCheckboxTitle, isOn: $model.isGPCEnabled)
                     VStack(alignment: .leading, spacing: Layout.Spacing.caption) {
                         TextMenuItemCaption(UserText.gpcExplanation)
@@ -114,20 +124,15 @@ extension Preferences {
                 }
 
                 PreferencePaneSection {
-                    TextMenuItemHeader(UserText.webTrackingProtectionAlwaysOn)
-                    VStack(alignment: .leading, spacing: Layout.Spacing.section) {
-                        TextMenuItemCaption(UserText.webTrackingProtectionUpdatedDescription)
-                        TextButton(UserText.learnMore) {
-                            model.openNewTab(with: .webTrackingProtection)
-                        }
-                    }
-                    PreferencesFeatureGridView(
+                    TextMenuItemHeader(UserText.webTrackingProtectionSubtitle)
+                    FeatureGridView(
                         features: trackingProtectionFeatures,
+                        layoutStyle: .fixed,
                         columns: Layout.Grid.columns,
-                        cellMinHeight: Layout.Grid.cellMinHeight
-                    )
+                        cellMinHeight: Layout.Grid.cellMinHeight,
+                        borderWidth: 1
+                    ).padding(.top, Layout.Spacing.featureGridPadding)
                 }
-
             }
         }
     }

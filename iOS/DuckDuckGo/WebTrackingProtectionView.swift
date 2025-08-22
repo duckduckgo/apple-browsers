@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import UIComponents
 
 // MARK: - Layout Constants
 
@@ -40,48 +41,48 @@ struct WebTrackingProtectionView: View {
     
     // Define all tracking protection features
     private let trackingProtectionFeatures = [
-        SettingsFeature(
+        FeatureGridItem(
             title: UserText.trackingProtectionThirdPartyTrackersTitle,
             description: UserText.trackingProtectionThirdPartyTrackersDescription,
             iconName: "Shield-16"
         ),
-        SettingsFeature(
+        FeatureGridItem(
             title: UserText.trackingProtectionTargetedAdsTitle,
             description: UserText.trackingProtectionTargetedAdsDescription,
             iconName: "Ads-Tracking-Blocked-16"
         ),
-        SettingsFeature(
+        FeatureGridItem(
             title: UserText.trackingProtectionLinkTrackingTitle,
             description: UserText.trackingProtectionLinkTrackingDescription,
             iconName: "Link-Blocked-16"
         ),
-        SettingsFeature(
+        FeatureGridItem(
             title: UserText.trackingProtectionFingerprintingTitle,
             description: UserText.trackingProtectionFingerprintingDescription,
             iconName: "Fingerprint-16"
         ),
-        SettingsFeature(
+        FeatureGridItem(
             title: UserText.trackingProtectionReferrerTitle,
             description: UserText.trackingProtectionReferrerDescription,
             iconName: "Profile-Lock-16"
         ),
-        SettingsFeature(
-            title: UserText.trackingProtectionFirstPartyCookiesTitle,
-            description: UserText.trackingProtectionFirstPartyCookiesDescription,
-            iconName: "Cookie-Blocked-16"
-
-        ),
-        SettingsFeature(
-            title: UserText.trackingProtectionCNAMECloakingTitle,
-            description: UserText.trackingProtectionCNAMECloakingDescription,
-            iconName: "Device-Laptop-Lock-16"
-        ),
-        SettingsFeature(
+        
+        FeatureGridItem(
             title: UserText.trackingProtectionGoogleAMPTitle,
             description: UserText.trackingProtectionGoogleAMPDescription,
             iconName: "Eye-Blocked-16"
         ),
-        SettingsFeature(
+        FeatureGridItem(
+            title: UserText.trackingProtectionCNAMECloakingTitle,
+            description: UserText.trackingProtectionCNAMECloakingDescription,
+            iconName: "Device-Laptop-Lock-16"
+        ),
+        FeatureGridItem(
+            title: UserText.trackingProtectionFirstPartyCookiesTitle,
+            description: UserText.trackingProtectionFirstPartyCookiesDescription,
+            iconName: "Cookie-Blocked-16"
+        ),
+        FeatureGridItem(
             title: UserText.trackingProtectionGoogleSignInTitle,
             description: UserText.trackingProtectionGoogleSignInDescription,
             iconName: "Popup-Blocked-16"
@@ -92,7 +93,7 @@ struct WebTrackingProtectionView: View {
         SettingsDescription(imageName: "SettingsWebTrackingProtectionContent",
                                      title: UserText.webTrackingProtection,
                                      status: .alwaysOn,
-                                     explanation: nil)
+                                     explanation: UserText.webTrackingProtectionUpdatedDescription)
     }
 
     var test: String = "test"
@@ -139,33 +140,30 @@ struct WebTrackingProtectionViewSettings: View {
 struct WebTrackingProtectionFeatureGrid: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
-    let features: [SettingsFeature]
+    let features: [FeatureGridItem]
+    
+    private var layoutStyle: FeatureGridLayoutStyle {
+        .staggered
+    }
+    
+    private var columnCount: Int {
+        UIDevice.current.userInterfaceIdiom == .pad ? 3 : 2
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.sectionSpacing) {
-            VStack(alignment: .leading, spacing: LayoutConstants.headerSpacing) {
-                Text(UserText.settingsAlwaysOn).textCase(.uppercase)
+            VStack(alignment: .leading) {
+                Text(UserText.webTrackingProtectionSubtitle).textCase(.uppercase)
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
-                Text(LocalizedStringKey(UserText.webTrackingProtectionUpdatedDescription))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .daxFootnoteRegular()
-                    .tintIfAvailable(Color(designSystemColor: .accent))
-                    .environment(\.openURL, OpenURLAction { url in
-                        if url.scheme == "ddgQuickLink" {
-                            viewModel.openWebTrackingProtectionLearnMore()
-                            return .handled
-                        }
-                        return .systemAction
-                    })
             }
-            Text("testdd")
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .daxBodyRegular()
 
-            // Feature grid with masonry layout
-            SettingsFeatureMasonryView(
-                features: features
+            // Use the shared FeatureGridView component
+            FeatureGridView(
+                features: features,
+                layoutStyle: layoutStyle,
+                columns: columnCount
             )
         }
         .listRowInsets(EdgeInsets())

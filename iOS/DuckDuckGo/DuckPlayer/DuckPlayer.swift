@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import UIKit
 import Combine
 import Foundation
 import WebKit
@@ -828,6 +829,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: appropriateTimestamp)
             }
         }
+    }
+
+    func printSomethig() {
+        print("printSomething")
     }
 
     /// Dismisses the bottom sheet

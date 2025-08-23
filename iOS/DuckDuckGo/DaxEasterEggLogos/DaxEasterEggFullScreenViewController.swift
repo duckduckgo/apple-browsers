@@ -19,16 +19,50 @@
 
 import UIKit
 import Kingfisher
+import os.log
 
-// MARK: - Layout Constants
+// MARK: - Layout Calculator
 
-private extension DaxEasterEggFullScreenViewController {
-    /// Padding around safe area for full-screen logo display
-    static let safeAreaPadding: CGFloat = 60.0
+/// Utility for calculating DaxEasterEgg logo frames with consistent sizing across components
+struct DaxEasterEggLayout {
+    private static let safeAreaPadding: CGFloat = 60.0
+    private static let logoSizeRatio: CGFloat = 0.4
+    
+    /// Calculate the frame for a logo constrained to 40% of screen size and safe area boundaries
+    static func calculateLogoFrame(for imageSize: CGSize, in containerFrame: CGRect, safeAreaInsets: UIEdgeInsets) -> CGRect {
+        guard imageSize.width > 0 && imageSize.height > 0 else {
+            return containerFrame
+        }
+        
+        let screenSize = UIScreen.main.bounds.size
+        let targetWidth = screenSize.width * logoSizeRatio
+        let targetHeight = screenSize.height * logoSizeRatio
+        
+        let availableWidth = containerFrame.width - safeAreaInsets.left - safeAreaInsets.right - (safeAreaPadding * 2)
+        let availableHeight = containerFrame.height - safeAreaInsets.top - safeAreaInsets.bottom - (safeAreaPadding * 2)
+        
+        let maxWidth = min(targetWidth, availableWidth)
+        let maxHeight = min(targetHeight, availableHeight)
+        
+        let imageAspectRatio = imageSize.width / imageSize.height
+        
+        let finalSize: CGSize
+        if imageAspectRatio > maxWidth / maxHeight {
+            finalSize = CGSize(width: maxWidth, height: maxWidth / imageAspectRatio)
+        } else {
+            finalSize = CGSize(width: maxHeight * imageAspectRatio, height: maxHeight)
+        }
+        
+        return CGRect(
+            x: containerFrame.midX - finalSize.width / 2,
+            y: containerFrame.midY - finalSize.height / 2,
+            width: finalSize.width,
+            height: finalSize.height
+        )
+    }
 }
 
-/// Full-screen viewer for Dax Easter Egg logos with custom transition support.
-/// Displays logos in a centered, appropriately sized view with safe area padding.
+/// Full-screen viewer for Dax Easter Egg logos with custom transition support
 class DaxEasterEggFullScreenViewController: UIViewController {
     
     private let imageView = UIImageView()
@@ -61,31 +95,26 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         setupUI()
         setupGestures()
         
-        // Start with source image, load high-res after transition completes
         imageView.image = sourceImage
         imageView.alpha = 0
     }
     
     private func setupUI() {
         view.backgroundColor = .clear
-        
-        // Configure image view
         imageView.contentMode = .scaleAspectFit
-        
-        // Setup view hierarchy and constraints
         view.addSubview(imageView)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.translatesAutoresizingMaskIntoConstraints = true
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         
-        // Add padding around the safe area
-        let padding = Self.safeAreaPadding
-        
-        NSLayoutConstraint.activate([
-            // ImageView respects safe area with additional padding
-            imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: padding),
-            imageView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: padding),
-            imageView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -padding),
-            imageView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -padding)
-        ])
+        let frame = DaxEasterEggLayout.calculateLogoFrame(
+            for: sourceImage?.size ?? CGSize(width: 100, height: 100),
+            in: view.bounds,
+            safeAreaInsets: view.safeAreaInsets
+        )
+        imageView.frame = frame
     }
     
     private func setupGestures() {
@@ -100,13 +129,10 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     /// Called by transition animator when animation completes - loads high-res image
     func transitionDidComplete() {
         imageView.alpha = 1
-        
         if let imageURL = imageURL {
             imageView.kf.setImage(with: imageURL, placeholder: sourceImage)
         }
     }
-    
-    // MARK: - Transition Support
     
     /// Returns current image for transition animation
     func getCurrentImage() -> UIImage? {

@@ -82,9 +82,11 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         tempImageView.layer.magnificationFilter = .trilinear
         containerView.addSubview(tempImageView)
         
-        // Calculate the final frame for the image (centered and scaled to fit with safe area + padding)
-        let adjustedFrame = calculateAdjustedFrame(for: finalFrame, viewController: toViewController)
-        let finalImageFrame = calculateFinalImageFrame(for: adjustedFrame, imageSize: sourceImage?.size ?? CGSize(width: 100, height: 100))
+        let finalImageFrame = DaxEasterEggLayout.calculateLogoFrame(
+            for: sourceImage?.size ?? CGSize(width: 100, height: 100),
+            in: finalFrame,
+            safeAreaInsets: toViewController.view.safeAreaInsets
+        )
         
         // Animate the transition using spring with high damping to prevent overshoot
         UIView.animate(withDuration: Self.animationDuration, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
@@ -110,9 +112,11 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         // Get the current image from the full-screen view controller
         let currentImage = fromViewController.getCurrentImage()
         
-        // Use the same frame calculation as presentation to ensure consistency
-        let adjustedFrame = calculateAdjustedFrame(for: finalFrame, viewController: fromViewController)
-        let calculatedImageFrame = calculateFinalImageFrame(for: adjustedFrame, imageSize: currentImage?.size ?? CGSize(width: 100, height: 100))
+        let calculatedImageFrame = DaxEasterEggLayout.calculateLogoFrame(
+            for: currentImage?.size ?? CGSize(width: 100, height: 100),
+            in: finalFrame,
+            safeAreaInsets: fromViewController.view.safeAreaInsets
+        )
         
         // Create a temporary image view for animation, starting from the calculated frame
         let tempImageView = UIImageView(image: currentImage)
@@ -146,28 +150,4 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         )
     }
     
-    private func calculateFinalImageFrame(for containerFrame: CGRect, imageSize: CGSize) -> CGRect {
-        guard imageSize.width > 0 && imageSize.height > 0 else {
-            return containerFrame
-        }
-        
-        let containerAspectRatio = containerFrame.width / containerFrame.height
-        let imageAspectRatio = imageSize.width / imageSize.height
-        
-        let finalSize: CGSize
-        if imageAspectRatio > containerAspectRatio {
-            // Image is wider than container
-            finalSize = CGSize(width: containerFrame.width, height: containerFrame.width / imageAspectRatio)
-        } else {
-            // Image is taller than container
-            finalSize = CGSize(width: containerFrame.height * imageAspectRatio, height: containerFrame.height)
-        }
-        
-        let finalOrigin = CGPoint(
-            x: containerFrame.midX - finalSize.width / 2,
-            y: containerFrame.midY - finalSize.height / 2
-        )
-        
-        return CGRect(origin: finalOrigin, size: finalSize)
-    }
 }

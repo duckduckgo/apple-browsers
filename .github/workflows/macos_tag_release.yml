@@ -19,6 +19,10 @@ on:
         description: "Branch name"
         required: false
         type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
       prerelease:
         description: "Is this a pre-release? (a.k.a. internal release)"
         required: true
@@ -39,6 +43,10 @@ on:
         type: string
       branch:
         description: "Branch name"
+        required: false
+        type: string
+      commit-sha:
+        description: "Commit SHA"
         required: false
         type: string
       prerelease:
@@ -86,7 +94,7 @@ jobs:
       with:
         fetch-depth: 0 # Fetch all history and tags in order to look up tags
         submodules: recursive
-        ref: ${{ env.BRANCH }}
+        ref: ${{ inputs.commit-sha || env.BRANCH }}
 
     - name: Assert release branch
       run: |
@@ -95,6 +103,13 @@ jobs:
           hotfix/*) ;;
           *) echo "👎 Not a release or hotfix branch"; exit 1 ;;
         esac
+
+    - name: Validate commit SHA
+      if: inputs.commit-sha
+      run: |
+        # Consider moving this check to the plugin
+        git merge-base --is-ancestor "${{ inputs.commit-sha }}" "origin/${{ env.BRANCH }}" \
+          || (echo "👎 Commit ${{ inputs.commit-sha }} does not belong to ${{ env.BRANCH }} branch" && exit 1)
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

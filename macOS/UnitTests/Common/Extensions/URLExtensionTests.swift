@@ -22,6 +22,7 @@ import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class URLExtensionTests {
 
     @Test("Verifying non-sandbox library directory URL returns consistent value regardless of sandbox")

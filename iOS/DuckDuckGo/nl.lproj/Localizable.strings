@@ -1076,7 +1076,7 @@
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Huidig aantal afwijzingen: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Sneltoetsen";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Pas je favorieten en go-to-functies aan. Herschik dingen of verberg ze om de tabbladpagina overzichtelijk te maken.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Je nieuwe tabbladpagina is... Nieuw!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favorieten";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Sneltoetsen";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Secties op het nieuwe tabblad weergeven, verbergen en opnieuw ordenen";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SECTIES";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "Sneltoetsen";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Nieuwe tabbladpagina aanpassen";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Bladwijzers";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Downloads";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Wachtwoorden";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Instellingen";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Open op een willekeurige site het menu ••• en selecteer **Favoriet toevoegen** om deze toe te voegen aan je nieuwe tabbladpagina.";
-
 /* No comment provided by engineer. */
 "No results found" = "Geen resultaten gevonden";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Standaard privé zoeken";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo heeft ook een %1$@, beschikbaar met een %2$@ en %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "geavanceerde, privé AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "Optioneel betaald abonnement.";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Zoek of voer een adres in";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Vraag stellen aan Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Zoeken";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Secundaire/ Tweede actie";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Volledig siteadres weergeven";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Standaard)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Experimenteel)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Probeer onze experimentele optie om Duck.ai direct vanuit de adresbalk te benaderen.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Zoeken en Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Alleen zoeken";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Snelkoppelingen Duck.ai beheren";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-snelkoppelingen";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Krijg antwoorden op veelgestelde vragen of neem contact op met de klantenservice van Privacy Pro via onze helppagina's.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Verstuur feedback";
+/* Share Feedback Button */
+"subscription.feedback" = "Feedback delen";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Annuleren";

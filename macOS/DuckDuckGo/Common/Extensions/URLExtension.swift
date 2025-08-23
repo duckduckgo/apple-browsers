@@ -106,6 +106,15 @@ extension URL {
            let atbWithVariant = LocalStatisticsStore().atbWithVariant {
             url = url.appendingParameter(name: URL.DuckDuckGoParameters.ATB.atb, value: atbWithVariant + "-wb")
         }
+
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            /// Append the kbg disable parameter only when Duck AI features are not shown
+            if !AIChatPreferences.shared.shouldShowAIFeatures {
+                url = url.appendingParameter(name: URL.DuckDuckGoParameters.KBG.kbg,
+                                             value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
+            }
+        }
+
         return url
     }
 
@@ -461,6 +470,11 @@ extension URL {
         case search = "q"
         case ia
         case iax
+
+        enum KBG {
+            static let kbg = "kbg"
+            static let kbgDisabledValue = "-1"
+        }
 
         enum ATB {
             static let atb = "atb"

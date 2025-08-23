@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Gyorsparancsok";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Testre szabhatja a kedvenceket és a leggyakrabban használt funkciókat. Az áttekinthetőség érdekében átrendezheti az elemeket, vagy elrejtheti őket.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Az új lap oldal… Új!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Kedvencek";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Gyorsparancsok";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Részek megjelenítése, elrejtése és átrendezése az új lap oldalon";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "RÉSZEK";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "GYORSPARANCSOK";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Új lap oldal testreszabása";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Könyvjelzők";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Letöltések";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Jelszavak";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Beállítások";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Nyisd meg a „•••” jelzésű menüt, és válaszd a **Kedvenc hozzáadása** lehetőséget, hogy hozzáadhasd azt az új laphoz.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nincs találat";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Privát keresés alapértelmezés szerint";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "A DuckDuckGo kínálatában %1$@ is szerepel, amelyhez %2$@ és %3$@ tartozik.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "fejlett, privát AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "opcionális előfizetés";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Keresés vagy cím megadása";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Duck.ai kérdezése";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Keresés";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Másodlagos/második művelet";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Teljes webhelycím megjelenítése";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Alapértelmezett)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Kísérleti)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Próbáld ki azt a kísérleti lehetőséget, hogy közvetlenül a címsorban tehetsz fel kérdéseket a Duck.ai számára.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Keresés és Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Csak keresés";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Duck.ai-gyorsparancsok kezelése";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-gyorsparancsok";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "A súgóoldalainkon választ kaphatsz a gyakran ismételt kérdésekre, vagy felveheted a kapcsolatot a Privacy Pro-támogatást nyújtó ügyfélszolgálattal.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Visszajelzés küldése";
+/* Share Feedback Button */
+"subscription.feedback" = "Visszajelzés megosztása";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Mégsem";

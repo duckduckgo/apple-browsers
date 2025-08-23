@@ -121,7 +121,6 @@ import SystemSettingsPiPTutorialTestSupport
             tabManager: tabManager,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
             privacyProDataReporter: privacyProDataReporter,
-            variantManager: variantManager,
             contextualOnboardingLogic: contextualOnboardingLogicMock,
             contextualOnboardingPixelReporter: onboardingPixelReporter,
             tutorialSettings: tutorialSettingsMock,

@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Συντομευσεις";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Προσαρμόστε τα Αγαπημένα και τις λειτουργίες μετάβασης. Αναδιατάξτε στοιχεία ή αποκρύψτε τα για να τη διατηρείτε καθαρή.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Η σελίδα σας για τη Νέα καρτέλα είναι... Νέα!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Αγαπημένα";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Συντομευσεις";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Εμφάνιση, απόκρυψη και αναδιάταξη ενοτήτων στη σελίδα της νέας καρτέλας";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "ΕΝΟΤΗΤΕΣ";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "ΣΥΝΤΟΜΕΥΣΕΙΣ";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Προσαρμογή σελίδας νέας καρτέλας";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Σελιδοδείκτες";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Λήψεις";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Κωδικός πρόσβασης";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Ρυθμίσεις";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Σε οποιονδήποτε ιστότοπο, ανοίξτε το μενού ••• και επιλέξτε **Προσθήκη αγαπημένου** για προσθήκη στη σελίδα νέας καρτέλας σας.";
-
 /* No comment provided by engineer. */
 "No results found" = "Δεν βρέθηκαν αποτελέσματα";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Ιδιωτική αναζήτηση βάσει προεπιλογής";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "Το DuckDuckGo διαθέτει επίσης μια %1$@, διαθέσιμη με %2$@ και %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "προηγμένη, ιδιωτική τεχνητή νοημοσύνη";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "προαιρετική επί πληρωμή συνδρομή";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Ρωτήστε το Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Αναζήτηση";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Δευτερεύουσα / Δεύτερη ενέργεια";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Εμφάνιση πλήρους διεύθυνσης ιστότοπου";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Προεπιλογή)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Πειραματικό)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Δοκιμάστε την πειραματική επιλογή μας για να ρωτήσετε το Duck.ai απευθείας από τη Γραμμή διευθύνσεων.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Αναζήτηση και Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Αναζήτηση μόνο";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Διαχείριση συντομεύσεων Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Συντομεύσεις Duck.ai";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Πάρτε απαντήσεις σε συχνές ερωτήσεις ή επικοινωνήστε με την υποστήριξη του Privacy Pro από τις σελίδες βοήθειας που διαθέτουμε.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Αποστολή σχολίου";
+/* Share Feedback Button */
+"subscription.feedback" = "Κοινοποίηση σχολίου";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Ακύρωση";

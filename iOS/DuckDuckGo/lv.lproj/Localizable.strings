@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Pielāgo savu izlasi un bieži izmantotās funkcijas. Pārkārto elementus vai paslēp tos, lai lieki neaizņemtu vietu.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Tava jaunas cilnes lapa ir... atjaunota!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Izlase";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Saīsnes";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Rādīt, paslēpt un pārkārtot sadaļas jaunās cilnes lapā";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SADAĻAS";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "SAĪSNES";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Jaunas cilnes lapas pielāgošana";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Grāmatzīmes";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Lejupielādes";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Paroles";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Iestatījumi";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Jebkurā vietnē atver izvēlni ••• un izvēlies **Pievienot izlasei**, lai to pievienotu savai jaunas cilnes lapai.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nav atrasti rezultāti";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Meklē privāti pēc noklusējuma";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ir arī %1$@, kas pieejams ar %2$@ un %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "uzlabotu, privātu mākslīgo intelektu";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "neobligāts maksas abonements";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Meklē vai ievadi adresi";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Pajautā Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Meklēt";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundārā/otrā darbība";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rādīt pilnu vietnes adresi";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Noklusējuma)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Eksperimentāls)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Izmēģini mūsu eksperimentālo iespēju jautāt Duck.ai tieši no adreses joslas.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Meklēšana & Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Meklēt tikai";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Pārvaldīt Duck.ai īsceļus";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai īsceļi";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Saņem atbildes uz bieži uzdotiem jautājumiem vai sazinies ar Privacy Pro atbalsta dienestu mūsu palīdzības lapās.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Sūtīt atsauksmi";
+/* Share Feedback Button */
+"subscription.feedback" = "Kopīgot atsauksmi";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Atcelt";

@@ -131,6 +131,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
             self?.handler.clearText()
+            self?.handler.clearButtonTapped()
         }
     }
 

@@ -25,7 +25,8 @@ protocol DaxEasterEggPresenting {
     func presentFullScreen(from presentingViewController: UIViewController,
                            logoURL: URL?,
                            currentImage: UIImage?,
-                           sourceFrame: CGRect)
+                           sourceFrame: CGRect,
+                           sourceViewController: OmniBarViewController?)
 }
 
 /// Presents Dax Easter Egg logos in full-screen mode with zoom transitions.
@@ -34,13 +35,15 @@ final class DaxEasterEggPresenter: DaxEasterEggPresenting {
     func presentFullScreen(from presentingViewController: UIViewController,
                            logoURL: URL?,
                            currentImage: UIImage?,
-                           sourceFrame: CGRect) {
+                           sourceFrame: CGRect,
+                           sourceViewController: OmniBarViewController?) {
         
         let fullScreenController = DaxEasterEggFullScreenViewController(
             imageURL: logoURL,
             placeholderImage: currentImage,
             sourceFrame: sourceFrame,
-            sourceImage: currentImage
+            sourceImage: currentImage,
+            sourceViewController: sourceViewController
         )
         presentingViewController.present(fullScreenController, animated: true)
     }

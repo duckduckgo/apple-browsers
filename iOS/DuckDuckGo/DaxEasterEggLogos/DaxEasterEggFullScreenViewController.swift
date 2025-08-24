@@ -71,6 +71,7 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     private let imageURL: URL?
     private let sourceFrame: CGRect
     private let sourceImage: UIImage?
+    private weak var sourceViewController: OmniBarViewController?
     
     /// Initialize with image URL and transition parameters
     /// - Parameters:
@@ -78,10 +79,12 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     ///   - placeholderImage: Image to show during loading (unused - sourceImage preferred)
     ///   - sourceFrame: Original frame for transition animation
     ///   - sourceImage: Image to use for transition and fallback
-    init(imageURL: URL?, placeholderImage: UIImage? = nil, sourceFrame: CGRect = .zero, sourceImage: UIImage? = nil) {
+    ///   - sourceViewController: The OmniBarViewController for getting current logo frame after rotation
+    init(imageURL: URL?, placeholderImage: UIImage? = nil, sourceFrame: CGRect = .zero, sourceImage: UIImage? = nil, sourceViewController: OmniBarViewController? = nil) {
         self.imageURL = imageURL
         self.sourceFrame = sourceFrame
         self.sourceImage = sourceImage ?? placeholderImage
+        self.sourceViewController = sourceViewController
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         transitioningDelegate = self
@@ -173,6 +176,14 @@ extension DaxEasterEggFullScreenViewController: UIViewControllerTransitioningDel
     }
     
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        DaxEasterEggZoomTransitionAnimator(sourceFrame: sourceFrame, sourceImage: sourceImage, isPresenting: false)
+        // Get the current source frame in case device rotated while in full-screen
+        let currentSourceFrame = getCurrentSourceFrame() ?? sourceFrame
+        return DaxEasterEggZoomTransitionAnimator(sourceFrame: currentSourceFrame, sourceImage: sourceImage, isPresenting: false)
+    }
+    
+    /// Get the current frame of the logo in the presenting view, accounting for rotation
+    private func getCurrentSourceFrame() -> CGRect? {
+        guard let sourceVC = sourceViewController else { return nil }
+        return sourceVC.getCurrentLogoFrame()
     }
 }

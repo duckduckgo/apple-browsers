@@ -695,6 +695,14 @@ extension OmniBarViewController: UITextFieldDelegate {
         }
         self.omniDelegate?.onDidEndEditing()
     }
+    
+    /// Get the current frame of the logo, accounting for device rotation and scale transforms
+    func getCurrentLogoFrame() -> CGRect? {
+        guard let imageView = barView.privacyInfoContainer.privacyIcon?.staticImageView,
+              !imageView.isHidden else { return nil }
+        
+        return imageView.convert(imageView.bounds, to: nil)
+    }
 }
 
 // MARK: - Theming
@@ -726,7 +734,8 @@ extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
             from: self,
             logoURL: logoURL,
             currentImage: currentImage,
-            sourceFrame: sourceFrame
+            sourceFrame: sourceFrame,
+            sourceViewController: self
         )
     }
 }

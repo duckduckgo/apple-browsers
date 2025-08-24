@@ -18,11 +18,43 @@
 
 import Foundation
 
+struct SanitizedError: CustomNSError {
+    let wrappedError: Error
+    let underlyingError: Error?
+
+    init(wrappedError: Error, underlyingError: Error?) {
+        self.wrappedError = wrappedError
+        self.underlyingError = underlyingError
+    }
+
+    public var errorUserInfo: [String: Any] {
+        let ns = wrappedError as NSError
+
+        var userDictionary: [String: Any] = [
+            "OriginalErrorDomain": ns.domain,
+            "OriginalErrorCode": ns.code,
+            "OriginalErrorDescription": ns.localizedDescription,
+        ]
+
+        if let underlyingError = underlyingError as NSError? {
+            userDictionary["UnderlyingError"] = underlyingError
+        }
+
+        return userDictionary
+    }
+}
+
 public struct XPCErrorSanitizer {
 
     public static func sanitize(_ error: Error) -> Error {
         let nsError = error as NSError
-        return isXPCSafe(nsError) ? error : PacketTunnelProvider.TunnelError.xpcIncompatibleError(underlyingError: error)
+
+        guard !XPCErrorSanitizer.isXPCSafe(nsError) else {
+            return error
+        }
+
+        let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError
+        return SanitizedError(wrappedError: error, underlyingError: underlyingError?.sanitizedForXPC())
     }
 
     static func isXPCSafe(_ error: NSError) -> Bool {
@@ -39,21 +71,5 @@ public struct XPCErrorSanitizer {
 extension Error {
     func sanitizedForXPC() -> Error {
         return XPCErrorSanitizer.sanitize(self)
-    }
-}
-
-extension PacketTunnelProvider.TunnelError {
-    var sanitizedForXPC: PacketTunnelProvider.TunnelError {
-        switch self {
-        case .couldNotGenerateTunnelConfiguration(let internalError):
-            return .couldNotGenerateTunnelConfiguration(internalError: internalError.sanitizedForXPC())
-        case .vpnAccessRevoked(let underlyingError):
-            return .vpnAccessRevoked(underlyingError.sanitizedForXPC())
-        case .startingTunnelWithoutAuthToken(let internalError):
-            return .startingTunnelWithoutAuthToken(internalError: internalError?.sanitizedForXPC())
-        default:
-            let nsError = self as NSError
-            return XPCErrorSanitizer.isXPCSafe(nsError) ? self : .xpcIncompatibleError(underlyingError: self)
-        }
     }
 }

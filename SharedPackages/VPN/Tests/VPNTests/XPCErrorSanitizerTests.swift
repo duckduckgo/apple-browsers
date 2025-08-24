@@ -51,18 +51,19 @@ final class XPCErrorSanitizerTests: XCTestCase {
         ])
 
         let tunnelError = PacketTunnelProvider.TunnelError.vpnAccessRevoked(unsafeUnderlying)
-        let sanitized = tunnelError.sanitizedForXPC
+        let sanitized = tunnelError.sanitizedForXPC()
 
-        if case .vpnAccessRevoked(let sanitizedUnderlying) = sanitized {
-            if case PacketTunnelProvider.TunnelError.xpcIncompatibleError(let original) = sanitizedUnderlying {
-                let nsError = original as NSError
-                XCTAssertEqual(nsError.domain, "SubscriptionDomain")
-                XCTAssertEqual(nsError.code, 42)
-            } else {
-                XCTFail("Expected xpcIncompatibleError for underlying")
-            }
+        if let sanitizedError = sanitized as? SanitizedError {
+            let wrappedNSError = sanitizedError.wrappedError as NSError
+            XCTAssertEqual(wrappedNSError.domain, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(wrappedNSError.code, 100)
+
+            let errorUserInfo = sanitizedError.errorUserInfo
+            XCTAssertEqual(errorUserInfo["OriginalErrorDomain"] as? String, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(errorUserInfo["OriginalErrorCode"] as? Int, 100)
+            XCTAssertEqual(errorUserInfo["OriginalErrorDescription"] as? String, "VPN disconnected due to expired subscription")
         } else {
-            XCTFail("Expected vpnAccessRevoked case")
+            XCTFail("Expected SanitizedError, but got \(type(of: sanitized))")
         }
     }
 
@@ -72,19 +73,19 @@ final class XPCErrorSanitizerTests: XCTestCase {
         ])
 
         let tunnelError = PacketTunnelProvider.TunnelError.startingTunnelWithoutAuthToken(internalError: internalError)
-        let sanitized = tunnelError.sanitizedForXPC
+        let sanitized = tunnelError.sanitizedForXPC()
 
-        if case .startingTunnelWithoutAuthToken(let maybeError) = sanitized {
-            guard let error = maybeError else { return XCTFail("Expected internal error present") }
-            if case PacketTunnelProvider.TunnelError.xpcIncompatibleError(let original) = error {
-                let ns = original as NSError
-                XCTAssertEqual(ns.domain, "TestError")
-                XCTAssertEqual(ns.code, 1)
-            } else {
-                XCTFail("Expected xpcIncompatibleError for internal error")
-            }
+        if let sanitizedError = sanitized as? SanitizedError {
+            let wrappedNSError = sanitizedError.wrappedError as NSError
+            XCTAssertEqual(wrappedNSError.domain, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(wrappedNSError.code, 0)
+
+            let errorUserInfo = sanitizedError.errorUserInfo
+            XCTAssertEqual(errorUserInfo["OriginalErrorDomain"] as? String, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(errorUserInfo["OriginalErrorCode"] as? Int, 0)
+            XCTAssertTrue((errorUserInfo["OriginalErrorDescription"] as? String)?.contains("Missing auth token at startup") == true)
         } else {
-            XCTFail("Expected startingTunnelWithoutAuthToken case")
+            XCTFail("Expected SanitizedError, but got \(type(of: sanitized))")
         }
     }
 
@@ -97,18 +98,19 @@ final class XPCErrorSanitizerTests: XCTestCase {
             internalError: underlyingError
         )
 
-        let sanitizedTunnelError = tunnelError.sanitizedForXPC
+        let sanitizedTunnelError = tunnelError.sanitizedForXPC()
 
-        if case .couldNotGenerateTunnelConfiguration(let sanitizedInternal) = sanitizedTunnelError {
-            if case PacketTunnelProvider.TunnelError.xpcIncompatibleError(let underlying) = sanitizedInternal {
-                let underlyingNSError = underlying as NSError
-                XCTAssertEqual(underlyingNSError.domain, "TestError")
-                XCTAssertEqual(underlyingNSError.code, 1)
-            } else {
-                XCTFail("Expected xpcIncompatibleError wrapper for underlying")
-            }
+        if let sanitizedError = sanitizedTunnelError as? SanitizedError {
+            let wrappedNSError = sanitizedError.wrappedError as NSError
+            XCTAssertEqual(wrappedNSError.domain, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(wrappedNSError.code, 1)
+
+            let errorUserInfo = sanitizedError.errorUserInfo
+            XCTAssertEqual(errorUserInfo["OriginalErrorDomain"] as? String, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(errorUserInfo["OriginalErrorCode"] as? Int, 1)
+            XCTAssertTrue((errorUserInfo["OriginalErrorDescription"] as? String)?.contains("Failed to generate a tunnel configuration") == true)
         } else {
-            XCTFail("Expected couldNotGenerateTunnelConfiguration case")
+            XCTFail("Expected SanitizedError, but got \(type(of: sanitizedTunnelError))")
         }
     }
 
@@ -118,17 +120,17 @@ final class XPCErrorSanitizerTests: XCTestCase {
         ])
 
         let error = PacketTunnelProvider.TunnelError.couldNotGenerateTunnelConfiguration(internalError: internalError)
-        let sanitized = error.sanitizedForXPC as NSError
+        let sanitized = error.sanitizedForXPC() as NSError
         XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: sanitized, requiringSecureCoding: true))
     }
 
-    func testXpcIncompatibleErrorUserInfoIsMinimal() {
+    func testSanitizedErrorUserInfoIsMinimal() {
         let unsafeError = NSError(domain: "TestError", code: 1, userInfo: [
             "unsafe": UnsafeTestClass()
         ])
 
-        let wrapped = PacketTunnelProvider.TunnelError.xpcIncompatibleError(underlyingError: unsafeError)
-        let ns = wrapped as NSError
+        let sanitized = XPCErrorSanitizer.sanitize(unsafeError)
+        let ns = sanitized as NSError
         let keys = Set(ns.userInfo.keys.map { String(describing: $0) })
         XCTAssertEqual(keys, ["OriginalErrorDomain", "OriginalErrorCode", "OriginalErrorDescription"])
     }
@@ -148,14 +150,14 @@ final class XPCErrorSanitizerTests: XCTestCase {
 
         let sanitized = XPCErrorSanitizer.sanitize(top)
 
-        if case PacketTunnelProvider.TunnelError.xpcIncompatibleError(let underlying) = sanitized {
-            let underlyingNSError = underlying as NSError
-            XCTAssertEqual(underlyingNSError.domain, "TopDomain")
-            XCTAssertEqual(underlyingNSError.code, 1)
+        if let sanitizedError = sanitized as? SanitizedError {
+            let wrappedNSError = sanitizedError.wrappedError as NSError
+            XCTAssertEqual(wrappedNSError.domain, "TopDomain")
+            XCTAssertEqual(wrappedNSError.code, 1)
             let ns = sanitized as NSError
             XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: ns, requiringSecureCoding: true))
         } else {
-            XCTFail("Expected xpcIncompatibleError for nested underlying chain")
+            XCTFail("Expected SanitizedError for nested underlying chain")
         }
     }
 
@@ -180,8 +182,96 @@ final class XPCErrorSanitizerTests: XCTestCase {
             internalError: underlyingError
         )
 
-        let error = tunnelError.sanitizedForXPC as NSError
+        let error = tunnelError.sanitizedForXPC() as NSError
         XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: error, requiringSecureCoding: true))
+    }
+
+    func testTunnelErrorWithDepth3NestedUnsafeUnderlyingErrors() {
+        let tunnelError = PacketTunnelProvider.TunnelError.couldNotGenerateTunnelConfiguration(
+            internalError: createNestedUnsafeError()
+        )
+
+        let sanitized = tunnelError.sanitizedForXPC()
+
+        if let sanitizedError = sanitized as? SanitizedError {
+            let wrappedNSError = sanitizedError.wrappedError as NSError
+            XCTAssertEqual(wrappedNSError.domain, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(wrappedNSError.code, 1)
+
+            let ns = sanitized as NSError
+            XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: ns, requiringSecureCoding: true))
+
+            let errorUserInfo = sanitizedError.errorUserInfo
+            XCTAssertEqual(errorUserInfo["OriginalErrorDomain"] as? String, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(errorUserInfo["OriginalErrorCode"] as? Int, 1)
+            XCTAssertTrue((errorUserInfo["OriginalErrorDescription"] as? String)?.contains("Failed to generate a tunnel configuration") == true)
+        } else {
+            XCTFail("Expected SanitizedError, but got \(type(of: sanitized))")
+        }
+    }
+
+    func testTunnelErrorWithDepth3NestedUnsafeUnderlyingErrorsForVpnAccessRevoked() {
+        let tunnelError = PacketTunnelProvider.TunnelError.vpnAccessRevoked(createNestedUnsafeError())
+        let sanitized = tunnelError.sanitizedForXPC()
+
+        if let sanitizedError = sanitized as? SanitizedError {
+            let wrappedNSError = sanitizedError.wrappedError as NSError
+            XCTAssertEqual(wrappedNSError.domain, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(wrappedNSError.code, 100)
+
+            let ns = sanitized as NSError
+            XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: ns, requiringSecureCoding: true))
+
+            let errorUserInfo = sanitizedError.errorUserInfo
+            XCTAssertEqual(errorUserInfo["OriginalErrorDomain"] as? String, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(errorUserInfo["OriginalErrorCode"] as? Int, 100)
+            XCTAssertEqual(errorUserInfo["OriginalErrorDescription"] as? String, "VPN disconnected due to expired subscription")
+        } else {
+            XCTFail("Expected SanitizedError, but got \(type(of: sanitized))")
+        }
+    }
+
+    func testTunnelErrorWithDepth3NestedUnsafeUnderlyingErrorsForStartingTunnelWithoutAuthToken() {
+        let tunnelError = PacketTunnelProvider.TunnelError.startingTunnelWithoutAuthToken(
+            internalError: createNestedUnsafeError()
+        )
+
+        let sanitized = tunnelError.sanitizedForXPC()
+
+        if let sanitizedError = sanitized as? SanitizedError {
+            let wrappedNSError = sanitizedError.wrappedError as NSError
+            XCTAssertEqual(wrappedNSError.domain, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(wrappedNSError.code, 0)
+
+            let ns = sanitized as NSError
+            XCTAssertNoThrow(try NSKeyedArchiver.archivedData(withRootObject: ns, requiringSecureCoding: true))
+
+            let errorUserInfo = sanitizedError.errorUserInfo
+            XCTAssertEqual(errorUserInfo["OriginalErrorDomain"] as? String, "VPN.PacketTunnelProvider.TunnelError")
+            XCTAssertEqual(errorUserInfo["OriginalErrorCode"] as? Int, 0)
+            XCTAssertTrue((errorUserInfo["OriginalErrorDescription"] as? String)?.contains("Missing auth token at startup") == true)
+        } else {
+            XCTFail("Expected SanitizedError, but got \(type(of: sanitized))")
+        }
+    }
+
+    private func createNestedUnsafeError() -> Error {
+        let bottomError = NSError(domain: "BottomDomain", code: 3, userInfo: [
+            NSLocalizedDescriptionKey: "Bottom level error"
+        ])
+
+        let middleError = NSError(domain: "MiddleDomain", code: 2, userInfo: [
+            NSLocalizedDescriptionKey: "Middle level error",
+            NSUnderlyingErrorKey: bottomError
+        ])
+
+        let topError = NSError(domain: "TopDomain", code: 1, userInfo: [
+            NSLocalizedDescriptionKey: "Top level error",
+            "unsafeTopObject": UnsafeTestClass(),
+            NSUnderlyingErrorKey: middleError
+        ])
+
+        return topError
     }
 }
 

@@ -34,15 +34,12 @@ struct DaxEasterEggLayout {
             return containerFrame
         }
         
-        let screenSize = UIScreen.main.bounds.size
-        let targetWidth = screenSize.width * logoSizeRatio
-        let targetHeight = screenSize.height * logoSizeRatio
-        
         let availableWidth = containerFrame.width - safeAreaInsets.left - safeAreaInsets.right - (safeAreaPadding * 2)
         let availableHeight = containerFrame.height - safeAreaInsets.top - safeAreaInsets.bottom - (safeAreaPadding * 2)
         
-        let maxWidth = min(targetWidth, availableWidth)
-        let maxHeight = min(targetHeight, availableHeight)
+        // Don't scale beyond actual image size to prevent blurriness
+        let maxWidth = min(availableWidth, imageSize.width)
+        let maxHeight = min(availableHeight, imageSize.height)
         
         let imageAspectRatio = imageSize.width / imageSize.height
         
@@ -53,12 +50,14 @@ struct DaxEasterEggLayout {
             finalSize = CGSize(width: maxHeight * imageAspectRatio, height: maxHeight)
         }
         
-        return CGRect(
-            x: containerFrame.midX - finalSize.width / 2,
-            y: containerFrame.midY - finalSize.height / 2,
-            width: finalSize.width,
-            height: finalSize.height
-        )
+        // Ensure pixel-aligned positioning to prevent blur
+        let scale = UIScreen.main.scale
+        let x = round((containerFrame.midX - finalSize.width / 2) * scale) / scale
+        let y = round((containerFrame.midY - finalSize.height / 2) * scale) / scale
+        let width = round(finalSize.width * scale) / scale
+        let height = round(finalSize.height * scale) / scale
+        
+        return CGRect(x: x, y: y, width: width, height: height)
     }
 }
 
@@ -156,13 +155,34 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     func transitionDidComplete() {
         imageView.alpha = 1
         if let imageURL = imageURL {
-            imageView.kf.setImage(with: imageURL, placeholder: sourceImage)
+            imageView.kf.setImage(with: imageURL, placeholder: sourceImage) { [weak self] result in
+                if case .success(let value) = result {
+                    // Now we have the actual image with real dimensions
+                    self?.adjustLayoutForActualImageSize(value.image.size)
+                }
+            }
         }
     }
     
     /// Returns current image for transition animation
     func getCurrentImage() -> UIImage? {
         imageView.image
+    }
+    
+    /// Adjusts the layout to use the actual downloaded image size to prevent blurriness
+    private func adjustLayoutForActualImageSize(_ actualImageSize: CGSize) {
+        let newFrame = DaxEasterEggLayout.calculateLogoFrame(
+            for: actualImageSize,
+            in: view.bounds,
+            safeAreaInsets: view.safeAreaInsets
+        )
+        
+        // Only animate if the frame actually changed
+        guard newFrame != imageView.frame else { return }
+        
+        UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut]) {
+            self.imageView.frame = newFrame
+        }
     }
     
 }

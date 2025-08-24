@@ -20,7 +20,7 @@ import Foundation
 
 public protocol WidePixelStoring {
     func save<T: WidePixelData>(_ data: T) throws
-    func load<T: WidePixelData>(contextID: String) throws -> T
+    func load<T: WidePixelData>(globalID: String) throws -> T
     func update<T: WidePixelData>(_ data: T) throws
     func delete<T: WidePixelData>(_ data: T)
     func allWidePixels<T: WidePixelData>(for type: T.Type) -> [T]
@@ -37,7 +37,7 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
     }
 
     public func save<T: WidePixelData>(_ data: T) throws {
-        let key = storageKey(T.self, contextID: data.contextData.id)
+        let key = storageKey(T.self, globalID: data.globalData.id)
 
         do {
             let encoded = try JSONEncoder().encode(data)
@@ -47,10 +47,10 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         }
     }
 
-    public func load<T: WidePixelData>(contextID: String) throws -> T {
-        let key = storageKey(T.self, contextID: contextID)
+    public func load<T: WidePixelData>(globalID: String) throws -> T {
+        let key = storageKey(T.self, globalID: globalID)
         guard let data = defaults.data(forKey: key) else {
-            throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with context ID \(contextID)")
+            throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with global ID \(globalID)")
         }
         do {
             return try JSONDecoder().decode(T.self, from: data)
@@ -60,15 +60,15 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
     }
 
     public func update<T: WidePixelData>(_ data: T) throws {
-        guard defaults.data(forKey: storageKey(T.self, contextID: data.contextData.id)) != nil else {
-            throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with context ID \(data.contextData.id)")
+        guard defaults.data(forKey: storageKey(T.self, globalID: data.globalData.id)) != nil else {
+            throw WidePixelError.flowNotFound(pixelName: "\(T.pixelName) with global ID \(data.globalData.id)")
         }
 
         try save(data)
     }
 
     public func delete<T: WidePixelData>(_ data: T) {
-        let key = storageKey(T.self, contextID: data.contextData.id)
+        let key = storageKey(T.self, globalID: data.globalData.id)
         defaults.removeObject(forKey: key)
     }
 
@@ -78,9 +78,9 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
 
         for key in allKeys {
             guard key.hasPrefix("\(T.pixelName).") else { continue }
-            let contextID = String(key.dropFirst(T.pixelName.count + 1))
-            guard !contextID.isEmpty, UUID(uuidString: contextID) != nil else { continue }
-            if let decoded: T = (try? load(contextID: contextID)) {
+            let globalID = String(key.dropFirst(T.pixelName.count + 1))
+            guard !globalID.isEmpty, UUID(uuidString: globalID) != nil else { continue }
+            if let decoded: T = (try? load(globalID: globalID)) {
                 results.append(decoded)
             }
         }
@@ -101,8 +101,8 @@ public final class WidePixelUserDefaultsStorage: WidePixelStoring {
         return value
     }
 
-    private func storageKey<T: WidePixelData>(_ type: T.Type, contextID: String) -> String {
-        return "\(T.pixelName).\(contextID)"
+    private func storageKey<T: WidePixelData>(_ type: T.Type, globalID: String) -> String {
+        return "\(T.pixelName).\(globalID)"
     }
 
 }

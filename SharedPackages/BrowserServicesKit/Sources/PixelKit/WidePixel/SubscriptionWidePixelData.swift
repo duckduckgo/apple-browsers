@@ -44,7 +44,7 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
                 completePurchaseDuration: WidePixel.MeasuredInterval? = nil,
                 activateAccountDuration: WidePixel.MeasuredInterval? = nil,
                 errorData: WidePixelErrorData? = nil,
-                contextData: WidePixelContextData = WidePixelContextData(),
+                contextData: WidePixelContextData,
                 appData: WidePixelAppData = WidePixelAppData(),
                 globalData: WidePixelGlobalData = WidePixelGlobalData()) {
         self.purchasePlatform = purchasePlatform

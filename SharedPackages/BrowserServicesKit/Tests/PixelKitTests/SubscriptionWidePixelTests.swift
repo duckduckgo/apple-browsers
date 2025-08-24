@@ -82,7 +82,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
     // MARK: - Successful Subscription Flow Tests
 
     func testSuccessfulAppStoreSubscriptionFlow() throws {
-        let context = WidePixelContextData(name: "funnel_onboarding_ios")
+        let context = WidePixelContextData(id: UUID().uuidString, name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore, contextData: context)
 
         widePixel.startFlow(subscriptionData)
@@ -95,27 +95,27 @@ final class SubscriptionWidePixelTests: XCTestCase {
         // User creates account (2.5s)
         let t0 = Date(timeIntervalSince1970: 0)
         let t1 = Date(timeIntervalSince1970: 2.5)
-        var flow0 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var flow0 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         flow0.createAccountDuration = WidePixel.MeasuredInterval(start: t0, end: t1)
         widePixel.updateFlow(flow0)
 
         // User completes purchase (1s)
         let t2 = Date(timeIntervalSince1970: 10)
         let t3 = Date(timeIntervalSince1970: 11)
-        var flow1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var flow1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         flow1.completePurchaseDuration = WidePixel.MeasuredInterval(start: t2, end: t3)
         widePixel.updateFlow(flow1)
 
         // Account gets activated (7.5s)
         let t4 = Date(timeIntervalSince1970: 20)
         let t5 = Date(timeIntervalSince1970: 27.5)
-        var flow2 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var flow2 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         flow2.activateAccountDuration = WidePixel.MeasuredInterval(start: t4, end: t5)
         widePixel.updateFlow(flow2)
 
         // Complete the flow successfully
         let expectation = XCTestExpectation(description: "Pixel fired")
-        let finalData = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        let finalData = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         widePixel.completeFlow(finalData, status: .success) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
@@ -148,7 +148,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
     }
 
     func testSuccessfulStripeSubscriptionFlow() throws {
-        let context = WidePixelContextData(name: "funnel_onboarding_ios")
+        let context = WidePixelContextData(id: UUID().uuidString, name: "funnel_onboarding_ios")
         let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .stripe, contextData: context)
 
         widePixel.startFlow(subscriptionData)
@@ -158,14 +158,14 @@ final class SubscriptionWidePixelTests: XCTestCase {
         updated.freeTrialEligible = false
         widePixel.updateFlow(updated)
 
-        var f = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var f = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         f.createAccountDuration = WidePixel.MeasuredInterval(start: Date(), end: Date())
         f.completePurchaseDuration = WidePixel.MeasuredInterval(start: Date(), end: Date())
         f.activateAccountDuration = WidePixel.MeasuredInterval(start: Date(), end: Date())
         widePixel.updateFlow(f)
 
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .success) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id, status: .success) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -183,7 +183,7 @@ final class SubscriptionWidePixelTests: XCTestCase {
     // MARK: - Failed Subscription Flow Tests
 
     func testFailedSubscriptionFlowAccountCreation() throws {
-        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore)
+        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore, contextData: WidePixelContextData(id: UUID().uuidString))
         widePixel.startFlow(subscriptionData)
 
         // Account creation fails
@@ -195,13 +195,13 @@ final class SubscriptionWidePixelTests: XCTestCase {
         var failed = subscriptionData
         failed.markAsFailed(at: .accountCreate, error: accountError)
         widePixel.updateFlow(failed)
-        var f1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var f1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         f1.createAccountDuration = WidePixel.MeasuredInterval(start: Date(timeIntervalSince1970: 0), end: Date(timeIntervalSince1970: 8))
         widePixel.updateFlow(f1) // 8s -> 10000 bucket
 
         // Complete the failed flow
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .failure) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id, status: .failure) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -222,24 +222,24 @@ final class SubscriptionWidePixelTests: XCTestCase {
     }
 
     func testFailedSubscriptionFlowStoreKitPurchase() throws {
-        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore)
+        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore, contextData: WidePixelContextData(id: UUID().uuidString))
         widePixel.startFlow(subscriptionData)
 
-        var s1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var s1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         s1.createAccountDuration = WidePixel.MeasuredInterval(start: Date(timeIntervalSince1970: 0), end: Date(timeIntervalSince1970: 1.5)) // 1.5s -> 5000
         widePixel.updateFlow(s1)
 
         let storeKitError = NSError(domain: "SKErrorDomain", code: 2)
 
-        var currentForFailure = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var currentForFailure = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         currentForFailure.markAsFailed(at: .accountPayment, error: storeKitError)
         widePixel.updateFlow(currentForFailure)
-        var f2 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var f2 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         f2.completePurchaseDuration = WidePixel.MeasuredInterval(start: Date(timeIntervalSince1970: 0), end: Date(timeIntervalSince1970: 15))
         widePixel.updateFlow(f2) // 15s -> 30000
 
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .failure) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id, status: .failure) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -261,15 +261,15 @@ final class SubscriptionWidePixelTests: XCTestCase {
     // MARK: - Cancelled/Timeout Flow Tests
 
     func testCancelledSubscriptionFlow() throws {
-        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore)
+        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore, contextData: WidePixelContextData(id: UUID().uuidString))
         widePixel.startFlow(subscriptionData)
 
-        var c1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var c1 = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         c1.createAccountDuration = WidePixel.MeasuredInterval(start: Date(timeIntervalSince1970: 0), end: Date(timeIntervalSince1970: 2)) // 2s -> 5000
         widePixel.updateFlow(c1)
 
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .cancelled) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id, status: .cancelled) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()
@@ -287,17 +287,17 @@ final class SubscriptionWidePixelTests: XCTestCase {
     }
 
     func testTimeoutSubscriptionFlow() throws {
-        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .stripe)
+        let subscriptionData = SubscriptionPurchaseWidePixelData(purchasePlatform: .stripe, contextData: WidePixelContextData(id: UUID().uuidString))
         widePixel.startFlow(subscriptionData)
 
-        var t = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id)!
+        var t = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)!
         t.createAccountDuration = WidePixel.MeasuredInterval(start: Date(timeIntervalSince1970: 0), end: Date(timeIntervalSince1970: 2)) // 2s -> 5000
         t.completePurchaseDuration = WidePixel.MeasuredInterval(start: Date(timeIntervalSince1970: 10), end: Date(timeIntervalSince1970: 12.5)) // 2.5s -> 5000
         t.activateAccountDuration = WidePixel.MeasuredInterval(start: Date(timeIntervalSince1970: 20), end: Date(timeIntervalSince1970: 85)) // 65s -> 60000
         widePixel.updateFlow(t)
 
         let expectation = XCTestExpectation(description: "Pixel fired")
-        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, contextID: subscriptionData.contextData.id, status: .unknown(reason: "activation_timeout")) { success, error in
+        widePixel.completeFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id, status: .unknown(reason: "activation_timeout")) { success, error in
             XCTAssertTrue(success)
             XCTAssertNil(error)
             expectation.fulfill()

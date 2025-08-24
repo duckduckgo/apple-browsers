@@ -101,8 +101,8 @@ public final class WidePixel: WidePixelManaging {
         Self.logger.info("Wide pixel with context ID \(contextID, privacy: .public) updated: \(T.pixelName, privacy: .public)")
     }
 
-    public func getFlowData<T: WidePixelData>(_ type: T.Type, contextID: String) -> T? {
-        return Self.storageQueue.sync { try? storage.load(contextID: contextID) }
+    public func getFlowData<T: WidePixelData>(_ type: T.Type, globalID: String) -> T? {
+        return Self.storageQueue.sync { try? storage.load(globalID: globalID) }
     }
 
     public func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T] {
@@ -116,7 +116,7 @@ public final class WidePixel: WidePixelManaging {
 
         do {
             try storage.update(data)
-            let current: T = try storage.load(contextID: data.contextData.id)
+            let current: T = try storage.load(globalID: data.globalData.id)
             let parameters = try generateFinalParameters(from: current, status: status)
             storage.delete(current)
 
@@ -210,9 +210,9 @@ public final class WidePixel: WidePixelManaging {
         )
     }
 
-    public func completeFlow<T: WidePixelData>(_ type: T.Type, contextID: String, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
-        guard let currentData = getFlowData(T.self, contextID: contextID) else {
-            Self.logger.info("Wide pixel completion ignored for non-existent flow: \(T.pixelName, privacy: .public), context ID: \(contextID, privacy: .public)")
+    public func completeFlow<T: WidePixelData>(_ type: T.Type, globalID: String, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
+        guard let currentData = getFlowData(T.self, globalID: globalID) else {
+            Self.logger.info("Wide pixel completion ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
             onComplete(true, nil)
             return
         }

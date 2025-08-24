@@ -76,6 +76,7 @@ public enum WidePixelStatus: Codable, Equatable, CustomStringConvertible {
 // MARK: - WidePixelGlobalData
 
 public struct WidePixelGlobalData: Codable {
+    public let id: String
     public var platform: String
     public let type: String
     public var sampleRate: Float
@@ -89,6 +90,7 @@ public struct WidePixelGlobalData: Codable {
             assertionFailure("Sample rate must be between 0-1")
         }
 
+        self.id = UUID().uuidString
         self.platform = platform
         self.type = "app" // Don't allow type to be overridden
         self.sampleRate = sampleRate.clamped(to: 0...1)
@@ -99,6 +101,7 @@ extension WidePixelGlobalData: WidePixelParameterProviding {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
+        parameters[WidePixelParameter.Global.id] = id
         parameters[WidePixelParameter.Global.platform] = platform
         parameters[WidePixelParameter.Global.type] = type
         parameters[WidePixelParameter.Global.sampleRate] = String(sampleRate)
@@ -153,7 +156,7 @@ public struct WidePixelContextData: Codable {
     public var name: String?
     public var data: [String: String]?
 
-    public init(id: String = UUID().uuidString, name: String? = nil, data: [String: String]? = nil) {
+    public init(id: String, name: String? = nil, data: [String: String]? = nil) {
         self.id = id
         self.name = name
         self.data = data

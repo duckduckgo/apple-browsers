@@ -72,7 +72,6 @@ extension WidePixelParameterProviding {
 public enum WidePixelParameter {
 
     public enum Global {
-        static let id = "global.id"
         static let platform = "global.platform"
         static let type = "global.type"
         static let sampleRate = "global.sample_rate"

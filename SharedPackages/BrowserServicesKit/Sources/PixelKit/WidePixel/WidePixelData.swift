@@ -101,7 +101,6 @@ extension WidePixelGlobalData: WidePixelParameterProviding {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
-        parameters[WidePixelParameter.Global.id] = id
         parameters[WidePixelParameter.Global.platform] = platform
         parameters[WidePixelParameter.Global.type] = type
         parameters[WidePixelParameter.Global.sampleRate] = String(sampleRate)

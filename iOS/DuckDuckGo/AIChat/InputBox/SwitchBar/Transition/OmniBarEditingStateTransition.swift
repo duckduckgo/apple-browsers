@@ -31,14 +31,12 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
     }
 
     private func calculateOffsets(switchBarTextViewMinY: CGFloat) -> TransitionOffsets {
+
         let switcherMultiplier: CGFloat = isTopBarPosition ? 1 : -1
 
         let switcherYOffset = switchBarTextViewMinY * switcherMultiplier
-
         let contentYOffset: CGFloat = switchBarTextViewMinY * switcherMultiplier
-
         let barYOffset: CGFloat = isTopBarPosition ? switchBarTextViewMinY : 0
-
         let baseLogoOffset: CGFloat = isTopBarPosition ? 0 : -(DefaultOmniBarView.expectedHeight + Constants.toolbarHeight)
         let logoYOffsetWithSwitcher = baseLogoOffset + switcherYOffset
 
@@ -90,12 +88,19 @@ final class OmniBarEditingStateTransition: NSObject, UIViewControllerAnimatedTra
             return
         }
 
-        let containerView = transitionContext.containerView
-
-        containerView.addSubview(toVC.view)
+        transitionContext.containerView.addSubview(toVC.view)
 
         let switchBarTextViewMinY = toVC.switchBarVC.textEntryViewController.view.frame.minY
         let offsets = calculateOffsets(switchBarTextViewMinY: switchBarTextViewMinY)
+
+        if !transitionContext.isAnimated {
+            toVC.switchBarVC.textEntryViewController.isExpandable = true
+
+            fromVC.hide(with: offsets.barYOffset, contentYOffset: offsets.contentYOffset)
+
+            transitionContext.completeTransition(true)
+            return
+        }
 
         toVC.view.layer.sublayerTransform = CATransform3DMakeTranslation(0, -offsets.switcherYOffset, 0)
         toVC.view.alpha = 0

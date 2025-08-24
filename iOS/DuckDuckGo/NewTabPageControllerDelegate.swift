@@ -26,11 +26,3 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController)
 }
-
-protocol NewTabPageControllerShortcutsDelegate: AnyObject {
-    func newTabPageDidRequestDownloads(_ controller: NewTabPageViewController)
-    func newTabPageDidRequestBookmarks(_ controller: NewTabPageViewController)
-    func newTabPageDidRequestPasswords(_ controller: NewTabPageViewController)
-    func newTabPageDidRequestAIChat(_ controller: NewTabPageViewController)
-    func newTabPageDidRequestSettings(_ controller: NewTabPageViewController)
-}

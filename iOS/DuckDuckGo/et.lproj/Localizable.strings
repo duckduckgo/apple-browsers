@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Otseteed";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Kohanda oma lemmikuid ja enim kasutatavaid funktsioone. Järjesta valikud ümber või peida need, et kõik oleks lihtsasti leitav.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Sinu uue vahelehe leht on... Uus!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Lemmikud";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Otseteed";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Jaotiste kuvamine, peitmine ja järjestamine uuel vahelehel";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "JAOTISED";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "OTSETEED";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Uue vahekaardilehe kohandamine";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Järjehoidjad";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Allalaadimised";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Paroolid";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Seaded";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Ava mis tahes saidil menüü ••• ja vali **Lisa lemmik**, et lisada see oma uue vahekaardi lehele.";
-
 /* No comment provided by engineer. */
 "No results found" = "Ühtegi tulemust ei leitud";
 

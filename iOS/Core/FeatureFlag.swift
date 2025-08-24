@@ -39,7 +39,6 @@ public enum FeatureFlag: String {
     case inputFocusApi
     case incontextSignup
     case autoconsentOnByDefault
-    case newTabPageSections
 
     // Duckplayer 'Web based' UI
     case duckPlayer
@@ -155,6 +154,13 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
+    
+    /// Adds kbg=-1 parameter to search URLs when DuckAI is disabled
+    case duckAISearchParameter
+
+    /// Local inactivity provisional notifications delivered to Notification Center.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
+    case inactivityNotification
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -211,7 +217,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .scheduledSetDefaultBrowserPrompts,
-             .scheduledSetDefaultBrowserPromptsForInactiveUsers:
+             .scheduledSetDefaultBrowserPromptsForInactiveUsers,
+             .duckAISearchParameter,
+             .inactivityNotification:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -266,8 +274,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.incontextSignup))
         case .autoconsentOnByDefault:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.onByDefault))
-        case .newTabPageSections:
-            return .remoteDevelopment(.feature(.newTabPageImprovements))
         case .duckPlayer:
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer))
         case .duckPlayerOpenInNewTab:
@@ -354,6 +360,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
             return .enabled
+        case .duckAISearchParameter:
+            return .internalOnly()
+        case .inactivityNotification:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         }
     }
 }

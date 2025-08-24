@@ -64,10 +64,9 @@ class DaxEasterEggZoomTransitionAnimator: NSObject, UIViewControllerAnimatedTran
         let containerView = transitionContext.containerView
         let finalFrame = transitionContext.finalFrame(for: toViewController)
         
-        // Add the destination view controller's view with clear background
+        // Add the destination view controller's view
         toViewController.view.frame = finalFrame
         toViewController.view.alpha = 0
-        toViewController.view.backgroundColor = .clear
         
         // Ensure container view also has clear background for the transition
         containerView.backgroundColor = .clear

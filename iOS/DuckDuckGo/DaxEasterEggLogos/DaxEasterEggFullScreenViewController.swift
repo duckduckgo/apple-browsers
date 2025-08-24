@@ -66,6 +66,7 @@ struct DaxEasterEggLayout {
 class DaxEasterEggFullScreenViewController: UIViewController {
     
     private let imageView = UIImageView()
+    private let closeButton = UIButton(type: .system)
     
     private let imageURL: URL?
     private let sourceFrame: CGRect
@@ -100,10 +101,31 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .clear
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.75)
         imageView.contentMode = .scaleAspectFit
+        
+        setupCloseButton()
+        
         view.addSubview(imageView)
+        view.addSubview(closeButton)
+        
         imageView.translatesAutoresizingMaskIntoConstraints = true
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            closeButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            closeButton.widthAnchor.constraint(equalToConstant: 44),
+            closeButton.heightAnchor.constraint(equalToConstant: 44)
+        ])
+    }
+    
+    private func setupCloseButton() {
+        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
+        closeButton.tintColor = .white
+        closeButton.backgroundColor = .clear
+        closeButton.layer.cornerRadius = 22
+        closeButton.addTarget(self, action: #selector(dismissViewController), for: .touchUpInside)
     }
     
     override func viewDidLayoutSubviews() {
@@ -119,6 +141,7 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     
     private func setupGestures() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissViewController))
+        tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
     }
     

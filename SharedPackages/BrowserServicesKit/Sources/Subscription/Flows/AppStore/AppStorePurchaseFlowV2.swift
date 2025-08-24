@@ -20,6 +20,7 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import Common
 
 public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
     case noProductsFound
@@ -71,6 +72,21 @@ public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
     }
 }
 
+// MARK: - Flow Events
+
+public enum AppStorePurchaseFlowV2Event {
+    case started(subscriptionIdentifier: String, freeTrialEligible: Bool)
+    case accountCreationStarted
+    case accountCreationEnded
+    case paymentStarted
+    case paymentEnded
+    case activationStarted
+    case activationEnded
+    case succeeded
+    case cancelled
+    case failed(errorDescription: String)
+}
+
 @available(macOS 12.0, iOS 15.0, *)
 public protocol AppStorePurchaseFlowV2 {
     typealias TransactionJWS = String
@@ -91,17 +107,24 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
     private let storePurchaseManager: any StorePurchaseManagerV2
     private let appStoreRestoreFlow: any AppStoreRestoreFlowV2
 
+    private let eventMapping: EventMapping<AppStorePurchaseFlowV2Event>?
+
     public init(subscriptionManager: any SubscriptionManagerV2,
                 storePurchaseManager: any StorePurchaseManagerV2,
-                appStoreRestoreFlow: any AppStoreRestoreFlowV2
+                appStoreRestoreFlow: any AppStoreRestoreFlowV2,
+                eventMapping: EventMapping<AppStorePurchaseFlowV2Event>? = nil
     ) {
         self.subscriptionManager = subscriptionManager
         self.storePurchaseManager = storePurchaseManager
         self.appStoreRestoreFlow = appStoreRestoreFlow
+        self.eventMapping = eventMapping
     }
 
     public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Purchasing Subscription")
+
+        let freeTrialEligible = storePurchaseManager.isUserEligibleForFreeTrial()
+        eventMapping?.fire(.started(subscriptionIdentifier: subscriptionIdentifier, freeTrialEligible: freeTrialEligible))
 
         var externalID: String?
         if let existingExternalID = await getExpiredSubscriptionID() {
@@ -109,21 +132,38 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             externalID = existingExternalID
         } else {
             Logger.subscriptionAppStorePurchaseFlow.log("Try to retrieve an expired Apple subscription or create a new one")
+            eventMapping?.fire(.accountCreationStarted)
 
             // Try to restore an account from a past purchase
             switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
             case .success:
                 Logger.subscriptionAppStorePurchaseFlow.log("An active subscription is already present")
+                eventMapping?.fire(.accountCreationEnded)
+                eventMapping?.fire(
+                    .failed(errorDescription: AppStorePurchaseFlowError.activeSubscriptionAlreadyPresent.localizedDescription),
+                    error: AppStorePurchaseFlowError.activeSubscriptionAlreadyPresent
+                )
                 return .failure(.activeSubscriptionAlreadyPresent)
             case .failure(let error):
                 Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(error.localizedDescription, privacy: .public)")
                 do {
                     externalID = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded).decodedAccessToken.externalID
+                    eventMapping?.fire(.accountCreationEnded)
                 } catch Networking.OAuthClientError.missingTokenContainer {
                     Logger.subscriptionStripePurchaseFlow.error("Failed to create a new account: \(error.localizedDescription, privacy: .public)")
+                    eventMapping?.fire(.accountCreationEnded)
+                    eventMapping?.fire(
+                        .failed(errorDescription: AppStorePurchaseFlowError.accountCreationFailed(error).localizedDescription),
+                        error: AppStorePurchaseFlowError.accountCreationFailed(error)
+                    )
                     return .failure(.accountCreationFailed(error))
                 } catch {
                     Logger.subscriptionStripePurchaseFlow.fault("Failed to create a new account: \(error.localizedDescription, privacy: .public), the operation is unrecoverable")
+                    eventMapping?.fire(.accountCreationEnded)
+                    eventMapping?.fire(
+                        .failed(errorDescription: AppStorePurchaseFlowError.internalError(error).localizedDescription),
+                        error: AppStorePurchaseFlowError.internalError(error)
+                    )
                     return .failure(.internalError(error))
                 }
             }
@@ -131,24 +171,40 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
 
         guard let externalID else {
             Logger.subscriptionAppStorePurchaseFlow.fault("Missing external ID, subscription purchase failed")
+            eventMapping?.fire(
+                .failed(errorDescription: AppStorePurchaseFlowError.internalError(nil).localizedDescription),
+                error: AppStorePurchaseFlowError.internalError(nil)
+            )
             return .failure(.internalError(nil))
         }
+
+        eventMapping?.fire(.paymentStarted)
 
         // Make the purchase
         switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID) {
         case .success(let transactionJWS):
+            eventMapping?.fire(.paymentEnded)
             return .success(transactionJWS)
         case .failure(let error):
             Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(error.localizedDescription, privacy: .public)")
-
+            eventMapping?.fire(.paymentEnded)
             await subscriptionManager.signOut(notifyUI: false) // TBD see if true is needed
 
             switch error {
             case .purchaseCancelledByUser:
+                eventMapping?.fire(.cancelled)
                 return .failure(.cancelledByUser)
             case .purchaseFailed(let underlyingError):
+                eventMapping?.fire(
+                    .failed(errorDescription: AppStorePurchaseFlowError.purchaseFailed(underlyingError).localizedDescription),
+                    error: AppStorePurchaseFlowError.purchaseFailed(underlyingError)
+                )
                 return .failure(.purchaseFailed(underlyingError))
             default:
+                eventMapping?.fire(
+                    .failed(errorDescription: AppStorePurchaseFlowError.purchaseFailed(error).localizedDescription),
+                    error: AppStorePurchaseFlowError.purchaseFailed(error)
+                )
                 return .failure(.purchaseFailed(error))
             }
         }
@@ -159,22 +215,42 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         Logger.subscriptionAppStorePurchaseFlow.log("Completing Subscription Purchase")
         subscriptionManager.clearSubscriptionCache()
 
+        eventMapping?.fire(.activationStarted)
+
         do {
             let subscription = try await subscriptionManager.confirmPurchase(signature: transactionJWS, additionalParams: additionalParams)
             let refreshedToken = try await subscriptionManager.getTokenContainer(policy: .localForceRefresh) // fetch new entitlements
+
             if subscription.isActive {
                 if refreshedToken.decodedAccessToken.subscriptionEntitlements.isEmpty {
                     Logger.subscriptionAppStorePurchaseFlow.error("Missing entitlements")
+                    eventMapping?.fire(.activationEnded)
+                    eventMapping?.fire(
+                        .failed(errorDescription: AppStorePurchaseFlowError.missingEntitlements.localizedDescription),
+                        error: AppStorePurchaseFlowError.missingEntitlements
+                    )
                     return .failure(.missingEntitlements)
                 } else {
+                    eventMapping?.fire(.activationEnded)
+                    eventMapping?.fire(.succeeded)
                     return .success(.completed)
                 }
             } else {
                 Logger.subscriptionAppStorePurchaseFlow.error("Subscription expired")
+                eventMapping?.fire(.activationEnded)
+                eventMapping?.fire(
+                    .failed(errorDescription: AppStorePurchaseFlowError.purchaseFailed(AppStoreRestoreFlowErrorV2.subscriptionExpired).localizedDescription),
+                    error: AppStorePurchaseFlowError.purchaseFailed(AppStoreRestoreFlowErrorV2.subscriptionExpired)
+                )
                 return .failure(.purchaseFailed(AppStoreRestoreFlowErrorV2.subscriptionExpired))
             }
         } catch {
             Logger.subscriptionAppStorePurchaseFlow.error("Purchase Failed: \(error)")
+            eventMapping?.fire(.activationEnded)
+            eventMapping?.fire(
+                .failed(errorDescription: AppStorePurchaseFlowError.purchaseFailed(error).localizedDescription),
+                error: AppStorePurchaseFlowError.purchaseFailed(error)
+            )
             return .failure(.purchaseFailed(error))
         }
     }
@@ -208,4 +284,5 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             throw error
         }
     }
+
 }

@@ -123,6 +123,7 @@ final class WidePixelTests: XCTestCase {
     // MARK: - Error Handling Tests
 
     func testGetFlowDataForNonExistentFlow() {
+        let nonExistentContextID = UUID().uuidString
         let result = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: "non-existent-global-id")
         XCTAssertNil(result)
     }

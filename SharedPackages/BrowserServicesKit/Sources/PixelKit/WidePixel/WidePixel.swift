@@ -198,6 +198,7 @@ public final class WidePixel: WidePixelManaging {
             withError: nil,
             allowedQueryReservedCharacters: nil,
             includeAppVersionParameter: false,
+            includePixelSourceParameter: false,
             onComplete: { success, error in
                 if success {
                     Self.logger.info("Wide pixel fired successfully: \(finalPixelName, privacy: .public)")

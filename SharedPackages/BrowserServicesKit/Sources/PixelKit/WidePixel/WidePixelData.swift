@@ -115,10 +115,12 @@ public struct WidePixelAppData: Codable {
     public var name: String
     public var version: String
     public var formFactor: String?
+    public var internalUser: Bool?
 
     public init(name: String = AppVersion.shared.name,
                 version: String = AppVersion.shared.versionAndBuildNumber,
-                formFactor: String? = nil) {
+                formFactor: String? = nil,
+                internalUser: Bool? = nil) {
         self.name = name
         self.version = version
 
@@ -127,6 +129,7 @@ public struct WidePixelAppData: Codable {
         #else
         self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overriden for testing
         #endif
+        self.internalUser = internalUser
     }
 }
 
@@ -142,6 +145,10 @@ extension WidePixelAppData: WidePixelParameterProviding {
             parameters[WidePixelParameter.Global.formFactor] = formFactor
         }
 
+        if let internalUser {
+            parameters[WidePixelParameter.App.internalUser] = internalUser ? "true" : "false"
+        }
+
         return parameters
     }
 
@@ -155,7 +162,7 @@ public struct WidePixelContextData: Codable {
     public var name: String?
     public var data: [String: String]?
 
-    public init(id: String, name: String? = nil, data: [String: String]? = nil) {
+    public init(id: String = UUID().uuidString, name: String? = nil, data: [String: String]? = nil) {
         self.id = id
         self.name = name
         self.data = data

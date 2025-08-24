@@ -61,6 +61,35 @@ final class PixelConfiguration {
         }
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
+
+        // Complete any pending wide pixel flows with unknown status on app launch (gated by feature flag)
+        if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
+            Task.detached(priority: .utility) {
+                let widePixel = WidePixel()
+                let pending: [SubscriptionPurchaseWidePixelData] = widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self)
+
+                guard !pending.isEmpty else { return }
+
+                for var data in pending {
+                    if var interval = data.createAccountDuration, interval.start != nil, interval.end == nil {
+                        interval.complete()
+                        data.createAccountDuration = interval
+                    }
+
+                    if var interval = data.completePurchaseDuration, interval.start != nil, interval.end == nil {
+                        interval.complete()
+                        data.completePurchaseDuration = interval
+                    }
+
+                    if var interval = data.activateAccountDuration, interval.start != nil, interval.end == nil {
+                        interval.complete()
+                        data.activateAccountDuration = interval
+                    }
+
+                    widePixel.completeFlow(data, status: .unknown(reason: "Partial data found during app launch")) { _, _ in }
+                }
+            }
+        }
     }
 
 }

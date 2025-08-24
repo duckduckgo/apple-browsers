@@ -194,11 +194,12 @@ public final class PixelKit {
                       withError error: Error?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
+                      includePixelSourceParameter: Bool,
                       onComplete: @escaping CompletionBlock) {
 
         var newParams = params ?? [:]
         if includeAppVersionParameter { newParams[Parameters.appVersion] = appVersion }
-        if let source { newParams[Parameters.pixelSource] = source }
+        if includePixelSourceParameter, let source { newParams[Parameters.pixelSource] = source }
         if let error { newParams.appendErrorPixelParams(error: error) }
 
         #if DEBUG
@@ -512,6 +513,7 @@ public final class PixelKit {
                      withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
+                     includePixelSourceParameter: Bool = true,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix)
@@ -567,6 +569,7 @@ public final class PixelKit {
              withError: newError,
              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
              includeAppVersionParameter: includeAppVersionParameter,
+             includePixelSourceParameter: includePixelSourceParameter,
              onComplete: onComplete)
     }
 
@@ -578,6 +581,7 @@ public final class PixelKit {
                             withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
+                            includePixelSourceParameter: Bool = true,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         Self.shared?.fire(event,
@@ -588,6 +592,7 @@ public final class PixelKit {
                           withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
+                          includePixelSourceParameter: includePixelSourceParameter,
                           onComplete: onComplete)
     }
 

@@ -162,8 +162,11 @@ enum SubscriptionContainerViewFactory {
 
         let eventMapping: EventMapping<AppStorePurchaseFlowV2Event>
         if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
-            eventMapping = SubscriptionWidePixelEventMapping(widePixelManager: widePixelManager, origin: origin, internalUserDecider: internalUserDecider)
+            eventMapping = SubscriptionAppStoreWidePixelEventMapping(widePixelManager: widePixelManager,
+                                                                     origin: origin,
+                                                                     internalUserDecider: internalUserDecider)
         } else {
+            // Use a no-op event mapper if the feature flag is disabled
             eventMapping = EventMapping<AppStorePurchaseFlowV2Event> { _, _, _, _ in }
         }
 
@@ -246,7 +249,7 @@ enum SubscriptionContainerViewFactory {
     }
 }
 
-private class SubscriptionWidePixelEventMapping: EventMapping<AppStorePurchaseFlowV2Event> {
+private class SubscriptionAppStoreWidePixelEventMapping: EventMapping<AppStorePurchaseFlowV2Event> {
     private let widePixelManager: WidePixelManaging
     private let origin: String?
     private let internalUserDecider: InternalUserDecider
@@ -258,10 +261,8 @@ private class SubscriptionWidePixelEventMapping: EventMapping<AppStorePurchaseFl
         self.origin = origin
         self.internalUserDecider = internalUserDecider
 
-        // Initialize super without capturing self in the closure
         super.init { _, _, _, _ in }
 
-        // Assign the real mapper after initialization to safely capture self
         self.eventMapper = { [weak self] event, error, _, _ in
             guard let self else { return }
             switch event {
@@ -326,9 +327,6 @@ private class SubscriptionWidePixelEventMapping: EventMapping<AppStorePurchaseFl
 
                 if let error {
                     data.errorData = WidePixelErrorData(error: error)
-                } else {
-                    let nsError = NSError(domain: "AppStorePurchaseFlowV2", code: -1, userInfo: [NSLocalizedDescriptionKey: errorDescription])
-                    data.errorData = WidePixelErrorData(error: nsError)
                 }
 
                 self.widePixelManager.completeFlow(data, status: .failure) { _, _ in }

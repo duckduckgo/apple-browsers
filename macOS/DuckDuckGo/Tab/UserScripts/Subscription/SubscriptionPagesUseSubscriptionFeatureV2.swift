@@ -64,6 +64,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     let subscriptionManager: SubscriptionManagerV2
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
     let stripePurchaseFlow: any StripePurchaseFlowV2
+    private var currentOrigin: String?
+    private let setStripeOrigin: (String?) -> Void
     let subscriptionErrorReporter = DefaultSubscriptionErrorReporter()
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler
     let uiHandler: SubscriptionUIHandling
@@ -85,7 +87,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 notificationCenter: NotificationCenter = .default,
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                aiChatURL: URL) {
+                aiChatURL: URL,
+                setStripeOrigin: @escaping (String?) -> Void = { _ in }) {
+        print("SAMDEBUG: Creating new subscription V2 feature instance")
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -96,6 +100,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.featureFlagger = featureFlagger
+        self.setStripeOrigin = setStripeOrigin
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -238,6 +243,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         let message = original
 
         await setPixelOrigin(from: message)
+        self.currentOrigin = await originFrom(originalMessage: message)
+        self.setStripeOrigin(self.currentOrigin)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             if #available(macOS 12.0, *) {
@@ -266,9 +273,22 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 let purchaseTransactionJWS: String
                 let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
+
+                let eventMapping: EventMapping<AppStorePurchaseFlowV2Event>
+                if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
+                    eventMapping = SubscriptionAppStoreWidePixelEventMapping(
+                        widePixelManager: WidePixel(),
+                        originProvider: { [weak self] in self?.currentOrigin },
+                        internalUserDecider: featureFlagger.internalUserDecider
+                    )
+                } else {
+                    eventMapping = EventMapping<AppStorePurchaseFlowV2Event> { _, _, _, _ in }
+                }
+
                 let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                          storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                         eventMapping: eventMapping)
 
                 Logger.subscription.log("[Purchase] Purchasing")
                 let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id)
@@ -348,7 +368,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             }
         } else if subscriptionPlatform == .stripe {
             let emailAccessToken = try? EmailManager().getToken()
-            let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: emailAccessToken)
+            let result = await self.stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: emailAccessToken)
             switch result {
             case .success(let success):
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: success)
@@ -412,6 +432,20 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
     func completeStripePayment(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         await uiHandler.presentProgressViewController(withTitle: UserText.completingPurchaseTitle)
+
+        if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
+            // Reuse the same flow instance so the mapping’s started context completes with success here
+            if !(stripePurchaseFlow is DefaultStripePurchaseFlowV2) {
+                let origin = await originFrom(originalMessage: original)
+                let internalUserDecider = NSApp.delegateTyped.internalUserDecider
+                let eventMapping = SubscriptionStripeWidePixelEventMapping(
+                    widePixelManager: WidePixel(),
+                    originProvider: { [weak self] in self?.currentOrigin },
+                    internalUserDecider: internalUserDecider
+                )
+                _ = eventMapping // mapping now provided from UserScripts; do not reassign flow here
+            }
+        }
         await stripePurchaseFlow.completeSubscriptionPurchase()
         await uiHandler.dismissProgressViewController()
 

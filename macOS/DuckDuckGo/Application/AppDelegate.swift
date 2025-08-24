@@ -402,6 +402,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
+
         self.featureFlagger = featureFlagger
 
         aiChatSidebarProvider = AIChatSidebarProvider()
@@ -838,6 +839,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
+
+        configureWidePixelCleanup()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -1113,6 +1116,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
             Self.setUpPixelKit(dryRun: false)
 #endif
+    }
+
+    private func configureWidePixelCleanup() {
+        if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
+            let widePixel = WidePixel()
+            let pending: [SubscriptionPurchaseWidePixelData] = widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self)
+
+            guard !pending.isEmpty else { return }
+
+            for var data in pending {
+                if var interval = data.createAccountDuration, interval.start != nil, interval.end == nil {
+                    interval.complete()
+                    data.createAccountDuration = interval
+                }
+
+                if var interval = data.completePurchaseDuration, interval.start != nil, interval.end == nil {
+                    interval.complete()
+                    data.completePurchaseDuration = interval
+                }
+
+                if var interval = data.activateAccountDuration, interval.start != nil, interval.end == nil {
+                    interval.complete()
+                    data.activateAccountDuration = interval
+                }
+
+                widePixel.completeFlow(data, status: .unknown(reason: "Partial data found during app launch")) { _, _ in }
+            }
+        }
     }
 
     private static func setUpPixelKit(dryRun: Bool) {

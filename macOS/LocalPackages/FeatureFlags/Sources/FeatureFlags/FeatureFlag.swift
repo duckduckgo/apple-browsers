@@ -164,6 +164,8 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
     case duckAISearchParameter
+
+    case subscriptionPurchaseWidePixelMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -237,7 +239,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .openFireWindowByDefault,
                 .restoreSessionPrompt,
                 .duckAISearchParameter,
-                .openFileMenuAction:
+                .openFileMenuAction,
+                .subscriptionPurchaseWidePixelMeasurement:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -364,6 +367,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .duckAISearchParameter:
             return .internalOnly()
+        case .subscriptionPurchaseWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         }
     }
 }

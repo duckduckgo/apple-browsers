@@ -96,20 +96,20 @@ jobs:
         submodules: recursive
         ref: ${{ inputs.commit-sha || env.BRANCH }}
 
-    # - name: Assert release branch
-    #   run: |
-    #     case "${{ env.BRANCH }}" in
-    #       release/*) ;;
-    #       hotfix/*) ;;
-    #       *) echo "👎 Not a release or hotfix branch"; exit 1 ;;
-    #     esac
+    - name: Assert release branch
+      run: |
+        case "${{ env.BRANCH }}" in
+          release/*) ;;
+          hotfix/*) ;;
+          *) echo "👎 Not a release or hotfix branch"; exit 1 ;;
+        esac
 
-    # - name: Validate commit SHA
-    #   if: inputs.commit-sha
-    #   run: |
-    #     # Consider moving this check to the plugin
-    #     git merge-base --is-ancestor "${{ inputs.commit-sha }}" "origin/${{ env.BRANCH }}" \
-    #       || (echo "👎 Commit ${{ inputs.commit-sha }} does not belong to ${{ env.BRANCH }} branch" && exit 1)
+    - name: Validate commit SHA
+      if: inputs.commit-sha
+      run: |
+        # Consider moving this check to the plugin
+        git merge-base --is-ancestor "${{ inputs.commit-sha }}" "origin/${{ env.BRANCH }}" \
+          || (echo "👎 Commit ${{ inputs.commit-sha }} does not belong to ${{ env.BRANCH }} branch" && exit 1)
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby

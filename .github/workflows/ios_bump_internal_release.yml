@@ -155,7 +155,17 @@ jobs:
   report_failure:
     name: Report Failure
     needs: [ validate_input_conditions, run_tests, increment_build_number, prepare_release, tag_and_merge ]
-    if: always() && (needs.run_tests.result == 'failure' || needs.increment_build_number.result == 'failure' || needs.prepare_release.result == 'failure' || needs.tag_and_merge.result == 'failure')
+    if: >
+      always() &&
+      needs.validate_input_conditions.outputs.asana-task-id != '' &&
+      needs.validate_input_conditions.outputs.release-branch != '' &&
+      (
+        needs.validate_input_conditions.result == 'failure' ||
+        needs.run_tests.result == 'failure' ||
+        needs.increment_build_number.result == 'failure' ||
+        needs.prepare_release.result == 'failure' ||
+        needs.tag_and_merge.result == 'failure'
+      )
     uses: ./.github/workflows/report_failed_release_workflow.yml
     with:
       asana-task-id: ${{ needs.validate_input_conditions.outputs.asana-task-id }}

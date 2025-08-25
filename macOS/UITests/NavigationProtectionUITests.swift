@@ -22,14 +22,24 @@ import Foundation
 class NavigationProtectionUITests: UITestCase {
 
     private var addressBarTextField: XCUIElement!
+    private var webView: XCUIElement!
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 
         addressBarTextField = app.addressBar
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        webView = app.webViews.firstMatch
+    }
+
+    override func tearDownWithError() throws {
+        app = nil
+        addressBarTextField = nil
+        webView = nil
+        try super.tearDownWithError()
     }
 
     // MARK: - AMP Link Protection Tests
@@ -39,7 +49,6 @@ class NavigationProtectionUITests: UITestCase {
         let ampTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/amp/")!
         addressBarTextField.pasteURL(ampTestURL, pressingEnter: true)
 
-        let webView = app.webViews.firstMatch
         // Ensure page loaded (anchor on a known element on AMP page)
         let pageLoadedAnchor = webView.links[".amp link"].firstMatch
         XCTAssertTrue(pageLoadedAnchor.waitForExistence(timeout: 15.0), "AMP test page should load and expose baseline link")
@@ -78,14 +87,15 @@ class NavigationProtectionUITests: UITestCase {
 
             // Wait for navigation to complete
             XCTAssertTrue(link.waitForNonExistence(timeout: 30.0), "Navigation should complete after AMP link click: \(label)")
+            Thread.sleep(forTimeInterval: 5)
 
             // Verify redirected URL exactly matches the page-provided canonical expectation
             app.activateAddressBar()
             let finalURL = addressBarTextField.value as? String ?? ""
             if label == "amp.dev" {
-                XCTAssertTrue(finalURL.hasPrefix(expectedURL), "Should be redirected to canonical URL \(expectedURL) for '\(label)'")
+                XCTAssertTrue(finalURL.hasPrefix(expectedURL), "Should be redirected to canonical URL \(expectedURL) for '\(label)'; actual: \(finalURL)")
             } else {
-                XCTAssertEqual(finalURL, expectedURL, "Should be redirected to canonical URL \(expectedURL) for '\(label)'")
+                XCTAssertEqual(finalURL, expectedURL, "Should be redirected to canonical URL \(expectedURL) for '\(label)'; actual: \(finalURL)")
             }
 
             // Return to the AMP tests list for the next case
@@ -101,7 +111,6 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(ampTestURL, pressingEnter: true)
 
         // Find the Guardian amp. test link
-        let webView = app.webViews.firstMatch
         let guardianAmpLink = webView.links["amp. link"]
         XCTAssertTrue(guardianAmpLink.waitForExistence(timeout: 10.0), "Guardian amp. test link should be available")
 
@@ -134,8 +143,6 @@ class NavigationProtectionUITests: UITestCase {
         // Navigate to a test page with social media embeds
         let socialTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/click-to-load/")!
         addressBarTextField.pasteURL(socialTestURL, pressingEnter: true)
-
-        let webView = app.webViews.firstMatch
 
         // Wait for page to load completely
         let pageHeader = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'About ClickToLoad Tests'")).firstMatch
@@ -195,7 +202,7 @@ class NavigationProtectionUITests: UITestCase {
         // Verify we stayed on the click-to-load page in the main window
         app.activateAddressBar()
         let currentURL = addressBarTextField.value as? String ?? ""
-        XCTAssertTrue(currentURL.contains("click-to-load"), "Should be on the click-to-load test page")
+        XCTAssertTrue(currentURL.contains("click-to-load"), "Should be on the click-to-load test page; actual: \(currentURL)")
     }
 
     // MARK: - Tracking Parameter Removal Tests
@@ -206,7 +213,6 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(trackedURL, pressingEnter: true)
 
         // Wait for page to load
-        let webView = app.webViews.firstMatch
         let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
         XCTAssertTrue(pageContent.waitForExistence(timeout: 15.0), "Example page should load")
 
@@ -215,13 +221,13 @@ class NavigationProtectionUITests: UITestCase {
         let finalURL = addressBarTextField.value as? String ?? ""
 
         // Assert that utm_source parameter was removed (this is consistently removed)
-        XCTAssertFalse(finalURL.contains("utm_source"), "utm_source tracking parameter should be removed")
+        XCTAssertFalse(finalURL.contains("utm_source"), "utm_source tracking parameter should be removed; actual: \(finalURL)")
 
         // Assert that utm_medium parameter was removed (this is consistently removed)
-        XCTAssertFalse(finalURL.contains("utm_medium"), "utm_medium tracking parameter should be removed")
+        XCTAssertFalse(finalURL.contains("utm_medium"), "utm_medium tracking parameter should be removed; actual: \(finalURL)")
 
         // Should still be on example.com (basic functionality preserved)
-        XCTAssertEqual(finalURL, "https://example.com/", "Should be on clean example.com URL after parameter removal")
+        XCTAssertEqual(finalURL, "https://example.com/", "Should be on clean example.com URL after parameter removal; actual: \(finalURL)")
     }
 
     // MARK: - Redirect Protection Tests
@@ -232,14 +238,13 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
 
         // Wait for local test page
-        let webView = app.webViews.firstMatch
         let safePageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Safe Test Page'")).firstMatch
         XCTAssertTrue(safePageContent.waitForExistence(timeout: 15.0), "Safe test page should load normally")
 
         // Verify we're on the expected safe page
         app.activateAddressBar()
         let currentURL = addressBarTextField.value as? String ?? ""
-        XCTAssertTrue(currentURL.contains("localhost:8085"), "Should remain on safe local test page")
+        XCTAssertTrue(currentURL.contains("localhost:8085"), "Should remain on safe local test page; actual: \(currentURL)")
     }
 
     // MARK: - Cross-Site Request Protection Tests
@@ -250,7 +255,6 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(originURL, pressingEnter: true)
 
         // Wait for origin page
-        let webView = app.webViews.firstMatch
         let originContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Origin Test Page'")).firstMatch
         XCTAssertTrue(originContent.waitForExistence(timeout: 15.0), "Origin page should load")
 
@@ -272,7 +276,7 @@ class NavigationProtectionUITests: UITestCase {
         app.activateAddressBar()
         XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after navigation")
         let finalURL = addressBarTextField.value as? String ?? ""
-        XCTAssertTrue(finalURL.contains("example.com"), "Legitimate cross-site navigation should work")
+        XCTAssertTrue(finalURL.contains("example.com"), "Legitimate cross-site navigation should work; actual: \(finalURL)")
     }
 
     // MARK: - Referrer Protection Tests
@@ -282,25 +286,51 @@ class NavigationProtectionUITests: UITestCase {
         let referrerTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/referrer-trimming/")!
         addressBarTextField.pasteURL(referrerTestURL, pressingEnter: true)
 
-        // Wait for referrer test page to load
-        let webView = app.webViews.firstMatch
-        let referrerPageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Referrer' OR value CONTAINS 'test'")).firstMatch
-        XCTAssertTrue(referrerPageContent.waitForExistence(timeout: 30.0), "Referrer trimming test page should load")
-
-        // Find and click the "start" button to run the test (matches integration test)
+        // Start the tests on page
         let startButton = webView.buttons["Start test"].firstMatch
-        XCTAssertTrue(startButton.waitForExistence(timeout: 10.0), "Start button should be available for referrer trimming test")
+        XCTAssertTrue(startButton.waitForExistence(timeout: 15.0), "Start button should be available for referrer trimming test")
+        Thread.sleep(forTimeInterval: 1)
         startButton.click()
 
-        // Wait for test completion (should return to original page)
-        let testCompletionContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'test' OR value CONTAINS 'result'")).firstMatch
-        XCTAssertTrue(testCompletionContent.waitForExistence(timeout: 40.0), "Referrer trimming test should complete")
+        // Wait for test completion summary and expand
+        let summary = webView.staticTexts["Performed 9 tests. Click for details."].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 40.0), "Referrer trimming test should complete")
+        summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        // Verify completion by asserting on-page results are visible (URL may vary during the flow)
-        let resultsVisible = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'referrer' OR value CONTAINS[c] 'result' OR value CONTAINS[c] 'passed' OR value CONTAINS[c] 'failed'"))
-            .firstMatch
-        XCTAssertTrue(resultsVisible.waitForExistence(timeout: 5.0), "Referrer trimming results should be visible on the page")
+        let summaryGroup = webView.groups.containing(NSPredicate(format: "value BEGINSWITH[c] %@", "1p navigation -")).firstMatch
+        // Helper to collect values in a section following a header prefix
+        func values(afterHeaderWithPrefix prefix: String) -> [String] {
+            // Locate the group that contains a static text header starting with the prefix
+            let group = summaryGroup.groups.containing(NSPredicate(format: "value BEGINSWITH[c] %@", prefix)).firstMatch
+            XCTAssertTrue(group.exists, "Group for header not found: \(prefix)")
+            let texts = group.staticTexts.allElementsBoundByIndex.map { ($0.value as? String) ?? $0.label }
+            return texts.filter { !$0.isEmpty && !$0.hasPrefix(prefix) }
+        }
+
+        // 1p navigation
+        let nav1p = values(afterHeaderWithPrefix: "1p navigation -")
+        XCTAssertTrue(nav1p.contains("js - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected value in 1p navigation; actual: \(nav1p)")
+        XCTAssertTrue(nav1p.contains("header - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected header value in 1p navigation; actual: \(nav1p)")
+
+        // 3p navigation
+        let nav3p = values(afterHeaderWithPrefix: "3p navigation -")
+        XCTAssertTrue(nav3p.contains("js - https://privacy-test-pages.site/"), "Missing expected value in 3p navigation; actual: \(nav3p)")
+        XCTAssertTrue(nav3p.contains("header - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected header value in 3p navigation; actual: \(nav3p)")
+
+        // 3p tracker navigation
+        let nav3pTracker = values(afterHeaderWithPrefix: "3p tracker navigation -")
+        XCTAssertTrue(nav3pTracker.contains("js - https://privacy-test-pages.site/"), "Missing expected value in 3p tracker navigation; actual: \(nav3pTracker)")
+        XCTAssertTrue(nav3pTracker.contains("header - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected header value in 3p tracker navigation; actual: \(nav3pTracker)")
+
+        // Requests (assert last value equals expected)
+        XCTAssertEqual(values(afterHeaderWithPrefix: "1p request -").last, "\"https://privacy-test-pages.site/privacy-protections/referrer-trimming/\"", "Unexpected 1p request value; actual: \(values(afterHeaderWithPrefix: "1p request -").last ?? "<nil>")")
+        XCTAssertEqual(values(afterHeaderWithPrefix: "3p request -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p request value; actual: \(values(afterHeaderWithPrefix: "3p request -").last ?? "<nil>")")
+        XCTAssertEqual(values(afterHeaderWithPrefix: "3p tracker request -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p tracker request value; actual: \(values(afterHeaderWithPrefix: "3p tracker request -").last ?? "<nil>")")
+
+        // Iframes (assert last value equals expected)
+        XCTAssertEqual(values(afterHeaderWithPrefix: "1p iframe -").last, "\"https://privacy-test-pages.site/privacy-protections/referrer-trimming/\"", "Unexpected 1p iframe value; actual: \(values(afterHeaderWithPrefix: "1p iframe -").last ?? "<nil>")")
+        XCTAssertEqual(values(afterHeaderWithPrefix: "3p iframe -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p iframe value; actual: \(values(afterHeaderWithPrefix: "3p iframe -").last ?? "<nil>")")
+        XCTAssertEqual(values(afterHeaderWithPrefix: "3p tracker iframe -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p tracker iframe value; actual: \(values(afterHeaderWithPrefix: "3p tracker iframe -").last ?? "<nil>")")
     }
 
     // MARK: - GPC (Global Privacy Control) Tests
@@ -310,34 +340,42 @@ class NavigationProtectionUITests: UITestCase {
         let gpcTestURL = URL(string: "https://privacy-test-pages.site/privacy-protections/gpc/")!
         addressBarTextField.pasteURL(gpcTestURL, pressingEnter: true)
 
-        // Wait for GPC test page to load
-        let webView = app.webViews.firstMatch
-        let gpcPageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'GPC' OR value CONTAINS 'Global Privacy Control'")).firstMatch
-        XCTAssertTrue(gpcPageContent.waitForExistence(timeout: 30.0), "GPC test page should load")
-
-        // Find and click the "start" button to run the GPC test
+        // Start the test
         let startButton = webView.buttons["Start test"].firstMatch
-        XCTAssertTrue(startButton.waitForExistence(timeout: 10.0), "Start button should be available for GPC test")
+        XCTAssertTrue(startButton.waitForExistence(timeout: 15.0), "Start button should be available for GPC test")
+        Thread.sleep(forTimeInterval: 1)
         startButton.click()
 
-        // Wait for test to complete - GPC test opens popup windows to test cross-frame GPC injection
-        let testCompletionTimeout: TimeInterval = 40.0
-        let downloadButton = webView.buttons["Download the result"]
-        XCTAssertTrue(downloadButton.waitForExistence(timeout: testCompletionTimeout), "GPC test should complete and enable download button")
+        // Wait for summary and expand details
+        let summary = webView.staticTexts["Performed 5 tests. Click for details."].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 40.0), "GPC test should complete and show summary")
+        summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        // Wait for test results to appear in the page (no need to click anything)
-        // After test completes, the results should be visible in the DOM
-        let gpcResultElement = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Sec-GPC' OR value CONTAINS 'header' OR value CONTAINS 'passed' OR value CONTAINS 'failed' OR value CONTAINS 'Global Privacy Control'")).firstMatch
-        XCTAssertTrue(gpcResultElement.waitForExistence(timeout: 15.0), "GPC test results should be visible on page after test completion")
+        // Helper to collect values in a section following a header prefix
+        func value(afterHeaderWithPrefix prefix: String) -> String? {
+            let all = webView.staticTexts.allElementsBoundByIndex
+            var inSection = false
+            for element in all {
+                let value = (element.value as? String) ?? element.label
+                if value.hasPrefix(prefix) {
+                    inSection = true
+                    continue
+                }
+                if inSection {
+                    if !value.isEmpty {
+                        return value
+                    }
+                }
+            }
+            return nil
+        }
 
-        // Verify GPC header injection was tested - look for any indication that GPC was actually tested
-        let gpcTestResult = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'GPC' OR value CONTAINS 'header' OR value CONTAINS 'privacy control'")).firstMatch
-        XCTAssertTrue(gpcTestResult.waitForExistence(timeout: 5.0), "GPC header injection test should show results")
-
-        // Verify the test ran on the correct page
-        app.activateAddressBar()
-        let finalURL = addressBarTextField.value as? String ?? ""
-        XCTAssertTrue(finalURL.contains("privacy-test-pages.site/privacy-protections/gpc"), "Should remain on GPC test page")
+        // Expectations per section
+        XCTAssertEqual(value(afterHeaderWithPrefix: "top frame header -"), "\"1\"")
+        XCTAssertEqual(value(afterHeaderWithPrefix: "top frame JS API -"), "true")
+        XCTAssertEqual(value(afterHeaderWithPrefix: "frame header -"), "…")
+        XCTAssertEqual(value(afterHeaderWithPrefix: "frame JS API -"), "true")
+        XCTAssertEqual(value(afterHeaderWithPrefix: "subequest header -") ?? value(afterHeaderWithPrefix: "subrequest header -"), "…")
     }
 
 }

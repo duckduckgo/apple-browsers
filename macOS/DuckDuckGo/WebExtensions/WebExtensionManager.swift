@@ -74,8 +74,6 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
          webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
          internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-
-        self.controller = WKWebExtensionController()
         self.pathsCache = webExtensionPathsCache
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
@@ -83,7 +81,6 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
         super.init()
 
-        eventsListener.controller = controller
         internalSiteHandler.dataSource = self
     }
 
@@ -106,7 +103,11 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     // Controller manages a set of loaded extension contexts
-    var controller: WKWebExtensionController
+    lazy var controller: WKWebExtensionController = {
+        let controllerConfiguration = WKWebExtensionController.Configuration.default()
+        controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = UserAgent.brandedDefaultSuffix
+        return WKWebExtensionController(configuration: controllerConfiguration)
+    }()
 
     // Events listening
     var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
@@ -123,7 +124,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     var hasInstalledExtensions: Bool {
-        controller.extensions.count > 0
+        pathsCache.cache.count > 0
     }
 
     var loadedExtensions: Set<WKWebExtensionContext> {
@@ -179,6 +180,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     @MainActor
     func loadInstalledExtensions() async {
         guard areExtenstionsEnabled else { return }
+
+        eventsListener.controller = controller
 
         // Load extensions
         let results = await loader.loadWebExtensions(from: pathsCache.cache, into: controller)

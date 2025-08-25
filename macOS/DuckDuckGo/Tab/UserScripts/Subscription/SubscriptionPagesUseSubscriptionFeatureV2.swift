@@ -89,7 +89,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
                 aiChatURL: URL,
                 setStripeOrigin: @escaping (String?) -> Void = { _ in }) {
-        print("SAMDEBUG: Creating new subscription V2 feature instance")
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler

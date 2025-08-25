@@ -1111,7 +1111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG || REVIEW
+#if DEBUG // Temporarily set to DEBUG only, so that review builds can send wide pixels
             Self.setUpPixelKit(dryRun: true)
 #else
             Self.setUpPixelKit(dryRun: false)

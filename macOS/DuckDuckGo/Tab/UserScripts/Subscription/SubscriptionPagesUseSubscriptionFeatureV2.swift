@@ -432,20 +432,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
     func completeStripePayment(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         await uiHandler.presentProgressViewController(withTitle: UserText.completingPurchaseTitle)
-
-        if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
-            // Reuse the same flow instance so the mapping’s started context completes with success here
-            if !(stripePurchaseFlow is DefaultStripePurchaseFlowV2) {
-                let origin = await originFrom(originalMessage: original)
-                let internalUserDecider = NSApp.delegateTyped.internalUserDecider
-                let eventMapping = SubscriptionStripeWidePixelEventMapping(
-                    widePixelManager: WidePixel(),
-                    originProvider: { [weak self] in self?.currentOrigin },
-                    internalUserDecider: internalUserDecider
-                )
-                _ = eventMapping // mapping now provided from UserScripts; do not reassign flow here
-            }
-        }
         await stripePurchaseFlow.completeSubscriptionPurchase()
         await uiHandler.dismissProgressViewController()
 

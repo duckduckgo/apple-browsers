@@ -157,7 +157,8 @@ public struct ImageSegmentedPickerView: View {
                     .fill(viewModel.configuration.selectedBackgroundColor)
                     .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
-                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
+                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
+                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
 
                 HStack(spacing: 0) {
                     ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in

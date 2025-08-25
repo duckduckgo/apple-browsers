@@ -328,7 +328,7 @@ private struct SuggestionListItem: View {
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                 .tintIfAvailable(Color(designSystemColor: .icons))
 
-            VStack(alignment: .leading, spacing: Metrics.subtitleSpacing) {
+            VStack(alignment: .leading, spacing: 0) {
 
                 Group {
                     // Can't use dax modifiers because they are not typed for Text
@@ -343,7 +343,7 @@ private struct SuggestionListItem: View {
                     } else {
                         Text(title)
                             .font(Font(uiFont: UIFont.daxBodyRegular()))
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
                     }
                 }
                 .lineLimit(1)
@@ -353,6 +353,7 @@ private struct SuggestionListItem: View {
                         .daxFootnoteRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .lineLimit(1)
+                        .frame(minHeight: Metrics.subtitleMinHeight)
                 }
             }
             .padding(.leading, Metrics.verticalSpacing)
@@ -379,9 +380,10 @@ private struct SuggestionListItem: View {
     private struct Metrics {
         static let iconSize: CGFloat = 24
         static let verticalSpacing: CGFloat = 10
-        static let subtitleSpacing: CGFloat = 2
         static let trailingPadding: CGFloat = 20
         static let indicatorLeadingPadding: CGFloat = 4
+        static let contentPadding: CGFloat = 3
+        static let subtitleMinHeight: CGFloat = 21
     }
 
 }

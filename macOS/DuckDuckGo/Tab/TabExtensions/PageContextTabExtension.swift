@@ -31,13 +31,13 @@ final class PageContextTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
     private var userScriptCancellables = Set<AnyCancellable>()
-    private weak var webView: WKWebView?
     private let tabID: TabIdentifier
     private let aiChatSidebarProvider: AIChatSidebarProviding
     private let isLoadedInSidebar: Bool
     private var cachedPageContext: AIChatPageContextData?
 
-    private(set) weak var pageContextUserScript: PageContextUserScript? {
+    private weak var webView: WKWebView?
+    private weak var pageContextUserScript: PageContextUserScript? {
         didSet {
             subscribeToCollectionResult()
         }
@@ -119,7 +119,6 @@ extension PageContextTabExtension: NavigationResponder {
 }
 
 protocol PageContextProtocol: AnyObject, NavigationResponder {
-    var pageContextUserScript: PageContextUserScript? { get }
 }
 
 extension PageContextTabExtension: PageContextProtocol, TabExtension {

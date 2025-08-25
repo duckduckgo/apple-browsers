@@ -72,11 +72,10 @@ final class UserScripts: UserScriptsProvider {
             pixelFiring: PixelKit.shared
         )
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
-        pageContextUserScript = PageContextUserScript()
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { NSApp.delegateTyped.featureFlagger.isFeatureOn(.paidAIChat) },
+            paidAIChatFlagStatusProvider: { sourceProvider.featureFlagger.isFeatureOn(.paidAIChat) },
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
@@ -91,8 +90,8 @@ final class UserScripts: UserScriptsProvider {
                                            messageSecret: messageSecret,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
-        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-        contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+        contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
@@ -104,7 +103,7 @@ final class UserScripts: UserScriptsProvider {
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
+        if sourceProvider.featureFlagger.isFeatureOn(.historyView) {
             let historyViewUserScript = HistoryViewUserScript()
             sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
             self.historyViewUserScript = historyViewUserScript
@@ -112,12 +111,18 @@ final class UserScripts: UserScriptsProvider {
             historyViewUserScript = nil
         }
 
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.newTabPagePerTab) {
+        if sourceProvider.featureFlagger.isFeatureOn(.newTabPagePerTab) {
             let newTabPageUserScript = NewTabPageUserScript()
             sourceProvider.newTabPageActionsManager?.registerUserScript(newTabPageUserScript)
             self.newTabPageUserScript = newTabPageUserScript
         } else {
             newTabPageUserScript = nil
+        }
+
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatPageContext) {
+            pageContextUserScript = PageContextUserScript()
+        } else {
+            pageContextUserScript = nil
         }
 
         specialPages = SpecialPagesUserScript()

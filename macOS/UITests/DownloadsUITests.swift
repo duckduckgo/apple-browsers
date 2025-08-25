@@ -98,7 +98,7 @@ class DownloadsUITests: UITestCase {
     /// Validates downloads behavior within a Fire window and that the popover is shown on completion.
     func testDownloadsOnFireWindow() {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
-                                     openDownloadsPopupOnCompletion: true,
+                                     openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)
         app.enforceSingleWindow()
         app.openFireWindow()
@@ -197,7 +197,8 @@ class DownloadsUITests: UITestCase {
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB", filename: baseName).absoluteString)
 
         // Open Downloads popover and assert two download rows are present
-        openDownloadsPopup()
+        XCTAssertTrue(popover.waitForExistence(timeout: 15))
+
         let table = popover.tables.firstMatch
         XCTAssertTrue(table.waitForExistence(timeout: 10.0))
         let twoRowsExpectation = XCTNSPredicateExpectation(
@@ -231,6 +232,7 @@ class DownloadsUITests: UITestCase {
         trackForCleanup(targetDir.path)
         saveFileAs(uniqueName, in: targetDir)
 
+        XCTAssertTrue(popover.waitForExistence(timeout: 15))
         assertDownloadListed(filename: uniqueName)
 
         // Verify file exists at chosen directory
@@ -313,6 +315,7 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.pasteURL(url, pressingEnter: true)
 
+        XCTAssertTrue(popover.waitForExistence(timeout: 15))
         assertDownloadListed(filename: uniqueName)
     }
 
@@ -385,7 +388,8 @@ class DownloadsUITests: UITestCase {
         openSiteForDownloadingFile(url: url.absoluteString)
 
         // Wait for the delayed download to start and appear
-        openDownloadsPopup()
+        XCTAssertTrue(popover.waitForExistence(timeout: 15))
+
         // We don't depend on exact name; ensure at least one item appears
         let table = popover.tables.firstMatch
         XCTAssertTrue(table.waitForExistence(timeout: 10.0))
@@ -500,6 +504,7 @@ class DownloadsUITests: UITestCase {
         app.pasteURL(url, pressingEnter: true)
 
         // Wait for completion in downloads UI
+        XCTAssertTrue(popover.waitForExistence(timeout: 15.0))
         assertDownloadListed(filename: "custom-dir-file-\(unique).bin")
 
         // Verify exists in customDir
@@ -630,6 +635,7 @@ class DownloadsUITests: UITestCase {
         trackForCleanup(downloadsDir.appendingPathComponent(fileName + ".duckload").path)
 
         openSiteForDownloadingFile(url: url.absoluteString)
+        XCTAssertTrue(popover.waitForExistence(timeout: 15.0))
         assertDownloadListed(filename: fileName, sizeLabelRegex: "1.0 MB")
 
         // Restart app and verify the same file is listed

@@ -22,7 +22,6 @@ import os.log
 
 class PrivacyDashboardUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement!
 
     override func setUpWithError() throws {

@@ -20,7 +20,6 @@ import XCTest
 
 class DownloadsUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var webView: XCUIElement!
     private var popover: XCUIElement!
     private var cleanupPaths: Set<String> = []

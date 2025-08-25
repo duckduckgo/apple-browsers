@@ -100,11 +100,6 @@ extension XCUIApplication {
         typeKey("t", modifierFlags: .command)
     }
 
-    /// Opens a Fire window via keyboard shortcut (Cmd+Shift+N)
-    func openFireWindow() {
-        typeKey("n", modifierFlags: [.command, .shift])
-    }
-
     /// Closes current tab via keyboard shortcut
     func closeCurrentTab() {
         typeKey("w", modifierFlags: .command)
@@ -126,7 +121,7 @@ extension XCUIApplication {
         typeKey("n", modifierFlags: .command)
     }
 
-    /// Opens a new fire window
+    /// Opens a Fire window via keyboard shortcut (Cmd+Shift+N)
     func openFireWindow() {
         typeKey("n", modifierFlags: [.command, .shift])
     }

@@ -21,7 +21,6 @@ import Foundation
 
 class NavigationProtectionUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement!
 
     override func setUpWithError() throws {

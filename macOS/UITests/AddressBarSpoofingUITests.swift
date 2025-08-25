@@ -21,7 +21,6 @@ import Foundation
 
 class AddressBarSpoofingUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement!
     private var webView: XCUIElement!
 

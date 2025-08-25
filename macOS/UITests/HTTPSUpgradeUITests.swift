@@ -21,7 +21,6 @@ import Foundation
 
 class HTTPSUpgradeUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement { app.addressBar }
 
     override func setUpWithError() throws {

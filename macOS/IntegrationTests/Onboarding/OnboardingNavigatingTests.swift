@@ -47,7 +47,6 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mvc = MainWindowController(
             window: mockWindow,
             mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
-            popUp: false,
             fireViewModel: fireCoordinator.fireViewModel,
             visualStyle: NSApp.delegateTyped.visualStyle)
         mvc.window = mockWindow
@@ -67,7 +66,6 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mvc = MainWindowController(
             window: mockWindow,
             mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
-            popUp: false,
             fireViewModel: fireCoordinator.fireViewModel,
             visualStyle: NSApp.delegateTyped.visualStyle
         )

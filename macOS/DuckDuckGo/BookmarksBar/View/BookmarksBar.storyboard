@@ -78,7 +78,7 @@
                                 <rect key="frame" x="0.0" y="-2" width="676" height="5"/>
                             </box>
                             <customView verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YdB-zl-3Cf">
-                                <rect key="frame" x="10" y="4" width="65" height="24"/>
+                                <rect key="frame" x="178" y="4" width="65" height="24"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="gwe-JW-nZ6">
                                         <rect key="frame" x="4" y="1" width="16.5" height="24"/>
@@ -91,10 +91,7 @@
                                         </imageCell>
                                     </imageView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jeg-Iv-FxB">
-                                        <rect key="frame" x="22" y="5" width="37" height="15"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="15" id="L4P-aC-UPW"/>
-                                        </constraints>
+                                        <rect key="frame" x="22" y="4" width="37" height="16"/>
                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Label" id="dAL-mz-5FX">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -154,7 +151,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <box clipsToBounds="YES" horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="Rv3-Ka-5rz">
-                                        <rect key="frame" x="141" y="3" width="5" height="18"/>
+                                        <rect key="frame" x="141" y="4" width="5" height="16"/>
                                     </box>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2sg-KO-1Lc" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="144" y="0.0" width="24" height="24"/>
@@ -162,6 +159,7 @@
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
+                                        <color key="contentTintColor" name="TextPrimary"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="24" id="jjL-ZS-utl"/>
                                             <constraint firstAttribute="width" constant="24" id="lA7-wg-t05"/>
@@ -203,7 +201,7 @@
                                 <constraints>
                                     <constraint firstItem="q2n-v7-67h" firstAttribute="leading" secondItem="LYf-UU-FXO" secondAttribute="trailing" priority="750" constant="4" id="2bE-wf-5qA"/>
                                     <constraint firstAttribute="height" priority="750" constant="24" id="3Jg-7j-886"/>
-                                    <constraint firstItem="q2n-v7-67h" firstAttribute="centerY" secondItem="LYf-UU-FXO" secondAttribute="centerY" priority="750" id="DLO-sI-8KT"/>
+                                    <constraint firstItem="q2n-v7-67h" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" priority="750" id="DLO-sI-8KT"/>
                                     <constraint firstItem="q2n-v7-67h" firstAttribute="trailing" secondItem="Rv3-Ka-5rz" secondAttribute="leading" constant="-4" id="KlU-hx-9xs"/>
                                     <constraint firstItem="LYf-UU-FXO" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" priority="750" id="LKL-bO-INh"/>
                                     <constraint firstItem="Rv3-Ka-5rz" firstAttribute="centerY" secondItem="5Hg-Gg-2dA" secondAttribute="centerY" id="SvL-pD-Ci0"/>
@@ -213,7 +211,7 @@
                                     <constraint firstAttribute="trailing" secondItem="mPS-TE-78s" secondAttribute="trailing" priority="750" id="ff1-CS-Bpa"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="leading" priority="750" id="iFh-7H-I99"/>
                                     <constraint firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="trailing" priority="750" id="kbh-qM-mLm"/>
-                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="height" secondItem="5Hg-Gg-2dA" secondAttribute="height" constant="-6" id="leE-YK-JdN"/>
+                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="height" secondItem="5Hg-Gg-2dA" secondAttribute="height" constant="-8" id="leE-YK-JdN"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="top" secondItem="5Hg-Gg-2dA" secondAttribute="top" priority="750" id="lyJ-iR-qLK"/>
                                     <constraint firstAttribute="bottom" secondItem="mPS-TE-78s" secondAttribute="bottom" priority="750" id="mRk-hF-6T0"/>
                                     <constraint firstItem="Rv3-Ka-5rz" firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="leading" id="r9I-0g-gNJ"/>
@@ -234,7 +232,7 @@
                             <constraint firstAttribute="bottom" secondItem="X6g-3K-JDi" secondAttribute="bottom" id="iWj-iC-9gW"/>
                             <constraint firstItem="5Hg-Gg-2dA" firstAttribute="centerY" secondItem="D39-Of-BIh" secondAttribute="centerY" id="puV-ka-Jph"/>
                             <constraint firstItem="cjE-4p-vxI" firstAttribute="centerY" secondItem="R54-3G-cms" secondAttribute="centerY" id="s3N-bi-7Hr"/>
-                            <constraint firstItem="YdB-zl-3Cf" firstAttribute="leading" secondItem="R54-3G-cms" secondAttribute="leading" constant="10" id="zyW-Tf-ym2"/>
+                            <constraint firstItem="YdB-zl-3Cf" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="trailing" constant="2" id="zyW-Tf-ym2"/>
                         </constraints>
                         <userDefinedRuntimeAttributes>
                             <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
@@ -281,6 +279,9 @@
         </namedColor>
         <namedColor name="NavigationBarBackgroundColor">
             <color red="0.98039215686274506" green="0.98039215686274506" blue="0.98039215686274506" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="TextPrimary">
+            <color red="0.12156862745098039" green="0.12156862745098039" blue="0.12156862745098039" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

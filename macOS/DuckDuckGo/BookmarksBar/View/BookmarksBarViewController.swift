@@ -125,6 +125,7 @@ final class BookmarksBarViewController: NSViewController {
         clippedItemsIndicator.sendAction(on: .leftMouseDown)
 
         importBookmarksLabel.stringValue = UserText.importBookmarks
+        importBookmarksLabel.font = .systemFont(ofSize: 11, weight: .regular)
 
         bookmarksBarCollectionView.delegate = viewModel
         bookmarksBarCollectionView.dataSource = viewModel
@@ -147,6 +148,7 @@ final class BookmarksBarViewController: NSViewController {
         syncButtonDivider.boxType = .separator
         syncButtonDivider.fillColor = .textPrimary
         syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
+        syncDismissButton.contentTintColor = .textPrimary
 
         syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
             self?.syncButton.isHidden = !$0
@@ -157,7 +159,10 @@ final class BookmarksBarViewController: NSViewController {
 
     private func setUpImportBookmarksButton() {
         importBookmarksIcon.image = NSImage(named: "Import-16D")
+        importBookmarksIcon.contentTintColor = .textPrimary
         importBookmarksButton.isHidden = true
+        importBookmarksButton.layer?.cornerRadius = visualStyle.toolbarButtonsCornerRadius
+        importBookmarksMouseOverView.cornerRadius = visualStyle.toolbarButtonsCornerRadius
     }
 
     private func addContextMenu() {
@@ -238,10 +243,13 @@ final class BookmarksBarViewController: NSViewController {
             .sink { [weak self] items in
                 if self?.bookmarkManager.list != nil {
                     self?.importBookmarksButton.isHidden = !items.isEmpty
-                    self?.syncButton.isHidden = items.isEmpty
                 }
             }
             .store(in: &cancellables)
+
+        bookmarkManager.listPublisher.sink { [weak self] list in
+            self?.importBookmarksButton.isHidden = !(list?.topLevelEntities.isEmpty ?? true)
+        }.store(in: &cancellables)
 
         clippedItemsIndicator.publisher(for: \.isMouseOver)
             .sink { [weak self] isMouseOver in

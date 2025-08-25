@@ -1326,6 +1326,8 @@
 		BDFF03262BA3DA4900F324C9 /* NetworkProtectionFeatureVisibilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFF03242BA3D92E00F324C9 /* NetworkProtectionFeatureVisibilityTests.swift */; };
 		C1056A562E253D98003220BA /* AutofillCredentialsImportPresentationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1056A552E253D98003220BA /* AutofillCredentialsImportPresentationManagerTests.swift */; };
 		C10CB5F32A1A5BDF0048E503 /* AutofillViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10CB5F22A1A5BDF0048E503 /* AutofillViews.swift */; };
+		C10E0A362E5CB1E4009CAE1B /* URL+QueryParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10E0A352E5CB1E4009CAE1B /* URL+QueryParameters.swift */; };
+		C10E0A382E5CB269009CAE1B /* URL+QueryParametersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10E0A372E5CB269009CAE1B /* URL+QueryParametersTests.swift */; };
 		C111B26927F579EF006558B1 /* BookmarkOrFolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C111B26827F579EF006558B1 /* BookmarkOrFolderTests.swift */; };
 		C111F9512DC3CC2D00FABCA8 /* SaveCreditCardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C111F9502DC3CC2D00FABCA8 /* SaveCreditCardViewModelTests.swift */; };
 		C12324C32C4697C900FBB26B /* AutofillBreakageReportTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1836CE42C35A0EA0016D057 /* AutofillBreakageReportTableViewCell.swift */; };
@@ -3444,6 +3446,8 @@
 		BDFF03242BA3D92E00F324C9 /* NetworkProtectionFeatureVisibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionFeatureVisibilityTests.swift; sourceTree = "<group>"; };
 		C1056A552E253D98003220BA /* AutofillCredentialsImportPresentationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCredentialsImportPresentationManagerTests.swift; sourceTree = "<group>"; };
 		C10CB5F22A1A5BDF0048E503 /* AutofillViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillViews.swift; sourceTree = "<group>"; };
+		C10E0A352E5CB1E4009CAE1B /* URL+QueryParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+QueryParameters.swift"; sourceTree = "<group>"; };
+		C10E0A372E5CB269009CAE1B /* URL+QueryParametersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+QueryParametersTests.swift"; sourceTree = "<group>"; };
 		C111B26827F579EF006558B1 /* BookmarkOrFolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkOrFolderTests.swift; sourceTree = "<group>"; };
 		C111F9502DC3CC2D00FABCA8 /* SaveCreditCardViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewModelTests.swift; sourceTree = "<group>"; };
 		C1193F602D08642900CB3239 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -7494,6 +7498,7 @@
 		D664C7962B289AA000CBFA76 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				C10E0A352E5CB1E4009CAE1B /* URL+QueryParameters.swift */,
 				BD10B8A92C7629740033115D /* Logger+Subscription.swift */,
 				F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */,
 				D664C7982B289AA000CBFA76 /* WKUserContentController+Handler.swift */,
@@ -8280,6 +8285,7 @@
 				56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */,
 				56940C742E0AA4F60007741D /* UnifiedFeedbackFormViewModelTests.swift */,
 				56B3310E2E0E92B200D4D3BA /* SubscriptionURLNavigationHandlerTests.swift */,
+				C10E0A372E5CB269009CAE1B /* URL+QueryParametersTests.swift */,
 			);
 			path = Subscription;
 			sourceTree = "<group>";
@@ -9802,6 +9808,7 @@
 				C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */,
 				F1849C6B2D6E3C98000589A4 /* DebugScreen.swift in Sources */,
 				F1849C6C2D6E3C98000589A4 /* DebugScreensViewModel.swift in Sources */,
+				C10E0A362E5CB1E4009CAE1B /* URL+QueryParameters.swift in Sources */,
 				F1849C6D2D6E3C98000589A4 /* DebugScreensViewController.swift in Sources */,
 				F1849C6E2D6E3C98000589A4 /* DebugScreensViewModel+Screens.swift in Sources */,
 				65BD16392D8DA439000795DE /* DuckPlayerDebugSettingsView.swift in Sources */,
@@ -10416,6 +10423,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10E0A382E5CB269009CAE1B /* URL+QueryParametersTests.swift in Sources */,
 				8528AE84212FF9A100D0BD74 /* AppRatingPromptStorageTests.swift in Sources */,
 				569437312BE3F64400C0881B /* SyncErrorHandlerSyncPausedAlertsTests.swift in Sources */,
 				563A3D012D37BF83001966FD /* ConfigurationManagerTests.swift in Sources */,

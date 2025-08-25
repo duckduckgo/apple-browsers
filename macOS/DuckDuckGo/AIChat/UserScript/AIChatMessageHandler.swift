@@ -25,7 +25,6 @@ enum AIChatMessageType {
     case nativeHandoffData
     case nativePrompt
     case chatRestorationData
-    case pageContext
 }
 
 protocol AIChatMessageHandling {
@@ -38,18 +37,15 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let promptHandler: any AIChatConsumableDataHandling
     private let payloadHandler: AIChatPayloadHandler
     private let chatRestorationDataHandler: AIChatRestorationDataHandler
-    private let pageContextHandler: AIChatPageContextHandler
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
-         chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler(),
-         pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler()) {
+         chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler()) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
         self.chatRestorationDataHandler = chatRestorationDataHandler
-        self.pageContextHandler = pageContextHandler
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
@@ -62,8 +58,6 @@ final class AIChatMessageHandler: AIChatMessageHandling {
             return getAIChatNativePrompt()
         case .chatRestorationData:
             return getAIChatRestorationData()
-        case .pageContext:
-            return getPageContext()
         }
     }
 
@@ -73,8 +67,6 @@ final class AIChatMessageHandler: AIChatMessageHandling {
             setNativeHandoffData(data as? AIChatPayload)
         case .chatRestorationData:
             setAIChatRestorationData(data as? AIChatRestorationData)
-        case .pageContext:
-            setPageContext(data as? AIChatPageContextData)
         default:
             break
         }
@@ -130,21 +122,5 @@ extension AIChatMessageHandler {
         }
 
         chatRestorationDataHandler.setData(data)
-    }
-
-    private func getPageContext() -> Encodable? {
-        if let data = pageContextHandler.consumeData() {
-            return [PageContextKeys.serializedPageData: data]
-        }
-        return nil
-    }
-
-    private func setPageContext(_ data: AIChatPageContextData?) {
-        guard let data else {
-            pageContextHandler.reset()
-            return
-        }
-
-        pageContextHandler.setData(data)
     }
 }

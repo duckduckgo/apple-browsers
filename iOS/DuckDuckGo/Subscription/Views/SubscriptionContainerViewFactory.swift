@@ -161,7 +161,7 @@ enum SubscriptionContainerViewFactory {
                                                                storePurchaseManager: subscriptionManager.storePurchaseManager())
 
         let eventMapping: EventMapping<AppStorePurchaseFlowV2Event>
-        if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
+        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
             eventMapping = SubscriptionAppStoreWidePixelEventMapping(widePixelManager: widePixelManager,
                                                                      origin: origin,
                                                                      internalUserDecider: internalUserDecider)
@@ -270,12 +270,9 @@ private class SubscriptionAppStoreWidePixelEventMapping: EventMapping<AppStorePu
                 var data = SubscriptionPurchaseWidePixelData(
                     purchasePlatform: .appStore,
                     subscriptionIdentifier: subscriptionIdentifier,
-                    freeTrialEligible: freeTrialEligible
+                    freeTrialEligible: freeTrialEligible,
+                    contextData: WidePixelContextData(id: "subscription-purchase", name: origin)
                 )
-
-                if let origin = self.origin {
-                    data.contextData.name = origin
-                }
 
                 data.appData.internalUser = self.internalUserDecider.isInternalUser
                 self.widePixelData = data

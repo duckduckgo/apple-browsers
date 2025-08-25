@@ -24,6 +24,7 @@ public protocol SubscriptionFeatureAvailability {
     var isPaidAIChatEnabled: Bool { get }
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
     var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
+    var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
@@ -75,7 +76,11 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
         supportsAlternateStripePaymentFlowStatusProvider()
     }
 
-// MARK: - Conditions
+    public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
+        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement)
+    }
+
+    // MARK: - Conditions
 
     private var isInternalUser: Bool {
         privacyConfigurationManager.internalUserDecider.isInternalUser

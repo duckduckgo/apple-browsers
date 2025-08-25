@@ -62,7 +62,6 @@ final class PixelConfiguration {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
 
-        // Complete any pending wide pixel flows with unknown status on app launch (gated by feature flag)
         if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
             Task.detached(priority: .utility) {
                 let widePixel = WidePixel()

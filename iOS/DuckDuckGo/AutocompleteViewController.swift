@@ -92,9 +92,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975623943806?focus=true
         let isExperimentalAddressBarEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = !isExperimentalAddressBarEnabled && appSettings.currentAddressBarPosition == .bottom
+        let showAskAIChat = featureFlagger.isFeatureOn(.askAIChatSuggestion) && aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
                                            showMessage: historyMessageManager.shouldShow(),
-                                           showAskAIChat: featureFlagger.isFeatureOn(.askAIChatSuggestion))
+                                           showAskAIChat: showAskAIChat)
 
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
@@ -278,6 +279,13 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
 
         case .openTab:
             Pixel.fire(pixel: .autocompleteClickOpenTab)
+
+        case .askAIChat:
+            if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatExperimentalExperience)
+            } else {
+                DailyPixel.fireDailyAndCount(pixel: .autocompleteAskAIChatLegacyExperience)
+            }
 
         default:
             // NO-OP

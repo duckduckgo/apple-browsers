@@ -137,7 +137,7 @@ final class AutocompleteViewModelTests: XCTestCase {
         XCTAssertEqual(vm.topHits.count, 1)
         XCTAssertEqual(vm.ddgSuggestions.count, 1)
         XCTAssertEqual(vm.localResults.count, 1)
-        XCTAssertTrue(vm.supplementarySuggestions.isEmpty)
+        XCTAssertTrue(vm.aiChatSuggestions.isEmpty)
     }
 
     func testUpdateSuggestions_WhenAllEmpty_InsertsQueryAsTopHitWithoutTapAhead() {
@@ -163,8 +163,8 @@ final class AutocompleteViewModelTests: XCTestCase {
 
         vm.updateSuggestions(result)
 
-        XCTAssertEqual(vm.supplementarySuggestions.count, 1)
-        if case .askAIChat(let value) = vm.supplementarySuggestions[0].suggestion {
+        XCTAssertEqual(vm.aiChatSuggestions.count, 1)
+        if case .askAIChat(let value) = vm.aiChatSuggestions[0].suggestion {
             XCTAssertEqual(value, "ask this")
         } else {
             XCTFail("Expected askAIChat suggestion")

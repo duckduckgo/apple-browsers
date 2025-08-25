@@ -45,7 +45,7 @@ class AutocompleteViewModel: ObservableObject {
     @Published var topHits = [SuggestionModel]()
     @Published var ddgSuggestions = [SuggestionModel]()
     @Published var localResults = [SuggestionModel]()
-    @Published var supplementarySuggestions = [SuggestionModel]()
+    @Published var aiChatSuggestions = [SuggestionModel]()
     @Published var query: String?
     @Published var isMessageVisible = true
     @Published var emptySuggestion: [SuggestionModel]?
@@ -66,14 +66,15 @@ class AutocompleteViewModel: ObservableObject {
         topHits = suggestions.topHits.map { SuggestionModel(suggestion: $0) }
         ddgSuggestions = suggestions.duckduckgoSuggestions.map { SuggestionModel(suggestion: $0) }
         localResults = suggestions.localSuggestions.map { SuggestionModel(suggestion: $0) }
+
         if topHits.isEmpty && ddgSuggestions.isEmpty && localResults.isEmpty {
             topHits = [SuggestionModel(suggestion: .phrase(phrase: query ?? ""), canShowTapAhead: false)]
         }
-
+        
         if showAskAIChat, let query {
-            supplementarySuggestions = [.init(suggestion: .askAIChat(value: query))]
+            aiChatSuggestions = [.init(suggestion: .askAIChat(value: query))]
         } else {
-            supplementarySuggestions = []
+            aiChatSuggestions = []
         }
     }
 

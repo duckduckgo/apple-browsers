@@ -48,12 +48,12 @@ struct AutocompleteView: View {
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
-            SuggestionsSection(suggestions: model.localResults,
+            SuggestionsSection(suggestions: model.aiChatSuggestions,
                                query: model.query,
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)
 
-            SuggestionsSection(suggestions: model.supplementarySuggestions,
+            SuggestionsSection(suggestions: model.localResults,
                                query: model.query,
                                onSuggestionSelected: model.onSuggestionSelected,
                                onSuggestionDeleted: model.deleteSuggestion)

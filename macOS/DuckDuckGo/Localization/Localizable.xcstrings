@@ -38165,6 +38165,18 @@
         }
       }
     },
+    "import.browser.data.select.profile.title" : {
+      "comment" : "Title for the data import browser profile picker",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select profile:"
+          }
+        }
+      }
+    },
     "import.browser.data.selection.sync.button.title" : {
       "comment" : "Import Browser Data dialog button title to sync imported data at selection stage",
       "extractionState" : "extracted_with_value",
@@ -71790,59 +71802,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выбрать папку %@..."
-          }
-        }
-      }
-    },
-    "Select Profile:" : {
-      "comment" : "Browser Profile picker title for Data Import",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profil auswählen:"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecciona perfil:"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionner le profil :"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seleziona profilo:"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profiel selecteren:"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wybierz profil:"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecionar perfil:"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выберите профиль:"
           }
         }
       }

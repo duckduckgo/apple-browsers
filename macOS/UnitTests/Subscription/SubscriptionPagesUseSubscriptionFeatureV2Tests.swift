@@ -17,18 +17,15 @@
 //
 
 import Common
-import Combine
 import Networking
 import NetworkingTestingUtils
 import SubscriptionTestingUtilities
 import WebKit
-import PixelKit
 import XCTest
 import UserScript
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
-@testable import BrowserServicesKit
 
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
@@ -297,76 +294,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         // Then
         XCTAssertNil(result)
         await fulfillment(of: [expectation], timeout: 1.0)
-    }
-
-    // MARK: - Wide Pixel (Stripe) Tests
-
-    private final class FakeWidePixelManager: WidePixelManaging {
-        var startedCount = 0
-        var completedStatuses: [WidePixelStatus] = []
-
-        func startFlow<T>(_ data: T) {
-            startedCount += 1
-        }
-
-        func updateFlow<T>(_ data: T) {}
-
-        func completeFlow<T>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) {
-            completedStatuses.append(status)
-            onComplete(true, nil)
-        }
-    }
-
-    private struct AlwaysInternalDecider: InternalUserDecider {
-        var isInternalUser: Bool { true }
-        var isInternalUserPublisher: AnyPublisher<Bool, Never> { Just(true).eraseToAnyPublisher() }
-        func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool { false }
-    }
-
-    @MainActor
-    func testStripeWidePixel_StartsOnPrepare_AndCompletesOnSuccess() async throws {
-        // Given: Stripe environment and a DefaultStripePurchaseFlowV2 wired with mapping that uses a fake wide pixel manager
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-
-        let widePixelFake = FakeWidePixelManager()
-        let decider = AlwaysInternalDecider()
-        let mapping = SubscriptionStripeWidePixelEventMapping(
-            widePixelManager: widePixelFake,
-            originProvider: { "test-origin" },
-            internalUserDecider: decider
-        )
-
-        subscriptionManagerV2.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
-
-        // Token setup for prepare (account creation path) and complete
-        subscriptionManagerV2.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        subscriptionManagerV2.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-
-        let flow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManagerV2, eventMapping: mapping)
-
-        sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
-                                                        subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
-                                                        stripePurchaseFlow: flow,
-                                                        uiHandler: mockUIHandler,
-                                                        subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
-                                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                        notificationCenter: mockNotificationCenter,
-                                                        dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-                                                        featureFlagger: mockFeatureFlagger,
-                                                        aiChatURL: URL.duckDuckGo)
-        sut.with(broker: broker)
-
-        // When: user selects Stripe subscription -> prepare should fire .started
-        _ = try await sut.subscriptionSelected(params: ["id": "pro_yearly"], original: Constants.mockScriptMessage)
-
-        // Then: wide pixel flow started once
-        XCTAssertEqual(widePixelFake.startedCount, 1)
-
-        // When: complete the purchase -> mapping should complete with success
-        _ = try await sut.completeStripePayment(params: [:], original: Constants.mockScriptMessage)
-
-        // Then: wide pixel flow completed with success
-        XCTAssertEqual(widePixelFake.completedStatuses.last, .success)
     }
 
     @MainActor

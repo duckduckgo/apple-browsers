@@ -20,26 +20,10 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
-import Common
 
 public enum StripePurchaseFlowError: Swift.Error {
     case noProductsFound
     case accountCreationFailed(Error)
-}
-
-// MARK: - Flow Events
-
-public enum StripePurchaseFlowV2Event {
-    case started(subscriptionIdentifier: String?)
-    case accountCreationStarted
-    case accountCreationEnded
-    case paymentStarted
-    case paymentEnded
-    case activationStarted
-    case activationEnded
-    case succeeded
-    case cancelled
-    case failed(errorDescription: String)
 }
 
 public protocol StripePurchaseFlowV2 {
@@ -50,12 +34,9 @@ public protocol StripePurchaseFlowV2 {
 
 public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
     private let subscriptionManager: any SubscriptionManagerV2
-    private let eventMapping: EventMapping<StripePurchaseFlowV2Event>?
 
-    public init(subscriptionManager: any SubscriptionManagerV2,
-                eventMapping: EventMapping<StripePurchaseFlowV2Event>? = nil) {
+    public init(subscriptionManager: any SubscriptionManagerV2) {
         self.subscriptionManager = subscriptionManager
-        self.eventMapping = eventMapping
     }
 
     public func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError> {
@@ -95,36 +76,23 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
     public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError> {
         Logger.subscription.log("Preparing subscription purchase")
 
-        eventMapping?.fire(.started(subscriptionIdentifier: nil))
-
         await subscriptionManager.signOut(notifyUI: false)
 
         if subscriptionManager.isUserAuthenticated {
             if let subscriptionExpired = await isSubscriptionExpired(),
                subscriptionExpired == true,
                let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid) {
-                eventMapping?.fire(.paymentStarted)
-                eventMapping?.fire(.paymentEnded)
                 return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
             } else {
-                eventMapping?.fire(.paymentStarted)
-                eventMapping?.fire(.paymentEnded)
                 return .success(PurchaseUpdate.redirect(withToken: ""))
             }
         } else {
             do {
                 // Create account
-                eventMapping?.fire(.accountCreationStarted)
                 let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
-                eventMapping?.fire(.accountCreationEnded)
                 return .success(PurchaseUpdate.redirect(withToken: tokenContainer.accessToken))
             } catch {
                 Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(error.localizedDescription, privacy: .public)")
-                eventMapping?.fire(.accountCreationEnded)
-                eventMapping?.fire(
-                    .failed(errorDescription: StripePurchaseFlowError.accountCreationFailed(error).localizedDescription),
-                    error: StripePurchaseFlowError.accountCreationFailed(error)
-                )
                 return .failure(.accountCreationFailed(error))
             }
         }
@@ -139,11 +107,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
     public func completeSubscriptionPurchase() async {
         Logger.subscriptionStripePurchaseFlow.log("Completing subscription purchase")
-
-        eventMapping?.fire(.activationStarted)
         subscriptionManager.clearSubscriptionCache()
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
-        eventMapping?.fire(.activationEnded)
-        eventMapping?.fire(.succeeded)
     }
 }

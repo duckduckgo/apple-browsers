@@ -26,7 +26,6 @@ import SpecialErrorPages
 import Subscription
 import UserScript
 import WebKit
-import Common
 
 @MainActor
 final class UserScripts: UserScriptsProvider {
@@ -59,10 +58,6 @@ final class UserScripts: UserScriptsProvider {
     let historyViewUserScript: HistoryViewUserScript?
     let newTabPageUserScript: NewTabPageUserScript?
     let faviconScript = FaviconUserScript()
-
-    private final class StripeOriginBox {
-        var origin: String?
-    }
 
     // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding) {
@@ -201,25 +196,11 @@ final class UserScripts: UserScriptsProvider {
                 assertionFailure("subscriptionManager is not available")
                 return
             }
-            let originBox = StripeOriginBox()
-            let eventMapping: EventMapping<StripePurchaseFlowV2Event>
-            if Application.appDelegate.featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
-                let internalUserDecider = Application.appDelegate.internalUserDecider
-                eventMapping = SubscriptionStripeWidePixelEventMapping(
-                    widePixelManager: WidePixel(),
-                    originProvider: { originBox.origin },
-                    internalUserDecider: internalUserDecider
-                )
-            } else {
-                eventMapping = EventMapping<StripePurchaseFlowV2Event> { _, _, _, _ in }
-            }
-
-            let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager, eventMapping: eventMapping)
+            let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
             delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                  stripePurchaseFlow: stripePurchaseFlow,
                                                                  uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL,
-                                                                 setStripeOrigin: { origin in originBox.origin = origin })
+                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL)
         }
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)

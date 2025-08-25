@@ -5,7 +5,12 @@ defaults:
     working-directory: iOS
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      freeze-release:
+        description: "Freeze the release branch"
+        type: boolean
+        default: true
 
 jobs:
   promote-testflight-to-appstore:
@@ -38,3 +43,8 @@ jobs:
         git config --global user.name "Dax the Duck"
         git config --global user.email "dax@duckduckgo.com"
         bundle exec fastlane promote_latest_testflight_to_appstore
+
+    - name: Freeze the release branch
+      if: ${{ github.event.inputs.freeze-release }}
+      run: |
+        bundle exec fastlane run freeze_release_branch platform:ios

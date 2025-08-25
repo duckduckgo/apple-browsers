@@ -138,16 +138,15 @@ final class BookmarksBarViewController: NSViewController {
         if appereancePreferences.showBookmarksBar {
             syncButtonModel.viewDidLoad()
         }
+        syncButton.layer?.cornerRadius = visualStyle.toolbarButtonsCornerRadius
+        syncMouseOverView.cornerRadius = visualStyle.toolbarButtonsCornerRadius
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = .textPrimary
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
         syncButtonDivider.boxType = .separator
         syncButtonDivider.fillColor = .textPrimary
-        syncButtonDivider.isHidden = true
         syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
-        syncDismissButton.isHidden = true
-        syncMouseOverView.delegate = self
 
         syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
             self?.syncButton.isHidden = !$0
@@ -632,15 +631,6 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
         }
     }
 
-}
-
-extension BookmarksBarViewController: MouseOverViewDelegate {
-
-    @objc @MainActor func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool) {
-        guard mouseOverView === self.syncMouseOverView else { return }
-        syncDismissButton.isHidden = !isMouseOver
-        syncButtonDivider.isHidden = !isMouseOver
-    }
 }
 
 extension Notification.Name {

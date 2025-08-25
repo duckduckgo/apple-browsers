@@ -16,10 +16,44 @@
 //  limitations under the License.
 //
 
-import SwiftUIExtensions
+import SwiftUI
+import DesignResourcesKit
+
+private struct ButtonWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct DynamicWidthButtonStyle: ButtonStyle {
+    let maxWidth: CGFloat?
+    let defaultBackgroundColor: DesignSystemColor
+    let pressedBackgroundColor: DesignSystemColor
+    let textColor: DesignSystemColor
+
+    func makeBody(configuration: Configuration) -> some View {
+        let backgroundColor = configuration.isPressed ? pressedBackgroundColor : defaultBackgroundColor
+
+        configuration.label
+            .font(.system(size: 13))
+            .padding(.horizontal, 12)
+            .frame(width: maxWidth, height: 28)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .preference(key: ButtonWidthPreferenceKey.self, value: geometry.size.width)
+                }
+            )
+            .background(Color(designSystemColor: backgroundColor))
+            .foregroundColor(Color(designSystemColor: textColor))
+            .cornerRadius(5)
+    }
+}
 
 public struct BookmarksEmptyStateView: View {
     @ObservedObject private var syncButtonModel = SyncDeviceButtonModel()
+    @State private var maxButtonWidth: CGFloat = 0
     let content: BookmarksEmptyStateContent
     let onImportClicked: () -> Void
     let onSyncClicked: () -> Void
@@ -51,17 +85,30 @@ public struct BookmarksEmptyStateView: View {
 
             VStack(spacing: 10) {
                 if !content.shouldHideImportButton {
-                    Button("Import Bookmarks") {
+                    Button(UserText.bookmarksEmptyStateImportButtonTitle) {
                         onImportClicked()
                     }
-                    .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                    .buttonStyle(DynamicWidthButtonStyle(
+                        maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
+                        defaultBackgroundColor: .buttonsPrimaryDefault,
+                        pressedBackgroundColor: .buttonsPrimaryPressed,
+                        textColor: .buttonsPrimaryText
+                    ))
                 }
                 if !content.shouldHideSyncButton, syncButtonModel.shouldShowSyncButton {
-                    Button("Sync Bookmarks") {
+                    Button(UserText.bookmarksEmptyStateSyncButtonTitle) {
                         onSyncClicked()
                     }
-                    .buttonStyle(StandardButtonStyle())
+                    .buttonStyle(DynamicWidthButtonStyle(
+                        maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
+                        defaultBackgroundColor: .buttonsSecondaryFillDefault,
+                        pressedBackgroundColor: .buttonsSecondaryFillPressed,
+                        textColor: .buttonsSecondaryFillText
+                    ))
                 }
+            }
+            .onPreferenceChange(ButtonWidthPreferenceKey.self) { width in
+                maxButtonWidth = width
             }
 
             Spacer()

@@ -154,7 +154,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <box clipsToBounds="YES" horizontalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="Rv3-Ka-5rz">
-                                        <rect key="frame" x="141" y="0.0" width="5" height="24"/>
+                                        <rect key="frame" x="141" y="3" width="5" height="18"/>
                                     </box>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2sg-KO-1Lc" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="144" y="0.0" width="24" height="24"/>
@@ -213,7 +213,7 @@
                                     <constraint firstAttribute="trailing" secondItem="mPS-TE-78s" secondAttribute="trailing" priority="750" id="ff1-CS-Bpa"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="leading" secondItem="5Hg-Gg-2dA" secondAttribute="leading" priority="750" id="iFh-7H-I99"/>
                                     <constraint firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="trailing" priority="750" id="kbh-qM-mLm"/>
-                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="height" secondItem="5Hg-Gg-2dA" secondAttribute="height" id="leE-YK-JdN"/>
+                                    <constraint firstItem="Rv3-Ka-5rz" firstAttribute="height" secondItem="5Hg-Gg-2dA" secondAttribute="height" constant="-6" id="leE-YK-JdN"/>
                                     <constraint firstItem="mPS-TE-78s" firstAttribute="top" secondItem="5Hg-Gg-2dA" secondAttribute="top" priority="750" id="lyJ-iR-qLK"/>
                                     <constraint firstAttribute="bottom" secondItem="mPS-TE-78s" secondAttribute="bottom" priority="750" id="mRk-hF-6T0"/>
                                     <constraint firstItem="Rv3-Ka-5rz" firstAttribute="trailing" secondItem="2sg-KO-1Lc" secondAttribute="leading" id="r9I-0g-gNJ"/>

@@ -12024,6 +12024,17 @@
         }
       }
     },
+    "bookmarks.empty.state.importButton.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks"
+          }
+        }
+      }
+    },
     "bookmarks.empty.state.message" : {
       "comment" : "Text displayed in Bookmark Manager when there is no bookmarks yet",
       "extractionState" : "extracted_with_value",
@@ -12080,6 +12091,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Если ваши закладки хранятся в другом браузере, вы можете импортировать их в DuckDuckGo."
+          }
+        }
+      }
+    },
+    "bookmarks.empty.state.syncButton.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync Bookmarks"
           }
         }
       }
@@ -76971,9 +76993,6 @@
           }
         }
       }
-    },
-    "Sync Bookmarks" : {
-
     },
     "Sync Bookmarks Across Devices" : {
 

@@ -43,7 +43,7 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - backgroundColor: The picker's background color. Defaults to backdrop color.
     ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to tertiary background color.
     public init(
-        font: Font = .system(size: 16, weight: .medium),
+        font: Font = .system(size: 14, weight: .medium),
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
         backgroundColor: Color = .init(designSystemColor: .backdrop),

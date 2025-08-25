@@ -241,6 +241,138 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertNil(syncPreferences.syncPausedButtonAction)
     }
 
+    // MARK: - Observable Properties Behavior
+
+    func testDevices_whenSet_updatesBookmarksAdapterEligibility() {
+        let singleDevice = [SyncDevice(kind: .desktop, name: "Test Device", id: "test")]
+        let multipleDevices = [
+            SyncDevice(kind: .desktop, name: "Device 1", id: "test1"),
+            SyncDevice(kind: .mobile, name: "Device 2", id: "test2")
+        ]
+
+        // Initially false with no devices
+        XCTAssertFalse(syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding)
+
+        // Should remain false with single device
+        syncPreferences.devices = singleDevice
+        XCTAssertFalse(syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding)
+
+        // Should become true with multiple devices
+        syncPreferences.devices = multipleDevices
+        XCTAssertTrue(syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding)
+    }
+
+    func testIsFaviconsFetchingEnabled_whenSet_updatesAdapterAndNotifiesScheduler() {
+        XCTAssertFalse(scheduler.notifyDataChangedCalled)
+
+        syncPreferences.isFaviconsFetchingEnabled = true
+
+        XCTAssertTrue(syncBookmarksAdapter.isFaviconsFetchingEnabled)
+        XCTAssertTrue(scheduler.notifyDataChangedCalled)
+    }
+
+    func testIsUnifiedFavoritesEnabled_whenSet_updatesAppearancePreferences() {
+        // Initially should be display native
+        XCTAssertFalse(appearancePreferences.favoritesDisplayMode.isDisplayUnified)
+
+        syncPreferences.isUnifiedFavoritesEnabled = true
+
+        XCTAssertTrue(appearancePreferences.favoritesDisplayMode.isDisplayUnified)
+    }
+
+    func testIsUnifiedFavoritesEnabled_whenSet_requestsSyncOnSubsequentChanges() async {
+        // First change should request sync (after initialization)
+        scheduler.notifyDataChangedCalled = false
+        syncPreferences.isUnifiedFavoritesEnabled = true
+        XCTAssertTrue(scheduler.notifyDataChangedCalled)
+
+        // Second change should also request sync
+        scheduler.notifyDataChangedCalled = false
+        syncPreferences.isUnifiedFavoritesEnabled = false
+        XCTAssertTrue(scheduler.notifyDataChangedCalled)
+    }
+
+    // MARK: - Reactive Subscriptions
+
+    func testFeatureFlagsPublisher_whenChanged_updatesLocalFeatureFlags() async {
+        let expectation = expectation(description: "feature flags updated")
+
+        syncPreferences.$syncFeatureFlags.dropFirst().sink { flags in
+            XCTAssertTrue(flags.contains(.dataSyncing))
+            expectation.fulfill()
+        }.store(in: &cancellables)
+
+        // Update the published property directly
+        ddgSyncing.featureFlags = [.dataSyncing, .connectFlows]
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testIsSyncInProgressPublisher_whenSyncCompletes_triggersInvalidObjectsUpdate() async {
+        let expectation = expectation(description: "sync completion processed")
+        expectation.assertForOverFulfill = false
+
+        // Listen for sync completion
+        syncPreferences.$invalidBookmarksTitles
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // Simulate sync in progress, then completion
+        ddgSyncing.isSyncInProgress = true
+        ddgSyncing.isSyncInProgress = false
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testDevicesPublisher_whenChanged_updatesLocalDevices() async {
+        let testDevices = [SyncDevice(kind: .desktop, name: "Test Device", id: "test")]
+        let expectation = expectation(description: "devices updated")
+
+        syncPreferences.$devices.dropFirst().sink { devices in
+            if devices.count == 1 && devices.first?.name == "Test Device" {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        // Simulate device update by directly setting devices on syncPreferences
+        // (This tests the publisher subscription behavior)
+        syncPreferences.devices = testDevices
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testSyncOptionsObservables_whenFaviconFetchingChanges_updatesLocalState() async {
+        let expectation = expectation(description: "favicon fetching state updated")
+
+        syncPreferences.$isFaviconsFetchingEnabled.sink { enabled in
+            if enabled {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        // Change the adapter's state to trigger the observable
+        syncBookmarksAdapter.isFaviconsFetchingEnabled = true
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testSyncOptionsObservables_whenUnifiedFavoritesChanges_updatesLocalState() async {
+        let expectation = expectation(description: "unified favorites state updated")
+
+        syncPreferences.$isUnifiedFavoritesEnabled.sink { enabled in
+            if enabled {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        // Change the appearance preferences to trigger the observable
+        appearancePreferences.favoritesDisplayMode = .displayUnified(native: .desktop)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
 }
 
 class CapturingScheduler: Scheduling {

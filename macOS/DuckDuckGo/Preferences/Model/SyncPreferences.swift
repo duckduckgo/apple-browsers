@@ -307,7 +307,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .store(in: &cancellables)
     }
 
-    // MARK: - Public API (Delegation to syncSettingsHandler)
+    // MARK: - Delegation to syncSettingsHandler
 
     @MainActor
     func turnOffSyncPressed() {

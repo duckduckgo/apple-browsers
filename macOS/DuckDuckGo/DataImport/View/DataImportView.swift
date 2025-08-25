@@ -217,7 +217,7 @@ struct DataImportView: ModalView {
                     importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
                 }
             } label: {
-                Text("Or Sync from DuckDuckGo on another device")
+                Text(UserText.importDataSelectionSyncButtonTitle)
                     .fontWeight(.semibold)
                     .foregroundColor(Color(.linkBlue))
             }
@@ -319,7 +319,7 @@ struct DataImportView: ModalView {
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
             if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
-                Button("Sync from Another Device") {
+                Button(UserText.importDataCompleteSyncButtonTitle) {
                     dismiss.callAsFunction()
                     syncLauncher.startDeviceSyncFlow(completion: nil)
                 }

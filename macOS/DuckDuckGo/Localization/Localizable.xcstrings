@@ -37771,6 +37771,18 @@
         }
       }
     },
+    "import.browser.data.complete.sync.button.title" : {
+      "comment" : "Import Browser Data dialog button title to sync imported data at completion stage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync to DuckDuckGo on Mobile"
+          }
+        }
+      }
+    },
     "import.browser.data.import-type.subtitle.bookmarks.and.passwords" : {
       "comment" : "Import Browser Data dialog subtitle for option to choose what to import in collapsed state",
       "extractionState" : "extracted_with_value",
@@ -38127,6 +38139,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импортировать пароли..."
+          }
+        }
+      }
+    },
+    "import.browser.data.selection.sync.button.title" : {
+      "comment" : "Import Browser Data dialog button title to sync imported data at selection stage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync from DuckDuckGo on another device"
           }
         }
       }
@@ -51745,9 +51769,6 @@
         }
       }
     },
-    "Or Sync from DuckDuckGo on another device" : {
-
-    },
     "page.crash.header" : {
       "comment" : "Error page heading text shown when a Web Page process had crashed",
       "extractionState" : "extracted_with_value",
@@ -59280,7 +59301,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Set up Sync"
+            "value" : "Set up Sync & Backup"
           }
         }
       }
@@ -76955,9 +76976,6 @@
 
     },
     "Sync Bookmarks Across Devices" : {
-
-    },
-    "Sync from Another Device" : {
 
     },
     "sync.promo.bookmarks.message" : {

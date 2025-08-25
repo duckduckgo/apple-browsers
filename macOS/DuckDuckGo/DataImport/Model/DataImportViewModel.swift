@@ -708,7 +708,7 @@ extension DataImportViewModel {
 
     var shouldShowSyncFooterButton: Bool {
         switch screen {
-        case .summary:
+        case .summary, .shortcuts:
             return true
         default:
             return false

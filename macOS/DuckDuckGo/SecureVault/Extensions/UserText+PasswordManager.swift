@@ -37,7 +37,7 @@ extension UserText {
     static let pmEmptyStateDefaultButtonTitle = NSLocalizedString("pm.empty.default.button.title", value: "Import Passwords", comment: "Import passwords button title for default empty state")
     static let pmEmptyStateSecondaryButtonTitle = NSLocalizedString("pm.empty.secondary.button.title", value: "Sync Passwords", comment: "Sync passwords button title for default empty state")
     static let pmEmptyStateDefaultButtonTitleAllItems = NSLocalizedString("pm.empty.default.button.title", value: "Import From Another Browser", comment: "Import passwords button title for default empty state")
-    static let pmEmptyStateSecondaryButtonTitleAllItems = NSLocalizedString("pm.empty.secondary.button.title", value: "Set up Sync", comment: "Import passwords button title for default empty state")
+    static let pmEmptyStateSecondaryButtonTitleAllItems = NSLocalizedString("pm.empty.secondary.button.title", value: "Set up Sync & Backup", comment: "Import passwords button title for default empty state")
 
     static let pmEmptyStateLoginsTitle = NSLocalizedString("pm.empty.logins.title", value: "No passwords saved yet", comment: "Label for logins empty state title")
     static let pmEmptyStateIdentitiesTitle = NSLocalizedString("pm.empty.identities.title", value: "No Identities", comment: "Label for identities empty state title")

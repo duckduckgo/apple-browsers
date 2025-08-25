@@ -605,6 +605,8 @@ struct UserText {
     static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
+    static let importDataSelectionSyncButtonTitle = NSLocalizedString("import.browser.data.selection.sync.button.title", value: "Sync from DuckDuckGo on another device", comment: "Import Browser Data dialog button title to sync imported data at selection stage")
+    static let importDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.sync.button.title", value: "Sync to DuckDuckGo on Mobile", comment: "Import Browser Data dialog button title to sync imported data at completion stage")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
     static let exportBookmarks = NSLocalizedString("export.bookmarks.menu.item", value: "Export Bookmarks…", comment: "Export bookmarks menu item")

@@ -47,4 +47,6 @@ jobs:
     - name: Freeze the release branch
       if: ${{ github.event.inputs.freeze-release }}
       run: |
-        bundle exec fastlane run freeze_release_branch platform:macos
+        bundle exec fastlane run freeze_release_branch \
+          platform:macos \
+          github_token:"${{ secrets.GITHUB_TOKEN }}"

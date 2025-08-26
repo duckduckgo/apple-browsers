@@ -52,3 +52,28 @@ final class SyncManagementDialogViewController: NSViewController {
         view = NSHostingView(rootView: syncManagementDialog)
     }
 }
+
+final class LegacySyncManagementDialogViewController: NSViewController {
+
+    init(_ model: ManagementDialogModel) {
+        self.managementDialogModel = model
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private weak var managementDialogModel: ManagementDialogModel?
+
+    override func loadView() {
+        guard let managementDialogModel else {
+            assertionFailure("Sync ManagementDialogModel was deallocated")
+            view = NSView()
+            return
+        }
+        let syncManagementDialog = ManagementDialog(model: managementDialogModel)
+        view = NSHostingView(rootView: syncManagementDialog)
+    }
+
+}

@@ -20,19 +20,20 @@ import Combine
 import Persistence
 import AppKit
 import DDGSync
+import FeatureFlags
+import BrowserServicesKit
 
 public final class SyncDeviceButtonModel: ObservableObject {
     @Published var shouldShowSyncButton: Bool = false
-    let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
 
     init(authStatePublisher: AnyPublisher<SyncAuthState, Never>, initialAuthState: SyncAuthState, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        shouldShowSyncButton = featureFlagger.isFeatureEnabled && (initialAuthState == .inactive)
+        shouldShowSyncButton = featureFlagger.isNewSyncEntryPointsFeatureOn && (initialAuthState == .inactive)
 
         authStatePublisher
             .map {
-                featureFlagger.isFeatureEnabled && (state == .inactive)
+                featureFlagger.isNewSyncEntryPointsFeatureOn && ($0 == .inactive)
             }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -41,9 +42,9 @@ public final class SyncDeviceButtonModel: ObservableObject {
     }
 }
 
-private extension FeatureFlagger {
+fileprivate extension FeatureFlagger {
     var isNewSyncEntryPointsFeatureOn: Bool {
-        isFeatureOn(for: .newSyncEntryPoints) & featureFlagger.isFeatureOn(for: .refactorOfSyncPreferences)
+        isFeatureOn(.newSyncEntryPoints) && isFeatureOn(.refactorOfSyncPreferences)
     }
 }
 

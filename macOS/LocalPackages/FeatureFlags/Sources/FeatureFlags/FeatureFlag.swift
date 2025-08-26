@@ -245,7 +245,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .openFireWindowByDefault,
                 .duckAISearchParameter,
                 .openFileMenuAction,
-                .refactorOfSyncPreferences:
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -374,6 +375,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
+        case .newSyncEntryPoints:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         }
     }
 }

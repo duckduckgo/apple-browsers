@@ -20,6 +20,8 @@ import Combine
 import Persistence
 import AppKit
 import DDGSync
+import FeatureFlags
+import BrowserServicesKit
 
 @MainActor
 public final class DismissableSyncDeviceButtonModel: ObservableObject {
@@ -73,8 +75,6 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         }
     }
 
-    lazy var syncLauncher: SyncDeviceFlowLaunching? = DeviceSyncCoordinator()
-
     @Published var shouldShowSyncButton: Bool = false
 
     private var authState: SyncAuthState = .initializing {
@@ -94,7 +94,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private let source: SyncDevicePromoSource
     private let keyValueStore: KeyValueStoring
     private let syncLauncher: SyncDeviceFlowLaunching?
-    private let featureFlagger: DefaultFeatureFlagger
+    private let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -127,10 +127,16 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
     }
 
-    init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring, authStatePublisher: AnyPublisher<SyncAuthState, Never>, syncLauncher: SyncDeviceFlowLaunching? = DeviceSyncCoordinator(), featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(
+        source: SyncDevicePromoSource,
+        keyValueStore: KeyValueStoring,
+        authStatePublisher: AnyPublisher<SyncAuthState, Never>,
+        syncLauncher: SyncDeviceFlowLaunching? = nil,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+    ) {
         self.source = source
         self.keyValueStore = keyValueStore
-        self.syncLauncher = syncLauncher
+        self.syncLauncher = syncLauncher ?? DeviceSyncCoordinator()
         self.featureFlagger = featureFlagger
         authStatePublisher
             .receive(on: DispatchQueue.main)
@@ -212,8 +218,8 @@ extension DismissableSyncDeviceButtonModel {
     }
 }
 
-private extension FeatureFlagger {
+fileprivate extension FeatureFlagger {
     var isNewSyncEntryPointsFeatureOn: Bool {
-        isFeatureOn(for: .newSyncEntryPoints) & featureFlagger.isFeatureOn(for: .refactorOfSyncPreferences)
+        isFeatureOn(.newSyncEntryPoints) && isFeatureOn(.refactorOfSyncPreferences)
     }
 }

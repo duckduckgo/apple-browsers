@@ -18,6 +18,8 @@
 
 import AppKit
 import DDGSync
+import BrowserServicesKit
+import FeatureFlags
 
 protocol DataImportFlowLaunching {
     @MainActor
@@ -52,8 +54,8 @@ final class DataImportFlowLauncher: DataImportFlowLaunching {
         if
             case .inactive = ddgSync?.authState,
             let deviceSyncLauncher = DeviceSyncCoordinator(),
-            isFeatureOn(for: .newSyncEntryPoints),
-            featureFlagger.isFeatureOn(for: .refactorOfSyncPreferences), {
+            featureFlagger.isFeatureOn(.newSyncEntryPoints),
+            featureFlagger.isFeatureOn(.refactorOfSyncPreferences) {
             syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
         } else {
             syncFeatureVisibility = .hide

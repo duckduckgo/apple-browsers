@@ -114,13 +114,14 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
+    private var backgroundObserver: NSObjectProtocol?
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         
         // Set up app lifecycle observers to reset session flags
-        NotificationCenter.default.addObserver(
+        backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
             queue: .main
@@ -181,6 +182,12 @@ final class SwitchBarHandler: SwitchBarHandling {
         if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
            let restoredState = TextEntryMode(rawValue: storedValue) {
             currentToggleState = restoredState
+        }
+    }
+    
+    deinit {
+        if let observer = backgroundObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
     

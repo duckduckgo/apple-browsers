@@ -151,7 +151,7 @@ struct SettingsSubscriptionView: View {
             )
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled && settingsViewModel.isAuthV2Enabled {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),

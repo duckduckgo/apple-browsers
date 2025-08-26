@@ -53,13 +53,13 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
 
-      # - name: Assert release branch
-      #   run: |
-      #     case "${{ github.ref_name }}" in
-      #       release/*) ;;
-      #       main) ;;
-      #       *) echo "👎 Not a release or main branch"; exit 1 ;;
-      #     esac
+      - name: Assert release branch
+        run: |
+          case "${{ github.ref_name }}" in
+            release/*) ;;
+            main) ;;
+            *) echo "👎 Not a release or main branch"; exit 1 ;;
+          esac
 
       - name: Setup Ruby and dependencies
         uses: ./.github/actions/setup-ruby

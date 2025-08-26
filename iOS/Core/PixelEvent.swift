@@ -1272,6 +1272,16 @@ extension Pixel {
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
+        
+        // MARK: Experimental Omnibar Metrics
+        case aiChatExperimentalOmnibarShown
+        case aiChatExperimentalOmnibarPromptSubmitted
+        case aiChatExperimentalOmnibarQuerySubmitted
+        case aiChatExperimentalOmnibarModeSwitched
+        case aiChatExperimentalOmnibarSessionBothModes
+        case aiChatLegacyOmnibarShown
+        case aiChatLegacyOmnibarQuerySubmitted
+        case aiChatLegacyOmnibarAichatButtonPressed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -2483,6 +2493,16 @@ extension Pixel.Event {
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+        
+        // MARK: Experimental Omnibar Metrics
+        case .aiChatExperimentalOmnibarShown: return "m_aichat_experimental_omnibar_shown"
+        case .aiChatExperimentalOmnibarPromptSubmitted: return "m_aichat_experimental_omnibar_prompt_submitted"
+        case .aiChatExperimentalOmnibarQuerySubmitted: return "m_aichat_experimental_omnibar_query_submitted"
+        case .aiChatExperimentalOmnibarModeSwitched: return "m_aichat_experimental_omnibar_mode_switched"
+        case .aiChatExperimentalOmnibarSessionBothModes: return "m_aichat_experimental_omnibar_session_both_modes"
+        case .aiChatLegacyOmnibarShown: return "m_aichat_legacy_omnibar_shown"
+        case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
+        case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

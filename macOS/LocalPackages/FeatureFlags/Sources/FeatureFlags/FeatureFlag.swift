@@ -183,7 +183,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .refactorOfSyncPreferences:
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints:
             true
         default:
             false

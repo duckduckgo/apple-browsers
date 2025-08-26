@@ -30,6 +30,9 @@ public enum EmailError: Error, Equatable, Codable {
     case cancelled
     case httpError(statusCode: Int)
     case unknownHTTPError
+    case extractionError
+    case requestError
+    case serverError
 }
 
 public struct EmailData: Decodable {
@@ -39,6 +42,8 @@ public struct EmailData: Decodable {
 
 public protocol EmailServiceProtocol {
     func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData
+
+    @available(*, deprecated, message: "Use EmailServiceV1Protocol.fetchEmailData instead")
     func getConfirmationLink(from email: String,
                              numberOfRetries: Int,
                              pollingInterval: TimeInterval,

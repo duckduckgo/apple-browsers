@@ -240,7 +240,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsAlternateStripePaymentFlow,
                 .restoreSessionPrompt,
                 .openFireWindowByDefault,
-                .restoreSessionPrompt,
                 .duckAISearchParameter,
                 .openFileMenuAction,
                 .refactorOfSyncPreferences:

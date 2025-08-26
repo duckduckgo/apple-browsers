@@ -363,7 +363,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .openFileMenuAction:
             return .internalOnly()
         case .duckAISearchParameter:
-            return .internalOnly()
+            return .enabled
         }
     }
 }

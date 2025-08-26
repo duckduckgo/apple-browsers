@@ -361,7 +361,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiFeaturesSettingsUpdate:
             return .enabled
         case .duckAISearchParameter:
-            return .internalOnly()
+            return .enabled
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         }

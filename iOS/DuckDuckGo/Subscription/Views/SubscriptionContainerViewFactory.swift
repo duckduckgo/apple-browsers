@@ -190,12 +190,16 @@ enum SubscriptionContainerViewFactory {
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                  appStoreRestoreFlow: appStoreRestoreFlow)
+        let purchaseURLWithOrigin = subscriptionManager.url(for: .purchase)
+            .appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)
         let subscriptionPagesUseSubscriptionFeature = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                                                        subscriptionAttributionOrigin: nil,
                                                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                                       privacyProDataReporter: nil)
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
+                                                       redirectPurchaseURL: purchaseURLWithOrigin,
                                                        isInternalUser: internalUserDecider.isInternalUser,
                                                        userScript: SubscriptionPagesUserScript(),
                                                        subFeature: subscriptionPagesUseSubscriptionFeature)
@@ -215,15 +219,19 @@ enum SubscriptionContainerViewFactory {
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                  appStoreRestoreFlow: appStoreRestoreFlow)
+        let purchaseURLWithOrigin = subscriptionManager.url(for: .purchase)
+            .appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
+            redirectPurchaseURL: purchaseURLWithOrigin,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                          subscriptionAttributionOrigin: nil,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                         privacyProDataReporter: nil)
         )
 
         viewModel.email.setEmailFlowMode(emailFlow)

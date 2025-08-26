@@ -78,6 +78,8 @@ extension SubscriptionPurchaseWidePixelData {
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
+        parameters[WidePixelParameter.Feature.name] = "subscription-purchase"
+
         parameters[WidePixelParameter.SubscriptionFeature.purchasePlatform] = purchasePlatform.rawValue
 
         if let failingStep = failingStep {

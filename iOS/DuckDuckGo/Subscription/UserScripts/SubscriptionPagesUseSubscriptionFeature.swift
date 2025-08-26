@@ -27,6 +27,7 @@ import Subscription
 import Core
 import os.log
 import Networking
+import PixelKit
 
 struct SubscriptionPagesUseSubscriptionFeatureConstants {
     static let featureName = "useSubscription"
@@ -588,6 +589,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let privacyProDataReporter: PrivacyProDataReporting?
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
+    private let widePixel: WidePixelManaging
+    private var widePixelData: SubscriptionPurchaseWidePixelData?
+    private var lastFetchedOptions: SubscriptionOptionsV2?
 
     init(subscriptionManager: SubscriptionManagerV2,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -595,7 +599,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
          appStorePurchaseFlow: AppStorePurchaseFlowV2,
          appStoreRestoreFlow: AppStoreRestoreFlowV2,
          privacyProDataReporter: PrivacyProDataReporting? = nil,
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()) {
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
+         widePixel: WidePixelManaging = WidePixel(),
+         widePixelContextName: String? = nil) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -603,6 +609,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
+        self.widePixel = widePixel
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -762,6 +769,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         }
 
         if let subscriptionOptions {
+            lastFetchedOptions = subscriptionOptions
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
                 return subscriptionOptions
             } else {
@@ -816,6 +824,15 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             return nil
         }
 
+        let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
+        var data = SubscriptionPurchaseWidePixelData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: subscriptionSelection.id,
+            freeTrialEligible: freeTrialEligible,
+            contextData: WidePixelContextData(name: subscriptionAttributionOrigin)
+        )
+        widePixel.startFlow(data)
+
         let purchaseTransactionJWS: String
 
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
@@ -830,15 +847,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
+                widePixel.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
                 return nil
             case .accountCreationFailed:
                 setTransactionError(.accountCreationFailed)
+                data.markAsFailed(at: .accountCreate, error: error)
             case .activeSubscriptionAlreadyPresent:
                 setTransactionError(.activeSubscriptionAlreadyPresent)
             default:
                 setTransactionError(.purchaseFailed)
+                data.markAsFailed(at: .accountPayment, error: error)
             }
             originalMessage = original
+            widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
             return nil
         }
 
@@ -856,6 +877,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             subscriptionParameters = frontEndExperiment.asParameters()
         }
 
+        var startPayment = WidePixel.MeasuredInterval.startingNow()
+        data.completePurchaseDuration = startPayment
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
                                                                        additionalParams: subscriptionParameters) {
         case .success:
@@ -866,6 +889,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Pixel.fireAttribution(pixel: .privacyProSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, privacyProDataReporter: privacyProDataReporter)
             setTransactionStatus(.idle)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
+            startPayment.complete()
+            data.completePurchaseDuration = startPayment
+            var activation = WidePixel.MeasuredInterval.startingNow()
+            activation.complete()
+            data.activateAccountDuration = activation
+            widePixel.updateFlow(data)
+            widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
         case .failure(let error):
             Logger.subscription.error("App store complete subscription purchase error: \(error, privacy: .public)")
 
@@ -874,6 +904,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             setTransactionStatus(.idle)
             setTransactionError(.missingEntitlements)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
+            startPayment.complete()
+            data.completePurchaseDuration = startPayment
+            data.markAsFailed(at: .accountActivation, error: error)
+            widePixel.updateFlow(data)
+            widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
         }
         return nil
     }

@@ -263,7 +263,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     contextData: WidePixelContextData(name: contextName)
                 )
 
-                widePixel.startFlow(data)
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                    widePixel.startFlow(data)
+                }
 
                 await uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
 
@@ -317,7 +319,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     }
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
                     if error == .cancelledByUser {
-                        widePixel.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+                        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                            widePixel.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+                        }
                     } else {
                         switch error {
                         case .noProductsFound:
@@ -327,7 +331,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         default:
                             data.markAsFailed(at: .accountPayment, error: error)
                         }
-                        widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+
+                        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                            widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                        }
                     }
                     return nil
                 }
@@ -399,14 +406,21 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
             var accountCreation = WidePixel.MeasuredInterval.startingNow()
             data.createAccountDuration = accountCreation
-            widePixel.startFlow(data)
-            self.widePixelData = data
+
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                widePixel.startFlow(data)
+                self.widePixelData = data
+            }
+
             let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: emailAccessToken)
             switch result {
             case .success(let success):
-                accountCreation.complete()
-                data.createAccountDuration = accountCreation
-                widePixel.updateFlow(data)
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                    accountCreation.complete()
+                    data.createAccountDuration = accountCreation
+                    widePixel.updateFlow(data)
+                }
+
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: success)
             case .failure(let error):
                 await showSomethingWentWrongAlert()

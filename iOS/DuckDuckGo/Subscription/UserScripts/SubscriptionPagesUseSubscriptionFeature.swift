@@ -831,7 +831,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             freeTrialEligible: freeTrialEligible,
             contextData: WidePixelContextData(name: subscriptionAttributionOrigin)
         )
-        widePixel.startFlow(data)
+
+        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+            widePixel.startFlow(data)
+        }
 
         let purchaseTransactionJWS: String
 
@@ -847,7 +850,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
-                widePixel.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                    widePixel.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+                }
+
                 return nil
             case .accountCreationFailed:
                 setTransactionError(.accountCreationFailed)
@@ -859,7 +866,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 data.markAsFailed(at: .accountPayment, error: error)
             }
             originalMessage = original
-            widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            }
+
             return nil
         }
 
@@ -879,6 +890,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         var startPayment = WidePixel.MeasuredInterval.startingNow()
         data.completePurchaseDuration = startPayment
+        var activationInterval: WidePixel.MeasuredInterval?
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
                                                                        additionalParams: subscriptionParameters) {
         case .success:
@@ -888,14 +900,22 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
             Pixel.fireAttribution(pixel: .privacyProSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, privacyProDataReporter: privacyProDataReporter)
             setTransactionStatus(.idle)
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                activationInterval = WidePixel.MeasuredInterval.startingNow()
+            }
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
             startPayment.complete()
             data.completePurchaseDuration = startPayment
-            var activation = WidePixel.MeasuredInterval.startingNow()
-            activation.complete()
-            data.activateAccountDuration = activation
-            widePixel.updateFlow(data)
-            widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
+
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                activationInterval?.complete()
+                if let activation = activationInterval {
+                    data.activateAccountDuration = activation
+                }
+                widePixel.updateFlow(data)
+                widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
+            }
+
         case .failure(let error):
             Logger.subscription.error("App store complete subscription purchase error: \(error, privacy: .public)")
 
@@ -905,10 +925,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             setTransactionError(.missingEntitlements)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
             startPayment.complete()
-            data.completePurchaseDuration = startPayment
-            data.markAsFailed(at: .accountActivation, error: error)
-            widePixel.updateFlow(data)
-            widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                data.completePurchaseDuration = startPayment
+                data.markAsFailed(at: .accountActivation, error: error)
+                widePixel.updateFlow(data)
+                widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            }
         }
         return nil
     }

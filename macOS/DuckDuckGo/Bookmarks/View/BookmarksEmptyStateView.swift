@@ -83,7 +83,7 @@ public struct BookmarksEmptyStateView: View {
                     .accessibilityIdentifier(BookmarksEmptyStateContent.descriptionAccessibilityIdentifier)
             }
 
-            VStack(spacing: 10) {
+            HStack(spacing: 10) {
                 if !content.shouldHideImportButton {
                     Button(UserText.bookmarksEmptyStateImportButtonTitle) {
                         onImportClicked()

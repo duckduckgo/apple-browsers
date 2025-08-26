@@ -45,9 +45,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1203108348835387/1209710972679271/f
     case networkProtectionAppStoreSysexMessage
 
-    /// https://app.asana.com/0/1204186595873227/1206489252288889
-    case networkProtectionRiskyDomainsProtection
-
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
@@ -156,10 +153,19 @@ public enum FeatureFlag: String, CaseIterable {
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211048158968532?focus=true
+    case openFireWindowByDefault
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
     case restoreSessionPrompt
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
+    /// https://app.asana.com/1/137249556945/project/276630244458377/task/1211090698913983?focus=true
+    case openFileMenuAction
+
+    /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
+    case duckAISearchParameter
+  
+      /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
     case refactorOfSyncPreferences
 }
 
@@ -194,7 +200,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autocompleteTabs,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .networkProtectionRiskyDomainsProtection,
                 .syncSeamlessAccountSwitching,
                 .historyView,
                 .webExtensions,
@@ -234,6 +239,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
                 .restoreSessionPrompt,
+                .openFireWindowByDefault,
+                .restoreSessionPrompt,
+                .duckAISearchParameter,
+                .openFileMenuAction,
                 .refactorOfSyncPreferences:
             return true
         case .debugMenu,
@@ -287,8 +296,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .networkProtectionRiskyDomainsProtection:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
@@ -355,8 +362,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+        case .openFireWindowByDefault:
+            return .internalOnly()
         case .restoreSessionPrompt:
             return .disabled
+        case .openFileMenuAction:
+            return .internalOnly()
+        case .duckAISearchParameter:
+            return .enabled
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         }

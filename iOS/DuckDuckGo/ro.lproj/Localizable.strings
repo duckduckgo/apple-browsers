@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Scurtături";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Personalizează-ți Favoritele și funcțiile predilecte. Reordonează lucrurile sau ascunde-le pentru a menține ordinea.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Pagina Filă nouă este... nouă!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Preferințe";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Scurtături";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Afișează, ascunde și reordonează secțiunile din pagina noii file";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SECȚIUNI";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "SCURTĂTURI";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Personalizează pagina Filă nouă";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Semne de carte";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Descărcări";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Parole";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Setări";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Pe orice site, deschide meniul ••• și selectează **Adaugă la favorite** pentru a adăuga la pagina Filă nouă.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nu s-a găsit niciun rezultat";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Caută implicit în mod privat";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo are, de asemenea, un %1$@, disponibil cu un %2$@ și %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "IA avansată și privată";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "abonament opțional cu plată";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Întreabă Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Caută";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Acțiune secundară/a doua acțiune";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(implicit)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Experimental)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Încearcă opțiunea noastră experimentală de a adresa o întrebare către Duck.ai direct din bara de adrese.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Caută pe Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Doar căutare";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Gestionează comenzile rapide Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Comenzi rapide Duck.ai";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Primește răspunsuri la întrebările frecvente sau contactează asistența Privacy Pro din paginile noastre de ajutor.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Trimite feedback";
+/* Share Feedback Button */
+"subscription.feedback" = "Trimitere feedback";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Renunță";

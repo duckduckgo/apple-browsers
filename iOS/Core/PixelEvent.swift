@@ -1164,26 +1164,6 @@ extension Pixel {
         case bookmarkLaunchedDaily
         case newTabPageDisplayedDaily
 
-        // MARK: New Tab Page
-        case newTabPageMessageDisplayed
-        case newTabPageMessageDismissed
-
-        case newTabPageFavoritesPlaceholderTapped
-
-        case newTabPageFavoritesSeeMore
-        case newTabPageFavoritesSeeLess
-
-        case newTabPageCustomize
-
-        case newTabPageShortcutClicked(_ shortcutName: String)
-
-        case newTabPageCustomizeSectionOff(_ sectionName: String)
-        case newTabPageCustomizeSectionOn(_ sectionName: String)
-        case newTabPageSectionReordered
-
-        case newTabPageCustomizeShortcutRemoved(_ shortcutName: String)
-        case newTabPageCustomizeShortcutAdded(_ shortcutName: String)
-
         // MARK: DuckPlayer
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
@@ -2392,31 +2372,6 @@ extension Pixel.Event {
         case .favoriteLaunchedNTPDaily: return "m_favorite_launched_ntp_daily"
         case .bookmarkLaunchedDaily: return "m_bookmark_launched_daily"
         case .newTabPageDisplayedDaily: return "m_new_tab_page_displayed_daily"
-
-        // MARK: New Tab Page
-        case .newTabPageMessageDisplayed: return "m_new_tab_page_message_displayed"
-        case .newTabPageMessageDismissed: return "m_new_tab_page_message_dismissed"
-
-        case .newTabPageFavoritesPlaceholderTapped: return "m_new_tab_page_favorites_placeholder_click"
-
-        case .newTabPageFavoritesSeeMore: return "m_new_tab_page_favorites_see_more"
-        case .newTabPageFavoritesSeeLess: return "m_new_tab_page_favorites_see_less"
-
-        case .newTabPageShortcutClicked(let name):
-            return "m_new_tab_page_shortcut_clicked_\(name)"
-
-        case .newTabPageCustomize: return "m_new_tab_page_customize"
-
-        case .newTabPageCustomizeSectionOff(let sectionName):
-            return "m_new_tab_page_customize_section_off_\(sectionName)"
-        case .newTabPageCustomizeSectionOn(let sectionName):
-            return "m_new_tab_page_customize_section_on_\(sectionName)"
-        case .newTabPageSectionReordered: return "m_new_tab_page_customize_section_reordered"
-
-        case .newTabPageCustomizeShortcutRemoved(let shortcutName):
-            return "m_new_tab_page_customize_shortcut_removed_\(shortcutName)"
-        case .newTabPageCustomizeShortcutAdded(let shortcutName):
-            return "m_new_tab_page_customize_shortcut_added_\(shortcutName)"
 
         // MARK: DuckPlayer
         case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"

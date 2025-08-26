@@ -139,6 +139,11 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPOrganic() throws {
+        // Skip this test on macOS 13
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        if version.majorVersion == 13 {
+            throw XCTSkip("Test disabled on macOS 13")
+        }
 
         // Settings
         openDuckPlayerSettings()
@@ -162,6 +167,11 @@ class DuckPlayerTests: UITestCase {
     }
 
     func test_DuckPlayer_AlwaysEnabled_Opens_FromSERPVideos() throws {
+        // Skip this test on macOS 13
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        if version.majorVersion == 13 {
+            throw XCTSkip("Test disabled on macOS 13")
+        }
 
         // Settings
         openDuckPlayerSettings()

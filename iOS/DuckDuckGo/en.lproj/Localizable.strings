@@ -2221,48 +2221,6 @@ https://duckduckgo.com/mac";
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Shortcuts";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Customize your Favorites and go-to features. Reorder things or hide them to keep it clean.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Your New Tab Page is... New!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favorites";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Shortcuts";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Show, hide, and reorder sections on the new tab page";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SECTIONS";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "SHORTCUTS";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Customize New Tab Page";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Bookmarks";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Downloads";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Passwords";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Settings";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "On any site, open the ••• menu and select **Add Favorite** to add it to your new tab page.";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";
 

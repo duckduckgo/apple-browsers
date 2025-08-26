@@ -107,7 +107,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    private func setupMoreOptionsMenu() {
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
 
@@ -133,7 +133,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                             storage: aiChatPreferencesStorage,
                                             remoteSettings: MockRemoteAISettings(),
                                             featureFlagger: mockFeatureFlagger
-                                          ))
+                                          ),
+                                          isFireWindowDefault: isFireWindowDefault)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -766,6 +767,19 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: false))
         XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
+    }
+
+    @MainActor
+    func testOpenNewWindowItemsAreInCorrectPosition_whenOpenFireWindowByDefaultChanges() {
+        setupMoreOptionsMenu()
+
+        XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newWindowMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newBurnerWindowMenuItem)
+
+        setupMoreOptionsMenu(isFireWindowDefault: true)
+
+        XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newBurnerWindowMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newWindowMenuItem)
     }
 }
 

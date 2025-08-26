@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Бързи Връзки";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Персонализирайте раздела Любими и функциите за достъп. Пренаредете елементите или скрийте някои от тях за по голяма яснота.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Страницата с нов раздел е... Нова!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Любими";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Бързи Връзки";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Показване, скриване и пренареждане на секции на страницата с нов раздел";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "СЕКЦИИ";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "БЪРЗИ ВРЪЗКИ";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Персонализиране на страницата с нов раздел";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Отметки";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Изтеглени файлове";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Пароли";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Настройки";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "В който и да е сайт отворете менюто ••• и изберете **Добавяне към предпочитани**, за да го добавите към страницата с нов раздел.";
-
 /* No comment provided by engineer. */
 "No results found" = "Няма намерени резултати";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Поверително търсене по подразбиране";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo също така има и %1$@, заедно с %2$@ и %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "усъвършенстван, поверителен AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "незадължителен платен абонамент";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Търсене или въвеждане на адрес";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Попитай Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Търсене";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Вторично/второ действие";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показване на пълния адрес на сайта";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(По подразбиране)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Експериментално)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Изпробвайте нашата експериментална опция за задаване на въпроси към Duck.ai директно от адресната лента.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Търсене и Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Само търсене";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Управление на преките пътища за Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Преки пътища за Duck.ai";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Вижте отговори на често задавани въпроси или се свържете с поддръжката на Privacy Pro от нашите страници за помощ.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Изпратете отзив";
+/* Share Feedback Button */
+"subscription.feedback" = "Споделяне на отзив";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Отмени";

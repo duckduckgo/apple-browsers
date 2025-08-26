@@ -37,6 +37,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
+    func onDismissRequested()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -242,6 +243,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
         switchBarVC.unfocusTextField()
+        delegate?.onDismissRequested()
         dismissAnimated()
     }
 

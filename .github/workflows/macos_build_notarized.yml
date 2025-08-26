@@ -41,6 +41,10 @@ on:
         description: "Branch name"
         required: false
         type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
       build-number-override:
         description: "Override build number (for Alpha builds)"
         required: false
@@ -104,7 +108,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        ref: ${{ env.branch }}
+        ref: ${{ inputs.commit-sha || env.branch }}
 
     - name: Start measuring duration
       id: start-duration
@@ -304,6 +308,7 @@ jobs:
       app-version: ${{ needs.export-notarized-app.outputs.app-version }}
       app-name: ${{ needs.export-notarized-app.outputs.app-name }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
+      branch: ${{ inputs.branch || github.ref_name }}
       upload-to: ${{ needs.export-notarized-app.outputs.upload-to }}
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       RUNS_ON: macos-15 # keep this in sync with runs-on above
@@ -314,7 +319,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        ref: ${{ inputs.branch || github.ref_name }}
+        ref: ${{ inputs.commit-sha || env.branch }}
         sparse-checkout: |
           .github
           Gemfile
@@ -487,6 +492,7 @@ jobs:
     runs-on: macos-15
 
     env:
+      branch: ${{ inputs.branch || github.ref_name }}
       success: ${{ (needs.export-notarized-app.result == 'success') && (needs.create-dmg.result == 'success' || needs.create-dmg.result == 'skipped') }}
       failure: ${{ (needs.export-notarized-app.result == 'failure') || (needs.create-dmg.result == 'failure') }}
 
@@ -494,7 +500,7 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch || github.ref_name }}
+          ref: ${{ inputs.commit-sha || env.branch }}
           sparse-checkout: |
             .github
             Gemfile

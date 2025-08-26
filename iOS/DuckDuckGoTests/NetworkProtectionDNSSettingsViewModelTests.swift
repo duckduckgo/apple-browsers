@@ -42,7 +42,7 @@ final class NetworkProtectionDNSSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(model.dnsSettings, vpnSettings.dnsSettings)
         XCTAssertFalse(model.isCustomDNSSelected)
         XCTAssertEqual(model.customDNSServers, vpnSettings.customDnsServers.joined(separator: ", "))
-        XCTAssertFalse(model.isBlockRiskyDomainsOn)
+        XCTAssertTrue(model.isBlockRiskyDomainsOn)
     }
 
     func test_WhenUpdateDNSSettingsToCustomThenPropagatesToVpnSettings() {

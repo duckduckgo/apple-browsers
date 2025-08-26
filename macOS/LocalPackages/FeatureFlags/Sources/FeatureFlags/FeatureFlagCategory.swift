@@ -47,7 +47,8 @@ extension FeatureFlag: FeatureFlagCategorization {
         switch self {
         case .aiChatGlobalSwitch,
                 .aiChatSidebar,
-                .aiChatTextSummarization:
+                .aiChatTextSummarization,
+                .duckAISearchParameter:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage:
@@ -62,7 +63,6 @@ extension FeatureFlag: FeatureFlagCategorization {
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .networkProtectionRiskyDomainsProtection,
                 .vpnToolbarUpsell:
             return .vpn
         default:

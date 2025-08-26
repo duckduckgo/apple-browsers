@@ -1,0 +1,18 @@
+// Push Notification-related pixel definitions
+{
+    'm_push-notification_local-provisional_inactive-user-tap': {
+        description: 'Fires when a user taps a local provisional push notification that was scheduled due to inactivity.',
+        owners: ['hanyutang-sandra'],
+        triggers: ['other'],
+        suffixes: ['form_factor'],
+        parameters: [
+            'appVersion',
+            'pixelSource',
+            {
+                key: 'daysInactive',
+                description: 'Number of days the user has been inactive',
+                type: 'integer',
+            },
+        ],
+    },
+}

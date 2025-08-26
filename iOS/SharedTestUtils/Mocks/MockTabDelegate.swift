@@ -41,6 +41,7 @@ final class MockTabDelegate: TabDelegate {
     private(set) var didRequestFireButtonPulseCalled = false
     private(set) var tabDidRequestPrivacyDashboardButtonPulseCalled = false
     private(set) var privacyDashboardAnimated: Bool?
+    var isAIChatEnabled = false
 
 
     func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }

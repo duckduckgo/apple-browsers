@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Genveje";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Tilpas dine favoritter og go-to-funktioner. Flyt rundt på ting, eller skjul dem for at holde det enkelt.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Din nye faneside er... Ny!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favoritter";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Genveje";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Vis, skjul og omarranger sektioner på den nye faneside";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SEKTIONER";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "GENVEJE";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Tilpas siden Ny fane";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Bogmærker";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Downloads";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Adgangskoder";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Indstillinger";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "På et hvilket som helst websted skal du åbne menuen ••• og vælge **Tilføj favorit** for at føje den til din nye faneside.";
-
 /* No comment provided by engineer. */
 "No results found" = "Ingen resultater fundet";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Søg fortroligt som standard";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo har også et %1$@, som byder på %2$@ og %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "avanceret, privat AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valgfrit betalt abonnement";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Søg eller indtast adresse";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Spørg Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Søg";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundær/anden Handling";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Vis hele webstedsadressen";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Standard)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Eksperimentel)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Prøv vores eksperimentelle mulighed for at spørge Duck.ai direkte fra adresselinjen.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Søg & Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Kun søgning";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Administrer Duck.ai-genveje";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-genveje";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Få svar på ofte stillede spørgsmål, eller kontakt Privacy Pro-support fra vores hjælpesider.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Send tilbagemelding";
+/* Share Feedback Button */
+"subscription.feedback" = "Del feedback";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Annullér";

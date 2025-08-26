@@ -122,8 +122,12 @@ private extension Tab {
     }
 }
 
-final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+final class MockVisualizeFireAnimationDecider: VisualizeFireSettingsDecider {
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()
 
     var shouldShowFireAnimation: Bool = false
+
+    var isOpenFireWindowByDefaultEnabled: Bool = false
+
+    var shouldShowOpenFireWindoyByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
 }

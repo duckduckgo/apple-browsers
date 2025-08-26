@@ -1810,33 +1810,6 @@ public struct UserText {
         public static let footerDisabledMessage = NSLocalizedString("malicious-site-protection.settings.footer.message", value: "Disabling this feature can put your personal information at risk.", comment: "Footer text for Malicious Site Protection settings warning the user about the risks of disabling the feature")
     }
 
-    // MARK: - New Tab Page
-
-    // MARK: Shortcuts
-    public static let newTabPageShortcutBookmarks = NSLocalizedString("new.tab.page.shortcut.bookmarks", value: "Bookmarks", comment: "Shortcut title leading to Bookmarks")
-    public static let newTabPageShortcutAIChat = NSLocalizedString("new.tab.page.shortcut.ai.chat", value: "Duck.ai", comment: "Shortcut title leading to AI Chat")
-    public static let newTabPageShortcutPasswords = NSLocalizedString("new.tab.page.shortcut.passwords", value: "Passwords", comment: "Shortcut title leading to Passwords")
-
-    public static let newTabPageShortcutDownloads = NSLocalizedString("new.tab.page.shortcut.downloads", value: "Downloads", comment: "Shortcut title leading to Downloads")
-    public static let newTabPageShortcutSettings = NSLocalizedString("new.tab.page.shortcut.settings", value: "Settings", comment: "Shortcut title leading to app settings")
-
-    // MARK: Tooltip
-    public static let newTabPageTooltipBody = NSLocalizedString("new.tab.page.tooltip.body", value: "On any site, open the ••• menu and select **Add Favorite** to add it to your new tab page.", comment: "Text shown on the favorites info tooltip")
-
-    // MARK: Settings
-
-    public static let newTabPageSettingsTitle = NSLocalizedString("new.tab.page.settings.title", value: "Customize New Tab Page", comment: "Title of New Tab Page preferences page.")
-    public static let newTabPageSettingsSectionsHeaderTitle = NSLocalizedString("new.tab.page.settings.sections.header.title", value: "SECTIONS", comment: "Header title of the group allowing for setting up new tab page sections")
-    public static let newTabPageSettingsSectionsDescription = NSLocalizedString("new.tab.page.settings.sections.description", value: "Show, hide, and reorder sections on the new tab page", comment: "Footer of the group allowing for setting up new tab page sections")
-    public static let newTabPageSettingsShortcutsHeaderTitle = NSLocalizedString("new.tab.page.settings.shortcuts.header.title", value: "SHORTCUTS", comment: "Header title of the shortcuts in New Tab Page preferences.")
-    public static let newTabPageSettingsSectionNameFavorites = NSLocalizedString("new.tab.page.settings.section.name.favorites", value: "Favorites", comment: "Name of favorites section setting")
-    public static let newTabPageSettingsSectionNameShortcuts = NSLocalizedString("new.tab.page.settings.section.name.shortcuts", value: "Shortcuts", comment: "Name of shortcuts section setting")
-
-    // MARK: Intro message
-
-    public static let newTabPageIntroMessageTitle = NSLocalizedString("new.tab.page.intro.message.title", value: "Your New Tab Page is... New!", comment: "Title of information message about New Tab Page redesign")
-    public static let newTabPageIntroMessageBody = NSLocalizedString("new.tab.page.intro.message.body", value: "Customize your Favorites and go-to features. Reorder things or hide them to keep it clean.", comment: "Information message about New Tab Page redesign")
-
 
     // MARK: - Onboarding
     public enum Onboarding {

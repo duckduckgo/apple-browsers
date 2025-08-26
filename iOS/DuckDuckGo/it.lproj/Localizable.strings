@@ -1556,7 +1556,7 @@
 "Enrolled: %@" = "Iscritti: %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Pillola d'ingresso";
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Accedi";
@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Scorciatoie";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Personalizza i tuoi Preferiti e le funzionalità principali. Riorganizza gli elementi o nascondili per mantenere tutto in ordine.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "La tua pagina Nuova scheda è... Nuova!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Preferiti";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Scorciatoie";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Mostra, nascondi e riordina le sezioni nella nuova scheda";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SEZIONI";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "Scorciatoie";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Personalizza pagina Nuova scheda";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Segnalibri";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Download";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Password";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Impostazioni";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Su qualsiasi sito, apri il menu ••• e seleziona **Aggiungi preferito** per aggiungerlo alla nuova scheda.";
-
 /* No comment provided by engineer. */
 "No results found" = "Nessun risultato trovato";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Cerca privatamente per impostazione predefinita";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ha anche un %1$@, disponibile con una %2$@ e %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "IA avanzata, privata";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "abbonamento opzionale a pagamento";
@@ -2690,13 +2654,22 @@
 "Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Ripristina lo stato modale di priming";
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "Results" = "Risultati";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Cerca o digita l'indirizzo";
+
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Chiedi a Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Ricerca";
 
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Azione secondaria / Seconda azione";
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Mostra l'indirizzo completo del sito";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Predefinito)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Sperimentale)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Prova la nostra opzione sperimentale per chiedere a Duck.ai direttamente dalla barra degli indirizzi.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Ricerca e Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Solo ricerca";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Gestisci scorciatoie Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Scorciatoie Duck.ai";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Ottieni risposte alle domande frequenti o contatta l'assistenza di Privacy Pro dalle nostre pagine di assistenza.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Invia feedback";
+/* Share Feedback Button */
+"subscription.feedback" = "Condividi feedback";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Annulla";

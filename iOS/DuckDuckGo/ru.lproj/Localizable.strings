@@ -1076,7 +1076,7 @@
 "crash.report.dialog.title" = "Автоматически отправлять отчеты о сбоях?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Текущее количество отклонений: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "СОБСТВЕННОЕ СОДЕРЖИМОЕ ЯЧЕЙКИ";
@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Ярлыки";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "К вашим услугам настройки «Избранного» и важнейших функций. Для поддержания порядка отдельные элементы можно переупорядочить или скрыть.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Ваша страница новой вкладки... В новом виде!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Избранное";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Ярлыки";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Показать, скрыть или изменить порядок разделов на странице новой вкладки";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "РАЗДЕЛЫ";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "Ярлыки";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Страница новой вкладки";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Закладки";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Загрузки";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Пароли";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Настройки";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Чтобы добавить сайт к странице новой вкладки, откройте меню ••• и выберите пункт **Добавить в избранное**.";
-
 /* No comment provided by engineer. */
 "No results found" = "Ничего не найдено";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Конфиденциальный поиск по умолчанию";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "В арсенале DuckDuckGo также имеется %1$@, куда входят %2$@ и %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "приватные чаты с передовыми ИИ-моделями";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "платной подписке";
@@ -2687,7 +2651,7 @@
 "Reset" = "Сбросить";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Сбросить счетчик отклонения таблеток";
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
@@ -2697,6 +2661,15 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Введите поисковый запрос или адрес сайта";
+
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Спросить у Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Поиск";
 
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Вторичное / Второе действие";
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показывать полный адрес сайта";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(по умолчанию)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(экспериментальный вариант)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Попробуйте нашу экспериментальную функцию: вопрос чат-боту Duck.ai прямо из адресной строки.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Поиск и Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Только поиск";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Управление ярлыками Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Ярлыки Duck.ai";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "На страницах справочного раздела вы найдете ответы на часто задаваемые вопросы, а также контактную информацию службы поддержки Privacy Pro.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Отправить отзыв";
+/* Share Feedback Button */
+"subscription.feedback" = "Оставьте нам отзыв";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Отменить";

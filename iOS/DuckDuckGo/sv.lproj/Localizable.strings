@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Genvägar";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Anpassa dina favoriter och funktioner. Ordna om saker och ting eller göm dem för att hålla layouten minimalistisk.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Din nya fliksida är... ny!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Favoriter";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Genvägar";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Visa, dölja och ändra ordning på avsnitt på den nya fliksidan";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "AVSNITT";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "GENVÄGAR";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Anpassa sidan Ny flik";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Bokmärken";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Nerladdningar";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Lösenord";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Inställningar";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Öppna menyn ••• på valfri webbplats och välj **Lägg till favorit** för att lägga till den på din nya fliksida.";
-
 /* No comment provided by engineer. */
 "No results found" = "Inga resultat hittades";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Sök privat som standard";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo har också ett %1$@ där det ingår ett %2$@ och %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "avancerad, privat AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "valfri betald prenumeration";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Sök eller ange adress";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Fråga Duck.ai";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Sök";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundär/andra åtgärd";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Visa hela webbplatsadressen";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Standard)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Experimentell)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Prova vår experimentella funktion och fråga Duck.ai direkt från adressfältet.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Sök & Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Sök endast";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Hantera Duck.ai-genvägar";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-genvägar";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Få svar på vanliga frågor eller kontakta supporten för Privacy Pro på våra hjälpsidor.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Skicka återkoppling";
+/* Share Feedback Button */
+"subscription.feedback" = "Berätta vad du tycker";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Avbryt";

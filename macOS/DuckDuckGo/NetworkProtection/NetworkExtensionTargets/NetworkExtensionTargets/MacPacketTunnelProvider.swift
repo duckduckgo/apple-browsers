@@ -208,7 +208,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             case .networkPathChanged:
                 break
             }
-        case .reportLatency(let result):
+        case .reportLatency(let result, let location):
             vpnLogger.log(result)
 
             switch result {
@@ -222,6 +222,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionLatency(quality: quality),
                     frequency: .legacyDailyAndCount,
+                    withAdditionalParameters: ["location": location.stringValue],
                     includeAppVersionParameter: true)
             }
         case .rekeyAttempt(let step):

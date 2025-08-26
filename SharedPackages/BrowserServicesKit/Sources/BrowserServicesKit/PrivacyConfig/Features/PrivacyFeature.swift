@@ -45,7 +45,6 @@ public enum PrivacyFeature: String {
     case dbp
     case sync
     case privacyDashboard
-    case history
     case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
@@ -55,7 +54,6 @@ public enum PrivacyFeature: String {
     case brokenSitePrompt
     case remoteMessaging
     case additionalCampaignPixelParams
-    case newTabPageImprovements
     case syncPromotion
     case autofillSurveys
     case marketplaceAdPostback
@@ -124,6 +122,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case defaultBrowserTutorial
 
     case widgetReporting
+
+    // Local inactivity provisional notifications delivered to Notification Center.
+    // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
+    case inactivityNotification
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

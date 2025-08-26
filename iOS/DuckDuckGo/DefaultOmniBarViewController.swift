@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import PrivacyDashboard
 import Suggestions
 import Bookmarks
@@ -32,8 +33,9 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private lazy var omniBarView = DefaultOmniBarView.create()
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
+    private var cancellables = Set<AnyCancellable>()
 
-//    let editModeTransitioningDelegate = OmniBarEditingStateTransitioningDelegate()
+    private var animateNextEditingTransition = true
 
     override func loadView() {
         view = omniBarView
@@ -56,9 +58,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         updateShadowAppearanceByApplyingLayerMask()
     }
 
+    
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
-            presentExperimentalEditingState(for: textField)
+            if textFieldTapped {
+                omniDelegate?.onExperimentalAddressBarTapped()
+            }
+            presentExperimentalEditingState(for: textField, animated: animateNextEditingTransition)
+
             return false
         }
 
@@ -144,6 +151,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingSmallTopSpacing = false
     }
 
+    override func beginEditing(animated: Bool) {
+        animateNextEditingTransition = animated
+
+        super.beginEditing(animated: animated)
+        
+        animateNextEditingTransition = true
+    }
+
     override func endEditing() {
         super.endEditing()
         editingStateViewController?.dismissAnimated()
@@ -167,7 +182,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                     clip: shouldClipShadows)
     }
 
-    private func presentExperimentalEditingState(for textField: UITextField) {
+    private func presentExperimentalEditingState(for textField: UITextField, animated: Bool = true) {
         guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
@@ -183,9 +198,16 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         editingStateViewController.automaticallySelectsTextOnAppear = shouldAutoSelectText
         
+        switchBarHandler.clearButtonTappedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.omniDelegate?.onExperimentalAddressBarClearPressed()
+            }
+            .store(in: &cancellables)
+        
         self.editingStateViewController = editingStateViewController
 
-        present(editingStateViewController, animated: true)
+        present(editingStateViewController, animated: animated)
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
@@ -249,6 +271,11 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
+    }
+
+    func onDismissRequested() {
+        // Fire cancel pixel only (no other side effects) when experimental bar is dismissed via back button
+        omniDelegate?.onExperimentalAddressBarCancelPressed()
     }
 }
 

@@ -111,6 +111,8 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestRefresh(tab: TabViewController)
     func tabDidRequestNavigationToDifferentSite(tab: TabViewController)
+    
+    var isAIChatEnabled: Bool { get }
 }
 
 extension TabDelegate {

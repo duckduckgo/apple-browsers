@@ -2287,48 +2287,6 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Šaukiniai";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Tinkinkite savo mėgstamiausius ir pagrindines funkcijas. Pertvarkykite elementus arba paslėpkite juos, kad užtikrintumėte tvarką.";
-
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Jūsų naujo skirtuko puslapis yra... Atnaujintas!";
-
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Mėgstami";
-
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Šaukiniai";
-
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Rodyti, slėpti ir pertvarkyti skiltis naujame skirtuko puslapyje";
-
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SKILTYS";
-
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "ŠAUKINIAI";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Tinkinti naujo skirtuko puslapį";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Žymės";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Atsisiuntimai";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Slaptažodžiai";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Nustatymai";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Bet kurioje interneto svetainėje atidarykite ••• meniu ir pasirinkite **Pridėti mėgstamą**, kad pridėtumėte naujame skirtuko puslapyje.";
-
 /* No comment provided by engineer. */
 "No results found" = "Rezultatų nerasta";
 
@@ -2349,6 +2307,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Vykdykite paiešką privačiai pagal numatytąjį nustatymą";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "„DuckDuckGo“ taip pat turi %1$@, prieinamą su %2$@ ir %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pažangus, privatus dirbtinis intelektas";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "pasirenkama mokama prenumerata";
@@ -2698,6 +2662,15 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Ieškoti arba įvesti adresą";
 
+/* Placeholder text for the search input field when searching Duck.ai */
+"search.input.field.placeholder.search.duckai" = "Paklausk „Duck.ai“";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Paieška";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Antrinis / antrasis veiksmas";
 
@@ -2757,6 +2730,24 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rodyti visą svetainės adresą";
+
+/* Caption indicating the default option in the AI experimental picker */
+"settings.ai.experimental.picker.default" = "(Numatytasis)";
+
+/* Caption indicating the experimental option in the AI experimental picker */
+"settings.ai.experimental.picker.experimental" = "(Eksperimentinis)";
+
+/* Footer under the AI experimental picker, descriptive sentence without link */
+"settings.ai.experimental.picker.footer" = "Išbandykite mūsų eksperimentinę parinktį ir užduokite klausimą „Duck.ai“ tiesiai iš adreso juostos.";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Paieška ir „Duck.ai“";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Tik paieška";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "„Duck.ai“ sparčiųjų klavišų valdymas";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "„Duck.ai“ spartieji klavišai";
@@ -3193,8 +3184,8 @@
 /* FAQ Description */
 "subscription.faq.description" = "Gaukite atsakymus į dažniausiai užduodamus klausimus arba susisiekite su „Privacy Pro“ palaikymo tarnyba mūsų pagalbos puslapiuose.";
 
-/* Send Feedback Button */
-"subscription.feedback" = "Siųsti atsiliepimą";
+/* Share Feedback Button */
+"subscription.feedback" = "Bendrinti atsiliepimą";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Atšaukti";

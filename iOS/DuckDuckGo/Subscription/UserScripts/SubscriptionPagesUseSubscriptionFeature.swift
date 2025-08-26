@@ -844,9 +844,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         print("SAMDEBUG: Purchasing subscription...")
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
-        case .success(let transactionJWS):
+        case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
-            purchaseTransactionJWS = transactionJWS
+            purchaseTransactionJWS = result.transactionJWS
+            
+            // Capture account creation duration in WidePixel data
+            if let accountCreationDuration = result.accountCreationDuration {
+                data.createAccountDuration = accountCreationDuration
+            }
 
         case .failure(let error):
             Logger.subscription.error("App store purchase error: \(error.localizedDescription)")
@@ -885,6 +890,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.fault("Purchase transaction JWS is empty")
             assertionFailure("Purchase transaction JWS is empty")
             setTransactionStatus(.idle)
+            
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            }
+            
             return nil
         }
 

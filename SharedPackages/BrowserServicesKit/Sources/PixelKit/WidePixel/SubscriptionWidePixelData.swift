@@ -18,7 +18,7 @@
 
 import Foundation
 
-public struct SubscriptionPurchaseWidePixelData: WidePixelData {
+public class SubscriptionPurchaseWidePixelData: WidePixelData {
     public static let pixelName = "subscription_purchase_debug"
 
     public var globalData: WidePixelGlobalData
@@ -27,7 +27,7 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
 
     public let purchasePlatform: PurchasePlatform
     public var subscriptionIdentifier: String?
-    public var freeTrialEligible: Bool?
+    public var freeTrialEligible: Bool
 
     public var createAccountDuration: WidePixel.MeasuredInterval?
     public var completePurchaseDuration: WidePixel.MeasuredInterval?
@@ -38,8 +38,8 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
 
     public init(purchasePlatform: PurchasePlatform,
                 failingStep: FailingStep? = nil,
-                subscriptionIdentifier: String? = nil,
-                freeTrialEligible: Bool? = nil,
+                subscriptionIdentifier: String?,
+                freeTrialEligible: Bool,
                 createAccountDuration: WidePixel.MeasuredInterval? = nil,
                 completePurchaseDuration: WidePixel.MeasuredInterval? = nil,
                 activateAccountDuration: WidePixel.MeasuredInterval? = nil,
@@ -89,9 +89,7 @@ extension SubscriptionPurchaseWidePixelData {
             parameters[WidePixelParameter.SubscriptionFeature.subscriptionIdentifier] = subscriptionIdentifier
         }
 
-        if let freeTrialEligible = freeTrialEligible {
-            parameters[WidePixelParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
-        }
+        parameters[WidePixelParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
 
         if let errorData = errorData {
             parameters[WidePixelParameter.Feature.errorDomain] = errorData.domain
@@ -119,7 +117,7 @@ extension SubscriptionPurchaseWidePixelData {
         return parameters
     }
 
-    public mutating func markAsFailed(at step: FailingStep, error: Error) {
+    public func markAsFailed(at step: FailingStep, error: Error) {
         self.failingStep = step
         self.errorData = WidePixelErrorData(error: error)
     }

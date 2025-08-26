@@ -18,14 +18,15 @@
 
 import Foundation
 import Subscription
+import PixelKit
 
 public final class AppStorePurchaseFlowMockV2: AppStorePurchaseFlowV2 {
-    public var purchaseSubscriptionResult: Result<TransactionJWS, AppStorePurchaseFlowError>?
+    public var purchaseSubscriptionResult: Result<PurchaseResult, AppStorePurchaseFlowError>?
     public var completeSubscriptionPurchaseResult: Result<PurchaseUpdate, AppStorePurchaseFlowError>?
 
     public init() { }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<TransactionJWS, AppStorePurchaseFlowError> {
+    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
         purchaseSubscriptionResult!
     }
 

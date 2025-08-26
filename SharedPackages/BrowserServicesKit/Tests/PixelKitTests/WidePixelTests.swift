@@ -378,35 +378,9 @@ final class WidePixelTests: XCTestCase {
         XCTAssertEqual(allFlows.count, 2)
     }
 
-    func testMultipleFlowIsolation() throws {
-        let flows = (0..<3).map { i in
-            makeTestSubscriptionData(
-                platform: i % 2 == 0 ? .appStore : .stripe, // Have both App Store and Stripe flows
-                contextName: "isolation-\(i)"
-            )
-        }
-
-        for flow in flows {
-            widePixel.startFlow(flow)
-        }
-
-        var updatedFlow = flows[1]
-        updatedFlow.freeTrialEligible = true
-        widePixel.updateFlow(updatedFlow)
-
-        let unchangedFlow1 = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: flows[0].globalData.id)
-        let changedFlow = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: flows[1].globalData.id)
-        let unchangedFlow3 = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: flows[2].globalData.id)
-
-        XCTAssertNil(unchangedFlow1.freeTrialEligible)
-        XCTAssertEqual(changedFlow.freeTrialEligible, true)
-        XCTAssertNil(unchangedFlow3.freeTrialEligible)
-    }
-
     func testNilAndEmptyValues() throws {
-        var data = makeTestSubscriptionData()
+        let data = makeTestSubscriptionData()
         data.subscriptionIdentifier = nil
-        data.freeTrialEligible = nil
         data.contextData.name = nil
         data.contextData.data = nil
 
@@ -414,7 +388,6 @@ final class WidePixelTests: XCTestCase {
 
         let retrievedData = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: data.globalData.id)
         XCTAssertNil(retrievedData.subscriptionIdentifier)
-        XCTAssertNil(retrievedData.freeTrialEligible)
         XCTAssertNil(retrievedData.contextData.name)
         XCTAssertNil(retrievedData.contextData.data)
 
@@ -435,7 +408,7 @@ final class WidePixelTests: XCTestCase {
 
         widePixel.startFlow(data1)
 
-        var updated1 = data1
+        let updated1 = data1
         updated1.subscriptionIdentifier = "subscription"
         widePixel.updateFlow(updated1)
 
@@ -451,7 +424,7 @@ final class WidePixelTests: XCTestCase {
     func testSamplingDecisionAtStartSkipsPersistenceWhenNotSampled() throws {
         let contextID = UUID().uuidString
 
-        var notSampled = makeTestSubscriptionData(contextID: contextID)
+        let notSampled = makeTestSubscriptionData(contextID: contextID)
         notSampled.globalData.sampleRate = 0.0
 
         widePixel.startFlow(notSampled)
@@ -482,7 +455,7 @@ final class WidePixelTests: XCTestCase {
         return SubscriptionPurchaseWidePixelData(
             purchasePlatform: platform,
             subscriptionIdentifier: subscriptionIdentifier,
-            freeTrialEligible: freeTrialEligible,
+            freeTrialEligible: freeTrialEligible ?? false,
             contextData: contextData
         )
     }

@@ -402,7 +402,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
-
         self.featureFlagger = featureFlagger
 
         aiChatSidebarProvider = AIChatSidebarProvider()

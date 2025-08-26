@@ -98,7 +98,7 @@ public final class WidePixel: WidePixelManaging {
             return
         }
 
-        Self.logger.info("Wide pixel with context ID \(contextID, privacy: .public) updated: \(T.pixelName, privacy: .public)")
+        Self.logger.info("Wide pixel with context ID \(contextID, privacy: .public) updated: \(data.pixelParameters())")
     }
 
     public func getFlowData<T: WidePixelData>(_ type: T.Type, globalID: String) -> T? {

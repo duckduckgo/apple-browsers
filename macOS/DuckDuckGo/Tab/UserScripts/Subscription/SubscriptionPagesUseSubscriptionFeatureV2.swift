@@ -291,8 +291,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 Logger.subscription.log("[Purchase] Purchasing")
                 let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id)
                 switch purchaseResult {
-                case .success(let transactionJWS):
-                    purchaseTransactionJWS = transactionJWS
+                case .success(let result):
+                    purchaseTransactionJWS = result.transactionJWS
+
+                    if let accountCreationDuration = result.accountCreationDuration {
+                        data.createAccountDuration = accountCreationDuration
+                    }
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
@@ -357,9 +361,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
                     startPayment.complete()
+
                     data.completePurchaseDuration = startPayment
                     var activation = WidePixel.MeasuredInterval.startingNow()
+
                     _ = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+
                     activation.complete()
                     data.activateAccountDuration = activation
                     widePixel.updateFlow(data)
@@ -400,15 +407,13 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         } else if subscriptionPlatform == .stripe {
             let emailAccessToken = try? EmailManager().getToken()
             let contextName = await originFrom(originalMessage: message) ?? ""
-            var data = SubscriptionPurchaseWidePixelData(
-                purchasePlatform: .stripe,
-                contextData: WidePixelContextData(name: contextName)
-            )
-
-            var accountCreation = WidePixel.MeasuredInterval.startingNow()
-            data.createAccountDuration = accountCreation
 
             if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                let data = SubscriptionPurchaseWidePixelData(purchasePlatform: .stripe,
+                                                             subscriptionIdentifier: nil, // Not available for Stripe
+                                                             freeTrialEligible: true, // Always true for Stripe
+                                                             contextData: WidePixelContextData(name: contextName))
+
                 widePixel.startFlow(data)
                 self.widePixelData = data
             }
@@ -416,13 +421,15 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: emailAccessToken)
             switch result {
             case .success(let success):
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                    accountCreation.complete()
-                    data.createAccountDuration = accountCreation
-                    widePixel.updateFlow(data)
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData = self.widePixelData {
+                    if let accountCreationDuration = success.accountCreationDuration {
+                        widePixelData.createAccountDuration = accountCreationDuration
+                    }
+
+                    widePixel.updateFlow(widePixelData)
                 }
 
-                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: success)
+                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: success.purchaseUpdate)
             case .failure(let error):
                 await showSomethingWentWrongAlert()
                 switch error {
@@ -432,9 +439,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
                 }
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
-                data.markAsFailed(at: .accountCreate, error: error)
-                widePixel.updateFlow(data)
-                widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData = self.widePixelData {
+                    widePixelData.markAsFailed(at: .accountCreate, error: error)
+                    widePixel.updateFlow(widePixelData)
+                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
+                }
             }
         }
 
@@ -494,13 +504,14 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         _ = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
         activation.complete()
 
-        if var data = widePixelData {
+        if let data = self.widePixelData {
             data.completePurchaseDuration = payment
             data.activateAccountDuration = activation
             widePixel.updateFlow(data)
             widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
             widePixelData = nil
         }
+
         await uiHandler.dismissProgressViewController()
 
         PixelKit.fire(PrivacyProPixel.privacyProPurchaseStripeSuccess, frequency: .legacyDailyAndCount)

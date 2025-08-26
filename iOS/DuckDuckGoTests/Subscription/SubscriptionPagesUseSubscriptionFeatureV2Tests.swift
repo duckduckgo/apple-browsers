@@ -36,16 +36,18 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockNotificationCenter: NotificationCenter!
     var mockWidePixel: WidePixelMock!
+    var mockInternalUserDecider: MockInternalUserDecider!
 
     @MainActor
     override func setUp() {
         super.setUp()
         
         mockSubscriptionManager = SubscriptionManagerMockV2()
-        mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success(.completed))
+        mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
         mockWidePixel = WidePixelMock()
+        mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
             subscriptionManager: mockSubscriptionManager,
@@ -54,7 +56,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: AppStorePurchaseFlowMockV2(),
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             privacyProDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping())
+            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
+            internalUserDecider: mockInternalUserDecider)
     }
     
     override func tearDown() {
@@ -190,7 +193,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionManager.resultStorePurchaseManager = storeManager
 
         let purchaseFlow = AppStorePurchaseFlowMockV2()
-        purchaseFlow.purchaseSubscriptionResult = .success("jws")
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
         purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
 
         let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
@@ -201,6 +204,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             privacyProDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
+            internalUserDecider: mockInternalUserDecider,
             widePixel: mockWidePixel
         )
 
@@ -246,6 +250,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             privacyProDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
+            internalUserDecider: mockInternalUserDecider,
             widePixel: mockWidePixel
         )
 
@@ -277,6 +282,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             privacyProDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
+            internalUserDecider: mockInternalUserDecider,
             widePixel: mockWidePixel
         )
 

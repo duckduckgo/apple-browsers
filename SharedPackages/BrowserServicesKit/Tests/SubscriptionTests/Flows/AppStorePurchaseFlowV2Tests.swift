@@ -19,7 +19,6 @@
 import XCTest
 @testable import Subscription
 @testable import Networking
-import Common
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 
@@ -30,22 +29,16 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
     private var subscriptionManagerMock: SubscriptionManagerMockV2!
     private var storePurchaseManagerMock: StorePurchaseManagerMockV2!
     private var appStoreRestoreFlowMock: AppStoreRestoreFlowMockV2!
-    private var events: [AppStorePurchaseFlowV2Event]!
 
     override func setUp() {
         super.setUp()
         subscriptionManagerMock = SubscriptionManagerMockV2()
         storePurchaseManagerMock = StorePurchaseManagerMockV2()
         appStoreRestoreFlowMock = AppStoreRestoreFlowMockV2()
-        events = []
-        let mapping = EventMapping<AppStorePurchaseFlowV2Event> { [weak self] event, _, _, _ in
-            self?.events.append(event)
-        }
         sut = DefaultAppStorePurchaseFlowV2(
             subscriptionManager: subscriptionManagerMock,
             storePurchaseManager: storePurchaseManagerMock,
-            appStoreRestoreFlow: appStoreRestoreFlowMock,
-            eventMapping: mapping
+            appStoreRestoreFlow: appStoreRestoreFlowMock
         )
     }
 
@@ -66,16 +59,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
         XCTAssertTrue(appStoreRestoreFlowMock.restoreAccountFromPastPurchaseCalled)
         XCTAssertEqual(result, .failure(.activeSubscriptionAlreadyPresent))
-        XCTAssertEqual(events.count, 4)
-        if case let .started(subscriptionIdentifier, freeTrialEligible) = events[safe: 0] {
-            XCTAssertEqual(subscriptionIdentifier, "testSubscriptionID")
-            XCTAssertEqual(freeTrialEligible, false)
-        } else { XCTFail("Expected started event") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case let .failed(errorDescription) = events[safe: 3] {
-            XCTAssertEqual(errorDescription, AppStorePurchaseFlowError.activeSubscriptionAlreadyPresent.localizedDescription)
-        } else { XCTFail("Expected failed(activeSubscriptionAlreadyPresent)") }
     }
 
     func test_purchaseSubscription_withNoProductsFound_returnsError() async {
@@ -95,15 +78,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
                 XCTFail("Unexpected error: \(error)")
             }
         }
-
-        XCTAssertEqual(events.count, 4)
-        if case .started = events[safe: 0] {} else { XCTFail("Expected started") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case let .failed(desc) = events[safe: 3] {
-            let expected = AppStorePurchaseFlowError.accountCreationFailed(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions).localizedDescription
-            XCTAssertEqual(desc, expected)
-        } else { XCTFail("Expected failed(accountCreationFailed)") }
     }
 
     func test_purchaseSubscription_successfulPurchase_returnsTransactionJWS() async {
@@ -115,122 +89,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
 
         XCTAssertTrue(storePurchaseManagerMock.purchaseSubscriptionCalled)
         XCTAssertEqual(result, .success("transactionJWS"))
-        XCTAssertEqual(events.count, 5)
-        if case .started = events[safe: 0] {} else { XCTFail("Expected started") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case .paymentStarted = events[safe: 3] {} else { XCTFail("Expected paymentStarted") }
-        if case .paymentEnded = events[safe: 4] {} else { XCTFail("Expected paymentEnded") }
-    }
-
-    func test_purchaseSubscription_emitsEvents_successPath_withCorrectValues() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions)
-        subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        storePurchaseManagerMock.isEligibleForFreeTrialResult = true
-        storePurchaseManagerMock.purchaseSubscriptionResult = .success("transactionJWS")
-
-        var events: [AppStorePurchaseFlowV2Event] = []
-        let mapping = EventMapping<AppStorePurchaseFlowV2Event> { event, _, _, _ in
-            events.append(event)
-        }
-        let sut = DefaultAppStorePurchaseFlowV2(
-            subscriptionManager: subscriptionManagerMock,
-            storePurchaseManager: storePurchaseManagerMock,
-            appStoreRestoreFlow: appStoreRestoreFlowMock,
-            eventMapping: mapping
-        )
-
-        let result = await sut.purchaseSubscription(with: "testSubscriptionID")
-
-        XCTAssertEqual(result, .success("transactionJWS"))
-        XCTAssertEqual(events.count, 5)
-        if case let .started(subscriptionIdentifier, freeTrialEligible) = events[safe: 0] {
-            XCTAssertEqual(subscriptionIdentifier, "testSubscriptionID")
-            XCTAssertTrue(freeTrialEligible)
-        } else { XCTFail("Expected started event") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case .paymentStarted = events[safe: 3] {} else { XCTFail("Expected paymentStarted") }
-        if case .paymentEnded = events[safe: 4] {} else { XCTFail("Expected paymentEnded") }
-    }
-
-    func test_purchaseSubscription_emitsEvents_restoreShowsActiveSubscription() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .success("someTransactionJWS")
-
-        var events: [AppStorePurchaseFlowV2Event] = []
-        let mapping = EventMapping<AppStorePurchaseFlowV2Event> { event, _, _, _ in events.append(event) }
-        let sut = DefaultAppStorePurchaseFlowV2(
-            subscriptionManager: subscriptionManagerMock,
-            storePurchaseManager: storePurchaseManagerMock,
-            appStoreRestoreFlow: appStoreRestoreFlowMock,
-            eventMapping: mapping
-        )
-
-        let result = await sut.purchaseSubscription(with: "product")
-
-        XCTAssertEqual(result, .failure(.activeSubscriptionAlreadyPresent))
-        XCTAssertEqual(events.count, 4)
-        if case .started = events[safe: 0] {} else { XCTFail("Expected started") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case let .failed(errorDescription) = events[safe: 3] {
-            XCTAssertEqual(errorDescription, AppStorePurchaseFlowError.activeSubscriptionAlreadyPresent.localizedDescription)
-        } else { XCTFail("Expected failed with activeSubscriptionAlreadyPresent") }
-    }
-
-    func test_purchaseSubscription_emitsEvents_cancelled() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions)
-        subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        storePurchaseManagerMock.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseCancelledByUser)
-
-        var events: [AppStorePurchaseFlowV2Event] = []
-        let mapping = EventMapping<AppStorePurchaseFlowV2Event> { event, _, _, _ in events.append(event) }
-        let sut = DefaultAppStorePurchaseFlowV2(
-            subscriptionManager: subscriptionManagerMock,
-            storePurchaseManager: storePurchaseManagerMock,
-            appStoreRestoreFlow: appStoreRestoreFlowMock,
-            eventMapping: mapping
-        )
-
-        let result = await sut.purchaseSubscription(with: "product")
-
-        XCTAssertEqual(result, .failure(.cancelledByUser))
-        XCTAssertEqual(events.count, 6)
-        if case .started = events[safe: 0] {} else { XCTFail("Expected started") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case .paymentStarted = events[safe: 3] {} else { XCTFail("Expected paymentStarted") }
-        if case .paymentEnded = events[safe: 4] {} else { XCTFail("Expected paymentEnded") }
-        if case .cancelled = events[safe: 5] {} else { XCTFail("Expected cancelled") }
-    }
-
-    func test_purchaseSubscription_emitsEvents_failed() async {
-        appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.missingAccountOrTransactions)
-        subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        let underlying = NSError(domain: "test", code: 42)
-        storePurchaseManagerMock.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseFailed(underlying))
-
-        var events: [AppStorePurchaseFlowV2Event] = []
-        let mapping = EventMapping<AppStorePurchaseFlowV2Event> { event, _, _, _ in events.append(event) }
-        let sut = DefaultAppStorePurchaseFlowV2(
-            subscriptionManager: subscriptionManagerMock,
-            storePurchaseManager: storePurchaseManagerMock,
-            appStoreRestoreFlow: appStoreRestoreFlowMock,
-            eventMapping: mapping
-        )
-
-        let result = await sut.purchaseSubscription(with: "product")
-
-        XCTAssertEqual(result, .failure(.purchaseFailed(underlying)))
-        XCTAssertEqual(events.count, 6)
-        if case .started = events[safe: 0] {} else { XCTFail("Expected started") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case .paymentStarted = events[safe: 3] {} else { XCTFail("Expected paymentStarted") }
-        if case .paymentEnded = events[safe: 4] {} else { XCTFail("Expected paymentEnded") }
-        if case let .failed(errorDescription) = events[safe: 5] {
-            XCTAssertEqual(errorDescription, AppStorePurchaseFlowError.purchaseFailed(underlying).localizedDescription)
-        } else { XCTFail("Expected failed with purchaseFailed") }
     }
 
     func test_purchaseSubscription_purchaseCancelledByUser_returnsCancelledError() async {
@@ -242,13 +100,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
         XCTAssertEqual(result, .failure(.cancelledByUser))
-        XCTAssertEqual(events.count, 6)
-        if case .started = events[safe: 0] {} else { XCTFail("Expected started") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case .paymentStarted = events[safe: 3] {} else { XCTFail("Expected paymentStarted") }
-        if case .paymentEnded = events[safe: 4] {} else { XCTFail("Expected paymentEnded") }
-        if case .cancelled = events[safe: 5] {} else { XCTFail("Expected cancelled") }
     }
 
     func test_purchaseSubscription_purchaseFailed_returnsPurchaseFailedError() async {
@@ -261,15 +112,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         let result = await sut.purchaseSubscription(with: "testSubscriptionID")
 
         XCTAssertEqual(result, .failure(.purchaseFailed(underlyingError)))
-        XCTAssertEqual(events.count, 6)
-        if case .started = events[safe: 0] {} else { XCTFail("Expected started") }
-        if case .accountCreationStarted = events[safe: 1] {} else { XCTFail("Expected accountCreationStarted") }
-        if case .accountCreationEnded = events[safe: 2] {} else { XCTFail("Expected accountCreationEnded") }
-        if case .paymentStarted = events[safe: 3] {} else { XCTFail("Expected paymentStarted") }
-        if case .paymentEnded = events[safe: 4] {} else { XCTFail("Expected paymentEnded") }
-        if case let .failed(desc) = events[safe: 5] {
-            XCTAssertEqual(desc, AppStorePurchaseFlowError.purchaseFailed(underlyingError).localizedDescription)
-        } else { XCTFail("Expected failed(purchaseFailed)") }
     }
 
     // MARK: - completeSubscriptionPurchase Tests
@@ -282,10 +124,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
 
         XCTAssertEqual(result, .success(.completed))
-        XCTAssertEqual(events.count, 3)
-        if case .activationStarted = events[safe: 0] {} else { XCTFail("Expected activationStarted") }
-        if case .activationEnded = events[safe: 1] {} else { XCTFail("Expected activationEnded") }
-        if case .succeeded = events[safe: 2] {} else { XCTFail("Expected succeeded") }
     }
 
     func test_completeSubscriptionPurchase_withMissingEntitlements_returnsMissingEntitlementsError() async {
@@ -296,12 +134,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
 
         XCTAssertEqual(result, .failure(.missingEntitlements))
-        XCTAssertEqual(events.count, 3)
-        if case .activationStarted = events[safe: 0] {} else { XCTFail("Expected activationStarted") }
-        if case .activationEnded = events[safe: 1] {} else { XCTFail("Expected activationEnded") }
-        if case let .failed(desc) = events[safe: 2] {
-            XCTAssertEqual(desc, AppStorePurchaseFlowError.missingEntitlements.localizedDescription)
-        } else { XCTFail("Expected failed(missingEntitlements)") }
     }
 
     func test_completeSubscriptionPurchase_withExpiredSubscription_returnsPurchaseFailedError() async {
@@ -312,12 +144,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
         let result = await sut.completeSubscriptionPurchase(with: "transactionJWS", additionalParams: nil)
 
         XCTAssertEqual(result, .failure(.purchaseFailed(AppStoreRestoreFlowErrorV2.subscriptionExpired)))
-        XCTAssertEqual(events.count, 3)
-        if case .activationStarted = events[safe: 0] {} else { XCTFail("Expected activationStarted") }
-        if case .activationEnded = events[safe: 1] {} else { XCTFail("Expected activationEnded") }
-        if case let .failed(desc) = events[safe: 2] {
-            XCTAssertEqual(desc, AppStorePurchaseFlowError.purchaseFailed(AppStoreRestoreFlowErrorV2.subscriptionExpired).localizedDescription)
-        } else { XCTFail("Expected failed(subscriptionExpired)") }
     }
 
     func test_completeSubscriptionPurchase_withConfirmPurchaseError_returnsPurchaseFailedError() async {
@@ -337,21 +163,6 @@ final class AppStorePurchaseFlowV2Tests: XCTestCase {
                 XCTFail("Unexpected error: \(error)")
             }
         }
-        XCTAssertEqual(events.count, 3)
-        if case .activationStarted = events[safe: 0] {} else { XCTFail("Expected activationStarted") }
-        if case .activationEnded = events[safe: 1] {} else { XCTFail("Expected activationEnded") }
-        if case let .failed(desc) = events[safe: 2] {
-            XCTAssertEqual(desc, AppStorePurchaseFlowError.purchaseFailed(OAuthServiceError.invalidResponseCode(HTTPStatusCode.badRequest)).localizedDescription)
-        } else { XCTFail("Expected failed(purchaseFailed)") }
-    }
-}
-
-// MARK: - Test Helpers
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        guard indices.contains(index) else { return nil }
-        return self[index]
     }
 }
 

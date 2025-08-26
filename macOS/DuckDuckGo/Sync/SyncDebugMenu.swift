@@ -129,7 +129,7 @@ final class SyncDebugMenu: NSMenu {
         if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
             let syncPreferences = SyncDialogController(
                 syncService: syncService,
-                syncPausedStateManager: SyncErrorHandler()
+                syncPausedStateManager: syncDataProviders.syncErrorHandler
             )
             syncPreferences.turnOffSync()
         }

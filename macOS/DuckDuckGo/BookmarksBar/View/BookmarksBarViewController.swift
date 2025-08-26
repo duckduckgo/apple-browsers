@@ -247,10 +247,6 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        bookmarkManager.listPublisher.sink { [weak self] list in
-            self?.importBookmarksButton.isHidden = !(list?.topLevelEntities.isEmpty ?? true)
-        }.store(in: &cancellables)
-
         clippedItemsIndicator.publisher(for: \.isMouseOver)
             .sink { [weak self] isMouseOver in
                 guard isMouseOver, let self, let clippedItemsIndicator else { return }

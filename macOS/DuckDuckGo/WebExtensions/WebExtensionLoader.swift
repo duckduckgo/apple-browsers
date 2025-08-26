@@ -37,6 +37,7 @@ final class WebExtensionLoader: WebExtensionLoading {
         case failedToFindContextForPath(path: String)
     }
 
+    @MainActor
     func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext {
         guard let extensionURL = URL(string: path) else {
             assertionFailure("Failed to create URL from path: \(path)")
@@ -45,7 +46,7 @@ final class WebExtensionLoader: WebExtensionLoading {
 
         let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
         let context = makeContext(for: webExtension, at: path)
-        try await controller.load(context)
+        try controller.load(context)
         return context
     }
 

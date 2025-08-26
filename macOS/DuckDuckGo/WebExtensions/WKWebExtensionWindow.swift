@@ -45,8 +45,8 @@ extension MainWindowController: WKWebExtensionWindow {
     }
 
     func setWindowState(_ state: WKWebExtension.WindowState, for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionWindowError.notSupported
+        // assertionFailure("not supported yet")
+        // throw WebExtensionWindowError.notSupported
     }
 
     func isPrivate(for context: WKWebExtensionContext) -> Bool {
@@ -67,8 +67,7 @@ extension MainWindowController: WKWebExtensionWindow {
     }
 
     func focus(for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionWindowError.notSupported
+        print("asd")
     }
 
     func close(for context: WKWebExtensionContext) async throws {

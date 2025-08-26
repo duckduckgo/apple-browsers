@@ -648,6 +648,20 @@ final class BrowserTabViewController: NSViewController {
         switch tabContent {
         case .newtab:
             return featureFlagger.isFeatureOn(.newTabPagePerTab) ? tabViewModel.tab.webView : newTabPageWebViewModel.webView
+        case .webExtensionUrl(let url):
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *),
+               let context = WebExtensionManager.shared.extensionContext(for: url),
+               let configuration = context.webViewConfiguration {
+
+                // Create web view with extension's configuration
+                let webView = WebView(frame: .zero, configuration: configuration)
+                let request = URLRequest(url: url)
+                webView.load(request)
+                return webView
+            }
+#endif
+            return tabViewModel.tab.webView
         default:
             return tabViewModel.tab.webView
         }
@@ -962,17 +976,7 @@ final class BrowserTabViewController: NSViewController {
             addAndLayoutChild(dataBrokerProtectionViewController)
 
         case .webExtensionUrl:
-            removeAllTabContent()
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
-                if let tab = tabViewModel?.tab,
-                   let url = tab.url,
-                   let webExtensionWebView = WebExtensionManager.shared.internalSiteHandler.webViewForExtensionUrl(url) {
-                    self.webExtensionWebView = webExtensionWebView
-                    self.addWebViewToViewHierarchy(webExtensionWebView, tab: tab)
-                }
-            }
-#endif
+            updateTabIfNeeded(tabViewModel: tabViewModel)
         default:
             removeAllTabContent()
         }

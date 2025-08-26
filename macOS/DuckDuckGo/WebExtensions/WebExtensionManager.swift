@@ -97,7 +97,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     // Loads web extensions after selection or application start
     var loader: WebExtensionLoading
 
-    // Context manages the extension's permissions and allows it to inject content, run background logic, show popovers, and display other web-based UI to the user.
+    // Extension contexts
     var contexts: [WKWebExtensionContext] {
         Array(controller.extensionContexts)
     }
@@ -106,7 +106,9 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     lazy var controller: WKWebExtensionController = {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = UserAgent.brandedDefaultSuffix
-        return WKWebExtensionController(configuration: controllerConfiguration)
+        let controller = WKWebExtensionController(configuration: controllerConfiguration)
+        controller.delegate = self
+        return controller
     }()
 
     // Events listening
@@ -183,7 +185,6 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
         eventsListener.controller = controller
 
-        // Load extensions
         let results = await loader.loadWebExtensions(from: pathsCache.cache, into: controller)
         continuation?.yield()
 
@@ -194,8 +195,6 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
                 assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")
             }
         }
-
-        controller.delegate = self
     }
 
     // MARK: - UI
@@ -267,6 +266,11 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         return button
     }
 
+    func extensionContext(for url: URL) -> WKWebExtensionContext? {
+        return contexts.first { context in
+            url.absoluteString.hasPrefix(context.baseURL.absoluteString)
+        }
+    }
 }
 
 @available(macOS 15.4, *)
@@ -294,7 +298,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     func webExtensionController(_ controller: WKWebExtensionController, openNewWindowUsing configuration: WKWebExtension.WindowConfiguration, for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionWindow)? {
 
         // Extract options
-        let tabs = configuration.tabURLs.map { Tab(content: .contentFromURL($0, source: .ui)) }
+        let tabs = configuration.tabURLs.map { Tab(content: .contentFromURL($0, source: .ui), webViewConfiguration: extensionContext.webViewConfiguration) }
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(tabs: tabs),
@@ -387,7 +391,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
     }
-
+/*
     func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext, replyHandler: ((Any?, (any Error)?) -> Void)) {
         // Uncomment when sending messages is implemented in the NativeMessagingHandler
 //        try nativeMessagingHandler.webExtensionController(controller,
@@ -400,7 +404,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     private func webExtensionController(_ controller: WKWebExtensionController!, connectUsingMessagePort port: WKWebExtension.MessagePort!, for extensionContext: WKWebExtensionContext!) async throws {
         try await nativeMessagingHandler.webExtensionController(controller, connectUsingMessagePort: port, for: extensionContext)
     }
-
+*/
 }
 
 @available(macOS 15.4, *)

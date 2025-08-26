@@ -782,6 +782,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
 
         DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseAttempt,

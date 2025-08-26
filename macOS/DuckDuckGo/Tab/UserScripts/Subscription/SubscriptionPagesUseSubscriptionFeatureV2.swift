@@ -233,6 +233,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         return subscriptionOptions
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         PixelKit.fire(PrivacyProPixel.privacyProPurchaseAttempt, frequency: .legacyDailyAndCount)
         struct SubscriptionSelection: Decodable {

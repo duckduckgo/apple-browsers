@@ -37,7 +37,7 @@ struct SanitizedError: CustomNSError {
         ]
 
         if let underlyingError = underlyingError as NSError? {
-            userDictionary["UnderlyingError"] = underlyingError
+            userDictionary[NSUnderlyingErrorKey] = underlyingError
         }
 
         return userDictionary

@@ -339,7 +339,7 @@ final class WidePixelTests: XCTestCase {
         XCTAssertEqual(parameters["global.sample_rate"], "1.0")
 
         // Feature metadata
-        XCTAssertEqual(parameters["feature.name"], SubscriptionPurchaseWidePixelData.pixelName)
+        XCTAssertEqual(parameters["feature.name"], "subscription-purchase")
         XCTAssertNil(parameters["feature.status"])
     }
 

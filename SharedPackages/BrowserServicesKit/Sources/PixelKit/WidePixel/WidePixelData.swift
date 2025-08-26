@@ -146,7 +146,7 @@ extension WidePixelAppData: WidePixelParameterProviding {
         }
 
         if let internalUser {
-            parameters[WidePixelParameter.App.internalUser] = internalUser ? "true" : "false"
+            parameters[WidePixelParameter.App.internalUser] = internalUser ? "true" : nil
         }
 
         return parameters

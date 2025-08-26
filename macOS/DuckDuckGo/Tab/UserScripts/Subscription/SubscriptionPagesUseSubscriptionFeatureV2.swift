@@ -253,15 +253,16 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 }
 
                 Logger.subscription.log("[Purchase] Starting purchase for: \(subscriptionSelection.id, privacy: .public)")
+
                 let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
                 let contextName = await originFrom(originalMessage: message) ?? ""
-                assert(!contextName.isEmpty, "Missing subscription funnel origin")
                 var data = SubscriptionPurchaseWidePixelData(
                     purchasePlatform: .appStore,
                     subscriptionIdentifier: subscriptionSelection.id,
                     freeTrialEligible: freeTrialEligible,
                     contextData: WidePixelContextData(name: contextName)
                 )
+
                 widePixel.startFlow(data)
 
                 await uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
@@ -350,6 +351,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     startPayment.complete()
                     data.completePurchaseDuration = startPayment
                     var activation = WidePixel.MeasuredInterval.startingNow()
+                    _ = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
                     activation.complete()
                     data.activateAccountDuration = activation
                     widePixel.updateFlow(data)
@@ -390,11 +392,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         } else if subscriptionPlatform == .stripe {
             let emailAccessToken = try? EmailManager().getToken()
             let contextName = await originFrom(originalMessage: message) ?? ""
-            assert(!contextName.isEmpty, "Missing subscription funnel origin")
             var data = SubscriptionPurchaseWidePixelData(
                 purchasePlatform: .stripe,
                 contextData: WidePixelContextData(name: contextName)
             )
+
             var accountCreation = WidePixel.MeasuredInterval.startingNow()
             data.createAccountDuration = accountCreation
             widePixel.startFlow(data)
@@ -472,10 +474,13 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         var payment = WidePixel.MeasuredInterval.startingNow()
         await stripePurchaseFlow.completeSubscriptionPurchase()
         payment.complete()
+
+        var activation = WidePixel.MeasuredInterval.startingNow()
+        _ = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
+        activation.complete()
+
         if var data = widePixelData {
             data.completePurchaseDuration = payment
-            var activation = WidePixel.MeasuredInterval.startingNow()
-            activation.complete()
             data.activateAccountDuration = activation
             widePixel.updateFlow(data)
             widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })

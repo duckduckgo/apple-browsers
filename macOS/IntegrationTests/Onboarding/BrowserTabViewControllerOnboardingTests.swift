@@ -41,7 +41,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor override func setUp() {
         autoreleasepool {
-            let tabCollectionViewModel = TabCollectionViewModel()
+            let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
             featureFlagger = MockFeatureFlagger()
             featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
             pixelReporter = CapturingOnboardingPixelReporter()

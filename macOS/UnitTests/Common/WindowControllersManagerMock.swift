@@ -81,10 +81,15 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         showTabCalls.append(content)
     }
 
+    func openTab(_ tab: DuckDuckGo_Privacy_Browser.Tab, afterParentTab parentTab: DuckDuckGo_Privacy_Browser.Tab, selected: Bool) {
+        openTabCalls.append( (tab, parentTab, selected) )
+    }
+
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 
     var showTabCalls: [Tab.TabContent] = []
+    var openTabCalls: [(Tab, Tab, Bool)] = []
 
     struct Open: Equatable {
         let url: URL

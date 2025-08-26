@@ -163,6 +163,7 @@ final class TabCollectionViewModel: NSObject {
         tabsPreferences: TabsPreferences = TabsPreferences.shared,
         windowControllersManager: WindowControllersManagerProtocol? = nil
     ) {
+        assert(!tabCollection.isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
         self.tabCollection = tabCollection
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.burnerMode = burnerMode
@@ -185,18 +186,23 @@ final class TabCollectionViewModel: NSObject {
 
     convenience init(tabCollection: TabCollection,
                      selectionIndex: TabIndex = .unpinned(0),
-                     burnerMode: BurnerMode = .regular) {
+                     burnerMode: BurnerMode = .regular,
+                     windowControllersManager: WindowControllersManagerProtocol? = nil) {
+        assert(!tabCollection.isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
         self.init(tabCollection: tabCollection,
                   selectionIndex: selectionIndex,
                   pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                  burnerMode: burnerMode)
+                  burnerMode: burnerMode,
+                  windowControllersManager: windowControllersManager)
     }
 
-    convenience init(isPopup: Bool, burnerMode: BurnerMode = .regular) {
+    convenience init(isPopup: Bool, burnerMode: BurnerMode = .regular, windowControllersManager: WindowControllersManagerProtocol? = nil) {
+        assert(!isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
         let tabCollection = TabCollection(isPopup: isPopup)
         self.init(tabCollection: tabCollection,
                   pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                  burnerMode: burnerMode)
+                  burnerMode: burnerMode,
+                  windowControllersManager: windowControllersManager)
     }
 
     var selectedTabCancellable: AnyCancellable?

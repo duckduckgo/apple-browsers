@@ -669,9 +669,8 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testPopupVMAppendNewTabRedirectsAndDoesNotGrowTabs() {
         let tabCollection = TabCollection(tabs: [Tab(content: .newtab)], isPopup: true)
-        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
         let windowControllersManager = WindowControllersManagerMock()
-        vm.windowControllersManager = windowControllersManager
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
 
         vm.appendNewTab(with: .newtab, selected: true)
 
@@ -682,9 +681,8 @@ final class TabCollectionViewModelTests: XCTestCase {
     @MainActor
     func testPopupVMInsertOrAppendRedirectsAndDoesNotGrowTabs() {
         let tabCollection = TabCollection(tabs: [Tab(content: .newtab)], isPopup: true)
-        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
         let windowControllersManager = WindowControllersManagerMock()
-        vm.windowControllersManager = windowControllersManager
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
 
         vm.insertOrAppendNewTab(.newtab, selected: false)
 

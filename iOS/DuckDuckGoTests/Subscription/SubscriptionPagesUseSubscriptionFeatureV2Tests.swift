@@ -19,6 +19,7 @@
 
 import XCTest
 import WebKit
+import PixelKit
 @testable import DuckDuckGo
 @testable import BrowserServicesKit
 @testable import Common
@@ -33,6 +34,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     var mockStripePurchaseFlow: StripePurchaseFlowMockV2!
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockNotificationCenter: NotificationCenter!
+    var mockWidePixel: MockWidePixel!
 
     @MainActor
     override func setUp() {
@@ -42,6 +44,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success(.completed))
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
+        mockWidePixel = MockWidePixel()
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
             subscriptionManager: mockSubscriptionManager,
@@ -59,6 +62,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStripePurchaseFlow = nil
         mockSubscriptionFeatureAvailability = nil
         mockNotificationCenter = nil
+        mockWidePixel = nil
         super.tearDown()
     }
     
@@ -173,4 +177,140 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertFalse(featureValue.usePaidDuckAi)
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
+
+    @MainActor
+    func testAppStoreSuccess_EmitsWidePixelWithContextAndDurations() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
+
+        let storeManager = StorePurchaseManagerMockV2()
+        storeManager.isEligibleForFreeTrialResult = true
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.purchaseSubscriptionResult = .success("jws")
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            privacyProDataReporter: nil,
+            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
+            widePixel: mockWidePixel
+        )
+
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        XCTAssertEqual(mockWidePixel.started.count, 1)
+        XCTAssertEqual(mockWidePixel.completions.count, 1)
+
+        let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
+        XCTAssertEqual(started.purchasePlatform, .appStore)
+        XCTAssertEqual(started.subscriptionIdentifier, "yearly")
+        XCTAssertEqual(started.freeTrialEligible, true)
+        XCTAssertEqual(started.contextData.name, "funnel_appsettings_ios")
+
+        let updated = try XCTUnwrap(mockWidePixel.updates.last as? SubscriptionPurchaseWidePixelData)
+        XCTAssertNotNil(updated.completePurchaseDuration?.start)
+        XCTAssertNotNil(updated.completePurchaseDuration?.end)
+        XCTAssertNotNil(updated.activateAccountDuration?.start)
+        XCTAssertNotNil(updated.activateAccountDuration?.end)
+
+        let completion = try XCTUnwrap(mockWidePixel.completions.first)
+        XCTAssertTrue(completion.0 is SubscriptionPurchaseWidePixelData)
+        XCTAssertEqual(completion.1, .success)
+    }
+
+    @MainActor
+    func testAppStoreCancelled_EmitsWidePixelCancelled() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_onboarding_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
+
+        let storeManager = StorePurchaseManagerMockV2()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            privacyProDataReporter: nil,
+            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
+            widePixel: mockWidePixel
+        )
+
+        _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
+
+        XCTAssertEqual(mockWidePixel.started.count, 1)
+        XCTAssertEqual(mockWidePixel.completions.count, 1)
+        let completion = try XCTUnwrap(mockWidePixel.completions.first)
+        XCTAssertEqual(completion.1, .cancelled)
+    }
+
+    @MainActor
+    func testOriginPrecedence_UsesAttributionOriginOverURL() async throws {
+        let urlOrigin = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: urlOrigin)
+        let message = MockWKScriptMessage(name: "subscriptionSelected", body: "", webView: webView)
+
+        let storeManager = StorePurchaseManagerMockV2()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+
+        let purchaseFlow = AppStorePurchaseFlowMockV2()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
+            privacyProDataReporter: nil,
+            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
+            widePixel: mockWidePixel
+        )
+
+        _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
+
+        let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
+        XCTAssertEqual(started.contextData.name, SubscriptionFunnelOrigin.appSettings.rawValue)
+    }
+}
+
+final class MockWidePixel: WidePixelManaging {
+    private(set) var started: [Any] = []
+    private(set) var updates: [Any] = []
+    private(set) var completions: [(Any, WidePixelStatus)] = []
+
+    func startFlow<T>(_ data: T) where T: WidePixelData {
+        started.append(data)
+    }
+
+    func updateFlow<T>(_ data: T) where T: WidePixelData {
+        updates.append(data)
+    }
+
+    func completeFlow<T>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) where T: WidePixelData {
+        completions.append((data, status))
+        onComplete(true, nil)
+    }
+}
+
+final class MockURLWebView: WKWebView {
+    private let mockedURL: URL
+    init(url: URL) {
+        self.mockedURL = url
+        super.init(frame: .zero, configuration: WKWebViewConfiguration())
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override var url: URL? { mockedURL }
 }

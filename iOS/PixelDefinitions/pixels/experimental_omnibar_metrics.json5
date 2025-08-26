@@ -1,5 +1,5 @@
-// See https://app.asana.com/1/137249556945/project/72649045549333/task/XXXX?focus=true
-// Experimental omnibar metrics for Duck.ai discovery, usage, and seamless mode switching
+// See https://app.asana.com/1/137249556945/project/72649045549333/task/1211121614418052?focus=true
+// Experimental omnibar metrics for Duck.ai discovery, usage, and mode switching
 {
     'm_aichat_experimental_omnibar_shown': {
         description: 'Fires when the experimental omnibar with Duck.ai toggle is displayed to the user',

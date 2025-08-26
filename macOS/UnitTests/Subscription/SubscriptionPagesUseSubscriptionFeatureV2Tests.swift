@@ -24,6 +24,7 @@ import WebKit
 import XCTest
 import UserScript
 import PixelKit
+import PixelKitTestingUtilities
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
@@ -41,7 +42,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
-    private var mockWidePixel: MockWidePixel!
+    private var mockWidePixel: WidePixelMock!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -73,7 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
-        mockWidePixel = MockWidePixel()
+        mockWidePixel = WidePixelMock()
 
         sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -429,19 +430,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertEqual(started.contextData.name, "funnel_appsettings_macos")
     }
 
-}
-
-final class MockWidePixel: WidePixelManaging {
-    private(set) var started: [Any] = []
-    private(set) var updates: [Any] = []
-    private(set) var completions: [(Any, WidePixelStatus)] = []
-
-    func startFlow<T>(_ data: T) where T: WidePixelData { started.append(data) }
-    func updateFlow<T>(_ data: T) where T: WidePixelData { updates.append(data) }
-    func completeFlow<T>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) where T: WidePixelData {
-        completions.append((data, status))
-        onComplete(true, nil)
-    }
 }
 
 final class MockURLWebView: WKWebView {

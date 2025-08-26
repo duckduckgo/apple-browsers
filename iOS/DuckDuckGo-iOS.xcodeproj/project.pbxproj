@@ -276,6 +276,7 @@
 		4B821FAC2E21CD3900685484 /* RunDBPDebugModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B821FAB2E21CD3600685484 /* RunDBPDebugModeViewController.swift */; };
 		4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */; };
 		4BB7CBB02AF59C310014A35F /* VPNWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */; };
+		4BB88F3F2E5D701200DE539A /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */; };
 		4BBBBA922B03291700D965DA /* VPNWaitlistUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */; };
 		4BC21A2F27238B7500229F0E /* RunLoopExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */; };
 		4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8622E174D5400391C19 /* DesignResourcesKit */; };
@@ -4052,6 +4053,7 @@
 				9F5412772E3998B000DBF008 /* SetDefaultBrowserTestSupport in Frameworks */,
 				4BC95EAB2D74179B002FAB32 /* PersistenceTestingUtils in Frameworks */,
 				5654CF572E22A9820074E806 /* BrowserServicesKitTestsUtils in Frameworks */,
+				4BB88F3F2E5D701200DE539A /* PixelKitTestingUtilities in Frameworks */,
 				4BC95EA52D741787002FAB32 /* Common in Frameworks */,
 				84EFBCCC2D817CB500706739 /* InlineSnapshotTesting in Frameworks */,
 				4BC95EA72D74178C002FAB32 /* ContentBlocking in Frameworks */,
@@ -8752,6 +8754,7 @@
 				5654CF562E22A9820074E806 /* BrowserServicesKitTestsUtils */,
 				9FE59CD92E309A4F00C4B65D /* SystemSettingsPiPTutorialTestSupport */,
 				9F5412762E3998B000DBF008 /* SetDefaultBrowserTestSupport */,
+				4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 84E341A61E2F7EFB00BDBA6F /* UnitTests.xctest */;
@@ -14214,6 +14217,10 @@
 		4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = "SyncUI-iOS";
+		};
+		4BB88F3E2E5D701200DE539A /* PixelKitTestingUtilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PixelKitTestingUtilities;
 		};
 		4BC5E8622E174D5400391C19 /* DesignResourcesKit */ = {
 			isa = XCSwiftPackageProductDependency;

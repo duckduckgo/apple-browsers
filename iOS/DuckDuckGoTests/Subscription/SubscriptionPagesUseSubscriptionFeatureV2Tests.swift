@@ -26,6 +26,7 @@ import PixelKit
 @testable import UserScript
 @testable import Subscription
 import SubscriptionTestingUtilities
+import PixelKitTestingUtilities
 
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     
@@ -34,7 +35,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     var mockStripePurchaseFlow: StripePurchaseFlowMockV2!
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockNotificationCenter: NotificationCenter!
-    var mockWidePixel: MockWidePixel!
+    var mockWidePixel: WidePixelMock!
 
     @MainActor
     override func setUp() {
@@ -44,7 +45,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success(.completed))
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
-        mockWidePixel = MockWidePixel()
+        mockWidePixel = WidePixelMock()
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
             subscriptionManager: mockSubscriptionManager,
@@ -283,25 +284,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
         XCTAssertEqual(started.contextData.name, SubscriptionFunnelOrigin.appSettings.rawValue)
-    }
-}
-
-final class MockWidePixel: WidePixelManaging {
-    private(set) var started: [Any] = []
-    private(set) var updates: [Any] = []
-    private(set) var completions: [(Any, WidePixelStatus)] = []
-
-    func startFlow<T>(_ data: T) where T: WidePixelData {
-        started.append(data)
-    }
-
-    func updateFlow<T>(_ data: T) where T: WidePixelData {
-        updates.append(data)
-    }
-
-    func completeFlow<T>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) where T: WidePixelData {
-        completions.append((data, status))
-        onComplete(true, nil)
     }
 }
 

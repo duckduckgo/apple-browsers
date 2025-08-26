@@ -13,11 +13,6 @@
                 description: 'Number of days the user has been inactive',
                 type: 'integer',
             },
-            {
-                key: 'copyNumber',
-                description: 'The number of copy variant shown to the user',
-                type: 'integer',
-            },
         ],
     },
 }

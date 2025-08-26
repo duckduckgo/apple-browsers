@@ -809,7 +809,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
-        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore, startupPreferences: startupPreferences, keyValueStore: keyValueStore)
+        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
+                                                             startupPreferences: startupPreferences,
+                                                             keyValueStore: keyValueStore,
+                                                             featureFlagger: featureFlagger)
 
 #if SPARKLE
         if AppVersion.runType != .uiTests {

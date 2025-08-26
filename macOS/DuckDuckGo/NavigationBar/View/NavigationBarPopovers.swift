@@ -62,6 +62,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var downloadsPopover: DownloadsPopover?
     private(set) var autofillOnboardingPopover: AutofillToolbarOnboardingPopover?
     private(set) var historyViewOnboardingPopover: HistoryViewOnboardingPopover?
+    private(set) var sessionRestorePromptPopover: SessionRestorePromptPopover?
 
     private var privacyDashboardPopover: PrivacyDashboardPopover?
     private var privacyInfoCancellable: AnyCancellable?
@@ -337,6 +338,17 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         show(zoomPopover, positionedBelow: button)
 
         zoomPopover.scheduleCloseTimer(source: source)
+    }
+
+    func showSessionRestorePromptPopover(from button: MouseOverButton,
+                                         withDelegate delegate: NSPopoverDelegate,
+                                         ctaCallback: @escaping (Bool) -> Void) {
+        guard closeTransientPopovers() else { return }
+
+        let popover = sessionRestorePromptPopover ?? SessionRestorePromptPopover(ctaCallback: ctaCallback)
+        popover.delegate = delegate
+        sessionRestorePromptPopover = popover
+        show(popover, positionedBelow: button, simulatingMouseDown: false)
     }
 
     func closeEditBookmarkPopover() {

@@ -143,6 +143,7 @@ final class NavigationBarViewController: NSViewController {
     private var navigationButtonsCancellables = Set<AnyCancellable>()
     private var downloadsCancellables = Set<AnyCancellable>()
     private var cancellables = Set<AnyCancellable>()
+    private var sessionRestoreCancellable: AnyCancellable?
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
@@ -1373,6 +1374,10 @@ final class NavigationBarViewController: NSViewController {
 
     func showPasswordManagerPopover(selectedWebsiteAccount: SecureVaultModels.WebsiteAccount) {
         popovers.showPasswordManagerPopover(selectedWebsiteAccount: selectedWebsiteAccount, from: passwordManagementButton, withDelegate: self)
+    }
+
+    func showSessionRestorePromptPopover(ctaCallback: @escaping (Bool) -> Void) {
+        popovers.showSessionRestorePromptPopover(from: optionsButton, withDelegate: self, ctaCallback: ctaCallback)
     }
 
     // MARK: - Overflow menu

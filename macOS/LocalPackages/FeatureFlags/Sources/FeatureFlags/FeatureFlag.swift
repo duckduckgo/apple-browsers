@@ -359,7 +359,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .openFireWindowByDefault:
             return .internalOnly()
         case .restoreSessionPrompt:
-            return .disabled
+            return .internalOnly()
         case .openFileMenuAction:
             return .internalOnly()
         case .duckAISearchParameter:

@@ -22,6 +22,7 @@ import Common
 import PixelKit
 import os.log
 import Persistence
+import BrowserServicesKit
 
 @MainActor
 final class AppStateRestorationManager: NSObject {
@@ -37,6 +38,7 @@ final class AppStateRestorationManager: NSObject {
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private let startupPreferences: StartupPreferences
     private let keyValueStore: ThrowingKeyValueStoring
+    private let featureFlagger: FeatureFlagger
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
     private var appIsRelaunchingAutomatically: Bool
@@ -65,21 +67,23 @@ final class AppStateRestorationManager: NSObject {
         startupPreferences.restorePreviousSession
     }
 
-    convenience init(fileStore: FileStore, startupPreferences: StartupPreferences, keyValueStore: ThrowingKeyValueStoring) {
+    convenience init(fileStore: FileStore, startupPreferences: StartupPreferences, keyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger) {
         let service = StatePersistenceService(fileStore: fileStore, fileName: Constants.fileName)
-        self.init(fileStore: fileStore, service: service, startupPreferences: startupPreferences, keyValueStore: keyValueStore)
+        self.init(fileStore: fileStore, service: service, startupPreferences: startupPreferences, keyValueStore: keyValueStore, featureFlagger: featureFlagger)
     }
 
     init(
         fileStore: FileStore,
         service: StatePersistenceService,
         startupPreferences: StartupPreferences,
-        keyValueStore: ThrowingKeyValueStoring
+        keyValueStore: ThrowingKeyValueStoring,
+        featureFlagger: FeatureFlagger
     ) {
         self.service = service
         self.tabSnapshotCleanupService = TabSnapshotCleanupService(fileStore: fileStore)
         self.startupPreferences = startupPreferences
         self.keyValueStore = keyValueStore
+        self.featureFlagger = featureFlagger
     }
 
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {
@@ -134,13 +138,7 @@ final class AppStateRestorationManager: NSObject {
         // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
         readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
 
-        // If the user has disabled "restore previous session" but the app closed unexpectedly,
-        // offer to restore the last session once (only once, to avoid a crash loop) when possible.
-        let didCloseUnexpectedly = !appDidTerminateAsExpected
-        appDidTerminateAsExpected = false // Set to false so it will be false if the app closes without terminating properly
-        if didCloseUnexpectedly && !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
-            // TODO: display a prompt to restore the last session
-        }
+        showRestoreSessionPromptIfNeeded()
 
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,
@@ -198,5 +196,26 @@ final class AppStateRestorationManager: NSObject {
 
     private func migratePinnedTabsSettingIfNecessary() {
         TabsPreferences.shared.migratePinnedTabsSettingIfNecessary(nil)
+    }
+
+    /// Displays a prompt, if possible, to restore the last session when the user has disabled "restore previous session" and the app closed unexpectedly.
+    private func showRestoreSessionPromptIfNeeded() {
+        guard featureFlagger.isFeatureOn(.restoreSessionPrompt) else { return }
+
+        let didCloseUnexpectedly = !appDidTerminateAsExpected
+        appDidTerminateAsExpected = false // Set to false so it will be false if the app closes without terminating properly
+
+        guard didCloseUnexpectedly && !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale else {
+            return
+        }
+        Task { @MainActor in
+            try? await Task.sleep(interval: 1) // wait for main window to be ready
+            Application.appDelegate.windowControllersManager.activeViewController?
+                .navigationBarViewController
+                .showSessionRestorePromptPopover { [weak self] restoreSession in
+                    guard let self, restoreSession else { return }
+                    readLastSessionState(restoreWindows: true, restoreRegularTabs: true)
+                }
+        }
     }
 }

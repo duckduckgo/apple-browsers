@@ -26,7 +26,7 @@ extension UserText {
     static let pmSaveCredentialsSecurityInfoAutolockOff = NSLocalizedString("pm.save-credentials.security.info.autolock.off", value: "Passwords are encrypted. We recommend setting up Auto-lock to keep your passwords even more secure. [Go to Settings](duck://settings/autofill)", comment: "Info message for the save credentials dialog when the autolock feature is off")
     static let pmUpdateCredentialsTitle = NSLocalizedString("pm.update-credentials.title", value: "Update password?", comment: "Title for the Update Credentials popover")
 
-    static let pmEmptyStateDefaultTitle = NSLocalizedString("pm.empty.default.title", value: "No passwords or credit cards saved yet", comment: "Label for default empty state title")
+    static let pmEmptyStateDefaultTitle = NSLocalizedString("pm.empty.default.title2", value: "Nothing added yet", comment: "Label for default empty state title")
     static let pmEmptyStateDefaultDescription = NSLocalizedString("pm.empty.default.description.extended.v2",
                                                                   value: "Passwords are encrypted. Nobody but you can see them, not even us.",
                                                                   comment: "Label for default empty state description")
@@ -39,7 +39,7 @@ extension UserText {
     static let pmEmptyStateDefaultButtonTitleAllItems = NSLocalizedString("pm.empty.default.button.title", value: "Import From Another Browser", comment: "Import passwords button title for default empty state")
     static let pmEmptyStateSecondaryButtonTitleAllItems = NSLocalizedString("pm.empty.secondary.button.title", value: "Set up Sync & Backup", comment: "Import passwords button title for default empty state")
 
-    static let pmEmptyStateLoginsTitle = NSLocalizedString("pm.empty.logins.title", value: "No passwords saved yet", comment: "Label for logins empty state title")
+    static let pmEmptyStateLoginsTitle = NSLocalizedString("pm.empty.logins.title2", value: "No passwords added yet", comment: "Label for logins empty state title")
     static let pmEmptyStateIdentitiesTitle = NSLocalizedString("pm.empty.identities.title", value: "No Identities", comment: "Label for identities empty state title")
     static let pmEmptyStateCardsTitle = NSLocalizedString("pm.empty.cards.title", value: "No Cards", comment: "Label for cards empty state title")
     static let pmEmptyStateNotesTitle = NSLocalizedString("pm.empty.notes.title", value: "No Notes", comment: "Label for notes empty state title")

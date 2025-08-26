@@ -1317,7 +1317,7 @@ struct UserText {
     static let bookmarksSortByNameDescending = NSLocalizedString("bookmarks.sort.name.desc", value: "Descending", comment: "Button to sort bookmarks by name descending")
 
     static let bookmarksEmptyStateTitle = NSLocalizedString("bookmarks.empty.state.title", value: "No bookmarks yet", comment: "Title displayed in Bookmark Manager when there is no bookmarks yet")
-    static let bookmarksEmptyStateMessage = NSLocalizedString("bookmarks.empty.state.message", value: "If your bookmarks are saved in another browser, you can import them into DuckDuckGo.", comment: "Text displayed in Bookmark Manager when there is no bookmarks yet")
+    static let bookmarksEmptyStateMessage = NSLocalizedString("bookmarks.empty.state.message2", value: "Import bookmarks from another browser or sync them on DuckDuckGo across your devices.", comment: "Text displayed in Bookmark Manager when there is no bookmarks yet")
     static let bookmarksEmptyStateImportButtonTitle = NSLocalizedString("bookmarks.empty.state.importButton.title", value: "Import Bookmarks", comment: "")
     static let bookmarksEmptyStateSyncButtonTitle = NSLocalizedString("bookmarks.empty.state.syncButton.title", value: "Sync Bookmarks", comment: "")
 

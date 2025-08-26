@@ -12037,7 +12037,7 @@
     },
     "bookmarks.empty.state.message" : {
       "comment" : "Text displayed in Bookmark Manager when there is no bookmarks yet",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12091,6 +12091,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Если ваши закладки хранятся в другом браузере, вы можете импортировать их в DuckDuckGo."
+          }
+        }
+      }
+    },
+    "bookmarks.empty.state.message2" : {
+      "comment" : "Text displayed in Bookmark Manager when there is no bookmarks yet",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import bookmarks from another browser or sync them on DuckDuckGo across your devices."
           }
         }
       }
@@ -59030,7 +59042,7 @@
     },
     "pm.empty.default.title" : {
       "comment" : "Label for default empty state title",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59084,6 +59096,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сохраненных паролей или платежных карт пока нет"
+          }
+        }
+      }
+    },
+    "pm.empty.default.title2" : {
+      "comment" : "Label for default empty state title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nothing added yet"
           }
         }
       }
@@ -59210,7 +59234,7 @@
     },
     "pm.empty.logins.title" : {
       "comment" : "Label for logins empty state title",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -59264,6 +59288,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сохраненных паролей пока нет"
+          }
+        }
+      }
+    },
+    "pm.empty.logins.title2" : {
+      "comment" : "Label for logins empty state title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No passwords added yet"
           }
         }
       }

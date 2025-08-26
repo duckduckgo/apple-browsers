@@ -422,8 +422,13 @@ public final class PixelKit {
     }
 
     private func printDebugInfo(pixelName: String, frequency: Frequency, parameters: [String: String], skipped: Bool = false) {
-        let params = parameters.filter { key, _ in !["test"].contains(key) }
-        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public) \(params, privacy: .public)")
+        let params = parameters
+            .filter { key, _ in key != "test" }
+            .sorted { $0.key < $1.key }
+
+        // Sort the params before logging them in debug mode to make it easier to compare multiple subsequent calls
+        let sortedParamsString = params.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", ")
+        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public) [\(sortedParamsString, privacy: .public)]")
     }
 
     private func fireRequestWrapper(

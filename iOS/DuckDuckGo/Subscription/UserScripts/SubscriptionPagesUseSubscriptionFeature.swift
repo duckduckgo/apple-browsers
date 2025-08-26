@@ -589,6 +589,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let privacyProDataReporter: PrivacyProDataReporting?
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
+    private let internalUserDecider: InternalUserDecider
     private let widePixel: WidePixelManaging
     private var widePixelData: SubscriptionPurchaseWidePixelData?
     private var lastFetchedOptions: SubscriptionOptionsV2?
@@ -600,8 +601,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
          appStoreRestoreFlow: AppStoreRestoreFlowV2,
          privacyProDataReporter: PrivacyProDataReporting? = nil,
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
-         widePixel: WidePixelManaging = WidePixel(),
-         widePixelContextName: String? = nil) {
+         internalUserDecider: InternalUserDecider,
+         widePixel: WidePixelManaging = WidePixel()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -609,6 +610,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
+        self.internalUserDecider = internalUserDecider
         self.widePixel = widePixel
     }
 
@@ -830,7 +832,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             purchasePlatform: .appStore,
             subscriptionIdentifier: subscriptionSelection.id,
             freeTrialEligible: freeTrialEligible,
-            contextData: WidePixelContextData(name: subscriptionAttributionOrigin)
+            contextData: WidePixelContextData(name: subscriptionAttributionOrigin),
+            appData: WidePixelAppData(internalUser: internalUserDecider.isInternalUser)
         )
 
         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
@@ -839,6 +842,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         let purchaseTransactionJWS: String
 
+        print("SAMDEBUG: Purchasing subscription...")
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
         case .success(let transactionJWS):
             Logger.subscription.log("Subscription purchased successfully")

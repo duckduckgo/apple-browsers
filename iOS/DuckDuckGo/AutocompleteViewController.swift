@@ -71,6 +71,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         }
     }()
 
+    let showAskAIChat: Bool
+
     init(historyManager: HistoryManaging,
          bookmarksDatabase: CoreDataDatabase,
          appSettings: AppSettings,
@@ -92,7 +94,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975623943806?focus=true
         let isExperimentalAddressBarEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = !isExperimentalAddressBarEnabled && appSettings.currentAddressBarPosition == .bottom
-        let showAskAIChat = featureFlagger.isFeatureOn(.askAIChatSuggestion) && aiChatSettings.isAIChatEnabled
+        self.showAskAIChat = featureFlagger.isFeatureOn(.askAIChatSuggestion) && aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
                                            showMessage: historyMessageManager.shouldShow(),
                                            showAskAIChat: showAskAIChat)
@@ -226,10 +228,11 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             (lastResults.duckduckgoSuggestions.isEmpty ? 0 : sectionPadding) +
             sectionHeight(lastResults.localSuggestions) +
             (lastResults.localSuggestions.isEmpty ? 0 : sectionPadding) +
+            (showAskAIChat ? sectionHeight([.askAIChat(value: "")]) + sectionPadding : 0) +
             messageHeight +
             controllerPadding
 
-        presentationDelegate?
+        self.presentationDelegate?
             .autocompleteDidChangeContentHeight(height: CGFloat(height))
     }
 

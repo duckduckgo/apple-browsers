@@ -37,9 +37,15 @@ struct DaxEasterEggLayout {
         let availableWidth = containerFrame.width - safeAreaInsets.left - safeAreaInsets.right - (safeAreaPadding * 2)
         let availableHeight = containerFrame.height - safeAreaInsets.top - safeAreaInsets.bottom - (safeAreaPadding * 2)
         
+        // Convert image pixel dimensions to points with max 2x upscaling (balance of quality and visibility)
+        let scale = UIScreen.main.scale
+        let maxUpscaleFactor: CGFloat = 2.0
+        let imageWidthInPoints = min(imageSize.width / scale * maxUpscaleFactor, imageSize.width)
+        let imageHeightInPoints = min(imageSize.height / scale * maxUpscaleFactor, imageSize.height)
+        
         // Don't scale beyond actual image size to prevent blurriness
-        let maxWidth = min(availableWidth, imageSize.width)
-        let maxHeight = min(availableHeight, imageSize.height)
+        let maxWidth = min(availableWidth, imageWidthInPoints)
+        let maxHeight = min(availableHeight, imageHeightInPoints)
         
         let imageAspectRatio = imageSize.width / imageSize.height
         
@@ -51,7 +57,6 @@ struct DaxEasterEggLayout {
         }
         
         // Ensure pixel-aligned positioning to prevent blur
-        let scale = UIScreen.main.scale
         let x = round((containerFrame.midX - finalSize.width / 2) * scale) / scale
         let y = round((containerFrame.midY - finalSize.height / 2) * scale) / scale
         let width = round(finalSize.width * scale) / scale

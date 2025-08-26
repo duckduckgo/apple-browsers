@@ -3,28 +3,28 @@
 {
     m_aichat_experimental_omnibar_shown: {
         description: 'Fires when the experimental omnibar with Duck.ai toggle is displayed to the user',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['daily'],
         parameters: ['appVersion'],
     },
     m_aichat_experimental_omnibar_prompt_submitted: {
         description: 'Fires when user submits an AI chat prompt through the experimental omnibar',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily_count'],
+        suffixes: ['first_daily_count'],
         parameters: ['appVersion'],
     },
     m_aichat_experimental_omnibar_query_submitted: {
         description: 'Fires when user submits a search query through the experimental omnibar',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily_count'],
+        suffixes: ['first_daily_count'],
         parameters: ['appVersion'],
     },
     m_aichat_experimental_omnibar_mode_switched: {
         description: 'Fires when user toggles between search and AI chat modes in the experimental omnibar',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: [
             {
@@ -36,30 +36,30 @@
     },
     m_aichat_experimental_omnibar_session_both_modes: {
         description: 'Fires when user has used BOTH search and AI chat modes within the same app session',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily_count'],
+        suffixes: ['first_daily_count'],
         parameters: ['appVersion'],
     },
     m_aichat_legacy_omnibar_shown: {
         description: 'Fires when the legacy omnibar is displayed to the user (baseline comparison for experimental omnibar)',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
         suffixes: ['daily'],
         parameters: ['appVersion'],
     },
     m_aichat_legacy_omnibar_query_submitted: {
         description: 'Fires when user submits a search query through the legacy omnibar (baseline comparison for experimental omnibar)',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily_count'],
+        suffixes: ['first_daily_count'],
         parameters: ['appVersion'],
     },
     m_aichat_legacy_omnibar_aichat_button_pressed: {
         description: 'Fires when user presses the AI chat button in the legacy omnibar (baseline comparison for experimental omnibar AI prompts)',
-        owners: ['pete'],
+        owners: ['aataraxiaa'],
         triggers: ['other'],
-        suffixes: ['daily_count'],
+        suffixes: ['first_daily_count'],
         parameters: ['appVersion'],
     },
 }

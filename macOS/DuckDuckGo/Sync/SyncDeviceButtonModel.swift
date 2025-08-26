@@ -23,16 +23,27 @@ import DDGSync
 
 public final class SyncDeviceButtonModel: ObservableObject {
     @Published var shouldShowSyncButton: Bool = false
+    let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
 
-    init(authStatePublisher: AnyPublisher<SyncAuthState, Never>, initialAuthState: SyncAuthState) {
-        shouldShowSyncButton = initialAuthState == .inactive
+    init(authStatePublisher: AnyPublisher<SyncAuthState, Never>, initialAuthState: SyncAuthState, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+        shouldShowSyncButton = featureFlagger.isFeatureEnabled && (initialAuthState == .inactive)
+
         authStatePublisher
-            .map { $0 == .inactive }
+            .map {
+                featureFlagger.isFeatureEnabled && (state == .inactive)
+            }
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .assign(to: \.shouldShowSyncButton, onWeaklyHeld: self)
             .store(in: &cancellables)
+    }
+}
+
+private extension FeatureFlagger {
+    var isNewSyncEntryPointsFeatureOn: Bool {
+        isFeatureOn(for: .newSyncEntryPoints) & featureFlagger.isFeatureOn(for: .refactorOfSyncPreferences)
     }
 }
 

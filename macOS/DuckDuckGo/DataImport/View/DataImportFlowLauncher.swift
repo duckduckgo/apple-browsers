@@ -48,7 +48,12 @@ final class DataImportFlowLauncher: DataImportFlowLaunching {
     ) {
         let ddgSync = NSApp.delegateTyped.syncService
         let syncFeatureVisibility: DataImportView.SyncFeatureVisibility
-        if case .inactive = ddgSync?.authState, let deviceSyncLauncher = DeviceSyncCoordinator(){
+        let featureFlagger = NSApp.delegateTyped.featureFlagger
+        if
+            case .inactive = ddgSync?.authState,
+            let deviceSyncLauncher = DeviceSyncCoordinator(),
+            isFeatureOn(for: .newSyncEntryPoints),
+            featureFlagger.isFeatureOn(for: .refactorOfSyncPreferences), {
             syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
         } else {
             syncFeatureVisibility = .hide

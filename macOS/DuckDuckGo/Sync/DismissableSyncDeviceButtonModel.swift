@@ -93,6 +93,8 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
 
     private let source: SyncDevicePromoSource
     private let keyValueStore: KeyValueStoring
+    private let syncLauncher: SyncDeviceFlowLaunching?
+    private let featureFlagger: DefaultFeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -125,9 +127,11 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
     }
 
-    init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring, authStatePublisher: AnyPublisher<SyncAuthState, Never>) {
+    init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring, authStatePublisher: AnyPublisher<SyncAuthState, Never>, syncLauncher: SyncDeviceFlowLaunching? = DeviceSyncCoordinator(), featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.source = source
         self.keyValueStore = keyValueStore
+        self.syncLauncher = syncLauncher
+        self.featureFlagger = featureFlagger
         authStatePublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.authState, onWeaklyHeld: self)
@@ -136,6 +140,8 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
 
     func viewDidLoad() {
         guard
+            featureFlagger.isNewSyncEntryPointsFeatureOn,
+            syncLauncher != nil,
             case .inactive = authState,
             !wasDimissed,
             !incrementPresentationCountLimitReturningLimitReached(),
@@ -203,5 +209,11 @@ extension DismissableSyncDeviceButtonModel {
             authStatePublisher = Just<SyncAuthState>(.initializing).eraseToAnyPublisher()
         }
         self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher)
+    }
+}
+
+private extension FeatureFlagger {
+    var isNewSyncEntryPointsFeatureOn: Bool {
+        isFeatureOn(for: .newSyncEntryPoints) & featureFlagger.isFeatureOn(for: .refactorOfSyncPreferences)
     }
 }

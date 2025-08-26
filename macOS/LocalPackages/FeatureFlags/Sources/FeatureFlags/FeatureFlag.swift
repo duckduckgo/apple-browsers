@@ -159,6 +159,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
     case restoreSessionPrompt
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
+    case refactorOfSyncPreferences
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -171,7 +173,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
-                .supportsAlternateStripePaymentFlow:
+                .supportsAlternateStripePaymentFlow,
+                .refactorOfSyncPreferences:
             true
         default:
             false
@@ -230,7 +233,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newFeedbackForm,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
-                .restoreSessionPrompt:
+                .restoreSessionPrompt,
+                .refactorOfSyncPreferences:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -353,6 +357,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .restoreSessionPrompt:
             return .disabled
+        case .refactorOfSyncPreferences:
+            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         }
     }
 }

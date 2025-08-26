@@ -724,6 +724,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     open override func startTunnel(options: [String: NSObject]? = nil) async throws {
+        do {
+            try await startTunnelInternal(options: options)
+        } catch {
+            throw error.sanitizedForXPC()
+        }
+    }
+
+    @MainActor
+    private func startTunnelInternal(options: [String: NSObject]? = nil) async throws {
         Logger.networkProtection.log("🚀 Starting tunnel")
 
         // It's important to have this as soon as possible since it helps setup PixelKit

@@ -595,6 +595,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          subscriptionManager: subscriptionManager,
                                                          moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
                                                          featureFlagger: featureFlagger,
+                                                         isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2,
                                                          onComplete: { [weak self] in
                                                              self?.submenuBuildingCompleteSubject.send(true)
                                                          })
@@ -1177,18 +1178,21 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
     private let featureFlagger: FeatureFlagger
+    private let isUsingAuthV2: Bool
 
     init(targeting target: AnyObject,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
          featureFlagger: FeatureFlagger,
+         isUsingAuthV2: Bool,
          onComplete: @escaping () -> Void = {}) {
 
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.subscriptionManager = subscriptionManager
         self.moreOptionsMenuIconsProvider = moreOptionsMenuIconsProvider
         self.featureFlagger = featureFlagger
+        self.isUsingAuthV2 = isUsingAuthV2
 
         super.init(title: "")
 
@@ -1222,7 +1226,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         if features.contains(.dataBrokerProtection) {
             addItem(dataBrokerProtectionItem)
         }
-        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) && isUsingAuthV2 {
             addItem(paidAIChatItem)
         }
         if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {

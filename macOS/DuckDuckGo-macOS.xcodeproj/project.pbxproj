@@ -3535,6 +3535,8 @@
 		CC0942FE2E16AF9C00E67336 /* FavoritesImportProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FC2E16AF6000E67336 /* FavoritesImportProcessor.swift */; };
 		CC0943002E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */; };
 		CC0943012E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */; };
+		CC0DD90F2E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */; };
+		CC0DD9102E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */; };
 		CC5B3D012E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */; };
 		CC5B3D022E158B9F00115521 /* ChromiumDataImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */; };
 		CC8777092E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
@@ -5674,6 +5676,7 @@
 		CC00A08F2E1D52A700750ED3 /* FirefoxPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxPreferencesTests.swift; sourceTree = "<group>"; };
 		CC0942FC2E16AF6000E67336 /* FavoritesImportProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesImportProcessor.swift; sourceTree = "<group>"; };
 		CC0942FF2E16B6F000E67336 /* FavoritesImportProcessorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesImportProcessorTests.swift; sourceTree = "<group>"; };
+		CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateRestorationManagerTests.swift; sourceTree = "<group>"; };
 		CC5B3D002E158B9F00115521 /* ChromiumDataImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumDataImporterTests.swift; sourceTree = "<group>"; };
 		CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReader.swift; sourceTree = "<group>"; };
 		CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReaderTests.swift; sourceTree = "<group>"; };
@@ -7881,6 +7884,7 @@
 				4B11060325903E570039B979 /* CoreDataEncryptionTesting.xcdatamodeld */,
 				B662D3DD275613BB0035D4D6 /* EncryptionKeyStoreMock.swift */,
 				B6A5A27825B93FFE00AA7ADA /* StateRestorationManagerTests.swift */,
+				CC0DD90E2E5DD74600277E46 /* AppStateRestorationManagerTests.swift */,
 				B6A5A27D25B9403E00AA7ADA /* FileStoreMock.swift */,
 				4BBF0916282DD6EF00EE1418 /* TemporaryFileHandlerTests.swift */,
 				378205F52837CBA800D1D4AA /* SavedStateMock.swift */,
@@ -14065,6 +14069,7 @@
 				3706FE84293F661700E42796 /* TabCollectionViewModelTests+PinnedTabs.swift in Sources */,
 				B603975229C1FFAD00902A34 /* ExpectedNavigationExtension.swift in Sources */,
 				3706FE85293F661700E42796 /* BWRequestTests.swift in Sources */,
+				CC0DD9102E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */,
 				1DA7FEE52D883436004882E9 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				37B16FFA2DBA3AF100910812 /* TabCrashIndicatorModelTests.swift in Sources */,
 				3135647F2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift in Sources */,
@@ -15698,6 +15703,7 @@
 				7B09CBA92BA4BE8100CF245B /* NetworkProtectionPixelEventTests.swift in Sources */,
 				B6DA441E2616C84600DD1EC2 /* PixelStoreMock.swift in Sources */,
 				B6BBF1702744CDE1004F850E /* CoreDataStoreTests.swift in Sources */,
+				CC0DD90F2E5DD74600277E46 /* AppStateRestorationManagerTests.swift in Sources */,
 				4B9292BF2667103100AD2C21 /* TreeControllerTests.swift in Sources */,
 				4B11060525903E570039B979 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				858A798826A99DBE00A75A42 /* PasswordManagementItemListModelTests.swift in Sources */,

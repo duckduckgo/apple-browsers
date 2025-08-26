@@ -21,6 +21,7 @@ import History
 
 import XCTest
 import Combine
+import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FireTests: XCTestCase {
@@ -176,13 +177,14 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnAllIsCalledThenLastSessionStateIsCleared() {
+    func testWhenBurnAllIsCalledThenLastSessionStateIsCleared() throws {
         let fileName = "testStateFileForBurningAllData"
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
-                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    keyValueStore: try MockKeyValueFileStore())
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
@@ -195,13 +197,14 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnDomainsIsCalledThenLastSessionStateIsCleared() {
+    func testWhenBurnDomainsIsCalledThenLastSessionStateIsCleared() throws {
         let fileName = "testStateFileForBurningAllData"
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
-                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    keyValueStore: try MockKeyValueFileStore())
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),

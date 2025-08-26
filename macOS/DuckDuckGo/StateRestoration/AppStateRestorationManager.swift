@@ -21,10 +21,14 @@ import Combine
 import Common
 import PixelKit
 import os.log
+import Persistence
 
 @MainActor
 final class AppStateRestorationManager: NSObject {
-    static let fileName = "persistentState"
+    private enum Constants {
+        static let fileName = "persistentState"
+        static let appDidTerminateAsExpectedKey = "appDidTerminateAsExpected"
+    }
 
     private let service: StatePersistenceService
     private let tabSnapshotCleanupService: TabSnapshotCleanupService
@@ -32,26 +36,50 @@ final class AppStateRestorationManager: NSObject {
     private var stateChangedCancellable: AnyCancellable?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private let startupPreferences: StartupPreferences
+    private let keyValueStore: ThrowingKeyValueStoring
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
     private var appIsRelaunchingAutomatically: Bool
+
+    private var appDidTerminateAsExpected: Bool {
+        get {
+            do {
+                if let value = try keyValueStore.object(forKey: Constants.appDidTerminateAsExpectedKey) as? Bool {
+                    return value
+                }
+            } catch {
+                Logger.general.error("Failed to read appDidTerminateAsExpected from keyValueStore: \(error)")
+            }
+            return true
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Constants.appDidTerminateAsExpectedKey)
+            } catch {
+                Logger.general.error("Failed to write appDidTerminateAsExpected to keyValueStore: \(error)")
+            }
+        }
+    }
+
     private var shouldRestoreRegularTabs: Bool {
         startupPreferences.restorePreviousSession
     }
 
-    convenience init(fileStore: FileStore, startupPreferences: StartupPreferences) {
-        let service = StatePersistenceService(fileStore: fileStore, fileName: AppStateRestorationManager.fileName)
-        self.init(fileStore: fileStore, service: service, startupPreferences: startupPreferences)
+    convenience init(fileStore: FileStore, startupPreferences: StartupPreferences, keyValueStore: ThrowingKeyValueStoring) {
+        let service = StatePersistenceService(fileStore: fileStore, fileName: Constants.fileName)
+        self.init(fileStore: fileStore, service: service, startupPreferences: startupPreferences, keyValueStore: keyValueStore)
     }
 
     init(
         fileStore: FileStore,
         service: StatePersistenceService,
-        startupPreferences: StartupPreferences
+        startupPreferences: StartupPreferences,
+        keyValueStore: ThrowingKeyValueStoring
     ) {
         self.service = service
         self.tabSnapshotCleanupService = TabSnapshotCleanupService(fileStore: fileStore)
         self.startupPreferences = startupPreferences
+        self.keyValueStore = keyValueStore
     }
 
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {
@@ -106,6 +134,14 @@ final class AppStateRestorationManager: NSObject {
         // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
         readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
 
+        // If the user has disabled "restore previous session" but the app closed unexpectedly,
+        // offer to restore the last session once (only once, to avoid a crash loop) when possible.
+        let didCloseUnexpectedly = !appDidTerminateAsExpected
+        appDidTerminateAsExpected = false // Set to false so it will be false if the app closes without terminating properly
+        if didCloseUnexpectedly && !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
+            // TODO: display a prompt to restore the last session
+        }
+
         stateChangedCancellable = Publishers.Merge(
                 Application.appDelegate.windowControllersManager.stateChanged,
                 pinnedTabsManagerProvider.settingChangedPublisher
@@ -120,6 +156,7 @@ final class AppStateRestorationManager: NSObject {
 
     func applicationWillTerminate() {
         stateChangedCancellable?.cancel()
+        appDidTerminateAsExpected = true
         if Application.appDelegate.windowControllersManager.isInInitialState {
             service.clearState(sync: true)
         } else {

@@ -267,16 +267,3 @@ final class DDGErrorTests: XCTestCase {
         XCTAssertNotNil(userInfo[NSUnderlyingErrorKey]) // Should be Any, not nil
     }
 }
-
-//// MARK: - Extensions for Testing Non-DDGError Types
-//
-//extension DDGErrorTests.SimpleError: DDGError {
-//    
-//    static var errorDomain: String { "SimpleErrorDomain" }
-//    
-//    var errorCode: Int { 999 }
-//    
-//    var underlyingError: Error? { nil }
-//    
-//    var description: String { "SimpleError(message: \"\(message)\")" }
-//}

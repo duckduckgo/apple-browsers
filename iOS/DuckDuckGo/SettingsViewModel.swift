@@ -193,12 +193,12 @@ final class SettingsViewModel: ObservableObject {
     var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
         Binding<RefreshButtonPosition>(
             get: {
-                self.state.refreshButton.position
+                self.state.refreshButtonPosition
             },
             set: {
                 #warning("TODO (PIKOR) Pixel?!")
                 self.appSettings.currentRefreshButtonPosition = $0
-                self.state.refreshButton.position = $0
+                self.state.refreshButtonPosition = $0
             }
         )
     }
@@ -591,9 +591,9 @@ extension SettingsViewModel {
             fireButtonAnimation: appSettings.currentFireButtonAnimation,
             textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
-            refreshButton: SettingsState.RefreshButton(position: appSettings.currentRefreshButtonPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
+            refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

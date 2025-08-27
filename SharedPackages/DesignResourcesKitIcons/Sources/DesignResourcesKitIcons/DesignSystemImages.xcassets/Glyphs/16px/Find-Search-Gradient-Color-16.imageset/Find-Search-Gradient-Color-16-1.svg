@@ -1,0 +1,16 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Search-Find-OnDark-Color-16_svg__a)">
+    <path fill="#444" d="M13 7A6 6 0 1 1 1 7a6 6 0 0 1 12 0"/>
+    <path fill="#fff" fill-opacity=".4" d="M7 2c1.315 0 2.512.508 3.404 1.339a5.5 5.5 0 0 0-7.065 7.065A5 5 0 0 1 7 2" opacity=".5"/>
+    <path fill="url(#Search-Find-OnDark-Color-16_svg__b)" d="M7 0a7 7 0 0 1 5.371 11.486l3.446 3.447.08.098a.626.626 0 0 1-.866.867l-.098-.08-3.447-3.447A7 7 0 1 1 7 0m0 1a6 6 0 1 0 0 12A6 6 0 0 0 7 1"/>
+  </g>
+  <defs>
+    <linearGradient id="Search-Find-OnDark-Color-16_svg__b" x1="8" x2="8" y1="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CCDAFF"/>
+      <stop offset="1" stop-color="#8FABF9"/>
+    </linearGradient>
+    <clipPath id="Search-Find-OnDark-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

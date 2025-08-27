@@ -194,6 +194,8 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    
+
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
@@ -228,6 +230,8 @@ class MainViewController: UIViewController {
 
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+    
+    private let daxEasterEggPresenter: DaxEasterEggPresenting
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -261,7 +265,8 @@ class MainViewController: UIViewController {
         keyValueStore: ThrowingKeyValueStoring,
         customConfigurationURLProvider: CustomConfigurationURLProviding,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-        daxDialogsManager: DaxDialogsManaging
+        daxDialogsManager: DaxDialogsManaging,
+        daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -298,6 +303,7 @@ class MainViewController: UIViewController {
         self.customConfigurationURLProvider = customConfigurationURLProvider
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
+        self.daxEasterEggPresenter = daxEasterEggPresenter
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -459,7 +465,8 @@ class MainViewController: UIViewController {
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      appSettings: appSettings)
+                                                      appSettings: appSettings,
+                                                      daxEasterEggPresenter: daxEasterEggPresenter)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -971,7 +978,6 @@ class MainViewController: UIViewController {
         // Attaching HomeScreen means it's going to be displayed immediately.
         // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
         tabModel.viewed = true
-        refreshControls()
 
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
@@ -997,6 +1003,10 @@ class MainViewController: UIViewController {
         }
 
         syncService.scheduler.requestSyncImmediately()
+
+        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
+        // ie remove back/forward and show bookmarks/passwords
+        refreshControls()
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually
@@ -1314,6 +1324,8 @@ class MainViewController: UIViewController {
 
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
+            // Clear Dax Easter Egg logo when no tab is active
+            viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
             return
         }
 
@@ -1326,6 +1338,10 @@ class MainViewController: UIViewController {
         } else {
             viewCoordinator.omniBar.resetPrivacyIcon(for: tab.url)
         }
+
+        // Restore the Dax Easter Egg logo URL for the current tab
+        Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
         viewCoordinator.omniBar.startBrowsing()
     }
@@ -2772,6 +2788,10 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
     
+    var isAIChatEnabled: Bool {
+        return aiChatSettings.isAIChatEnabled
+    }
+    
     func tab(_ tab: TabViewController,
              didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration,
              for navigationAction: WKNavigationAction,
@@ -2863,6 +2883,22 @@ extension MainViewController: TabDelegate {
         if currentTab == tab {
             viewCoordinator.omniBar.updatePrivacyIcon(for: privacyInfo)
             themeColorManager.updateThemeColor()
+        }
+    }
+    
+    func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            Logger.daxEasterEgg.debug("Tab received logo - Tab [\(tab.tabModel.uid)] Logo: \(logoURL ?? "nil"), IsCurrent: \(self.currentTab == tab)")
+            
+            tab.tabModel.daxEasterEggLogoURL = logoURL
+            
+            // Only update omnibar if this is the currently active tab
+            if self.currentTab == tab {
+                Logger.daxEasterEgg.debug("Setting omnibar logo: \(logoURL ?? "nil")")
+                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+            }
+            // If this is NOT the current tab, the logo will be restored when the tab becomes active via refreshOmniBar()
         }
     }
 

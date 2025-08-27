@@ -330,8 +330,8 @@ final class MainMenu: NSMenu {
             NSMenuItem.separator()
 
             homeButtonMenuItem
-            toggleDownloadsShortcutMenuItem
             toggleShareShortcutMenuItem
+            toggleDownloadsShortcutMenuItem
             toggleAutofillShortcutMenuItem
             toggleBookmarksShortcutMenuItem
 

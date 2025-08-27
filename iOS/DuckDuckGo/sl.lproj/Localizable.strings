@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o brskanju z enim gumbom";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokirajte sledilnike tretjih oseb";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Več";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Naj DuckDuckGo upravlja pojavna okna s soglasjem za piškotke";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Nastavitve";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Pomaga blokirati sledilnike tretjih oseb, ki se poskušajo prikriti znotraj spletnega mesta z uporabo DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Ščiti pred prikrivanjem DNS CNAME";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Onemogoči sledenje vsebini Facebooka, kot so pripomočki za komentarje na Facebooku, na spletnih mestih, ki niso Facebookova.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Zaščita pred sledenjem Facebooka";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Podjetjem preprečuje sledenje in s tem pridobivanje enoličnih identifikatorjev o vašem brskalniku in napravi, na podlagi katerih vam lahko sledijo povsod po spletu.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Preprečuje sledenje prstnim odtisom";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Poskrbi, da lastni piškotki samodejno potečejo po 30 dneh, tako da vam spletna mesta ne morejo slediti za nedoločen čas, ko ste odjavljeni.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Poteče veljavnost lastnih piškotkov";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Povezave Google AMP zamenja s spletnim mestom prvotnega založnika.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokira Googlovo sledenje AMP";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokira pojavna okna za prijavo v Google na spletnih mestih, ki niso v Googlovi lasti.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokira Googlova pojavna okna za prijavo";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Odstrani parametre sledenja v povezavah, da tretjim osebam prepreči sledenje vašemu vedenju na različnih spletnih mestih.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokira sledenje povezavam";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Pomaga preprečiti, da bi podjetja prepoznala spletno mesto, ki ste ga nazadnje obiskali.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Ščiti pred sledenjem napotiteljem";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blokira invazivne sledilnike, še preden se naložijo, s čimer učinkovito odstrani oglase, ki temeljijo na sledenju.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokira ciljane oglase";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Pomaga blokirati piškotke tretjih oseb, ki vam sledijo od enega do drugega spletnega mesta, in sicer s preprečevanjem, da bi se sledilniki tretjih oseb sploh naložili.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokira sledilnike tretjih oseb";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezaščitene strani";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Zaščita pred spletnim sledenjem";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Zaščita pred spletnim sledenjem je vedno vklopljena.";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo samodejno blokira skrite sledilnike med brskanjem po spletu.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Kako vas ščitimo";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Brskalnik DuckDuckGo nudi zaščito pred sledenjem, ki je vedno aktivna. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izberite možnost, ki najbolje opisuje težavo, na katero ste naleteli.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Upravljaj VPN s Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Uporaba strežnika DNS po meri lahko vpliva na hitrost brskanja, če strežnik ni varen ali zanesljiv, pa lahko vaše dejavnosti razkrije tretjim osebam.";
+"vpn.settings.dns.section-disclaimer" = "Uporaba strežnika DNS po meri lahko vpliva na hitrost brskanja in, če strežnik ni varen ali zanesljiv, lahko vaše dejavnosti razkrije tretjim osebam.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

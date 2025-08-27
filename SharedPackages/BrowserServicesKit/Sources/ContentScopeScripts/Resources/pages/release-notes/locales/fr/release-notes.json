@@ -68,9 +68,9 @@
     "title" : "Réessayer la mise à jour",
     "note" : "Label for a button that retries applying the failed update"
   },
-  "forPrivacyProSubscribers" : {
-    "title" : "Pour les abonnés Privacy Pro",
-    "note" : "Heading label for release notes specific to Privacy Pro Subscribers (do not translate Privacy Pro)"
+  "forSubscribers" : {
+    "title" : "Pour les abonnés DuckDuckGo",
+    "note" : "Heading label for release notes specific to DuckDuckGo Subscribers"
   },
   "new" : {
     "title" : "Nouveau",

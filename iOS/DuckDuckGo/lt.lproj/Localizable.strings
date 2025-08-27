@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vienu mygtuku ištrink naršymo duomenis";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuoja trečiųjų šalių stebėjimo priemones";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Sužinoti daugiau";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Leiskite „DuckDuckGo“ valdyti sutikimo su slapukais iššokančiuosius langus";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Nustatymai";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Padeda blokuoti trečiųjų šalių sekimo priemones, kurios bando pasislėpti svetainėje naudodamos DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Apsauga nuo DNS CNAME slėpimo";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Išjungia „Facebook“ turinio, pvz., „Facebook“ komentarų valdiklių, stebėjimą ne „Facebook“ svetainėse.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Apsauga nuo „Facebook“ sekimo";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Padeda neleisti stebėjimo įmonėms gauti unikalius identifikatorius apie jūsų naršyklę ir įrenginį, kuriuos jie naudoja sekti jus visame internete.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Apsaugo nuo pirštų atspaudų sekimo";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Automatiškai nutraukia 1‑osios šalies slapukų galiojimą po 30 dienų, kad svetainės negalėtų neribotą laiką sekti jūsų, kai esate atsijungę.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Panaikina pirmosios šalies slapukų galiojimą";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Pakeičia „Google AMP“ nuorodas į originalią leidėjo svetainę.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokuoja „Google“ AMP sekimą";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokuoja „Google“ prisijungimo iššokančiuosius langus svetainėse, kurios nepriklauso „Google“.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokuoja „Google“ prisijungimo iššokančiuosius langus";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Pašalinami nuorodose esantys sekimo parametrai, kad trečiosios šalys negalėtų sekti jūsų elgesio svetainėse.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokuoja nuorodų sekimą";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Padeda neleisti įmonėms identifikuoti paskutinę aplankytą svetainę.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Apsaugo nuo nukreipiančiojo sekimo";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blokuoja invazines sekimo priemones prieš jas įkeliant, todėl veiksmingai pašalina skelbimus, taikomus pagal sekimą.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokuoja tikslines reklamas";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Padeda blokuoti 3‑iųjų šalių slapukus, kurie seka jus iš vienos svetainės į kitą, neleidžiant įkelti 3‑iųjų šalių sekimo įrenginių.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokuoja trečiųjų šalių stebėjimo priemones";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Neapsaugotos svetainės";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Apsauga nuo žiniatinklio sekimo";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Žiniatinklio sekimo apsauga visada įjungta";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "„DuckDuckGo“ automatiškai blokuoja paslėptas stebėjimo priemones naršant internete.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Kaip jus saugome";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "\"DuckDuckGo\" naršyklėje yra visada aktyvi stebėjimo apsauga. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Pasirinkite parinktį, kuri geriausiai apibūdina iškilusią problemą.";

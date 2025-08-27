@@ -1,0 +1,36 @@
+/* The body of the notification when Privacy Pro subscription expired */
+"vpn.entitlement.expired.notification.body" = "Suscríbete a DuckDuckGo para volver a conectar la VPN de DuckDuckGo.";
+
+/* The title of the notification when Privacy Pro subscription expired */
+"vpn.entitlement.expired.notification.title" = "La VPN se ha desconectado";
+
+/* The subtitle of the notification shown when DuckDuckGo VPN fails to reconnect */
+"vpn.failure.notification.subtitle" = "No se puede conectar en estos momentos. Inténtalo de nuevo más tarde.";
+
+/* The title of the notification shown when DuckDuckGo VPN fails to reconnect */
+"vpn.failure.notification.title" = "No se ha podido conectar la VPN de DuckDuckGo";
+
+/* The subtitle of the notification shown when DuckDuckGo VPN's connection is interrupted */
+"vpn.interrupted.notification.subtitle" = "Intentando volver a conectar ahora...";
+
+/* The title of the notification shown when DuckDuckGo VPN's connection is interrupted */
+"vpn.interrupted.notification.title" = "La VPN de DuckDuckGo se ha interrumpido";
+
+/* The subtitle of the notification shown when the VPN reconnects successfully */
+"vpn.success.notification.subtitle" = "Tu ubicación y actividad en línea están protegidas.";
+
+/* The body of the notification shown when DuckDuckGo VPN connects successfully with the city + state/country as formatted parameter */
+"vpn.success.notification.subtitle.including.serverLocation" = "Redirigiendo el tráfico de dispositivos a través de %@.";
+
+/* The title of the notification shown when DuckDuckGo VPN connects successfully */
+"vpn.success.notification.title" = "DuckDuckGo VPN está activado";
+
+/* The title of the `Reconnect` notification action button shown when VPN connection is replaced by another app VPN connection taking over */
+"vpn.superseded.action.reconnect.title" = "Volver a conectar";
+
+/* The subtitle of the notification shown when VPN connection is replaced by another app VPN connection taking over */
+"vpn.superseded.notification.subtitle" = "Es posible que otra aplicación de VPN en tu Mac la haya desactivado.";
+
+/* The title of the notification shown when VPN connection is replaced by another app VPN connection taking over */
+"vpn.superseded.notification.title" = "La VPN de DuckDuckGo se ha desconectado";
+

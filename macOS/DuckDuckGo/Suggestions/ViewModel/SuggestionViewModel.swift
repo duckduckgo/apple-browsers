@@ -96,7 +96,7 @@ struct SuggestionViewModel {
              .internalPage(title: let title, url: _, _),
              .openTab(title: let title, url: _, _, _):
             return title
-        case .unknown(value: let value):
+        case .unknown(value: let value), .askAIChat(let value):
             return value
         }
     }
@@ -105,7 +105,8 @@ struct SuggestionViewModel {
         switch suggestion {
         case .phrase,
              .website,
-             .unknown:
+             .unknown,
+             .askAIChat:
             return nil
         case .historyEntry(title: let title, url: let url, _):
             if url.isDuckDuckGoSearch {
@@ -146,7 +147,7 @@ struct SuggestionViewModel {
         case .website(url: let url) where url.toString(forUserInput: userStringValue, decodePunycode: false) != self.string:
             return url.toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: true)
 
-        case .phrase, .unknown, .website:
+        case .phrase, .unknown, .website, .askAIChat:
             return nil
         case .openTab(title: _, url: let url, _, _) where url.isDuckURLScheme:
             return UserText.duckDuckGo
@@ -179,7 +180,7 @@ struct SuggestionViewModel {
             return suggestionIcons.bookmarkEntryIcon
         case .bookmark(title: _, url: _, isFavorite: true, _):
             return suggestionIcons.favoriteEntryIcon
-        case .unknown:
+        case .unknown, .askAIChat:
             return suggestionIcons.unknownEntryIcon
         case .internalPage(title: _, url: let url, _) where url == .bookmarks,
              .openTab(title: _, url: let url, _, _) where url == .bookmarks:

@@ -29,7 +29,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         case bookmarksBar
         case bookmarkAdded
 
-        fileprivate var wasDismissedKey: String {
+        var wasDismissedKey: String {
             switch self {
             case .bookmarksBar:
                 return "com.duckduckgo.bookmarksBarSyncPromoDismissed"
@@ -38,7 +38,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             }
         }
 
-        fileprivate var promoWasPresentedCountKey: String? {
+        var promoWasPresentedCountKey: String? {
             switch self {
             case .bookmarksBar:
                 return nil
@@ -47,7 +47,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             }
         }
 
-        fileprivate var promoFirstPresentedDateKey: String? {
+        var promoFirstPresentedDateKey: String? {
             switch self {
             case .bookmarksBar:
                 return "com.duckduckgo.bookmarkFirstPresentedCount"
@@ -56,7 +56,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             }
         }
 
-        fileprivate var promoMaxPresentationCount: Int {
+        var promoMaxPresentationCount: Int {
             switch self {
             case .bookmarksBar:
                 return .max
@@ -65,7 +65,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             }
         }
 
-        fileprivate var promoMaxPresentationDays: Int {
+        var promoMaxPresentationDays: Int {
             switch self {
             case .bookmarksBar:
                 return 7

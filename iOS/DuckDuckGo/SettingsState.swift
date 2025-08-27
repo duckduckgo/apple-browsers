@@ -31,6 +31,10 @@ struct SettingsState {
         var position: AddressBarPosition
     }
     
+    struct RefreshButton {
+        var position: RefreshButtonPosition
+    }
+    
     struct TextZoom {
         var enabled: Bool
         var level: TextZoomLevel
@@ -63,8 +67,11 @@ struct SettingsState {
     var fireButtonAnimation: FireButtonAnimationType
     var textZoom: TextZoom
     var addressBar: AddressBar
+    var refreshButton: RefreshButton
     var showsFullURL: Bool
     var isExperimentalAIChatEnabled: Bool
+    #warning("PIKOR: do it like this, drop struct RefreshButton, not needed")
+    // var position: RefreshButtonPosition <- that's sufficient
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -122,6 +129,7 @@ struct SettingsState {
             fireButtonAnimation: .fireRising,
             textZoom: TextZoom(enabled: false, level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
+            refreshButton: RefreshButton(position: .addressBar),
             showsFullURL: false,
             isExperimentalAIChatEnabled: false,
             sendDoNotSell: true,

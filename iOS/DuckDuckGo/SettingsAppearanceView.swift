@@ -50,6 +50,13 @@ struct SettingsAppearanceView: View {
                                            selectedOption: viewModel.addressBarPositionBinding)
                 }
 
+                // Refresh Button Position
+#warning("PIKOR: Use UserText")
+#warning("PIKOR: see self.featureFlagger.isFeatureOn(.duckPlayerNativeUI) -> use of course in settings viewmmodel")
+                SettingsPickerCellView(label: "Refresh Button Position",
+                                       options: RefreshButtonPosition.allCases,
+                                       selectedOption: viewModel.refreshButtonPositionBinding)
+                
                 // Show Full Site Address
                 SettingsCellView(label: UserText.settingsFullURL,
                                  accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))

@@ -35,6 +35,7 @@ public class AppUserDefaults: AppSettings {
         public static let didVerifyInternalUser = Notification.Name("com.duckduckgo.app.DidVerifyInternalUser")
         public static let inspectableWebViewsToggled = Notification.Name("com.duckduckgo.app.DidToggleInspectableWebViews")
         public static let addressBarPositionChanged = Notification.Name("com.duckduckgo.app.AddressBarPositionChanged")
+        public static let refreshButtonSettingsChanged = Notification.Name("com.duckduckgo.refreshButton.settings.changed")
         public static let showsFullURLAddressSettingChanged = Notification.Name("com.duckduckgo.app.ShowsFullURLAddressSettingChanged")
         public static let autofillDebugScriptToggled = Notification.Name("com.duckduckgo.app.DidToggleAutofillDebugScript")
         public static let duckPlayerSettingsUpdated = Notification.Name("com.duckduckgo.app.DuckPlayerSettingsUpdated")
@@ -76,6 +77,8 @@ public class AppUserDefaults: AppSettings {
         static let autofillIsNewInstallForOnByDefault = "com.duckduckgo.ios.autofillIsNewInstallForOnByDefault"
 
         static let favoritesDisplayMode = "com.duckduckgo.ios.favoritesDisplayMode"
+        
+        static let refreshButtonPosition = "com.duckduckgo.ios.refreshbuttonposition"
 
         static let crashCollectionOptInStatus = "com.duckduckgo.ios.crashCollectionOptInStatus"
         static let crashCollectionShouldRevertOptedInStatusTrigger = "com.duckduckgo.ios.crashCollectionShouldRevertOptedInStatusTrigger"
@@ -244,6 +247,20 @@ public class AppUserDefaults: AppSettings {
         set {
             addressBarPositionStorage = newValue.rawValue
             NotificationCenter.default.post(name: Notifications.addressBarPositionChanged, object: currentAddressBarPosition)
+        }
+    }
+    
+    var currentRefreshButtonPosition: RefreshButtonPosition {
+        get {
+            guard let value = userDefaults?.string(forKey: Keys.refreshButtonPosition), let refreshButtonPosition = RefreshButtonPosition(rawValue: value) else {
+                return .addressBar
+            }
+            return refreshButtonPosition
+        }
+        
+        set {
+            userDefaults?.setValue(newValue.rawValue, forKey: Keys.refreshButtonPosition)
+            NotificationCenter.default.post(name: Notifications.refreshButtonSettingsChanged, object: currentRefreshButtonPosition)
         }
     }
 

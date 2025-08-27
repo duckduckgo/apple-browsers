@@ -159,7 +159,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         let webRunner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: jobDependencies.privacyConfig,
             prefs: jobDependencies.contentScopeProperties,
-            query: JobContext(dataBroker: broker, profileQuery: profileQuery),
+            context: JobContext(dataBroker: broker, profileQuery: profileQuery),
             emailService: jobDependencies.emailService,
             captchaService: jobDependencies.captchaService,
             featureFlagger: jobDependencies.featureFlagger,

@@ -35,7 +35,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
-    public let query: SubJobContextProviding
+    public let context: SubJobContextProviding
     public let emailService: EmailServiceProtocol
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
@@ -55,7 +55,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
-                query: SubJobContextProviding,
+                context: SubJobContextProviding,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
@@ -69,7 +69,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     ) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
+        self.context = context
         self.emailService = emailService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
@@ -106,9 +106,9 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
 
                 task = Task {
-                    await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                    await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
                     do {
-                        let scanStep = try query.dataBroker.scanStep()
+                        let scanStep = try context.dataBroker.scanStep()
                         if let actionsHandler = actionsHandler {
                             self.actionsHandler = actionsHandler
                         } else {
@@ -174,6 +174,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
-        .init(stepType: .scan, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
+        .init(stepType: .scan, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

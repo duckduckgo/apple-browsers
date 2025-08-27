@@ -103,6 +103,7 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
                                                 extractedProfileId: Int64) throws
     func deleteOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws
     func fetchOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws -> OptOutEmailConfirmationDB?
+    func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationDB]
     func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationDB]
     func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationDB]
 
@@ -661,6 +662,13 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                 OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
                 OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
             ])
+        }
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationDB] {
+        try db.read { db in
+            try OptOutEmailConfirmationDB
+                .fetchAll(db)
         }
     }
 

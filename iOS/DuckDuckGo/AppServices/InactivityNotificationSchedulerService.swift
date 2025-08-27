@@ -29,19 +29,19 @@ final class InactivityNotificationSchedulerService {
     private let featureFlagger: FeatureFlagger
     private let userNotificationCenter: UNUserNotificationCenter
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let notificationServiceManager: NotificationServiceManager
+    private let notificationServiceManager: NotificationServiceManaging
     
     // MARK: - Constants
     
     static let notificationIdentifier = "com.duckduckgo.inactivity.notification"
-    static let defaultDaysInactive: Double = 7 // default to 7 days
+    static let defaultDaysInactive: Double = 7.0 // default to 7 days
     static let daysInactiveSettingKey: String = "daysInactive"
     private static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
     
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          userNotificationCenter: UNUserNotificationCenter = .current(),
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         notificationServiceManager: NotificationServiceManager
+         notificationServiceManager: NotificationServiceManaging
     ) {
         self.featureFlagger = featureFlagger
         self.userNotificationCenter = userNotificationCenter
@@ -62,8 +62,6 @@ final class InactivityNotificationSchedulerService {
             await schedule()
         }
     }
-    
-    // MARK: - Private
     
     private func isFeatureEnabled() -> Bool {
         return featureFlagger.isFeatureOn(.inactivityNotification)
@@ -113,7 +111,7 @@ final class InactivityNotificationSchedulerService {
         )
     }
     
-    private func makeUNNotificationContent(with daysInactive: Double = defaultDaysInactive) -> UNNotificationContent {
+    func makeUNNotificationContent(with daysInactive: Double = defaultDaysInactive) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
@@ -121,7 +119,7 @@ final class InactivityNotificationSchedulerService {
         return content
     }
     
-    private func makeDaysInactive() -> Double {
+    func makeDaysInactive() -> Double {
         guard let settings = privacyConfigurationManager.privacyConfig.settings(for: Self.subfeature),
               let jsonData = settings.data(using: .utf8) else { return Self.defaultDaysInactive }
         do {

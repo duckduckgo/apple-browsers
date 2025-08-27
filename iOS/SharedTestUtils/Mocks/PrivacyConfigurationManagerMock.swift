@@ -101,9 +101,11 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
     func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         return settings[feature] ?? [:]
     }
-
+    
+    var subfeatureSettings: [String: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] = [:]
     func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
-        return nil
+        print("called \(subfeatureSettings[subfeature.rawValue]) with \(subfeature.rawValue)")
+        return subfeatureSettings[subfeature.rawValue] ?? ""
     }
 
     var userUnprotected = Set<String>()

@@ -23,7 +23,9 @@ import UIKit
 import NotificationCenter
 import Core
 
-final class NotificationServiceManager: NSObject, @preconcurrency UNUserNotificationCenterDelegate {
+protocol NotificationServiceManaging: UNUserNotificationCenterDelegate {}
+
+final class NotificationServiceManager: NSObject, NotificationServiceManaging {
     
     private let mainCoordinator: MainCoordinator
     
@@ -38,7 +40,6 @@ final class NotificationServiceManager: NSObject, @preconcurrency UNUserNotifica
         completionHandler(.banner)
     }
 
-    @MainActor
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -47,16 +48,22 @@ final class NotificationServiceManager: NSObject, @preconcurrency UNUserNotifica
         
         let id = response.notification.request.identifier
         switch id {
-            case InactivityNotificationSchedulerService.notificationIdentifier:
+        case InactivityNotificationSchedulerService.notificationIdentifier:
             let daysInactive = response.notification.request.content.userInfo[InactivityNotificationSchedulerService.daysInactiveSettingKey] as? Double ?? InactivityNotificationSchedulerService.defaultDaysInactive
             Pixel.fire(pixel: .provisionalPushNotificationTapped, withAdditionalParameters: [InactivityNotificationSchedulerService.daysInactiveSettingKey: String(daysInactive)])
-            case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
-                mainCoordinator.presentNetworkProtectionStatusSettingsModal()
-            default:
-                break
+            completionHandler()
+            return
+
+        case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
+            Task { @MainActor [weak self] in
+                self?.mainCoordinator.presentNetworkProtectionStatusSettingsModal()
+                completionHandler()
+            }
+            return
+
+        default:
+            completionHandler()
         }
-        
-        completionHandler()
     }
     
 }

@@ -204,8 +204,7 @@ extension TabViewController {
         }
 
         if appSettings.currentRefreshButtonPosition.isEnabledForBrowsingMenu {
-            #warning("PIKOR: use UserText!")
-            let refreshEntry = BrowsingMenuEntry.regular(name: "Refresh Page",
+            let refreshEntry = BrowsingMenuEntry.regular(name: UserText.actionRefreshPage,
                                                         image: DesignSystemImages.Glyphs.Size16.reload,
                                                         action: { [weak self] in
                 guard let self = self else { return }

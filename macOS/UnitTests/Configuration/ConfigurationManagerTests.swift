@@ -87,7 +87,7 @@ final class ConfigurationManagerTests: XCTestCase {
         XCTAssertEqual(operationLog.steps.count, 6, "Should have exactly 6 operations.")
     }
 
-    func test_WhenRefreshNow_ThenPrivacyConfigFetchAndReloadBeforeTrackerDataSetFetch() async {
+    func test_WhenRefreshNow_ThenPrivacyConfigFetchAndReloadBeforeTrackerDataSetFetch() async throws {
         // GIVEN
         operationLog.clear()
 
@@ -98,21 +98,9 @@ final class ConfigurationManagerTests: XCTestCase {
         let steps = operationLog.steps
 
         // Find indices of key operations
-        guard let fetchPrivacyConfigIndex = steps.firstIndex(of: .fetchPrivacyConfigStarted) else {
-            XCTFail("Privacy config fetch should have started")
-            return
-        }
-
-        guard let fetchTrackerDataSetIndex = steps.firstIndex(of: .fetchTrackerDataSetStarted) else {
-            XCTFail("Tracker data set fetch should have started")
-            return
-        }
-
-        let firstPrivacyReloadIndex = steps.firstIndex(of: .reloadPrivacyConfig)
-        guard let firstReloadIndex = firstPrivacyReloadIndex else {
-            XCTFail("Privacy config should be reloaded at least once")
-            return
-        }
+        let fetchPrivacyConfigIndex = try XCTUnwrap(steps.firstIndex(of: .fetchPrivacyConfigStarted))
+        let fetchTrackerDataSetIndex = try XCTUnwrap(steps.firstIndex(of: .fetchTrackerDataSetStarted))
+        let firstReloadIndex = try XCTUnwrap(steps.firstIndex(of: .reloadPrivacyConfig))
 
         // Verify correct dependency ordering
         XCTAssertLessThan(fetchPrivacyConfigIndex, firstReloadIndex, "Privacy config should be fetched before being reloaded")

@@ -592,7 +592,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let internalUserDecider: InternalUserDecider
     private let widePixel: WidePixelManaging
     private var widePixelData: SubscriptionPurchaseWidePixelData?
-    private var lastFetchedOptions: SubscriptionOptionsV2?
 
     init(subscriptionManager: SubscriptionManagerV2,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -771,7 +770,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         }
 
         if let subscriptionOptions {
-            lastFetchedOptions = subscriptionOptions
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
                 return subscriptionOptions
             } else {
@@ -842,13 +840,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         let purchaseTransactionJWS: String
 
-        print("SAMDEBUG: Purchasing subscription...")
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
         case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
             purchaseTransactionJWS = result.transactionJWS
-            
-            // Capture account creation duration in WidePixel data
+
             if let accountCreationDuration = result.accountCreationDuration {
                 data.createAccountDuration = accountCreationDuration
             }
@@ -906,6 +902,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         var startPayment = WidePixel.MeasuredInterval.startingNow()
         data.completePurchaseDuration = startPayment
         var activationInterval: WidePixel.MeasuredInterval?
+
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
                                                                        additionalParams: subscriptionParameters) {
         case .success:

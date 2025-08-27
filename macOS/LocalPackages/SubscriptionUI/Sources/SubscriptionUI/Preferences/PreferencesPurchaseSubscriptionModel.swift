@@ -89,7 +89,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat)
+        featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
     }
 
     var isSubscriptionRebrandingEnabled: Bool {

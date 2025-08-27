@@ -345,7 +345,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
@@ -353,7 +353,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .newTabPagePerTab:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPagePerTab))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .openFireWindowByDefault:

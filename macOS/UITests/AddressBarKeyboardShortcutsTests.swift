@@ -27,7 +27,6 @@ class AddressBarKeyboardShortcutsTests: UITestCase {
 
     override class func setUp() {
         super.setUp()
-        UITests.firstRun()
         UITests.setAutocompleteToggleBeforeTestcaseRuns(false) // We don't want changes in the address bar that we don't create
     }
 
@@ -37,7 +36,7 @@ class AddressBarKeyboardShortcutsTests: UITestCase {
         app = XCUIApplication.setUp()
         urlStringForAddressBar = "https://duckduckgo.com/duckduckgo-help-pages/results/translation/"
         urlForAddressBar = URL(string: urlStringForAddressBar)
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         app.enforceSingleWindow()
         addressBarTextField.typeURL(urlForAddressBar, pressingEnter: false)
     }

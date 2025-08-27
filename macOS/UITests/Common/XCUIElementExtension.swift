@@ -156,4 +156,35 @@ extension XCUIElement {
         let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
         coordinate.click()
     }
+
+    /// Wait for a property of the element to contain a specific substring
+    /// - Parameters:
+    ///   - keyPath: The key path to the property to check (e.g., \.value, \.label, \.title)
+    ///   - substring: The substring that should be contained in the property
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait(for keyPath: PartialKeyPath<XCUIElement>,
+              contains substring: String,
+              timeout: TimeInterval = 30.0) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: .keyPath(keyPath, contains: substring), object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
+
+    /// Wait for a property of the element to equal a specific value
+    /// - Parameters:
+    ///   - keyPath: The key path to the property to check (e.g., \.value, \.label, \.title)
+    ///   - value: The value that the property should equal
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait<V: CVarArg>(for keyPath: PartialKeyPath<XCUIElement>,
+                          equals value: V,
+                          timeout: TimeInterval = 30.0) -> Bool {
+        let predicate = NSPredicate.keyPath(keyPath, equalTo: value)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
 }

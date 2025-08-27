@@ -48,14 +48,11 @@ class HTTPSUpgradeUITests: UITestCase {
         app.pasteURL(httpURL, pressingEnter: true)
 
         // Wait for page content to load
-        let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")) .firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: 30.0), "Example.com should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain") .firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Example.com should load")
 
         // Verify HTTPS upgrade in address bar
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
-        XCTAssertTrue(addressBarValue.contains("https://"), "Address bar should show HTTPS after upgrade from HTTP")
-        XCTAssertTrue(addressBarValue.contains("example.com"), "Should still be on example.com after upgrade")
+        XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Address bar should show HTTPS after upgrade from HTTP")
     }
 
     func testHTTPSUpgrade_WithPrivacyTestPages_UpgradesCorrectly() throws {
@@ -65,13 +62,13 @@ class HTTPSUpgradeUITests: UITestCase {
 
         // Start the tests
         let startButton = webView.buttons["Start test"].firstMatch
-        XCTAssertTrue(startButton.waitForExistence(timeout: 15.0), "Start button should be available")
+        XCTAssertTrue(startButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         Thread.sleep(forTimeInterval: 1)
         startButton.click()
 
         // Wait for aggregated results and expand them
         let summary = webView.staticTexts["Performed 4 tests. Click for details."].firstMatch
-        XCTAssertTrue(summary.waitForExistence(timeout: 40.0), "Summary should appear after running tests")
+        XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "Summary should appear after running tests")
         // Click by coordinate to expand details
         summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
@@ -127,21 +124,21 @@ class HTTPSUpgradeUITests: UITestCase {
 
         // Start the test
         let startButton = webView.buttons["Start test"].firstMatch
-        XCTAssertTrue(startButton.waitForExistence(timeout: 15.0), "Start button should be available")
+        XCTAssertTrue(startButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         Thread.sleep(forTimeInterval: 1)
         startButton.click()
 
         // Wait for test completion summary
         let summary = webView.staticTexts["Performed 1 tests. Click for details."].firstMatch
-        XCTAssertTrue(summary.waitForExistence(timeout: 40.0), "Loop protection summary should appear")
+        XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "Loop protection summary should appear")
 
         // Expand results
         summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
         // Validate that navigation was upgraded correctly
         let expected = "https://good.third-party.site/privacy-protections/https-loop-protection/http-only.html"
-        let navResult = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS[c] %@", expected)).firstMatch
-        XCTAssertTrue(navResult.waitForExistence(timeout: 3.0), "Loop protection navigation should be upgraded to expected URL")
+        let navResult = webView.staticTexts.containing(\.value, containing: expected).firstMatch
+        XCTAssertTrue(navResult.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Loop protection navigation should be upgraded to expected URL")
     }
 
     // MARK: - Edge Cases Tests
@@ -152,13 +149,11 @@ class HTTPSUpgradeUITests: UITestCase {
         app.pasteURL(httpOnlyURL, pressingEnter: true)
 
         // Should load over HTTP when HTTPS not available
-        let httpContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'HTTP Test Page'")) .firstMatch
-        XCTAssertTrue(httpContent.waitForExistence(timeout: 15.0), "HTTP-only site should load correctly")
+        let httpContent = webView.staticTexts.containing(\.value, containing: "HTTP Test Page") .firstMatch
+        XCTAssertTrue(httpContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "HTTP-only site should load correctly")
 
         // Should remain HTTP when upgrade not possible
-        app.activateAddressBar()
-        let finalURL = addressBarTextField.value as? String ?? ""
-        XCTAssertTrue(finalURL.contains("http://localhost"), "Should remain HTTP when HTTPS upgrade not available")
-        XCTAssertFalse(finalURL.contains("https://"), "Should not upgrade to HTTPS when not available")
+        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
+        XCTAssertEqual(finalURL, httpOnlyURL.absoluteString)
     }
 }

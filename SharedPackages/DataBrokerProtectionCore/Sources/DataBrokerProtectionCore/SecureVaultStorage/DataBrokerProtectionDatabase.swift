@@ -39,6 +39,8 @@ public protocol DataBrokerProtectionRepository {
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
 
     func fetchAllDataBrokers() throws -> [DataBroker]
+    func fetchBroker(with id: Int64) throws -> DataBroker?
+    func fetchProfileQuery(with id: Int64) throws -> ProfileQuery?
 
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
@@ -400,6 +402,24 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchAllBrokers()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+            throw error
+        }
+    }
+
+    public func fetchBroker(with id: Int64) throws -> DataBroker? {
+        do {
+            return try vault.fetchBroker(with: id)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchBroker id")
+            throw error
+        }
+    }
+
+    public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
+        do {
+            return try vault.fetchProfileQuery(with: id)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchProfileQuery id")
             throw error
         }
     }

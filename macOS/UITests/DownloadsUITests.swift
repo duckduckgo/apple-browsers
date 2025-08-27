@@ -23,8 +23,7 @@ class DownloadsUITests: UITestCase {
     private var app: XCUIApplication!
     private var webView: XCUIElement!
     private var popover: XCUIElement!
-    private var cleanupPaths: Set<String> = []
-
+    private var table: XCUIElement!
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -32,14 +31,13 @@ class DownloadsUITests: UITestCase {
         app.enforceSingleWindow()
 
         webView = app.webViews.firstMatch
-        popover = app.popovers.firstMatch
+        popover = app.popovers.containing(.table, identifier: "DownloadsViewController.table").firstMatch
+        table = popover.tables["DownloadsViewController.table"]
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     override func tearDown() {
-        cleanupTrackedFiles()
-        cleanupPaths.removeAll()
         webView = nil
         popover = nil
         app = nil
@@ -87,11 +85,11 @@ class DownloadsUITests: UITestCase {
 
         // Expect NSSavePanel as a sheet
         let saveSheet = app.sheets.firstMatch
-        XCTAssertTrue(saveSheet.waitForExistence(timeout: 30.0), "Save panel should appear when 'Always ask' is enabled")
+        XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.navigation), "Save panel should appear when 'Always ask' is enabled")
 
         // Dismiss the sheet to clean up
         let cancel = saveSheet.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 2.0))
+        XCTAssertTrue(cancel.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         cancel.click()
     }
 
@@ -117,7 +115,7 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile(onFireWindow: true)
         // Wait for the download to actually start (Downloads button becomes available)
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
-        _ = downloadsButton.waitForExistence(timeout: 10.0)
+        _ = downloadsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence)
         assertDownloadListed(filenameRegex: ".MMA.+10GB.*")
         app.typeKey(.escape, modifierFlags: [])
 
@@ -158,15 +156,14 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile()
 
         // Open Downloads popover and assert it's visible
-        let table = popover.tables.firstMatch
-        XCTAssertTrue(table.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let firstRow = table.cells.firstMatch
-        XCTAssertTrue(firstRow.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         firstRow.click()
         firstRow.rightClick()
-        let stopItem = app.menuItems.containing(NSPredicate(format: "title ==[c] 'Stop'"))
+        let stopItem = app.menuItems.containing(\.title, equalTo: "Stop")
             .firstMatch
-        XCTAssertTrue(stopItem.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(stopItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Additionally assert progress text and filename
         assertDownloadListed(sizeLabelRegex: ".* of .*( – .*|)")
@@ -192,21 +189,15 @@ class DownloadsUITests: UITestCase {
 
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB", filename: baseName).absoluteString)
         // Briefly allow processing of the first trigger
-        _ = app.windows.firstMatch.waitForExistence(timeout: 1.0)
+        _ = app.windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence)
 
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB", filename: baseName).absoluteString)
 
-        // Open Downloads popover and assert two download rows are present
-        XCTAssertTrue(popover.waitForExistence(timeout: 15))
+        // Downloads popover should open and assert two download rows are present
+        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.navigation))
 
-        let table = popover.tables.firstMatch
-        XCTAssertTrue(table.waitForExistence(timeout: 10.0))
-        let twoRowsExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "count >= %d", 2),
-            object: table.cells
-        )
-        let waiterResult = XCTWaiter.wait(for: [twoRowsExpectation], timeout: 15.0)
-        XCTAssertEqual(waiterResult, .completed)
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(table.cells.wait(for: \.count, in: 2..., timeout: UITests.Timeouts.localTestServer), "Should have at least 2 cells in downloads table")
         assertDownloadListed(filename: baseName)
         assertDownloadListed(filename: baseName.replacingOccurrences(of: ".bin", with: " 1.bin"))
     }
@@ -236,7 +227,7 @@ class DownloadsUITests: UITestCase {
         assertDownloadListed(filename: uniqueName)
 
         // Verify file exists at chosen directory
-        waitForFile(at: targetDir.appendingPathComponent(uniqueName), timeout: 15.0)
+        waitForFile(at: targetDir.appendingPathComponent(uniqueName), timeout: UITests.Timeouts.localTestServer)
     }
 
     /// Cancelling the save dialog should cancel the download and leave the list empty.
@@ -257,7 +248,7 @@ class DownloadsUITests: UITestCase {
 
         // Cancel the dialog to cancel download
         let cancel = saveSheet.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 2.0))
+        XCTAssertTrue(cancel.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         cancel.click()
 
         // Verify no downloads were recorded
@@ -291,7 +282,7 @@ class DownloadsUITests: UITestCase {
         try FileManager.default.createDirectory(at: targetDir, withIntermediateDirectories: true)
         trackForCleanup(targetDir.path)
         saveFileAs(uniqueName, in: targetDir)
-        waitForFile(at: targetDir.appendingPathComponent(uniqueName), timeout: 15.0)
+        waitForFile(at: targetDir.appendingPathComponent(uniqueName), timeout: UITests.Timeouts.localTestServer)
     }
 
     /// Navigating to unrenderable content (no attachment disposition) should still start a download.
@@ -333,19 +324,13 @@ class DownloadsUITests: UITestCase {
 
         triggerDownloadWithUniqueName(size: "1MB")
 
-        let table = popover.tables.firstMatch
-
         // Expect exactly one item + "Open Downloads folder"
-        let oneDownloadExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "count == %d", 2),
-            object: table.cells
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [oneDownloadExpectation], timeout: 15.0), .completed)
+        XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer), "Should have exactly 2 cells (1 download + Open Downloads folder), actual: \(table.cells.count)")
 
         // Quit and relaunch
         app.typeKey("q", modifierFlags: [.command])
         app.launch()
-        _ = app.wait(for: .runningForeground, timeout: 5.0)
+        _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
@@ -391,19 +376,15 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(popover.waitForExistence(timeout: 15))
 
         // We don't depend on exact name; ensure at least one item appears
-        let table = popover.tables.firstMatch
-        XCTAssertTrue(table.waitForExistence(timeout: 10.0))
+
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Expect exactly one item + "Open Downloads folder"
-        let oneDownloadExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "count == %d", 2),
-            object: table.cells
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [oneDownloadExpectation], timeout: 15.0), .completed)
+        XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer), "Should have exactly 2 cells (1 download + Open Downloads folder), actual: \(table.cells.count)")
 
         // Quit and relaunch to restore session
         app.typeKey("q", modifierFlags: [.command])
         app.launch()
-        _ = app.wait(for: .runningForeground, timeout: 5.0)
+        _ = app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
 
         XCTAssertTrue(webView.staticTexts["Page loaded!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         sleep(2)
@@ -428,13 +409,9 @@ class DownloadsUITests: UITestCase {
         triggerDownloadWithUniqueName(size: "1MB")
 
         // Assert a single item exists
-        let table = popover.tables.firstMatch
+
         // Expect exactly one item + "Open Downloads folder"
-        let oneDownloadExpectation = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "count == %d", 2),
-            object: table.cells
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [oneDownloadExpectation], timeout: 15.0), .completed)
+        XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer), "Should have exactly 2 cells (1 download + Open Downloads folder)")
 
         // Close the current tab and immediately reopen last closed tab
         app.closeCurrentTab()
@@ -442,7 +419,7 @@ class DownloadsUITests: UITestCase {
 
         // Wait a short moment for potential retrigger (should not happen)
         openDownloadsPopup()
-        _ = table.waitForExistence(timeout: 3.0)
+        _ = table.waitForExistence(timeout: UITests.Timeouts.elementExistence)
         XCTAssertEqual(table.cells.count, 2)
     }
 
@@ -475,7 +452,7 @@ class DownloadsUITests: UITestCase {
         app.pasteURL(pageURL, pressingEnter: true)
 
         let link = app.webViews.firstMatch.links["HTML Link"].firstMatch
-        XCTAssertTrue(link.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIApplication.perform(withKeyModifiers: [.option]) {
             link.click()
         }
@@ -509,7 +486,7 @@ class DownloadsUITests: UITestCase {
 
         // Verify exists in customDir
         let expected = customDir.appendingPathComponent("custom-dir-file-\(unique).bin")
-        waitForFile(at: expected, timeout: 15.0)
+        waitForFile(at: expected, timeout: UITests.Timeouts.localTestServer)
     }
 
     /// Window close during a long download should not destabilize the browser; Downloads UI remains accessible.
@@ -572,7 +549,7 @@ class DownloadsUITests: UITestCase {
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let cancel = saveSheet.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 2.0))
+        XCTAssertTrue(cancel.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         cancel.click()
     }
 
@@ -612,7 +589,7 @@ class DownloadsUITests: UITestCase {
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let cancel = saveSheet.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 2.0))
+        XCTAssertTrue(cancel.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         cancel.click()
     }
 
@@ -642,7 +619,7 @@ class DownloadsUITests: UITestCase {
         app.typeKey("q", modifierFlags: [.command])
 
         app.launch()
-        _=app.wait(for: .runningForeground, timeout: 5.0)
+        _=app.wait(for: .runningForeground, timeout: UITests.Timeouts.elementExistence)
         app.enforceSingleWindow()
         // wait for the New Tab page to load
         XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -670,36 +647,36 @@ class DownloadsUITests: UITestCase {
 
         app.typeKey("q", modifierFlags: [.command])
         let quitSheet = app.dialogs.firstMatch
-        XCTAssertTrue(quitSheet.waitForExistence(timeout: 5.0), "Quit confirmation sheet should appear with active downloads")
+        XCTAssertTrue(quitSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Quit confirmation sheet should appear with active downloads")
 
         let alertTitle = app.staticTexts["A download is in progress."]
-        XCTAssertTrue(alertTitle.waitForExistence(timeout: 10.0), "Quit confirmation alert should appear with active downloads")
+        XCTAssertTrue(alertTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Quit confirmation alert should appear with active downloads")
         // Button title uses a typographic apostrophe on macOS – match exact title deterministically
         let dontQuit = app.buttons["Don’t Quit"].firstMatch
-        XCTAssertTrue(dontQuit.waitForExistence(timeout: 2.0))
+        XCTAssertTrue(dontQuit.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         dontQuit.click()
 
         // Validate download is still running (Stop item visible in context menu)
         if !popover.exists {
             openDownloadsPopup()
         }
-        let table = popover.tables.firstMatch
-        XCTAssertTrue(table.waitForExistence(timeout: 5.0))
+
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let firstRow = table.cells.firstMatch
-        XCTAssertTrue(firstRow.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         firstRow.click()
         firstRow.rightClick()
-        let stopItem = app.menuItems.containing(NSPredicate(format: "title ==[c] 'Stop'"))
-        XCTAssertTrue(stopItem.firstMatch.waitForExistence(timeout: 3.0))
+        let stopItem = app.menuItems.containing(\.title, equalTo: "Stop")
+        XCTAssertTrue(stopItem.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeKey(.escape, modifierFlags: [])
 
         // Now quit for real and validate app terminates
         app.typeKey("q", modifierFlags: [.command])
         let quitButton = app.buttons["Quit"].firstMatch
-        XCTAssertTrue(quitButton.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(quitButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         quitButton.click()
         // App should no longer be running in the foreground shortly after
-        XCTAssertTrue(app.wait(for: .notRunning, timeout: 5.0))
+        XCTAssertTrue(app.wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence))
     }
 
     /// Opening a download in a background tab with "Always ask where to save files" enabled,
@@ -769,16 +746,16 @@ class DownloadsUITests: UITestCase {
 
         // Validate via JS-updated DOM that download was initiated from launcher tab
         let startedIndicator = app.webViews.firstMatch.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'Download started'"))
+            .containing(\.value, containing: "Download started")
             .firstMatch
-        XCTAssertTrue(startedIndicator.waitForExistence(timeout: 15.0))
+        XCTAssertTrue(startedIndicator.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
         // Close the popup tab with the "x" button
         let tabGroup = app.windows.firstMatch
             .tabGroups["Tabs"]
         let popupTab = tabGroup
             .radioButtons
-            .containing(NSPredicate(format: "title == 'Background Download'"))
+            .containing(\.title, equalTo: "Background Download")
             .firstMatch
         XCTAssertTrue(popupTab.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         try popupTab.closeTab()
@@ -806,28 +783,27 @@ class DownloadsUITests: UITestCase {
         trackForCleanup(downloadsDir.appendingPathComponent(filename + ".duckload").path)
 
         openSiteForDownloadingFile(url: URL.testsDownload(size: "1MB").absoluteString)
-        verifyDownloadPopupIsShown()
+        XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.navigation))
 
         // Wait until a completed row (size text) appears, then right-click that row
-        let sizeLabel = popover.staticTexts.containing(NSPredicate(format: "value MATCHES[c] '1.0 MB'"))
-        XCTAssertTrue(sizeLabel.firstMatch.waitForExistence(timeout: 20.0))
-        let table = popover.tables.firstMatch
-        XCTAssertTrue(table.waitForExistence(timeout: 5.0))
+        assertDownloadListed(filenameRegex: "1MB.*", sizeLabelRegex: "1.0 MB")
+
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let firstRow = table.cells.firstMatch
-        XCTAssertTrue(firstRow.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         firstRow.click()
         firstRow.rightClick()
-        let showInFinder = app.menuItems.containing(NSPredicate(format: "title CONTAINS[c] 'Show in Finder'"))
-        XCTAssertTrue(showInFinder.firstMatch.waitForExistence(timeout: 5.0))
+        let showInFinder = app.menuItems.containing(\.title, containing: "Show in Finder")
+        XCTAssertTrue(showInFinder.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         showInFinder.firstMatch.click()
 
         openDownloadsPopup()
-        XCTAssertTrue(table.waitForExistence(timeout: 5.0))
-        XCTAssertTrue(firstRow.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         firstRow.click()
         firstRow.rightClick()
-        let removeItem = app.menuItems.containing(NSPredicate(format: "title CONTAINS[c] 'Remove from List'"))
-        XCTAssertTrue(removeItem.firstMatch.waitForExistence(timeout: 5.0))
+        let removeItem = app.menuItems.containing(\.title, containing: "Remove from List")
+        XCTAssertTrue(removeItem.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         removeItem.firstMatch.click()
 
         // Verify popover shows empty state without toggling it closed
@@ -880,27 +856,27 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile()
         // Open downloads and cancel the first row
         openDownloadsPopup()
-        let table = popover.tables.firstMatch
-        XCTAssertTrue(table.waitForExistence(timeout: 5.0))
+
+        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let firstRow = table.cells.firstMatch
-        XCTAssertTrue(firstRow.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         firstRow.click()
         // Right-click and choose Stop to cancel
         firstRow.rightClick()
-        let stopItem = popover.menuItems.containing(NSPredicate(format: "title ==[c] 'Stop'")).firstMatch
-        XCTAssertTrue(stopItem.waitForExistence(timeout: 3.0))
+        let stopItem = popover.menuItems.containing(\.title, equalTo: "Stop").firstMatch
+        XCTAssertTrue(stopItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         stopItem.click()
 
         // Now right-click again and click Restart Download
         firstRow.rightClick()
-        let restartItem = popover.menuItems.containing(NSPredicate(format: "title ==[c] 'Restart Download'")).firstMatch
-        XCTAssertTrue(restartItem.waitForExistence(timeout: 3.0))
+        let restartItem = popover.menuItems.containing(\.title, equalTo: "Restart Download").firstMatch
+        XCTAssertTrue(restartItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         restartItem.click()
 
         // Assert popover remains open (do not toggle with Cmd+J)
         // Progress should resume: right-click again and ensure the Stop action is available
         firstRow.rightClick()
-        XCTAssertTrue(stopItem.waitForExistence(timeout: 5.0))
+        XCTAssertTrue(stopItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeKey(.escape, modifierFlags: [])
     }
 
@@ -1004,7 +980,11 @@ class DownloadsUITests: UITestCase {
         // Enter path and confirm
         app.typeText(directoryURL.path)
         sleep(1)
+        XCTAssertTrue(saveSheet.sheets.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         app.typeKey(.return, modifierFlags: [])
+        if !saveSheet.sheets.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            app.typeKey(.return, modifierFlags: [])
+        }
 
         // Enter filename and save
         app.typeKey("a", modifierFlags: [.command])
@@ -1054,23 +1034,21 @@ class DownloadsUITests: UITestCase {
             openDownloadsPopup()
         }
         if let sizeRegex = sizeLabelRegex {
-            let sizePredicate = NSPredicate(format: "value MATCHES[c] %@", sizeRegex)
-            let size = popover.staticTexts.containing(sizePredicate).firstMatch
-            XCTAssertTrue(size.waitForExistence(timeout: 15.0))
+            let size = popover.staticTexts.matching(.keyPath(\.value, matchingRegex: sizeRegex)).firstMatch
+            XCTAssertTrue(size.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         }
         if let filename {
-            XCTAssertTrue(popover.staticTexts[filename].waitForExistence(timeout: 15.0))
+            XCTAssertTrue(popover.staticTexts[filename].waitForExistence(timeout: UITests.Timeouts.localTestServer))
         }
         if let filenameRegex {
-            let namePredicate = NSPredicate(format: "value MATCHES[c] %@", filenameRegex)
-            let nameLabel = popover.staticTexts.containing(namePredicate).firstMatch
-            XCTAssertTrue(nameLabel.waitForExistence(timeout: 15.0))
+            let nameLabel = popover.staticTexts.matching(.keyPath(\.value, matchingRegex: filenameRegex)).firstMatch
+            XCTAssertTrue(nameLabel.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         }
     }
 
     private func clearDownloads() {
         let clearButton = app.buttons["DownloadsViewController.clearDownloadsButton"]
-        XCTAssertTrue(clearButton.waitForExistence(timeout: 10.0), "Clear button should exist when downloads are present")
+        XCTAssertTrue(clearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Clear button should exist when downloads are present")
         clearButton.click()
     }
 
@@ -1079,7 +1057,7 @@ class DownloadsUITests: UITestCase {
             openDownloadsPopup()
         }
         let clearButton = popover.buttons["DownloadsViewController.clearDownloadsButton"]
-        XCTAssertTrue(clearButton.waitForExistence(timeout: 2.0))
+        XCTAssertTrue(clearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         clearButton.click()
         verifyNoRecentDownloads()
     }
@@ -1100,7 +1078,7 @@ class DownloadsUITests: UITestCase {
 
     private func openDownloadsPopup() {
         app.typeKey("j", modifierFlags: [.command])
-        if !popover.waitForExistence(timeout: 2) {
+        if !popover.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
             app.typeKey("j", modifierFlags: [.command])
             XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         }
@@ -1162,35 +1140,6 @@ class DownloadsUITests: UITestCase {
         RunLoop.current.add(timer, forMode: .default)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout + 1.0)
         XCTAssertEqual(result, .completed, "Expected file to exist at \(url.path)")
-    }
-
-    private func trackForCleanup(_ path: String) {
-        cleanupPaths.insert(path)
-    }
-
-    private func cleanupTrackedFiles() {
-        guard !cleanupPaths.isEmpty else { return }
-
-        let paths = Array(cleanupPaths)
-        let pathsQuery = paths.joined(separator: ",")
-        let cleanupURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: pathsQuery)
-
-        let session = URLSession(configuration: .ephemeral)
-        let request = URLRequest(url: cleanupURL, cachePolicy: .reloadIgnoringLocalCacheData)
-
-        let expectation = expectation(description: "Cleanup request completed")
-        let task = session.dataTask(with: request) { _, response, error in
-            if let error = error {
-                self.record(.init(type: .system, compactDescription: "Cleanup request failed: \(error)"))
-            } else if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-                self.record(.init(type: .system, compactDescription: "Cleanup request returned status \(httpResponse.statusCode)"))
-            }
-            expectation.fulfill()
-        }
-        task.resume()
-
-        // Wait but don't fail the test if cleanup is slow
-        _ = XCTWaiter.wait(for: [expectation], timeout: 5.0)
     }
 
 }

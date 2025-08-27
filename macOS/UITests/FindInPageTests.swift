@@ -25,11 +25,6 @@ class FindInPageTests: UITestCase {
     private var findInPageCloseButton: XCUIElement!
     private var loremIpsumFileURL: URL!
 
-    override class func setUp()  {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -46,7 +41,7 @@ class FindInPageTests: UITestCase {
 
         addressBarTextField.pasteURL(loremIpsumFileURL, pressingEnter: true)
         XCTAssertTrue(
-            loremIpsumWebView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Lorem ipsum'")).firstMatch
+            loremIpsumWebView.staticTexts.containing(\.value, containing: "Lorem ipsum").firstMatch
                 .waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The \"Lorem Ipsum\" web page didn't load in a reasonable timeframe."
         )
@@ -156,7 +151,8 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_findInPage_showsFocusAndOccurrenceHighlighting() throws {
@@ -172,11 +168,13 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
 
         // Validate movement by advancing to next match using Command+G and asserting status updates.
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_findNext_menuItemGoesToNextOccurrence() throws {
@@ -192,7 +190,8 @@ class FindInPageTests: UITestCase {
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
         // Note: the following is not a localized test element, but it should have a localization strategy.
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
 
         let findNextMenuBarItem = app.menuItems["MainMenu.findNext"]
         XCTAssertTrue(
@@ -200,7 +199,8 @@ class FindInPageTests: UITestCase {
             "Couldn't find \"Find Next\" main menu bar item in a reasonable timeframe."
         )
         findNextMenuBarItem.click()
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_findNext_nextArrowGoesToNextOccurrence() throws {
@@ -215,7 +215,8 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
 
         let findInPageNextButton = app.windows.buttons["FindInPageController.nextButton"]
         XCTAssertTrue(
@@ -225,7 +226,8 @@ class FindInPageTests: UITestCase {
 
         findInPageNextButton.click()
 
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_findNext_commandGGoesToNextOccurrence() throws {
@@ -240,10 +242,12 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
 
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_findInPage_cyclesThroughAllOccurrences_UsingNextWrapsToFirst() throws {
@@ -254,16 +258,21 @@ class FindInPageTests: UITestCase {
         let statusField = app.textFields["FindInPageController.statusField"]
         XCTAssertTrue(statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "3 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "3 of 4"),
+                      "Status field should show '3 of 4', but got: \(statusField.value ?? "nil")")
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "4 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "4 of 4"),
+                      "Status field should show '4 of 4', but got: \(statusField.value ?? "nil")")
         // Wrap around to first
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_findPrevious_viaMenuShortcutAndButton() throws {
@@ -272,23 +281,27 @@ class FindInPageTests: UITestCase {
         app.typeText("maximus\r")
         let statusField = app.textFields["FindInPageController.statusField"]
         XCTAssertTrue(statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
 
         // Previous via menu item
         let findPreviousMenuItem = app.menuItems["MainMenu.findPrevious"]
         XCTAssertTrue(findPreviousMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         findPreviousMenuItem.click()
-        assertElement(statusField, hasValue: "4 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "4 of 4"),
+                      "Status field should show '4 of 4', but got: \(statusField.value ?? "nil")")
 
         // Previous via Cmd+Shift+G
         app.typeKey("g", modifierFlags: [.command, .shift])
-        assertElement(statusField, hasValue: "3 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "3 of 4"),
+                      "Status field should show '3 of 4', but got: \(statusField.value ?? "nil")")
 
         // Previous via button
         let findInPagePreviousButton = app.windows.buttons["FindInPageController.previousButton"]
         XCTAssertTrue(findInPagePreviousButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         findInPagePreviousButton.click()
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_clickingWebViewDeactivates_thenCmdFReactivatesAndKeepsText() throws {
@@ -297,17 +310,20 @@ class FindInPageTests: UITestCase {
         app.typeText("maximus\r")
         let statusField = app.textFields["FindInPageController.statusField"]
         XCTAssertTrue(statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
         // Click inside web content to move focus away
         loremIpsumWebView.click()
         // Press Cmd+F to reactivate find
         app.typeKey("f", modifierFlags: .command)
         // The search text should be kept; status should still be shown
         XCTAssertTrue(statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
         // And next should work
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
     }
 
     func test_hideAndReactivate_keepsTextAndNextWorks() throws {
@@ -316,7 +332,8 @@ class FindInPageTests: UITestCase {
         app.typeText("maximus\r")
         let statusField = app.textFields["FindInPageController.statusField"]
         XCTAssertTrue(statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
         // Hide and reactivate
         app.typeKey("f", modifierFlags: [.command, .shift])
         XCTAssertTrue(findInPageCloseButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence))
@@ -324,9 +341,11 @@ class FindInPageTests: UITestCase {
         XCTAssertTrue(findInPageCloseButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         // Text should be kept and next still works
         XCTAssertTrue(statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        assertElement(statusField, hasValue: "1 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"),
+                      "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
         app.typeKey("g", modifierFlags: [.command])
-        assertElement(statusField, hasValue: "2 of 4")
+        XCTAssertTrue(statusField.wait(for: \.value, equals: "2 of 4"),
+                      "Status field should show '2 of 4', but got: \(statusField.value ?? "nil")")
     }
 
 }

@@ -47,6 +47,10 @@ extension XCUIApplication {
         return app
     }
 
+    @nonobjc var path: String? {
+        self.value(forKey: "path") as? String
+    }
+
     /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
     /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
     func dismissPopover(buttonIdentifier: String) {
@@ -71,7 +75,7 @@ extension XCUIApplication {
         while window.exists {
             window.click()
             typeKey("w", modifierFlags: [.command, .option, .shift])
-            _=window.waitForNonExistence(timeout: 5)
+            _=window.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
         }
         typeKey("n", modifierFlags: .command)
     }
@@ -104,7 +108,14 @@ extension XCUIApplication {
 
     /// Address bar text field element
     var addressBar: XCUIElement {
-        textFields[AccessibilityIdentifiers.addressBarTextField]
+        windows.firstMatch.textFields[AccessibilityIdentifiers.addressBarTextField]
+    }
+
+    /// Activates the address bar if needed and returns its current value
+    /// - Returns: The current value of the address bar as a string
+    func addressBarValueActivatingIfNeeded() -> String? {
+        activateAddressBar()
+        return addressBar.value as? String
     }
 
     // MARK: - Bookmarks
@@ -198,7 +209,7 @@ extension XCUIApplication {
     func coordinatesForContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws -> CGRect {
         let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
         XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
+            contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Context menu did not appear in a reasonable timeframe."
         )
 
@@ -224,7 +235,7 @@ extension XCUIApplication {
     func clickContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws {
         let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
         XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
+            contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Context menu did not appear in a reasonable timeframe."
         )
 
@@ -260,15 +271,14 @@ extension XCUIApplication {
 
     /// Returns the Preferences/Settings window element
     var preferencesWindow: XCUIElement {
-        windows.containing(NSPredicate(format: "title CONTAINS[c] 'Preferences' OR title CONTAINS[c] 'Settings'"))
-            .firstMatch
+        windows.containing(\.title, equalTo: "Settings").firstMatch
     }
 
     /// Selects the General pane in Preferences
     func preferencesGoToGeneralPane() {
         let prefs = preferencesWindow
         let general = prefs.buttons["PreferencesSidebar.generalButton"]
-        if general.waitForExistence(timeout: 2.0) { general.click() }
+        if general.waitForExistence(timeout: UITests.Timeouts.elementExistence) { general.click() }
     }
 
     /// Sets startup behavior to reopen all windows from last session (or not)
@@ -282,10 +292,10 @@ extension XCUIApplication {
         let reopen = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"].firstMatch
         let openNew = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"].firstMatch
         if enabled {
-            XCTAssertTrue(reopen.waitForExistence(timeout: 2.0), "Reopen last session radio button should exist")
+            XCTAssertTrue(reopen.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Reopen last session radio button should exist")
             if reopen.isSelected == false { reopen.click() }
         } else {
-            XCTAssertTrue(openNew.waitForExistence(timeout: 2.0), "Open new window radio button should exist")
+            XCTAssertTrue(openNew.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Open new window radio button should exist")
             if openNew.isSelected == false { openNew.click() }
         }
     }
@@ -297,58 +307,30 @@ extension XCUIApplication {
         let toggleIdentifier = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         let scrollView = prefs.scrollViews.containing(.checkBox, identifier: toggleIdentifier).firstMatch
         scrollView.swipeUp()
-        let control = prefs.descendants(matching: .checkBox)
-            .matching(NSPredicate(format: "identifier == %@", toggleIdentifier))
-            .firstMatch
-        XCTAssertTrue(control.exists, "Always ask toggle should exist in Preferences")
+        let checkbox = prefs.checkBoxes.element(matching: .checkBox, identifier: toggleIdentifier)
+        XCTAssertTrue(checkbox.exists, "Always ask toggle should exist in Preferences")
 
-        if let valueString = control.value as? String {
-            let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { control.click() }
-        } else if let valueNumber = control.value as? NSNumber {
-            let isOn = valueNumber.intValue != 0
-            if isOn != enabled { control.click() }
-        } else {
-            // Fallback: click once and trust UI state
-            control.click()
-        }
+        checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
     /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
     func setSwitchToNewTabWhenOpened(enabled: Bool) {
         let prefs = preferencesWindow
         let label = "When opening links, switch to the new tab or window immediately"
-        let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
+        let checkbox = prefs.checkBoxes.element(matching: \.label, equalTo: label)
         XCTAssertTrue(checkbox.exists, "Switch-to-new-tab toggle should exist in Preferences")
 
-        if let valueString = checkbox.value as? String {
-            let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { checkbox.click() }
-        } else if let valueNumber = checkbox.value as? NSNumber {
-            let isOn = valueNumber.intValue != 0
-            if isOn != enabled { checkbox.click() }
-        } else {
-            // Fallback: click once and trust UI state
-            checkbox.click()
-        }
+        checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
     /// Sets the "Automatically open the Downloads panel when downloads complete" preference
     func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
         let prefs = preferencesWindow
         let label = "Automatically open the Downloads panel when downloads complete"
-        let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
+        let checkbox = prefs.checkBoxes.element(matching: \.label, equalTo: label)
         XCTAssertTrue(checkbox.exists, "Downloads panel toggle should exist in Preferences")
 
-        if let valueString = checkbox.value as? String {
-            let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { checkbox.click() }
-        } else if let valueNumber = checkbox.value as? NSNumber {
-            let isOn = valueNumber.intValue != 0
-            if isOn != enabled { checkbox.click() }
-        } else {
-            checkbox.click()
-        }
+        checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
     // MARK: - Downloads Location
@@ -367,7 +349,11 @@ extension XCUIApplication {
         // Type path and confirm
         typeText(directoryURL.path)
         sleep(1)
+        XCTAssertTrue(sheets.firstMatch.sheets.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         typeKey(.return, modifierFlags: [])
+        if !sheets.firstMatch.sheets.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            typeKey(.return, modifierFlags: [])
+        }
 
         // Confirm selection
         typeKey(.return, modifierFlags: [])

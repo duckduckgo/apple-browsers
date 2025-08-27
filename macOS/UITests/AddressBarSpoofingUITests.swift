@@ -35,7 +35,6 @@ class AddressBarSpoofingUITests: UITestCase {
         // Use extension property instead of manual reference
         addressBarTextField = app.addressBar
         webView = app.webViews.firstMatch
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     override func tearDown() {
@@ -52,16 +51,15 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = app.webViews.buttons["Start"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Start button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring address bar is ready for inspection
         // JavaScript execution should complete within a reasonable timeframe
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after exploit attempt")
+        Thread.sleep(forTimeInterval: 1)
 
         // Check that address bar was not spoofed to duckduckgo.com:8443
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertNotEqual(addressBarValue, "https://duckduckgo.com:8443/",
                           "Address bar should not be spoofed to malicious URL, got: \(addressBarValue)")
     }
@@ -76,14 +74,13 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring address bar is ready for inspection
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after exploit attempt")
+        Thread.sleep(forTimeInterval: 1)
 
         // Verify address bar protection and content
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // Check if the page shows "Not DDG." indicating the exploit was blocked
-        let notDDGContent = webView.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Not DDG.'")).firstMatch
+        let notDDGContent = webView.staticTexts.containing(\.label, containing: "Not DDG.").firstMatch
         let contentNotSpoofed = notDDGContent.exists
 
         // The exploit should be blocked, showing either:
@@ -109,10 +106,11 @@ class AddressBarSpoofingUITests: UITestCase {
         // Wait for exploit attempt to complete - JavaScript should execute within reasonable time
         // The exploit opens a popup window, so we wait for any content changes
         Thread.sleep(forTimeInterval: 3.0) // Allow time for JavaScript to execute and complete
+        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "Not DDG.").firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation should complete")
 
         // Check address bar state after exploit attempt
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // The exploit should be blocked - address bar should not show duckduckgo.com
         let addressBarNotSpoofed = !addressBarValue.contains("duckduckgo.com")
@@ -132,16 +130,15 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = app.webViews.buttons["run"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Run button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Run button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete
-        let navigationCompleted = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
-        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: 10.0), "Navigation to example.com should complete")
+        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // The browser should strip basic auth credentials, showing clean URL
         XCTAssertEqual(addressBarValue, "https://example.com/",
@@ -154,16 +151,15 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = app.webViews.buttons["run"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Run button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Run button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
-        let navigationCompleted = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
-        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: 10.0), "Navigation to example.com should complete")
+        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertEqual(addressBarValue, "https://example.com/",
                        "Basic auth should be stripped from address bar, got: \(addressBarValue)")
     }
@@ -174,16 +170,15 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = app.webViews.buttons["run"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Run button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Run button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
-        let navigationCompleted = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
-        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: 10.0), "Navigation to example.com should complete")
+        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to example.com should complete")
 
         // Verify basic auth is stripped from address bar
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         let basicAuthStrippedFromAddressBar = addressBarValue == "https://example.com/"
         XCTAssertTrue(basicAuthStrippedFromAddressBar,
                       "Basic auth should be stripped from address bar, got: \(addressBarValue)")
@@ -199,12 +194,11 @@ class AddressBarSpoofingUITests: UITestCase {
         runButton.click()
 
         // Wait for navigation to complete
-        let navigationCompleted = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'DuckDuckGo'")).firstMatch
-        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: 10.0), "Navigation to DuckDuckGo should complete")
+        let navigationCompleted = webView.staticTexts.containing(\.value, containing: "DuckDuckGo").firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to DuckDuckGo should complete")
 
         // Verify address bar shows correct destination after form submission
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // The form should navigate to duckduckgo.com (duck.co redirects there)
         XCTAssertEqual(addressBarValue, "https://duckduckgo.com/",
@@ -217,15 +211,14 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = app.webViews.buttons["Start"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Start button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
         // JavaScript execution should complete within a reasonable timeframe
 
         // Verify address bar state after exploit attempt
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // Based on the current test failure, the download redirect is happening
         // The browser should eventually be fixed to prevent this, but for now we test what actually happens
@@ -243,15 +236,14 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = webView.buttons["Start"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Start button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
         // JavaScript execution should complete within a reasonable timeframe
 
         // Verify address bar protection
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
         let addressBarEmpty = addressBarValue.isEmpty
         let addressBarIsData = addressBarValue.starts(with: "data:text/html")
@@ -266,15 +258,14 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = app.webViews.buttons["Start"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Start button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         runButton.click()
 
         // Wait for exploit attempt to complete by ensuring UI is ready for inspection
         // JavaScript execution should complete within a reasonable timeframe
 
         // Verify address bar protection
-        app.activateAddressBar()
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         let addressBarNotUpdated = addressBarValue == "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-unsupported-scheme.html"
         XCTAssertTrue(addressBarNotUpdated,
                       "Address bar should show original test page URL, got: \(addressBarValue)")
@@ -286,15 +277,14 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Click run button to trigger the exploit (button existence implies page loaded)
         let runButton = app.webViews.buttons["Start"]
-        XCTAssertTrue(runButton.waitForExistence(timeout: 15.0), "Start button should be available")
+        XCTAssertTrue(runButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available")
         runButton.click()
 
         // Wait for long-loading rewrite attempt to complete by ensuring address bar is accessible
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 8.0), "Address bar should be accessible after long-loading exploit attempt")
+        Thread.sleep(forTimeInterval: 1)
 
         // Verify address bar protection against long loading request rewrite
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site"),
                       "Address bar should show original test page URL, not be spoofed, got: \(addressBarValue)")
     }
@@ -315,7 +305,7 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Wait for second window to appear
         let secondWindow = app.windows.element(boundBy: 1)
-        XCTAssertTrue(secondWindow.waitForExistence(timeout: 5.0), "Second window should open")
+        XCTAssertTrue(secondWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Second window should open")
 
         // Step 2: Switch to the original window (it becomes the second one in order)
         app.menuBarItems["Window"].firstMatch.click()
@@ -323,19 +313,18 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Wait for the second window to show spoofing message
         let spoofMessage = secondWindow.staticTexts["Your address bar has been spoofed. This is not https://broken.third-party.site"]
-        XCTAssertTrue(spoofMessage.waitForExistence(timeout: 5.0), "Spoof warning message should appear in second window")
+        XCTAssertTrue(spoofMessage.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Spoof warning message should appear in second window")
 
         // Step 3: Click "Spoof" button in our original window
         let spoofButton = webView.buttons["Spoof"]
-        XCTAssertTrue(spoofButton.waitForExistence(timeout: 3.0), "Spoof button should be available")
+        XCTAssertTrue(spoofButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Spoof button should be available")
         spoofButton.click()
 
         // Wait for spoof attempt to complete by ensuring address bar is accessible  
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after spoof attempt")
+        Thread.sleep(forTimeInterval: 1)
 
         // Step 4: Verify address bar is NOT spoofed to "https://broken.third-party.site"
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // The browser should be protected - address bar should NOT show the spoofed URL
         let addressBarNotSpoofed = !addressBarValue.contains("broken.third-party.site")

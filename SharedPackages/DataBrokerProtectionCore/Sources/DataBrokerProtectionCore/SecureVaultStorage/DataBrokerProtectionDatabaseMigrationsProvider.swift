@@ -93,7 +93,7 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
         migrator.registerMigration("v5", migrate: migrateV5(database:))
         migrator.registerMigration("v6", migrate: migrateV6(database:))
         migrator.registerMigration("v7", migrate: migrateV7(database:))
-        migrator.registerMigration("v8", migrate: migrateV7(database:))
+        migrator.registerMigration("v8", migrate: migrateV8(database:))
     }
 
     static func migrateV1(database: Database) throws {

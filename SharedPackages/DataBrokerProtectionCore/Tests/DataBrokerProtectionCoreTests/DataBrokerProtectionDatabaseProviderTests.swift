@@ -77,6 +77,9 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         MockMigrationsProvider.didCallV3Migrations = false
         MockMigrationsProvider.didCallV4Migrations = false
         MockMigrationsProvider.didCallV5Migrations = false
+        MockMigrationsProvider.didCallV6Migrations = false
+        MockMigrationsProvider.didCallV7Migrations = false
+        MockMigrationsProvider.didCallV8Migrations = false
     }
 
     func testV3MigrationCleansUpOrphanedRecords_andResultsInNoDataIntegrityIssues() throws {
@@ -242,6 +245,18 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
         // Then
         XCTAssertEqual(optOut.attemptCount, 0)
+    }
+
+    func testV8Migration() throws {
+        // Given
+        XCTAssertNoThrow(try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v8Migrations))
+
+        // When
+        let brokers = try sut.fetchAllBrokers()
+        let broker = brokers.first!
+
+        // Then
+        XCTAssertNil(broker.removedAt, "New removedAt field should default to nil")
     }
 
     func testDeleteAllDataSucceedsInRemovingAllData() throws {

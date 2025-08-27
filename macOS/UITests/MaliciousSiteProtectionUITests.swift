@@ -141,11 +141,11 @@ class MaliciousSiteProtectionUITests: UITestCase {
         let phishingFirstLine = localization.phishingWarningText.title.components(separatedBy: "{newline}").first ?? localization.phishingWarningText.title
         let phishingWarning = webView.staticTexts.containing(\.value, containing: phishingFirstLine).firstMatch
         XCTAssertFalse(phishingWarning.exists, "Safe site should not show phishing warnings")
-        
+
         let malwareFirstLine = localization.malwarePageHeading.title.components(separatedBy: "{newline}").first ?? localization.malwarePageHeading.title
         let malwareWarning = webView.staticTexts.containing(\.value, containing: malwareFirstLine).firstMatch
         XCTAssertFalse(malwareWarning.exists, "Safe site should not show malware warnings")
-        
+
         let scamFirstLine = localization.scamPageHeading.title.components(separatedBy: "{newline}").first ?? localization.scamPageHeading.title
         let scamWarning = webView.staticTexts.containing(\.value, containing: scamFirstLine).firstMatch
         XCTAssertFalse(scamWarning.exists, "Safe site should not show scam warnings")
@@ -155,7 +155,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
         setScamBlockerEnabled(false)
         app.activateAddressBar()
         addressBarTextField.pasteURL(URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!, pressingEnter: true)
-        
+
         // Verify no phishing warning appears (check only first line of heading)
         let phishingFirstLine = localization.phishingPageHeading.title.components(separatedBy: "{newline}").first ?? localization.phishingPageHeading.title
         let phishingWarning = webView.staticTexts.containing(\.value, containing: phishingFirstLine).firstMatch
@@ -167,7 +167,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
         setScamBlockerEnabled(false)
         app.activateAddressBar()
         addressBarTextField.pasteURL(URL(string: "http://privacy-test-pages.site/security/badware/malware.html")!, pressingEnter: true)
-        
+
         // Verify no malware warning appears (check only first line of heading)
         let malwareFirstLine = localization.malwarePageHeading.title.components(separatedBy: "{newline}").first ?? localization.malwarePageHeading.title
         let malwareWarning = webView.staticTexts.containing(\.value, containing: malwareFirstLine).firstMatch

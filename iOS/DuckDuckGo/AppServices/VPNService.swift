@@ -38,12 +38,15 @@ final class VPNService: NSObject {
     init(mainCoordinator: MainCoordinator,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          application: UIApplication = UIApplication.shared,
-         notificationCenter: UNUserNotificationCenter = .current()) {
+         notificationCenter: UNUserNotificationCenter = .current(),
+         notificationServiceManager: NotificationServiceManager,
+    ) {
         self.mainCoordinator = mainCoordinator
         self.subscriptionManager = subscriptionManager
         self.application = application
-        self.notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
-        notificationCenter.delegate = notificationServiceManager
+        self.notificationServiceManager = notificationServiceManager
+        
+        notificationCenter.delegate = self.notificationServiceManager
         
         super.init()
 

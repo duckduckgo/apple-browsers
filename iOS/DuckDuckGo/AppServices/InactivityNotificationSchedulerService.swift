@@ -24,24 +24,31 @@ import BrowserServicesKit
 
 final class InactivityNotificationSchedulerService {
     
+    // MARK: - Dependencies
+    
     private let featureFlagger: FeatureFlagger
     private let userNotificationCenter: UNUserNotificationCenter
-    private let notificationPermissionsController: NotificationsAuthorizationControlling
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let notificationServiceManager: NotificationServiceManager
+    
+    // MARK: - Constants
     
     static let notificationIdentifier = "com.duckduckgo.inactivity.notification"
-    private let defaultNotificationSchedulingTime: Double = 7 * 60 * 60 * 24 // default to 7 days
-    private let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
+    static let defaultDaysInactive: Double = 7 // default to 7 days
+    static let daysInactiveSettingKey: String = "daysInactive"
+    private static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
     
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         userNotificationCenter: UNUserNotificationCenter = UNUserNotificationCenter.current(),
-         notificationPermissionsController: NotificationsAuthorizationControlling = NotificationsAuthorizationController(),
+         userNotificationCenter: UNUserNotificationCenter = .current(),
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         notificationServiceManager: NotificationServiceManager
     ) {
         self.featureFlagger = featureFlagger
         self.userNotificationCenter = userNotificationCenter
-        self.notificationPermissionsController = notificationPermissionsController
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.notificationServiceManager = notificationServiceManager
+        
+        userNotificationCenter.delegate = self.notificationServiceManager
     }
     
     // MARK: - Public
@@ -51,8 +58,9 @@ final class InactivityNotificationSchedulerService {
             cancelPendingNotifications()
             return
         }
-        
-        schedule()
+        Task {
+            await schedule()
+        }
     }
     
     // MARK: - Private
@@ -61,28 +69,34 @@ final class InactivityNotificationSchedulerService {
         return featureFlagger.isFeatureOn(.inactivityNotification)
     }
     
-    private func schedule() {
-        Task { @MainActor in
-            cancelPendingNotifications()
-            await requestProvisionalAuthorizationIfNeeded()
-            let request = buildUNNotificationRequest()
-            try? await userNotificationCenter.add(request)
-        }
-    }
-    
     private func cancelPendingNotifications() {
         userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [Self.notificationIdentifier])
     }
     
+    private func schedule() async {
+        cancelPendingNotifications()
+        await requestProvisionalAuthorizationIfNeeded()
+        
+        let status = await userNotificationCenter.notificationSettings().authorizationStatus
+        guard status == .provisional else { return }
+            
+        let request = buildUNNotificationRequest()
+        do {
+            try await userNotificationCenter.add(request)
+        } catch {
+            Logger.pushNotification.error("Inactivity notification scheduling failed with \(error.localizedDescription, privacy: .public)")
+        }
+    }
+    
     private func requestProvisionalAuthorizationIfNeeded() async {
-        let currentStatus = await notificationPermissionsController.authorizationStatus
+        let currentStatus = await userNotificationCenter.notificationSettings().authorizationStatus
         
         switch currentStatus {
         case .notDetermined:
             do {
-                let granted = try await userNotificationCenter.requestAuthorization(options: [.provisional])
+                _ = try await userNotificationCenter.requestAuthorization(options: [.provisional])
             } catch {
-                break
+                Logger.pushNotification.error("Inactivity notification authorization request failed with \(error.localizedDescription, privacy: .public)")
             }
         default:
             break
@@ -90,35 +104,45 @@ final class InactivityNotificationSchedulerService {
     }
     
     private func buildUNNotificationRequest() -> UNNotificationRequest {
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: makeTimeInterval(), repeats: false)
-        let request = UNNotificationRequest(
+        let daysInactive = makeDaysInactive()
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: daysInactive.toSeconds(), repeats: false)
+        return UNNotificationRequest(
             identifier: Self.notificationIdentifier,
-            content: makeUNNotificationContent(),
+            content: makeUNNotificationContent(with: daysInactive),
             trigger: trigger
         )
-        return request
     }
     
-    private func makeUNNotificationContent() -> UNNotificationContent {
+    private func makeUNNotificationContent(with daysInactive: Double = defaultDaysInactive) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
+        content.userInfo = [Self.daysInactiveSettingKey: daysInactive]
         return content
     }
     
-    private func makeTimeInterval() -> Double {
-        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: subfeature),
-              let jsonData = settings.data(using: .utf8) else { return defaultNotificationSchedulingTime }
+    private func makeDaysInactive() -> Double {
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: Self.subfeature),
+              let jsonData = settings.data(using: .utf8) else { return Self.defaultDaysInactive }
         do {
             if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: String],
-               let daysInactiveStr = settingsDict["daysInactive"],
-               let daysInactive = Double(daysInactiveStr)
-            {
-                return daysInactive * 24 * 60 * 60
+               let daysInactiveStr = settingsDict[Self.daysInactiveSettingKey],
+               let daysInactive = Double(daysInactiveStr) {
+                return daysInactive
             }
         } catch {
-            // No op
+            Logger.pushNotification.error("Inactivity notification daysInactiveSettingKey parsed failed with \(error.localizedDescription, privacy: .public)")
         }
-        return defaultNotificationSchedulingTime
+        return Self.defaultDaysInactive
     }
+}
+
+private extension Double {
+    func toSeconds() -> Double {
+        return self * 60 * 60 * 24
+    }
+}
+
+extension Logger {
+    static var pushNotification = { Logger(subsystem: "Push Notification", category: "") }()
 }

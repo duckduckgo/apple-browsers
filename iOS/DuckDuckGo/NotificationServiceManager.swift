@@ -23,12 +23,13 @@ import UIKit
 import NotificationCenter
 import Core
 
-final class NotificationServiceManager: NSObject, UNUserNotificationCenterDelegate {
+final class NotificationServiceManager: NSObject, @preconcurrency UNUserNotificationCenterDelegate {
     
     private let mainCoordinator: MainCoordinator
     
     init(mainCoordinator: MainCoordinator) {
         self.mainCoordinator = mainCoordinator
+        super.init()
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter,
@@ -41,17 +42,20 @@ final class NotificationServiceManager: NSObject, UNUserNotificationCenterDelega
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-            let identifier = response.notification.request.identifier
-
-            if NetworkProtectionNotificationIdentifier(rawValue: identifier) != nil {
+        
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
+        
+        let id = response.notification.request.identifier
+        switch id {
+            case InactivityNotificationSchedulerService.notificationIdentifier:
+            let daysInactive = response.notification.request.content.userInfo[InactivityNotificationSchedulerService.daysInactiveSettingKey] as? Double ?? InactivityNotificationSchedulerService.defaultDaysInactive
+            Pixel.fire(pixel: .provisionalPushNotificationTapped, withAdditionalParameters: [InactivityNotificationSchedulerService.daysInactiveSettingKey: String(daysInactive)])
+            case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
                 mainCoordinator.presentNetworkProtectionStatusSettingsModal()
-            }
-            
-            if identifier == InactivityNotificationSchedulerService.notificationIdentifier {
-                Pixel.fire(pixel: .provisionalPushNotificationTapped)
-            }
+            default:
+                break
         }
+        
         completionHandler()
     }
     

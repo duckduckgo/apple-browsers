@@ -101,7 +101,7 @@ struct AddEditBookmarkView: View {
         if shouldShowSyncButton {
             Divider()
             DismissableButton(
-                titleKey: "Sync Bookmarks Across Devices",
+                title: UserText.Bookmarks.Dialog.Action.syncBookmarks,
                 dismissButtonImage: DesignSystemImages.Glyphs.Size16.close,
                 backgroundColor: Color(designSystemColor: .controlsFillPrimary),
                 mainAction: syncButtonAction,

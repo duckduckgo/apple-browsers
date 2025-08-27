@@ -556,7 +556,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
 
         if syncDeviceButtonModel.shouldShowSyncButton {
-            addItem(withTitle: "Sync & Backup", action: #selector(startSync), keyEquivalent: "")
+            addItem(withTitle: UserText.sync, action: #selector(startSync), keyEquivalent: "")
                 .targetting(self)
                 .withImage(moreOptionsMenuIconsProvider.syncIcon)
         }

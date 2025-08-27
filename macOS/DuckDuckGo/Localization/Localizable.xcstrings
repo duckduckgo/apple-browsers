@@ -11184,6 +11184,18 @@
         }
       }
     },
+    "bookmarks.dialog.action.syncBookmarks" : {
+      "comment" : "CTA title for syncing bookmarks",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync Bookmarks Across Devices"
+          }
+        }
+      }
+    },
     "bookmarks.dialog.allTabs.message.add" : {
       "comment" : "Bookmark creation for all open tabs dialog title",
       "extractionState" : "extracted_with_value",
@@ -76988,9 +77000,6 @@
           }
         }
       }
-    },
-    "Sync Bookmarks Across Devices" : {
-
     },
     "sync.promo.bookmarks.message" : {
       "comment" : "Message for the Sync Promotion banner when user has bookmarks that can be synced",

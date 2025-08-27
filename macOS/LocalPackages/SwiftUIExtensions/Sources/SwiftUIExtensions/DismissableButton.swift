@@ -19,14 +19,14 @@
 import SwiftUI
 
 public struct DismissableButton: View {
-    private let titleKey: LocalizedStringKey
+    private let title: String
     private let dismissButtonImage: NSImage
     private let backgroundColor: Color
     private let mainAction: @MainActor () -> Void
     private let dismissAction: @MainActor () -> Void
 
-    public init(titleKey: LocalizedStringKey, dismissButtonImage: NSImage, backgroundColor: Color, mainAction: @escaping () -> Void, dismissAction: @escaping () -> Void) {
-        self.titleKey = titleKey
+    public init(title: String, dismissButtonImage: NSImage, backgroundColor: Color, mainAction: @escaping () -> Void, dismissAction: @escaping () -> Void) {
+        self.title = title
         self.dismissButtonImage = dismissButtonImage
         self.backgroundColor = backgroundColor
         self.mainAction = mainAction
@@ -37,7 +37,7 @@ public struct DismissableButton: View {
         HStack(spacing: 0) {
             // Main action area (fills remaining width)
             Button(action: mainAction) {
-                Text(titleKey)
+                Text(title)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 8)
                     .padding(.leading, 12)
@@ -63,10 +63,4 @@ public struct DismissableButton: View {
         )
         .padding(0)
     }
-}
-
-#Preview {
-//    DismissableButton()
-//        .padding()
-//        .previewLayout(.sizeThatFits)
 }

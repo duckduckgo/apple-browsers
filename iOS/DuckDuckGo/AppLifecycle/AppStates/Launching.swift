@@ -147,6 +147,7 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService()
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -170,7 +171,8 @@ struct Launching: LaunchingHandling {
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
                                defaultBrowserPromptService: defaultBrowserPromptService,
-                               systemSettingsPiPTutorialService: systemSettingsPiPTutorialService
+                               systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
+                               inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
         )
 
         // Register background tasks that run after app is ready

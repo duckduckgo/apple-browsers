@@ -223,6 +223,7 @@
 		31EEBCDB2E2AABAD00901255 /* NavigationActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */; };
 		31FD991B2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */; };
 		369E69282E5F4B9600F98A8F /* InactivityNotificationSchedulerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */; };
+		369E692A2E5F579B00F98A8F /* NotificationServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69292E5F579500F98A8F /* NotificationServiceManager.swift */; };
 		3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */; };
 		372A0FF02B2389590033BF7F /* SyncMetricsEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */; };
 		373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */; };
@@ -2154,6 +2155,7 @@
 		31EEBCDA2E2AABA900901255 /* NavigationActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarView.swift; sourceTree = "<group>"; };
 		31FD991A2DCE6AAB00AAC9C7 /* ExperimentalAIChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalAIChatManager.swift; sourceTree = "<group>"; };
 		369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerService.swift; sourceTree = "<group>"; };
+		369E69292E5F579500F98A8F /* NotificationServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceManager.swift; sourceTree = "<group>"; };
 		3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingStoreErrorHandling.swift; sourceTree = "<group>"; };
 		372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetricsEventsHandler.swift; sourceTree = "<group>"; };
 		3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeStorage.swift; sourceTree = "<group>"; };
@@ -8387,6 +8389,7 @@
 		F1C5ECF31E37812900C599A4 /* Application */ = {
 			isa = PBXGroup;
 			children = (
+				369E69292E5F579500F98A8F /* NotificationServiceManager.swift */,
 				CBD72E6A2E2526C900DB0938 /* LaunchTask */,
 				CB05BCD52D676AFF0034ABA6 /* UICoordination */,
 				CBAD0F042CFE1DA2006267B8 /* AppLifecycle */,
@@ -10116,6 +10119,7 @@
 				8C4724502217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift in Sources */,
 				564DE4532C3ED1B700D23241 /* NewTabDaxDialogFactory.swift in Sources */,
 				1EDE39D22705D4A200C99C72 /* FileSizeDebugViewController.swift in Sources */,
+				369E692A2E5F579B00F98A8F /* NotificationServiceManager.swift in Sources */,
 				4B412ACC2BBB3D0900A39F5E /* LazyView.swift in Sources */,
 				7B10FF252D11A56300F36BF2 /* ControlWidgetVPNIntents.swift in Sources */,
 				85047C772A0D5D3D00D2FF3F /* SyncSettingsViewController+SyncDelegate.swift in Sources */,

@@ -29,7 +29,7 @@ final class InactivityNotificationSchedulerService {
     private let notificationPermissionsController: NotificationsAuthorizationControlling
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     
-    private let notificationIdentifier = "com.duckduckgo.inactivity.notification"
+    static let notificationIdentifier = "com.duckduckgo.inactivity.notification"
     private let defaultNotificationSchedulingTime: Double = 7 * 60 * 60 * 24 // default to 7 days
     private let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
     
@@ -71,7 +71,7 @@ final class InactivityNotificationSchedulerService {
     }
     
     private func cancelPendingNotifications() {
-        userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [notificationIdentifier])
+        userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [Self.notificationIdentifier])
     }
     
     private func requestProvisionalAuthorizationIfNeeded() async {
@@ -92,7 +92,7 @@ final class InactivityNotificationSchedulerService {
     private func buildUNNotificationRequest() -> UNNotificationRequest {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: makeTimeInterval(), repeats: false)
         let request = UNNotificationRequest(
-            identifier: notificationIdentifier,
+            identifier: Self.notificationIdentifier,
             content: makeUNNotificationContent(),
             trigger: trigger
         )

@@ -1341,6 +1341,9 @@ extension Pixel {
         case systemSettingsPiPTutorialFailedToLoadVideo
 
         case appDidTerminateWithUnhandledError
+        
+        // MARK: - Push Notifications
+        case provisionalPushNotificationTapped
     }
 
 }
@@ -2611,6 +2614,9 @@ extension Pixel.Event {
         case .systemSettingsPiPTutorialFailedToLoadVideo: return "m_picture-in-picture-tutorial_failed-to-load-video"
 
         case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
+            
+        // MARK: Push Notification
+        case .provisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         }
     }
 }

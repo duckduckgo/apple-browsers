@@ -57,7 +57,7 @@ final class DeviceSyncCoordinator {
 
     @MainActor
     private func presentDialog(completion: (() -> Void)? = nil) {
-        guard !(syncWindowController?.window?.isVisible ?? false) else {
+        guard syncWindowController?.window?.isVisible != true else {
             return
         }
 

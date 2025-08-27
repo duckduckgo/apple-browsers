@@ -98,7 +98,7 @@ class AutocompleteViewModel: ObservableObject {
     }
 
     func nextSelection() {
-        let all = topHits + ddgSuggestions + localResults
+        let all = topHits + ddgSuggestions + localResults + aiChatSuggestions
         guard let selection else {
             selection = all.first
             return
@@ -116,7 +116,7 @@ class AutocompleteViewModel: ObservableObject {
 
     func previousSelection() {
         guard let selection else { return }
-        let all = topHits + ddgSuggestions + localResults
+        let all = topHits + ddgSuggestions + localResults + aiChatSuggestions
 
         guard let index = all.firstIndex(of: selection) else {
             return

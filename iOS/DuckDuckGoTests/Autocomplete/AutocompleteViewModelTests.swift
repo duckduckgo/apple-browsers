@@ -170,6 +170,47 @@ final class AutocompleteViewModelTests: XCTestCase {
             XCTFail("Expected askAIChat suggestion")
         }
     }
+
+    func testNextSelection_IncludesAiChatSuggestions() {
+        let (vm, _) = makeViewModel(showMessage: true, showAskAIChat: true)
+        vm.query = "test query"
+        let first = AutocompleteViewModel.SuggestionModel(suggestion: .phrase(phrase: "first"))
+        let aiChat = AutocompleteViewModel.SuggestionModel(suggestion: .askAIChat(value: "test query"))
+        
+        vm.topHits = [first]
+        vm.aiChatSuggestions = [aiChat]
+        
+        vm.selection = first
+        vm.nextSelection()
+        
+        XCTAssertEqual(vm.selection, aiChat)
+    }
+
+    func testPreviousSelection_IncludesAiChatSuggestions() {
+        let (vm, _) = makeViewModel(showMessage: true, showAskAIChat: true)
+        vm.query = "test query"
+        let first = AutocompleteViewModel.SuggestionModel(suggestion: .phrase(phrase: "first"))
+        let aiChat = AutocompleteViewModel.SuggestionModel(suggestion: .askAIChat(value: "test query"))
+        
+        vm.topHits = [first]
+        vm.aiChatSuggestions = [aiChat]
+        
+        vm.selection = aiChat
+        vm.previousSelection()
+        
+        XCTAssertEqual(vm.selection, first)
+    }
+
+    func testNextSelection_WhenNoSelection_SelectsFirstFromAllIncludingAiChat() {
+        let (vm, _) = makeViewModel(showMessage: true, showAskAIChat: true)
+        vm.query = "test query"
+        let aiChat = AutocompleteViewModel.SuggestionModel(suggestion: .askAIChat(value: "test query"))
+        vm.aiChatSuggestions = [aiChat]
+        
+        vm.nextSelection()
+        
+        XCTAssertEqual(vm.selection, aiChat)
+    }
 }
 
 private final class MockAutocompleteViewModelDelegate: NSObject, AutocompleteViewModelDelegate {

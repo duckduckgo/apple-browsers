@@ -35,7 +35,7 @@ extension Suggestion {
             return .autocompleteClickOpenTab(from: source)
         case .internalPage:
             return nil
-        case .unknown:
+        case .unknown, .askAIChat:
             return nil
         }
     }

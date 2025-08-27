@@ -16,10 +16,6 @@ jobs:
     runs-on: macos-15-xlarge
     timeout-minutes: 10
 
-    outputs:
-      release_branch_name: ${{ steps.make_release_branch.outputs.release_branch_name }}
-      asana_task_url: ${{ steps.create_release_task.outputs.asana_task_url }}
-
     steps:
 
       - name: Check out the code

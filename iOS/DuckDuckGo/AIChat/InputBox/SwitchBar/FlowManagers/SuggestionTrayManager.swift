@@ -214,7 +214,7 @@ final class SuggestionTrayManager: NSObject {
     
     private func extractText(from suggestion: Suggestion) -> String? {
         switch suggestion {
-        case .phrase(let phrase):
+        case .phrase(let phrase), .askAIChat(let phrase):
             return phrase
         case .website(let url):
             return extractTextFromURL(url)

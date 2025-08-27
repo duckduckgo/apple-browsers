@@ -197,6 +197,8 @@ extension Pixel {
         case autocompleteClickSearchHistory
         case autocompleteClickSiteHistory
         case autocompleteClickOpenTab
+        case autocompleteAskAIChatLegacyExperience
+        case autocompleteAskAIChatExperimentalExperience
         case autocompleteDisplayedLocalBookmark
         case autocompleteDisplayedLocalFavorite
         case autocompleteDisplayedLocalHistory
@@ -1501,6 +1503,10 @@ extension Pixel.Event {
         case .autocompleteClickSearchHistory: return "m_autocomplete_click_history_search"
         case .autocompleteClickSiteHistory: return "m_autocomplete_click_history_site"
         case .autocompleteClickOpenTab: return "m_autocomplete_click_switch_to_tab"
+
+        case .autocompleteAskAIChatLegacyExperience: return "m_autocomplete_click_askaichat_legacy"
+        case .autocompleteAskAIChatExperimentalExperience: return "m_autocomplete_click_askaichat_experimental"
+
         case .autocompleteDisplayedLocalBookmark: return "m_autocomplete_display_local_bookmark"
         case .autocompleteDisplayedLocalFavorite: return "m_autocomplete_display_local_favorite"
         case .autocompleteDisplayedLocalHistory: return "m_autocomplete_display_local_history"

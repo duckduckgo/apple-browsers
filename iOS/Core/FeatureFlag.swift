@@ -155,7 +155,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
-    
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
+    case askAIChatSuggestion
+
     /// Adds kbg=-1 parameter to search URLs when DuckAI is disabled
     case duckAISearchParameter
 
@@ -223,9 +226,11 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .scheduledSetDefaultBrowserPrompts,
              .scheduledSetDefaultBrowserPromptsForInactiveUsers,
+             .askAIChatSuggestion,
              .duckAISearchParameter,
              .inactivityNotification,
-             .daxEasterEggLogos:
+             .daxEasterEggLogos,
+             .dbpEmailConfirmationDecoupling:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -233,7 +238,43 @@ extension FeatureFlag: FeatureFlagDescribing {
             } else {
                 return false
             }
-        default:
+        case .debugMenu,
+               .sync,
+               .autofillCredentialInjecting,
+               .autofillCredentialsSaving,
+               .autofillInlineIconCredentials,
+               .autofillAccessCredentialManagement,
+               .autofillPasswordGeneration,
+               .autofillOnByDefault,
+               .autofillFailureReporting,
+               .autofillOnForExistingUsers,
+               .autofillUnknownUsernameCategorization,
+               .autofillPartialFormSaves,
+               .autofillCreditCards,
+               .autofillCreditCardsOnByDefault,
+               .inputFocusApi,
+               .incontextSignup,
+               .autoconsentOnByDefault,
+               .duckPlayer,
+               .duckPlayerOpenInNewTab,
+               .sslCertificatesBypass,
+               .syncPromotionBookmarks,
+               .syncPromotionPasswords,
+               .onboardingHighlights,
+               .onboardingAddToDock,
+               .autofillSurveys,
+               .autocompleteTabs,
+               .adAttributionReporting,
+               .dbpRemoteBrokerDelivery,
+               .crashReportOptInStatusResetting,
+               .privacyProFreeTrialJan25,
+               .webViewStateRestoration,
+               .syncSeamlessAccountSwitching,
+               .failsafeExampleCrossPlatformFeature,
+               .failsafeExamplePlatformSpecificSubfeature,
+               .experimentalAddressBar,
+               .aiChatKeepSession,
+               .aiFeaturesSettingsUpdate:
             return false
         }
     }
@@ -370,6 +411,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .duckAISearchParameter:
             return .enabled
+        case .askAIChatSuggestion:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.askAIChatSuggestion))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:

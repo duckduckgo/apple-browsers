@@ -5,8 +5,12 @@ defaults:
     working-directory: macOS
 
 on:
-  schedule:
-    - cron: '0 5 * * 2-5' # Run at 05:00 UTC, Tuesday through Friday
+  push:
+    branches:
+      - 'release/macos/**'
+    paths:
+      - 'SharedPackages/**'
+      - 'macOS/**'
   workflow_dispatch:
     inputs:
       asana-task-url:
@@ -23,7 +27,7 @@ on:
         type: boolean
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: 'macos-release'
   cancel-in-progress: false
 
 jobs:

@@ -40,13 +40,23 @@ runs:
         VERSION="${{ inputs.app-version }}.${{ inputs.build-number }}${{ inputs.suffix != '' && format('.{0}', inputs.suffix) || '' }}"
         echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+    - name: Sanitize sizes
+      id: sanitize-sizes
+      shell: bash
+      run: |
+        # Remove unit suffixes (MB, GB, etc.) to get clean numeric values for easier metric transformations
+        SANITIZED_DOWNLOAD_SIZE=$(echo "${{ steps.parse.outputs.download_size }}" | sed 's/[A-Z]*$//')
+        SANITIZED_INSTALLATION_SIZE=$(echo "${{ steps.parse.outputs.installation_size }}" | sed 's/[A-Z]*$//')
+        echo "download_size=${SANITIZED_DOWNLOAD_SIZE}" >> $GITHUB_OUTPUT
+        echo "installation_size=${SANITIZED_INSTALLATION_SIZE}" >> $GITHUB_OUTPUT
+
     - name: Send Download Size Pixel
       if: ${{ inputs.download-size-pixel-name != '' }}
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: ${{ inputs.download-size-pixel-name }}
         query-params: |
-          size: ${{ steps.parse.outputs.download_size }}
+          size: ${{ steps.sanitize-sizes.outputs.download_size }}
           appVersion: ${{ steps.app-version.outputs.version }}
 
     - name: Send Installation Size Pixel
@@ -55,5 +65,5 @@ runs:
       with:
         pixel-name: ${{ inputs.installation-size-pixel-name }}
         query-params: |
-          size: ${{ steps.parse.outputs.installation_size }}
+          size: ${{ steps.sanitize-sizes.outputs.installation_size }}
           appVersion: ${{ steps.app-version.outputs.version }}

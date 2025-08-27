@@ -38,6 +38,8 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case httpError(code: Int)
     case dataNotInDatabase
     case jobTimeout
+    case malformedBroker
+    case emailConfirmationFailed
 
     static func parse(params: Any) -> DataBrokerProtectionError {
         let errorDataResult = try? JSONSerialization.data(withJSONObject: params)
@@ -88,6 +90,10 @@ extension DataBrokerProtectionError {
             return "dataNotInDatabase"
         case .jobTimeout:
             return "jobTimeout"
+        case .malformedBroker:
+            return "malformedBroker"
+        case .emailConfirmationFailed:
+            return "emailConfirmationFailed"
         }
     }
 }
@@ -111,6 +117,8 @@ extension DataBrokerProtectionError: CustomNSError {
         case .dataNotInDatabase: return 113
         /// code 114 was for .vaultNotAvailable error, which has been removed
         case .jobTimeout: return 115
+        case .malformedBroker: return 116
+        case .emailConfirmationFailed: return 117
         }
     }
 }

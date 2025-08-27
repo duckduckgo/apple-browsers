@@ -17,10 +17,11 @@
 //
 
 import Foundation
+import Common
 
 extension APIRequestV2 {
 
-    public enum Error: Swift.Error, LocalizedError, Equatable {
+    public enum Error: DDGError {
 
         case urlSession(Swift.Error)
         case invalidResponse
@@ -30,10 +31,10 @@ extension APIRequestV2 {
         case emptyResponseBody
         case invalidURL
 
-        public var errorDescription: String? {
+        public var description: String {
             switch self {
             case .urlSession(let error):
-                return "URL session error: \(error.localizedDescription)"
+                return "URL session error: \(String(describing: error))"
             case .invalidResponse:
                 return "Invalid response received."
             case .unsatisfiedRequirement(let requirement):
@@ -49,15 +50,41 @@ extension APIRequestV2 {
             }
         }
 
-        public var localizedDescription: String {
-            errorDescription ?? "Unknown"
+        public static var errorDomain: String = "com.duckduckgo.networking.APIRequestV2"
+
+        public var errorCode: Int {
+            switch self {
+            case .urlSession:
+                return 11400
+            case .invalidResponse:
+                return 11401
+            case .unsatisfiedRequirement:
+                return 11402
+            case .invalidStatusCode:
+                return 11403
+            case .invalidDataType:
+                return 11404
+            case .emptyResponseBody:
+                return 11405
+            case .invalidURL:
+                return 11406
+            }
+        }
+
+        public var underlyingError: Error? {
+            switch self {
+            case .urlSession(let error):
+                return error as? Error
+            default:
+                return nil
+            }
         }
 
         // MARK: - Equatable Conformance
         public static func == (lhs: Error, rhs: Error) -> Bool {
             switch (lhs, rhs) {
             case (.urlSession(let lhsError), .urlSession(let rhsError)):
-                return lhsError.localizedDescription == rhsError.localizedDescription
+                return String(describing: lhsError) == String(describing: rhsError)
             case (.invalidResponse, .invalidResponse):
                 return true
             case (.unsatisfiedRequirement(let lhsRequirement), .unsatisfiedRequirement(let rhsRequirement)):

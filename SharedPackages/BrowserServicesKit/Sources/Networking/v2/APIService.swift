@@ -66,7 +66,7 @@ public class DefaultAPIService: APIService {
         do {
             result = try await urlSession.data(for: request.urlRequest)
         } catch {
-            Logger.networking.error("Request failed: \(error.localizedDescription)\nrequest: \(request.url?.absoluteString ?? "unknown URL")")
+            Logger.networking.error("Request failed: \(String(describing: error))\nrequest: \(request.url?.absoluteString ?? "unknown URL")")
 
             if let retryPolicy = request.retryPolicy,
                failureRetryCount < retryPolicy.maxRetries {
@@ -128,7 +128,7 @@ public class DefaultAPIService: APIService {
         let notModifiedIsAllowed: Bool = request.responseConstraints?.contains(.allowHTTPNotModified) ?? false
         if responseHTTPStatus == .notModified && !notModifiedIsAllowed {
             let error = APIRequestV2.Error.unsatisfiedRequirement(.allowHTTPNotModified)
-            Logger.networking.error("Error: \(error.localizedDescription)")
+            Logger.networking.error("Error: \(String(describing: error))")
             throw error
         }
         if let requirements = request.responseConstraints {
@@ -137,14 +137,14 @@ public class DefaultAPIService: APIService {
                 case .requireETagHeader:
                     guard httpResponse.etag != nil else {
                         let error = APIRequestV2.Error.unsatisfiedRequirement(requirement)
-                        Logger.networking.error("Error: \(error.localizedDescription)")
+                        Logger.networking.error("Error: \(String(describing: error))")
                         throw error
                     }
                 case .requireUserAgent:
                     guard let userAgent = httpResponse.allHeaderFields[HTTPHeaderKey.userAgent] as? String,
                           userAgent.isEmpty == false else {
                         let error = APIRequestV2.Error.unsatisfiedRequirement(requirement)
-                        Logger.networking.error("Error: \(error.localizedDescription)")
+                        Logger.networking.error("Error: \(String(describing: error))")
                         throw error
                     }
                 default:

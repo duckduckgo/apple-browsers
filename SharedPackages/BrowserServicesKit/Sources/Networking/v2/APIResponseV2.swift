@@ -46,7 +46,7 @@ public extension APIResponseV2 {
         case is String.Type:
             guard let resultString = String(data: data, encoding: .utf8) as? T else {
                 let error = APIRequestV2.Error.invalidDataType
-                Logger.networking.error("Error: \(error.localizedDescription)")
+                Logger.networking.error("Error: \(String(describing: error), privacy: .public)")
                 throw error
             }
             return resultString

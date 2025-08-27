@@ -1267,7 +1267,7 @@ final class DataImportViewModelTests: XCTestCase {
     @MainActor
     func testWhenAllOtherScreensShow_shouldNotShowSyncFooterButton() async throws {
         for screen: DataImportViewModel.Screen in [.profileAndDataTypesPicker, .moreInfo, .getReadPermission(.aboutDuckDuckGo), .fileImport(dataType: .bookmarks), .feedback] {
-            let model = DataImportViewModel(importSource: .chrome, screen: .summary([.bookmarks], isFileImport: true), summary: [])
+            let model = DataImportViewModel(importSource: .chrome, screen: screen, summary: [])
             XCTAssertFalse(model.shouldShowSyncFooterButton)
         }
     }

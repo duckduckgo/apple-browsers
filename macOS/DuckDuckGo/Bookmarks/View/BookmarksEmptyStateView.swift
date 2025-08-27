@@ -84,17 +84,6 @@ public struct BookmarksEmptyStateView: View {
             }
 
             HStack(spacing: 10) {
-                if !content.shouldHideImportButton {
-                    Button(UserText.bookmarksEmptyStateImportButtonTitle) {
-                        onImportClicked()
-                    }
-                    .buttonStyle(DynamicWidthButtonStyle(
-                        maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
-                        defaultBackgroundColor: .buttonsPrimaryDefault,
-                        pressedBackgroundColor: .buttonsPrimaryPressed,
-                        textColor: .buttonsPrimaryText
-                    ))
-                }
                 if !content.shouldHideSyncButton, syncButtonModel.shouldShowSyncButton {
                     Button(UserText.bookmarksEmptyStateSyncButtonTitle) {
                         onSyncClicked()
@@ -104,6 +93,17 @@ public struct BookmarksEmptyStateView: View {
                         defaultBackgroundColor: .buttonsSecondaryFillDefault,
                         pressedBackgroundColor: .buttonsSecondaryFillPressed,
                         textColor: .buttonsSecondaryFillText
+                    ))
+                }
+                if !content.shouldHideImportButton {
+                    Button(UserText.bookmarksEmptyStateImportButtonTitle) {
+                        onImportClicked()
+                    }
+                    .buttonStyle(DynamicWidthButtonStyle(
+                        maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
+                        defaultBackgroundColor: .buttonsPrimaryDefault,
+                        pressedBackgroundColor: .buttonsPrimaryPressed,
+                        textColor: .buttonsPrimaryText
                     ))
                 }
             }

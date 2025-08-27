@@ -176,8 +176,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
-             .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .askAIChatSuggestion:
+             .createFireproofFaviconUpdaterSecureVaultInBackground:
             true
         default:
             false

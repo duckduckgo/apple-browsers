@@ -284,7 +284,7 @@ private struct SuggestionView: View {
             case .askAIChat(value: let value):
                 SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
                                    title: value,
-                                   subtitle: "Ask Duck.ai")
+                                   subtitle: UserText.autocompleteAskAIChat)
                 .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
 
             }

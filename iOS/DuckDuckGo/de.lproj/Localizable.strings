@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Browsing-Daten mit einem Klick löschen";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blockiert Tracker von Drittanbietern";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Mehr erfahren";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Lasse Cookie-Zustimmungs-Popups von DuckDuckGo verwalten";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Einstellungen";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Hilft dabei, Tracker von Drittanbietern zu blockieren, die versuchen, sich innerhalb einer Website mit DNS zu tarnen.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Schützt vor DNS CNAME Cloaking";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Deaktiviert das Tracking für Facebook-Inhalte wie Facebook-Kommentar-Widgets auf Nicht-Facebook-Seiten.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebook-Tracking-Schutz";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Hilft zu verhindern, dass Tracking-Unternehmen eindeutige Identifikatoren über deinen Browser und dein Gerät erhalten, die sie nutzen würden, um dich im Internet zu verfolgen.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Verhindert das Tracking von Fingerabdrücken";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Lässt Cookies von Erstanbietern automatisch nach 30 Tagen ablaufen, damit Websites dich nicht auf unbestimmte Zeit tracken können, wenn du abgemeldet bist.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Erstanbieter-Cookies laufen ab";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Ersetzt die Google AMP-Links durch die ursprüngliche Website des Herausgebers.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blockiert das AMP-Tracking von Google";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blockiert Google-Anmelde-Pop-ups auf Websites, die nicht Google gehören.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blockiert die Anmelde-Pop-ups von Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Entfernt Tracking-Parameter in Links, um zu verhindern, dass Dritte dein Verhalten über verschiedene Websites hinweg verfolgen können.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blockiert Link-Tracking";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Hilft dabei, Unternehmen daran zu hindern, die von dir zuletzt besuchte Website zu identifizieren.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Schützt vor Referrer-Tracking";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blockiert invasive Tracker, bevor sie geladen werden, und eliminiert so effektiv Werbung, die auf Tracking basiert.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blockiert zielgerichtete Werbung";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Hilft Cookies von Drittanbietern zu blockieren, die dich von Website zu Website tracken, indem das Laden von Drittanbieter-Trackern verhindert wird.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blockiert Tracker von Drittanbietern";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Ungeschützte Websites";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web Tracking Protection";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections sind immer aktiviert";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blockiert beim Durchsuchen des Internets automatisch ausgeblendete Tracker.[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Wie wir dich schützen";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Der DuckDuckGo-Browser bietet Tracking-Schutz, der immer aktiv ist. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Wähle die Option, die dein Problem am besten beschreibt.";

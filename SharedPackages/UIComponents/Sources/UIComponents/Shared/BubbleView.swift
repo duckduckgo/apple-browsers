@@ -1,6 +1,5 @@
 //
 //  BubbleView.swift
-//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -23,14 +22,14 @@ import SwiftUI
 
 /// A shape representing a rectangular bubble with a directional arrow and rounded corners.
 /// Used internally by BubbleView.
-struct Bubble: InsettableShape {
+public struct Bubble: InsettableShape {
     let arrowLength: CGFloat
     let arrowWidth: CGFloat
     let arrowPositionPercent: CGFloat
     let cornerRadius: CGFloat
 
     // swiftlint:disable:next cyclomatic_complexity
-    func path(in rect: CGRect) -> Path {
+    public func path(in rect: CGRect) -> Path {
 
         let radius = max(0, cornerRadius)
         guard rect.width >= 2 * radius, rect.height >= 2 * radius else {
@@ -137,19 +136,19 @@ struct Bubble: InsettableShape {
         return path
     }
 
-    func inset(by amount: CGFloat) -> some InsettableShape {
+    public func inset(by amount: CGFloat) -> some InsettableShape {
          // Basic inset conformance, strokeBorder handles the rest
         return self
     }
 
-    // Make Edge internal (default) so BubbleView can access it
-    enum Edge { case top, right, bottom, left }
+    // Make Edge public so BubbleView can access it
+    public enum Edge { case top, right, bottom, left }
 }
 
 // MARK: - Bubble View Definition
 
 /// A view that displays content within a bubble shape, automatically sizing to the content.
-struct BubbleView<Content: View>: View {
+public struct BubbleView<Content: View>: View {
     // Content to display inside the bubble
     let content: Content
 
@@ -171,7 +170,7 @@ struct BubbleView<Content: View>: View {
                cornerRadius: cornerRadius)
     }
 
-    var body: some View {
+    public var body: some View {
         content
             // Add padding around the content BEFORE applying background/overlay
             .padding(paddingAmount)
@@ -230,7 +229,7 @@ struct BubbleView<Content: View>: View {
      ///   - borderWidth: Width of the bubble's border.
      ///   - paddingAmount: Padding between the content and the bubble edge. Defaults to 10.
      ///   - content: A closure returning the View to display inside the bubble.
-     init(
+     public init(
          arrowLength: CGFloat = 15,
          arrowWidth: CGFloat = 30,
          arrowPositionPercent: CGFloat = 10,

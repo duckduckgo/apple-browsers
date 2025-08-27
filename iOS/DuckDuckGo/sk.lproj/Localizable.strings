@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Odstráni údaje prehliadania jedným tlačidlom";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokovať sledovanie tretími stranami";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnica";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Zistite viac";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Nech DuckDuckGo spravuje kontextové okná týkajúce sa súhlasu so súbormi cookie";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Nastavenia";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Pomáha blokovať sledovacie programy tretích strán, ktoré sa snažia zamaskovať v rámci webovej lokality pomocou DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Chráni pred maskovaním názvov DNS CNAME";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Zakáže sledovanie obsahu Facebooku, ako sú miniaplikácie komentárov na Facebooku na stránkach, ktoré nie sú na Facebooku.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Ochrana pred sledovaním na Facebooku";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Pomáha zabrániť sledovacím spoločnostiam v získavaní jedinečných identifikátorov o tvojom prehliadači a zariadení, ktoré používajú na to, aby ťa sledovali na webe.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Zabraňuje sledovaniu odtlačkov prstov";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Po 30 dňoch automaticky vyprší platnosť súborov cookie prvej strany, čím sa zabezpečí, že ťa weby nebudú po odhlásení sledovať bez časového obmedzenia.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Exspirácia súborov cookie prvej strany";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Nahradí odkazy Google AMP webom pôvodného vydavateľa.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokuje sledovanie AMP spoločnosti Google";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokuje vyskakovacie okná pre prihlásenie pomocou Google na stránkach, ktoré spoločnosť Google nevlastní.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokovanie vyskakovacích okien na prihlásenie do služby Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Odstráni parametre sledovania v odkazoch, aby zabránil tretím stranám sledovať tvoje správanie na stránkach.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokuje sledovanie odkazov";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Pomáha firmám blokovať zistenie poslednej webovej stránky, ktorú ste navštívili.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Chráni pred sledovaním odkazov";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blokuje invazívne sledovače skôr, než sa načítajú, čím efektívne eliminuje reklamy, ktoré sa spoliehajú na sledovanie.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokuje cielené reklamy";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Pomáha blokovať súbory cookie tretích strán, ktoré ťa sledujú naprieč lokalitami tým, že zabraňuje načítaniu sledovacích zariadení tretích strán už na začiatku.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokuje sledovanie tretích strán";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nezabezpečené webové stránky";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Ochrana pred sledovaním webu";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web tracking protections sú vždy zapnuté";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo automaticky blokuje skryté sledovacie zariadenia pri prehliadaní webu.\n[Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Ako ťa chránime";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Prehliadač DuckDuckGo poskytuje ochrany proti sledovaniu, ktoré sú vždy aktívne. [Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vyberte možnosť, ktorá najlepšie opisuje problém, ktorý ste zaznamenali.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Ovládať VPN pomocou Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Používanie vlastného servera DNS môže ovplyvniť rýchlosť prehliadania a vystaviť tvoju aktivitu tretím stranám, ak server nie je zabezpečený alebo spoľahlivý.";
+"vpn.settings.dns.section-disclaimer" = "Používanie vlastného servera DNS môže ovplyvniť rýchlosť prehliadania a vystaviť tvoju aktivitu tretím stranám, ak server nie je zabezpečený či spoľahlivý.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

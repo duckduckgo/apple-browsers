@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Elimina dados de navegação com um botão";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Bloqueia rastreadores de terceiros";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Teclado";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Saiba mais";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Permitir que o DuckDuckGo faça a gestão dos pop-ups de consentimento de cookies";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Definições";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Ajuda a bloquear rastreadores de terceiros que tentam esconder-se num site usando DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Protege contra camuflagem do DNS CNAME";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Desativa o rastreamento de conteúdo do Facebook, como widgets de comentários do Facebook em sites que não são do Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Proteção contra rastreamento do Facebook";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Ajuda a impedir que as empresas de rastreamento obtenham identificadores exclusivos sobre o teu navegador e dispositivo, que usam para te seguir na Web.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Impede o rastreamento de impressões digitais";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Expira automaticamente os cookies originais após 30 dias, garantindo que os sites não te conseguem rastrear indefinidamente quando tens a sessão terminada.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Expira cookies principais";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Substitui os links AMP da Google pelo site do publicador original.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Bloqueia o rastreamento AMP da Google";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Bloqueia pop-ups de início de sessão da Google em sites que não são da Google.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Bloqueia os pop-ups de início de sessão da Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Remove os parâmetros de rastreamento nos links para impedir que terceiros rastreiem o teu comportamento entre sites.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Bloqueia o rastreamento de links";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Ajuda a impedir que as empresas identifiquem o último site que visitaste.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Protege contra rastreamento de referenciadores";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que usam o rastreio.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Bloqueia anúncios segmentados";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Ajuda a bloquear cookies de terceiros que te rastreiam de site para site, impedindo que os rastreadores de terceiros sejam carregados desde o início.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Bloqueia rastreadores de terceiros";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Sites desprotegidos";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Proteção contra rastreamento na internet";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "As Web Tracking Protections estão sempre ativadas";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "O DuckDuckGo bloqueia automaticamente os rastreadores ocultos enquanto navegas na Internet.\n[Sabe Mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Como te protegemos";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "O navegador DuckDuckGo fornece proteções contra rastreamento, que estão sempre ativas. [Sabe mais](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Seleciona a opção que melhor descreve o problema que enfrentaste.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Controla a VPN com a Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "A utilização de um servidor DNS personalizado pode afetar as velocidades de navegação e expor a tua atividade a terceiros se o servidor não for seguro ou fiável.";
+"vpn.settings.dns.section-disclaimer" = "A utilização de um servidor DNS personalizado pode afetar as velocidades de navegação e expor a sua atividade a terceiros se o servidor não for seguro ou fiável.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

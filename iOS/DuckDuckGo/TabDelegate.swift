@@ -48,6 +48,14 @@ protocol TabDelegate: AnyObject {
     func tab(_ tab: TabViewController, didUpdatePreview preview: UIImage)
 
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?)
+    
+    /// Called when a tab extracts a Dax Easter Egg logo URL from the current page.
+    /// This occurs when the DaxEasterEggHandler finds a dynamic logo on search result pages.
+    ///
+    /// - Parameters:
+    ///   - tab: The tab that extracted the logo URL
+    ///   - logoURL: The extracted logo URL, or nil if no logo was found or the page reset to default
+    func tab(_ tab: TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?)
 
     func tabDidRequestReportBrokenSite(tab: TabViewController)
 

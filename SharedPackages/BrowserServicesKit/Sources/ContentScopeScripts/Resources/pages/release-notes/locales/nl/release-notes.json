@@ -68,9 +68,9 @@
     "title" : "Update opnieuw proberen",
     "note" : "Label for a button that retries applying the failed update"
   },
-  "forPrivacyProSubscribers" : {
-    "title" : "Voor abonnees van Privacy Pro",
-    "note" : "Heading label for release notes specific to Privacy Pro Subscribers (do not translate Privacy Pro)"
+  "forSubscribers" : {
+    "title" : "Voor DuckDuckGo-abonnees",
+    "note" : "Heading label for release notes specific to DuckDuckGo Subscribers"
   },
   "new" : {
     "title" : "Nieuw",

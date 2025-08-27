@@ -585,7 +585,7 @@ private extension Suggestion {
             return .init(type: .openTab, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: tabId.flatMap(UUID.init(uuidString:)), score: score)
         case .internalPage(title: let title, url: let url, score: let score):
             return .init(type: .internalPage, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: score)
-        case .unknown:
+        case .unknown, .askAIChat:
             return nil
         }
     }

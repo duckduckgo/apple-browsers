@@ -177,7 +177,6 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             if let countKey = source.promoWasPresentedCountKey {
                 keyValueStore.removeObject(forKey: countKey)
             }
-            keyValueStore.removeObject(forKey: source.wasDismissedKey)
         }
     }
 

@@ -26,6 +26,11 @@ public protocol EmailConfirmationErrorDelegate: AnyObject {
 
 public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
+    struct JobContext: SubJobContextProviding {
+        let dataBroker: DataBroker
+        let profileQuery: ProfileQuery
+    }
+
     private let jobData: OptOutEmailConfirmationJobData
     private let showWebView: Bool
     private(set) weak var errorDelegate: EmailConfirmationErrorDelegate? // Internal read-only to enable mocking
@@ -137,9 +142,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             throw DataBrokerProtectionError.noOptOutStep
         }
 
-//        guard let profileQuery = try? jobDependencies.database.fetchProfileQuery(with: jobData.profileQueryId) else {
-//            throw DataBrokerProtectionError.dataNotInDatabase
-//        }
+        guard let profileQuery = try? jobDependencies.database.fetchProfileQuery(with: jobData.profileQueryId) else {
+            throw DataBrokerProtectionError.dataNotInDatabase
+        }
 
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: broker.url,
@@ -151,25 +156,10 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
         let actionsHandler = try ActionsHandler.forEmailConfirmationContinuation(optOutStep)
 
-        guard let brokerProfileQueryData = try jobDependencies.database.brokerProfileQueryData(for: jobData.brokerId, and: jobData.profileQueryId) else {
-            throw DataBrokerProtectionError.dataNotInDatabase
-        }
-
-//        let brokerProfileQueryData = BrokerProfileQueryData(
-//            dataBroker: broker,
-//            profileQuery: profileQuery,
-//            scanJobData: ScanJobData(
-//                brokerId: jobData.brokerId,
-//                profileQueryId: jobData.profileQueryId,
-//                historyEvents: []  // Empty since not needed for email confirmation
-//            ),
-//            optOutJobData: []
-//        )
-
         let webRunner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: jobDependencies.privacyConfig,
             prefs: jobDependencies.contentScopeProperties,
-            query: brokerProfileQueryData,
+            query: JobContext(dataBroker: broker, profileQuery: profileQuery),
             emailService: jobDependencies.emailService,
             captchaService: jobDependencies.captchaService,
             featureFlagger: jobDependencies.featureFlagger,

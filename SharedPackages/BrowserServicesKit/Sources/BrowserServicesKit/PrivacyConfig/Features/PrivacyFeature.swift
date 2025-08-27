@@ -81,6 +81,7 @@ public enum PrivacyFeature: String {
     case disableFireAnimation
     case feedbackForm
     case htmlNewTabPage
+    case daxEasterEggLogos
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

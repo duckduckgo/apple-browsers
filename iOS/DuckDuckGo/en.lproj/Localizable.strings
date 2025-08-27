@@ -2287,7 +2287,7 @@ https://duckduckgo.com/mac";
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Delete browsing data with one button";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Block 3rd-party trackers";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2782,6 +2782,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Learn More";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Let DuckDuckGo manage cookie consent pop-ups";
 
@@ -2932,6 +2935,66 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the Settings View */
 "settings.title" = "Settings";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Protects against DNS CNAME cloaking";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebook tracking protection";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Prevents fingerprint tracking";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Expires 1st-party cookies";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Replaces Google AMP links with the original publisher’s site.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blocks Google's AMP Tracking";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blocks Google sign-in pop-ups on sites Google doesn't own.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blocks Google’s sign-in pop-ups";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Removes tracking parameters in links to prevent 3rd parties from tracking your behavior across sites.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blocks link tracking";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Helps block companies from identifying the last website you visited.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Protects against referrer tracking";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blocks targeted ads";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blocks 3rd-party trackers";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Unprotected Sites";
 
@@ -2944,8 +3007,17 @@ Take back control of your personal information with the browser designed for dat
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web Tracking Protection";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web tracking protections are always on";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo automatically blocks hidden trackers as you browse the web.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "How We Protect You";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "The DuckDuckGo browser provides tracking protections, which are always active. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Select the option that best describes the problem you experienced.";
@@ -3488,7 +3560,7 @@ Take back control of your personal information with the browser designed for dat
 "vpn.settings.control.with.siri" = "Control VPN With Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Using a custom DNS server can impact browsing speeds and expose your activity to third parties if the server isn't secure or reliable.";
+"vpn.settings.dns.section-disclaimer" = "Using a custom DNS server can impact browsing speeds and expose your activity to 3rd parties if the server isn't secure or reliable.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

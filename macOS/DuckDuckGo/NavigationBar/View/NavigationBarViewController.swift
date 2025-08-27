@@ -1258,7 +1258,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @IBAction func shareButtonAction(_ sender: NSButton) {
-        let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu)
+        let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .navigationBar)
         let location = NSPoint(x: -sharingMenu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
         sharingMenu.popUp(positioning: nil, at: location, in: sender)
         PixelKit.fire(NavigationBarPixel.shareButtonClicked, frequency: .daily)

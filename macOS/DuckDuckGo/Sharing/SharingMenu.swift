@@ -22,7 +22,7 @@ import PixelKit
 final class SharingMenu: NSMenu {
 
     enum Location: Equatable {
-        case mainMenu, moreOptionsMenu, addressBarTextField
+        case mainMenu, moreOptionsMenu, addressBarTextField, navigationBar
     }
 
     let location: Location

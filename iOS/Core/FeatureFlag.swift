@@ -370,7 +370,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.daxEasterEggLogos))
         }
     }
 }

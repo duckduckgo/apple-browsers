@@ -817,6 +817,9 @@ public struct UserText {
     // MARK: Notifications
 
     public static let macWaitlistAvailableNotificationTitle = NSLocalizedString("mac-waitlist.available.notification.title", value: "DuckDuckGo for Mac is ready!", comment: "Title for the macOS waitlist notification")
+    /// https://app.asana.com/1/137249556945/project/38424471409662/task/1211092472261869
+    public static let inactivityNotificationTitle = NSLocalizedString("inactivity.notification.title", value: "Trackers are lurking!", comment: "Title for inactivity notification")
+    public static let inactivityNotificationBody = NSLocalizedString("inactivity.notification.body", value: "Over 85% of popular sites contain trackers. Search and browse with DuckDuckGo to help avoid them.", comment: "Body for inactivaity notification")
 
     // MARK: Settings Screen
 

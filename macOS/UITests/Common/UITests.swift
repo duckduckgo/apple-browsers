@@ -224,7 +224,7 @@ extension UITestCase {
         }
         self.swizzled_releaseButton(button, at: offset, clickCount: clickCount)
     }
-    
+
     override func tearDown() {
         cleanupTrackedFiles()
         cleanupPaths.removeAll()

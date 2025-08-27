@@ -1259,8 +1259,14 @@ final class DataImportViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSummaryNotShows_shouldNotShowSyncFooterButton() async throws {
-        for screen: DataImportViewModel.Screen in [.profileAndDataTypesPicker, .moreInfo, .getReadPermission(.aboutDuckDuckGo), .fileImport(dataType: .bookmarks), .feedback, .shortcuts([])] {
+    func testWhenShortcutsShown_shouldShowSyncFooterButton() async throws {
+        let model = DataImportViewModel(importSource: .chrome, screen: .shortcuts([.bookmarks]), summary: [])
+        XCTAssertTrue(model.shouldShowSyncFooterButton)
+    }
+
+    @MainActor
+    func testWhenAllOtherScreensShow_shouldNotShowSyncFooterButton() async throws {
+        for screen: DataImportViewModel.Screen in [.profileAndDataTypesPicker, .moreInfo, .getReadPermission(.aboutDuckDuckGo), .fileImport(dataType: .bookmarks), .feedback] {
             let model = DataImportViewModel(importSource: .chrome, screen: .summary([.bookmarks], isFileImport: true), summary: [])
             XCTAssertFalse(model.shouldShowSyncFooterButton)
         }

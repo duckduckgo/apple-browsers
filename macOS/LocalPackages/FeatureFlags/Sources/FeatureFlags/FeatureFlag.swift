@@ -159,9 +159,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
     case restoreSessionPrompt
 
-    /// https://app.asana.com/1/137249556945/project/276630244458377/task/1211090698913983?focus=true
-    case openFileMenuAction
-
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
     case duckAISearchParameter
 }
@@ -236,8 +233,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsAlternateStripePaymentFlow,
                 .openFireWindowByDefault,
                 .restoreSessionPrompt,
-                .duckAISearchParameter,
-                .openFileMenuAction:
+                .duckAISearchParameter:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -360,8 +356,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .restoreSessionPrompt:
             return .disabled
-        case .openFileMenuAction:
-            return .internalOnly()
         case .duckAISearchParameter:
             return .enabled
         }

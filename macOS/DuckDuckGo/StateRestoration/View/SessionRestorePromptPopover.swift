@@ -43,6 +43,7 @@ final class SessionRestorePromptPopover: NSPopover {
 }
 
 final class SessionRestorePromptViewController: NSHostingController<SessionRestorePromptView> {
+    private let viewModel: SessionRestorePromptViewModel
 
     init(ctaCallback: @escaping (Bool) -> Void) {
         self.viewModel = SessionRestorePromptViewModel(ctaCallback: ctaCallback)
@@ -53,6 +54,4 @@ final class SessionRestorePromptViewController: NSHostingController<SessionResto
     @MainActor @preconcurrency required dynamic init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    private let viewModel: SessionRestorePromptViewModel
 }

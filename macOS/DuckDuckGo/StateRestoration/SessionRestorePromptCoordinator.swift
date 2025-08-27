@@ -25,10 +25,6 @@ protocol SessionRestorePromptCoordinating {
 }
 
 final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
-    private enum Constants {
-        static let appDidTerminateAsExpectedKey = "appDidTerminateAsExpected"
-    }
-
     private enum State {
         case initial
         case restoreNeeded((Bool) -> Void)

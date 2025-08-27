@@ -145,7 +145,7 @@ final class AppStateRestorationManager: NSObject {
         if didCloseUnexpectedly && !shouldRestoreRegularTabs && canRestoreLastSessionState && !service.isAppStateFileStale {
             sessionRestorePromptCoordinator.showRestoreSessionPrompt { [weak self] restoreSession in
                 guard let self, restoreSession else { return }
-                readLastSessionState(restoreWindows: true, restoreRegularTabs: true)
+                restoreLastSessionState(interactive: true, includeRegularTabs: true)
             }
         }
 

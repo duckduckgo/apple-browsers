@@ -21,7 +21,6 @@ import History
 
 import XCTest
 import Combine
-import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FireTests: XCTestCase {
@@ -177,14 +176,14 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnAllIsCalledThenLastSessionStateIsCleared() throws {
+    func testWhenBurnAllIsCalledThenLastSessionStateIsCleared() {
         let fileName = "testStateFileForBurningAllData"
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
-                                                                    keyValueStore: try MockKeyValueFileStore(),
+                                                                    keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
         appStateRestorationManager.applicationDidFinishLaunching()
 
@@ -198,14 +197,14 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnDomainsIsCalledThenLastSessionStateIsCleared() throws {
+    func testWhenBurnDomainsIsCalledThenLastSessionStateIsCleared() {
         let fileName = "testStateFileForBurningAllData"
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
-                                                                    keyValueStore: try MockKeyValueFileStore(),
+                                                                    keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
         appStateRestorationManager.applicationDidFinishLaunching()
 

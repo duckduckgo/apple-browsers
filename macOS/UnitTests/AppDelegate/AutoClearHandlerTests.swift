@@ -21,7 +21,6 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 import Combine
-import PersistenceTestingUtils
 
 @MainActor
 class AutoClearHandlerTests: XCTestCase {
@@ -58,7 +57,7 @@ class AutoClearHandlerTests: XCTestCase {
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
-                                                                    keyValueStore: try! MockKeyValueFileStore(),
+                                                                    keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
         handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                    startupPreferences: startupPreferences,

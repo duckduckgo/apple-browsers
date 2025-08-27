@@ -29,7 +29,7 @@ final class InactivityNotificationSchedulerService {
     private let featureFlagger: FeatureFlagger
     private let userNotificationCenter: UNUserNotificationCenter
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let notificationServiceManager: NotificationServiceManaging
+    private let notificationServiceManager: NotificationServiceManaging?
     
     // MARK: - Constants
     
@@ -41,14 +41,16 @@ final class InactivityNotificationSchedulerService {
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          userNotificationCenter: UNUserNotificationCenter = .current(),
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         notificationServiceManager: NotificationServiceManaging
+         notificationServiceManager: NotificationServiceManaging? = nil
     ) {
         self.featureFlagger = featureFlagger
         self.userNotificationCenter = userNotificationCenter
         self.privacyConfigurationManager = privacyConfigurationManager
         self.notificationServiceManager = notificationServiceManager
         
-        userNotificationCenter.delegate = self.notificationServiceManager
+        if let notificationServiceManager {
+            userNotificationCenter.delegate = notificationServiceManager
+        }
     }
     
     // MARK: - Public
@@ -125,7 +127,7 @@ final class InactivityNotificationSchedulerService {
         do {
             if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: String],
                let daysInactiveStr = settingsDict[Self.daysInactiveSettingKey],
-               let daysInactive = Double(daysInactiveStr) {
+               let daysInactive = Double(daysInactiveStr), daysInactive >= 1 {
                 return daysInactive
             }
         } catch {

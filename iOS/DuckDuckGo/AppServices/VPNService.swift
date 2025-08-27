@@ -30,7 +30,7 @@ final class VPNService: NSObject {
     private let tunnelDefaults = UserDefaults.networkProtectionGroupDefaults
     private let vpnFeatureVisibility: DefaultNetworkProtectionVisibility = AppDependencyProvider.shared.vpnFeatureVisibility
     private let tipKitAppEventsHandler = TipKitAppEventHandler()
-    private let notificationServiceManager: NotificationServiceManager
+    private let notificationServiceManager: NotificationServiceManaging?
 
     private let mainCoordinator: MainCoordinator
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -39,14 +39,16 @@ final class VPNService: NSObject {
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          application: UIApplication = UIApplication.shared,
          notificationCenter: UNUserNotificationCenter = .current(),
-         notificationServiceManager: NotificationServiceManager,
+         notificationServiceManager: NotificationServiceManaging? = nil,
     ) {
         self.mainCoordinator = mainCoordinator
         self.subscriptionManager = subscriptionManager
         self.application = application
         self.notificationServiceManager = notificationServiceManager
         
-        notificationCenter.delegate = self.notificationServiceManager
+        if let notificationServiceManager {
+            notificationCenter.delegate = notificationServiceManager
+        }
         
         super.init()
 

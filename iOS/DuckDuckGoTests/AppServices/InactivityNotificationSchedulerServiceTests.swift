@@ -36,6 +36,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         mockPrivacyConfigManager = PrivacyConfigurationManagerMock()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.inactivityNotification])
         mockNotificationServiceManager = MockNotificationServiceManager()
+        
         service = InactivityNotificationSchedulerService(
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigManager,

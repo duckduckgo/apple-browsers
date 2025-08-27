@@ -104,7 +104,6 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
     
     var subfeatureSettings: [String: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] = [:]
     func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
-        print("called \(subfeatureSettings[subfeature.rawValue]) with \(subfeature.rawValue)")
         return subfeatureSettings[subfeature.rawValue] ?? ""
     }
 

@@ -2830,6 +2830,15 @@ Take back control of your personal information with the browser designed for dat
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.";
 
+/* Settings screen cell title for setting refresh button position in address bar */
+"settings.refreshButton.position.addressBar" = "Address Bar";
+
+/* Settings screen option to set refresh button position to be in the menu */
+"settings.refreshButton.position.menu" = "Menu";
+
+/* Settings screen cell title for setting refresh button position. */
+"settings.refreshButton.position.title" = "Refresh Button Position";
+
 /* Header of settings related to search */
 "settings.search.settings" = "Search Settings";
 

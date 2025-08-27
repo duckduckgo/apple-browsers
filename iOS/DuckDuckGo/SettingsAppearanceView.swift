@@ -51,9 +51,8 @@ struct SettingsAppearanceView: View {
                 }
 
                 // Refresh Button Position
-#warning("PIKOR: Use UserText")
 #warning("PIKOR: see self.featureFlagger.isFeatureOn(.duckPlayerNativeUI) -> use of course in settings viewmmodel")
-                SettingsPickerCellView(label: "Refresh Button Position",
+                SettingsPickerCellView(label: UserText.settingsRefreshButtonPositionTitle,
                                        options: RefreshButtonPosition.allCases,
                                        selectedOption: viewModel.refreshButtonPositionBinding)
                 

@@ -50,13 +50,12 @@ enum RefreshButtonPosition: String, CaseIterable, CustomStringConvertible {
         return descriptionText
     }
     
-    #warning("PIKOR: Use UserText!")
     var descriptionText: String {
         switch self {
         case .addressBar:
-            return "Address Bar"
+            return UserText.settingsRefreshButtonPositionAddressBar
         case .menu:
-            return "Menu"
+            return UserText.settingsRefreshButtonPositionMenu
         }
     }
     

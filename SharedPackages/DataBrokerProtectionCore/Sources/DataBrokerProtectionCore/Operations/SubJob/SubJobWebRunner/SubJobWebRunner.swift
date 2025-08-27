@@ -23,13 +23,18 @@ import UserScript
 import Common
 import os.log
 
+public protocol SubJobContextProviding {
+    var dataBroker: DataBroker { get }
+    var profileQuery: ProfileQuery { get }
+}
+
 public protocol SubJobWebRunning: CCFCommunicationDelegate {
     associatedtype ReturnValue
     associatedtype InputValue
 
     var privacyConfig: PrivacyConfigurationManaging { get }
     var prefs: ContentScopeProperties { get }
-    var query: BrokerProfileQueryData { get }
+    var query: SubJobContextProviding { get }
     var emailService: EmailServiceProtocol { get }
     var captchaService: CaptchaServiceProtocol { get }
     var cookieHandler: CookieHandler { get }

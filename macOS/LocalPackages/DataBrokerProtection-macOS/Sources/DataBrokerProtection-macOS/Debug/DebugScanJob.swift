@@ -28,13 +28,13 @@ struct DebugScanReturnValue {
     let brokerURL: String
     let extractedProfiles: [ExtractedProfile]
     let error: Error?
-    let brokerProfileQueryData: BrokerProfileQueryData
+    let brokerProfileQueryData: SubJobContextProviding
     let meta: [String: Any]?
 
     init(brokerURL: String,
          extractedProfiles: [ExtractedProfile] = [ExtractedProfile](),
          error: Error? = nil,
-         brokerProfileQueryData: BrokerProfileQueryData,
+         brokerProfileQueryData: SubJobContextProviding,
          meta: [String: Any]? = nil) {
         self.brokerURL = brokerURL
         self.extractedProfiles = extractedProfiles
@@ -56,7 +56,7 @@ final class DebugScanJob: SubJobWebRunning {
 
     let privacyConfig: PrivacyConfigurationManaging
     let prefs: ContentScopeProperties
-    let query: BrokerProfileQueryData
+    let query: SubJobContextProviding
     let emailService: EmailServiceProtocol
     let captchaService: CaptchaServiceProtocol
     let stageCalculator: StageDurationCalculator
@@ -79,7 +79,7 @@ final class DebugScanJob: SubJobWebRunning {
 
     init(privacyConfig: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
-         query: BrokerProfileQueryData,
+         query: SubJobContextProviding,
          emailService: EmailServiceProtocol,
          captchaService: CaptchaServiceProtocol,
          executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),

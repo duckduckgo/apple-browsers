@@ -32,6 +32,12 @@ public struct DataBrokerScheduleConfig: Codable, Sendable {
     var hoursUntilNextOptOutAttempt: Int {
         maintenanceScan
     }
+
+    // Used for opt-outs with email confirmation step following the decoupling changes
+    // https://app.asana.com/1/137249556945/project/481882893211075/task/1211046211583710?focus=true
+    var hoursUntilNextAttemptForOptOutWithEmailConfirmation: Int {
+        maintenanceScan
+    }
 }
 
 extension Int {

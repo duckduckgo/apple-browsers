@@ -46,10 +46,10 @@ extension Preferences {
                 if model.shouldShowOpenFirewindowByDefaultSection {
                     PreferencePaneSection(UserText.fireWindow) {
                         PreferencePaneSubSection {
-                            ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.openFireWindowByDefault)
+                            ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.shouldOpenFireWindowbyDefault)
                                 .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
 
-                            if model.openFireWindowByDefault && startupModel.restorePreviousSession {
+                            if model.shouldOpenFireWindowbyDefault && startupModel.restorePreviousSession {
                                 VStack(alignment: .leading, spacing: 1) {
                                     TextMenuItemCaption(UserText.fireWindowSessionRestoreWarning)
                                     TextButton(UserText.showStartupSettings) {

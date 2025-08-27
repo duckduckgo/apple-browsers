@@ -621,7 +621,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
@@ -721,6 +721,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 bookmarksDatabase: bookmarkDatabase.db,
                 database: database.db,
                 appearancePreferences: appearancePreferences,
+                startupPreferences: startupPreferences,
                 pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,

@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import BrowserServicesKit
 import FeatureFlags
+import Persistence
 
 enum StartupWindowType: String, CaseIterable {
     case window = "window"
@@ -55,6 +56,10 @@ protocol StartupPreferencesPersistor {
 }
 
 struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
+    enum Key: String {
+        case startupWindowType = "startup-window-type"
+    }
+
     @UserDefaultsWrapper(key: .restorePreviousSession, defaultValue: false)
     var restorePreviousSession: Bool
 
@@ -64,8 +69,37 @@ struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
     @UserDefaultsWrapper(key: .customHomePageURL, defaultValue: URL.duckDuckGo.absoluteString)
     var customHomePageURL: String
 
-    @UserDefaultsWrapper(key: .startupWindowType, defaultValue: .window)
-    var startupWindowType: StartupWindowType
+    var startupWindowType: StartupWindowType {
+        get {
+            do {
+                let value = try keyValueStore.object(forKey: Key.startupWindowType.rawValue) as? String ?? StartupWindowType.window.rawValue
+                return StartupWindowType(rawValue: value) ?? .window
+            } catch {
+                return .window
+            }
+        }
+        set { try? keyValueStore.set(newValue.rawValue, forKey: Key.startupWindowType.rawValue) }
+    }
+
+    /**
+     * Initializes Startup Preferences persistor.
+     *
+     * - Parameters:
+     *   - keyValueStore: An instance of `ThrowingKeyValueStoring` that is supposed to hold all newly added preferences.
+     *   - legacyKeyValueStore: An instance of `KeyValueStoring` (wrapper for `UserDefaults`) that can be used for migrating existing
+     *                          preferences to the new store.
+     *
+     *  `keyValueStore` is an opt-in mechanism, in that all pre-existing properties of the persistor (especially those using `@UserDefaultsWrapper`)
+     *  continue using `legacyKeyValueStore` (a.k.a. `UserDefaults`) and only new properties should use `keyValueStore` by default
+     *  (see `isProtectionsReportVisible`).
+     */
+    init(keyValueStore: ThrowingKeyValueStoring, legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults) {
+        self.keyValueStore = keyValueStore
+        self.legacyKeyValueStore = legacyKeyValueStore
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let legacyKeyValueStore: KeyValueStoring
 
 }
 
@@ -77,7 +111,7 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
     private var pinnedViewsNotificationCancellable: AnyCancellable?
 
     init(pinningManager: LocalPinningManager = .shared,
-         persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+         persistor: StartupPreferencesPersistor,
          appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager
         self.appearancePreferences = appearancePreferences

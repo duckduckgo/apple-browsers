@@ -91,7 +91,6 @@ public struct UserDefaultsWrapper<T> {
         case restorePreviousSession = "preferences.startup.restore-previous-session"
         case launchToCustomHomePage = "preferences.startup.launch-to-custom-home-page"
         case customHomePageURL = "preferences.startup.customHomePageURL"
-        case startupWindowType = "preferences.startup.window-type"
         case openFireWindowByDefault = "preferences.startup.open-fire-window-by-default"
         case currentThemeName = "com.duckduckgo.macos.currentThemeNameKey"
         case showFullURL = "preferences.appearance.show-full-url"

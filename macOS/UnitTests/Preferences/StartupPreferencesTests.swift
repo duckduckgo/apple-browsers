@@ -17,15 +17,16 @@
 //
 
 import XCTest
+import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
-struct StartupPreferencesPersistorMock: StartupPreferencesPersistor {
+final class StartupPreferencesPersistorMock: StartupPreferencesPersistor {
     var launchToCustomHomePage: Bool
     var customHomePageURL: String
     var restorePreviousSession: Bool
     var startupWindowType: StartupWindowType
 
-    init(launchToCustomHomePage: Bool, customHomePageURL: String, restorePreviousSession: Bool = false, startupWindowType: StartupWindowType = .window) {
+    init(launchToCustomHomePage: Bool = false, customHomePageURL: String = "", restorePreviousSession: Bool = false, startupWindowType: StartupWindowType = .window) {
         self.customHomePageURL = customHomePageURL
         self.launchToCustomHomePage = launchToCustomHomePage
         self.restorePreviousSession = restorePreviousSession
@@ -294,7 +295,7 @@ class StartupPreferencesTests: XCTestCase {
 }
 
 fileprivate extension StartupPreferences {
-    convenience init(persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor()) {
+    convenience init(persistor: StartupPreferencesPersistor = StartupPreferencesPersistorMock()) {
         self.init(
             persistor: persistor,
             appearancePreferences: NSApp.delegateTyped.appearancePreferences

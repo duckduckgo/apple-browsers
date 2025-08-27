@@ -7,7 +7,7 @@ defaults:
 on:
   push:
     branches:
-      - release/ios/*
+      - 'release/ios/**'
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'

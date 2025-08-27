@@ -7,7 +7,7 @@ defaults:
 on:
   push:
     branches:
-      - release/macos/*
+      - 'release/macos/**'
     paths:
       - 'SharedPackages/**'
       - 'macOS/**'

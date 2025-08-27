@@ -45,7 +45,7 @@ jobs:
         bundle exec fastlane promote_latest_testflight_to_appstore
 
     - name: Freeze the release branch
-      if: ${{ github.event.inputs.freeze-release }}
+      if: ${{ github.event.inputs.freeze-release == 'true' }}
       run: |
         bundle exec fastlane run freeze_release_branch \
           platform:ios \

@@ -765,6 +765,17 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return nil
     }
 
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
     public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
     }
 
@@ -934,6 +945,25 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasFetchAllDataBrokersCalled = true
 
         return dataBrokersToReturn
+    }
+
+    public func fetchBroker(with id: Int64) throws -> DataBroker? {
+        return dataBrokersToReturn.first { $0.id == id }
+    }
+
+    public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
+        return ProfileQuery.mock
+    }
+
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        return []
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
@@ -2021,7 +2051,7 @@ public final class MockActionsHandler: ActionsHandler {
     public var didCallNextAction = false
 
     public init() {
-        super.init(step: Step(type: .scan, actions: []), isEmailConfirmationDecouplingFeatureOn: false)
+        super.init(stepType: .scan, actions: [])
     }
 
     public override func nextAction() -> (any Action)? {

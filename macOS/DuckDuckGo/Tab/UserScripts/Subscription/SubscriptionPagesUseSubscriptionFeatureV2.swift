@@ -242,10 +242,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         let message = original
 
-        await setPixelOrigin(from: message)
+        let origin = await setPixelOrigin(from: message)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             if #available(macOS 12.0, *) {
+                // 1: Parse subscription selection from message object
                 guard let subscriptionSelection: SubscriptionSelection = CodableHelper.decode(from: params) else {
                     assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
                     subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
@@ -255,22 +256,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
                 Logger.subscription.log("[Purchase] Starting purchase for: \(subscriptionSelection.id, privacy: .public)")
 
-                let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
-                let contextName = await originFrom(originalMessage: message) ?? ""
-                var data = SubscriptionPurchaseWidePixelData(
-                    purchasePlatform: .appStore,
-                    subscriptionIdentifier: subscriptionSelection.id,
-                    freeTrialEligible: freeTrialEligible,
-                    contextData: WidePixelContextData(name: contextName)
-                )
-
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                    widePixel.startFlow(data)
-                }
-
+                // 2: Show purchase progress UI to user
                 await uiHandler.presentProgressViewController(withTitle: UserText.purchasingSubscriptionTitle)
 
-                // Check for active subscriptions
+                // 3: Check for active subscriptions
                 if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
                     // Sandbox note: Looks like our BE is not receiving updates when a subscription transitions from grace period to expired, so during testing we can end up with a subscription in grace period and we will not be able to purchase a new one, only restore it because Transaction.currentEntitlements will not return the subscription to restore.
                     PixelKit.fire(PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt)
@@ -281,6 +270,20 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     return nil
                 }
 
+                // 4: Configure wide pixel and start the flow
+                let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
+                let data = SubscriptionPurchaseWidePixelData(
+                    purchasePlatform: .appStore,
+                    subscriptionIdentifier: subscriptionSelection.id,
+                    freeTrialEligible: freeTrialEligible,
+                    contextData: WidePixelContextData(name: origin ?? "")
+                )
+
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+                    widePixel.startFlow(data)
+                }
+
+                // 5: No existing subscription was found, so proceed with the remaining purchase flow
                 let purchaseTransactionJWS: String
                 let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
@@ -288,12 +291,16 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                                                                          storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                          appStoreRestoreFlow: appStoreRestoreFlow)
 
+                // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
                 Logger.subscription.log("[Purchase] Purchasing")
                 let purchaseResult = await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id)
+
                 switch purchaseResult {
                 case .success(let result):
                     purchaseTransactionJWS = result.transactionJWS
 
+                    // Account creation is only one piece of the purchase function's job, so we extract the creation
+                    // duration from the result rather than time the execution of the entire call.
                     if let accountCreationDuration = result.accountCreationDuration {
                         data.createAccountDuration = accountCreationDuration
                     }
@@ -322,15 +329,21 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     } else {
                         await uiHandler.dismissProgressViewController()
                     }
+
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
+
+                    // Complete the wide pixel flow if the purchase step fails:
                     if error == .cancelledByUser {
                         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
                             widePixel.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
                         }
+                    } else if error == .activeSubscriptionAlreadyPresent {
+                        // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
+                        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let data = self.widePixelData {
+                            widePixel.discardFlow(data)
+                        }
                     } else {
                         switch error {
-                        case .noProductsFound:
-                            data.markAsFailed(at: .accountPayment, error: error)
                         case .accountCreationFailed(let creationError):
                             data.markAsFailed(at: .accountCreate, error: creationError)
                         default:
@@ -341,14 +354,27 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                             widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
                         }
                     }
+
                     return nil
                 }
 
+                // 7: Update UI to indicate that the purchase is completing
                 await uiHandler.updateProgressViewController(title: UserText.completingPurchaseTitle)
 
-                var startPayment = WidePixel.MeasuredInterval.startingNow()
-                data.completePurchaseDuration = startPayment
+                // 8: Attempt to complete the purchase, measuring the duration
+                var accountActivationDuration = WidePixel.MeasuredInterval.startingNow()
+                data.activateAccountDuration = accountActivationDuration
                 let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
+
+                func completeWidePixelFlow(with error: Error) {
+                    accountActivationDuration.complete()
+                    data.activateAccountDuration = accountActivationDuration
+                    data.markAsFailed(at: .accountActivation, error: error)
+                    widePixel.updateFlow(data)
+                    widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                }
+
+                // 9: Handle purchase completion result
                 switch completePurchaseResult {
                 case .success(let purchaseUpdate):
                     Logger.subscription.log("[Purchase] Purchase completed")
@@ -360,32 +386,33 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
                     notificationCenter.post(name: .subscriptionDidChange, object: self)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
-                    startPayment.complete()
 
-                    data.completePurchaseDuration = startPayment
-                    var activation = WidePixel.MeasuredInterval.startingNow()
-
-                    _ = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
-
-                    activation.complete()
-                    data.activateAccountDuration = activation
+                    accountActivationDuration.complete()
+                    data.activateAccountDuration = accountActivationDuration
                     widePixel.updateFlow(data)
                     widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
                         subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
+                        completeWidePixelFlow(with: error)
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
+                        completeWidePixelFlow(with: error)
                     case .authenticatingWithTransactionFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
+                        completeWidePixelFlow(with: error)
                     case .accountCreationFailed(let creationError):
                         subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
+                        completeWidePixelFlow(with: error)
                     case .purchaseFailed(let purchaseError):
                         subscriptionErrorReporter.report(subscriptionActivationError: .purchaseFailed(purchaseError))
+                        completeWidePixelFlow(with: error)
                     case .cancelledByUser:
                         subscriptionErrorReporter.report(subscriptionActivationError: .cancelledByUser)
+                        completeWidePixelFlow(with: error)
                     case .missingEntitlements:
+                        // This case deliberately avoids sending a failure wide pixel in case activation succeeds later
                         subscriptionErrorReporter.report(subscriptionActivationError: .missingEntitlements)
                         DispatchQueue.main.async { [weak self] in
                             self?.notificationCenter.post(name: .subscriptionPageCloseAndOpenPreferences, object: self)
@@ -393,15 +420,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         await uiHandler.dismissProgressViewController()
                         return nil
                     case .internalError:
+                        completeWidePixelFlow(with: error)
                         assertionFailure("Internal error")
                     }
 
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "completed"))
-                    startPayment.complete()
-                    data.completePurchaseDuration = startPayment
-                    data.markAsFailed(at: .accountActivation, error: error)
-                    widePixel.updateFlow(data)
-                    widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }
             }
         } else if subscriptionPlatform == .stripe {
@@ -438,6 +461,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 case .accountCreationFailed(let creationError):
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))
                 }
+
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
 
                 if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData = self.widePixelData {
@@ -495,23 +519,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func completeStripePayment(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        var accountActivationDuration = WidePixel.MeasuredInterval.startingNow()
+        widePixelData?.activateAccountDuration = accountActivationDuration
+
         await uiHandler.presentProgressViewController(withTitle: UserText.completingPurchaseTitle)
-        var payment = WidePixel.MeasuredInterval.startingNow()
         await stripePurchaseFlow.completeSubscriptionPurchase()
-        payment.complete()
-
-        var activation = WidePixel.MeasuredInterval.startingNow()
-        _ = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
-        activation.complete()
-
-        if let data = self.widePixelData {
-            data.completePurchaseDuration = payment
-            data.activateAccountDuration = activation
-            widePixel.updateFlow(data)
-            widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
-            widePixelData = nil
-        }
-
         await uiHandler.dismissProgressViewController()
 
         PixelKit.fire(PrivacyProPixel.privacyProPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
@@ -520,6 +532,14 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
         notificationCenter.post(name: .subscriptionDidChange, object: self)
+
+        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let data = self.widePixelData {
+            accountActivationDuration.complete()
+            data.activateAccountDuration = accountActivationDuration
+            widePixel.updateFlow(data)
+            widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
+        }
+
         return [String: String]() // cannot be nil, the web app expect something back before redirecting the user to the final page
     }
 
@@ -632,9 +652,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     /// Sets the appropriate origin for the subscription success tracking pixel.
     ///
     /// - Note: This method is asynchronous when extracting the origin from the webview URL.
-    private func setPixelOrigin(from message: WKScriptMessage) async {
+    @discardableResult private func setPixelOrigin(from message: WKScriptMessage) async -> String? {
         // Extract the origin from the webview URL to use for attribution pixel.
-        subscriptionSuccessPixelHandler.origin = await originFrom(originalMessage: message)
+        let origin = await originFrom(originalMessage: message)
+        subscriptionSuccessPixelHandler.origin = origin
+        return origin
     }
 }
 

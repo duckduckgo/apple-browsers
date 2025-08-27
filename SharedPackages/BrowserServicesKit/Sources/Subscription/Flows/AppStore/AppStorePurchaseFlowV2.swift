@@ -123,7 +123,6 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
             case .failure(let error):
                 Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(error.localizedDescription, privacy: .public)")
                 do {
-                    // Measure account creation duration
                     var creationStart = WidePixel.MeasuredInterval.startingNow()
                     externalID = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded).decodedAccessToken.externalID
                     creationStart.complete()

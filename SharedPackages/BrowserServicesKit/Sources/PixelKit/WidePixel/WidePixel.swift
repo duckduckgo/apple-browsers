@@ -28,6 +28,7 @@ public protocol WidePixelManaging {
     func startFlow<T: WidePixelData>(_ data: T)
     func updateFlow<T: WidePixelData>(_ data: T)
     func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
+    func discardFlow<T: WidePixelData>(_ data: T)
 }
 
 public final class WidePixel: WidePixelManaging {
@@ -137,6 +138,27 @@ public final class WidePixel: WidePixelManaging {
         }
     }
 
+    public func discardFlow<T: WidePixelData>(_ data: T) {
+        do {
+            let current: T = try Self.storageQueue.sync {
+                try storage.load(globalID: data.globalData.id)
+            }
+
+            Self.storageQueue.sync {
+                storage.delete(current)
+            }
+
+            Self.logger.info("Discarded wide pixel flow '\(T.pixelName, privacy: .public)' with context ID: \(data.contextData.id, privacy: .public)")
+        } catch {
+            if case WidePixelError.flowNotFound = error {
+                // No-op
+            } else {
+                Self.logger.error("Failed to discard wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                report(.discardFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
+            }
+        }
+    }
+
     private func shouldSampleFlow(_ data: any WidePixelData) -> Bool {
         return sampler.shouldSendPixel(
             sampleRate: Float(data.globalData.sampleRate),
@@ -158,7 +180,6 @@ public final class WidePixel: WidePixelManaging {
         parameters.merge(typed.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
-        parameters[WidePixelParameter.Feature.name] = T.pixelName
         parameters[WidePixelParameter.Feature.status] = status.description
 
         if case let .unknown(reason) = status {

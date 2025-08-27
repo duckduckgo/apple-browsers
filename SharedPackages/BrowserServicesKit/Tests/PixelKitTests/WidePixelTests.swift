@@ -142,6 +142,65 @@ final class WidePixelTests: XCTestCase {
         widePixel.completeFlow(data, status: .success) { _, _ in }
     }
 
+    func testDiscardFlowDeletesStoredData() throws {
+        let subscriptionData = makeTestSubscriptionData(contextName: "discard-test")
+        widePixel.startFlow(subscriptionData)
+
+        // Verify flow exists
+        _ = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+
+        // Discard the flow
+        widePixel.discardFlow(subscriptionData)
+
+        // Verify flow is deleted from storage
+        let retrievedData = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        XCTAssertNil(retrievedData, "Flow should be deleted from storage after discard")
+
+        // Verify no pixel was fired
+        XCTAssertEqual(capturedPixels.count, 0, "No pixel should be fired when discarding a flow")
+    }
+
+    func testDiscardFlowForNonExistentFlow() {
+        let nonExistentContextID = UUID().uuidString
+        let data = makeTestSubscriptionData(contextID: nonExistentContextID)
+
+        // This should not crash and should handle the missing flow gracefully
+        widePixel.discardFlow(data)
+
+        // Verify no pixel was fired
+        XCTAssertEqual(capturedPixels.count, 0)
+    }
+
+    func testDiscardFlowAfterUpdates() throws {
+        let subscriptionData = makeTestSubscriptionData(platform: .stripe, contextName: "discard-with-updates")
+        widePixel.startFlow(subscriptionData)
+
+        // Update the flow multiple times
+        var updatedData = subscriptionData
+        updatedData.subscriptionIdentifier = "test-subscription"
+        updatedData.freeTrialEligible = true
+        widePixel.updateFlow(updatedData)
+
+        updatedData.failingStep = .accountCreate
+        widePixel.updateFlow(updatedData)
+
+        // Verify flow exists with updates
+        let retrievedBeforeDiscard = try XCTUnwrapFlow(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        XCTAssertEqual(retrievedBeforeDiscard.subscriptionIdentifier, "test-subscription")
+        XCTAssertEqual(retrievedBeforeDiscard.failingStep, .accountCreate)
+        XCTAssertTrue(retrievedBeforeDiscard.freeTrialEligible)
+
+        // Discard the flow
+        widePixel.discardFlow(updatedData)
+
+        // Verify flow is deleted
+        let retrievedAfterDiscard = widePixel.getFlowData(SubscriptionPurchaseWidePixelData.self, globalID: subscriptionData.globalData.id)
+        XCTAssertNil(retrievedAfterDiscard, "Updated flow should be deleted from storage after discard")
+
+        // Verify no pixel was fired
+        XCTAssertEqual(capturedPixels.count, 0, "No pixel should be fired when discarding a flow")
+    }
+
     func testSerializationFailure() throws {
         struct NonSerializableData: WidePixelData {
             static let pixelName = "non_serializable"

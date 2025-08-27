@@ -18,7 +18,6 @@
 
 import Foundation
 import Subscription
-import PixelKit
 
 public final class AppStorePurchaseFlowMockV2: AppStorePurchaseFlowV2 {
     public var purchaseSubscriptionResult: Result<PurchaseResult, AppStorePurchaseFlowError>?

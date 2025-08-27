@@ -24,6 +24,7 @@ public final class WidePixelMock: WidePixelManaging {
     public private(set) var started: [Any] = []
     public private(set) var updates: [Any] = []
     public private(set) var completions: [(Any, WidePixelStatus)] = []
+    public private(set) var discarded: [Any] = []
 
     public init() {}
 
@@ -38,5 +39,9 @@ public final class WidePixelMock: WidePixelManaging {
     public func completeFlow<T>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock) where T: WidePixelData {
         completions.append((data, status))
         onComplete(true, nil)
+    }
+
+    public func discardFlow<T>(_ data: T) where T: WidePixelData {
+        discarded.append(data)
     }
 }

@@ -18,7 +18,6 @@
 
 import Foundation
 import Subscription
-import PixelKit
 
 public final class StripePurchaseFlowMockV2: StripePurchaseFlowV2 {
     public var subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>

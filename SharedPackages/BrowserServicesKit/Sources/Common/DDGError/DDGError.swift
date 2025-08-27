@@ -84,7 +84,7 @@ import Foundation
 /// This protocol and its extensions are thread-safe and can be used from any queue.
 public protocol DDGError: Error, Equatable, CustomNSError {
     // MARK: - Core Error Properties
-    
+
     /// The error domain identifying the error's origin or category.
     ///
     /// This should be a unique string identifier that groups related errors together.
@@ -305,7 +305,7 @@ public extension DDGError /*CustomNSError*/ {
     /// used when the error is bridged to NSError.
     ///
     /// - Returns: A dictionary suitable for use as NSError userInfo.
-    var errorUserInfo: [String : Any] {
+    var errorUserInfo: [String: Any] {
         [
             NSDebugDescriptionErrorKey: description,
             NSUnderlyingErrorKey: underlyingError as Any
@@ -337,7 +337,7 @@ public extension DDGErrorUIPresentable /*CustomNSError*/ {
     /// - Integration with system error reporting
     ///
     /// - Returns: A comprehensive dictionary suitable for user-facing NSError instances.
-    var errorUserInfo: [String : Any] {
+    var errorUserInfo: [String: Any] {
         [
             NSDebugDescriptionErrorKey: description,
             NSUnderlyingErrorKey: underlyingError as Any,

@@ -2613,7 +2613,9 @@ extension MainViewController: OmniBarDelegate {
             }
         )
 
-        DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarAichatButtonPressed)
+        if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarAichatButtonPressed)
+        }
         fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
     }
 

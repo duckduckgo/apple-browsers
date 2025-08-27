@@ -39,11 +39,6 @@ class PermissionsTests: UITestCase {
     private var clearAllHistoryAlertClearButton: XCUIElement!
     private var fakeFireButton: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -51,7 +46,7 @@ class PermissionsTests: UITestCase {
 
         permissionsSiteURL = try XCTUnwrap(URL(string: "https://permission.site"), "It wasn't possible to unwrap a URL that the tests depend on.")
         notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         historyMenuBarItem = app.menuBarItems["History"]
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]

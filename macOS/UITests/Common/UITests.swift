@@ -28,6 +28,10 @@ enum UITests {
         static let elementExistence: Double = 5.0
         /// The fire animation time has environmental dependencies, so we want to wait for completion so we don't try to type into it
         static let fireAnimation: Double = 30.0
+        /// Navigation timeout for page loads and network requests
+        static let navigation: Double = 30.0
+        /// Local test server timeout for localhost connections
+        static let localTestServer: Double = 15.0
     }
 
     /// A page simple enough to test favorite, bookmark, and history storage
@@ -125,11 +129,15 @@ class UITestCase: XCTestCase {
     var app: XCUIApplication!
 
     private static let failureObserver = TestFailureObserver()
+    private var cleanupPaths: Set<String> = []
 
     override class func setUp() {
         setupXCPointerEventPathSwizzling()
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
+
+        Logger.log("Resetting environment for the first run")
+        UITests.firstRun()
     }
 
     override class func tearDown() {
@@ -216,6 +224,117 @@ extension UITestCase {
         }
         self.swizzled_releaseButton(button, at: offset, clickCount: clickCount)
     }
+    
+    override func tearDown() {
+        cleanupTrackedFiles()
+        cleanupPaths.removeAll()
+        super.tearDown()
+    }
+
+    static func log(_ message: String) {
+        Logger.log(message)
+    }
+
+    // MARK: - File Management Methods
+
+    /// Track a file path for cleanup after the test completes
+    /// - Parameter path: The absolute file path to track for cleanup
+    func trackForCleanup(_ path: String) {
+        cleanupPaths.insert(path)
+    }
+
+    /// Read a file via the local test server to bypass permission issues
+    /// - Parameter filePath: The absolute file path to read
+    /// - Returns: The file data
+    /// - Throws: Error if the file cannot be read or server request fails
+    func readFileViaLocalServer(filePath: String) throws -> Data {
+        let readURL = URL.testsServer.appendingParameter(name: "readFile", value: filePath)
+
+        let session = URLSession(configuration: .ephemeral)
+        let request = URLRequest(url: readURL, cachePolicy: .reloadIgnoringLocalCacheData)
+
+        var outResponse: URLResponse?
+        var resultData: Data?
+        var resultError: Error?
+        var retry = 0
+        repeat {
+            if retry > 0 {
+                Thread.sleep(forTimeInterval: 0.5)
+            }
+            let expectation = expectation(description: "File read request completed")
+
+            let task = session.dataTask(with: request) { data, response, error in
+                outResponse = response
+                resultError = error
+                resultData = data
+                if error == nil,
+                   let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                    resultError = NSError(domain: "FileReadError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode)"])
+                }
+                expectation.fulfill()
+            }
+            task.resume()
+
+            let result = XCTWaiter.wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
+            XCTAssertEqual(result, .completed, "File read request should complete")
+
+            Logger.log("Response #\(retry): \(outResponse ??? "<nil>"), error: \(resultError ??? "<nil>"), data: \(resultData ??? "<nil>")")
+            retry += 1
+        } while resultData?.count == 0 && retry < 5
+
+        if let error = resultError {
+            throw error
+        }
+
+        guard let data = resultData else {
+            throw NSError(domain: "FileReadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received from server"])
+        }
+
+        return data
+    }
+
+    /// Clean up all tracked files using the local test server
+    private func cleanupTrackedFiles() {
+        guard !cleanupPaths.isEmpty else { return }
+
+        let paths = Array(cleanupPaths)
+        let pathsQuery = paths.joined(separator: ",")
+        let cleanupURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: pathsQuery)
+
+        let session = URLSession(configuration: .ephemeral)
+        let request = URLRequest(url: cleanupURL, cachePolicy: .reloadIgnoringLocalCacheData)
+
+        let expectation = expectation(description: "Cleanup request completed")
+        let task = session.dataTask(with: request) { _, _, _ in
+            expectation.fulfill()
+        }
+        task.resume()
+
+        // Wait but don't fail the test if cleanup is slow
+        _ = XCTWaiter.wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
+    }
+}
+
+struct Logger {
+    static var debug: Logger = Logger()
+
+    func log(_ message: String) {
+        Logger.log(message)
+    }
+
+    /// Log a debug message using XCTest's private debug log handler
+    /// - Parameter message: The message to log
+    static func log(_ message: String) {
+        let currentContextSelector = NSSelectorFromString("currentContext")
+        let logFormatSelector = NSSelectorFromString("_recordActivityMessageWithFormat:")
+
+        guard let context = XCTContext.perform(currentContextSelector)?.takeUnretainedValue() else {
+            fatalError("Could not retrieve current XCTContext")
+        }
+        // Escape any %-escaped values in the message before passing it as the format string
+        let escapedMessage = message.replacingOccurrences(of: "%", with: "%%")
+        _ = context.perform(logFormatSelector, with: escapedMessage)
+    }
 }
 
 extension XCTestCase {
@@ -226,11 +345,13 @@ extension XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
+}
 
-    func assertElement(_ element: XCUIElement, hasValue value: CVarArg, file: StaticString = #file, line: UInt = #line) {
-        let predicate = NSPredicate(format: "%K == %@", #keyPath(XCUIElement.value), value)
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
-        let result = XCTWaiter().wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
-        XCTAssertEqual(result, .completed, "Unexpected status field text content after a \"Find Next\" operation.")
-    }
+infix operator ???: NilCoalescingPrecedence
+/// Provide value debug description or ??? "defaultValue" - to be used for logging like:
+/// ```
+/// Logger.general.debug("event received: \(event ??? "<nil>")")
+/// ```
+public func ??? <T>(optionalValue: T?, defaultValue: @autoclosure () -> String) -> String {
+    optionalValue.map { String(describing: $0) } ?? defaultValue()
 }

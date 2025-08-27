@@ -122,6 +122,21 @@ server.middleware = [{ request in
         return .ok(.text(report))
     }
 
+    // Handle file reading requests
+    if let fileToRead = params["readFile"] {
+        let fileURL = URL(fileURLWithPath: fileToRead)
+
+        do {
+            let fileData = try Data(contentsOf: fileURL)
+            return .raw(200, "OK", ["Content-Type": "application/octet-stream"]) { writer in
+                try? writer.write(fileData)
+            }
+        } catch {
+            print("Failed to read file at \(fileToRead): \(error)")
+            return .notFound
+        }
+    }
+
     // Support /download/{size} to stream random data of specified size
     if request.path.hasPrefix("/download/") {
         let sizeSpec = String(request.path.dropFirst("/download/".count))

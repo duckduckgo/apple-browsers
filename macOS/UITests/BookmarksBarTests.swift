@@ -31,11 +31,6 @@ class BookmarksBarTests: UITestCase {
     private var addressBarTextField: XCUIElement!
     private let titleStringLength = 12
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -46,7 +41,7 @@ class BookmarksBarTests: UITestCase {
         showBookmarksBarAlways = app.menuItems["Preferences.AppearanceView.showBookmarksBarAlways"]
         showBookmarksBarNewTabOnly = app.menuItems["Preferences.AppearanceView.showBookmarksBarNewTabOnly"]
         bookmarksBarCollectionView = app.windows.firstMatch.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
-        addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
         app.enforceSingleWindow()

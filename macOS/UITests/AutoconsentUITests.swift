@@ -46,26 +46,26 @@ class AutoconsentUITests: UITestCase {
 
         // Wait for autoconsent test page to load with specific content
         let webView = app.webViews.firstMatch
-        let autoconsentPageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'automatic consent popup clicking'")).firstMatch
-        XCTAssertTrue(autoconsentPageContent.waitForExistence(timeout: 30.0), "Autoconsent test page should load with 'automatic consent popup clicking' text")
+        let autoconsentPageContent = webView.staticTexts.containing(\.value, containing: "automatic consent popup clicking").firstMatch
+        XCTAssertTrue(autoconsentPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Autoconsent test page should load with 'automatic consent popup clicking' text")
 
         // Verify autoconsent automatically clicked the first button - should show "I was clicked!"
-        let clickedButton = webView.buttons.containing(NSPredicate(format: "title CONTAINS 'I was clicked!'")).firstMatch
-        XCTAssertTrue(clickedButton.waitForExistence(timeout: 10.0), "Autoconsent should have automatically clicked the first button, changing it to 'I was clicked!'")
+        let clickedButton = webView.buttons.containing(\.title, containing: "I was clicked!").firstMatch
+        XCTAssertTrue(clickedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Autoconsent should have automatically clicked the first button, changing it to 'I was clicked!'")
 
         // Check privacy dashboard for autoconsent status
         let privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
-        XCTAssertTrue(privacyButton.waitForExistence(timeout: 10.0), "Privacy button should be available")
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
 
         privacyButton.click()
 
         // Wait for privacy dashboard to open
         let privacyDashboard = app.popovers.firstMatch
-        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: 10.0), "Privacy dashboard should open")
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
 
         // Look for "Cookies Managed" in the privacy dashboard (for button clicking test)
         let cookiesManagedInfo = privacyDashboard.groups.containing(.button, identifier: "Cookies Managed").firstMatch
-        XCTAssertTrue(cookiesManagedInfo.waitForExistence(timeout: 5.0), "Privacy dashboard should show 'Cookies Managed' for autoconsent button clicking")
+        XCTAssertTrue(cookiesManagedInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show 'Cookies Managed' for autoconsent button clicking")
 
         // Close privacy dashboard
         app.typeKey(.escape, modifierFlags: [])
@@ -78,28 +78,28 @@ class AutoconsentUITests: UITestCase {
 
         // Wait for banner test page to load with specific test content
         let webView = app.webViews.firstMatch
-        let bannerTestContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Tests for cosmetic hiding of cookie banners'")).firstMatch
-        XCTAssertTrue(bannerTestContent.waitForExistence(timeout: 30.0), "Banner test page should load with 'Tests for cosmetic hiding of cookie banners' text")
+        let bannerTestContent = webView.staticTexts.containing(\.value, containing: "Tests for cosmetic hiding of cookie banners").firstMatch
+        XCTAssertTrue(bannerTestContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Banner test page should load with 'Tests for cosmetic hiding of cookie banners' text")
 
         // Check that banner content is hidden by autoconsent (entire banner should be gone)
-        let bannerContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'This is a fake consent banner without a reject button'")).firstMatch
+        let bannerContent = webView.staticTexts.containing(\.value, containing: "This is a fake consent banner without a reject button").firstMatch
         XCTAssertFalse(bannerContent.exists, "Banner content should be hidden by autoconsent cosmetic filtering")
 
-        let preHiddenElement = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'This should be pre-hidden'")).firstMatch
+        let preHiddenElement = webView.staticTexts.containing(\.value, containing: "This should be pre-hidden").firstMatch
         XCTAssertFalse(preHiddenElement.exists, "Pre-hidden element should be hidden by autoconsent cosmetic filtering")
 
         // Check privacy dashboard shows cookies are managed
         let privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
-        XCTAssertTrue(privacyButton.waitForExistence(timeout: 10.0), "Privacy button should be available")
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
 
         privacyButton.click()
 
         let privacyDashboard = app.popovers.firstMatch
-        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: 10.0), "Privacy dashboard should open")
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
 
         // Verify autoconsent is working by checking for "Cookies Managed" status
         let cookiePopupHiddenInfo = privacyDashboard.groups.containing(.button, identifier: "Cookies Managed").firstMatch
-        XCTAssertTrue(cookiePopupHiddenInfo.waitForExistence(timeout: 5.0), "Privacy dashboard should show 'Cookies Managed' indicating autoconsent is active")
+        XCTAssertTrue(cookiePopupHiddenInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show 'Cookies Managed' indicating autoconsent is active")
 
         app.typeKey(.escape, modifierFlags: [])
     }
@@ -110,21 +110,21 @@ class AutoconsentUITests: UITestCase {
         // Page 1: autoclick flow
         app.activateAddressBar()
         addressBarTextField.pasteURL(URL(string: "http://privacy-test-pages.site/features/autoconsent/")!, pressingEnter: true)
-        let page1Content = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Tests for automatic consent popup clicking'"))
+        let page1Content = webView.staticTexts.containing(\.value, containing: "Tests for automatic consent popup clicking")
             .firstMatch
-        XCTAssertTrue(page1Content.waitForExistence(timeout: 30.0))
-        let clickedButton1 = webView.buttons.containing(NSPredicate(format: "title CONTAINS 'I was clicked!'"))
+        XCTAssertTrue(page1Content.waitForExistence(timeout: UITests.Timeouts.navigation))
+        let clickedButton1 = webView.buttons.containing(\.title, containing: "I was clicked!")
             .firstMatch
-        XCTAssertTrue(clickedButton1.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(clickedButton1.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Page 2: banner hiding flow
         app.activateAddressBar()
         addressBarTextField.pasteURL(URL(string: "http://privacy-test-pages.site/features/autoconsent/banner.html")!, pressingEnter: true)
-        let page2Content = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Tests for cosmetic hiding of cookie banners'"))
+        let page2Content = webView.staticTexts.containing(\.value, containing: "Tests for cosmetic hiding of cookie banners")
             .firstMatch
-        XCTAssertTrue(page2Content.waitForExistence(timeout: 30.0))
+        XCTAssertTrue(page2Content.waitForExistence(timeout: UITests.Timeouts.navigation))
         let bannerText = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS 'This is a fake consent banner without a reject button'"))
+            .containing(\.value, containing: "This is a fake consent banner without a reject button")
             .firstMatch
         XCTAssertFalse(bannerText.exists)
     }
@@ -136,18 +136,18 @@ class AutoconsentUITests: UITestCase {
 
         // Wait for autoconsent test page to load
         let webView = app.webViews.firstMatch
-        let autoconsentContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Tests for automatic consent popup clicking'"))
+        let autoconsentContent = webView.staticTexts.containing(\.value, containing: "Tests for automatic consent popup clicking")
             .firstMatch
-        XCTAssertTrue(autoconsentContent.waitForExistence(timeout: 30.0), "Initial autoconsent page should load with consent popup text")
+        XCTAssertTrue(autoconsentContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Initial autoconsent page should load with consent popup text")
 
         // Reload the page
         app.typeKey("r", modifierFlags: [.command])
 
         // Wait for reload and verify autoclick persists
-        XCTAssertTrue(autoconsentContent.waitForExistence(timeout: 30.0))
-        let clickedButton = webView.buttons.containing(NSPredicate(format: "title CONTAINS 'I was clicked!'"))
+        XCTAssertTrue(autoconsentContent.waitForExistence(timeout: UITests.Timeouts.navigation))
+        let clickedButton = webView.buttons.containing(\.title, containing: "I was clicked!")
             .firstMatch
-        XCTAssertTrue(clickedButton.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(clickedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Verify dashboard shows cookies managed
         let privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
@@ -155,11 +155,11 @@ class AutoconsentUITests: UITestCase {
 
         // Wait for privacy dashboard to open
         let privacyDashboard = app.popovers.firstMatch
-        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: 10.0), "Privacy dashboard should open")
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
 
         // Look for "Cookies Managed" in the privacy dashboard (for button clicking test)
         let cookiesManagedInfo = privacyDashboard.groups.containing(.button, identifier: "Cookies Managed").firstMatch
-        XCTAssertTrue(cookiesManagedInfo.waitForExistence(timeout: 5.0), "Privacy dashboard should show 'Cookies Managed' for autoconsent button clicking")
+        XCTAssertTrue(cookiesManagedInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show 'Cookies Managed' for autoconsent button clicking")
 
         // Close privacy dashboard
         app.typeKey(.escape, modifierFlags: [])
@@ -172,37 +172,37 @@ class AutoconsentUITests: UITestCase {
         addressBarTextField.pasteURL(firstURL, pressingEnter: true)
 
         let webView = app.webViews.firstMatch
-        let firstPageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Tests for automatic consent popup clicking'")).firstMatch
-        XCTAssertTrue(firstPageContent.waitForExistence(timeout: 30.0), "First page should load with consent popup text")
+        let firstPageContent = webView.staticTexts.containing(\.value, containing: "Tests for automatic consent popup clicking").firstMatch
+        XCTAssertTrue(firstPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "First page should load with consent popup text")
         // Verify auto-click occurred
-        let clickedButton2 = webView.buttons.containing(NSPredicate(format: "title CONTAINS 'I was clicked!'"))
+        let clickedButton2 = webView.buttons.containing(\.title, containing: "I was clicked!")
             .firstMatch
-        XCTAssertTrue(clickedButton2.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(clickedButton2.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Navigate to second test site
         app.activateAddressBar()
         let secondURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/banner.html")!
         addressBarTextField.pasteURL(secondURL, pressingEnter: true)
 
-        let secondPageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Tests for cosmetic hiding of cookie banners'"))
+        let secondPageContent = webView.staticTexts.containing(\.value, containing: "Tests for cosmetic hiding of cookie banners")
             .firstMatch
-        XCTAssertTrue(secondPageContent.waitForExistence(timeout: 30.0), "Second banner page should load with cosmetic hiding text")
+        XCTAssertTrue(secondPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Second banner page should load with cosmetic hiding text")
         // Verify banner is hidden
         let bannerText2 = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS 'This is a fake consent banner without a reject button'"))
+            .containing(\.value, containing: "This is a fake consent banner without a reject button")
             .firstMatch
         XCTAssertFalse(bannerText2.exists)
 
         // Go back to first site
         let backButton = app.buttons.matching(identifier: "NavigationBarViewController.BackButton").firstMatch
-        XCTAssertTrue(backButton.waitForExistence(timeout: 5.0), "Back button should be available")
+        XCTAssertTrue(backButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Back button should be available")
         XCTAssertTrue(backButton.isEnabled, "Back button should be enabled")
 
         backButton.click()
 
         // Wait for navigation back and re-verify auto-click result
-        XCTAssertTrue(firstPageContent.waitForExistence(timeout: 15.0))
-        XCTAssertTrue(clickedButton2.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(firstPageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        XCTAssertTrue(clickedButton2.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
     }
 }

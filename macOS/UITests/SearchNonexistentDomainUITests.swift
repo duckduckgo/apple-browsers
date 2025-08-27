@@ -57,14 +57,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for redirect to search - invalid TLD should trigger search redirect
-        let searchContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", invalidDomain)).firstMatch
-        XCTAssertTrue(searchContent.waitForExistence(timeout: 15.0), "Search results should contain the invalid domain")
+        let searchContent = webView.staticTexts.containing(\.value, containing: invalidDomain).firstMatch
+        XCTAssertTrue(searchContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Search results should contain the invalid domain")
 
         // Verify the URL changed to a search URL by checking address bar after navigation
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after search redirect")
-
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "Should redirect to DuckDuckGo search page")
         XCTAssertTrue(addressBarValue.contains(invalidDomain), "Search URL should contain the original search term")
     }
@@ -76,14 +73,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for redirect to search - invalid TLD should trigger search redirect
-        let searchContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", typoedDomain)).firstMatch
-        XCTAssertTrue(searchContent.waitForExistence(timeout: 15.0), "Search results should contain the invalid domain")
+        let searchContent = webView.staticTexts.containing(\.value, containing: typoedDomain).firstMatch
+        XCTAssertTrue(searchContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Search results should contain the invalid domain")
 
         // Verify the URL changed to a search URL by checking address bar after navigation
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after search redirect")
-
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "Should redirect to DuckDuckGo search page")
         XCTAssertTrue(addressBarValue.contains(typoedDomain), "Search URL should contain the original search term")
     }
@@ -96,13 +90,10 @@ class SearchNonexistentDomainUITests: UITestCase {
 
         // Wait for redirect to search - should load DuckDuckGo search page
 
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load search results page")
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Web view should load search results page")
 
         // Verify the URL changed to a search URL by checking address bar after navigation
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after search redirect")
-
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "Should redirect to DuckDuckGo search page")
         XCTAssertTrue(addressBarValue.contains(randomString), "Search URL should contain the original search term")
     }
@@ -115,18 +106,16 @@ class SearchNonexistentDomainUITests: UITestCase {
 
         // Wait for browser handling - look for an error/suggestions indicator in page content
 
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0), "Web view should load (error page or actual page)")
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Web view should load (error page or actual page)")
 
         // Suggestions or error page text (robust predicate)
         let suggestionOrErrorText = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))
+            .containing(\.value, containing: "could not be found")
             .firstMatch
-        XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: 10.0), "Should show suggestions or an error page for misspelled popular site")
+        XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Should show suggestions or an error page for misspelled popular site")
 
         // Address bar remains accessible and contains something
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0))
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertEqual(addressBarValue, "http://facebok.nonexistent.invalid.domain.com/")
     }
 
@@ -137,14 +126,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for redirect to search - invalid TLD should trigger search redirect
-        let searchContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", invalidDomain)).firstMatch
-        XCTAssertTrue(searchContent.waitForExistence(timeout: 15.0), "Search results should contain the invalid domain")
+        let searchContent = webView.staticTexts.containing(\.value, containing: invalidDomain).firstMatch
+        XCTAssertTrue(searchContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Search results should contain the invalid domain")
 
         // Verify history was recorded - address bar should contain search URL
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible for history navigation")
-
-        let addressBarValue = addressBarTextField.value as? String ?? ""
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(addressBarValue.contains("duckduckgo.com"), "History should record the search redirect")
         XCTAssertTrue(addressBarValue.contains(invalidDomain), "Search URL should contain the original search term")
     }
@@ -156,14 +142,14 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Wait for navigation to complete by checking for page content
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
-        let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: 15.0), "Should navigate to example.com and show page content")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should navigate to example.com and show page content")
 
         // Verify browser navigated and remains functional - address bar should still be accessible
-        app.activateAddressBar() // Activate address bar after navigation
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should remain accessible after valid domain navigation")
+        let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
+        XCTAssertEqual(addressBarValue, "https://example.com/")
     }
 
     func testWhenHttpSingleSlashEntered_NormalizesToDoubleSlash() throws {
@@ -171,11 +157,9 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeText("http:/localhost:8085")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0))
-        let value = (addressBarTextField.value as? String) ?? ""
+        let value = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(value.contains("http://localhost:8085"), "Scheme should be normalized to http:// for single-slash input")
     }
 
@@ -184,11 +168,9 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeText("localhost")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0))
-        let value = (addressBarTextField.value as? String) ?? ""
+        let value = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(value.contains("localhost"))
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
@@ -198,11 +180,9 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.typeText("localhost:8085")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
-        XCTAssertTrue(webView.waitForExistence(timeout: 15.0))
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0))
-        let value = (addressBarTextField.value as? String) ?? ""
+        let value = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(value.contains("localhost:8085"))
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
@@ -213,12 +193,10 @@ class SearchNonexistentDomainUITests: UITestCase {
         let url = URL.testsServer.appendingTestParameters(data: testContent.utf8data)
         addressBarTextField.pasteURL(url, pressingEnter: true)
 
-        let serverContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS %@", testContent)).firstMatch
-        XCTAssertTrue(serverContent.waitForExistence(timeout: 15.0), "Should show test content from local server")
+        let serverContent = webView.staticTexts.containing(\.value, containing: testContent).firstMatch
+        XCTAssertTrue(serverContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should show test content from local server")
 
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0))
-        let value = (addressBarTextField.value as? String) ?? ""
+        let value = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(value.contains("localhost"))
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
@@ -230,12 +208,11 @@ class SearchNonexistentDomainUITests: UITestCase {
 
         // Robust error/suggestion predicate
         let suggestionOrErrorText = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))
+            .containing(\.value, containing: "could not be found")
             .firstMatch
-        XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        app.activateAddressBar()
-        let value = (addressBarTextField.value as? String) ?? ""
+        let value = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
 
@@ -245,12 +222,11 @@ class SearchNonexistentDomainUITests: UITestCase {
         addressBarTextField.pasteURL(invalidURL, pressingEnter: true)
 
         let suggestionOrErrorText = webView.staticTexts
-            .containing(NSPredicate(format: "value CONTAINS[c] 'could not be found'"))
+            .containing(\.value, containing: "could not be found")
             .firstMatch
-        XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: 10.0))
+        XCTAssertTrue(suggestionOrErrorText.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        app.activateAddressBar()
-        let value = (addressBarTextField.value as? String) ?? ""
+        let value = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertFalse(value.contains("duckduckgo.com"))
     }
 

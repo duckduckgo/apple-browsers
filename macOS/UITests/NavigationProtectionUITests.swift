@@ -51,11 +51,11 @@ class NavigationProtectionUITests: UITestCase {
 
         // Ensure page loaded (anchor on a known element on AMP page)
         let pageLoadedAnchor = webView.links[".amp link"].firstMatch
-        XCTAssertTrue(pageLoadedAnchor.waitForExistence(timeout: 15.0), "AMP test page should load and expose baseline link")
+        XCTAssertTrue(pageLoadedAnchor.waitForExistence(timeout: UITests.Timeouts.localTestServer), "AMP test page should load and expose baseline link")
 
         // Collect all expected canonical URL markers ("Expected: ...") in DOM order
         let expectedTexts = webView.staticTexts
-            .matching(NSPredicate(format: "value BEGINSWITH[c] 'Expected: '"))
+            .matching(.keyPath(\.value, beginsWith: "Expected: "))
             .allElementsBoundByIndex
             .map { ($0.value as? String ?? "").replacingOccurrences(of: "Expected: ", with: "") }
 
@@ -82,16 +82,15 @@ class NavigationProtectionUITests: UITestCase {
 
             let expectedURL = expectedTexts[index]
             let link = webView.links[label].firstMatch
-            XCTAssertTrue(link.waitForExistence(timeout: 10.0), "Expected AMP link '\(label)' to exist")
+            XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Expected AMP link '\(label)' to exist")
             link.click()
 
             // Wait for navigation to complete
-            XCTAssertTrue(link.waitForNonExistence(timeout: 30.0), "Navigation should complete after AMP link click: \(label)")
+            XCTAssertTrue(link.waitForNonExistence(timeout: UITests.Timeouts.navigation), "Navigation should complete after AMP link click: \(label)")
             Thread.sleep(forTimeInterval: 5)
 
             // Verify redirected URL exactly matches the page-provided canonical expectation
-            app.activateAddressBar()
-            let finalURL = addressBarTextField.value as? String ?? ""
+            let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
             if label == "amp.dev" {
                 XCTAssertTrue(finalURL.hasPrefix(expectedURL), "Should be redirected to canonical URL \(expectedURL) for '\(label)'; actual: \(finalURL)")
             } else {
@@ -100,7 +99,7 @@ class NavigationProtectionUITests: UITestCase {
 
             // Return to the AMP tests list for the next case
             app.typeKey("[", modifierFlags: [.command])
-            XCTAssertTrue(pageLoadedAnchor.waitForExistence(timeout: 15.0), "Should return to AMP test page before next iteration after \(label)")
+            XCTAssertTrue(pageLoadedAnchor.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should return to AMP test page before next iteration after \(label)")
         }
     }
 
@@ -112,11 +111,11 @@ class NavigationProtectionUITests: UITestCase {
 
         // Find the Guardian amp. test link
         let guardianAmpLink = webView.links["amp. link"]
-        XCTAssertTrue(guardianAmpLink.waitForExistence(timeout: 10.0), "Guardian amp. test link should be available")
+        XCTAssertTrue(guardianAmpLink.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Guardian amp. test link should be available")
 
         // Get the expected URL from the test page instead of hardcoding
-        let expectedURLElement = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Expected: https://www.theguardian.com'")).firstMatch
-        XCTAssertTrue(expectedURLElement.waitForExistence(timeout: 5.0), "Expected URL element should be found on the test page")
+        let expectedURLElement = webView.staticTexts.containing(\.value, containing: "Expected: https://www.theguardian.com").firstMatch
+        XCTAssertTrue(expectedURLElement.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Expected URL element should be found on the test page")
 
         let expectedURLText = expectedURLElement.value as? String ?? ""
         let expectedURL = expectedURLText.replacingOccurrences(of: "Expected: ", with: "")
@@ -130,8 +129,7 @@ class NavigationProtectionUITests: UITestCase {
         XCTAssertTrue(newPageContent.waitForExistence(timeout: navigationTimeout), "Navigation should complete after AMP link click")
 
         // Verify AMP protection worked - should redirect to canonical URL
-        app.activateAddressBar()
-        let finalURL = addressBarTextField.value as? String ?? ""
+        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // Should be redirected to the exact expected canonical URL from the test page
         XCTAssertEqual(finalURL, expectedURL, "Should be redirected to exact canonical URL specified in test page")
@@ -145,16 +143,16 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(socialTestURL, pressingEnter: true)
 
         // Wait for page to load completely
-        let pageHeader = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'About ClickToLoad Tests'")).firstMatch
-        XCTAssertTrue(pageHeader.waitForExistence(timeout: 15.0), "Click-to-load test page should load")
+        let pageHeader = webView.staticTexts.containing(\.value, containing: "About ClickToLoad Tests").firstMatch
+        XCTAssertTrue(pageHeader.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Click-to-load test page should load")
 
         // Validate that Click-to-Load blocked FB resources on the page (functional signal from the test page)
-        let metrics = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Facebook Resources Loads:'")).firstMatch
-        XCTAssertTrue(metrics.waitForExistence(timeout: 20.0), "Metrics section should be visible on the click-to-load page")
+        let metrics = webView.staticTexts.containing(\.value, containing: "Facebook Resources Loads:").firstMatch
+        XCTAssertTrue(metrics.waitForExistence(timeout: UITests.Timeouts.navigation), "Metrics section should be visible on the click-to-load page")
 
         // Initial state: resources should be NONE
         let noneValue = webView.staticTexts["NONE"].firstMatch
-        if !noneValue.waitForExistence(timeout: 30.0) {
+        if !noneValue.waitForExistence(timeout: UITests.Timeouts.navigation) {
             let attach = XCTAttachment(string: app.debugDescription)
             attach.lifetime = .keepAlways
             add(attach)
@@ -167,10 +165,10 @@ class NavigationProtectionUITests: UITestCase {
         let firstLoginStatic = webView.staticTexts["Log in with Facebook"].firstMatch
         let customLoginButton = webView.buttons["Custom Facebook Login"].firstMatch
 
-        let hasFirstButton = firstLoginButton.waitForExistence(timeout: 8.0)
-        let hasFirstLink = hasFirstButton ? false : firstLoginLink.waitForExistence(timeout: 4.0)
-        let hasFirstStatic = (hasFirstButton || hasFirstLink) ? false : firstLoginStatic.waitForExistence(timeout: 4.0)
-        let hasCustom = (!hasFirstButton && !hasFirstLink && !hasFirstStatic) ? customLoginButton.waitForExistence(timeout: 5.0) : false
+        let hasFirstButton = firstLoginButton.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        let hasFirstLink = hasFirstButton ? false : firstLoginLink.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        let hasFirstStatic = (hasFirstButton || hasFirstLink) ? false : firstLoginStatic.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        let hasCustom = (!hasFirstButton && !hasFirstLink && !hasFirstStatic) ? customLoginButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) : false
 
         guard hasFirstButton || hasFirstLink || hasFirstStatic || hasCustom else {
             let attach = XCTAttachment(string: app.debugDescription)
@@ -192,16 +190,15 @@ class NavigationProtectionUITests: UITestCase {
 
         // Wait for the CTL overlay to be presented
         let overlayTitle = app.staticTexts["Logging in with Facebook lets them track you"].firstMatch
-        XCTAssertTrue(overlayTitle.waitForExistence(timeout: 10.0), "CTL overlay should appear after clicking login")
+        XCTAssertTrue(overlayTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "CTL overlay should appear after clicking login")
 
         let overlayLogin = app.buttons["Log In"].firstMatch
-        XCTAssertTrue(overlayLogin.waitForExistence(timeout: 10.0), "Overlay 'Log In' should be visible")
+        XCTAssertTrue(overlayLogin.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Overlay 'Log In' should be visible")
 
         // Do not proceed further in CI; presence of overlay and primary action is sufficient
 
         // Verify we stayed on the click-to-load page in the main window
-        app.activateAddressBar()
-        let currentURL = addressBarTextField.value as? String ?? ""
+        let currentURL = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(currentURL.contains("click-to-load"), "Should be on the click-to-load test page; actual: \(currentURL)")
     }
 
@@ -213,12 +210,11 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(trackedURL, pressingEnter: true)
 
         // Wait for page to load
-        let pageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: 15.0), "Example page should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Example page should load")
 
         // Check final URL after navigation - tracking parameters should be removed
-        app.activateAddressBar()
-        let finalURL = addressBarTextField.value as? String ?? ""
+        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
 
         // Assert that utm_source parameter was removed (this is consistently removed)
         XCTAssertFalse(finalURL.contains("utm_source"), "utm_source tracking parameter should be removed; actual: \(finalURL)")
@@ -238,12 +234,11 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(safeURL, pressingEnter: true)
 
         // Wait for local test page
-        let safePageContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Safe Test Page'")).firstMatch
-        XCTAssertTrue(safePageContent.waitForExistence(timeout: 15.0), "Safe test page should load normally")
+        let safePageContent = webView.staticTexts.containing(\.value, containing: "Safe Test Page").firstMatch
+        XCTAssertTrue(safePageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Safe test page should load normally")
 
         // Verify we're on the expected safe page
-        app.activateAddressBar()
-        let currentURL = addressBarTextField.value as? String ?? ""
+        let currentURL = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(currentURL.contains("localhost:8085"), "Should remain on safe local test page; actual: \(currentURL)")
     }
 
@@ -255,8 +250,8 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(originURL, pressingEnter: true)
 
         // Wait for origin page
-        let originContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Origin Test Page'")).firstMatch
-        XCTAssertTrue(originContent.waitForExistence(timeout: 15.0), "Origin page should load")
+        let originContent = webView.staticTexts.containing(\.value, containing: "Origin Test Page").firstMatch
+        XCTAssertTrue(originContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Origin page should load")
 
         // Navigate to different origin to test cross-site protection
         let crossOriginURL = URL(string: "https://example.com")!
@@ -264,18 +259,16 @@ class NavigationProtectionUITests: UITestCase {
         addressBarTextField.pasteURL(crossOriginURL, pressingEnter: true)
 
         // Wait for cross-origin page to load completely
-        let crossOriginContent = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
-        XCTAssertTrue(crossOriginContent.waitForExistence(timeout: 15.0), "Cross-origin page should load")
+        let crossOriginContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+        XCTAssertTrue(crossOriginContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Cross-origin page should load")
 
         // Ensure page is fully loaded before accessing address bar
         let pageLoadTimeout: TimeInterval = 3.0
-        let pageFullyLoaded = webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'")).firstMatch
+        let pageFullyLoaded = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
         XCTAssertTrue(pageFullyLoaded.waitForExistence(timeout: pageLoadTimeout), "Page should be fully loaded")
 
         // Verify cross-site navigation completed (protection allows legitimate navigation)
-        app.activateAddressBar()
-        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: 5.0), "Address bar should be accessible after navigation")
-        let finalURL = addressBarTextField.value as? String ?? ""
+        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(finalURL.contains("example.com"), "Legitimate cross-site navigation should work; actual: \(finalURL)")
     }
 
@@ -288,20 +281,20 @@ class NavigationProtectionUITests: UITestCase {
 
         // Start the tests on page
         let startButton = webView.buttons["Start test"].firstMatch
-        XCTAssertTrue(startButton.waitForExistence(timeout: 15.0), "Start button should be available for referrer trimming test")
+        XCTAssertTrue(startButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available for referrer trimming test")
         Thread.sleep(forTimeInterval: 1)
         startButton.click()
 
         // Wait for test completion summary and expand
         let summary = webView.staticTexts["Performed 9 tests. Click for details."].firstMatch
-        XCTAssertTrue(summary.waitForExistence(timeout: 40.0), "Referrer trimming test should complete")
+        XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "Referrer trimming test should complete")
         summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        let summaryGroup = webView.groups.containing(NSPredicate(format: "value BEGINSWITH[c] %@", "1p navigation -")).firstMatch
+        let summaryGroup = webView.groups.containing(.keyPath(\.value, beginsWith: "1p navigation -")).firstMatch
         // Helper to collect values in a section following a header prefix
         func values(afterHeaderWithPrefix prefix: String) -> [String] {
             // Locate the group that contains a static text header starting with the prefix
-            let group = summaryGroup.groups.containing(NSPredicate(format: "value BEGINSWITH[c] %@", prefix)).firstMatch
+            let group = summaryGroup.groups.containing(.staticText, where: .keyPath(\.value, beginsWith: prefix)).firstMatch
             XCTAssertTrue(group.exists, "Group for header not found: \(prefix)")
             let texts = group.staticTexts.allElementsBoundByIndex.map { ($0.value as? String) ?? $0.label }
             return texts.filter { !$0.isEmpty && !$0.hasPrefix(prefix) }
@@ -342,13 +335,13 @@ class NavigationProtectionUITests: UITestCase {
 
         // Start the test
         let startButton = webView.buttons["Start test"].firstMatch
-        XCTAssertTrue(startButton.waitForExistence(timeout: 15.0), "Start button should be available for GPC test")
+        XCTAssertTrue(startButton.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Start button should be available for GPC test")
         Thread.sleep(forTimeInterval: 1)
         startButton.click()
 
         // Wait for summary and expand details
         let summary = webView.staticTexts["Performed 5 tests. Click for details."].firstMatch
-        XCTAssertTrue(summary.waitForExistence(timeout: 40.0), "GPC test should complete and show summary")
+        XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "GPC test should complete and show summary")
         summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
         // Helper to collect values in a section following a header prefix

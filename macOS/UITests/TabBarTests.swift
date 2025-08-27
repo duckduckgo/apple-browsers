@@ -29,11 +29,6 @@ class TabBarTests: UITestCase {
         resetPinnedTabs()
     }
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     func testClosesChildTabIsSelected_whenSibilingTabIsClosed() {
         openPrivacyTestPagesSite()
 
@@ -194,12 +189,12 @@ class TabBarTests: UITestCase {
     private func openSite(pageTitle: String) {
         let url = UITests.simpleServedPage(titled: pageTitle)
 
-        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]
+        let addressBar = app.addressBar
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(url)
+        addressBar.typeURL(url)
         XCTAssertTrue(
             app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
@@ -208,12 +203,12 @@ class TabBarTests: UITestCase {
 
     private func openPrivacyTestPagesSite() {
         let url = URL(string: "http://privacy-test-pages.site/index.html")!
-        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]
+        let addressBar = app.addressBar
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(url)
+        addressBar.typeURL(url)
         XCTAssertTrue(
             app.windows.firstMatch.webViews["Privacy Test Pages - Home"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."

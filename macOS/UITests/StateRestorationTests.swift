@@ -30,11 +30,6 @@ class StateRestorationTests: UITestCase {
     private var openANewWindowPreference: XCUIElement!
     private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -43,7 +38,7 @@ class StateRestorationTests: UITestCase {
         secondPageTitle = UITests.randomPageTitle(length: titleStringLength)
         firstURLForBookmarksBar = UITests.simpleServedPage(titled: firstPageTitle)
         secondURLForBookmarksBar = UITests.simpleServedPage(titled: secondPageTitle)
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
         openANewWindowPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]

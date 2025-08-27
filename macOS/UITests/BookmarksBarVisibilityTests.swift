@@ -30,11 +30,6 @@ class BookmarksBarVisibilityTests: UITestCase {
     private var skipOnboardingMenuItem: XCUIElement!
     private var bookmarksBarPromptPopover: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -42,11 +37,11 @@ class BookmarksBarVisibilityTests: UITestCase {
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
 
-        addressBarTextField = app.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         skipOnboardingMenuItem = app.menuItems["MainMenu.skipOnboarding"]
-        bookmarksBarPromptPopover = app.popovers.containing(NSPredicate(format: "title == %@", "Show Bookmarks Bar?")).element
+        bookmarksBarPromptPopover = app.popovers.containing(\.title, equalTo: "Show Bookmarks Bar?").element
 
         app.resetBookmarks()
         skipOnboarding()
@@ -101,7 +96,7 @@ class BookmarksBarVisibilityTests: UITestCase {
         )
 
         // Open a new tab
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
 
         // Verify bookmarks bar is shown in the new tab
         XCTAssertTrue(
@@ -198,7 +193,7 @@ class BookmarksBarVisibilityTests: UITestCase {
         app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
 
         // Open a new tab
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
 
         // Verify bookmarks bar is hidden in the new tab
         XCTAssertFalse(

@@ -55,11 +55,6 @@ class BookmarksAndFavoritesTests: UITestCase {
     private var addNewFolderButton: XCUIElement!
     private var folderNameTextField: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -67,7 +62,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
         addressBarBookmarkButton = app.buttons["AddressBarButtonsViewController.bookmarkButton"]
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         bookmarkPageContextMenuItem = app.menuItems["ContextMenuManager.bookmarkPageMenuItem"]
         bookmarkPageMenuItem = app.menuItems["MoreOptionsMenu.bookmarkPage"]
         bookmarkPageMainMenuItem = app.menuItems["Bookmark This Page…"]
@@ -338,7 +333,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         let pageTitleForAddFavoriteDialog: String = try XCTUnwrap(pageTitle, "Couldn't unwrap page title")
         let urlForAddFavoriteDialog = try XCTUnwrap(urlForBookmarksBar, "Couldn't unwrap page url")
         app.typeText("\(pageTitleForAddFavoriteDialog)\t")
-        app.typeURL(urlForAddFavoriteDialog)
+        app.pasteURL(urlForAddFavoriteDialog)
         let newFavorite = app.links[pageTitleForAddFavoriteDialog]
 
         XCTAssertTrue(
@@ -562,6 +557,11 @@ class BookmarksAndFavoritesTests: UITestCase {
         bookmarkTableCellViewMenuButton.clickAfterExistenceTestSucceeds()
         contextualMenuRemoveBookmarkFromFavoritesMenuItem.clickAfterExistenceTestSucceeds()
 
+        app.windows.buttons[XCUIIdentifierCloseWindow].hover()
+        if bookmarksManagementAccessoryImageView.exists {
+            bookmarksManagementAccessoryImageView.hover()
+        }
+
         XCTAssertTrue(
             bookmarksManagementAccessoryImageView.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Bookmarks accessory view favorites indicator didn't disappear from the view in a reasonable timeframe."
@@ -633,7 +633,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         )
     }
 
-    func test_bookmark_canBeRemovedFromBookmarksBarViaRightClick() {
+    func test_bookmark_canBeRemovedFromBookmarksBarViaRightClick() throws {
 //        This test uses coordinates (instead of accessibility IDs) to address the elements of the right click. As the writer of this test, I see this
 //        as a fragile test hook. However, I think it is preferable to making changes to the UI element it tests for this test alone. The reason is
 //        that the bookmark item on the bookmark bar isn't yet an accessibility-enabled UI element and doesn't appear to have a natural anchor point
@@ -649,11 +649,9 @@ class BookmarksAndFavoritesTests: UITestCase {
 //        this test can fail while the app is working correctly. -Halle Winkler
 
         toggleShowBookmarksBarAlwaysOn()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         openSiteToBookmark(bookmarkingViaDialog: true, escapingDialog: true)
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
 
         XCTAssertTrue(
             bookmarksBarCollectionView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -664,18 +662,20 @@ class BookmarksAndFavoritesTests: UITestCase {
             bookmarkBarBookmarkIcon.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The bookmarks bar bookmark icon failed to become available in a reasonable timeframe."
         )
-        let bookmarkBarBookmarkIconCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        var deleteContextMenuItemCoordinate: XCUICoordinate
-        if #available(macOS 15.0, *) {
-            deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 9.0))
-        } else {
-            deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 10.5))
-        }
-
+        let bookmarkBarBookmarkIconCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 1.0, dy: 0.5))
         bookmarkBarBookmarkIconCoordinate.rightClick()
-        deleteContextMenuItemCoordinate.click()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+
+        // choose the "Delete" menu item
+        for _ in 0..<7 {
+            app.typeKey(.downArrow, modifierFlags: [])
+        }
+        app.typeKey(.enter, modifierFlags: [])
+        XCTAssertTrue(
+            bookmarkBarBookmarkIcon.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "The bookmarks bar bookmark item should disappear."
+        )
+
+        app.enforceSingleWindow()
 
         XCTAssertTrue(
             app.staticTexts[pageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
@@ -768,7 +768,7 @@ private extension BookmarksAndFavoritesTests {
     /// Make sure that appearance tab has been used to set "show favorites" to true
     func toggleBookmarksBarShowFavoritesOn() {
         app.openNewTab()
-        addressBarTextField.typeURL(URL(string: "duck://settings")!)
+        addressBarTextField.pasteURL(URL(string: "duck://settings")!)
 
         XCTAssertTrue(
             settingsAppearanceButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -796,7 +796,7 @@ private extension BookmarksAndFavoritesTests {
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(urlForBookmarksBar)
+        addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."

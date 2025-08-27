@@ -23,11 +23,6 @@ class FireWindowTests: UITestCase {
     private var settingsGeneralButton: XCUIElement!
     private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
@@ -162,12 +157,8 @@ class FireWindowTests: UITestCase {
 
             // Use an expectation to wait for the value to update
             let expectedValue = "test@duck.com"
-            let valuePredicate = NSPredicate(format: "value == %@", expectedValue)
-
-            let expectation = XCTNSPredicateExpectation(predicate: valuePredicate, object: emailTextFieldFire)
-
-            let result = XCTWaiter().wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
-            XCTAssertEqual(result, .completed, "The email text field value did not update as expected.")
+            XCTAssertTrue(emailTextFieldFire.wait(for: \.value, equals: expectedValue, timeout: UITests.Timeouts.elementExistence),
+                          "The email text field value did not update as expected.")
             XCTAssertEqual(emailTextFieldFire.value as? String, expectedValue)
         }
     }
@@ -201,12 +192,12 @@ class FireWindowTests: UITestCase {
     }
 
     private func openLoginSite() {
-        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"].firstMatch
+        let addressBar = app.addressBar
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(URL(string: "https://privacy-test-pages.site/autofill/autoprompt/1-standard-login-form.html")!)
+        addressBar.typeURL(URL(string: "https://privacy-test-pages.site/autofill/autoprompt/1-standard-login-form.html")!)
         XCTAssertTrue(
             app.windows.firstMatch.webViews["Autofill autoprompt for signin forms"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
@@ -251,12 +242,12 @@ class FireWindowTests: UITestCase {
     }
 
     private func openSignUpSite() {
-        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"].firstMatch
+        let addressBar = app.addressBar
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(URL(string: "https://privacy-test-pages.site/autofill/signup.html")!)
+        addressBar.typeURL(URL(string: "https://privacy-test-pages.site/autofill/signup.html")!)
         XCTAssertTrue(
             app.windows.firstMatch.webViews["Password generation during signup"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
@@ -272,12 +263,8 @@ class FireWindowTests: UITestCase {
     }
 
     private func assertFireWindowDoesNotHavePinnedTabs() {
-        let existsPredicate = NSPredicate(format: "exists == true")
-        let staticTextExistsExpectation = expectation(for: existsPredicate, evaluatedWith: app.windows.firstMatch.staticTexts.element(boundBy: 0), handler: nil)
-
-        // Wait up to 10 seconds for the static texts to be available
-        let result = XCTWaiter().wait(for: [staticTextExistsExpectation], timeout: 10)
-        XCTAssertEqual(result, .completed, "No static texts were found in the app")
+        let staticTexts = app.windows.firstMatch.staticTexts.element(boundBy: 0)
+        XCTAssertTrue(staticTexts.waitForExistence(timeout: UITests.Timeouts.elementExistence), "No static texts were found in the app")
 
         // After confirming static texts are available, iterate through them
         for staticText in app.staticTexts.allElementsBoundByIndex where staticText.exists {
@@ -295,12 +282,8 @@ class FireWindowTests: UITestCase {
     }
 
     private func assertSitesOpenedOnFireWindowAreNotRestored() {
-        let existsPredicate = NSPredicate(format: "exists == true")
-        let staticTextExistsExpectation = expectation(for: existsPredicate, evaluatedWith: app.staticTexts.element(boundBy: 0), handler: nil)
-
-        // Wait up to 10 seconds for the static texts to be available
-        let result = XCTWaiter().wait(for: [staticTextExistsExpectation], timeout: 10)
-        XCTAssertEqual(result, .completed, "No static texts were found in the app")
+        let staticTexts = app.windows.firstMatch.staticTexts.element(boundBy: 0)
+        XCTAssertTrue(staticTexts.waitForExistence(timeout: UITests.Timeouts.elementExistence), "No static texts were found in the app")
 
         // After confirming static texts are available, iterate through them
         for staticText in app.staticTexts.allElementsBoundByIndex where staticText.exists {
@@ -342,12 +325,12 @@ class FireWindowTests: UITestCase {
 
     private func openSite(pageTitle: String) {
         let url = UITests.simpleServedPage(titled: pageTitle)
-        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"].firstMatch
+        let addressBar = app.addressBar
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(url)
+        addressBar.typeURL(url)
         XCTAssertTrue(
             app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."

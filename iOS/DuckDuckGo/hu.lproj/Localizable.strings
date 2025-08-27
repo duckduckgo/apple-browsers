@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Böngészési adatok törlése gombnyomásra";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Harmadik féltől származó nyomkövetők blokkolása";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Billentyűzet";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "További részletek";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "A DuckDuckGo kezelheti a sütik elfogadására szolgáló felugró ablakokat";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Beállítások";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Segít blokkolni a harmadik féltől származó olyan nyomkövetőket, amelyek DNS segítségével próbálják elrejteni magukat egy webhelyen.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Védelmet nyújt a DNS CNAME-álcázás ellen";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Letiltja a Facebook-tartalmak, például a Facebook-hozzászólásokat lehetővé tévő minialkalmazások nyomon követését a nem Facebook-oldalakon.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebook-nyomkövetés elleni védelem";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Segít megakadályozni, hogy a nyomkövető cégek olyan egyedi azonosítókat gyűjtsenek a böngésződről és az eszközödről, amelyek használatával nyomon követhetnek a weben.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Megakadályozza az ujjlenyomat-alapú nyomkövetést";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Az első féltől származó sütiket 30 nap elteltével automatikusan lejárt állapotba állítja, biztosítva ezáltal, hogy a webhelyek ne tudjanak korlátlanul követni, ha kijelentkeztél.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Lejárttá teszi az első féltől származó sütiket";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "A Google AMP linkeket az eredeti tartalom közzétevőjének oldalára cseréli.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokkolja a Google AMP nyomon követését";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokkolja az előugró Google bejelentkezési ablakokat a nem a Google tulajdonában lévő webhelyeken.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokkolja a felugró Google-bejelentkezési ablakokat";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Eltávolítja a linkek nyomkövető paramétereit, hogy harmadik felek ne tudják nyomon követni a webhelyeken átívelő böngészési szokásaidat.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokkolja a linkkövetést";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Segít megakadályozni a vállalatokat az általad utoljára meglátogatott webhelyek azonosításában.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Védelmet nyújt a hivatkozó-nyomkövetés ellen";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Még betöltés előtt blokkolja az invazív nyomkövetőket, így hatékonyan kiküszöböljük a nyomkövetésre épülő hirdetéseket.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokkolja a célzott hirdetéseket";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "A harmadik féltől származó nyomkövetők betöltésének megakadályozásával segít blokkolni a téged webhelyről webhelyre követő harmadik féltől származó sütiket.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokkolja a harmadik féltől származó nyomkövetőket";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Védelem nélküli weboldalak";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Webes követés elleni védelem";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "A webes követés elleni védelem mindig be van kapcsolva";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "A DuckDuckGo böngészés közben automatikusan blokkolja a rejtett nyomkövetőket.\n[További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Így védünk téged";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "A DuckDuckGo böngésző nyomkövetés elleni védelmi megoldásokat kínál, amelyek mindig aktívak. [További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Válaszd ki azt a lehetőséget, amelyik a legjobban leírja a tapasztalt problémát.";

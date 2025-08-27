@@ -3435,6 +3435,59 @@
         }
       }
     },
+    "Always On" : {
+      "comment" : "Web tracking protection Always on title",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Immer aktiviert"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siempre activado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toujours activé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre attiva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altijd aan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zawsze włączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre ligada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда включено"
+          }
+        }
+      }
+    },
     "Always Show" : {
       "comment" : "Preference for always showing the bookmarks bar",
       "localizations" : {
@@ -27027,7 +27080,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffne das Browser-Menü und wähle Neues Fire Window, um zu surfen, ohne den lokalen Verlauf zu speichern und Daten beim Schließen des Fensters automatisch zu löschen."
+            "value" : "Öffne das Browser-Menü und wähle „Neues Fire Window“, um zu surfen, ohne den lokalen Verlauf zu speichern und Daten beim Schließen des Fensters automatisch zu löschen."
           }
         },
         "en" : {
@@ -27045,7 +27098,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrez le menu du navigateur et sélectionnez Nouvelle Fire Window pour naviguer sans enregistrer l’historique local et effacer automatiquement les données lorsque vous fermez la fenêtre."
+            "value" : "Ouvrez le menu du navigateur et sélectionnez Nouvelle Fire Window pour naviguer sans enregistrer l'historique local et effacer automatiquement les données lorsque vous fermez la fenêtre."
           }
         },
         "it" : {
@@ -27069,13 +27122,13 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abre o menu do navegador e seleciona Nova Fire Window para navegar sem guardar o histórico local e eliminar automaticamente os dados quando fechares a janela."
+            "value" : "Abre o menu do navegador e seleciona Nova Fire Window para navegar sem guardar o histórico local, e eliminar automaticamente os dados quando fechares a janela."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Чтобы просматривать сайты без сохранения локальной истории и автоматически стереть данные после закрытия окна, откройте меню браузера и выберите пункт Новое окно Fire Window."
+            "value" : "Чтобы просматривать сайты без сохранения локальной истории и автоматически стереть данные после закрытия окна, откройте меню браузера и выберите пункт «Новое окно Fire Window»."
           }
         }
       }
@@ -44227,10 +44280,58 @@
       "comment" : "Main Menu File item",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei öffnen …"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open File…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir archivo…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir le fichier…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri file..."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestand openen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz plik…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir ficheiro…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть файл…"
           }
         }
       }
@@ -67133,10 +67234,58 @@
       "comment" : "Section title for Fire Window preferences",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Fire Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okno Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Окно Fire Window"
           }
         }
       }
@@ -67505,10 +67654,58 @@
       "comment" : "Option to make all new windows Fire Windows",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window standardmäßig öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open Fire Window by default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Fire Window por defecto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir la Fire Window par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri la Fire Window per impostazione predefinita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire Window standaard openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Domyślnie otwieraj okno Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Fire Window por defeito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывать окно Fire Window по умолчанию"
           }
         }
       }
@@ -70371,7 +70568,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ein Browserproblem melden"
+            "value" : "Ein Problem mit dem Browser melden"
           }
         },
         "en" : {
@@ -70383,7 +70580,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Informar de un problema del navegador"
+            "value" : "Informar de un problema con el navegador"
           }
         },
         "fr" : {
@@ -70395,7 +70592,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Segnala un problema del browser"
+            "value" : "Report a Browser Problem"
           }
         },
         "nl" : {
@@ -70413,7 +70610,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Relatar um problema no navegador"
+            "value" : "Denunciar um problema no navegador"
           }
         },
         "ru" : {
@@ -73458,6 +73655,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось обновить"
+          }
+        }
+      }
+    },
+    "settings.web.tracking.protection.subtitle" : {
+      "comment" : "The subtitle of the web tracking protection grid section",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie wir dich schützen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "How We Protect You"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cómo te protegemos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment nous vous protégeons"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come proteggiamo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoe wij je beschermen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W jaki sposób Cię chronimy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Como te protegemos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как мы вас защищаем"
           }
         }
       }
@@ -80381,6 +80638,1206 @@
         }
       }
     },
+    "tracking.protection.cname.cloaking.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hilft dabei, Tracker von Drittanbietern zu blockieren, die versuchen, sich innerhalb einer Website mit DNS zu tarnen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda a bloquear rastreadores de terceros que intentan disfrazarse en un sitio web usando DNS."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permet de bloquer les traqueurs tiers qui tentent de se dissimuler sur un site Web à l'aide du DNS."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuta a bloccare i sistemi di tracciamento di terze parti che cercano di mascherarsi all'interno di un sito Web utilizzando il DNS."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helpt bij het blokkeren van trackers van derden die zich proberen te vermommen binnen een website met behulp van DNS."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomaga blokować mechanizmy śledzące innych firm, które próbują ukryć się w witrynie internetowej za pomocą DNS."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajuda a bloquear rastreadores de terceiros que tentam esconder-se num site usando DNS."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Помогает блокировать сторонние трекеры, которые пытаются маскироваться на сайтах с помощью DNS."
+          }
+        }
+      }
+    },
+    "tracking.protection.cname.cloaking.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schützt vor DNS CNAME Cloaking"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Protects against DNS CNAME cloaking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege contra el encubrimiento de DNS CNAME"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protège contre le DNS CNAME cloaking"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protegge dal cloaking DNS CNAME"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschermt tegen DNS CNAME cloaking"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chroni przed maskowaniem DNS CNAME"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege contra camuflagem do DNS CNAME"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита от маскировки CNAME в DNS"
+          }
+        }
+      }
+    },
+    "tracking.protection.facebook.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deaktiviert das Tracking für Facebook-Inhalte wie Facebook-Kommentar-Widgets auf Nicht-Facebook-Seiten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deshabilita el rastreo de contenido de Facebook, como los widgets de comentarios de Facebook, en sitios que no son de Facebook."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactive le pistage du contenu Facebook comme les widgets de commentaires Facebook sur les sites autres que Facebook."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabilita il tracciamento dei contenuti di Facebook come i widget dei commenti di Facebook su siti non Facebook."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schakelt tracking uit voor Facebook-content, zoals Facebook-widgets voor reacties op andere sites."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłącza śledzenie treści Facebooka, takich jak widżety komentarzy Facebooka na stronach innych niż Facebook."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativa o rastreamento de conteúdo do Facebook, como widgets de comentários do Facebook em sites que não são do Facebook."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пресекает отслеживание контента из Facebook (например, через виджеты с комментариями, размещенные на других сайтах)."
+          }
+        }
+      }
+    },
+    "tracking.protection.facebook.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Facebook-Tracking-Schutz"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Facebook tracking protection"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protección de rastreo de Facebook"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protection contre le pistage Facebook"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protezione dal tracciamento di Facebook"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bescherming tegen Facebook-tracking"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ochrona przed śledzeniem przez Facebooka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteção contra rastreamento do Facebook"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита от трекеров Facebook"
+          }
+        }
+      }
+    },
+    "tracking.protection.fingerprinting.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verhindert, dass Tracking-Unternehmen eindeutige Identifikatoren über deinen Browser und dein Gerät erhalten, die sie nutzen würden, um dich im Internet zu verfolgen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda a impedir que las empresas de rastreo obtengan identificadores únicos sobre tu navegador y dispositivo, que luego utilizan para seguirte por la web."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permet d'empêcher les entreprises de pistage d'obtenir des identifiants uniques sur votre navigateur et votre appareil, qu'elles utilisent pour vous suivre sur le Web."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuta a impedire alle aziende di ottenere identificatori univoci sul browser e dispositivo, che utilizzano per seguirti sul web."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helpt voorkomen dat trackingbedrijven unieke identificatiegegevens over je browser en apparaat verkrijgen, die ze gebruiken om je op het internet e volgen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomaga uniemożliwić firmom śledzącym uzyskiwanie unikalnych identyfikatorów Twojej przeglądarki i urządzenia, których używają do śledzenia Cię w sieci."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajuda a impedir que as empresas de rastreamento obtenham identificadores exclusivos sobre o teu navegador e dispositivo, que usam para te seguir na Web."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не позволяет компаниям собирать уникальные идентификаторы вашего браузера и устройства для дальнейшей слежки за вами в Сети."
+          }
+        }
+      }
+    },
+    "tracking.protection.fingerprinting.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verhindert das Tracking von Fingerabdrücken"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Prevents fingerprint tracking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previene el rastreo de huellas dactilares"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empêche le pistage par fingerprinting"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impedisce il tracciamento delle impronte digitali"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voorkomt fingerprint tracking"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapobiega śledzeniu cyfrowego odcisku palca"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impede o rastreamento de impressões digitais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита от отслеживания по цифровому отпечатку"
+          }
+        }
+      }
+    },
+    "tracking.protection.first.party.cookies.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lässt Cookies von Erstanbietern automatisch nach 30 Tagen ablaufen, damit Websites dich nicht auf unbestimmte Zeit verfolgen können, selbst wenn du abgemeldet bist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hace caducar automáticamente las cookies propias después de 30 días, lo que garantiza que los sitios no puedan rastrearte indefinidamente cuando cierras sesión."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permet l'expiration automatique des cookies propriétaires après 30 jours afin que les sites ne puissent pas vous suivre indéfiniment lorsque vous êtes déconnecté(e)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I cookie di prima parte scadono automaticamente dopo 30 giorni, in modo che i siti non possano tracciarti all'infinito quando ti disconnetti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlaat automatisch cookies van eerste partijen na 30 dagen, zodat sites je niet onbeperkt kunnen volgen als je bent uitgelogd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatycznie powoduje utratę ważności własnych plików cookie witryn po 30 dniach, aby nie mogły śledzić Cię w nieskończoność po wylogowaniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expira automaticamente os cookies originais após 30 dias, garantindo que os sites não te conseguem rastrear indefinidamente quando tens a sessão terminada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автоматически завершает срок действия собственных куки-файлов сайтов по истечении 30 дней, чтобы они не могли бесконечно отслеживать вас после выхода из учетной записи."
+          }
+        }
+      }
+    },
+    "tracking.protection.first.party.cookies.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstanbieter-Cookies laufen ab"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Expires 1st-party cookies"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caducan las cookies propias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fait expirer les cookies propriétaires"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scadenza dei cookie di prima parte"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat cookies van eerste partijen vervallen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogranicza ważność własnych plików cookie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expira cookies principais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Остановка действия куки-файлов"
+          }
+        }
+      }
+    },
+    "tracking.protection.google.amp.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ersetzt Google AMP-Links durch die ursprüngliche Website des Herausgebers."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Replaces Google AMP links with the original publisher's site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reemplaza los enlaces de Google AMP con el sitio del editor original."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplace les liens Google AMP par le site de l'éditeur d'origine."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sostituisce i link AMP di Google con il sito del publisher originale."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vervangt Google AMP-links door de site van de oorspronkelijke uitgever."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zastępuje linki Google AMP oryginalną witryną wydawcy."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Substitui os links AMP da Google pelo site do publicador original."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заменяет ссылки Google AMP на ссылки источника."
+          }
+        }
+      }
+    },
+    "tracking.protection.google.amp.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert das AMP-Tracking von Google"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks Google's AMP Tracking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea el rastreo AMP de Google"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque le pistage AMP de Google"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca il tracciamento AMP di Google"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeert Google's AMP-tracking"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuje śledzenie AMP Google"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia o rastreamento AMP da Google"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка отслеживания через Google AMP"
+          }
+        }
+      }
+    },
+    "tracking.protection.google.sign.in.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert Google-Anmelde-Pop-ups auf Websites, die nicht Google gehören."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks Google sign-in pop-ups on sites Google doesn't own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea las ventanas emergentes de inicio de sesión de Google en sitios que no son propiedad de Google."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque les fenêtres contextuelles de connexion à Google sur les sites qui ne lui appartiennent pas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca i pop-up di accesso a Google su siti non di proprietà di Google."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeert aanmeldingspop-ups van Google op sites die niet van Google zijn."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuje wyskakujące okienka logowania Google w witrynach, które nie są własnością Google."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia pop-ups de início de sessão da Google em sites que não são da Google."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокирует всплывающие окна входа в Google на сайтах, не принадлежащих компании."
+          }
+        }
+      }
+    },
+    "tracking.protection.google.sign.in.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert die Anmelde-Pop-ups von Google"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks Google's sign-in pop-ups"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea las ventanas emergentes de inicio de sesión de Google"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque les fenêtres contextuelles de connexion de Google"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca i popup di accesso di Google"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeert de pop-ups voor aanmelden bij Google"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuje wyskakujące okienka logowania Google"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia os pop-ups de início de sessão da Google"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка всплывающих окон входа в Google"
+          }
+        }
+      }
+    },
+    "tracking.protection.link.tracking.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entfernt Tracking-Parameter in Links, um zu verhindern, dass Dritte dein Verhalten über verschiedene Websites hinweg verfolgen können."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Removes tracking parameters in links to prevent 3rd parties from tracking your behavior across sites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina los parámetros de rastreo de los enlaces para impedir que terceros rastreen tu comportamiento en los sitios."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprime les paramètres de pistage dans les liens pour empêcher les tiers de suivre votre comportement sur plusieurs sites."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuove i parametri di tracciamento nei link per impedire a terze parti di tracciare il comportamento sui vari siti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijdert trackingparameters in links om te voorkomen dat derden je gedrag op verschillende sites kunnen volgen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuwa parametry śledzenia w linkach, aby uniemożliwić innym firmom śledzenie Twojego zachowania na odwiedzanych stronach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove os parâmetros de rastreamento nos links para impedir que terceiros rastreiem o teu comportamento entre sites."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удаляет параметры отслеживания в ссылках, чтобы сторонние компании не могли считывать ваши действия на разных сайтах."
+          }
+        }
+      }
+    },
+    "tracking.protection.link.tracking.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert Link-Tracking"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks link tracking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea el rastreo de enlaces"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque le pistage des liens"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca il tracciamento dei link"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeert het volgen van links"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuje śledzenie linków"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia o rastreamento de links"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка отслеживания ссылок"
+          }
+        }
+      }
+    },
+    "tracking.protection.referrer.description" : {
+      "comment" : "Feature box description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hilft dabei, Unternehmen daran zu hindern, die von dir zuletzt besuchte Website zu identifizieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Helps block companies from identifying the last website you visited."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda a impedir que las empresas identifiquen el último sitio web que visitaste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permet d'empêcher les entreprises d'identifier le dernier site Web que vous avez visité."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuta a impedire alle aziende di individuare l'ultimo sito web che hai visitato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helpt voorkomen dat bedrijven de laatst bezochte website kunnen identificeren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomaga blokować możliwość zidentyfikowania ostatnio odwiedzonej witryny przez firmy."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajuda a impedir que as empresas identifiquem o último site que visitaste."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не позволяет компаниям идентифицировать последний посещенный вами сайт."
+          }
+        }
+      }
+    },
+    "tracking.protection.referrer.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schützt vor Referrer-Tracking"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Protects against referrer tracking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege contra el rastreo de remitentes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protège contre le pistage via référent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protegge dal tracciamento dei referrer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschermt tegen referrer tracking"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chroni przed śledzeniem stron odsyłających"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protege contra rastreamento de referenciadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита от отслеживания источников трафика"
+          }
+        }
+      }
+    },
+    "tracking.protection.targeted.ads.description" : {
+      "comment" : "Feature description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert invasive Tracker, bevor sie geladen werden, und eliminiert so effektiv Werbung, die auf Tracking basiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea los rastreadores invasivos antes de que se carguen, eliminando de manera efectiva los anuncios que se basan en el rastreo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque les traqueurs invasifs avant leur chargement, ce qui permet d'éliminer efficacement les publicités reposant sur le pistage."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca i sistemi di tracciamento prima che vengano caricati, eliminando di fatto gli annunci che si basano sul tracciamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We blokkeren invasieve trackers voordat ze worden geladen. Zo elimineren we effectief advertenties die afhankelijk zijn van tracking."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuje inwazyjne mechanizmy śledzące przed ich załadowaniem, skutecznie eliminując reklamy, które opierają się na śledzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia os rastreadores invasivos antes de serem carregados, eliminando eficazmente os anúncios que usam o rastreio."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пресекает загрузку непрошенных трекеров, эффективно избавляя вас от рекламы, которая полагается на отслеживание."
+          }
+        }
+      }
+    },
+    "tracking.protection.targeted.ads.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert zielgerichtete Werbung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks targeted ads"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea los anuncios segmentados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque les publicités ciblées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca gli annunci mirati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeert gerichte advertenties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie ukierunkowanych reklam"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia anúncios segmentados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокирует целевую рекламу"
+          }
+        }
+      }
+    },
+    "tracking.protection.third.party.trackers.description" : {
+      "comment" : "Feature description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hilft Cookies von Drittanbietern zu blockieren, die dich von Website zu Website verfolgen, indem das Laden der Tracker von Drittanbietern verhindert wird."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda a bloquear las cookies de terceros que te rastrean de un sitio a otro al impedir que los rastreadores de terceros se carguen desde el principio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permet de bloquer les cookies tiers qui vous suivent d'un site à l'autre en empêchant dès le départ le chargement des traqueurs tiers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuta a bloccare i cookie di terze parti che ti tracciano da un sito all'altro, impedendo il caricamento dei sistemi di tracciamento di terze parti fin dall'inizio."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helpt bij het blokkeren van cookies van derden die je op elke website volgen door te voorkomen dat trackers van derden überhaupt worden geladen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pomaga blokować pliki cookie innych firm, które śledzą Twoją aktywność na stronach, uniemożliwiając ładowanie mechanizmom śledzącym innych firm."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajuda a bloquear cookies de terceiros que te rastreiam de site para site, impedindo que os rastreadores de terceiros sejam carregados desde o início."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не дает сторонним трекерам даже загрузиться, чтобы они не отслеживали ваши перемещения с сайта на сайт."
+          }
+        }
+      }
+    },
+    "tracking.protection.third.party.trackers.title" : {
+      "comment" : "Feature box title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiert Tracker von Drittanbietern"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Blocks 3rd-party trackers"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea rastreadores de terceros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloque les traqueurs tiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca i sistemi di tracciamento di terze parti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeert trackers van derden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuje mechanizmy śledzące innych firm"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia rastreadores de terceiros"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка сторонних трекеров"
+          }
+        }
+      }
+    },
     "Transformations" : {
       "comment" : "Main Menu Edit item",
       "localizations" : {
@@ -81512,7 +82969,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Using a custom DNS server can impact browsing speeds and expose your activity to third parties if the server isn't secure or reliable."
+            "value" : "Using a custom DNS server can impact browsing speeds and expose your activity to 3rd parties if the server isn't secure or reliable."
           }
         },
         "es" : {
@@ -81542,19 +82999,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Korzystanie z niestandardowego serwera DNS może mieć wpływ na prędkość przeglądania stron internetowych oraz narażać aktywność na dostęp nieupoważnionych osób, jeśli serwer nie jest bezpieczny lub sprawdzony."
+            "value" : "Korzystanie z niestandardowego serwera DNS może mieć wpływ na prędkość przeglądania stron internetowych oraz narażać aktywność na dostęp innych firm, jeśli serwer nie jest bezpieczny lub sprawdzony."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A utilização de um servidor DNS personalizado pode afetar as velocidades de navegação e expor a tua atividade a terceiros se o servidor não for seguro ou fiável."
+            "value" : "A utilização de um servidor DNS personalizado pode afetar as velocidades de navegação e expor a sua atividade a terceiros se o servidor não for seguro ou fiável."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Использование собственного DNS-сервера может снизить скорость просмотра веб-страниц и обнаружить ваши действия для третьих лиц, если сервер плохо защищен или работает ненадежно."
+            "value" : "Использование собственного DNS-сервера может снизить скорость просмотра веб-страниц и раскрыть ваши действия третьим лицам, если сервер плохо защищен или работает ненадежно."
           }
         }
       }
@@ -86153,6 +87610,66 @@
     },
     "web.tracking.protection.explenation" : {
       "comment" : "Privacy feature explanation in the browser settings",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo blockiert beim Durchsuchen des Internets automatisch ausgeblendete Tracker."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo automatically blocks hidden trackers as you browse the web."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo bloquea automáticamente los rastreadores ocultos mientras navegas por la web."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo bloque automatiquement les traqueurs cachés lorsque vous naviguez sur le Web."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo blocca automaticamente i sistemi di tracciamento nascosti mentre navighi sul web."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo blokkeert automatisch verborgen trackers terwijl je op het web surft."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podczas przeglądania stron internetowych DuckDuckGo automatycznie blokuje ukryte mechanizmy śledzące."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo bloqueia automaticamente os rastreadores ocultos enquanto navegas na Internet."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo автоматически блокирует скрытые трекеры, пока вы посещаете сайты."
+          }
+        }
+      }
+    },
+    "web.tracking.protection.subtitle" : {
+      "comment" : "Privacy feature explanation in the browser settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -86267,6 +87784,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Защита от отслеживания онлайн"
+          }
+        }
+      }
+    },
+    "web.tracking.protection.updated.description" : {
+      "comment" : "Updated feature description in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der DuckDuckGo-Browser bietet Tracking-Schutz, der immer aktiv ist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The DuckDuckGo browser provides tracking protections, which are always active."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El navegador DuckDuckGo proporciona protecciones de rastreo que están siempre activas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le navigateur DuckDuckGo fournit des protections contre le pistage qui sont toujours actives."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il browser DuckDuckGo fornisce protezioni dal tracciamento, che sono sempre attive."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De DuckDuckGo-browser biedt bescherming tegen tracking die altijd actief is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeglądarka DuckDuckGo zapewnia ochronę przed śledzeniem, która jest zawsze aktywna."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O navegador DuckDuckGo fornece proteções contra rastreamento, que estão sempre ativas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Функции защиты от отслеживания в составе DuckDuckGo работают без остановки."
           }
         }
       }

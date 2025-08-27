@@ -161,6 +161,9 @@ public enum FeatureFlag: String {
     /// Local inactivity provisional notifications delivered to Notification Center.
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210989706758207?focus=true
+    case daxEasterEggLogos
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -173,7 +176,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
-             .createFireproofFaviconUpdaterSecureVaultInBackground:
+             .createFireproofFaviconUpdaterSecureVaultInBackground,
+             .daxEasterEggLogos:
             true
         default:
             false
@@ -219,7 +223,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .scheduledSetDefaultBrowserPrompts,
              .scheduledSetDefaultBrowserPromptsForInactiveUsers,
              .duckAISearchParameter,
-             .inactivityNotification:
+             .inactivityNotification,
+             .daxEasterEggLogos:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -364,6 +369,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
+        case .daxEasterEggLogos:
+            return .remoteReleasable(.feature(.daxEasterEggLogos))
         }
     }
 }

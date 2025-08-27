@@ -112,7 +112,6 @@ struct WebTrackingProtectionView: View {
             Pixel.fire(pixel: .settingsWebTrackingProtectionOpen)
         }
     }
-
 }
 
 struct WebTrackingProtectionViewSettings: View {
@@ -128,9 +127,9 @@ struct WebTrackingProtectionViewSettings: View {
 
             // Unprotected Sites in same section
             SettingsCellView(label: UserText.settingsUnprotectedSites,
-                              action: { viewModel.presentLegacyView(.unprotectedSites) },
-                              disclosureIndicator: true,
-                              isButton: true)
+                             action: { viewModel.presentLegacyView(.unprotectedSites) },
+                             disclosureIndicator: true,
+                             isButton: true)
         }
     }
 }

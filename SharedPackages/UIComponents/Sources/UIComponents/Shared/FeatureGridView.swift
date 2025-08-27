@@ -194,34 +194,33 @@ struct FeatureCardView: View {
                 Circle()
                     .stroke(Color(designSystemColor: .lines), lineWidth: borderWidth)
             )
-            .overlay(
-                Group {
-                    if let iconImage = feature.iconImage {
-                        #if os(iOS)
-                        Image(uiImage: iconImage)
-                            .resizable()
-                            .renderingMode(.template)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        #elseif os(macOS)
-                        Image(nsImage: iconImage)
-                            .resizable()
-                            .renderingMode(.template)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        #endif
-                    } else if let iconName = feature.iconName {
-                        Image(iconName)
-                            .resizable()
-                            .renderingMode(.template)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                    }
-                }
-            )
+            .overlay(iconImage)
+    }
+
+    @ViewBuilder
+    private var iconImage: some View {
+        #if os(iOS)
+        if let iconImage = feature.iconImage {
+            iconImageStyled(Image(uiImage: iconImage))
+        } else if let iconName = feature.iconName {
+            iconImageStyled(Image(iconName))
+        }
+        #elseif os(macOS)
+        if let iconImage = feature.iconImage {
+            iconImageStyled(Image(nsImage: iconImage))
+        } else if let iconName = feature.iconName {
+            iconImageStyled(Image(iconName))
+        }
+        #endif
+    }
+
+    private func iconImageStyled(_ image: Image) -> some View {
+        image
+            .resizable()
+            .renderingMode(.template)
+            .aspectRatio(contentMode: .fit)
+            .frame(width: LayoutConstants.iconSize, height: LayoutConstants.iconSize)
+            .foregroundColor(Color(designSystemColor: .textPrimary))
     }
 }
 

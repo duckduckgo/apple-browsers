@@ -130,7 +130,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
 
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
     case scheduledSetDefaultBrowserPromptsForInactiveUsers
 
     case subscriptionRebranding
@@ -161,6 +161,9 @@ public enum FeatureFlag: String {
     /// Local inactivity provisional notifications delivered to Notification Center.
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
+    
+    /// https://app.asana.com/1/137249556945/project/1211100299285059/task/1210869716452616
+    case refreshButtonPosition
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -219,7 +222,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .scheduledSetDefaultBrowserPrompts,
              .scheduledSetDefaultBrowserPromptsForInactiveUsers,
              .duckAISearchParameter,
-             .inactivityNotification:
+             .inactivityNotification,
+             .refreshButtonPosition:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -364,6 +368,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
+        case .refreshButtonPosition:
+            return .disabled
         }
     }
 }

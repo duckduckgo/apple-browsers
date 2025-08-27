@@ -171,6 +171,8 @@ final class NavigationBarViewController: NSViewController {
         OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
     }
 
+    private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
+
     // MARK: View Lifecycle
 
     static func create(tabCollectionViewModel: TabCollectionViewModel,
@@ -191,6 +193,7 @@ final class NavigationBarViewController: NSViewController {
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
                        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
+                       sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -218,6 +221,7 @@ final class NavigationBarViewController: NSViewController {
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
                 vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
                 vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
+                sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                 showTab: showTab
             )
         }!
@@ -243,6 +247,7 @@ final class NavigationBarViewController: NSViewController {
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
+        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -276,6 +281,7 @@ final class NavigationBarViewController: NSViewController {
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
+        self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         super.init(coder: coder)
@@ -345,6 +351,7 @@ final class NavigationBarViewController: NSViewController {
         listenToPinningManagerNotifications()
         listenToMessageNotifications()
         listenToFeedbackFormNotifications()
+        listenToSessionRestoreNotifications()
         subscribeToDownloads()
         subscribeToNavigationBarWidthChanges()
 
@@ -378,6 +385,7 @@ final class NavigationBarViewController: NSViewController {
         super.viewDidAppear()
 
         updateNavigationBarForCurrentWidth()
+        sessionRestorePromptCoordinator.markUIReady()
     }
 
     override func viewWillLayout() {
@@ -814,6 +822,13 @@ final class NavigationBarViewController: NSViewController {
             let source = UnifiedFeedbackSource(userInfo: notification.userInfo)
             Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: source)
         }
+    }
+
+    func listenToSessionRestoreNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(showSessionRestorePromptPopover(_:)),
+                                               name: .sessionRestorePromptShouldBeShown,
+                                               object: nil)
     }
 
     private func setupNavigationButtons() {
@@ -1376,8 +1391,9 @@ final class NavigationBarViewController: NSViewController {
         popovers.showPasswordManagerPopover(selectedWebsiteAccount: selectedWebsiteAccount, from: passwordManagementButton, withDelegate: self)
     }
 
-    func showSessionRestorePromptPopover(ctaCallback: @escaping (Bool) -> Void) {
-        popovers.showSessionRestorePromptPopover(from: optionsButton, withDelegate: self, ctaCallback: ctaCallback)
+    @objc func showSessionRestorePromptPopover(_ sender: Notification) {
+        guard let restoreAction = sender.object as? (Bool) -> Void else { return }
+        popovers.showSessionRestorePromptPopover(from: optionsButton, withDelegate: self, ctaCallback: restoreAction)
     }
 
     // MARK: - Overflow menu

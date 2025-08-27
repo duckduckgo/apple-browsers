@@ -23,54 +23,109 @@ import PersistenceTestingUtils
 
 final class AppStateRestorationManagerTests: XCTestCase {
 
+    private var mockFileStore: FileStoreMock!
+    private var mockService: StatePersistenceService!
+    private var mockStartupPreferences: StartupPreferences!
     private var mockKeyValueStore: MockKeyValueFileStore!
+    private var mockPromptCoordinator: SessionRestorePromptCoordinatorMock!
     private var appStateManager: AppStateRestorationManager!
     private let terminationFlagKey = "appDidTerminateAsExpected"
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
-        let mockFileStore = FileStoreMock()
-        let mockService = StatePersistenceService(fileStore: FileStoreMock(), fileName: "test_persistent_state")
+        mockFileStore = FileStoreMock()
+        mockService = StatePersistenceService(fileStore: mockFileStore, fileName: "test_persistent_state")
+        let persistor = MockStartupPreferencesPersistor()
         let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
-        let mockStartupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
+        mockStartupPreferences = StartupPreferences(persistor: persistor, appearancePreferences: appearancePreferences)
         mockKeyValueStore = try MockKeyValueFileStore()
+        mockPromptCoordinator = SessionRestorePromptCoordinatorMock()
 
         appStateManager = AppStateRestorationManager(
             fileStore: mockFileStore,
             service: mockService,
             startupPreferences: mockStartupPreferences,
-            keyValueStore: mockKeyValueStore
+            keyValueStore: mockKeyValueStore,
+            sessionRestorePromptCoordinator: mockPromptCoordinator
         )
     }
 
     override func tearDown() {
         appStateManager = nil
         mockKeyValueStore = nil
+        mockStartupPreferences = nil
+        mockService = nil
+        mockFileStore = nil
+        mockPromptCoordinator = nil
         super.tearDown()
     }
 
+    // MARK: - Session Restore Prompt Tests
+
     @MainActor
-    func testAppDidFinishLaunching_WhenAppTerminatedAsExpected_SetsExpectedValueForTerminationFlag() throws {
+    func testAppDidFinishLaunching_WhenAppTerminatedAsExpected_DoesNotShowPrompt() throws {
         try mockKeyValueStore.set(true, forKey: terminationFlagKey)
+        addMockSessionData()
 
         appStateManager.applicationDidFinishLaunching()
 
-        XCTAssertEqual(try mockKeyValueStore.object(forKey: terminationFlagKey) as? Bool, false)
+        XCTAssertFalse(mockPromptCoordinator.sessionPromptShown)
     }
 
     @MainActor
-    func testAppDidFinishLaunching_WhenAppDidNotTerminateAsExpected_SetsExpectedValueForTerminationFlag() throws {
+    func testAppDidFinishLaunching_WhenAppCrashedAndAllConditionsMet_ShowsPrompt() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        addMockSessionData()
+
+        appStateManager.applicationDidFinishLaunching()
+
+        XCTAssertTrue(mockPromptCoordinator.sessionPromptShown)
+    }
+
+    @MainActor
+    func testAppDidFinishLaunching_WhenAppCrashedButRestoreSessionEnabled_DoesNotShowPrompt() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        mockStartupPreferences.restorePreviousSession = true
+        addMockSessionData()
+
+        appStateManager.applicationDidFinishLaunching()
+
+        XCTAssertFalse(mockPromptCoordinator.sessionPromptShown)
+    }
+
+    @MainActor
+    func testAppDidFinishLaunching_WhenAppCrashedButCannotRestoreSession_DoesNotShowPrompt() throws {
         try mockKeyValueStore.set(false, forKey: terminationFlagKey)
 
         appStateManager.applicationDidFinishLaunching()
 
-        XCTAssertEqual(try mockKeyValueStore.object(forKey: terminationFlagKey) as? Bool, false)
+        XCTAssertFalse(mockPromptCoordinator.sessionPromptShown)
     }
 
     @MainActor
-    func testAppDidFinishLaunching_WhenKeyValueStoreIsEmpty_SetsExpectedValueForTerminationFlag() throws {
+    func testAppDidFinishLaunching_WhenAppCrashedButStateIsStale_DoesNotShowPrompt() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        addStaleMockSessionData()
+
+        appStateManager.applicationDidFinishLaunching()
+
+        XCTAssertFalse(mockPromptCoordinator.sessionPromptShown)
+    }
+
+    @MainActor
+    func testAppDidFinishLaunching_WhenKeyValueStoreIsEmpty_DoesNotShowPrompt() throws {
         try mockKeyValueStore.removeObject(forKey: terminationFlagKey)
+        addMockSessionData()
+
+        appStateManager.applicationDidFinishLaunching()
+
+        XCTAssertFalse(mockPromptCoordinator.sessionPromptShown)
+    }
+
+    @MainActor
+    func testAppDidFinishLaunching_SetsTerminationFlagToFalse() throws {
+        try mockKeyValueStore.set(true, forKey: terminationFlagKey)
 
         appStateManager.applicationDidFinishLaunching()
 
@@ -89,7 +144,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
     // MARK: - Error Handling Tests
 
     @MainActor
-    func testKeyValueStoreReadError_DefaultsToTrue() throws {
+    func testKeyValueStoreReadError_DoesNotCrash() throws {
         // Given: Key value store throws an error on read
         mockKeyValueStore.throwOnRead = MockError.error
 
@@ -111,10 +166,30 @@ final class AppStateRestorationManagerTests: XCTestCase {
             self.appStateManager.applicationWillTerminate()
         }
     }
+
+    private func addMockSessionData() {
+        // Add some mock data to make canRestoreLastSessionState return true
+        let mockData = Data("mock session data".utf8)
+        mockFileStore.storage["test_persistent_state"] = mockData
+        mockService.loadLastSessionState()
+    }
+
+    private func addStaleMockSessionData() {
+        addMockSessionData()
+        mockService.didLoadState()
+        mockService.loadLastSessionState()
+        mockService.didLoadState()
+    }
 }
 
 // MARK: - Mock Helpers
 
 private enum MockError: Error {
     case error
+}
+
+private class MockStartupPreferencesPersistor: StartupPreferencesPersistor {
+    var restorePreviousSession: Bool = false
+    var launchToCustomHomePage: Bool = false
+    var customHomePageURL: String = ""
 }

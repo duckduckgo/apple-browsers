@@ -186,6 +186,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
+    lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(featureFlagger: featureFlagger)
+
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature
     public let freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator
@@ -812,7 +814,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                              startupPreferences: startupPreferences,
                                                              keyValueStore: keyValueStore,
-                                                             featureFlagger: featureFlagger)
+                                                             sessionRestorePromptCoordinator: sessionRestorePromptCoordinator)
 
 #if SPARKLE
         if AppVersion.runType != .uiTests {

@@ -52,6 +52,24 @@ class SwitchBarTextEntryViewController: UIViewController {
         setupViews()
         setupConstraints()
         setupPasteAndGo()
+        monitorKeyboard()
+    }
+
+    private func monitorKeyboard() {
+        NotificationCenter.default.publisher(for: UIResponder.keyboardDidChangeFrameNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] n in
+                guard let userInfo = n.userInfo,
+                      let frame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
+                    return
+                }
+                self?.updateKeyboardFrame(frame)
+            }
+            .store(in: &cancellables)
+    }
+
+    func updateKeyboardFrame(_ keyboardFrame: CGRect) {
+        textEntryView.bottomThreshold = keyboardFrame.minY
     }
 
     func focusTextField() {
@@ -96,7 +114,7 @@ class SwitchBarTextEntryViewController: UIViewController {
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
         ])
     }
 

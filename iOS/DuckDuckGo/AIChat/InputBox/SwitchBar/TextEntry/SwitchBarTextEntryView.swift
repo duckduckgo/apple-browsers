@@ -56,6 +56,12 @@ class SwitchBarTextEntryView: UIView {
 
     private var heightConstraint: NSLayoutConstraint?
 
+    var bottomThreshold = 0.0 {
+        didSet {
+            updateTextViewHeight()
+        }
+    }
+    
     var hasBeenInteractedWith = false
     var isURL: Bool {
         // TODO some kind of text length check?
@@ -148,7 +154,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor)
+            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
     }
 
@@ -231,13 +237,30 @@ class SwitchBarTextEntryView: UIView {
         return !hasBeenInteractedWith && isURL
     }
 
-    private func updateTextViewHeight() {
+    // AI generated
+    private func maxHeight(for textView: UITextView) -> CGFloat {
+        // Ensure layout is up-to-date (especially if text/attributes just changed)
+        textView.layoutIfNeeded()
 
-        let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
-        let contentExceedsMaxHeight = size.height > Constants.maxHeight
+        // Use the view's current width; fall back to frame if bounds isn't set yet
+        let width = textView.bounds.width > 0 ? textView.bounds.width : textView.frame.width
+        let target = CGSize(width: width, height: .greatestFiniteMagnitude)
+
+        // sizeThatFits includes textContainerInset + lineFragmentPadding
+        let fitting = textView.sizeThatFits(target)
+
+        // contentInset affects scrolling, not sizeThatFits — add it if you use it
+        let extra = textView.contentInset.top + textView.contentInset.bottom
+
+        return ceil(fitting.height + extra)
+    }
+
+    private func updateTextViewHeight() {
 
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
+        textView.isScrollEnabled = true
+        textView.showsVerticalScrollIndicator = true
 
         if isUnexpandedURL() ||
             // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
@@ -248,16 +271,22 @@ class SwitchBarTextEntryView: UIView {
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
         } else if isExpandable {
-            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
-            heightConstraint?.constant = newHeight
+            let height = maxHeight(for: textView)
+            let newHeight = max(Constants.minHeight, height)
+            let frame = self.convert(self.frame, to: nil)
 
-            textView.isScrollEnabled = contentExceedsMaxHeight
-            textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
+            let maxY = frame.minY + newHeight
+            let actualThreshold = bottomThreshold -
+                NavigationActionBarView.Constants.buttonSize -
+                (NavigationActionBarView.Constants.buttonSpacing * 2)
+
+            if maxY < actualThreshold {
+                heightConstraint?.constant = newHeight
+            }
+
         } else {
             heightConstraint?.constant = Constants.minHeight
-            textView.isScrollEnabled = true
-            textView.showsVerticalScrollIndicator = true
             return
         }
 

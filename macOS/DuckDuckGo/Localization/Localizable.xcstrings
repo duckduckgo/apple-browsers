@@ -23765,6 +23765,18 @@
         }
       }
     },
+    "duckai.show-in-search-box-on-new-tab-page.toggle" : {
+      "comment" : "A checkbox to control AI Chat shortcut visibility in a search box on the New Tab Page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show in Search box on New Tab Page"
+          }
+        }
+      }
+    },
     "duckai.show-on-new-tab-page.toggle" : {
       "comment" : "A checkbox to control AI Chat shortcut visibility on the New Tab Page",
       "extractionState" : "extracted_with_value",

@@ -70,7 +70,7 @@ extension Preferences {
 
                     PreferencePaneSection(UserText.aiChatShortcutsSectionTitle,
                                           spacing: 6) {
-                        ToggleMenuItem(UserText.aiChatShowOnNewTabPageBarToggle,
+                        ToggleMenuItem(UserText.aiChatShowInSearchBoxOnNewTabPageBarToggle,
                                        isOn: $model.showShortcutOnNewTabPage)
                         .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
                         .onChange(of: model.showShortcutOnNewTabPage) { newValue in

@@ -25,9 +25,14 @@ class BrowserChromeButton: UIButton {
     enum ButtonType {
         case primary
         case secondary
+        case tabSwitcher
     }
 
-    let type: ButtonType
+    var type: ButtonType {
+        didSet {
+            applyConfiguration()
+        }
+    }
 
     init(_ type: ButtonType = .primary) {
         self.type = type
@@ -37,7 +42,10 @@ class BrowserChromeButton: UIButton {
     }
     
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        self.type = .primary
+        super.init(coder: coder)
+
+        applyConfiguration()
     }
 
     func setImage(_ image: UIImage?) {
@@ -45,18 +53,21 @@ class BrowserChromeButton: UIButton {
     }
 
     func applyConfiguration() {
-        configuration = .omniBarDefault()
+        let image = configuration?.image
+        let defaultConfiguration = defaultConfiguration()
+
+        configuration = defaultConfiguration
 
         let type = self.type
 
+        configuration?.image = image
         configuration?.automaticallyUpdateForSelection = false
         configuration?.imageColorTransformer = .init { [weak self] _ in
             type.foregroundColor(for: self?.state ?? .normal)
         }
 
         configurationUpdateHandler = { button in
-
-            var newConfiguration = button.configuration ?? .omniBarDefault()
+            var newConfiguration = button.configuration ?? defaultConfiguration
 
             newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
             newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
@@ -64,6 +75,15 @@ class BrowserChromeButton: UIButton {
             UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
                 button.configuration = newConfiguration
             }.startAnimation()
+        }
+    }
+
+    private func defaultConfiguration() -> UIButton.Configuration {
+        switch type {
+        case .primary, .secondary:
+            return .omniBarDefault()
+        case .tabSwitcher:
+            return .tabSwitcherDefault()
         }
     }
 }
@@ -90,7 +110,7 @@ private extension BrowserChromeButton.ButtonType {
             default:
                 return UIColor(designSystemColor: .icons)
             }
-        case .secondary:
+        case .secondary, .tabSwitcher:
             switch state {
             case .disabled:
                 return UIColor(designSystemColor: .iconsSecondary).withAlphaComponent(0.5)
@@ -110,6 +130,18 @@ private extension UIButton.Configuration {
         config.background.backgroundInsets = .init(top: 2, leading: 2, bottom: 2, trailing: 2)
 
         config.background.cornerRadius = 14
+
+        return config
+    }
+
+    static func tabSwitcherDefault() -> UIButton.Configuration {
+        var config = UIButton.Configuration.gray()
+        config.cornerStyle = .dynamic
+        config.buttonSize = .medium
+        config.titleAlignment = .center
+        config.background.backgroundInsets = .init(top: 4, leading: 4, bottom: 4, trailing: 4)
+
+        config.background.cornerRadius = 8
 
         return config
     }

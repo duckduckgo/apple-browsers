@@ -50,6 +50,7 @@ final class PreferencesSidebarModel: ObservableObject {
     let vpnTunnelIPCClient: VPNControllerXPCClient
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let settingsIconProvider: SettingsIconsProviding
+    let isUsingAuthV2: Bool
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
 
@@ -86,6 +87,7 @@ final class PreferencesSidebarModel: ObservableObject {
         notificationCenter: NotificationCenter = .default,
         featureFlagger: FeatureFlagger,
         settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyle.iconsProvider.settingsIconProvider,
+        isUsingAuthV2: Bool,
         pixelFiring: PixelFiring?
     ) {
         self.loadSections = loadSections
@@ -94,6 +96,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.notificationCenter = notificationCenter
         self.settingsIconProvider = settingsIconProvider
+        self.isUsingAuthV2 = isUsingAuthV2
         self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
 
@@ -139,6 +142,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   syncService: syncService,
                   subscriptionManager: subscriptionManager,
                   featureFlagger: featureFlagger,
+                  isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2,
                   pixelFiring: PixelKit.shared
         )
     }
@@ -337,7 +341,7 @@ final class PreferencesSidebarModel: ObservableObject {
                                                          isNetworkProtectionRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)) ?? false,
                                                          isPersonalInformationRemovalAvailable: (try? subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false,
                                                          isIdentityTheftRestorationAvailable: isIdentityTheftRestorationAvailable || isIdentityTheftRestorationGlobalAvailable,
-                                                         isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable)
+                                                         isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable && isUsingAuthV2)
     }
 
     func refreshSections() {

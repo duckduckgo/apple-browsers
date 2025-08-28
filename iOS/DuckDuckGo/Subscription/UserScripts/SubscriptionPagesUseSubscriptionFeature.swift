@@ -835,6 +835,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             contextData: WidePixelContextData(name: subscriptionAttributionOrigin),
             appData: WidePixelAppData(internalUser: internalUserDecider.isInternalUser)
         )
+        self.widePixelData = data
 
         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
             widePixel.startFlow(data)

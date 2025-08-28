@@ -875,6 +875,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
                 if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let data = self.widePixelData {
                     widePixel.discardFlow(data)
+                    self.widePixelData = nil
                 }
 
                 setTransactionError(.activeSubscriptionAlreadyPresent)

@@ -340,6 +340,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
                         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let data = self.widePixelData {
                             widePixel.discardFlow(data)
+                            self.widePixelData = nil
                         }
                     } else {
                         switch error {
@@ -366,11 +367,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
 
                 func completeWidePixelFlow(with error: Error) {
+                    guard let widePixelData = self.widePixelData else { return }
                     accountActivationDuration.complete()
-                    data.activateAccountDuration = accountActivationDuration
-                    data.markAsFailed(at: .accountActivation, error: error)
-                    widePixel.updateFlow(data)
-                    widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                    widePixelData.activateAccountDuration = accountActivationDuration
+                    widePixelData.markAsFailed(at: .accountActivation, error: error)
+                    widePixel.updateFlow(widePixelData)
+                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
                 }
 
                 // 9: Handle purchase completion result

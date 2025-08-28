@@ -19,7 +19,7 @@
 import Foundation
 import Common
 
-public enum AccountKeychainAccessError: Error, LocalizedError {
+public enum AccountKeychainAccessError: DDGError {
     case failedToDecodeKeychainData
     case failedToDecodeKeychainValueAsData
     case failedToDecodeKeychainDataAsString
@@ -28,19 +28,29 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
     case keychainDeleteFailure(OSStatus)
     case keychainLookupFailure(OSStatus)
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .failedToDecodeKeychainData: return "failedToDecodeKeychainData"
-        case .failedToDecodeKeychainValueAsData: return "failedToDecodeKeychainValueAsData"
-        case .failedToDecodeKeychainDataAsString: return "failedToDecodeKeychainDataAsString"
-        case .failedToEncodeKeychainData: return "failedToEncodeKeychainData"
-        case .keychainSaveFailure(let status): return "keychainSaveFailure(\(status) - \(status.humanReadableDescription))"
-        case .keychainDeleteFailure(let status): return "keychainDeleteFailure(\(status) - \(status.humanReadableDescription))"
-        case .keychainLookupFailure(let status): return "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
+        case .failedToDecodeKeychainData: "failedToDecodeKeychainData"
+        case .failedToDecodeKeychainValueAsData: "failedToDecodeKeychainValueAsData"
+        case .failedToDecodeKeychainDataAsString: "failedToDecodeKeychainDataAsString"
+        case .failedToEncodeKeychainData: "failedToEncodeKeychainData"
+        case .keychainSaveFailure(let status): "keychainSaveFailure(\(status) - \(status.humanReadableDescription))"
+        case .keychainDeleteFailure(let status): "keychainDeleteFailure(\(status) - \(status.humanReadableDescription))"
+        case .keychainLookupFailure(let status): "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
         }
     }
 
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
+    public static var errorDomain: String { "com.duckduckgo.subscription.AccountKeychainAccessError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .failedToDecodeKeychainData: 12400
+        case .failedToDecodeKeychainValueAsData: 12401
+        case .failedToDecodeKeychainDataAsString: 12402
+        case .failedToEncodeKeychainData: 12403
+        case .keychainSaveFailure: 12404
+        case .keychainDeleteFailure: 12405
+        case .keychainLookupFailure: 12406
+        }
     }
 }

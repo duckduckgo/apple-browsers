@@ -20,10 +20,34 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import Common
 
-public enum StripePurchaseFlowError: Swift.Error {
+public enum StripePurchaseFlowError: DDGError {
     case noProductsFound
     case accountCreationFailed(Error)
+
+    public var description: String {
+        switch self {
+        case .noProductsFound: "No products found."
+        case .accountCreationFailed(let error): "Account creation failed: \(error)"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.subscription.StripePurchaseFlowError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noProductsFound: 12700
+        case .accountCreationFailed: 12701
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .accountCreationFailed(let error): error
+        default: nil
+        }
+    }
 }
 
 public protocol StripePurchaseFlowV2 {

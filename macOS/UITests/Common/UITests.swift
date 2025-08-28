@@ -297,7 +297,10 @@ extension UITestCase {
     private func cleanupTrackedFiles() {
         guard !cleanupPaths.isEmpty else { return }
 
-        let paths = Array(cleanupPaths)
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0].standardizedFileURL.path
+        let paths = cleanupPaths.filter {
+            URL(fileURLWithPath: $0).standardizedFileURL.path != downloadsDir
+        }
         let pathsQuery = paths.joined(separator: ",")
         let cleanupURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: pathsQuery)
 

@@ -66,7 +66,7 @@ class StateRestorationTests: UITestCase {
             app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         app.typeURL(secondURLForBookmarksBar)
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -102,7 +102,7 @@ class StateRestorationTests: UITestCase {
             app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         app.typeURL(secondURLForBookmarksBar)
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),

@@ -133,11 +133,12 @@ extension XCUIElement {
             let isOn = valueString == "1" || valueString.lowercased() == "on"
             if isOn != enabled { self.click() }
             return
-        }
-        if let valueNumber = self.value as? NSNumber {
+        } else if let valueNumber = self.value as? NSNumber {
             let isOn = valueNumber.intValue != 0
             if isOn != enabled { self.click() }
             return
+        } else {
+            XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
         }
         // Fallback
         self.click()

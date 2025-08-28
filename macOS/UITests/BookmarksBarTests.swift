@@ -132,7 +132,7 @@ class BookmarksBarTests: UITestCase {
             "The bookmarksBarCollectionView should not exist on a new window when we have unchecked \"Show Bookmarks Bar\" in the settings"
         )
 
-        app.typeKey("t", modifierFlags: [.command]) // Open new tab
+        app.openNewTab()
         XCTAssertTrue(
             bookmarksBarCollectionView.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "The bookmarksBarCollectionView should not exist on a new tab when we have unchecked \"Show Bookmarks Bar\" in the settings"
@@ -171,7 +171,7 @@ private extension BookmarksBarTests {
     }
 
     func openSecondWindowAndVisitSite() {
-        app.typeKey("n", modifierFlags: [.command])
+        app.openNewWindow()
         addressBarTextField.pasteURL(urlForBookmarksBar)
     }
 

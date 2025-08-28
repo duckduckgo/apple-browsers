@@ -2110,9 +2110,7 @@ class TabNavigationTests: UITestCase {
 
         app.openPreferencesWindow()
         app.preferencesGoToGeneralPane()
-        let switchToNewTabToggle = app.switchToNewTabWhenOpenedCheckbox
-        switchToNewTabToggle.toggleCheckboxIfNeeded(to: enabled)
-        app.closeCurrentTab()
+        app.setSwitchToNewTabWhenOpened(enabled: enabled)
         Self.isSwitchToNewTabEnabled = enabled
     }
 

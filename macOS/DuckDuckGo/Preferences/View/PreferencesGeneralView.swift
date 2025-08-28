@@ -232,8 +232,8 @@ extension Preferences {
                 // SECTION: Downloads
                 PreferencePaneSection(UserText.downloads) {
                     PreferencePaneSubSection {
-                        ToggleMenuItem(UserText.downloadsOpenPopupOnCompletion,
-                                       isOn: $downloadsModel.shouldOpenPopupOnCompletion)
+                        ToggleMenuItem(UserText.downloadsOpenPopupOnCompletion, isOn: $downloadsModel.shouldOpenPopupOnCompletion)
+                            .accessibilityIdentifier("PreferencesGeneralView.openPopupOnDownloadCompletion")
                     }.padding(.bottom, 5)
 
                     // MARK: Location
@@ -248,8 +248,8 @@ extension Preferences {
                         }
                         .disabled(downloadsModel.alwaysRequestDownloadLocation)
 
-                        ToggleMenuItem(UserText.downloadsAlwaysAsk,
-                                       isOn: $downloadsModel.alwaysRequestDownloadLocation).accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
+                        ToggleMenuItem(UserText.downloadsAlwaysAsk, isOn: $downloadsModel.alwaysRequestDownloadLocation)
+                            .accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
                     }
                 }
             }

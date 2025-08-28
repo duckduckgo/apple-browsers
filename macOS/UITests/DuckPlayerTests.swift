@@ -86,7 +86,6 @@ class DuckPlayerTests: UITestCase {
         )
 
         // Focus the address bar first, then get its value
-        app.typeKey("l", modifierFlags: [.command])
         let urlValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             urlValue.contains(Self.duckURLForVideo),
@@ -109,7 +108,6 @@ class DuckPlayerTests: UITestCase {
         )
 
         // Focus the address bar first, then get its value
-        app.typeKey("l", modifierFlags: [.command])
         let urlValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             urlValue.contains("youtube.com"),

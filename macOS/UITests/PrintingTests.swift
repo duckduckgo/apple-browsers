@@ -127,7 +127,7 @@ class PrintingTests: UITestCase {
         let uniqueFilename = "test-\(UUID().uuidString.prefix(8)).pdf"
         let expectedSaveURL = downloadsURL.appendingPathComponent(uniqueFilename)
         defer {
-            try? FileManager.default.removeItem(at: expectedSaveURL)
+            trackForCleanup(expectedSaveURL.path)
         }
 
         // Select Downloads folder destination
@@ -137,15 +137,7 @@ class PrintingTests: UITestCase {
         }
 
         // Modify the filename in the save dialog
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(uniqueFilename)
-        }
-
-        // Click Save button
-        app.typeKey(.enter, modifierFlags: [])
+        app.enterSaveDialogFileNameAndConfirm(uniqueFilename)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved")
@@ -172,7 +164,7 @@ class PrintingTests: UITestCase {
         XCTAssertGreaterThan(fileSize?.intValue ?? 0, 0, "Saved PDF file is empty.")
 
         // Clean up
-        try? FileManager.default.removeItem(at: expectedSaveURL)
+        trackForCleanup(expectedSaveURL.path)
     }
 
     func test_pdf_keyboardShortcutSaveAs_opensDialogAndSavesPDF() throws {
@@ -200,15 +192,7 @@ class PrintingTests: UITestCase {
         }
 
         // Modify the filename in the save dialog
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(uniqueFilename)
-        }
-
-        // Click Save button
-        app.typeKey(.enter, modifierFlags: [])
+        app.enterSaveDialogFileNameAndConfirm(uniqueFilename)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved")
@@ -235,7 +219,7 @@ class PrintingTests: UITestCase {
         XCTAssertGreaterThan(fileSize?.intValue ?? 0, 0, "Saved PDF file is empty.")
 
         // Clean up
-        try? FileManager.default.removeItem(at: expectedSaveURL)
+        trackForCleanup(expectedSaveURL.path)
     }
 
     func test_pdf_saveToPDF_createsValidPDFFile() throws {
@@ -280,7 +264,7 @@ class PrintingTests: UITestCase {
         let validationFilename = "validation-test-\(UUID().uuidString.prefix(8)).pdf"
         let validationSaveURL = downloadsURL.appendingPathComponent(validationFilename)
         defer {
-            try? FileManager.default.removeItem(at: validationSaveURL)
+            trackForCleanup(validationSaveURL.path)
         }
 
         // Select Downloads folder destination
@@ -290,15 +274,7 @@ class PrintingTests: UITestCase {
         }
 
         // Set filename in the save dialog
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(validationFilename)
-        }
-
-        // Click Save button
-        app.typeKey(.enter, modifierFlags: [])
+        app.enterSaveDialogFileNameAndConfirm(validationFilename)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved for validation")
@@ -319,7 +295,7 @@ class PrintingTests: UITestCase {
         )
 
         // Open the saved PDF in a new tab to validate content
-        app.typeKey("t", modifierFlags: [.command]) // New tab
+        app.openNewTab()
 
         // Wait for new tab and address bar
         XCTAssertTrue(
@@ -421,7 +397,7 @@ class PrintingTests: UITestCase {
         XCTAssertEqual(pinnedTabsPopUp.value as? String, "Shared across all windows")
 
         // Step 2: Open PDF in current window
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         _ = openPDFInBrowser()
 
         // Step 3: Pin the tab using Window -> Pin Tab menu
@@ -455,7 +431,7 @@ class PrintingTests: UITestCase {
         )
 
         // Step 6: Open new window (cmd+n)
-        app.typeKey("n", modifierFlags: [.command])
+        app.openNewWindow()
 
         firstWindow = app.windows.element(boundBy: 1) // First window: Background window
         var secondWindow = app.windows.firstMatch // Second window: Active window
@@ -521,7 +497,7 @@ class PrintingTests: UITestCase {
         let pinnedTabFilename = "pinned-tab-test-\(UUID().uuidString.prefix(8)).pdf"
         let pinnedTabSaveURL = downloadsURL.appendingPathComponent(pinnedTabFilename)
         defer {
-            try? FileManager.default.removeItem(at: pinnedTabSaveURL)
+            trackForCleanup(pinnedTabSaveURL.path)
         }
 
         // Select Downloads folder destination
@@ -531,15 +507,7 @@ class PrintingTests: UITestCase {
         }
 
         // Set filename
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(pinnedTabFilename)
-        }
-
-        // Save
-        app.typeKey(.enter, modifierFlags: [])
+        app.enterSaveDialogFileNameAndConfirm(pinnedTabFilename, in: saveDialog)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved from pinned tab")
@@ -560,7 +528,7 @@ class PrintingTests: UITestCase {
         )
 
         // Open new tab in second window and load the saved PDF
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
 
         let addressBarWindow2 = secondWindow.textFields["AddressBarViewController.addressBarTextField"]
         XCTAssertTrue(

@@ -67,7 +67,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         bookmarkPageMenuItem = app.menuItems["MoreOptionsMenu.bookmarkPage"]
         bookmarkPageMainMenuItem = app.menuItems["Bookmark This Page…"]
         bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
-        bookmarksDialogAddToFavoritesCheckbox = app.checkBoxes["bookmark.add.add.to.favorites.button"]
+        bookmarksDialogAddToFavoritesCheckbox = app.bookmarksDialogAddToFavoritesCheckbox
         bookmarksManagementAccessoryImageView = app.images["BookmarkTableCellView.accessoryImageView"]
         bookmarksMenu = app.menuBarItems["Bookmarks"]
         bookmarksTabPopup = app.popUpButtons["Bookmarks"]
@@ -228,7 +228,8 @@ class BookmarksAndFavoritesTests: UITestCase {
     func test_bookmarks_canBeAddedTo_byClickingBookmarksButtonInAddressBar() {
         openSiteToBookmark(bookmarkingViaDialog: false, escapingDialog: false)
         // In order to directly click the bookmark button in the address bar, we need to hover over something in the bar area
-        optionsButton.hoverAfterExistenceTestSucceeds()
+        app.windows.firstMatch.toolbars.firstMatch.hover()
+
         addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
         XCTAssertTrue( // Check Add Bookmark dialog for existence but don't click on it
             defaultBookmarkDialogButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -306,7 +307,7 @@ class BookmarksAndFavoritesTests: UITestCase {
     func test_favorites_canBeAddedTo_byClickingAddFavoriteInAddBookmarkPopover() {
         openSiteToBookmark(bookmarkingViaDialog: false, escapingDialog: false)
         // In order to directly click the bookmark button in the address bar, we need to hover over something in the bar area
-        optionsButton.hoverAfterExistenceTestSucceeds()
+        app.windows.firstMatch.toolbars.firstMatch.hover()
 
         addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
         XCTAssertTrue( // Check Add Bookmark dialog for existence before adding to favorites

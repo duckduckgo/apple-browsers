@@ -54,7 +54,7 @@ struct OperationPreferredDateCalculator {
             return currentPreferredRunDate
         case .optOutRequested:
             return Date().addingTimeInterval(schedulingConfig.confirmOptOutScan.hoursToSeconds)
-        case .matchRemovedByUser:
+        case .matchRemovedByUser, .optOutSubmittedAndAwaitingEmailConfirmation:
             return nil
         }
     }

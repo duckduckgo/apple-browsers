@@ -117,8 +117,24 @@ struct BrokerProfileOptOutSubJob {
                                     shouldRunNextStep: shouldRunNextStep)
 
             if dependencies.featureFlagger.isEmailConfirmationDecouplingFeatureOn,
-               brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut() {
-                // TODO: Halt opt-out process at email confirmation
+               brokerProfileQueryData.dataBroker.requiresEmailConfirmationDuringOptOut(),
+               let email = extractedProfile.email {
+                // We halted at email confirmation - save data and set waiting state
+                try dependencies.database.saveOptOutEmailConfirmation(
+                    profileQueryId: profileQueryId,
+                    brokerId: brokerId,
+                    extractedProfileId: extractedProfileId,
+                    generatedEmail: email,
+                    attemptID: stageDurationCalculator.attemptId.uuidString
+                )
+
+                // Save the new state
+                try dependencies.database.add(.init(
+                    extractedProfileId: extractedProfileId,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    type: .optOutSubmittedAndAwaitingEmailConfirmation
+                ))
             } else {
                 // Normal completion path - opt out was fully submitted
                 // 8c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:

@@ -102,7 +102,7 @@ extension Preferences {
                         Picker(selection: $startupModel.restorePreviousSession, content: {
                             if featureFlagger.isFeatureOn(.openFireWindowByDefault) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
+                                    HStack(spacing: 0) {
                                         Text(UserText.openANew)
                                         Picker("", selection: $startupModel.startupWindowType) {
                                             ForEach(StartupWindowType.allCases, id: \.self) { windowType in

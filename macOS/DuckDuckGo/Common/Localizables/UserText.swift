@@ -937,11 +937,11 @@ struct UserText {
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
-    static let openANew = NSLocalizedString("preferences.startup.open-a-new", value: "Open a new:", comment: "Label for startup window type selection")
+    static let openANew = NSLocalizedString("preferences.startup.open-a-new", value: "Open a new", comment: "Label for startup window type selection")
     static let window = NSLocalizedString("preferences.startup.window", value: "Window", comment: "Option for regular window type")
     static let fireWindow = NSLocalizedString("preferences.fire-window-section", value: "Fire Window", comment: "Section title for Fire Window preferences")
     static let openFireWindowByDefault = NSLocalizedString("preferences.open-fire-window-by-default", value: "Open Fire Window by default", comment: "Option to make all new windows Fire Windows")
-    static let openFireWindowByDefaultExplanation = NSLocalizedString("preferences.open-fire-window-by-default.explanation", value: "Open Fire Window by default when opening a new window (Command + N). You can still open a regular browser window when this setting is on with Shift + Command + N.", comment: "Explanation for the option to make all new windows Fire Windows")
+    static let openFireWindowByDefaultExplanation = NSLocalizedString("preferences.open-fire-window-by-default.explanation", value: "Open Fire Windows by default when opening new windows (⌘N). You can still open a regular browser window when this setting is on (⇧⌘N).", comment: "Explanation for the option to make all new windows Fire Windows")
 
     static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
     static let pinnedTabsWarningTitle = NSLocalizedString("preferences-pinned-tabs-warning-title", value: "Are you sure you want to share pinned tabs across all windows?", comment: "Title of warning before switching from per window pinned tabs to shared pinned tabs")
@@ -1541,13 +1541,13 @@ struct UserText {
     static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Your session won't be restored if Auto Clear is turned on, or if your last session was in Fire Window.",
+                                                                          value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored",
                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
-                                                            value: "Open Data Clearing Settings",
+                                                            value: "Go to Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
     static let showStartupSettings = NSLocalizedString("show.startup.settings",
-                                                       value: "Show Startup Settings",
+                                                       value: "Go to Startup Settings",
                                                        comment: "Button in Data Clearing Settings. It navigates user to Startup Settings.")
     static let fireWindowSessionRestoreWarning = NSLocalizedString("fire.window.session.restore.warning",
                                                                   value: "Your session won't be restored if you're browsing in a Fire Window.",

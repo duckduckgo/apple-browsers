@@ -76,7 +76,7 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
     private func showPrompt(with restoreAction: @escaping (Bool) -> Void) {
         guard featureFlagger.isFeatureOn(.restoreSessionPrompt) else { return }
         state = .promptShown
-        let restoreAction = { [weak self] restoreSession in
+        let dismissPromptAction = { [weak self] restoreSession in
             self?.state = .promptDismissed
             if restoreSession {
                 self?.pixelFiring?.fire(SessionRestorePromptPixel.promptDismissedWithRestore)
@@ -85,7 +85,7 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
             }
             restoreAction(restoreSession)
         }
-        NotificationCenter.default.post(name: .sessionRestorePromptShouldBeShown, object: restoreAction)
+        NotificationCenter.default.post(name: .sessionRestorePromptShouldBeShown, object: dismissPromptAction)
         pixelFiring?.fire(SessionRestorePromptPixel.promptShown)
     }
 }

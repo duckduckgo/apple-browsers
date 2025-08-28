@@ -27,10 +27,6 @@ import XCTest
 
 @testable import Navigation
 
-@objc private protocol WebProcessPoolPrivate: AnyObject {
-    @objc(_setWebProcessCountLimit:) static func setWebProcessCountLimit(_ webProcessCountLimit: UInt)
-}
-
 @available(macOS 12.0, iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
 
@@ -72,8 +68,6 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 XCTFail("[\(testName)] unexpected event received: \($0)")
             })
         }
-
-        unsafeBitCast(WKProcessPool.self, to: WebProcessPoolPrivate.Type.self).setWebProcessCountLimit(5)
     }
 
     override func tearDown() {
@@ -90,6 +84,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
                 let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
                 objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
             }
+            _webView.killWebContentProcess()
             self._webView = nil
         }
         navigationDelegateProxy = nil

@@ -26,8 +26,19 @@ import LocalAuthentication
 @available(macOS 15.4, *)
 final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
 
+    enum BiometricsStatus: Int {
+        case available = 0
+        case unlockNeeded = 1
+        case hardwareUnavailable = 2
+        case autoSetupNeeded = 3
+        case manualSetupNeeded = 4
+        case platformUnsupported = 5
+        case desktopDisconnected = 6
+        case notEnabledLocally = 7
+        case notEnabledInConnectedDesktopApp = 8
+    }
+
     var nativeMessagingConnections = [NativeMessagingConnection]()
-    var comm1: NativeMessagingCommunicator?
 
     func handleMessage(_ message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) throws -> Any? {
 
@@ -35,60 +46,86 @@ final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
             switch applicationIdentifier {
             case "com.bitwarden.desktop", "com.8bit.bitwarden":
                 guard let command = message["command"] as? String else {
-                    throw NSError(domain: "NativeMessagingHandler", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing 'command' field in the message"])
+                    throw NSError(domain: "NativeMessagingCoordinator", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing 'command' field in the message"])
                 }
 
                 // Extract messageId for response
                 let messageId = message["messageId"] as? Int ?? 0
 
                 switch command {
+                case "downloadFile":
+                    // Probably need this... will test
+                    return nil
                 case "copyToClipboard":
                     guard let string = message["data"] as? String else {
-                        throw NSError(domain: "NativeMessagingHandler", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing 'data' field in the message"])
+                        throw NSError(domain: "NativeMessagingCoordinator", code: 1, userInfo: [NSLocalizedDescriptionKey: "Missing 'data' field in the message"])
                     }
 
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.setString(string, forType: .string)
                     return [
+                        "command": command,
                         "messageId": messageId,
                         "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
                         "success": true
+                    ]
+                case "readFromClipboard":
+                    // We have purposedly not implemented this as it's unclear why we'd give the extension free access to the clipboard.
+                    // The user can still paste normally, which is handled by the native app.
+                    return nil
+                case "showPopover":
+                    // We have purposedly not implemented this as it's unclear why we'd give the extension free access to the clipboard.
+                    // The user can still paste normally, which is handled by the native app.
+                    return nil
+                case "authenticateWithBiometrics":
+                    return [
+                        "command": "authenticateWithBiometrics",
+                        "response": false,
+                        "timestamp": Int64(NSDate().timeIntervalSince1970 * 1000),
+                        "messageId": messageId,
+                    ]
+                case "biometricUnlock":
+                    return [
+                        "command": "authenticateWithBiometrics",
+                        "response": "not supported",
+                        "timestamp": Int64(NSDate().timeIntervalSince1970 * 1000),
+                        "messageId": messageId,
+                    ]
+                case "biometricUnlockAvailable":
+                    return [
+                        "command": "authenticateWithBiometrics",
+                        "response": "not available",
+                        "timestamp": Int64(NSDate().timeIntervalSince1970 * 1000),
+                        "messageId": messageId,
+                    ]
+                case "getBiometricsStatus":
+                    return [
+                        "command": "getBiometricsStatus",
+                        "messageId": messageId,
+                        "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
+                        "response": BiometricsStatus.notEnabledInConnectedDesktopApp.rawValue
                     ]
                 case "getBiometricsStatusForUser":
-                    let result = getBiometricsStatusForUser(extensionContext: extensionContext, messageId: messageId)
-                    print("[BitwardenNativeMessaging] getBiometricsStatusForUser returning: \(result)")
-                    return result
-                case "getBiometricsStatus":
-                    let result = [
+                    return [
+                        "command": "getBiometricsStatusForUser",
                         "messageId": messageId,
                         "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-                        "response": 0
-                    ] as [String: Any]
-                    print("[BitwardenNativeMessaging] getBiometricsStatus returning: \(result)")
-                    return result
+                        "response": BiometricsStatus.notEnabledInConnectedDesktopApp.rawValue
+                    ]
                 case "unlockWithBiometricsForUser":
-                    guard let userId = message["userId"] as? String else {
-                        return [
-                            "messageId": messageId,
-                            "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-                            "error": "Missing userId"
-                        ]
-                    }
-                    return unlockWithBiometricsForUser(userId: userId, messageId: messageId)
+                    return [
+                        "command": "unlockWithBiometricsForUser",
+                        "response": false,
+                        "timestamp": Int64(NSDate().timeIntervalSince1970 * 1000),
+                        "messageId": messageId,
+                    ]
                 case "sleep":
-                    return [
-                        "messageId": messageId,
-                        "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-                        "success": true
-                    ]
+                    // The Bitwarden extension returns no message here
+                    return nil
                 default:
-                    print("[BitwardenNativeMessaging] Unhandled command: \(command)")
-                    return [
-                        "messageId": messageId,
-                        "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-                        "error": "Command not supported"
-                    ]
+                    print("[NativeMessaging] Unhandled command: \(command)")
+                    return nil
                 }
             default:
                 // Fire a pixel to report an application we want to support
@@ -140,37 +177,32 @@ final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
             throw NSError(domain: "com.duckduckgo.duckbrowser.nativemessaging", code: 1, userInfo: nil)
         }
 
-        let path: String? = getExecutablePath(for: applicationIdentifier)
+        let path: String? = {
+            if applicationIdentifier == "com.8bit.bitwarden" {
+                // return "file:///Applications/Bitwarden.app/Contents/MacOS/Bitwarden"
+                return "file:///Applications/Bitwarden.app/Contents/MacOS/desktop_proxy"
+            }
+
+            return nil
+        }()
 
         guard let path else {
             throw NSError(domain: "com.duckduckgo.duckbrowser.nativemessaging", code: 2, userInfo: nil)
         }
 
-        // Setup Bitwarden main app
-        setupBitwardenApp()
-
-        // Create the communicator for desktop_proxy
-        let communicator = NativeMessagingCommunicator(appPath: path, arguments: [""])
-        communicator.delegate = self
-        let connection = NativeMessagingConnection(port: port, communicator: communicator)
-        nativeMessagingConnections.append(connection)
-    }
-
-    private func getExecutablePath(for applicationIdentifier: String) -> String? {
-        if applicationIdentifier == "com.8bit.bitwarden" {
-            return "file:///Applications/Bitwarden.app/Contents/MacOS/desktop_proxy"
-        }
-        return nil
-    }
-
-    private func setupBitwardenApp() {
         let communicator1 = NativeMessagingCommunicator(appPath: "/Applications/Bitwarden.app/Contents/MacOS/Bitwarden", arguments: [""])
         do {
             try communicator1.runProxyProcess()
         } catch {
-            print("Failed to setup Bitwarden app")
+            print("asd")
         }
-        comm1 = communicator1
+
+        // Create the communicator (either immediately if app was running, or this is for other apps)
+        let communicator = NativeMessagingCommunicator(appPath: path, arguments: [""])
+        communicator.delegate = self
+        let connection = NativeMessagingConnection(port: port,
+                                                   communicator: communicator)
+        nativeMessagingConnections.append(connection)
     }
 }
 
@@ -229,70 +261,6 @@ extension BitwardenNativeMessagingHandler: @preconcurrency NativeMessagingConnec
 // MARK: - Biometrics Methods
 @available(macOS 15.4, *)
 extension BitwardenNativeMessagingHandler {
-
-    enum BiometricsStatus: Int {
-        case available = 0
-        case unlockNeeded = 1
-        case hardwareUnavailable = 2
-        case autoSetupNeeded = 3
-        case manualSetupNeeded = 4
-        case platformUnsupported = 5
-        case desktopDisconnected = 6
-        case notEnabledLocally = 7
-        case notEnabledInConnectedDesktopApp = 8
-    }
-
-    private func getBiometricsStatusForUser(extensionContext: WKWebExtensionContext, messageId: Int) -> [String: Any] {
-        return [
-            "command": getBiometricsStatusForUser,
-            "messageId": messageId,
-            "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-            "response": BiometricsStatus.hardwareUnavailable.rawValue
-        ]
-        /*
-        let laContext = LAContext()
-        var error: NSError?
-
-        // Check if biometric authentication is available on the device
-        let canUseBiometrics = laContext.canEvaluatePolicy(
-            .deviceOwnerAuthenticationWithBiometrics,
-            error: &error
-        )
-
-        // Basic implementation - can be expanded based on requirements
-        if canUseBiometrics {
-            return [
-                "command": getBiometricsStatusForUser,
-                "messageId": messageId,
-                "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-                "response": BiometricsStatus.Available.rawValue
-            ]
-        } else {
-            // Determine specific error status based on LocalAuthentication error
-            let statusCode: Int
-            if let authError = error as? LAError {
-                switch authError.code {
-                case .biometryNotAvailable:
-                    statusCode = 2 // HardwareUnavailable
-                case .biometryNotEnrolled:
-                    statusCode = 3 // AutoSetupNeeded
-                case .biometryLockout:
-                    statusCode = 1 // UnlockNeeded
-                default:
-                    statusCode = 2 // HardwareUnavailable
-                }
-            } else {
-                statusCode = 2 // HardwareUnavailable
-            }
-
-            return [
-                "messageId": messageId,
-                "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-                "response": statusCode
-            ]
-        }
-        */
-    }
 
     private func unlockWithBiometricsForUser(userId: String, messageId: Int) -> [String: Any] {
         print("[BitwardenNativeMessaging] Attempting biometric unlock for user: \(userId)")

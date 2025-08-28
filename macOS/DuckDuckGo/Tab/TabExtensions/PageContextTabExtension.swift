@@ -57,6 +57,9 @@ final class PageContextTabExtension {
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
 
+        guard !isLoadedInSidebar else {
+            return
+        }
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
             self?.pageContextUserScript?.webView = webView

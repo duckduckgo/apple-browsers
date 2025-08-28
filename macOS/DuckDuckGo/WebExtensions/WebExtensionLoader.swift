@@ -50,20 +50,13 @@ final class WebExtensionLoader: WebExtensionLoading {
         }
 
         let webExtension: WKWebExtension
-        var knownExtension: WebExtensionIdentifier?
+        var extensionIdentifier: WebExtensionIdentifier?
 
         if path.hasSuffix(".appex"),
            let bundle = Bundle(url: extensionURL) {
 
-            // Detect known extension based on bundle ID
-            if let bundleId = bundle.bundleIdentifier {
-                switch bundleId {
-                case "com.bitwarden.desktop", "com.8bit.bitwarden":
-                    knownExtension = .bitwarden
-                default:
-                    break
-                }
-            }
+            // Detect known extension based on bundle
+            extensionIdentifier = WebExtensionIdentifier.identify(bundle: bundle)
 
             // Loading from the bundle is best to support native messaging automagically
             webExtension = try await WKWebExtension(appExtensionBundle: bundle)
@@ -75,7 +68,7 @@ final class WebExtensionLoader: WebExtensionLoading {
         let context = makeContext(for: webExtension, at: path)
         try controller.load(context)
 
-        return WebExtensionLoadResult(context: context, knownExtension: knownExtension)
+        return WebExtensionLoadResult(context: context, extensionIdentifier: extensionIdentifier)
     }
 
     func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {

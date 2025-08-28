@@ -39,9 +39,9 @@ final class NativeMessagingCoordinator {
         contextHandlers.removeValue(forKey: context)
     }
 
-    func createHandlerIfNeeded(for knownExtension: WebExtensionIdentifier?, context: WKWebExtensionContext) {
-        guard let knownExtension = knownExtension,
-              let handler = NativeMessagingHandlerFactory.makeHandler(for: knownExtension) else {
+    func createHandlerIfNeeded(for extensionIdentifier: WebExtensionIdentifier?, context: WKWebExtensionContext) {
+        guard let extensionIdentifier = extensionIdentifier,
+              let handler = NativeMessagingHandlerFactory.makeHandler(for: extensionIdentifier) else {
             return
         }
         registerHandler(handler, for: context)

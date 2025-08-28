@@ -24,11 +24,11 @@ import WebKit
 @available(macOS 15.4, *)
 struct WebExtensionLoadResult {
     let context: WKWebExtensionContext
-    let knownExtension: WebExtensionIdentifier?
+    let extensionIdentifier: WebExtensionIdentifier?
 
-    init(context: WKWebExtensionContext, knownExtension: WebExtensionIdentifier? = nil) {
+    init(context: WKWebExtensionContext, extensionIdentifier: WebExtensionIdentifier? = nil) {
         self.context = context
-        self.knownExtension = knownExtension
+        self.extensionIdentifier = extensionIdentifier
     }
 }
 

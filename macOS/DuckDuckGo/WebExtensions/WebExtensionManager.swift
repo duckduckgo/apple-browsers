@@ -141,9 +141,9 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
             let loadResult = try await loader.loadWebExtension(path: path, into: controller)
 
             // Create and register handler if extension is known
-            nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.knownExtension, context: loadResult.context)
-            if let knownExtension = loadResult.knownExtension {
-                print("[WebExtensionManager] Created native messaging handler for extension: \(knownExtension)")
+            nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.extensionIdentifier, context: loadResult.context)
+            if let extensionIdentifier = loadResult.extensionIdentifier {
+                print("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier)")
             }
         } catch {
             // This is temporary.  The actual handling of this error should be done outside of this manager.
@@ -213,9 +213,9 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         for result in results {
             switch result {
             case .success(let loadResult):
-                nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.knownExtension, context: loadResult.context)
-                if let knownExtension = loadResult.knownExtension {
-                    print("[WebExtensionManager] Created native messaging handler for extension: \(knownExtension)")
+                nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.extensionIdentifier, context: loadResult.context)
+                if let extensionIdentifier = loadResult.extensionIdentifier {
+                    print("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier)")
                 }
             case .failure(let failure):
                 // If this is blocking from starting up the app, disable this

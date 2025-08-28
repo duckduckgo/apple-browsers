@@ -828,7 +828,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         // 3: Configure wide pixel and start the flow
         let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
-        var data = SubscriptionPurchaseWidePixelData(
+        let data = SubscriptionPurchaseWidePixelData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: subscriptionSelection.id,
             freeTrialEligible: freeTrialEligible,
@@ -887,9 +887,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                     widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }
             }
-
             originalMessage = original
-
             return nil
         }
 
@@ -923,7 +921,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
             Pixel.fireAttribution(pixel: .privacyProSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, privacyProDataReporter: privacyProDataReporter)
             setTransactionStatus(.idle)
-
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
             if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {

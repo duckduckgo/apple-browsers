@@ -35,36 +35,40 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler(.banner)
+                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        return .banner
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
+                                didReceive response: UNNotificationResponse) async {
         
         guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
         
         let id = response.notification.request.identifier
         switch id {
         case InactivityNotificationSchedulerService.Constants.notificationIdentifier:
-            let daysInactiveKey = InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey
-            let daysInactive = response.notification.request.content.userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Constants.defaultDaysInactive
-            Pixel.fire(pixel: .inactiveUserProvisionalPushNotificationTapped, withAdditionalParameters: [daysInactiveKey: String(daysInactive)])
-            completionHandler()
-            return
-
+            handleInactivityNotification(for: response)
         case let raw where NetworkProtectionNotificationIdentifier(rawValue: raw) != nil:
-            Task { @MainActor [weak self] in
-                self?.mainCoordinator.presentNetworkProtectionStatusSettingsModal()
-                completionHandler()
-            }
-            return
-
+            await handleVPNNotification()
         default:
-            completionHandler()
+            break
         }
     }
+}
+
+
+// MARK: - Helpers
+
+private extension NotificationServiceManager {
     
+    func handleInactivityNotification(for response: UNNotificationResponse) {
+        let daysInactiveKey = InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey
+        let daysInactive = response.notification.request.content.userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Constants.defaultDaysInactive
+        Pixel.fire(pixel: .inactiveUserProvisionalPushNotificationTapped, withAdditionalParameters: [daysInactiveKey: String(daysInactive)])
+    }
+    
+    @MainActor
+    func handleVPNNotification() {
+        mainCoordinator.presentNetworkProtectionStatusSettingsModal()
+    }
 }

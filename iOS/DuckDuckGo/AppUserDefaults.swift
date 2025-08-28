@@ -252,6 +252,9 @@ public class AppUserDefaults: AppSettings {
     
     var currentRefreshButtonPosition: RefreshButtonPosition {
         get {
+            guard featureFlagger.isFeatureOn(.refreshButtonPosition) else {
+                return .addressBar
+            }
             guard let value = userDefaults?.string(forKey: Keys.refreshButtonPosition), let refreshButtonPosition = RefreshButtonPosition(rawValue: value) else {
                 return .addressBar
             }

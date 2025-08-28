@@ -23,35 +23,8 @@ import WebKit
 
 @available(macOS 15.4, *)
 protocol NativeMessagingHandling {
-    var nativeMessagingConnections: [NativeMessagingConnection] { get set }
-
     func handleMessage(_ message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) throws -> Any?
     func handleConnection(using port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) throws
-}
-
-@available(macOS 15.4, *)
-extension NativeMessagingHandling {
-
-    // Default implementations of common functionality
-    func connection(for port: WKWebExtension.MessagePort) -> NativeMessagingConnection? {
-        return nativeMessagingConnections.first(where: { $0.port === port })
-    }
-
-    func connection(for communicator: NativeMessagingCommunicator) -> NativeMessagingConnection? {
-        return nativeMessagingConnections.first(where: { communicator === $0.communicator })
-    }
-
-    mutating func cancelConnection(_ connection: NativeMessagingConnection) {
-        nativeMessagingConnections.removeAll { $0 === connection }
-    }
-
-    mutating func cancelConnection(with port: WKWebExtension.MessagePort) {
-        nativeMessagingConnections.removeAll { $0.port === port }
-    }
-
-    mutating func cancelConnection(with communicator: NativeMessagingCommunicator) {
-        nativeMessagingConnections.removeAll { $0.communicator === communicator }
-    }
 }
 
 #endif

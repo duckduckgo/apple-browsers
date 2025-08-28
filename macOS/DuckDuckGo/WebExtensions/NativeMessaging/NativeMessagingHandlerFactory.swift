@@ -27,6 +27,8 @@ final class NativeMessagingHandlerFactory {
         switch extensionIdentifier {
         case .bitwarden:
             return BitwardenNativeMessagingHandler()
+        case .onePassword:
+            return OnePasswordNativeMessagingHandler()
         }
     }
 }

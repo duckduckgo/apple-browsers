@@ -38,8 +38,6 @@ final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
         case notEnabledInConnectedDesktopApp = 8
     }
 
-    var nativeMessagingConnections = [NativeMessagingConnection]()
-
     func handleMessage(_ message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) throws -> Any? {
 
         if let message = message as? [String: Any] {
@@ -137,6 +135,8 @@ final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
     }
 
     func handleConnection(using port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) throws {
+        // Persistent connections currently disabled
+        /*
         port.disconnectHandler = { [weak self] error in
             if let error {
                 Logger.webExtensions.log(("Message port disconnected: \(error)"))
@@ -203,138 +203,7 @@ final class BitwardenNativeMessagingHandler: NativeMessagingHandling {
         let connection = NativeMessagingConnection(port: port,
                                                    communicator: communicator)
         nativeMessagingConnections.append(connection)
-    }
-}
-
-// MARK: - NativeMessagingCommunicatorDelegate
-@available(macOS 15.4, *)
-@MainActor
-extension BitwardenNativeMessagingHandler: @preconcurrency NativeMessagingCommunicatorDelegate {
-    func nativeMessagingCommunicator(_ nativeMessagingCommunicator: any NativeMessagingCommunication, didReceiveMessageData messageData: Data) {
-
-        guard let nativeMessagingCommunicator = nativeMessagingCommunicator as? NativeMessagingCommunicator else {
-            assertionFailure("Unknown type of native messaging communicator")
-            return
-        }
-
-        handleReceivedMessageData(messageData, communicator: nativeMessagingCommunicator)
-    }
-
-    private func handleReceivedMessageData(_ messageData: Data, communicator: NativeMessagingCommunicator) {
-        guard let connection = connection(for: communicator) else {
-            assertionFailure("Connection not found")
-            return
-        }
-
-        do {
-            let decodedMessage = try JSONDecoder().decode(String.self, from: messageData)
-            Logger.webExtensions.log("Message received: \(decodedMessage)")
-            connection.port.sendMessage(decodedMessage)
-        } catch {
-            assertionFailure("Failed to decode message")
-            Logger.webExtensions.log(("Failed to decode the message: \(String(data: messageData, encoding: .utf8) ?? "")"))
-        }
-    }
-
-    func nativeMessagingCommunicatorProcessDidTerminate(_ nativeMessagingCommunicator: any NativeMessagingCommunication) {
-        Logger.webExtensions.log(("Process for native messaging terminated"))
-
-        guard let nativeMessagingCommunicator = nativeMessagingCommunicator as? NativeMessagingCommunicator else {
-            assertionFailure("Unknown type of native messaging communicator")
-            return
-        }
-
-        // cancelConnection(with: nativeMessagingCommunicator)
-    }
-}
-
-// MARK: - NativeMessagingConnectionDelegate
-@available(macOS 15.4, *)
-@MainActor
-extension BitwardenNativeMessagingHandler: @preconcurrency NativeMessagingConnectionDelegate {
-
-    func nativeMessagingConnectionProcessDidFail(_ nativeMessagingConnection: NativeMessagingConnection) {
-        // cancelConnection(nativeMessagingConnection)
-    }
-}
-
-// MARK: - Biometrics Methods
-@available(macOS 15.4, *)
-extension BitwardenNativeMessagingHandler {
-
-    private func unlockWithBiometricsForUser(userId: String, messageId: Int) -> [String: Any] {
-        print("[BitwardenNativeMessaging] Attempting biometric unlock for user: \(userId)")
-
-        let context = LAContext()
-        context.interactionNotAllowed = false
-
-        // Try to read the biometric-protected keychain item
-        // This will trigger the macOS keychain dialog
-        let keychainAccount = "\(userId)_user_biometric"
-        print("[BitwardenNativeMessaging] Looking for keychain account: \(keychainAccount)")
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "Bitwarden_biometric",
-            kSecAttrAccount as String: keychainAccount,
-            kSecReturnData as String: true,
-            kSecUseAuthenticationContext as String: context
-        ]
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        switch status {
-        case errSecSuccess:
-            if let data = result as? Data {
-                print("[BitwardenNativeMessaging] Successfully retrieved vault key via biometrics")
-                // Return the actual keychain data as base64
-                let userKeyB64 = data.base64EncodedString()
-
-                return [
-                    "messageId": messageId,
-                    "timestamp": Int64(Date().timeIntervalSince1970 * 1000),
-                    "response": true,
-                    "userKeyB64": userKeyB64
-                ]
-            } else {
-                print("[BitwardenNativeMessaging] Retrieved keychain data but couldn't decode")
-                return [
-                    "messageId": messageId,
-                    "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
-                ]
-            }
-        case errSecUserCanceled: // errSecUserCancel
-            print("[BitwardenNativeMessaging] User cancelled biometric authentication")
-            return [
-                "messageId": messageId,
-                "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
-            ]
-        case -25293: // errSecAuthFailed  
-            print("[BitwardenNativeMessaging] Biometric authentication failed")
-            return [
-                "messageId": messageId,
-                "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
-            ]
-        case -25300: // errSecItemNotFound
-            print("[BitwardenNativeMessaging] Keychain item not found")
-            return [
-                "messageId": messageId,
-                "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
-            ]
-        case -25308: // errSecInteractionNotAllowed
-            print("[BitwardenNativeMessaging] Keychain interaction not allowed - missing permissions")
-            return [
-                "messageId": messageId,
-                "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
-            ]
-        default:
-            print("[BitwardenNativeMessaging] Keychain access failed with status: \(status)")
-            print("[BitwardenNativeMessaging] Error description: \(SecCopyErrorMessageString(OSStatus(status), nil) ?? "Unknown error" as CFString)")
-            return [
-                "messageId": messageId,
-                "timestamp": Int64(Date().timeIntervalSince1970 * 1000)
-            ]
-        }
+        */
     }
 }
 

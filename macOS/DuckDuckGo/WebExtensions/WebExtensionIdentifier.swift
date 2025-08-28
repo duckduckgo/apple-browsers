@@ -23,6 +23,7 @@ import Foundation
 @available(macOS 15.4, *)
 enum WebExtensionIdentifier {
     case bitwarden
+    case onePassword
 
     static func identify(bundle: Bundle) -> WebExtensionIdentifier? {
         guard let bundleId = bundle.bundleIdentifier else {
@@ -33,6 +34,8 @@ enum WebExtensionIdentifier {
         case "com.bitwarden.desktop.safari":
             // Could add additional validation here (entitlements, version, etc.)
             return .bitwarden
+        case "com.1password.safari.extension":
+            return .onePassword
         default:
             return nil
         }

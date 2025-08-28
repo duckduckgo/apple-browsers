@@ -24,43 +24,44 @@ import BrowserServicesKit
 
 final class InactivityNotificationSchedulerService {
     
+    // MARK: - Constants
+    
+    enum Constants {
+        static let daysInactiveSettingKey: String = "daysInactive"
+        static let defaultDaysInactive: Int = 7 // default to 7 days
+        static let notificationIdentifier = "com.duckduckgo.inactivity.notification"
+        static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
+    }
+    
     // MARK: - Dependencies
     
     private let featureFlagger: FeatureFlagger
-    private let userNotificationCenter: UNUserNotificationCenter
+    private let notificationServiceManager: NotificationServiceManaging
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let notificationServiceManager: NotificationServiceManaging?
+    private let userNotificationCenter: UNUserNotificationCenterRepresentable
     
-    // MARK: - Constants
-    
-    static let notificationIdentifier = "com.duckduckgo.inactivity.notification"
-    static let defaultDaysInactive: Double = 7.0 // default to 7 days
-    static let daysInactiveSettingKey: String = "daysInactive"
-    private static let subfeature: any PrivacySubfeature = iOSBrowserConfigSubfeature.inactivityNotification
-    
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         userNotificationCenter: UNUserNotificationCenter = .current(),
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         notificationServiceManager: NotificationServiceManaging? = nil
+    init(featureFlagger: FeatureFlagger,
+         notificationServiceManager: NotificationServiceManaging,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
     ) {
         self.featureFlagger = featureFlagger
-        self.userNotificationCenter = userNotificationCenter
-        self.privacyConfigurationManager = privacyConfigurationManager
         self.notificationServiceManager = notificationServiceManager
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.userNotificationCenter = userNotificationCenter
         
-        if let notificationServiceManager {
-            userNotificationCenter.delegate = notificationServiceManager
-        }
+        self.userNotificationCenter.delegate = notificationServiceManager
     }
     
     // MARK: - Public
     
-    func resume() {
+    @discardableResult
+    func resume() -> Task<Void, Never> {
         guard isFeatureEnabled() else {
             cancelPendingNotifications()
-            return
+            return Task {} // noop
         }
-        Task {
+        return Task {
             await schedule()
         }
     }
@@ -70,14 +71,14 @@ final class InactivityNotificationSchedulerService {
     }
     
     private func cancelPendingNotifications() {
-        userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [Self.notificationIdentifier])
+        userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [Constants.notificationIdentifier])
     }
     
-    private func schedule() async {
+    func schedule() async {
         cancelPendingNotifications()
         await requestProvisionalAuthorizationIfNeeded()
         
-        let status = await userNotificationCenter.notificationSettings().authorizationStatus
+        let status = await userNotificationCenter.authorizationStatus()
         guard status == .provisional else { return }
             
         let request = buildUNNotificationRequest()
@@ -88,8 +89,8 @@ final class InactivityNotificationSchedulerService {
         }
     }
     
-    private func requestProvisionalAuthorizationIfNeeded() async {
-        let currentStatus = await userNotificationCenter.notificationSettings().authorizationStatus
+    func requestProvisionalAuthorizationIfNeeded() async {
+        let currentStatus = await userNotificationCenter.authorizationStatus()
         
         switch currentStatus {
         case .notDetermined:
@@ -105,41 +106,37 @@ final class InactivityNotificationSchedulerService {
     
     private func buildUNNotificationRequest() -> UNNotificationRequest {
         let daysInactive = makeDaysInactive()
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: daysInactive.toSeconds(), repeats: false)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(makeDaysInactive()), repeats: false)
         return UNNotificationRequest(
-            identifier: Self.notificationIdentifier,
+            identifier: Constants.notificationIdentifier,
             content: makeUNNotificationContent(with: daysInactive),
             trigger: trigger
         )
     }
     
-    func makeUNNotificationContent(with daysInactive: Double = defaultDaysInactive) -> UNNotificationContent {
+    func makeUNNotificationContent(with daysInactive: Int = Constants.defaultDaysInactive) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
-        content.userInfo = [Self.daysInactiveSettingKey: daysInactive]
+        content.userInfo = [Constants.daysInactiveSettingKey: daysInactive]
         return content
     }
     
-    func makeDaysInactive() -> Double {
-        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: Self.subfeature),
-              let jsonData = settings.data(using: .utf8) else { return Self.defaultDaysInactive }
+    func makeDaysInactive() -> Int {
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: Constants.subfeature),
+              let jsonData = settings.data(using: .utf8) else { return Constants.defaultDaysInactive }
+        
         do {
             if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: String],
-               let daysInactiveStr = settingsDict[Self.daysInactiveSettingKey],
-               let daysInactive = Double(daysInactiveStr), daysInactive >= 1 {
+               let daysInactiveStr = settingsDict[Constants.daysInactiveSettingKey],
+               let daysInactive = Int(daysInactiveStr), daysInactive >= 1 {
                 return daysInactive
             }
         } catch {
             Logger.pushNotification.error("Inactivity notification daysInactiveSettingKey parsed failed with \(error.localizedDescription, privacy: .public)")
         }
-        return Self.defaultDaysInactive
-    }
-}
-
-private extension Double {
-    func toSeconds() -> Double {
-        return self * 60 * 60 * 24
+        
+        return Constants.defaultDaysInactive
     }
 }
 

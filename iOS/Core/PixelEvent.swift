@@ -1343,7 +1343,7 @@ extension Pixel {
         case appDidTerminateWithUnhandledError
         
         // MARK: - Push Notifications
-        case provisionalPushNotificationTapped
+        case inactiveUserProvisionalPushNotificationTapped
     }
 
 }
@@ -2616,7 +2616,7 @@ extension Pixel.Event {
         case .appDidTerminateWithUnhandledError: return "m_app-did-terminate-with-unhandled-error"
             
         // MARK: Push Notification
-        case .provisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
+        case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         }
     }
 }

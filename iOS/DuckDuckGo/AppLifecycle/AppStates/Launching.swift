@@ -150,7 +150,11 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
-        let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(notificationServiceManager: notificationServiceManager)
+        let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
+            featureFlagger: featureFlagger,
+            notificationServiceManager: notificationServiceManager,
+            privacyConfigurationManager: privacyConfigurationManager
+        )
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:

@@ -225,6 +225,12 @@
 		369E69282E5F4B9600F98A8F /* InactivityNotificationSchedulerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */; };
 		369E692A2E5F579B00F98A8F /* NotificationServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E69292E5F579500F98A8F /* NotificationServiceManager.swift */; };
 		369E692D2E5F6EC200F98A8F /* InactivityNotificationSchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */; };
+		36F2CA592E604C5100C7039D /* UNUserNotificationCenterRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */; };
+		36F2CA5B2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
+		36F2CA5C2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
+		36F2CA5D2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
+		36F2CA5E2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */; };
+		36F2CA622E6098F800C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F2CA612E6098EF00C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift */; };
 		3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */; };
 		372A0FF02B2389590033BF7F /* SyncMetricsEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */; };
 		373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */; };
@@ -2158,6 +2164,9 @@
 		369E69272E5F4B8500F98A8F /* InactivityNotificationSchedulerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerService.swift; sourceTree = "<group>"; };
 		369E69292E5F579500F98A8F /* NotificationServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceManager.swift; sourceTree = "<group>"; };
 		369E692C2E5F6EB500F98A8F /* InactivityNotificationSchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceTests.swift; sourceTree = "<group>"; };
+		36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UNUserNotificationCenterRepresentable.swift; sourceTree = "<group>"; };
+		36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUNUserNotificationCenter.swift; sourceTree = "<group>"; };
+		36F2CA612E6098EF00C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InactivityNotificationSchedulerServiceIntegrationTests.swift; sourceTree = "<group>"; };
 		3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingStoreErrorHandling.swift; sourceTree = "<group>"; };
 		372A0FEF2B2389590033BF7F /* SyncMetricsEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetricsEventsHandler.swift; sourceTree = "<group>"; };
 		3736088F2ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeStorage.swift; sourceTree = "<group>"; };
@@ -5943,6 +5952,7 @@
 				562BE5642E1C26F80064F305 /* AiChat */,
 				563A3CFC2D37B8E3001966FD /* Configuration */,
 				1E1D8B5F29950FB300C96994 /* Autoconsent */,
+				36F2CA612E6098EF00C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift */,
 				85F21DBD21121147002631A6 /* AtbServerTests.swift */,
 				85519124247468580010FDD0 /* TrackerRadarIntegrationTests.swift */,
 				02CA904C24FD2DB000D41DDF /* ContentBlockingRulesTests.swift */,
@@ -6124,6 +6134,7 @@
 		98E562FE2DE8AF3100E6E75F /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				36F2CA5A2E60588F00C7039D /* MockUNUserNotificationCenter.swift */,
 				9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */,
 				986CD5502DE913EC00AFA98A /* MockFavoritesListInteracting.swift */,
 				986CD54B2DE9139300AFA98A /* HomePageMessagesConfigurationMock.swift */,
@@ -8406,6 +8417,7 @@
 				CBF2598C2D47B19800AC63E4 /* AppConfiguration */,
 				CBAD0F0E2D006291006267B8 /* AppServices */,
 				EE9D68D72AE15AD600B55EF4 /* UIApplicationExtension.swift */,
+				36F2CA582E604C4700C7039D /* UNUserNotificationCenterRepresentable.swift */,
 				CB05BCD32D67652F0034ABA6 /* UIWindowExtension.swift */,
 				CB69F31A2D581CF4008550E7 /* ShortcutKey.swift */,
 				83BE9BC2215D69C1009844D9 /* AppConfigurationFetch.swift */,
@@ -10045,6 +10057,7 @@
 				C18128A22D737D8700807C09 /* AutofillSettingsViewModel.swift in Sources */,
 				C18128A32D737D8700807C09 /* AutofillSettingsViewController.swift in Sources */,
 				C18128A42D737D8700807C09 /* AutofillSettingsView.swift in Sources */,
+				36F2CA592E604C5100C7039D /* UNUserNotificationCenterRepresentable.swift in Sources */,
 				F1D2D2572D71F6BD00985A2C /* SubscriptionSettingsViewModelV2.swift in Sources */,
 				F1617C151E57336D00DEDCAF /* TabManager.swift in Sources */,
 				C1C23C2E2D4C0F1A00B6BDF6 /* DataImportViewController.swift in Sources */,
@@ -10675,6 +10688,7 @@
 				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				9FE59CE72E3307AD00C4B65D /* SystemSettingsPiPTutorialPixelHandlerTests.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,
+				36F2CA5D2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */,
 				8579791C2E4A3BF900A9F6DB /* AIChatSettingsMigrationTests.swift in Sources */,
 				9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */,
 				8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */,
@@ -10882,6 +10896,7 @@
 				98E5642D2DE8B32D00E6E75F /* MockPersistentPixel.swift in Sources */,
 				98E5642E2DE8B32D00E6E75F /* MockTabDelegate.swift in Sources */,
 				98E5642F2DE8B32D00E6E75F /* MockTutorialSettings.swift in Sources */,
+				36F2CA622E6098F800C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift in Sources */,
 				98E564302DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
 				98E564312DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E563392DE8B04D00E6E75F /* TestDataLoader.swift in Sources */,
@@ -10894,6 +10909,7 @@
 				98E5633F2DE8B04D00E6E75F /* CoreDataDatabaseTestUtilities.swift in Sources */,
 				98E563402DE8B04D00E6E75F /* SwiftUITestUtilities.swift in Sources */,
 				98E564A72DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
+				36F2CA5E2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */,
 				98E564342DE8B64300E6E75F /* HistoryMocks.swift in Sources */,
 				98E563412DE8B04D00E6E75F /* HtmlTestDataLoader.swift in Sources */,
 				98E563422DE8B04D00E6E75F /* CoreDataTestUtilities.swift in Sources */,
@@ -10992,6 +11008,7 @@
 				98E563E12DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E564A52DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
 				98E564352DE8B64300E6E75F /* HistoryMocks.swift in Sources */,
+				36F2CA5C2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */,
 				98424AAC2CED4FF10071C7DB /* DataStoreIDManagerTests.swift in Sources */,
 				859675B12E315BF000D7CAA8 /* FireButtonReferenceTests.swift in Sources */,
 				98424AAD2CED4FF10071C7DB /* WKWebViewConfigurationExtensionTests.swift in Sources */,
@@ -11075,6 +11092,7 @@
 				98E5646E2DE8DDDC00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				98E564A12DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				98E564702DE8DDDC00E6E75F /* HistoryMocks.swift in Sources */,
+				36F2CA5B2E60589600C7039D /* MockUNUserNotificationCenter.swift in Sources */,
 				98E564712DE8DDDC00E6E75F /* MockFaviconStore.swift in Sources */,
 				98E564722DE8DDDC00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				98E564732DE8DDDC00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,

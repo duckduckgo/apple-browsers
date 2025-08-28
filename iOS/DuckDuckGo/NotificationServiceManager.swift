@@ -48,9 +48,10 @@ final class NotificationServiceManager: NSObject, NotificationServiceManaging {
         
         let id = response.notification.request.identifier
         switch id {
-        case InactivityNotificationSchedulerService.notificationIdentifier:
-            let daysInactive = response.notification.request.content.userInfo[InactivityNotificationSchedulerService.daysInactiveSettingKey] as? Double ?? InactivityNotificationSchedulerService.defaultDaysInactive
-            Pixel.fire(pixel: .provisionalPushNotificationTapped, withAdditionalParameters: [InactivityNotificationSchedulerService.daysInactiveSettingKey: String(daysInactive)])
+        case InactivityNotificationSchedulerService.Constants.notificationIdentifier:
+            let daysInactiveKey = InactivityNotificationSchedulerService.Constants.daysInactiveSettingKey
+            let daysInactive = response.notification.request.content.userInfo[daysInactiveKey] as? Int ?? InactivityNotificationSchedulerService.Constants.defaultDaysInactive
+            Pixel.fire(pixel: .inactiveUserProvisionalPushNotificationTapped, withAdditionalParameters: [daysInactiveKey: String(daysInactive)])
             completionHandler()
             return
 

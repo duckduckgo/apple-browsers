@@ -20,18 +20,13 @@ import Foundation
 import XCTest
 
 class PrintingTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var pdfURL: URL!
     private var addressBarTextField: XCUIElement!
     private var printMenuItem: XCUIElement!
     private var saveAsMenuItem: XCUIElement!
     private var printDialog: XCUIElement!
     private var saveDialog: XCUIElement!
-
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -45,9 +40,9 @@ class PrintingTests: UITestCase {
         pdfURL = URL(fileURLWithPath: testPDFPath)
 
         // Initialize UI elements
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        printMenuItem = app.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.print'"))
-        saveAsMenuItem = app.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.saveAs'"))
+        addressBarTextField = app.addressBar
+        printMenuItem = app.menuItems.element(matching: .menuItem, identifier: "PDFContextMenu.print")
+        saveAsMenuItem = app.menuItems.element(matching: .menuItem, identifier: "PDFContextMenu.saveAs")
         printDialog = app.sheets.containing(.button, identifier: "Print").firstMatch
         saveDialog = app.sheets.containing(.button, identifier: "Save").firstMatch
 
@@ -132,7 +127,7 @@ class PrintingTests: UITestCase {
         let uniqueFilename = "test-\(UUID().uuidString.prefix(8)).pdf"
         let expectedSaveURL = downloadsURL.appendingPathComponent(uniqueFilename)
         defer {
-            try? FileManager.default.removeItem(at: expectedSaveURL)
+            trackForCleanup(expectedSaveURL.path)
         }
 
         // Select Downloads folder destination
@@ -142,21 +137,7 @@ class PrintingTests: UITestCase {
         }
 
         // Modify the filename in the save dialog
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(uniqueFilename)
-        }
-
-        // Click Save button
-        let saveButton = saveDialog.buttons["Save"]
-        XCTAssertTrue(
-            saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save button did not appear in save dialog in a reasonable timeframe."
-        )
-
-        saveButton.click()
+        app.enterSaveDialogFileNameAndConfirm(uniqueFilename)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved")
@@ -167,7 +148,7 @@ class PrintingTests: UITestCase {
             }
         }
 
-        wait(for: [fileSavedExpectation], timeout: 10.0)
+        wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
         checkTimer.invalidate()
 
         // Verify file was saved and has correct content
@@ -183,7 +164,7 @@ class PrintingTests: UITestCase {
         XCTAssertGreaterThan(fileSize?.intValue ?? 0, 0, "Saved PDF file is empty.")
 
         // Clean up
-        try? FileManager.default.removeItem(at: expectedSaveURL)
+        trackForCleanup(expectedSaveURL.path)
     }
 
     func test_pdf_keyboardShortcutSaveAs_opensDialogAndSavesPDF() throws {
@@ -211,21 +192,7 @@ class PrintingTests: UITestCase {
         }
 
         // Modify the filename in the save dialog
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(uniqueFilename)
-        }
-
-        // Click Save button
-        let saveButton = saveDialog.buttons["Save"]
-        XCTAssertTrue(
-            saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save button did not appear in save dialog in a reasonable timeframe."
-        )
-
-        saveButton.click()
+        app.enterSaveDialogFileNameAndConfirm(uniqueFilename)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved")
@@ -236,7 +203,7 @@ class PrintingTests: UITestCase {
             }
         }
 
-        wait(for: [fileSavedExpectation], timeout: 10.0)
+        wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
         checkTimer.invalidate()
 
         // Verify file was saved
@@ -252,7 +219,7 @@ class PrintingTests: UITestCase {
         XCTAssertGreaterThan(fileSize?.intValue ?? 0, 0, "Saved PDF file is empty.")
 
         // Clean up
-        try? FileManager.default.removeItem(at: expectedSaveURL)
+        trackForCleanup(expectedSaveURL.path)
     }
 
     func test_pdf_saveToPDF_createsValidPDFFile() throws {
@@ -297,7 +264,7 @@ class PrintingTests: UITestCase {
         let validationFilename = "validation-test-\(UUID().uuidString.prefix(8)).pdf"
         let validationSaveURL = downloadsURL.appendingPathComponent(validationFilename)
         defer {
-            try? FileManager.default.removeItem(at: validationSaveURL)
+            trackForCleanup(validationSaveURL.path)
         }
 
         // Select Downloads folder destination
@@ -307,21 +274,7 @@ class PrintingTests: UITestCase {
         }
 
         // Set filename in the save dialog
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(validationFilename)
-        }
-
-        // Click Save button
-        let saveButton = saveDialog.buttons["Save"]
-        XCTAssertTrue(
-            saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save button did not appear in save dialog in a reasonable timeframe."
-        )
-
-        saveButton.click()
+        app.enterSaveDialogFileNameAndConfirm(validationFilename)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved for validation")
@@ -332,7 +285,7 @@ class PrintingTests: UITestCase {
             }
         }
 
-        wait(for: [fileSavedExpectation], timeout: 10.0)
+        wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
         checkTimer.invalidate()
 
         // Validate PDF file exists
@@ -342,7 +295,7 @@ class PrintingTests: UITestCase {
         )
 
         // Open the saved PDF in a new tab to validate content
-        app.typeKey("t", modifierFlags: [.command]) // New tab
+        app.openNewTab()
 
         // Wait for new tab and address bar
         XCTAssertTrue(
@@ -364,7 +317,7 @@ class PrintingTests: UITestCase {
         pdfWebView.rightClick()
 
         // Click "Open with Preview" menu item
-        try app.clickContextMenuItem(matching: { $0.title == "Open with Preview" })
+        try app.clickContextMenuItem(matching: { $0.title.hasPrefix("Open with Preview") })
 
         // Get Preview app
         let previewApp = XCUIApplication(bundleIdentifier: "com.apple.Preview")
@@ -378,20 +331,20 @@ class PrintingTests: UITestCase {
             }
         }
 
-        wait(for: [previewActivatedExpectation], timeout: 10.0)
+        wait(for: [previewActivatedExpectation], timeout: UITests.Timeouts.elementExistence)
         activationTimer.invalidate()
 
         XCTAssertEqual(previewApp.state, .runningForeground, "Preview app should be running in foreground")
 
         // Get the specific PDF window (to avoid interference from other windows)
-        let previewWindow = previewApp.windows.matching(NSPredicate(format: "title CONTAINS[c] 'test.pdf'")).firstMatch
+        let previewWindow = previewApp.windows.containing(\.title, containing: "test.pdf").firstMatch
         XCTAssertTrue(
             previewWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "PDF window should exist in Preview."
         )
 
         // Validate that "TestPDF" text is present in the PDF window
-        let testText = previewWindow.staticTexts.element(matching: NSPredicate(format: "value LIKE '*TestPDF*'")).firstMatch
+        let testText = previewWindow.staticTexts.matching(\.value, containing: "TestPDF").firstMatch
 
         XCTAssertTrue(
             testText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -409,7 +362,7 @@ class PrintingTests: UITestCase {
 
         // Verify window is closed by checking it no longer exists
         XCTAssertTrue(
-            previewWindow.waitForNonExistence(timeout: 2.0),
+            previewWindow.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "PDF window should be closed after clicking close button."
         )
 
@@ -444,7 +397,7 @@ class PrintingTests: UITestCase {
         XCTAssertEqual(pinnedTabsPopUp.value as? String, "Shared across all windows")
 
         // Step 2: Open PDF in current window
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         _ = openPDFInBrowser()
 
         // Step 3: Pin the tab using Window -> Pin Tab menu
@@ -478,7 +431,7 @@ class PrintingTests: UITestCase {
         )
 
         // Step 6: Open new window (cmd+n)
-        app.typeKey("n", modifierFlags: [.command])
+        app.openNewWindow()
 
         firstWindow = app.windows.element(boundBy: 1) // First window: Background window
         var secondWindow = app.windows.firstMatch // Second window: Active window
@@ -496,13 +449,13 @@ class PrintingTests: UITestCase {
         // Step 8: Validate no print dialog is shown in the new window
         let printDialogWindow2 = { secondWindow.sheets.containing(.button, identifier: "Print").firstMatch }
         XCTAssertTrue(
-            printDialogWindow2().waitForNonExistence(timeout: 2.0),
+            printDialogWindow2().waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Print dialog should NOT appear in second window automatically."
         )
 
         // Step 9: Validate print dialog is closed in first window
         XCTAssertTrue(
-            printDialogWindow1().waitForNonExistence(timeout: 2.0),
+            printDialogWindow1().waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Print dialog should be closed in first window after switching tabs."
         )
 
@@ -544,7 +497,7 @@ class PrintingTests: UITestCase {
         let pinnedTabFilename = "pinned-tab-test-\(UUID().uuidString.prefix(8)).pdf"
         let pinnedTabSaveURL = downloadsURL.appendingPathComponent(pinnedTabFilename)
         defer {
-            try? FileManager.default.removeItem(at: pinnedTabSaveURL)
+            trackForCleanup(pinnedTabSaveURL.path)
         }
 
         // Select Downloads folder destination
@@ -554,14 +507,7 @@ class PrintingTests: UITestCase {
         }
 
         // Set filename
-        let filenameField = saveDialog.textFields.firstMatch
-        if filenameField.exists {
-            filenameField.click()
-            app.typeKey("a", modifierFlags: [.command]) // select all
-            filenameField.typeText(pinnedTabFilename)
-        }
-
-        saveDialog.buttons["Save"].click()
+        app.enterSaveDialogFileNameAndConfirm(pinnedTabFilename, in: saveDialog)
 
         // Wait for file to be saved
         let fileSavedExpectation = expectation(description: "PDF file should be saved from pinned tab")
@@ -572,7 +518,7 @@ class PrintingTests: UITestCase {
             }
         }
 
-        wait(for: [fileSavedExpectation], timeout: 10.0)
+        wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
         checkTimer.invalidate()
 
         // Step 12: Validate saved file by opening it in second window
@@ -582,7 +528,7 @@ class PrintingTests: UITestCase {
         )
 
         // Open new tab in second window and load the saved PDF
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
 
         let addressBarWindow2 = secondWindow.textFields["AddressBarViewController.addressBarTextField"]
         XCTAssertTrue(
@@ -613,13 +559,13 @@ class PrintingTests: UITestCase {
 
         // Make sure the print dialog in the 2nd window disappears
         XCTAssertTrue(
-            printDialogWindow2().waitForNonExistence(timeout: 2),
+            printDialogWindow2().waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Print dialog should disappear from second window after activating first window."
         )
 
         // Make sure there's no print dialog in 1st window
         XCTAssertTrue(
-            printDialogWindow1().waitForNonExistence(timeout: 2),
+            printDialogWindow1().waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Print dialog should not exist in first window after activating it."
         )
 
@@ -634,7 +580,7 @@ class PrintingTests: UITestCase {
 
         // Make sure the print dialog in the 2nd window doesn't exist
         XCTAssertTrue(
-            printDialogWindow2().waitForNonExistence(timeout: 2),
+            printDialogWindow2().waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Print dialog should not appear in the second window after starting print in 1st window."
         )
 
@@ -667,7 +613,7 @@ private extension PrintingTests {
 
     @discardableResult
     func getPdfViewElement(in root: XCUIElement? = nil) -> XCUIElement {
-        let element = (root ?? app).groups.containing(NSPredicate(format: "elementType == %lu AND value LIKE 'TestPDF*'", XCUIElement.ElementType.staticText.rawValue)).firstMatch
+        let element = (root ?? app).groups.containing(.staticText, where: .keyPath(\.value, beginsWith: "TestPDF")).firstMatch
 
         XCTAssertTrue(
             element.waitForExistence(timeout: UITests.Timeouts.elementExistence),

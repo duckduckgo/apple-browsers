@@ -19,7 +19,6 @@
 import XCTest
 
 class DuckPlayerTests: UITestCase {
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement!
 
     private static let searchURL = "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web"
@@ -35,23 +34,17 @@ class DuckPlayerTests: UITestCase {
     private static let turnOnDuckPlayer = "Turn On Duck Player"
     private static let duckPlayerLoadDelay = 5.0
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         app.enforceSingleWindow()
     }
 
     private func openURL(url: String) {
-        let addressBar = app.textFields["AddressBarViewController.addressBarTextField"]
-        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        addressBar.pasteURL(URL(string: url)!)
+        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        addressBarTextField.pasteURL(URL(string: url)!)
     }
 
     private func openDuckPlayerSettings() {
@@ -93,8 +86,7 @@ class DuckPlayerTests: UITestCase {
         )
 
         // Focus the address bar first, then get its value
-        app.typeKey("l", modifierFlags: [.command])
-        let urlValue = addressBarTextField.value as? String ?? ""
+        let urlValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             urlValue.contains(Self.duckURLForVideo),
             "URL should be DuckPlayer, but was: \(urlValue)"
@@ -116,8 +108,7 @@ class DuckPlayerTests: UITestCase {
         )
 
         // Focus the address bar first, then get its value
-        app.typeKey("l", modifierFlags: [.command])
-        let urlValue = addressBarTextField.value as? String ?? ""
+        let urlValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             urlValue.contains("youtube.com"),
             "URL should contain youtube.com, but was: \(urlValue)"
@@ -126,7 +117,8 @@ class DuckPlayerTests: UITestCase {
 
     private func closeNonDuckPlayerTabs() throws {
         // Close Opener tab
-        let nonDuckPlayerTabs = app.radioButtons.matching(NSPredicate(format: "identifier == 'TabBarViewItem' AND NOT (title BEGINSWITH[c] 'Duck Player')"))
+        let nonDuckPlayerTabs = app.radioButtons.matching(identifier: "TabBarViewItem")
+            .matching(.not(.keyPath(\.title, beginsWith: "Duck Player")))
         var count = nonDuckPlayerTabs.count
         while count > 0 {
             let tab = nonDuckPlayerTabs.firstMatch
@@ -157,7 +149,7 @@ class DuckPlayerTests: UITestCase {
 
         // Click Link
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: 30))
+        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.navigation))
         organicVideo.click()
         sleep(2)
 
@@ -206,7 +198,7 @@ class DuckPlayerTests: UITestCase {
         openURL(url: Self.searchURL)
 
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: 30))
+        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.navigation))
         organicVideo.click()
         sleep(2)
 
@@ -214,7 +206,7 @@ class DuckPlayerTests: UITestCase {
 
         // Turn On YouTube Button not be present
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
-        XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
+        XCTAssertFalse(watchLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     func test_DuckPlayer_Disabled_DoesNotOpen_FromSERPVideo() throws {
@@ -240,7 +232,7 @@ class DuckPlayerTests: UITestCase {
 
         // Turn On YouTube Button not be present
         let watchLink = app.links.containing(.staticText, identifier: Self.turnOnDuckPlayer).firstMatch
-        XCTAssertFalse(watchLink.waitForExistence(timeout: 1))
+        XCTAssertFalse(watchLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     // MARK:  Ask Mode - Serp
@@ -255,7 +247,7 @@ class DuckPlayerTests: UITestCase {
         openURL(url: Self.searchURL)
 
         let organicVideo = app.links.containing(.staticText, identifier: Self.organicVideoTitle).firstMatch
-        XCTAssertTrue(organicVideo.waitForExistence(timeout: 30))
+        XCTAssertTrue(organicVideo.waitForExistence(timeout: UITests.Timeouts.navigation))
         organicVideo.click()
 
         sleep(2)

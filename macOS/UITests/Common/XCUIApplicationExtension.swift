@@ -31,6 +31,27 @@ extension XCUIApplication {
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
+        static let backButton = "NavigationBarViewController.BackButton"
+        static let forwardButton = "NavigationBarViewController.ForwardButton"
+        static let downloadsButton = "NavigationBarViewController.downloadsButton"
+        static let bookmarksBar = "BookmarksBarViewController.bookmarksBarCollectionView"
+        static let mainMenuAddBookmarkMenuItem = "MainMenu.addBookmark"
+        static let mainMenuToggleBookmarksBarMenuItem = "MainMenu.toggleBookmarksBar"
+        static let historyMenu = "History"
+        static let bookmarksMenu = "Bookmarks"
+        static let mainMenuPinTabMenuItem = "Pin Tab"
+        static let mainMenuUnpinTabMenuItem = "Unpin Tab"
+        static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
+
+        static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
+        static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
+        static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
+        static let openPopupOnDownloadCompletionCheckbox = "PreferencesGeneralView.openPopupOnDownloadCompletion"
+        static let addBookmarkAddToFavoritesCheckbox = "bookmark.add.add.to.favorites.button"
+        static let bookmarkDialogAddButton = "BookmarkDialogButtonsView.defaultButton"
+
+        static let addBookmarkFolderDropdown = "bookmark.add.folder.dropdown"
+
     }
 
     static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
@@ -45,6 +66,10 @@ extension XCUIApplication {
         }
         app.launch()
         return app
+    }
+
+    @nonobjc var path: String? {
+        self.value(forKey: "path") as? String
     }
 
     /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
@@ -71,7 +96,7 @@ extension XCUIApplication {
         while window.exists {
             window.click()
             typeKey("w", modifierFlags: [.command, .option, .shift])
-            _=window.waitForNonExistence(timeout: 5)
+            _=window.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
         }
         typeKey("n", modifierFlags: .command)
     }
@@ -81,19 +106,9 @@ extension XCUIApplication {
         typeKey("t", modifierFlags: .command)
     }
 
-    /// Opens a Fire window via keyboard shortcut (Cmd+Shift+N)
-    func openFireWindow() {
-        typeKey("n", modifierFlags: [.command, .shift])
-    }
-
     /// Closes current tab via keyboard shortcut
     func closeCurrentTab() {
         typeKey("w", modifierFlags: .command)
-    }
-
-    /// Closes the current window via keyboard shortcut (Cmd+Shift+W)
-    func closeWindow() {
-        typeKey("w", modifierFlags: [.command, .shift])
     }
 
     /// Activate address bar for input
@@ -104,7 +119,39 @@ extension XCUIApplication {
 
     /// Address bar text field element
     var addressBar: XCUIElement {
-        textFields[AccessibilityIdentifiers.addressBarTextField]
+        windows.firstMatch.textFields[XCUIApplication.AccessibilityIdentifiers.addressBarTextField]
+    }
+
+    /// Activates the address bar if needed and returns its current value
+    /// - Returns: The current value of the address bar as a string
+    func addressBarValueActivatingIfNeeded() -> String? {
+        activateAddressBar()
+        return addressBar.value as? String
+    }
+
+    /// Opens a new window
+    func openNewWindow() {
+        typeKey("n", modifierFlags: .command)
+    }
+
+    /// Opens a Fire window via keyboard shortcut (Cmd+Shift+N)
+    func openFireWindow() {
+        typeKey("n", modifierFlags: [.command, .shift])
+    }
+
+    /// Closes the current window via keyboard shortcut (Cmd+Shift+W)
+    func closeWindow() {
+        typeKey("w", modifierFlags: [.command, .shift])
+    }
+
+    /// Closes all windows
+    func closeAllWindows() {
+        typeKey("w", modifierFlags: [.command, .option, .shift])
+    }
+
+    /// Opens downloads
+    func openDownloads() {
+        typeKey("j", modifierFlags: .command)
     }
 
     // MARK: - Bookmarks
@@ -198,7 +245,7 @@ extension XCUIApplication {
     func coordinatesForContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws -> CGRect {
         let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
         XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
+            contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Context menu did not appear in a reasonable timeframe."
         )
 
@@ -224,7 +271,7 @@ extension XCUIApplication {
     func clickContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws {
         let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
         XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
+            contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Context menu did not appear in a reasonable timeframe."
         )
 
@@ -253,22 +300,21 @@ extension XCUIApplication {
     func closePreferencesWindow() {
         let prefs = preferencesWindow
         if prefs.exists {
-            let close = prefs.buttons["_XCUI:CloseWindow"].firstMatch
+            let close = prefs.buttons[XCUIIdentifierCloseWindow].firstMatch
             if close.exists { close.click() }
         }
     }
 
     /// Returns the Preferences/Settings window element
     var preferencesWindow: XCUIElement {
-        windows.containing(NSPredicate(format: "title CONTAINS[c] 'Preferences' OR title CONTAINS[c] 'Settings'"))
-            .firstMatch
+        windows.containing(\.title, equalTo: "Settings").firstMatch
     }
 
     /// Selects the General pane in Preferences
     func preferencesGoToGeneralPane() {
         let prefs = preferencesWindow
-        let general = prefs.buttons["PreferencesSidebar.generalButton"]
-        if general.waitForExistence(timeout: 2.0) { general.click() }
+        let general = prefs.buttons[AccessibilityIdentifiers.preferencesGeneralButton]
+        if general.waitForExistence(timeout: UITests.Timeouts.elementExistence) { general.click() }
     }
 
     /// Sets startup behavior to reopen all windows from last session (or not)
@@ -282,47 +328,104 @@ extension XCUIApplication {
         let reopen = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"].firstMatch
         let openNew = prefs.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"].firstMatch
         if enabled {
-            XCTAssertTrue(reopen.waitForExistence(timeout: 2.0), "Reopen last session radio button should exist")
+            ensureHittable(reopen)
+            XCTAssertTrue(reopen.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Reopen last session radio button should exist")
             if reopen.isSelected == false { reopen.click() }
         } else {
-            XCTAssertTrue(openNew.waitForExistence(timeout: 2.0), "Open new window radio button should exist")
+            ensureHittable(openNew)
+            XCTAssertTrue(openNew.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Open new window radio button should exist")
             if openNew.isSelected == false { openNew.click() }
         }
     }
 
     /// Sets the "Always ask where to save files" toggle to a specific state
     func setAlwaysAskWhereToSaveFiles(enabled: Bool) {
-        let prefs = preferencesWindow
-
-        let toggleIdentifier = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
-        let scrollView = prefs.scrollViews.containing(.checkBox, identifier: toggleIdentifier).firstMatch
-        scrollView.swipeUp()
-        let checkbox = prefs.descendants(matching: .checkBox)
-            .matching(NSPredicate(format: "identifier == %@", toggleIdentifier))
-            .firstMatch
-        XCTAssertTrue(checkbox.exists, "Always ask toggle should exist in Preferences")
+        let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.alwaysAskWhereToSaveFilesCheckbox]
+        ensureHittable(checkbox)
 
         checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
     /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
     func setSwitchToNewTabWhenOpened(enabled: Bool) {
-        let prefs = preferencesWindow
-        let label = "When opening links, switch to the new tab or window immediately"
-        let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
-        XCTAssertTrue(checkbox.exists, "Switch-to-new-tab toggle should exist in Preferences")
+        let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.switchToNewTabWhenOpenedCheckbox]
+        ensureHittable(checkbox)
 
         checkbox.toggleCheckboxIfNeeded(to: enabled)
     }
 
     /// Sets the "Automatically open the Downloads panel when downloads complete" preference
     func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
-        let prefs = preferencesWindow
-        let label = "Automatically open the Downloads panel when downloads complete"
-        let checkbox = prefs.checkBoxes.containing(NSPredicate(format: "label ==[c] %@", label)).firstMatch
-        XCTAssertTrue(checkbox.exists, "Downloads panel toggle should exist in Preferences")
+        let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.openPopupOnDownloadCompletionCheckbox]
+        ensureHittable(checkbox)
 
         checkbox.toggleCheckboxIfNeeded(to: enabled)
+    }
+
+    private func ensureHittable(_ element: XCUIElement) {
+        XCTAssertTrue(element.exists, "\(element) should exist in Preferences")
+        if !element.isHittable {
+            let scrollView = preferencesWindow.scrollViews.matching(element.elementType, identifier: element.identifier).firstMatch
+            XCTAssertTrue(scrollView.exists)
+            scrollView.swipeUp()
+
+            XCTAssertTrue(element.isHittable, "\(element) should be hittable after scrolling up")
+        }
+    }
+
+    func setSaveDialogLocation(to location: URL, in saveSheet: XCUIElement? = nil) {
+        let saveSheet = saveSheet ?? sheets.containing(.button, identifier: "Save").firstMatch
+        XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Open Go To Folder (Cmd+Shift+G)
+        typeKey("g", modifierFlags: [.command, .shift])
+        // Wait for the Location Chooser to appear
+        let chooseFolderSheet = saveSheet.sheets.firstMatch
+        XCTAssertTrue(chooseFolderSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Select All
+        typeKey("a", modifierFlags: [.command])
+
+        // Enter path
+        typeText(location.path)
+
+        // Wait for the path to appear in the Location Chooser
+        Logger.log("Waiting for cell with \"\(location.path)\"")
+        let standardizedPath = location.standardizedFileURL.path
+        let pathCell = chooseFolderSheet.tables.cells.containing(NSPredicate { element, _ in
+            guard let id = (element as? NSObject)?.value(forKey: #keyPath(XCUIElement.identifier)) as? String,
+                  id.hasPrefix("/"),
+                  URL(fileURLWithPath: id).standardizedFileURL.path == standardizedPath else { return false }
+
+            return true
+        }).firstMatch
+        XCTAssertTrue(pathCell.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Confirm Location selection
+        typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(chooseFolderSheet.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Location Chooser should disappear")
+    }
+
+    func enterSaveDialogFileNameAndConfirm(_ fileName: String, in saveSheet: XCUIElement? = nil) {
+        let saveSheet = saveSheet ?? sheets.containing(.button, identifier: "Save").firstMatch
+        XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Select All
+        typeKey("a", modifierFlags: [.command])
+        // Enter filename
+        typeText(fileName)
+
+        // Click Save
+        let saveButton = saveSheet.buttons["Save"].firstMatch
+        XCTAssertTrue(saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(saveButton.isHittable)
+        saveButton.click()
+
+        let replaceDialog = sheets.containing(.button, identifier: "Replace").firstMatch
+        XCTAssertTrue(replaceDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        if replaceDialog.waitForExistence(timeout: 0.5) {
+            replaceDialog.buttons["Replace"].click()
+        }
     }
 
     // MARK: - Downloads Location
@@ -331,19 +434,73 @@ extension XCUIApplication {
     func setDownloadsLocation(to directoryURL: URL) {
         let prefs = preferencesWindow
         let changeButton = prefs.buttons["Change…"].firstMatch
-        XCTAssertTrue(changeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Change… button should exist in Preferences")
+        ensureHittable(changeButton)
         changeButton.click()
 
-        // Open "Go to the folder" panel
-        typeKey("g", modifierFlags: [.command, .shift])
-        typeKey("a", modifierFlags: [.command, .shift])
-
-        // Type path and confirm
-        typeText(directoryURL.path)
-        sleep(1)
-        typeKey(.return, modifierFlags: [])
+        self.setSaveDialogLocation(to: directoryURL)
 
         // Confirm selection
         typeKey(.return, modifierFlags: [])
     }
+
+    var mainMenuPinTabMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuPinTabMenuItem]
+    }
+
+    var mainMenuUnpinTabMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuUnpinTabMenuItem]
+    }
+
+    var mainMenuAddBookmarkMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuAddBookmarkMenuItem]
+    }
+
+    var mainMenuToggleBookmarksBarMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuToggleBookmarksBarMenuItem]
+    }
+
+    var preferencesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.preferencesMenuItem]
+    }
+
+    var bookmarksBar: XCUIElement {
+        collectionViews[AccessibilityIdentifiers.bookmarksBar]
+    }
+
+    var backButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.backButton]
+    }
+
+    var forwardButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.forwardButton]
+    }
+
+    var downloadsButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.downloadsButton]
+    }
+
+    var historyMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.historyMenu]
+    }
+
+    var bookmarksMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.bookmarksMenu]
+    }
+
+    var preferencesGeneralButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.preferencesGeneralButton]
+    }
+
+    var bookmarksDialogAddToFavoritesCheckbox: XCUIElement {
+        checkBoxes[XCUIApplication.AccessibilityIdentifiers.addBookmarkAddToFavoritesCheckbox]
+    }
+
+    var addBookmarkAlertAddButton: XCUIElement {
+        buttons[XCUIApplication.AccessibilityIdentifiers.bookmarkDialogAddButton]
+    }
+
+    var bookmarkDialogBookmarkFolderDropdown: XCUIElement {
+        popUpButtons[XCUIApplication.AccessibilityIdentifiers.addBookmarkFolderDropdown]
+    }
+
 }

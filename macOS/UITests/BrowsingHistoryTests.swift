@@ -19,18 +19,13 @@
 import XCTest
 
 class BrowsingHistoryTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var historyMenuBarItem: XCUIElement!
     private var clearAllHistoryMenuItem: XCUIElement!
     private var clearAllHistoryAlertClearButton: XCUIElement!
     private var fakeFireButton: XCUIElement!
     private var addressBarTextField: XCUIElement!
     private let lengthForRandomPageTitle = 8
-
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -40,7 +35,7 @@ class BrowsingHistoryTests: UITestCase {
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
         fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
         XCTAssertTrue(
@@ -134,7 +129,7 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
 
         addressBarTextField.typeURL(urlForSecondTab)
         XCTAssertTrue(
@@ -158,7 +153,7 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Restored visited tab 1 wasn't available with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
             app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Restored visited tab 2 wasn't available with the expected title in a reasonable timeframe."

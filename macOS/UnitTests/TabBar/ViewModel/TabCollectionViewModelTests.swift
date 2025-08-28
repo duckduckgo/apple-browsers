@@ -664,6 +664,32 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertIdentical(preloader.tabToReturn, viewModel.tabCollection.tabs.last!)
     }
 
+    // MARK: - Popup behavior
+
+    @MainActor
+    func testPopupVMAppendNewTabRedirectsAndDoesNotGrowTabs() {
+        let tabCollection = TabCollection(tabs: [Tab(content: .newtab)], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        vm.appendNewTab(with: .newtab, selected: true)
+
+        XCTAssertEqual(vm.tabCollection.tabs.count, 1)
+        XCTAssertEqual(windowControllersManager.showTabCalls.count, 1)
+    }
+
+    @MainActor
+    func testPopupVMInsertOrAppendRedirectsAndDoesNotGrowTabs() {
+        let tabCollection = TabCollection(tabs: [Tab(content: .newtab)], isPopup: true)
+        let windowControllersManager = WindowControllersManagerMock()
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil, windowControllersManager: windowControllersManager)
+
+        vm.insertOrAppendNewTab(.newtab, selected: false)
+
+        XCTAssertEqual(vm.tabCollection.tabs.count, 1)
+        XCTAssertEqual(windowControllersManager.showTabCalls.count, 1)
+    }
+
 }
 
 fileprivate extension TabCollectionViewModel {

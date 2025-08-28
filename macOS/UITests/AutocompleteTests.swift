@@ -19,7 +19,7 @@
 import XCTest
 
 class AutocompleteTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var addBookmarkButton: XCUIElement!
     private var resetBookMarksMenuItem: XCUIElement!
     private var historyMenuBarItem: XCUIElement!
@@ -33,7 +33,6 @@ class AutocompleteTests: UITestCase {
 
     override class func setUp() {
         super.setUp()
-        UITests.firstRun()
         UITests.setAutocompleteToggleBeforeTestcaseRuns(true) // These tests require autocomplete to be on
     }
 
@@ -45,7 +44,7 @@ class AutocompleteTests: UITestCase {
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         historyMenuBarItem = app.menuBarItems["History"]
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         suggestionsTableView = app.tables["SuggestionViewController.tableView"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
         fakeFireButton = app.buttons["FireViewController.fakeFireButton"]

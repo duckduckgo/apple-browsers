@@ -133,14 +133,24 @@ extension XCUIElement {
             let isOn = valueString == "1" || valueString.lowercased() == "on"
             if isOn != enabled { self.click() }
             return
-        }
-        if let valueNumber = self.value as? NSNumber {
+        } else if let valueNumber = self.value as? NSNumber {
             let isOn = valueNumber.intValue != 0
             if isOn != enabled { self.click() }
             return
+        } else {
+            XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
         }
         // Fallback
         self.click()
+    }
+
+    public var tabs: XCUIElementQuery {
+        var element = self
+        if element is XCUIApplication {
+            element = windows.firstMatch
+        }
+
+        return element.tabGroups["TabBarViewController.CollectionView"].radioButtons
     }
 
     func closeTab() throws {
@@ -155,5 +165,43 @@ extension XCUIElement {
 
         let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
         coordinate.click()
+    }
+
+    /// Performs a middle mouse click on the element
+    func middleClick() {
+        UITestCase.$shouldReplaceButtonWithMiddleMouseButton.withValue(true) {
+            rightClick()
+        }
+    }
+
+    /// Wait for a property of the element to contain a specific substring
+    /// - Parameters:
+    ///   - keyPath: The key path to the property to check (e.g., \.value, \.label, \.title)
+    ///   - substring: The substring that should be contained in the property
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait(for keyPath: PartialKeyPath<XCUIElement>,
+              contains substring: String,
+              timeout: TimeInterval = 30.0) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: .keyPath(keyPath, contains: substring), object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
+
+    /// Wait for a property of the element to equal a specific value
+    /// - Parameters:
+    ///   - keyPath: The key path to the property to check (e.g., \.value, \.label, \.title)
+    ///   - value: The value that the property should equal
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait<V: CVarArg>(for keyPath: PartialKeyPath<XCUIElement>,
+                          equals value: V,
+                          timeout: TimeInterval = 30.0) -> Bool {
+        let predicate = NSPredicate.keyPath(keyPath, equalTo: value)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
     }
 }

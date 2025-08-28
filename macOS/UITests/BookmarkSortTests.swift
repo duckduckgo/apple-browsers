@@ -19,18 +19,11 @@
 import XCTest
 
 class BookmarkSortTests: UITestCase {
-    private var app: XCUIApplication!
 
     private enum AccessibilityIdentifiers {
-        static let addressBarTextField = "AddressBarViewController.addressBarTextField"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
         static let sortBookmarksButtonPanel = "BookmarkListViewController.sortBookmarksButton"
         static let sortBookmarksButtonManager = "BookmarkManagementDetailViewController.sortItemsButton"
-    }
-
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
     }
 
     override func setUpWithError() throws {

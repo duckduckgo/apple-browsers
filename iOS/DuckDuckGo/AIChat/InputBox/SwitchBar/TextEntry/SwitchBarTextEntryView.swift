@@ -276,13 +276,15 @@ class SwitchBarTextEntryView: UIView {
             let newHeight = max(Constants.minHeight, height)
             let frame = self.convert(self.frame, to: nil)
 
-            let maxY = frame.minY + newHeight
+            let proposedMaxY = frame.minY + newHeight
             let actualThreshold = bottomThreshold -
                 NavigationActionBarView.Constants.buttonSize -
                 (NavigationActionBarView.Constants.buttonSpacing * 2)
 
-            if maxY < actualThreshold {
+            if proposedMaxY < actualThreshold {
                 heightConstraint?.constant = newHeight
+            } else {
+                heightConstraint?.constant = actualThreshold - frame.minY
             }
 
         } else {

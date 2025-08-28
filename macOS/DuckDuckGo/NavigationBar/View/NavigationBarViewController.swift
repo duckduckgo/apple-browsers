@@ -354,6 +354,7 @@ final class NavigationBarViewController: NSViewController {
         updatePasswordManagementButton()
         updateBookmarksButton()
         updateHomeButton()
+        updateShareButton()
 
         if view.window?.isPopUpWindow == true {
             goBackButton.isHidden = true

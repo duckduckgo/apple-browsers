@@ -134,7 +134,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                             remoteSettings: MockRemoteAISettings(),
                                             featureFlagger: mockFeatureFlagger
                                           ),
-                                          isFireWindowDefault: isFireWindowDefault)
+                                          isFireWindowDefault: isFireWindowDefault,
+                                          isUsingAuthV2: true)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }

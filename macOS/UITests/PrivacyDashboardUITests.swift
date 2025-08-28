@@ -114,8 +114,6 @@ class PrivacyDashboardUITests: UITestCase {
     // MARK: - Privacy Dashboard Access Tests
 
     func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackers() throws {
-        throw XCTSkip("Skipping due to flaky behavior")
-
         // Navigate to a page with known trackers
         let trackerTestURL = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
         addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)
@@ -146,7 +144,7 @@ class PrivacyDashboardUITests: UITestCase {
         }
 
         // Click "View Tracker Companies" button to see detailed tracker information
-        let viewTrackerCompaniesButton = privacyDashboard.buttons.containing(\.title, containing: "View Tracker Companies").firstMatch
+        let viewTrackerCompaniesButton = privacyDashboard.buttons.containing(\.label, containing: "View Tracker Companies").firstMatch
         XCTAssertTrue(viewTrackerCompaniesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "View Tracker Companies button should be available")
 
         viewTrackerCompaniesButton.click()
@@ -179,7 +177,7 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
 
         // Click "View Tracker Companies" button to see detailed tracker information
-        let viewTrackerCompaniesButton = privacyDashboard.buttons.containing(\.title, containing: "View Tracker Companies").firstMatch
+        let viewTrackerCompaniesButton = privacyDashboard.buttons.containing(\.label, containing: "View Tracker Companies").firstMatch
         XCTAssertTrue(viewTrackerCompaniesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "View Tracker Companies button should be available")
 
         viewTrackerCompaniesButton.click()

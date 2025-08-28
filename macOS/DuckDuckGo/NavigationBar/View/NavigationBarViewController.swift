@@ -1196,7 +1196,8 @@ final class NavigationBarViewController: NSViewController {
                                    internalUserDecider: internalUserDecider,
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
-                                   dockCustomizer: dockCustomization)
+                                   dockCustomizer: dockCustomization,
+                                   isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2)
 
         menu.actionDelegate = self
         let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)

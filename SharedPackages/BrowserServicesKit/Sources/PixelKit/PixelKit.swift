@@ -117,7 +117,7 @@ public final class PixelKit {
     public static let duckDuckGoMorePrivacyInfo = URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/atb/")!
     private let defaults: UserDefaults
 
-    private let logger = Logger(subsystem: "com.duckduckgo.PixelKit", category: "PixelKit")
+    private let logger = Logger(subsystem: "PixelKit", category: "PixelKit")
 
     private static let defaultDailyPixelCalendar: Calendar = {
         var calendar = Calendar.current

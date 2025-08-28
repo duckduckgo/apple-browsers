@@ -41,6 +41,7 @@ final class MockTabDelegate: TabDelegate {
     private(set) var didRequestFireButtonPulseCalled = false
     private(set) var tabDidRequestPrivacyDashboardButtonPulseCalled = false
     private(set) var privacyDashboardAnimated: Bool?
+    var isAIChatEnabled = false
 
 
     func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }
@@ -126,7 +127,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestRefresh(tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestNavigationToDifferentSite(tab: DuckDuckGo.TabViewController) {}
-
+    
+    func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
 }
 
 extension TabViewController {

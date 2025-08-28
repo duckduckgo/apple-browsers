@@ -395,7 +395,21 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).openNewWindowCalled, .init(contents: [TabContent.url(.duckDuckGo, source: .bookmark(isFavorite: true))], burnerMode: .regular))
+        let manager = menu.windowControllersManager as! WindowControllersManagerMock
+        XCTAssertEqual(manager.openWindowCalls, [
+            .init(
+                contents: [TabContent.url(.duckDuckGo, source: .bookmark(isFavorite: true))],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
     }
 
     @MainActor
@@ -468,11 +482,25 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).openNewWindowCalled, .init(contents: [
-            TabContent.url(bookmark1.urlObject!, source: .bookmark(isFavorite: false)),
-            TabContent.url(bookmark2.urlObject!, source: .bookmark(isFavorite: false)),
-            TabContent.url(bookmark3.urlObject!, source: .bookmark(isFavorite: false)),
-        ], burnerMode: .regular))
+        let manager = menu.windowControllersManager as! WindowControllersManagerMock
+        XCTAssertEqual(manager.openWindowCalls, [
+            .init(
+                contents: [
+                    TabContent.url(bookmark1.urlObject!, source: .bookmark(isFavorite: false)),
+                    TabContent.url(bookmark2.urlObject!, source: .bookmark(isFavorite: false)),
+                    TabContent.url(bookmark3.urlObject!, source: .bookmark(isFavorite: false)),
+                ],
+                burnerMode: .regular,
+                droppingPoint: nil,
+                contentSize: nil,
+                showWindow: true,
+                popUp: false,
+                lazyLoadTabs: false,
+                isMiniaturized: false,
+                isMaximized: false,
+                isFullscreen: false
+            )
+        ])
     }
 
     @MainActor

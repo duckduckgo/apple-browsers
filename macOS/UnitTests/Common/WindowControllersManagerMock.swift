@@ -63,14 +63,33 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         showBookmarksTabCalled = true
     }
 
-    struct OpenNewWindowArgs: Equatable {
-        var contents: [TabContent]?
-        var burnerMode: BurnerMode = .regular, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool = true, popUp: Bool = false, lazyLoadTabs: Bool = false, isMiniaturized: Bool = false, isMaximized: Bool = false, isFullscreen: Bool = false
+    struct OpenWindowCall: Equatable {
+        let contents: [TabContent]?
+        let burnerMode: BurnerMode
+        let droppingPoint: NSPoint?
+        let contentSize: NSSize?
+        let showWindow: Bool
+        let popUp: Bool
+        let lazyLoadTabs: Bool
+        let isMiniaturized: Bool
+        let isMaximized: Bool
+        let isFullscreen: Bool
     }
-    var openNewWindowCalled: OpenNewWindowArgs?
+    var openWindowCalls: [OpenWindowCall] = []
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
-        openNewWindowCalled = .init(contents: tabCollectionViewModel?.tabs.map(\.content), burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: isMiniaturized, isMaximized: isMaximized, isFullscreen: isFullscreen)
+        openWindowCalls.append(OpenWindowCall(
+            contents: tabCollectionViewModel?.tabs.map(\.content),
+            burnerMode: burnerMode,
+            droppingPoint: droppingPoint,
+            contentSize: contentSize,
+            showWindow: showWindow,
+            popUp: popUp,
+            lazyLoadTabs: lazyLoadTabs,
+            isMiniaturized: isMiniaturized,
+            isMaximized: isMaximized,
+            isFullscreen: isFullscreen
+        ))
         return nil
     }
 
@@ -82,14 +101,19 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
     }
 
     func openTab(_ tab: DuckDuckGo_Privacy_Browser.Tab, afterParentTab parentTab: DuckDuckGo_Privacy_Browser.Tab, selected: Bool) {
-        openTabCalls.append( (tab, parentTab, selected) )
+        openTabCalls.append(OpenTabCall(tab: tab, parentTab: parentTab, selected: selected))
     }
 
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 
     var showTabCalls: [Tab.TabContent] = []
-    var openTabCalls: [(Tab, Tab, Bool)] = []
+    struct OpenTabCall: Equatable {
+        let tab: Tab
+        let parentTab: Tab
+        let selected: Bool
+    }
+    var openTabCalls: [OpenTabCall] = []
 
     struct Open: Equatable {
         let url: URL

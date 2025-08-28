@@ -146,11 +146,12 @@ final class TabCollectionViewModel: NSObject {
     /// Redirects tab opening out of a popup window to the main window
     private func redirectOpenOutsidePopup(_ tab: Tab, parentTab: Tab? = nil, selected: Bool = true) {
         guard let manager = windowControllersManager else { return }
-        if let parentTab = parentTab ?? tab.parentTab ?? tabCollection.tabs.first?.parentTab {
+        if let parentTab = parentTab ?? tab.parentTab ?? tabCollection.tabs.first?.parentTab,
+           parentTab.burnerMode == tab.burnerMode {
             manager.openTab(tab, afterParentTab: parentTab, selected: selected)
         } else {
-            let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab], isPopup: false), burnerMode: burnerMode)
-            manager.openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, showWindow: true)
+            let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab], isPopup: false), burnerMode: tab.burnerMode)
+            manager.openNewWindow(with: tabCollectionViewModel, burnerMode: tab.burnerMode, showWindow: true)
         }
     }
 
@@ -453,14 +454,14 @@ final class TabCollectionViewModel: NSObject {
 
     func insert(_ tab: Tab, after parentTab: Tab?, selected: Bool) {
         guard changesEnabled else { return }
-        guard let parentTab = parentTab ?? tab.parentTab,
-              let parentTabIndex = indexInAllTabs(of: parentTab) else {
-            Logger.tabLazyLoading.error("TabCollection: No parent tab")
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, parentTab: parentTab, selected: selected)
             return
         }
 
-        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
-            redirectOpenOutsidePopup(tab, parentTab: parentTab, selected: selected)
+        guard let parentTab = parentTab ?? tab.parentTab,
+              let parentTabIndex = indexInAllTabs(of: parentTab) else {
+            Logger.tabLazyLoading.error("TabCollection: No parent tab")
             return
         }
 

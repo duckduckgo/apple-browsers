@@ -1,5 +1,5 @@
 //
-//  NativeMessagingHandlerFactory.swift
+//  WebExtensionLoadResult.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,15 +19,16 @@
 #if WEB_EXTENSIONS_ENABLED
 
 import Foundation
+import WebKit
 
 @available(macOS 15.4, *)
-final class NativeMessagingHandlerFactory {
+struct WebExtensionLoadResult {
+    let context: WKWebExtensionContext
+    let knownExtension: WebExtensionIdentifier?
 
-    static func makeHandler(for knownExtension: WebExtensionIdentifier) -> NativeMessagingHandling? {
-        switch knownExtension {
-        case .bitwarden:
-            return BitwardenNativeMessagingHandler()
-        }
+    init(context: WKWebExtensionContext, knownExtension: WebExtensionIdentifier? = nil) {
+        self.context = context
+        self.knownExtension = knownExtension
     }
 }
 

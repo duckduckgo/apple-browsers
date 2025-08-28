@@ -23,6 +23,7 @@ import Common
 import WebKit
 import os.log
 import BrowserServicesKit
+import CryptoKit
 
 @available(macOS 15.4, *)
 protocol WebExtensionManaging {
@@ -137,10 +138,16 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         pathsCache.add(path)
 
         do {
-            try await loader.loadWebExtension(path: path, into: controller)
+            let loadResult = try await loader.loadWebExtension(path: path, into: controller)
+
+            // Create and register handler if extension is known
+            nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.knownExtension, context: loadResult.context)
+            if let knownExtension = loadResult.knownExtension {
+                print("[WebExtensionManager] Created native messaging handler for extension: \(knownExtension)")
+            }
         } catch {
             // This is temporary.  The actual handling of this error should be done outside of this manager.
-            assertionFailure("Failed to unload web extension \(path): \(error)")
+            assertionFailure("Failed to load web extension \(path): \(error)")
         }
 
         continuation?.yield()
@@ -161,6 +168,13 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     func uninstallExtension(path: String) throws {
         pathsCache.remove(path)
 
+        // Find the context to unregister from coordinator before unloading
+        let identifierHash = identifierHash(forPath: path)
+        if let context = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifierHash }) {
+            nativeMessagingCoordinator.unregisterHandler(for: context)
+            print("[WebExtensionManager] Unregistered native messaging handler for extension")
+        }
+
         do {
             try loader.unloadExtension(at: path, from: controller)
         } catch {
@@ -177,6 +191,14 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         return nil
     }
 
+    private func identifierHash(forPath path: String) -> String {
+        let identifier = Data(path.utf8)
+        let hash = SHA256.hash(data: identifier)
+        let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
+
+        return hashString
+    }
+
     // MARK: - Lifecycle
 
     @MainActor
@@ -189,7 +211,13 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         continuation?.yield()
 
         for result in results {
-            if case .failure(let failure) = result {
+            switch result {
+            case .success(let loadResult):
+                nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.knownExtension, context: loadResult.context)
+                if let knownExtension = loadResult.knownExtension {
+                    print("[WebExtensionManager] Created native messaging handler for extension: \(knownExtension)")
+                }
+            case .failure(let failure):
                 // If this is blocking from starting up the app, disable this
                 // assertion then go to Debug Menu > Web Extensions > Uninstall all extensions
                 assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")

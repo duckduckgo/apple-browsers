@@ -26,77 +26,51 @@ import LocalAuthentication
 @available(macOS 15.4, *)
 final class NativeMessagingCoordinator {
 
-    var nativeMessagingConnections = [NativeMessagingConnection]()
-    private var bitwardenHandler = BitwardenNativeMessagingHandler()
+    // Context to handler mappings
+    private var contextHandlers: [WKWebExtensionContext: NativeMessagingHandling] = [:]
 
-    private func connection(for port: WKWebExtension.MessagePort) -> NativeMessagingConnection? {
-        return bitwardenHandler.connection(for: port)
+    // MARK: - Handler Registration
+
+    func registerHandler(_ handler: NativeMessagingHandling, for context: WKWebExtensionContext) {
+        contextHandlers[context] = handler
     }
 
-    private func connection(for communicator: NativeMessagingCommunicator) -> NativeMessagingConnection? {
-        return bitwardenHandler.connection(for: communicator)
+    func unregisterHandler(for context: WKWebExtensionContext) {
+        contextHandlers.removeValue(forKey: context)
     }
 
-    private func cancelConnection(_ connection: NativeMessagingConnection) {
-        bitwardenHandler.cancelConnection(connection)
-        // Sync back to coordinator's connections
-        nativeMessagingConnections = bitwardenHandler.nativeMessagingConnections
+    func createHandlerIfNeeded(for knownExtension: WebExtensionIdentifier?, context: WKWebExtensionContext) {
+        guard let knownExtension = knownExtension,
+              let handler = NativeMessagingHandlerFactory.makeHandler(for: knownExtension) else {
+            return
+        }
+        registerHandler(handler, for: context)
     }
 
-    private func cancelConnection(with port: WKWebExtension.MessagePort) {
-        bitwardenHandler.cancelConnection(with: port)
-        // Sync back to coordinator's connections
-        nativeMessagingConnections = bitwardenHandler.nativeMessagingConnections
-    }
-
-    private func cancelConnection(with communicator: NativeMessagingCommunicator) {
-        bitwardenHandler.cancelConnection(with: communicator)
-        // Sync back to coordinator's connections
-        nativeMessagingConnections = bitwardenHandler.nativeMessagingConnections
+    private func handler(for context: WKWebExtensionContext) -> NativeMessagingHandling? {
+        return contextHandlers[context]
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {
-        // For now, assume Bitwarden relationship and delegate directly to the handler
-        return try bitwardenHandler.handleMessage(message, to: applicationIdentifier, for: extensionContext)
+        // Route to the registered handler for this context
+        if let handler = handler(for: extensionContext) {
+            return try handler.handleMessage(message, to: applicationIdentifier, for: extensionContext)
+        }
+
+        // No handler registered for this context
+        throw NSError(domain: "NativeMessagingCoordinator", code: 1, userInfo: [NSLocalizedDescriptionKey: "No native messaging handler registered for this extension"])
     }
+
     func webExtensionController(_ controller: WKWebExtensionController, connectUsingMessagePort port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) throws {
-        // For now, assume Bitwarden relationship and delegate directly to the handler
-        try bitwardenHandler.handleConnection(using: port, for: extensionContext)
+        // Route to the registered handler for this context
+        if let handler = handler(for: extensionContext) {
+            try handler.handleConnection(using: port, for: extensionContext)
+            return
+        }
 
-        // Sync the connections with the handler's connections
-        nativeMessagingConnections = bitwardenHandler.nativeMessagingConnections
+        // No handler registered for this context
+        throw NSError(domain: "NativeMessagingCoordinator", code: 2, userInfo: [NSLocalizedDescriptionKey: "No native messaging handler registered for this extension"])
     }
-}
-
-@available(macOS 15.4, *)
-@MainActor
-extension NativeMessagingCoordinator: @preconcurrency NativeMessagingCommunicatorDelegate {
-    func nativeMessagingCommunicator(_ nativeMessagingCommunicator: any NativeMessagingCommunication, didReceiveMessageData messageData: Data) {
-        // Route to the handler since it manages the connections
-        bitwardenHandler.nativeMessagingCommunicator(nativeMessagingCommunicator, didReceiveMessageData: messageData)
-        // Sync connections back
-        nativeMessagingConnections = bitwardenHandler.nativeMessagingConnections
-    }
-
-    func nativeMessagingCommunicatorProcessDidTerminate(_ nativeMessagingCommunicator: any NativeMessagingCommunication) {
-        // Route to the handler since it manages the connections  
-        bitwardenHandler.nativeMessagingCommunicatorProcessDidTerminate(nativeMessagingCommunicator)
-        // Sync connections back
-        nativeMessagingConnections = bitwardenHandler.nativeMessagingConnections
-    }
-}
-
-@available(macOS 15.4, *)
-@MainActor
-extension NativeMessagingCoordinator: @preconcurrency NativeMessagingConnectionDelegate {
-
-    func nativeMessagingConnectionProcessDidFail(_ nativeMessagingConnection: NativeMessagingConnection) {
-        // Route to the handler since it manages the connections
-        bitwardenHandler.nativeMessagingConnectionProcessDidFail(nativeMessagingConnection)
-        // Sync connections back
-        nativeMessagingConnections = bitwardenHandler.nativeMessagingConnections
-    }
-
 }
 
 #endif

@@ -24,8 +24,8 @@ import WebKit
 @available(macOS 15.4, *)
 protocol WebExtensionLoading: AnyObject {
     @discardableResult
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WKWebExtensionContext, Error>]
+    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult
+    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>]
     func unloadExtension(at path: String, from controller: WKWebExtensionController) throws
 }
 
@@ -43,46 +43,47 @@ final class WebExtensionLoader: WebExtensionLoading {
     }
 
     @MainActor
-    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext {
+    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
         guard let extensionURL = URL(string: path) else {
             assertionFailure("Failed to create URL from path: \(path)")
             throw WebExtensionLoaderError.failedToCreateURLFromPath(path: path)
         }
 
         let webExtension: WKWebExtension
+        var knownExtension: WebExtensionIdentifier?
 
         if path.hasSuffix(".appex"),
            let bundle = Bundle(url: extensionURL) {
 
+            // Detect known extension based on bundle ID
+            if let bundleId = bundle.bundleIdentifier {
+                switch bundleId {
+                case "com.bitwarden.desktop", "com.8bit.bitwarden":
+                    knownExtension = .bitwarden
+                default:
+                    break
+                }
+            }
+
             // Loading from the bundle is best to support native messaging automagically
             webExtension = try await WKWebExtension(appExtensionBundle: bundle)
-            let context = makeContext(for: webExtension, at: path)
-            try controller.load(context)
-
-            return context
         } else {
             webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
         }
 
-        // let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+        // Single point for context creation and loading
         let context = makeContext(for: webExtension, at: path)
         try controller.load(context)
 
-        let permissions: [WKWebExtension.Permission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
-            WKWebExtension.Permission($0)
-        }
-        for permission in permissions {
-            context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
-        }
-        return context
+        return WebExtensionLoadResult(context: context, knownExtension: knownExtension)
     }
 
-    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WKWebExtensionContext, Error>] {
-        var result = [Result<WKWebExtensionContext, Error>]()
+    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
+        var result = [Result<WebExtensionLoadResult, Error>]()
         for path in paths {
             do {
-                let context = try await loadWebExtension(path: path, into: controller)
-                result.append(.success(context))
+                let loadResult = try await loadWebExtension(path: path, into: controller)
+                result.append(.success(loadResult))
             } catch {
                 result.append(.failure(error))
             }

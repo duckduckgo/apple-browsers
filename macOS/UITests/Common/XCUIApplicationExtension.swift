@@ -364,12 +364,12 @@ extension XCUIApplication {
             // Get the element's frame and scroll view's frame
             let elementFrame = element.frame
             let scrollViewFrame = scrollView.frame
-            
+
             // Calculate how much we need to scroll to make the element visible
             // Add some padding to ensure the element is fully visible
             let padding: CGFloat = 20
             let delta = elementFrame.maxY - scrollViewFrame.maxY + padding
-            
+
             // Create a normalized vector for the scroll amount
             scrollView.scroll(byDeltaX: 0, deltaY: -delta)
         }

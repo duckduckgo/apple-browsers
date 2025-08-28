@@ -3580,6 +3580,8 @@
 		CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770C2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
 		CC87770D2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
+		CC9B678C2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */; };
+		CC9B678D2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */; };
 		CCC87D6D2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */; };
 		CCC87D6E2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */; };
 		CCC87D732E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */; };
@@ -5760,6 +5762,7 @@
 		CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinatorMock.swift; sourceTree = "<group>"; };
 		CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReader.swift; sourceTree = "<group>"; };
 		CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReaderTests.swift; sourceTree = "<group>"; };
+		CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptPixel.swift; sourceTree = "<group>"; };
 		CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReader.swift; sourceTree = "<group>"; };
 		CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReaderTests.swift; sourceTree = "<group>"; };
 		CCEB617F2E05710A00AEBED4 /* FirefoxPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxPreferences.swift; sourceTree = "<group>"; };
@@ -10569,6 +10572,7 @@
 				37598EF32D5A18FB00720EAF /* HistoryViewPixel.swift */,
 				1D99CDDA2D929EBE00656A84 /* PinnedTabsPixel.swift */,
 				56DB9FE82CD24B47001BEC23 /* ContextualOnboardingPixel.swift */,
+				CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */,
 			);
 			path = Statistics;
 			sourceTree = "<group>";
@@ -13701,6 +13705,7 @@
 				3706FC6E293F65D500E42796 /* DuckURLSchemeHandler.swift in Sources */,
 				37445F9A2A1566420029F789 /* SyncDataProviders.swift in Sources */,
 				3706FC6F293F65D500E42796 /* FirePopoverViewModel.swift in Sources */,
+				CC9B678C2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */,
 				3706FC71293F65D500E42796 /* NSColorExtension.swift in Sources */,
 				1DB9618229F67F6100CF5568 /* FaviconNullStore.swift in Sources */,
 				BB9BA22A2D10C0A5009229F3 /* TabBarActiveRemoteMessage.swift in Sources */,
@@ -14779,6 +14784,7 @@
 				C172E7372C93968E00521D9A /* SyncPromoPixelKitEvent.swift in Sources */,
 				B684121C2B6A1D880092F66A /* ErrorPageHTMLTemplate.swift in Sources */,
 				B65C7DFB2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
+				CC9B678D2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */,
 				B68458CD25C7EB9000DC17B6 /* WKWebViewConfigurationExtensions.swift in Sources */,
 				1D01A3D82B88DF8B00FE8150 /* PreferencesSyncView.swift in Sources */,
 				B6619EFB2B111CC500CD9186 /* InstructionsFormatParser.swift in Sources */,

@@ -1,0 +1,11 @@
+name: Test Workflow
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  run_tests:
+    name: Run Tests
+    uses: ./.github/workflows/macos_pr_checks.yml
+    secrets: inherit

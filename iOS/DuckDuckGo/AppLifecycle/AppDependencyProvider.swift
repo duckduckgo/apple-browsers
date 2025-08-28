@@ -174,8 +174,8 @@ final class AppDependencyProvider: DependencyProvider {
                                             authService: authService)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
-                                                    pixelHandler: pixelHandler,
-                                                    isAuthV2Enabled: isAuthV2Enabled)
+                                                pixelHandler: pixelHandler,
+                                                isAuthV2Enabled: isAuthV2Enabled)
 
         isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
 

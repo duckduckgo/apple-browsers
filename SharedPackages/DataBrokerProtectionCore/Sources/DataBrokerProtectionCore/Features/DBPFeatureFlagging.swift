@@ -20,6 +20,10 @@ import Foundation
 
 public typealias DBPFeatureFlagging = RemoteBrokerDeliveryFeatureFlagging & EmailConfirmationDecouplingFeatureFlagging
 
+public protocol RemoteBrokerDeliveryFeatureFlagging {
+    var isRemoteBrokerDeliveryFeatureOn: Bool { get }
+}
+
 public protocol EmailConfirmationDecouplingFeatureFlagging {
     var isEmailConfirmationDecouplingFeatureOn: Bool { get }
 }

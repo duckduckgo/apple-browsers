@@ -1075,6 +1075,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateRemoveDateCalled = false
         wasAddHistoryEventCalled = false
         wasFetchLastHistoryEventCalled = false
+        fetchAllBrokerProfileQueryDataError = nil
         lastHistoryEventToReturn = nil
         lastPreferredRunDateOnScan = nil
         lastPreferredRunDateOnOptOut = nil

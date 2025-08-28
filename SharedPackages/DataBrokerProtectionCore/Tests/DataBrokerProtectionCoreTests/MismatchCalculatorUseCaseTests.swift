@@ -26,8 +26,16 @@ final class MismatchCalculatorUseCaseTests: XCTestCase {
     private let database = MockDatabase()
     private let pixelHandler = MockDataBrokerProtectionPixelsHandler()
 
+    override func setUp() {
+        super.setUp()
+        pixelHandler.clear()
+        database.clear()
+    }
+
     override func tearDown() {
         pixelHandler.clear()
+        database.clear()
+        super.tearDown()
     }
 
     func testWhenParentHasMoreMatches_thenParentSiteHasMoreMatchesPixelIsFired() {

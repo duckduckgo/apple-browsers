@@ -162,7 +162,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
     
-    /// https://app.asana.com/1/137249556945/project/1211100299285059/task/1210869716452616
+    /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
 }
 
@@ -369,7 +369,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .refreshButtonPosition:
-            return .disabled
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         }
     }
 }

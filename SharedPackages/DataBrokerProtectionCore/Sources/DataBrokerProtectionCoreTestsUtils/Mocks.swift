@@ -2095,6 +2095,18 @@ public extension BrokerDB {
             )
         }
     }
+
+    static func random(name: String? = nil, removedAt: Date? = nil) -> BrokerDB {
+        BrokerDB(
+            id: nil,
+            name: name ?? .random(length: 6),
+            json: try! JSONSerialization.data(withJSONObject: [:], options: []),
+            version: "1.0.0",
+            url: "www.\(name?.lowercased() ?? "test")broker.com",
+            eTag: "test-etag",
+            removedAt: removedAt
+        )
+    }
 }
 
 public extension ScanHistoryEventDB {

@@ -109,6 +109,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewDidAppear(animated)
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
+        DailyPixel.fire(pixel: .aiChatExperimentalOmnibarShown)
     }
 
     // MARK: - Public Methods
@@ -211,9 +212,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
                 switch submission.mode {
                 case .search:
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarQuerySubmitted)
                     self.delegate?.onQuerySubmitted(text)
 
                 case .aiChat:
+                    DailyPixel.fireDailyAndCount(pixel: .aiChatExperimentalOmnibarPromptSubmitted)
                     // If we (re)add the web rag button, then we need to add it to the array of tools Duck.ai should use
                     //  for this submission.
                     self.delegate?.onPromptSubmitted(text, tools: nil)

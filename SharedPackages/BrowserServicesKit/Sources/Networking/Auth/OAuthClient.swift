@@ -314,7 +314,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 throw OAuthClientError.authMigrationNotPerformed
             }
 
-            guard let legacyTokenStorage else {
+            guard var legacyTokenStorage else {
                 Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
                 throw OAuthClientError.authMigrationNotPerformed
             }
@@ -328,7 +328,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             try await exchange(accessTokenV1: legacyToken)
             Logger.OAuthClient.log("Tokens migrated successfully")
 
-            // NOTE: We don't remove the old token to allow roll back to Auth V1
+            // After releasing Auth V2 at 100% we are now deleting the Auth V1 token.
+            legacyTokenStorage.token = nil
         }
 
         migrationOngoingTask = task

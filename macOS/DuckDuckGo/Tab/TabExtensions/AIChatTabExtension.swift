@@ -67,6 +67,7 @@ final class AIChatTabExtension {
                 }
 
                 if let pageContext = self?.temporaryPageContext {
+                    self?.aiChatUserScript?.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
                     self?.aiChatUserScript?.handler.submitPageContext(pageContext)
                     self?.temporaryPageContext = nil
                 }
@@ -115,6 +116,7 @@ final class AIChatTabExtension {
             return
         }
 
+        aiChatUserScript.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
         aiChatUserScript.handler.submitPageContext(pageContext)
     }
 }

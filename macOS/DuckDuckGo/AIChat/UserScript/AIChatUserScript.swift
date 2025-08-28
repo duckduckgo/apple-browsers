@@ -108,6 +108,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.removeChat
         case .openSummarizationSourceLink:
             return handler.openSummarizationSourceLink
+        case .getPageContext:
+            return handler.getPageContext
         default:
             return nil
         }

@@ -37,6 +37,7 @@ protocol AIChatUserScriptHandling {
     @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
+    func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
@@ -93,6 +94,10 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
         messageHandling.getDataForMessageType(.nativePrompt)
+    }
+
+    func getPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+        messageHandling.getDataForMessageType(.pageContext)
     }
 
     @MainActor

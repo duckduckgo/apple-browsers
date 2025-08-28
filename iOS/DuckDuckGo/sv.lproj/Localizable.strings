@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Radera surfdata med en knapp";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blockera spårare från tredje part";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Läs mer";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Låt DuckDuckGo hantera popup-fönster för godkännande av cookies";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Inställningar";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Hjälper till att blockera spårare från tredje part som använder DNS för att försöka gömma sig på en webbplats.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Skyddar mot DNS CNAME-maskering";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Inaktiverar spårning av Facebook-innehåll, t.ex. widgetar för Facebook-kommentarer på webbplatser utanför Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Skydd mot Facebook-spårning";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Hjälper till att förhindra spårningsföretag från att få unika identifierare om din webbläsare och enhet, som de använder för att följa dig på webben.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Förhindrar fingerprint-spårning";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Förstapartscookies löper automatiskt ut efter 30 dagar, så att webbplatser inte kan spåra dig på obestämd tid när du är utloggad.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Upphör för förstapartscookies";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Ersätter Google AMP-länkar med den ursprungliga utgivarens webbplats.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blockerar spårning med Google AMP";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blockerar popup-fönster för Google-inloggning på webbplatser som Google inte äger.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blockerar popup-fönster för Google-inloggning";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Tar bort spårningsparametrar i länkar för att förhindra att tredje part spårar ditt beteende på olika webbplatser.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blockerar länkspårning";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Hjälper till att blockera företag från att identifiera den senaste webbplatsen du besökte.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Skyddar mot hänvisningsspårning";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blockerar invasiva spårare innan de läses in, vilket effektivt eliminerar annonser som bygger på spårning.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blockerar riktade annonser";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Hjälper till att blockera tredjepartscookies som spårar dig från webbplats till webbplats genom att förhindra att tredjepartsspårare laddas.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blockerar spårare från tredje part";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Oskyddade webbplatser";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web Tracking Protection";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections är alltid aktiverat";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blockerar automatiskt dolda spårare när du surfar på webben.\n[Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Hur vi skyddar dig";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo-webbläsaren erbjuder spårningsskydd som alltid är aktiva. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Välj det alternativ som bäst beskriver det problem som du har stött på.";

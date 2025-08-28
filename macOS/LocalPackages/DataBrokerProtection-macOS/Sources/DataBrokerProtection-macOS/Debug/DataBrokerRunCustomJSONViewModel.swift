@@ -218,7 +218,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 for queryData in brokerProfileQueryData {
                     let debugScanJob = DebugScanJob(privacyConfig: self.privacyConfigManager,
                                                     prefs: self.contentScopeProperties,
-                                                    query: queryData,
+                                                    context: queryData,
                                                     emailService: self.emailService,
                                                     captchaService: self.captchaService) {
                         true
@@ -228,7 +228,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                         do {
                             return try await debugScanJob.run(inputValue: (), showWebView: false)
                         } catch {
-                            return DebugScanReturnValue(brokerURL: "ERROR - with broker: \(queryData.dataBroker.name)", extractedProfiles: [ExtractedProfile](), brokerProfileQueryData: queryData)
+                            return DebugScanReturnValue(brokerURL: "ERROR - with broker: \(queryData.dataBroker.name)", extractedProfiles: [ExtractedProfile](), context: queryData)
                         }
                     }
                 }
@@ -306,7 +306,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                               error: String? = nil,
                               extractedResult: ExtractResult? = nil) -> String {
         let matchedString = matched ? "TRUE" : "FALSE"
-        let profileQuery = result.brokerProfileQueryData.profileQuery
+        let profileQuery = result.context.profileQuery
 
         var csvRow = ""
 
@@ -328,8 +328,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         }
 
         csvRow.append("\(result.brokerURL),") // Broker URL
-        csvRow.append("\(result.brokerProfileQueryData.dataBroker.name),") // Broker Name
-        csvRow.append("\(profileQuery.id ?? 0)_\(result.brokerProfileQueryData.dataBroker.name),") // Screenshot name
+        csvRow.append("\(result.context.dataBroker.name),") // Broker Name
+        csvRow.append("\(profileQuery.id ?? 0)_\(result.context.dataBroker.name),") // Screenshot name
 
         if let error = error {
             csvRow.append("\(error),") // Error
@@ -384,7 +384,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
-                                query: query,
+                                context: query,
                                 emailService: self.emailService,
                                 captchaService: self.captchaService,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
@@ -437,7 +437,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
-                    query: brokerProfileQueryData,
+                    context: brokerProfileQueryData,
                     emailService: self.emailService,
                     captchaService: self.captchaService,
                     stageCalculator: FakeStageDurationCalculator(),

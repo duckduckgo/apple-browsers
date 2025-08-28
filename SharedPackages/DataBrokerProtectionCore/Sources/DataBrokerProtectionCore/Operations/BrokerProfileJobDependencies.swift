@@ -91,7 +91,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         return BrokerProfileScanSubJobWebRunner(
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
-            query: profileQuery,
+            context: profileQuery,
             emailService: self.emailService,
             captchaService: self.captchaService,
             stageDurationCalculator: stageDurationCalculator,
@@ -107,7 +107,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         return BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
-            query: profileQuery,
+            context: profileQuery,
             emailService: self.emailService,
             captchaService: self.captchaService,
             stageCalculator: stageDurationCalculator,

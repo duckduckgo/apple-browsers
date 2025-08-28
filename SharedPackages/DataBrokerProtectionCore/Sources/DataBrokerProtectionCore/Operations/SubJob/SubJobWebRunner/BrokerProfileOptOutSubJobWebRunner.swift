@@ -36,7 +36,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
-    public let query: BrokerProfileQueryData
+    public let context: SubJobContextProviding
     public let emailService: EmailServiceProtocol
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
@@ -56,7 +56,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
-                query: BrokerProfileQueryData,
+                context: SubJobContextProviding,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
@@ -68,7 +68,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
+        self.context = context
         self.emailService = emailService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
@@ -96,7 +96,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                self.extractedProfile = inputValue.merge(with: query.profileQuery)
+                self.extractedProfile = inputValue.merge(with: context.profileQuery)
                 self.continuation = continuation
 
                 guard self.shouldRunNextStep() else {
@@ -106,10 +106,10 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
                 task = Task {
                     await initialize(handler: webViewHandler,
-                                     isFakeBroker: query.dataBroker.isFakeBroker,
+                                     isFakeBroker: context.dataBroker.isFakeBroker,
                                      showWebView: showWebView)
 
-                    if let optOutStep = query.dataBroker.optOutStep() {
+                    if let optOutStep = context.dataBroker.optOutStep() {
                         if let actionsHandler = actionsHandler {
                             self.actionsHandler = actionsHandler
                         } else {
@@ -164,6 +164,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     }
 
     private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
-        .init(stepType: .optOut, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
+        .init(stepType: .optOut, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

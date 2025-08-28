@@ -22,9 +22,9 @@ extension WKWebView {
 
     func killWebContentProcess() {
         let webContentProcessInfo = (WKProcessPool.perform(Selector(("_webContentProcessInfo"))).takeUnretainedValue() as? [NSObject])!
-        let processInfo = webContentProcessInfo.first {
-            ($0.value(forKey: "webViews") as? [WKWebView])!.contains(self)
-        }!
+        guard let processInfo = webContentProcessInfo.first(where: {
+            ($0.value(forKey: "webViews") as? [WKWebView])?.contains(self) == true
+        }) else { return }
         let pid = processInfo.value(forKey: "pid") as! pid_t
 
         kill(pid, SIGTERM)

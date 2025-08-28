@@ -28,18 +28,18 @@ struct DebugScanReturnValue {
     let brokerURL: String
     let extractedProfiles: [ExtractedProfile]
     let error: Error?
-    let brokerProfileQueryData: BrokerProfileQueryData
+    let context: SubJobContextProviding
     let meta: [String: Any]?
 
     init(brokerURL: String,
          extractedProfiles: [ExtractedProfile] = [ExtractedProfile](),
          error: Error? = nil,
-         brokerProfileQueryData: BrokerProfileQueryData,
+         context: SubJobContextProviding,
          meta: [String: Any]? = nil) {
         self.brokerURL = brokerURL
         self.extractedProfiles = extractedProfiles
         self.error = error
-        self.brokerProfileQueryData = brokerProfileQueryData
+        self.context = context
         self.meta = meta
     }
 }
@@ -56,7 +56,7 @@ final class DebugScanJob: SubJobWebRunning {
 
     let privacyConfig: PrivacyConfigurationManaging
     let prefs: ContentScopeProperties
-    let query: BrokerProfileQueryData
+    let context: SubJobContextProviding
     let emailService: EmailServiceProtocol
     let captchaService: CaptchaServiceProtocol
     let stageCalculator: StageDurationCalculator
@@ -79,7 +79,7 @@ final class DebugScanJob: SubJobWebRunning {
 
     init(privacyConfig: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
-         query: BrokerProfileQueryData,
+         context: SubJobContextProviding,
          emailService: EmailServiceProtocol,
          captchaService: CaptchaServiceProtocol,
          executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
@@ -89,7 +89,7 @@ final class DebugScanJob: SubJobWebRunning {
     ) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
+        self.context = context
         self.emailService = emailService
         self.captchaService = captchaService
         self.executionConfig = executionConfig
@@ -115,10 +115,10 @@ final class DebugScanJob: SubJobWebRunning {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             Task {
-                await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
 
                 do {
-                    let scanStep = try query.dataBroker.scanStep()
+                    let scanStep = try context.dataBroker.scanStep()
                     if let actionsHandler = actionsHandler {
                         self.actionsHandler = actionsHandler
                     } else {
@@ -140,7 +140,7 @@ final class DebugScanJob: SubJobWebRunning {
         if action is ExtractAction {
             do {
                 if let path = self.debugScanContentPath {
-                    let fileName = "\(query.profileQuery.id ?? 0)_\(query.dataBroker.name)"
+                    let fileName = "\(context.profileQuery.id ?? 0)_\(context.dataBroker.name)"
                     try await webViewHandler?.takeSnaphost(path: path + "/screenshots/", fileName: "\(fileName).png")
                     try await webViewHandler?.saveHTML(path: path + "/html/", fileName: "\(fileName).html")
                 }
@@ -151,7 +151,7 @@ final class DebugScanJob: SubJobWebRunning {
 
         await webViewHandler?.execute(action: action,
                                       ofType: actionsHandler?.stepType,
-                                      data: .userData(query.profileQuery, self.extractedProfile))
+                                      data: .userData(context.profileQuery, self.extractedProfile))
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
@@ -159,7 +159,7 @@ final class DebugScanJob: SubJobWebRunning {
             let debugScanReturnValue = DebugScanReturnValue(
                 brokerURL: scanURL,
                 extractedProfiles: profiles,
-                brokerProfileQueryData: query,
+                context: context,
                 meta: meta
             )
             complete(debugScanReturnValue)
@@ -170,7 +170,7 @@ final class DebugScanJob: SubJobWebRunning {
 
     public func completeWith(error: Error) async {
         if let scanURL = self.scanURL {
-            let debugScanReturnValue = DebugScanReturnValue(brokerURL: scanURL, error: error, brokerProfileQueryData: query)
+            let debugScanReturnValue = DebugScanReturnValue(brokerURL: scanURL, error: error, context: context)
             complete(debugScanReturnValue)
         }
 

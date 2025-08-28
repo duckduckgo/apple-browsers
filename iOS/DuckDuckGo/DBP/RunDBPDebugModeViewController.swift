@@ -490,7 +490,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         let runner = BrokerProfileScanSubJobWebRunner(
                             privacyConfig: privacyConfigManager,
                             prefs: contentScopeProperties,
-                            query: brokerProfileQueryData,
+                            context: brokerProfileQueryData,
                             emailService: emailService,
                             captchaService: captchaService,
                             stageDurationCalculator: FakeStageDurationCalculator(),
@@ -572,11 +572,11 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     
     private func getWebViewTitle() -> String {
         if let runner = currentRunner {
-            let brokerName = runner.query.dataBroker.name
+            let brokerName = runner.context.dataBroker.name
             return "PIR Debug Mode: \(brokerName) (Scan)"
         }
         if let optOutRunner = currentOptOutRunner {
-            let brokerName = optOutRunner.query.dataBroker.name
+            let brokerName = optOutRunner.context.dataBroker.name
             return "PIR Debug Mode: \(brokerName) (Opt Out)"
         }
         return "PIR Debug Mode"
@@ -618,7 +618,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: privacyConfigManager,
                     prefs: contentScopeProperties,
-                    query: brokerProfileQueryData,
+                    context: brokerProfileQueryData,
                     emailService: emailService,
                     captchaService: captchaService,
                     stageCalculator: FakeStageDurationCalculator(),

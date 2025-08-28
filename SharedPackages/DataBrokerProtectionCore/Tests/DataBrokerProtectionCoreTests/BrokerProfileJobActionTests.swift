@@ -44,7 +44,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -70,7 +70,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -103,7 +103,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -134,7 +134,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -158,7 +158,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -187,7 +187,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -209,7 +209,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -232,7 +232,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -256,7 +256,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -287,7 +287,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -311,7 +311,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -336,7 +336,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -356,7 +356,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -378,7 +378,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -399,7 +399,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -420,7 +420,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -440,7 +440,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileScanSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: .mock(with: [Step(type: .scan, actions: [])]),
+            context: BrokerProfileQueryData.mock(with: [Step(type: .scan, actions: [])]),
             emailService: emailService,
             captchaService: captchaService,
             stageDurationCalculator: MockStageDurationCalculator(),
@@ -459,7 +459,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -480,7 +480,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileScanSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: .mock(with: [Step(type: .scan, actions: [])]),
+            context: BrokerProfileQueryData.mock(with: [Step(type: .scan, actions: [])]),
             emailService: emailService,
             captchaService: captchaService,
             stageDurationCalculator: MockStageDurationCalculator(),
@@ -509,7 +509,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(),
+            context: BrokerProfileQueryData.mock(),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -529,7 +529,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(url: "spokeo.com"),
+            context: BrokerProfileQueryData.mock(url: "spokeo.com"),
             emailService: emailService,
             captchaService: captchaService,
             cookieHandler: mockCookieHandler,
@@ -552,7 +552,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(url: "verecor.com"),
+            context: BrokerProfileQueryData.mock(url: "verecor.com"),
             emailService: emailService,
             captchaService: captchaService,
             cookieHandler: mockCookieHandler,
@@ -579,7 +579,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -605,7 +605,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -634,7 +634,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileScanSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: .mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             stageDurationCalculator: mockStageCalculator,
@@ -659,7 +659,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -691,7 +691,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -722,7 +722,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -766,7 +766,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             let sut = BrokerProfileOptOutSubJobWebRunner(
                 privacyConfig: PrivacyConfigurationManagingMock(),
                 prefs: ContentScopeProperties.mock,
-                query: BrokerProfileQueryData.mock(with: [step]),
+                context: BrokerProfileQueryData.mock(with: [step]),
                 emailService: emailService,
                 captchaService: captchaService,
                 operationAwaitTime: 0,
@@ -797,7 +797,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,
@@ -830,7 +830,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
         let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
-            query: BrokerProfileQueryData.mock(with: [step]),
+            context: BrokerProfileQueryData.mock(with: [step]),
             emailService: emailService,
             captchaService: captchaService,
             operationAwaitTime: 0,

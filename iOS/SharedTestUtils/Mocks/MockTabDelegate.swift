@@ -127,7 +127,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestRefresh(tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestNavigationToDifferentSite(tab: DuckDuckGo.TabViewController) {}
-
+    
+    func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
 }
 
 extension TabViewController {

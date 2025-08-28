@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Verwijder browsegegevens met één knop";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokkeer trackers van derden";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Toetsenbord";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Meer informatie";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Laat DuckDuckGo pop-ups voor cookietoestemming beheren";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Instellingen";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Helpt bij het blokkeren van trackers van derden die zich proberen te vermommen binnen een website met behulp van DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Beschermt tegen DNS CNAME cloaking";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Schakelt tracking uit voor Facebook-content, zoals Facebook-widgets voor reacties op andere sites.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Bescherming tegen Facebook-tracking";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Helpt voorkomen dat trackingbedrijven unieke identificatiegegevens over je browser en apparaat verkrijgen, die ze gebruiken om je op het internet te volgen.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Voorkomt fingerprint tracking";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Verlaat automatisch cookies van eerste partijen na 30 dagen, zodat sites je niet onbeperkt kunnen volgen als je bent uitgelogd.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Laat cookies van eerste partijen vervallen";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Vervangt Google AMP-links door de site van de oorspronkelijke uitgever.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokkeert Google's AMP-tracking";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokkeert aanmeldingspop-ups van Google op sites die niet van Google zijn.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokkeert de pop-ups voor aanmelden bij Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Verwijdert trackingparameters in links om te voorkomen dat derden je gedrag op verschillende sites kunnen volgen.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokkeert het volgen van links";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Helpt voorkomen dat bedrijven de laatst bezochte website kunnen identificeren.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Beschermt tegen referrer tracking";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "We blokkeren invasieve trackers voordat ze worden geladen. Zo elimineren we effectief advertenties die afhankelijk zijn van tracking.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokkeert gerichte advertenties";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Helpt bij het blokkeren van cookies van derden die je op elke website volgen door te voorkomen dat trackers van derden überhaupt worden geladen.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokkeert trackers van derden";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Onbeschermde sites";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Bescherming tegen webtracking";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Bescherming tegen webtracking is altijd ingeschakeld";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blokkeert automatisch verborgen trackers terwijl je op het web surft.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Hoe wij je beschermen";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "De DuckDuckGo-browser biedt bescherming tegen tracking die altijd actief is. [Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selecteer de optie die het beste je probleem beschrijft.";

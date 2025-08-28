@@ -221,14 +221,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         _ = try? configureUpdater()
 
-#if DEBUG
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
-            checkForUpdateRespectingRollout()
-        }
-#else
         checkForUpdateRespectingRollout()
-#endif
-
         subscribeToResignKeyNotifications()
     }
 
@@ -268,6 +261,11 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates while adhering to the rollout schedule
     // This is the default behavior
     func checkForUpdateRespectingRollout() {
+#if DEBUG
+        guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) else {
+            return
+        }
+#endif
         Task { @UpdateCheckActor in
             await performUpdateCheck()
         }

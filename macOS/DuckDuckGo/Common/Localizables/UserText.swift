@@ -941,7 +941,13 @@ struct UserText {
     static let window = NSLocalizedString("preferences.startup.window", value: "Window", comment: "Option for regular window type")
     static let fireWindow = NSLocalizedString("preferences.fire-window-section", value: "Fire Window", comment: "Section title for Fire Window preferences")
     static let openFireWindowByDefault = NSLocalizedString("preferences.open-fire-window-by-default", value: "Open Fire Window by default", comment: "Option to make all new windows Fire Windows")
-    static let openFireWindowByDefaultExplanation = NSLocalizedString("preferences.open-fire-window-by-default.explanation", value: "Open Fire Windows by default when opening new windows (⌘N). You can still open a regular browser window when this setting is on (⇧⌘N).", comment: "Explanation for the option to make all new windows Fire Windows")
+
+    static func openFireWindowByDefaultExplanation(newFireWindowShortcut: String, newRegularWindowShortcut: String) -> String {
+        let localized = NSLocalizedString("preferences.open-fire-window-by-default.explanation",
+                                          value: "Open Fire Windows by default when opening new windows (%@). You can still open a regular browser window when this setting is on (%@).",
+                                          comment: "Explanation for the option to make all new windows Fire Windows. The %@ will be replaced with a keyboard shortcut for opening new Fire Windows and regular Windows (e.g. '⌘N' and '⇧⌘N').")
+        return String(format: localized, newFireWindowShortcut, newRegularWindowShortcut)
+    }
 
     static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
     static let pinnedTabsWarningTitle = NSLocalizedString("preferences-pinned-tabs-warning-title", value: "Are you sure you want to share pinned tabs across all windows?", comment: "Title of warning before switching from per window pinned tabs to shared pinned tabs")

@@ -67723,13 +67723,13 @@
       }
     },
     "preferences.open-fire-window-by-default.explanation" : {
-      "comment" : "Explanation for the option to make all new windows Fire Windows",
+      "comment" : "Explanation for the option to make all new windows Fire Windows. The %@ will be replaced with a keyboard shortcut for opening new Fire Windows and regular Windows (e.g. '⌘N' and '⇧⌘N').",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Fire Windows by default when opening new windows (⌘N). You can still open a regular browser window when this setting is on (⇧⌘N)."
+            "value" : "Open Fire Windows by default when opening new windows (%1$@). You can still open a regular browser window when this setting is on (%2$@)."
           }
         }
       }

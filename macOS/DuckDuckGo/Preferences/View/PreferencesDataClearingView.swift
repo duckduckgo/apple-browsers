@@ -60,7 +60,7 @@ extension Preferences {
                             }
 
                             VStack(alignment: .leading, spacing: 1) {
-                                TextMenuItemCaption(UserText.openFireWindowByDefaultExplanation)
+                                TextMenuItemCaption(UserText.openFireWindowByDefaultExplanation(newFireWindowShortcut: "⌘N", newRegularWindowShortcut: "⇧⌘N"))
                             }
                         }
                     }

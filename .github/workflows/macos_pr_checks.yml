@@ -28,6 +28,10 @@ on:
         description: "Skip Asana task creation on tests failure"
         type: boolean
         default: true
+      skip-release-build:
+        description: "Skip release build"
+        type: boolean
+        default: true
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -372,7 +376,10 @@ jobs:
 
     # Dependabot doesn't have access to all secrets, so we skip this job
     # workflow_call is used by bump_internal_release and is followed by a proper release job
-    if: github.actor != 'dependabot[bot]' && (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: >
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
+      inputs.skip-release-build != true
 
     runs-on: macos-15
     timeout-minutes: 60

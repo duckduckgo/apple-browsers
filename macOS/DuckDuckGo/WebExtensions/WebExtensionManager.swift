@@ -115,7 +115,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
 
     // Handles native messaging
-    let nativeMessagingHandler = NativeMessagingHandler()
+    let nativeMessagingCoordinator = NativeMessagingCoordinator()
 
     // Handles internal sites of web extenions
     let internalSiteHandler = WebExtensionInternalSiteHandler()
@@ -391,20 +391,19 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
     }
-/*
-    func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext, replyHandler: ((Any?, (any Error)?) -> Void)) {
-        // Uncomment when sending messages is implemented in the NativeMessagingHandler
-//        try nativeMessagingHandler.webExtensionController(controller,
-//                                                          sendMessage: message,
-//                                                          to: applicationIdentifier,
-//                                                          for: extensionContext)
-        replyHandler(nil, nil)
-    }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, connectUsingMessagePort port: WKWebExtension.MessagePort!, for extensionContext: WKWebExtensionContext!) async throws {
-        try await nativeMessagingHandler.webExtensionController(controller, connectUsingMessagePort: port, for: extensionContext)
+    func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {
+
+        try await nativeMessagingCoordinator.webExtensionController(controller,
+                                                          sendMessage: message,
+                                                          to: applicationIdentifier,
+                                                          for: extensionContext)
     }
-*/
+/*
+    func webExtensionController(_ controller: WKWebExtensionController, connectUsing port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) async throws {
+
+        try nativeMessagingCoordinator.webExtensionController(controller, connectUsingMessagePort: port, for: extensionContext)
+    }*/
 }
 
 @available(macOS 15.4, *)

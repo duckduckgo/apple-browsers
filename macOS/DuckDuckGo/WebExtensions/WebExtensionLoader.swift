@@ -37,6 +37,11 @@ final class WebExtensionLoader: WebExtensionLoading {
         case failedToFindContextForPath(path: String)
     }
 
+    func bundle(from path: String) -> Bundle? {
+        let url = URL(fileURLWithPath: path, isDirectory: true)
+        return Bundle(url: url)
+    }
+
     @MainActor
     func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext {
         guard let extensionURL = URL(string: path) else {
@@ -44,9 +49,31 @@ final class WebExtensionLoader: WebExtensionLoading {
             throw WebExtensionLoaderError.failedToCreateURLFromPath(path: path)
         }
 
-        let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+        let webExtension: WKWebExtension
+
+        if path.hasSuffix(".appex"),
+           let bundle = Bundle(url: extensionURL) {
+
+            // Loading from the bundle is best to support native messaging automagically
+            webExtension = try await WKWebExtension(appExtensionBundle: bundle)
+            let context = makeContext(for: webExtension, at: path)
+            try controller.load(context)
+
+            return context
+        } else {
+            webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
+        }
+
+        // let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
         let context = makeContext(for: webExtension, at: path)
         try controller.load(context)
+
+        let permissions: [WKWebExtension.Permission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
+            WKWebExtension.Permission($0)
+        }
+        for permission in permissions {
+            context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
+        }
         return context
     }
 

@@ -649,7 +649,7 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             return featureFlagger.isFeatureOn(.newTabPagePerTab) ? tabViewModel.tab.webView : newTabPageWebViewModel.webView
         case .webExtensionUrl(let url):
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
             if #available(macOS 15.4, *),
                let context = WebExtensionManager.shared.extensionContext(for: url),
                let configuration = context.webViewConfiguration {

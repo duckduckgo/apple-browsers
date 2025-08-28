@@ -25,14 +25,14 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
 
-    private let installExtensionMenuItem = NSMenuItem(title: "Install web extension...", action: #selector(WebExtensionsDebugMenu.selectAndLoadWebExtension))
+    private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
 
     init(webExtensionManager: WebExtensionManaging = WebExtensionManager.shared) {
         self.webExtensionManager = webExtensionManager
         super.init(title: "")
 
-        installExtensionMenuItem.target = self
+        installExtensionMenuItem.submenu = makeInstallSubmenu()
         installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
         uninstallAllExtensionsMenuItem.target = self
         uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
@@ -54,6 +54,26 @@ final class WebExtensionsDebugMenu: NSMenu {
                                                   webExtensionName: name))
             }
         }
+    }
+
+    private func makeInstallSubmenu() -> NSMenu {
+        let submenu = NSMenu()
+
+        let browseItem = NSMenuItem(title: "Other...", action: #selector(selectAndLoadWebExtension))
+        browseItem.target = self
+        submenu.addItem(browseItem)
+
+        submenu.addItem(.separator())
+
+        let bitwardenItem = NSMenuItem(title: "Bitwarden", action: #selector(installBitwardenExtension))
+        bitwardenItem.target = self
+        submenu.addItem(bitwardenItem)
+
+        let onePasswordItem = NSMenuItem(title: "1Password", action: #selector(installOnePasswordExtension))
+        onePasswordItem.target = self
+        submenu.addItem(onePasswordItem)
+
+        return submenu
     }
 
     required init(coder: NSCoder) {
@@ -83,6 +103,20 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     @objc func uninstallAllExtensions() {
         webExtensionManager.uninstallAllExtensions()
+    }
+
+    @objc func installBitwardenExtension() {
+        let path = "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"
+        Task {
+            await webExtensionManager.installExtension(path: path)
+        }
+    }
+
+    @objc func installOnePasswordExtension() {
+        let path = "file:///Applications/1Password%20for%20Safari.app/Contents/PlugIns/1Password.appex"
+        Task {
+            await webExtensionManager.installExtension(path: path)
+        }
     }
 
 }

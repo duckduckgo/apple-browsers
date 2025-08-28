@@ -78,7 +78,7 @@ final class MainWindowController: NSWindowController {
         subscribeToFullScreenToolbarChanges()
         subscribeToKeyWindow()
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didOpenWindow(self)
         }
@@ -307,7 +307,7 @@ extension MainWindowController: NSWindowDelegate {
             Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
         }
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didFocusWindow(self)
         }
@@ -442,7 +442,7 @@ extension MainWindowController: NSWindowDelegate {
         _=Unmanaged.passRetained(self).autorelease()
         Application.appDelegate.windowControllersManager.unregister(self)
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didCloseWindow(self)
         }

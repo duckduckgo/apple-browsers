@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
 
 import WebKit
 

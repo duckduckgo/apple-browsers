@@ -33,7 +33,7 @@ final class TabCollection: NSObject {
     func append(tab: Tab) {
         tabs.append(tab)
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didOpenTab(tab)
         }
@@ -48,7 +48,7 @@ final class TabCollection: NSObject {
         }
 
         tabs.insert(tab, at: index)
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didOpenTab(tab)
         }
@@ -124,7 +124,7 @@ final class TabCollection: NSObject {
             keepLocalHistory(of: tabs[index])
         }
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didCloseTab(tabs[index], windowIsClosing: false)
         }
@@ -135,7 +135,7 @@ final class TabCollection: NSObject {
         for i in range {
             keepLocalHistory(of: tabs[i])
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
             if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didCloseTab(tabs[i], windowIsClosing: false)
             }
@@ -170,7 +170,7 @@ final class TabCollection: NSObject {
         let oldTab = tabs[index]
         tabs[index] = tab
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didReplaceTab(oldTab, with: tab)
         }

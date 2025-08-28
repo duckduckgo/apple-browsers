@@ -779,7 +779,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             Task { @MainActor in
                 await WebExtensionManager.shared.loadInstalledExtensions()

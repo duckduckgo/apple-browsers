@@ -808,7 +808,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
             }
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
             if #available(macOS 15.4, *) {
                 NSMenuItem.separator()
                 NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu())

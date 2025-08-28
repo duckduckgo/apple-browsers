@@ -328,7 +328,7 @@ final class NavigationBarViewController: NSViewController {
         addDebugNotificationListeners()
 #endif
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+#if WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *), !burnerMode.isBurner {
             Task { @MainActor in
                 await WebExtensionNavigationBarUpdater(container: menuButtons).runUpdateLoop()

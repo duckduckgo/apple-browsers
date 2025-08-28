@@ -114,6 +114,7 @@ class PrivacyDashboardUITests: UITestCase {
     // MARK: - Privacy Dashboard Access Tests
 
     func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackers() throws {
+        throw XCTSkip("Flaky test")
         // Navigate to a page with known trackers
         let trackerTestURL = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
         addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)

@@ -134,19 +134,16 @@ extension XCUIElement {
         XCTAssertTrue(self.exists, "Control should exist before toggling")
         if let valueString = self.value as? String {
             let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { self.click() }
-            return
+            if isOn == enabled { return }
         } else if let valueNumber = self.value as? NSNumber {
             let isOn = valueNumber.intValue != 0
-            if isOn != enabled { self.click() }
-            return
+            if isOn == enabled { return }
         } else {
             XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
         }
         if !isHittable {
             ensureHittable(self)
         }
-        // Fallback
         self.click()
     }
 

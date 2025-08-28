@@ -30,7 +30,7 @@ enum WebExtensionIdentifier {
         }
 
         switch bundleId {
-        case "com.bitwarden.desktop", "com.8bit.bitwarden":
+        case "com.bitwarden.desktop.safari":
             // Could add additional validation here (entitlements, version, etc.)
             return .bitwarden
         default:

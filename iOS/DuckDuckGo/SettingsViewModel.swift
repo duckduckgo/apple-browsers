@@ -126,6 +126,10 @@ final class SettingsViewModel: ObservableObject {
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
+    
+    var isRefreshButtonPositionEnabled: Bool {
+        featureFlagger.isFeatureOn(.refreshButtonPosition)
+    }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false

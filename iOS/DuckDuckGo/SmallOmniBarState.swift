@@ -222,7 +222,7 @@ struct SmallOmniBarState {
         let showBackground = true
         let showClear = false
         var showAbort: Bool { isLoading }
-        var showRefresh: Bool { return !isLoading && dependencies.isRefreshButtonEnabledInSettings }
+        var showRefresh: Bool { return !isLoading && dependencies.isRefreshButtonEnabled }
         let showShare: Bool = true
         let showMenu = false
         let showSettings = false
@@ -293,7 +293,10 @@ extension OmnibarDependencyProvider {
         return false
     }
     
-    var isRefreshButtonEnabledInSettings: Bool {
+    var isRefreshButtonEnabled: Bool {
+        guard featureFlagger.isFeatureOn(.refreshButtonPosition) else {
+            return true
+        }
         return appSettings.currentRefreshButtonPosition.isEnabledForAddressBar
     }
 }

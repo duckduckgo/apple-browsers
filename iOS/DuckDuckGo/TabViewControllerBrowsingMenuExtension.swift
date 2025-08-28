@@ -203,10 +203,10 @@ extension TabViewController {
             entries.append(entry)
         }
 
-        if appSettings.currentRefreshButtonPosition.isEnabledForBrowsingMenu {
+        if featureFlagger.isFeatureOn(.refreshButtonPosition) && appSettings.currentRefreshButtonPosition.isEnabledForBrowsingMenu {
             let refreshEntry = BrowsingMenuEntry.regular(name: UserText.actionRefreshPage,
-                                                        image: DesignSystemImages.Glyphs.Size16.reload,
-                                                        action: { [weak self] in
+                                                         image: DesignSystemImages.Glyphs.Size16.reload,
+                                                         action: { [weak self] in
                 guard let self = self else { return }
                 self.reload()
             })

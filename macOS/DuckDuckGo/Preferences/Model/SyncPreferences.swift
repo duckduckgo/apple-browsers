@@ -189,16 +189,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified
 
-        let syncSettingsHandler = SyncDialogController(
-            syncService: syncService,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: userAuthenticator,
-            syncPausedStateManager: syncPausedStateManager,
-            connectionControllerFactory: connectionControllerFactory,
-            featureFlagger: featureFlagger
-        )
-
-        self.syncSettingsHandler = DeviceSyncCoordinator(managementDialogModel: managementDialogModel, dialogController: syncSettingsHandler) ?? syncSettingsHandler
+        self.syncSettingsHandler = DeviceSyncCoordinator(syncService: syncService, syncPausedStateManager: syncPausedStateManager)
 
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
 

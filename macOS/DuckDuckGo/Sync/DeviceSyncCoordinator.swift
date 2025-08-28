@@ -42,12 +42,9 @@ final class DeviceSyncCoordinator {
     var cancellable: AnyCancellable?
 
     @MainActor
-    init?(managementDialogModel: ManagementDialogModel = .init(), dialogController: SyncDialogController? = nil) {
+    init(managementDialogModel: ManagementDialogModel = .init(), syncService: DDGSyncing, syncPausedStateManager: any SyncPausedStateManaging) {
         self.managementDialogModel = managementDialogModel
-        guard let dialogController = dialogController ?? Self.createDialogController(managementDialogModel: managementDialogModel) else {
-            return nil
-        }
-        self.dialogController = dialogController
+        self.dialogController = SyncDialogController(syncService: syncService, managementDialogModel: managementDialogModel, syncPausedStateManager: syncPausedStateManager)
         dialogController.coordinationDelegate = self
     }
 
@@ -77,16 +74,6 @@ final class DeviceSyncCoordinator {
         parentWindowController.window?.beginSheet(syncWindow) { _ in
             completion?()
         }
-    }
-
-    @MainActor
-    private static func createDialogController(managementDialogModel: ManagementDialogModel) -> SyncDialogController? {
-        guard let syncService = NSApp.delegateTyped.syncService, let errorHandler = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler else {
-            assertionFailure("Sync: Core dependencies not available")
-            return nil
-        }
-
-        return SyncDialogController(syncService: syncService, managementDialogModel: managementDialogModel, syncPausedStateManager: errorHandler)
     }
 }
 
@@ -160,5 +147,17 @@ extension DeviceSyncCoordinator: SyncSettingsViewHandling {
     func recoverDataPressed() async {
         presentDialog()
         await dialogController.recoverDataPressed()
+    }
+}
+
+extension DeviceSyncCoordinator {
+
+    @MainActor
+    convenience init?() {
+        guard let syncService = NSApp.delegateTyped.syncService, let errorHandler = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler else {
+            assertionFailure("Sync: Core dependencies not available")
+            return nil
+        }
+        self.init(syncService: syncService, syncPausedStateManager: errorHandler)
     }
 }

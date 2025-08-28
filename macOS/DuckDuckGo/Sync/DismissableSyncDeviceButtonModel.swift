@@ -131,12 +131,12 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         source: SyncDevicePromoSource,
         keyValueStore: KeyValueStoring,
         authStatePublisher: AnyPublisher<SyncAuthState, Never>,
-        syncLauncher: SyncDeviceFlowLaunching? = nil,
+        syncLauncher: SyncDeviceFlowLaunching?,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     ) {
         self.source = source
         self.keyValueStore = keyValueStore
-        self.syncLauncher = syncLauncher ?? DeviceSyncCoordinator()
+        self.syncLauncher = syncLauncher
         self.featureFlagger = featureFlagger
         authStatePublisher
             .receive(on: DispatchQueue.main)
@@ -208,12 +208,15 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
 extension DismissableSyncDeviceButtonModel {
     convenience init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring) {
         let authStatePublisher: AnyPublisher<SyncAuthState, Never>
-        if let syncService = NSApp.delegateTyped.syncService {
+        let syncLauncher: SyncDeviceFlowLaunching?
+        if let syncService = NSApp.delegateTyped.syncService, let syncPausedStateManager = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler{
             authStatePublisher = syncService.authStatePublisher
+            syncLauncher = DeviceSyncCoordinator(syncService: syncService, syncPausedStateManager: syncPausedStateManager)
         } else {
             authStatePublisher = Just<SyncAuthState>(.initializing).eraseToAnyPublisher()
+            syncLauncher = nil
         }
-        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher)
+        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher, syncLauncher: syncLauncher)
     }
 }
 

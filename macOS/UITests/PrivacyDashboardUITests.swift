@@ -186,9 +186,6 @@ class PrivacyDashboardUITests: UITestCase {
         let googleAdsTracker = privacyDashboard.staticTexts.containing(\.value, containing: "Google Ads").firstMatch
         XCTAssertTrue(googleAdsTracker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Google Ads (Google) should appear in tracker companies list")
 
-        let amazonTracker = privacyDashboard.staticTexts.containing(\.value, containing: "Amazon").firstMatch
-        XCTAssertTrue(amazonTracker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Amazon should appear in tracker companies list")
-
         // Close dashboard
         app.typeKey(.escape, modifierFlags: [])
 

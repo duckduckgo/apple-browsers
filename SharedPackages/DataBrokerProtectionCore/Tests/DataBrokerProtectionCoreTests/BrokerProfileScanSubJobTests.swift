@@ -115,7 +115,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                             url: "databroker.com",
                                             steps: [Step](),
                                             version: "1.0",
-                                            schedulingConfig:config,
+                                            schedulingConfig: config,
                                             optOutUrl: "",
                                             eTag: "",
                                             removedAt: nil)

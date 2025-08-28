@@ -361,16 +361,14 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
 
         // Add some test data to v7 database (manual insert without removedAt column)
         let v7BrokerId: Int64 = try v7Provider.db.write { db in
-            try db.execute(sql: """
-                INSERT INTO broker (name, json, version, url, eTag) 
-                VALUES (?, ?, ?, ?, ?)
-                """, arguments: [
-                    "V7TestBroker",
-                    try! JSONSerialization.data(withJSONObject: [:], options: []),
-                    "1.0.0",
-                    "www.v7testbroker.com",
-                    "v7-etag"
-                ])
+            try db.execute(sql: "INSERT INTO broker (name, json, version, url, eTag) VALUES (?, ?, ?, ?, ?)",
+                           arguments: [
+                            "V7TestBroker",
+                            try! JSONSerialization.data(withJSONObject: [:], options: []),
+                            "1.0.0",
+                            "www.v7testbroker.com",
+                            "v7-etag"
+                           ])
             return db.lastInsertedRowID
         }
         let v7BrokerCount = try v7Provider.fetchAllBrokers().count

@@ -91,6 +91,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
             }
         } else {
             do {
+                // Create account
                 var accountCreation = WidePixel.MeasuredInterval.startingNow()
                 let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
                 accountCreation.complete()

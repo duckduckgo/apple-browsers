@@ -507,11 +507,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     /// Sets the appropriate origin for the subscription success tracking pixel.
     ///
     /// - Note: This method is asynchronous when extracting the origin from the webview URL.
-    @discardableResult private func setPixelOrigin(from message: WKScriptMessage) async -> String? {
+    private func setPixelOrigin(from message: WKScriptMessage) async {
         // Extract the origin from the webview URL to use for attribution pixel.
-        let origin = await originFrom(originalMessage: message)
-        subscriptionSuccessPixelHandler.origin = origin
-        return origin
+        subscriptionSuccessPixelHandler.origin = await originFrom(originalMessage: message)
     }
 }
 

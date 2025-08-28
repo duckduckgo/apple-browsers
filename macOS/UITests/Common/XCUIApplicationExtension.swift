@@ -27,6 +27,7 @@ enum BookmarkMode {
 extension XCUIApplication {
 
     private enum AccessibilityIdentifiers {
+        static let okButton = "OKButton"
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
@@ -341,41 +342,49 @@ extension XCUIApplication {
     /// Sets the "Always ask where to save files" toggle to a specific state
     func setAlwaysAskWhereToSaveFiles(enabled: Bool) {
         let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.alwaysAskWhereToSaveFilesCheckbox]
-        ensureHittable(checkbox)
-
-        checkbox.toggleCheckboxIfNeeded(to: enabled)
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
     }
 
     /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
     func setSwitchToNewTabWhenOpened(enabled: Bool) {
         let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.switchToNewTabWhenOpenedCheckbox]
-        ensureHittable(checkbox)
-
-        checkbox.toggleCheckboxIfNeeded(to: enabled)
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
     }
 
     /// Sets the "Automatically open the Downloads panel when downloads complete" preference
     func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
         let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.openPopupOnDownloadCompletionCheckbox]
-        ensureHittable(checkbox)
-
-        checkbox.toggleCheckboxIfNeeded(to: enabled)
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
     }
 
-    private func ensureHittable(_ element: XCUIElement) {
-        XCTAssertTrue(element.exists, "\(element) should exist in Preferences")
-        if !element.isHittable {
-            let scrollView = preferencesWindow.scrollViews.matching(element.elementType, identifier: element.identifier).firstMatch
-            XCTAssertTrue(scrollView.exists)
-            scrollView.swipeUp()
+    func ensureHittable(_ element: XCUIElement) {
+        let scrollView = preferencesWindow.scrollViews.containing(.checkBox, where: NSPredicate(value: true)).firstMatch
 
-            XCTAssertTrue(element.isHittable, "\(element) should be hittable after scrolling up")
+        if !element.exists || !element.isHittable {
+            // Get the element's frame and scroll view's frame
+            let elementFrame = element.frame
+            let scrollViewFrame = scrollView.frame
+            
+            // Calculate how much we need to scroll to make the element visible
+            // Add some padding to ensure the element is fully visible
+            let padding: CGFloat = 20
+            let delta = elementFrame.maxY - scrollViewFrame.maxY + padding
+            
+            // Create a normalized vector for the scroll amount
+            scrollView.scroll(byDeltaX: 0, deltaY: -delta)
         }
+        XCTAssertTrue(element.exists, "\(element) should exist in Preferences")
+        XCTAssertTrue(element.isHittable, "\(element) should be hittable after scrolling up")
     }
 
-    func setSaveDialogLocation(to location: URL, in saveSheet: XCUIElement? = nil) {
-        let saveSheet = saveSheet ?? sheets.containing(.button, identifier: "Save").firstMatch
-        XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    func setSaveDialogLocation(to location: URL, in sheet: XCUIElement? = nil) {
+        let saveSheet: XCUIElement
+        if let sheet {
+            saveSheet = sheet
+            XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        } else {
+            saveSheet = getOpenSaveSheet()
+        }
 
         // Open Go To Folder (Cmd+Shift+G)
         typeKey("g", modifierFlags: [.command, .shift])
@@ -406,9 +415,36 @@ extension XCUIApplication {
         XCTAssertTrue(chooseFolderSheet.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Location Chooser should disappear")
     }
 
-    func enterSaveDialogFileNameAndConfirm(_ fileName: String, in saveSheet: XCUIElement? = nil) {
-        let saveSheet = saveSheet ?? sheets.containing(.button, identifier: "Save").firstMatch
-        XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    private func getOpenSaveSheet() -> XCUIElement {
+        var saveSheet: XCUIElement!
+        wait(for: NSPredicate { _, _ in
+            let sheet = self.sheets.containing(.button, identifier: AccessibilityIdentifiers.okButton).firstMatch
+            let dialog = self.dialogs.containing(.button, identifier: AccessibilityIdentifiers.okButton).firstMatch
+            if dialog.exists {
+                saveSheet = dialog
+                return true
+            } else if sheet.exists {
+                saveSheet = sheet
+                return true
+            }
+            return false
+        }, timeout: UITests.Timeouts.elementExistence)
+
+        guard let saveSheet else {
+            XCTFail("Save dialog not found")
+            fatalError("Save dialog not found")
+        }
+        return saveSheet
+    }
+
+    func enterSaveDialogFileNameAndConfirm(_ fileName: String, in sheet: XCUIElement? = nil) {
+        let saveSheet: XCUIElement
+        if let sheet {
+            saveSheet = sheet
+            XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        } else {
+            saveSheet = getOpenSaveSheet()
+        }
 
         // Select All
         typeKey("a", modifierFlags: [.command])
@@ -416,7 +452,7 @@ extension XCUIApplication {
         typeText(fileName)
 
         // Click Save
-        let saveButton = saveSheet.buttons["Save"].firstMatch
+        let saveButton = saveSheet.buttons[AccessibilityIdentifiers.okButton].firstMatch
         XCTAssertTrue(saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(saveButton.isHittable)
         saveButton.click()

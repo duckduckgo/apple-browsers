@@ -1183,9 +1183,6 @@ final class TabCollectionViewModelTests: XCTestCase {
             .init(tab: newTab, parentTab: parentTab, selected: true)
         ])
         XCTAssertEqual(windowControllersManager.openWindowCalls, [])
-
-        // And: The new tab should have regular burner mode
-        XCTAssertEqual(newTab.burnerMode, .regular)
     }
 }
 

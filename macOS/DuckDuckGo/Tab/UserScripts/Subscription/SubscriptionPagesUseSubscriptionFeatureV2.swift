@@ -272,12 +272,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
                 // 4: Configure wide pixel and start the flow
                 let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
-                let data = SubscriptionPurchaseWidePixelData(
-                    purchasePlatform: .appStore,
-                    subscriptionIdentifier: subscriptionSelection.id,
-                    freeTrialEligible: freeTrialEligible,
-                    contextData: WidePixelContextData(name: origin ?? "")
-                )
+                let data = SubscriptionPurchaseWidePixelData(purchasePlatform: .appStore,
+                                                             subscriptionIdentifier: subscriptionSelection.id,
+                                                             freeTrialEligible: freeTrialEligible,
+                                                             contextData: WidePixelContextData(name: origin ?? ""))
+                self.widePixelData = data
 
                 if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
                     widePixel.startFlow(data)

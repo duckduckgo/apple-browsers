@@ -34,7 +34,7 @@ final class DDGErrorTests: XCTestCase {
         }
 
         static let errorDomain = "TestErrorDomain"
-        
+
         var errorCode: Int {
             switch self {
             case .simpleError(let code, _):
@@ -43,7 +43,7 @@ final class DDGErrorTests: XCTestCase {
                 return code
             }
         }
-        
+
         var underlyingError: Error? {
             switch self {
             case .simpleError:
@@ -52,57 +52,13 @@ final class DDGErrorTests: XCTestCase {
                 return SimpleError(message: "Underlying error")
             }
         }
-        
+
         var description: String {
             switch self {
             case .simpleError(_, let description):
                 return description
             case .errorWithUnderlying(_, let description):
                 return description
-            }
-        }
-    }
-
-    enum TestUIError: DDGErrorUIPresentable, CaseIterable {
-        case userFacingError
-        case userErrorWithDetails
-        
-        static let errorDomain = "TestUIErrorDomain"
-        
-        var errorCode: Int {
-            switch self {
-            case .userFacingError: return 300
-            case .userErrorWithDetails: return 400
-            }
-        }
-        
-        var underlyingError: Error? { nil }
-        
-        var description: String {
-            switch self {
-            case .userFacingError: return "Technical description"
-            case .userErrorWithDetails: return "Technical description"
-            }
-        }
-        
-        var localizedDescription: String {
-            switch self {
-            case .userFacingError: return "User-friendly description"
-            case .userErrorWithDetails: return "User-friendly description"
-            }
-        }
-        
-        var localizedFailureReason: String? {
-            switch self {
-            case .userFacingError: return "Something went wrong"
-            case .userErrorWithDetails: return nil
-            }
-        }
-        
-        var localizedRecoverySuggestion: String? {
-            switch self {
-            case .userFacingError: return "Try again later"
-            case .userErrorWithDetails: return nil
             }
         }
     }
@@ -115,7 +71,7 @@ final class DDGErrorTests: XCTestCase {
 
     func testDDGErrorBasicProperties() {
         let error = TestError.simpleError(code: 100, description: "Test error")
-        
+
         XCTAssertEqual(TestError.errorDomain, "TestErrorDomain")
         XCTAssertEqual(error.errorCode, 100)
         XCTAssertEqual(error.description, "Test error")
@@ -124,7 +80,7 @@ final class DDGErrorTests: XCTestCase {
 
     func testDDGErrorWithUnderlyingError() {
         let error = TestError.errorWithUnderlying(code: 200, description: "Main error")
-        
+
         XCTAssertEqual(error.errorCode, 200)
         XCTAssertEqual(error.description, "Main error")
         XCTAssertNotNil(error.underlyingError)
@@ -134,32 +90,9 @@ final class DDGErrorTests: XCTestCase {
         let error1 = TestError.simpleError(code: 100, description: "Same error")
         let error2 = TestError.simpleError(code: 100, description: "Same error")
         let error3 = TestError.simpleError(code: 101, description: "Different error")
-        
+
         XCTAssertEqual(error1, error2)
         XCTAssertNotEqual(error1, error3)
-    }
-
-    // MARK: - DDGErrorUIPresentable Tests
-
-    func testDDGErrorUIPresentableBasicProperties() {
-        let error = TestUIError.userFacingError
-        
-        XCTAssertEqual(TestUIError.errorDomain, "TestUIErrorDomain")
-        XCTAssertEqual(error.errorCode, 300)
-        XCTAssertEqual(error.description, "Technical description")
-        XCTAssertEqual(error.localizedDescription, "User-friendly description")
-        XCTAssertEqual(error.localizedFailureReason, "Something went wrong")
-        XCTAssertEqual(error.localizedRecoverySuggestion, "Try again later")
-    }
-
-    func testDDGErrorUIPresentableWithOptionalValues() {
-        let error = TestUIError.userErrorWithDetails
-        
-        XCTAssertEqual(error.errorCode, 400)
-        XCTAssertEqual(error.description, "Technical description")
-        XCTAssertEqual(error.localizedDescription, "User-friendly description")
-        XCTAssertNil(error.localizedFailureReason)
-        XCTAssertNil(error.localizedRecoverySuggestion)
     }
 
     // MARK: - Errors Chain Tests
@@ -167,7 +100,7 @@ final class DDGErrorTests: XCTestCase {
     func testErrorsChainWithSingleError() {
         let error = TestError.simpleError(code: 100, description: "Single error")
         let chain = error.errorsChain
-        
+
         XCTAssertEqual(chain.count, 1)
         XCTAssertTrue(chain[0] is TestError)
         XCTAssertEqual((chain[0] as! TestError).errorCode, 100)
@@ -175,9 +108,9 @@ final class DDGErrorTests: XCTestCase {
 
     func testErrorsChainWithMultipleDDGErrors() {
         let error = TestError.errorWithUnderlying(code: 3, description: "Top error")
-        
+
         let chain = error.errorsChain
-        
+
         XCTAssertEqual(chain.count, 2)
         XCTAssertEqual((chain[0] as! TestError).errorCode, 3)
         XCTAssertTrue(chain[1] is SimpleError)
@@ -185,9 +118,9 @@ final class DDGErrorTests: XCTestCase {
 
     func testErrorsChainWithMixedErrorTypes() {
         let ddgError = TestError.errorWithUnderlying(code: 100, description: "DDG error")
-        
+
         let chain = ddgError.errorsChain
-        
+
         XCTAssertEqual(chain.count, 2)
         XCTAssertTrue(chain[0] is TestError)
         XCTAssertTrue(chain[1] is SimpleError)
@@ -200,24 +133,24 @@ final class DDGErrorTests: XCTestCase {
     func testErrorsChainDescriptionWithSingleError() {
         let error = TestError.simpleError(code: 100, description: "Single error")
         let description = error.errorsChainDebugDescription
-        
+
         XCTAssertEqual(description, "- Single error")
     }
 
     func testErrorsChainDescriptionWithMultipleErrors() {
         let error = TestError.errorWithUnderlying(code: 3, description: "Top error")
-        
+
         let description = error.errorsChainDebugDescription
         let expected = "- Top error\n- SimpleError(message: \"Underlying error\")"
-        
+
         XCTAssertEqual(description, expected)
     }
 
     func testErrorsChainDescriptionWithMixedErrorTypes() {
         let ddgError = TestError.errorWithUnderlying(code: 100, description: "DDG error")
-        
+
         let description = ddgError.errorsChainDebugDescription
-        
+
         XCTAssertTrue(description.contains("- DDG error"))
         XCTAssertTrue(description.contains("- SimpleError(message: \"Underlying error\")"))
     }
@@ -226,9 +159,9 @@ final class DDGErrorTests: XCTestCase {
 
     func testDDGErrorUserInfo() {
         let error = TestError.errorWithUnderlying(code: 100, description: "Main error")
-        
+
         let userInfo = error.errorUserInfo
-        
+
         XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Main error")
         XCTAssertNotNil(userInfo[NSUnderlyingErrorKey])
         XCTAssertTrue(userInfo[NSUnderlyingErrorKey] is SimpleError)
@@ -236,34 +169,10 @@ final class DDGErrorTests: XCTestCase {
 
     func testDDGErrorUserInfoWithoutUnderlyingError() {
         let error = TestError.simpleError(code: 100, description: "Main error")
-        
+
         let userInfo = error.errorUserInfo
-        
+
         XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Main error")
-        XCTAssertNotNil(userInfo[NSUnderlyingErrorKey]) // Should be Any, not nil
-    }
-
-    func testDDGErrorUIPresentableUserInfo() {
-        let error = TestUIError.userFacingError
-        
-        let userInfo = error.errorUserInfo
-        
-        XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Technical description")
-        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "User-friendly description")
-        XCTAssertEqual(userInfo[NSLocalizedFailureErrorKey] as? String, "Something went wrong")
-        XCTAssertEqual(userInfo[NSLocalizedRecoverySuggestionErrorKey] as? String, "Try again later")
-        XCTAssertNotNil(userInfo[NSUnderlyingErrorKey])
-    }
-
-    func testDDGErrorUIPresentableUserInfoWithOptionalValues() {
-        let error = TestUIError.userErrorWithDetails
-        
-        let userInfo = error.errorUserInfo
-        
-        XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Technical description")
-        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "User-friendly description")
-        XCTAssertNotNil(userInfo[NSLocalizedFailureErrorKey]) // Should be Any, not nil
-        XCTAssertNotNil(userInfo[NSLocalizedRecoverySuggestionErrorKey]) // Should be Any, not nil
         XCTAssertNotNil(userInfo[NSUnderlyingErrorKey]) // Should be Any, not nil
     }
 }

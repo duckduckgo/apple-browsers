@@ -54,6 +54,11 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
     var shouldOpenAIChatInSidebar: Bool { get }
 
+    /// This property determines whether websites should send page context to the AI Chat sidebar.
+    ///
+    /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
+    var isPageContextEnabled: Bool { get }
+
     /// This property validates user settings to determine if the text summarization
     /// feature should be presented to the user.
     ///
@@ -112,6 +117,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     var shouldOpenAIChatInSidebar: Bool {
         shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
+    }
+
+    var isPageContextEnabled: Bool {
+        shouldDisplayAnyAIChatFeature && storage.isPageContextEnabled
     }
 
     init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {

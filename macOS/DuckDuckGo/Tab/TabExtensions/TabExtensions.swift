@@ -250,6 +250,7 @@ extension TabExtensionsBuilder {
                                     webViewPublisher: args.webViewFuture,
                                     tabID: args.tabID,
                                     aiChatSidebarProvider: dependencies.aiChatSidebarProvider,
+                                    aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
                                     isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 

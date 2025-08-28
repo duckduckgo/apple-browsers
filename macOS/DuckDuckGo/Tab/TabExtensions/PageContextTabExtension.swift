@@ -33,6 +33,7 @@ final class PageContextTabExtension {
     private var userScriptCancellables = Set<AnyCancellable>()
     private let tabID: TabIdentifier
     private let aiChatSidebarProvider: AIChatSidebarProviding
+    private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
     private var cachedPageContext: AIChatPageContextData?
 
@@ -48,10 +49,12 @@ final class PageContextTabExtension {
         webViewPublisher: some Publisher<WKWebView, Never>,
         tabID: TabIdentifier,
         aiChatSidebarProvider: AIChatSidebarProviding,
+        aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
         isLoadedInSidebar: Bool
     ) {
         self.tabID = tabID
         self.aiChatSidebarProvider = aiChatSidebarProvider
+        self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
 
         webViewPublisher.sink { [weak self] webView in
@@ -87,7 +90,10 @@ final class PageContextTabExtension {
         pageContextUserScript.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                self?.handle(pageContext)
+                guard let self, aiChatMenuConfiguration.isPageContextEnabled else {
+                    return
+                }
+                handle(pageContext)
             }
             .store(in: &userScriptCancellables)
     }
@@ -104,14 +110,14 @@ final class PageContextTabExtension {
 
 extension PageContextTabExtension: NavigationResponder {
     func navigationDidFinish(_ navigation: Navigation) {
-        guard !isLoadedInSidebar else {
+        guard !isLoadedInSidebar, aiChatMenuConfiguration.isPageContextEnabled else {
             return
         }
         pageContextUserScript?.collect()
     }
 
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
-        guard !isLoadedInSidebar, navigationType != .anchorNavigation, navigationType != .sessionStateReplace else {
+        guard !isLoadedInSidebar, aiChatMenuConfiguration.isPageContextEnabled, navigationType != .anchorNavigation, navigationType != .sessionStateReplace else {
             return
         }
         pageContextUserScript?.collect()

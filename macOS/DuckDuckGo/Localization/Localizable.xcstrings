@@ -18686,7 +18686,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored"
+            "value" : "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored."
           }
         },
         "es" : {
@@ -32180,7 +32180,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your session won't be restored if you're browsing in a Fire Window."
+            "value" : "Fire Windows won’t be restored with your session."
           }
         }
       }

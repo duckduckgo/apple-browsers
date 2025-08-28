@@ -21,6 +21,7 @@
 final class SessionRestorePromptCoordinatorMock: SessionRestorePromptCoordinating {
     var uiReady: Bool = false
     var sessionPromptShown: Bool = false
+    var isPromptShowing: Bool = false
 
     func markUIReady() {
         uiReady = true

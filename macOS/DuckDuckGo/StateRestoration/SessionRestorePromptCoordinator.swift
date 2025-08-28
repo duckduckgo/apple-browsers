@@ -18,10 +18,12 @@
 
 import Foundation
 import BrowserServicesKit
+import PixelKit
 
 protocol SessionRestorePromptCoordinating {
     func markUIReady()
     func showRestoreSessionPrompt(restoreAction: @escaping (Bool) -> Void)
+    var isPromptShowing: Bool { get }
 }
 
 final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
@@ -30,12 +32,24 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
         case restoreNeeded((Bool) -> Void)
         case uiReady
         case promptShown
+        case promptDismissed
     }
 
+    private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
     private var state: State = .initial
 
-    init(featureFlagger: FeatureFlagger) {
+    var isPromptShowing: Bool {
+        if case .promptShown = state {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    init(pixelFiring: PixelFiring?,
+         featureFlagger: FeatureFlagger) {
+        self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
     }
 
@@ -64,7 +78,17 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
     private func showPrompt(with restoreAction: @escaping (Bool) -> Void) {
         guard featureFlagger.isFeatureOn(.restoreSessionPrompt) else { return }
         state = .promptShown
+        let restoreAction = { [weak self] restoreSession in
+            self?.state = .promptDismissed
+            if restoreSession {
+                self?.pixelFiring?.fire(SessionRestorePromptPixel.promptDismissedWithRestore)
+            } else {
+                self?.pixelFiring?.fire(SessionRestorePromptPixel.promptDismissedWithoutRestore)
+            }
+            restoreAction(restoreSession)
+        }
         NotificationCenter.default.post(name: .sessionRestorePromptShouldBeShown, object: restoreAction)
+        pixelFiring?.fire(SessionRestorePromptPixel.promptShown)
     }
 }
 

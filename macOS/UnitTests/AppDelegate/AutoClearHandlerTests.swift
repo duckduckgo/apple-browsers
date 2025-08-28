@@ -58,7 +58,8 @@ class AutoClearHandlerTests: XCTestCase {
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
+                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    pixelFiring: nil)
         handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                    startupPreferences: startupPreferences,
                                    fireViewModel: fireViewModel,

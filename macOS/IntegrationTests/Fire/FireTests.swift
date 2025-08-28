@@ -184,7 +184,8 @@ final class FireTests: XCTestCase {
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
+                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
@@ -205,7 +206,8 @@ final class FireTests: XCTestCase {
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
-                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator)
+                                                                    sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
+                                                                    pixelFiring: nil)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),

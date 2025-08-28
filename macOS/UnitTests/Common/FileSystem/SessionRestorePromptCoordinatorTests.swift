@@ -18,18 +18,21 @@
 
 import XCTest
 import BrowserServicesKit
+import PixelKitTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SessionRestorePromptCoordinatorTests: XCTestCase {
 
     private var coordinator: SessionRestorePromptCoordinator!
+    private var mockPixelKit: PixelKitMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var notificationCenter: NotificationCenter!
     private var receivedNotifications: [Notification] = []
 
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
-        coordinator = SessionRestorePromptCoordinator(featureFlagger: mockFeatureFlagger)
+        mockPixelKit = PixelKitMock()
+        coordinator = SessionRestorePromptCoordinator(pixelFiring: mockPixelKit, featureFlagger: mockFeatureFlagger)
         notificationCenter = NotificationCenter.default
         receivedNotifications = []
 
@@ -48,6 +51,7 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         notificationCenter = nil
         coordinator = nil
         mockFeatureFlagger = nil
+        mockPixelKit = nil
         receivedNotifications = []
     }
 
@@ -156,5 +160,53 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         coordinator.markUIReady()
 
         XCTAssertEqual(receivedNotifications.count, 1)
+    }
+
+    // MARK: - Pixels
+
+    func testWhenPromptIsShown_ThenPixelIsFired() {
+        mockPixelKit.expectedFireCalls = [.init(pixel: SessionRestorePromptPixel.promptShown, frequency: .standard)]
+        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
+        coordinator.markUIReady()
+
+        coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
+
+        XCTAssertEqual(mockPixelKit.expectedFireCalls, mockPixelKit.actualFireCalls)
+    }
+
+    func testWhenPromptIsDismissedWithRestore_ThenPixelIsFired() {
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: SessionRestorePromptPixel.promptShown, frequency: .standard),
+            .init(pixel: SessionRestorePromptPixel.promptDismissedWithRestore, frequency: .standard)
+        ]
+        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
+        coordinator.markUIReady()
+        coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
+
+        if let notificationAction = receivedNotifications.first?.object as? (Bool) -> Void {
+            notificationAction(true)
+        } else {
+            XCTFail("Notification action is not of expected type")
+        }
+
+        XCTAssertEqual(mockPixelKit.expectedFireCalls, mockPixelKit.actualFireCalls)
+    }
+
+    func testWhenPromptIsDismissedWithoutRestore_ThenPixelIsFired() {
+        mockPixelKit.expectedFireCalls = [
+            .init(pixel: SessionRestorePromptPixel.promptShown, frequency: .standard),
+            .init(pixel: SessionRestorePromptPixel.promptDismissedWithoutRestore, frequency: .standard)
+        ]
+        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
+        coordinator.markUIReady()
+        coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
+
+        if let notificationAction = receivedNotifications.first?.object as? (Bool) -> Void {
+            notificationAction(false)
+        } else {
+            XCTFail("Notification action is not of expected type")
+        }
+
+        XCTAssertEqual(mockPixelKit.expectedFireCalls, mockPixelKit.actualFireCalls)
     }
 }

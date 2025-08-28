@@ -19,6 +19,7 @@
 import XCTest
 import Combine
 import PersistenceTestingUtils
+import PixelKitTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AppStateRestorationManagerTests: XCTestCase {
@@ -29,6 +30,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
     private var mockKeyValueStore: MockKeyValueFileStore!
     private var mockPromptCoordinator: SessionRestorePromptCoordinatorMock!
     private var appStateManager: AppStateRestorationManager!
+    private var mockPixelKit: PixelKitMock!
     private let terminationFlagKey = "appDidTerminateAsExpected"
 
     @MainActor
@@ -41,13 +43,15 @@ final class AppStateRestorationManagerTests: XCTestCase {
         mockStartupPreferences = StartupPreferences(persistor: persistor, appearancePreferences: appearancePreferences)
         mockKeyValueStore = try MockKeyValueFileStore()
         mockPromptCoordinator = SessionRestorePromptCoordinatorMock()
+        mockPixelKit = PixelKitMock()
 
         appStateManager = AppStateRestorationManager(
             fileStore: mockFileStore,
             service: mockService,
             startupPreferences: mockStartupPreferences,
             keyValueStore: mockKeyValueStore,
-            sessionRestorePromptCoordinator: mockPromptCoordinator
+            sessionRestorePromptCoordinator: mockPromptCoordinator,
+            pixelFiring: mockPixelKit
         )
     }
 
@@ -58,6 +62,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
         mockService = nil
         mockFileStore = nil
         mockPromptCoordinator = nil
+        mockPixelKit = nil
         super.tearDown()
     }
 
@@ -165,6 +170,28 @@ final class AppStateRestorationManagerTests: XCTestCase {
         XCTAssertNoThrow {
             self.appStateManager.applicationWillTerminate()
         }
+    }
+
+    // MARK: - Pixels
+
+    @MainActor
+    func testWhenAppDidTerminateUnexpectedly_ThenPixelIsFired() throws {
+        try mockKeyValueStore.set(false, forKey: terminationFlagKey)
+        mockPixelKit.expectedFireCalls = [.init(pixel: SessionRestorePromptPixel.unexpectedAppTerminationDetected, frequency: .standard)]
+
+        appStateManager.applicationDidFinishLaunching()
+
+        XCTAssertEqual(mockPixelKit.expectedFireCalls, mockPixelKit.actualFireCalls)
+    }
+
+    @MainActor
+    func testWhenAppIsTerminatedWithoutDismissingPrompt_ThenPixelIsFired() {
+        mockPromptCoordinator.isPromptShowing = true
+        mockPixelKit.expectedFireCalls = [.init(pixel: SessionRestorePromptPixel.appTerminatedWhilePromptShowing, frequency: .standard)]
+
+        appStateManager.applicationWillTerminate()
+
+        XCTAssertEqual(mockPixelKit.expectedFireCalls, mockPixelKit.actualFireCalls)
     }
 
     private func addMockSessionData() {

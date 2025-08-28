@@ -155,6 +155,7 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile()
 
         // Open Downloads popover and assert it's visible
+        openDownloadsPopup()
         XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let firstRow = table.cells.firstMatch
         XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))

@@ -360,7 +360,7 @@ extension XCUIApplication {
     func ensureHittable(_ element: XCUIElement) {
         let scrollView = preferencesWindow.scrollViews.containing(.checkBox, where: NSPredicate(value: true)).firstMatch
 
-        if !element.exists || !element.isHittable {
+        if !element.isHittable {
             // Get the element's frame and scroll view's frame
             let elementFrame = element.frame
             let scrollViewFrame = scrollView.frame
@@ -369,7 +369,6 @@ extension XCUIApplication {
             // Add some padding to ensure the element is fully visible
             let padding: CGFloat = 20
             let delta = elementFrame.maxY - scrollViewFrame.maxY + padding
-
             // Create a normalized vector for the scroll amount
             scrollView.scroll(byDeltaX: 0, deltaY: -delta)
         }

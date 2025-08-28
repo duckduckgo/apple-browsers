@@ -284,7 +284,7 @@ class SwitchBarTextEntryView: UIView {
             if proposedMaxY < actualThreshold {
                 heightConstraint?.constant = newHeight
             } else {
-                heightConstraint?.constant = actualThreshold - frame.minY
+                heightConstraint?.constant = max(Constants.minHeight, actualThreshold - frame.minY)
             }
 
         } else {

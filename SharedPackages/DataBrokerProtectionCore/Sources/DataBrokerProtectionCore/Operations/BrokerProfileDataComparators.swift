@@ -41,7 +41,7 @@ extension ScanJobData {
             return .other
         case .optOutRequested:
             return .confirmOptOut
-        case .matchRemovedByUser, .optOutSubmittedAndAwaitingEmailConfirmation:
+        case .matchRemovedByUser:
             return .other
         }
     }

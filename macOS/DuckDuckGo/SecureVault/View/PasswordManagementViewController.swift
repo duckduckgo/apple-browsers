@@ -1091,7 +1091,7 @@ final class PasswordManagementViewController: NSViewController {
             setUpEmptyStateMessageView()
         }
         emptyStateImportButton.isHidden = hideButton
-        emptyStateSyncButton.isHidden = hideButton && !syncButtonModel.shouldShowSyncButton
+        emptyStateSyncButton.isHidden = hideButton || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
         emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
         emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitle

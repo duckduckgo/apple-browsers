@@ -1013,6 +1013,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard didFinishLaunching else { return }
 
         fireDailyActiveUserPixel()
+        fireDailyFireWindowConfigurationPixel()
 
         initializeSync()
 
@@ -1046,6 +1047,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .legacyDaily)
 #endif
+    }
+
+    private func fireDailyFireWindowConfigurationPixel() {
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfiguration(
+            startupFireWindow: startupPreferences.startupWindowType == .fireWindow,
+            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowbyDefault,
+            fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
+        )), frequency: .daily)
     }
 
     private func initializeSync() {

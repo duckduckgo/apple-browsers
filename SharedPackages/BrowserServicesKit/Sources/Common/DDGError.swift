@@ -155,59 +155,6 @@ public protocol DDGError: Error, Equatable, CustomNSError {
     var description: String { get }
 }
 
-/// Extended error protocol for errors that need to be displayed to users.
-///
-/// This protocol extends `DDGError` with localized, user-friendly error information
-/// suitable for display in the application's user interface.
-///
-/// ## When to Use
-/// Implement this protocol when your error:
-/// - Will be displayed to users in alerts, error screens, or notifications
-/// - Needs localized messages for different languages
-/// - Requires user-friendly explanations and recovery suggestions
-///
-/// ## Requirements
-/// - All string properties should be localized using `NSLocalizedString`
-/// - Never include sensitive data in user-facing messages
-/// - Focus on actionable guidance rather than technical details
-public protocol DDGErrorUIPresentable: DDGError {
-
-    /// A localized, user-friendly description of the error.
-    ///
-    /// This is the primary message shown to users and should be:
-    /// - Clear and understandable to non-technical users
-    /// - Localized for the user's language
-    /// - Concise but informative
-    /// - Free of technical jargon
-    ///
-    /// Example: "Unable to connect to the internet" instead of "Network request failed with status 404"
-    var localizedDescription: String { get }
-
-    /// An optional localized explanation of why the error occurred.
-    ///
-    /// This provides additional context about the failure cause:
-    /// - More detailed than `localizedDescription`
-    /// - Helps users understand what went wrong
-    /// - Should be user-friendly, not technical
-    ///
-    /// Example: "Your internet connection appears to be offline" for a network error.
-    ///
-    /// - Returns: A localized explanation string, or `nil` if no additional reason is needed.
-    var localizedFailureReason: String? { get }
-
-    /// An optional localized suggestion for how the user can resolve the error.
-    ///
-    /// This provides actionable guidance to help users fix the problem:
-    /// - Specific steps the user can take
-    /// - Alternative actions if the primary solution fails
-    /// - Contact information if user action isn't sufficient
-    ///
-    /// Example: "Please check your internet connection and try again."
-    ///
-    /// - Returns: A localized recovery suggestion string, or `nil` if no suggestion is applicable.
-    var localizedRecoverySuggestion: String? { get }
-}
-
 // MARK: - Error Chain Traversal
 
 /// Extensions providing error chain traversal and debugging capabilities.
@@ -289,8 +236,16 @@ public extension DDGError /*CustomNSError*/ {
     /// integration with Cocoa error handling patterns.
     ///
     /// ## Included Keys
-    /// - `NSDebugDescriptionErrorKey`: The error's debug description
-    /// - `NSUnderlyingErrorKey`: The underlying error (if any)
+    /// - `NSDebugDescriptionErrorKey`: The error's description
+    /// - `NSUnderlyingErrorKey`: The underlying error (optional)
+    ///
+    /// It also provides additional localized information suitable for display to users. It includes all standard NSError
+    /// keys that the system uses for error presentation.
+    ///
+    /// ## Included Keys
+    /// - `NSLocalizedDescriptionKey`: Localized error description
+    /// - `NSLocalizedFailureErrorKey`: Localized failure reason (optional)
+    /// - `NSLocalizedRecoverySuggestionErrorKey`: Recovery suggestion (optional)
     ///
     /// ## Usage
     /// ```swift
@@ -306,44 +261,16 @@ public extension DDGError /*CustomNSError*/ {
     ///
     /// - Returns: A dictionary suitable for use as NSError userInfo.
     var errorUserInfo: [String: Any] {
-        [
+        var result = [
             NSDebugDescriptionErrorKey: description,
             NSUnderlyingErrorKey: underlyingError as Any
         ]
-    }
-}
 
-/// Extension providing enhanced NSError integration for user-presentable errors.
-public extension DDGErrorUIPresentable /*CustomNSError*/ {
-
-    /// Creates a comprehensive userInfo dictionary for user-presentable errors.
-    ///
-    /// This property extends the base DDGError userInfo with additional localized
-    /// information suitable for display to users. It includes all standard NSError
-    /// keys that the system uses for error presentation.
-    ///
-    /// ## Included Keys
-    /// - `NSDebugDescriptionErrorKey`: Technical description for debugging
-    /// - `NSUnderlyingErrorKey`: The underlying error (if any)
-    /// - `NSLocalizedDescriptionKey`: User-friendly error description
-    /// - `NSLocalizedFailureErrorKey`: Localized failure reason (if provided)
-    /// - `NSLocalizedRecoverySuggestionErrorKey`: Recovery suggestion (if provided)
-    ///
-    /// ## System Integration
-    /// When bridged to NSError, this userInfo enables:
-    /// - Proper error display in system alert dialogs
-    /// - Accessibility support for error messages
-    /// - Automatic localization handling
-    /// - Integration with system error reporting
-    ///
-    /// - Returns: A comprehensive dictionary suitable for user-facing NSError instances.
-    var errorUserInfo: [String: Any] {
-        [
-            NSDebugDescriptionErrorKey: description,
-            NSUnderlyingErrorKey: underlyingError as Any,
-            NSLocalizedDescriptionKey: localizedDescription,
-            NSLocalizedFailureErrorKey: localizedFailureReason as Any,
-            NSLocalizedRecoverySuggestionErrorKey: localizedRecoverySuggestion as Any
-        ]
+        if let localisedError = self as? LocalizedError {
+            result[NSLocalizedDescriptionKey] = localisedError.errorDescription
+            result[NSLocalizedFailureErrorKey] = localisedError.failureReason as Any
+            result[NSLocalizedRecoverySuggestionErrorKey] = localisedError.recoverySuggestion as Any
+        }
+        return result
     }
 }

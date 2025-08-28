@@ -63,50 +63,6 @@ final class DDGErrorTests: XCTestCase {
         }
     }
 
-    enum TestUIError: DDGErrorUIPresentable, CaseIterable {
-        case userFacingError
-        case userErrorWithDetails
-
-        static let errorDomain = "TestUIErrorDomain"
-
-        var errorCode: Int {
-            switch self {
-            case .userFacingError: return 300
-            case .userErrorWithDetails: return 400
-            }
-        }
-
-        var underlyingError: Error? { nil }
-
-        var description: String {
-            switch self {
-            case .userFacingError: return "Technical description"
-            case .userErrorWithDetails: return "Technical description"
-            }
-        }
-
-        var localizedDescription: String {
-            switch self {
-            case .userFacingError: return "User-friendly description"
-            case .userErrorWithDetails: return "User-friendly description"
-            }
-        }
-
-        var localizedFailureReason: String? {
-            switch self {
-            case .userFacingError: return "Something went wrong"
-            case .userErrorWithDetails: return nil
-            }
-        }
-
-        var localizedRecoverySuggestion: String? {
-            switch self {
-            case .userFacingError: return "Try again later"
-            case .userErrorWithDetails: return nil
-            }
-        }
-    }
-
     struct SimpleError: Error {
         let message: String
     }
@@ -137,29 +93,6 @@ final class DDGErrorTests: XCTestCase {
 
         XCTAssertEqual(error1, error2)
         XCTAssertNotEqual(error1, error3)
-    }
-
-    // MARK: - DDGErrorUIPresentable Tests
-
-    func testDDGErrorUIPresentableBasicProperties() {
-        let error = TestUIError.userFacingError
-
-        XCTAssertEqual(TestUIError.errorDomain, "TestUIErrorDomain")
-        XCTAssertEqual(error.errorCode, 300)
-        XCTAssertEqual(error.description, "Technical description")
-        XCTAssertEqual(error.localizedDescription, "User-friendly description")
-        XCTAssertEqual(error.localizedFailureReason, "Something went wrong")
-        XCTAssertEqual(error.localizedRecoverySuggestion, "Try again later")
-    }
-
-    func testDDGErrorUIPresentableWithOptionalValues() {
-        let error = TestUIError.userErrorWithDetails
-
-        XCTAssertEqual(error.errorCode, 400)
-        XCTAssertEqual(error.description, "Technical description")
-        XCTAssertEqual(error.localizedDescription, "User-friendly description")
-        XCTAssertNil(error.localizedFailureReason)
-        XCTAssertNil(error.localizedRecoverySuggestion)
     }
 
     // MARK: - Errors Chain Tests
@@ -240,30 +173,6 @@ final class DDGErrorTests: XCTestCase {
         let userInfo = error.errorUserInfo
 
         XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Main error")
-        XCTAssertNotNil(userInfo[NSUnderlyingErrorKey]) // Should be Any, not nil
-    }
-
-    func testDDGErrorUIPresentableUserInfo() {
-        let error = TestUIError.userFacingError
-
-        let userInfo = error.errorUserInfo
-
-        XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Technical description")
-        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "User-friendly description")
-        XCTAssertEqual(userInfo[NSLocalizedFailureErrorKey] as? String, "Something went wrong")
-        XCTAssertEqual(userInfo[NSLocalizedRecoverySuggestionErrorKey] as? String, "Try again later")
-        XCTAssertNotNil(userInfo[NSUnderlyingErrorKey])
-    }
-
-    func testDDGErrorUIPresentableUserInfoWithOptionalValues() {
-        let error = TestUIError.userErrorWithDetails
-
-        let userInfo = error.errorUserInfo
-
-        XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Technical description")
-        XCTAssertEqual(userInfo[NSLocalizedDescriptionKey] as? String, "User-friendly description")
-        XCTAssertNotNil(userInfo[NSLocalizedFailureErrorKey]) // Should be Any, not nil
-        XCTAssertNotNil(userInfo[NSLocalizedRecoverySuggestionErrorKey]) // Should be Any, not nil
         XCTAssertNotNil(userInfo[NSUnderlyingErrorKey]) // Should be Any, not nil
     }
 }

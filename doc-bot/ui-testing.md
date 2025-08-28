@@ -93,6 +93,78 @@ app = XCUIApplication.setUp(
 - **Privacy Subfeatures**: Control privacy functionality (e.g., `autoconsent-filterlist`, `tracker-allowlist`)
 - Both use separate environment variables and configuration systems
 
+### File Management in UI Tests
+
+The `UITestCase` base class provides built-in file management capabilities for handling downloads, temporary files, and other file operations during testing.
+
+**Important**: UI tests run in a sandboxed environment and cannot directly read or delete files from user directories using standard FileManager calls. For non-temp directories, use the `filesToCleanup` pattern that's handled in the base class `tearDown()`.
+
+#### Automatic File Cleanup
+
+All UI test classes automatically clean up tracked files after test completion:
+
+```swift
+class DownloadsUITests: UITestCase {
+    func testFileDownload() {
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let fileName = "test-file.json"
+        let filePath = downloadsDir.appendingPathComponent(fileName).path
+        
+        // Track file for automatic cleanup
+        trackForCleanup(filePath)
+        
+        // Perform download test...
+        // File will be automatically cleaned up after test completes
+    }
+}
+```
+
+#### Reading Files via Local Server
+
+Use `readFileViaLocalServer()` to read files that may have permission restrictions:
+
+```swift
+func testJSONFileContent() throws {
+    let filePath = "/Users/admin/Downloads/test-results.json"
+    
+    // Read file via local test server (bypasses permission issues)
+    let jsonData = try readFileViaLocalServer(filePath: filePath)
+    let results = try JSONDecoder().decode(TestResults.self, from: jsonData)
+    
+    // Validate file contents
+    XCTAssertFalse(results.items.isEmpty)
+}
+```
+
+#### File Management Best Practices
+
+```swift
+class FileBasedUITests: UITestCase {
+    func testCompleteFileWorkflow() throws {
+        // 1. Track all files that will be created
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("test-files")
+        trackForCleanup(tempDir.path)
+        
+        let downloadedFile = "/Users/admin/Downloads/results.json"
+        trackForCleanup(downloadedFile)
+        
+        // 2. Perform file operations
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        
+        // 3. Read files via server if needed
+        let fileData = try readFileViaLocalServer(filePath: downloadedFile)
+        
+        // 4. Files are automatically cleaned up in tearDown()
+    }
+}
+```
+
+#### Available Methods
+
+- **`trackForCleanup(_ path: String)`**: Track a file/directory for automatic cleanup
+- **`readFileViaLocalServer(filePath: String) throws -> Data`**: Read file via local test server
+- **Automatic cleanup**: All tracked files are cleaned up after each test via the base class `tearDown()`
+
 ## Element Access Patterns
 
 ### Accessibility IDs - The Golden Standard
@@ -180,6 +252,53 @@ func testDownloadFlow() {
     XCTAssertTrue(app.downloadButton.exists)
 }
 ```
+
+### Timeout Constants Usage
+
+**MANDATORY**: Always use `UITests.Timeouts` constants instead of hardcoded timeout values.
+
+```swift
+// ✅ CORRECT: Use semantic timeout constants
+XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Button should appear")
+XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Page should load")
+XCTAssertTrue(localContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Local server content should load")
+
+// ❌ INCORRECT: Hardcoded timeout values
+XCTAssertTrue(button.waitForExistence(timeout: 5.0), "Button should appear")
+XCTAssertTrue(pageContent.waitForExistence(timeout: 30.0), "Page should load")
+XCTAssertTrue(localContent.waitForExistence(timeout: 15.0), "Local server content should load")
+```
+
+**Available Timeout Constants**:
+- `UITests.Timeouts.elementExistence` (5 sec) - UI elements, buttons, text fields, dialogs
+- `UITests.Timeouts.navigation` (30 sec) - Page loads, network requests, external sites
+- `UITests.Timeouts.localTestServer` (15 sec) - Localhost connections, test server content
+- `UITests.Timeouts.fireAnimation` (30 sec) - Fire animation completion
+
+### Address Bar Validation Rules
+
+**MANDATORY**: Always use `app.addressBarValueActivatingIfNeeded()` for address bar validation and prefer exact matches over contains checks.
+
+```swift
+// ✅ CORRECT: Use helper method with exact match for known URLs
+XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://example.com/", "Should navigate to example.com")
+XCTAssertEqual(app.addressBarValueActivatingIfNeeded(), "https://duckduckgo.com/", "Should be on DuckDuckGo")
+
+// ❌ INCORRECT: Manual address bar access, partial comparison
+app.activateAddressBar()
+let addressBarValue = addressBarTextField.value as? String ?? ""
+XCTAssertTrue(addressBarValue.contains("example.com"), "Should be on example.com")
+
+// ❌ INCORRECT: Contains check for known exact URLs
+let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
+XCTAssertTrue(addressBarValue.contains("example.com"), "Should be on example.com") // Use XCTAssertEqual instead
+```
+
+**Address Bar Validation Guidelines**:
+- **Use exact matches** (`XCTAssertEqual`) for known static URLs
+- **Use contains checks** only for dynamic URLs (search results, localhost with ports)
+- **Always use** `app.addressBarValueActivatingIfNeeded()` helper method
+- **Never manually** call `app.activateAddressBar()` + `addressBarTextField.value`
 
 ### CRITICAL: XCUIElement Queries Are Always Live
 
@@ -466,6 +585,7 @@ extension XCUIApplication {
 
 **Available Extension Properties and Methods:**
 - `app.addressBar` → Address bar text field element (replaces manual `app.textFields["AddressBarViewController.addressBarTextField"]`)
+- `app.addressBarValueActivatingIfNeeded()` → Activate address bar and return its current value as String?
 - `app.enforceSingleWindow()` → Close all windows and open new one (replaces `setupSingleWindow()`)
 - `app.activateAddressBar()` → Activate address bar for input (replaces direct `Cmd+L`)
 - `app.openNewTab()` → Open new tab via `Cmd+T`
@@ -503,6 +623,183 @@ XCTAssertTrue(element2.waitForExistence(timeout: 5))  // Consecutive waits slow 
 Thread.sleep(forTimeInterval: 2.0)  // Unreliable
 Task.sleep(nanoseconds: 2_000_000_000)  // Same issue
 ```
+
+#### XCUIElement Property Waiting Extensions
+
+**NEW: Type-safe property waiting methods for more reliable UI tests:**
+
+```swift
+// ✅ EXCELLENT: Wait for element properties using key paths
+let addressBar = app.addressBar
+let button = app.buttons["TestButton"]
+
+// Wait for property to contain substring (case-insensitive)
+XCTAssertTrue(addressBar.wait(for: \.value, contains: "example.com", timeout: 10.0))
+XCTAssertTrue(button.wait(for: \.label, contains: "Submit"))
+
+// Wait for property to equal specific value
+XCTAssertTrue(button.wait(for: \.isEnabled, equals: true, timeout: 5.0))
+XCTAssertTrue(addressBar.wait(for: \.value, equals: "https://duckduckgo.com"))
+
+// Use in assertions with descriptive failure messages
+XCTAssertTrue(statusField.wait(for: \.value, equals: "1 of 4"), 
+              "Status field should show '1 of 4', but got: \(statusField.value ?? "nil")")
+```
+
+**Benefits of property waiting extensions:**
+- **Type-safe**: Uses Swift key paths instead of string predicates
+- **Flexible**: Works with any property (\.value, \.label, \.title, \.isEnabled, etc.)
+- **Reliable**: Built on XCTNSPredicateExpectation for proper waiting
+- **Debuggable**: Easy to add current value to failure messages
+
+#### XCUIElementQuery Filtering Extensions
+
+**Type-safe element filtering using key paths:**
+
+```swift
+// ✅ CORRECT: Filter elements using key paths
+let webView = app.webViews.firstMatch
+
+// Filter by substring (case-insensitive)
+let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
+let submitButtons = app.buttons.containing(\.label, containing: "Submit")
+
+// Filter by exact value  
+let enabledButtons = app.buttons.containing(\.isEnabled, equalTo: true)
+let specificText = webView.staticTexts.containing(\.value, equalTo: "Welcome").firstMatch
+let settingsWindow = app.windows.containing(\.title, equalTo: "Settings").firstMatch
+
+// Element matching patterns
+let stopMenuItem = app.menuItems.containing(\.title, equalTo: "Stop").firstMatch
+let backgroundTab = app.radioButtons.containing(\.title, equalTo: "Background Download").firstMatch
+
+// Replace old NSPredicate format strings  
+// ❌ OLD: webView.staticTexts.containing(NSPredicate(format: "value CONTAINS 'Example Domain'"))
+// ✅ NEW: webView.staticTexts.containing(\.value, containing: "Example Domain")
+```
+
+**Available XCUIElementQuery Methods**:
+- `containing(_:containing:)` - Filter elements where property contains substring
+- `containing(_:equalTo:)` - Filter elements where property equals value
+- `containing(_:where:)` - Filter elements containing specific element type with predicate
+- `matching(_:containing:)` - Alternative filtering method for contains
+- `matching(_:equalTo:)` - Alternative filtering method for equals
+- `element(matching:containing:)` - Get single element matching contains criteria
+- `element(matching:equalTo:)` - Get single element matching equals criteria
+
+#### NSPredicate KeyPath Extensions
+
+**Type-safe predicate construction for complex filtering:**
+
+```swift
+// ✅ CORRECT: Using .keyPath() method for predicate construction
+let webView = app.webViews.firstMatch
+
+// Complex element filtering with compound predicates
+let pdfElement = app.groups.containing(.staticText, where: .keyPath(\.value, beginsWith: "TestPDF")).firstMatch
+
+// Compound predicates combining multiple conditions
+let summaryGroup = webView.groups.containing(.keyPath(\.value, beginsWith: "1p navigation -")).firstMatch
+let headerGroup = summaryGroup.groups.containing(.staticText, where: .keyPath(\.value, beginsWith: "Blocked")).firstMatch
+
+// Advanced predicate construction with chaining
+let complexPredicate = NSPredicate.keyPath(\.elementType, equalTo: XCUIElement.ElementType.staticText.rawValue)
+    .and(.keyPath(\.value, beginsWith: "Expected"))
+
+let pathCell = tables.cells.containing(NSPredicate { element, _ in
+    guard let id = (element as? NSObject)?.value(forKey: #keyPath(XCUIElement.identifier)) as? String,
+          id.hasPrefix("/"),
+          URL(fileURLWithPath: id).standardizedFileURL.path == standardizedPath else { return false }
+    return true
+}).firstMatch
+
+// Window filtering patterns
+let namedWindow = app.windows.containing(NSPredicate(format: "title == %@", "Page Title")).firstMatch
+
+// Replace manual NSPredicate format strings
+// ❌ OLD: NSPredicate(format: "value CONTAINS %@ AND isEnabled == %@", "text", true)
+// ✅ NEW: .keyPath(\.value, contains: "text").and(.keyPath(\.isEnabled, equalTo: true))
+```
+
+**Available NSPredicate Static Methods**:
+
+**Equality and Membership**:
+- `.keyPath(_:equalTo:)` - Property equals specific value
+- `.keyPath(_:in: [values])` - Property in collection of values
+- `.keyPath(_:in: range)` - Property in numeric range
+
+**String Operations**:
+- `.keyPath(_:contains:)` - Property contains substring (case-insensitive)
+- `.keyPath(_:like:)` - Pattern matching with wildcards (* and ?)
+- `.keyPath(_:beginsWith:)` - Property starts with prefix
+- `.keyPath(_:endsWith:)` - Property ends with suffix
+- `.keyPath(_:matchingRegex:)` - Property matches regular expression
+
+**Numeric Range Operations**:
+- `.keyPath(_:in: 1...10)` - Closed range (inclusive)
+- `.keyPath(_:in: 1..<10)` - Half-open range
+- `.keyPath(_:in: 5...)` - Greater than or equal (>= 5)
+- `.keyPath(_:in: ..<10)` - Less than (< 10)
+- `.keyPath(_:in: ...10)` - Less than or equal (<= 10)
+
+**Compound Operations**:
+- `predicate.and(otherPredicate)` - AND combination (instance method)
+- `predicate.or(otherPredicate)` - OR combination (instance method)
+- `.and(pred1, pred2, ...)` - AND multiple predicates (static)
+- `.or(pred1, pred2, ...)` - OR multiple predicates (static)
+- `predicate.inverted` - NOT predicate (property)
+
+**Benefits of NSPredicate KeyPath Extensions**:
+- **Type Safety**: Compile-time KeyPath validation
+- **Automatic Format Specifiers**: Handles %@, %d, %f automatically based on type
+- **Composable**: Easy compound predicate construction with and/or/not
+- **Reusable**: Store predicates as variables for reuse across tests
+
+#### XCUIElementQuery Waiting Extensions
+
+**Wait for conditions on element queries (e.g., count changes):**
+
+```swift
+// ✅ CORRECT: Wait for element count conditions
+let table = app.tables.firstMatch
+let cells = table.cells
+
+// Wait for exact count
+XCTAssertTrue(cells.wait(for: \.count, equals: 5, timeout: UITests.Timeouts.localTestServer), "Should have exactly 5 cells")
+
+// Wait for range conditions
+XCTAssertTrue(cells.wait(for: \.count, in: 1...10, timeout: UITests.Timeouts.elementExistence), "Should have 1-10 cells")
+XCTAssertTrue(cells.wait(for: \.count, in: 2..., timeout: UITests.Timeouts.elementExistence), "Should have at least 2 cells")
+XCTAssertTrue(cells.wait(for: \.count, in: ..<10, timeout: UITests.Timeouts.elementExistence), "Should have less than 10 cells")
+
+// Wait with custom predicate
+let countPredicate = NSPredicate.keyPath(\.count, in: 1...5)
+XCTAssertTrue(cells.wait(for: countPredicate, timeout: UITests.Timeouts.elementExistence), "Should have 1-5 cells")
+
+// Replace old XCTNSPredicateExpectation patterns
+// ❌ OLD: Manual XCTNSPredicateExpectation creation
+// let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == %d", 2), object: table.cells)
+// XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 15.0), .completed)
+
+// ✅ NEW: Direct query waiting methods
+// XCTAssertTrue(table.cells.wait(for: \.count, equals: 2, timeout: UITests.Timeouts.localTestServer))
+```
+
+**Available XCUIElementQuery Wait Methods**:
+- `wait(for: NSPredicate, timeout:)` - Wait for custom NSPredicate condition
+- `wait(for: \.count, equals: value, timeout:)` - Wait for count to equal specific value
+- `wait(for: \.count, in: ClosedRange, timeout:)` - Wait for count in inclusive range (1...10)
+- `wait(for: \.count, in: Range, timeout:)` - Wait for count in half-open range (1..<10) 
+- `wait(for: \.count, in: PartialRangeFrom, timeout:)` - Wait for count >= value (5...)
+- `wait(for: \.count, in: PartialRangeUpTo, timeout:)` - Wait for count < value (..<10)
+- `wait(for: \.count, in: PartialRangeThrough, timeout:)` - Wait for count <= value (...10)
+
+**Benefits of query waiting extensions:**
+- **Type-safe**: Uses Swift key paths with compile-time validation
+- **Range support**: Native Swift range syntax for numeric conditions
+- **Simplified**: Replaces verbose XCTNSPredicateExpectation patterns
+- **Consistent**: Same predicate-based API as filtering methods
+- **Maintainable**: Compiler catches property and range type errors
 
 #### Middle Click Special Handling
 
@@ -947,14 +1244,66 @@ func takeScreenshot(name: String) {
 }
 ```
 
+### UI Tests Logging
+
+**For UI tests, NEVER use `print()`. ALWAYS use `Logger.log()` for debug output:**
+
+```swift
+✅ // GOOD: Use Logger.log() for UI test debugging
+class FeatureUITests: UITestCase {
+    func testComplexFlow() {
+        Logger.log("Starting complex UI flow test")
+        Logger.log("Setting up test data with \(testData.count) items")
+        Logger.log("DEBUG: currentState = \(app.addressBarValueActivatingIfNeeded())")
+        
+        // Perform UI test operations
+        
+        Logger.log("UI test completed successfully")
+    }
+}
+
+❌ // BAD: Using print() statements in UI tests
+func testComplexFlow() {
+    print("Starting test")  // Never use print()
+    print("DEBUG: addressBar = \(addressBar.value)")  // Use Logger.log() instead
+}
+```
+
+**Benefits of Logger.log():**
+- Integrates with XCTest's internal logging system
+- Appears in test logs alongside other XCTest debug output
+- Better performance and integration than print() statements
+- Proper formatting for CI log collection
+- Uses XCTest's private debug logging infrastructure for better integration
+
+**Usage Examples:**
+```swift
+class FeatureUITests: UITestCase {
+    func testComplexInteraction() {
+        Logger.log("Starting test with \(elements.count) elements")
+        
+        let currentURL = app.addressBarValueActivatingIfNeeded()
+        Logger.log("Current URL: \(currentURL ?? "nil")")
+        
+        if !button.waitForExistence(timeout: 5.0) {
+            Logger.log("Button not found, taking screenshot for debugging")
+            takeScreenshot("button-not-found")
+        }
+    }
+}
+```
+
 ### 🔍 Debug Operator: `???` for Optional String Conversion
 
 The `???` operator provides safe string conversion for debugging:
 
 ```swift
-// ✅ CORRECT: Debug string conversion with ??? operator
-Logger.general.debug("event received: \(event ??? "<nil>")")
+// ✅ CORRECT: Debug string conversion with ??? operator (UI tests)
+Logger.log("event received: \(event ??? "<nil>")")
 XCTAssertTrue(element.exists, "Element should exist: \(optionalValue ??? "missing")")
+
+// ✅ CORRECT: Debug string conversion with ??? operator (unit tests)
+Logger.log("event received: \(event ??? "<nil>")")
 ```
 
 **What it does:**
@@ -998,7 +1347,7 @@ func testComplexUIInteraction() {
     if !runButton.waitForExistence(timeout: 5.0) {
         // Capture view hierarchy for debugging
         let snapshot = try! webView.snapshot().toDictionary()
-        print("WebView hierarchy:\n\(snapshot)")
+        Logger.log("WebView hierarchy:\n\(snapshot)")
         XCTFail("Start button not found in webView")
     }
     
@@ -1056,8 +1405,8 @@ let snapshot = try! element.snapshot().toDictionary()
 ```swift
 func debugElementHierarchy() {
     // Print element hierarchy for debugging
-    Logger.tests.debug("Current window hierarchy: \(app.windows.debugDescription)")
-    Logger.tests.debug("Current tab structure: \(app.tabs.debugDescription)")
+    Logger.log("Current window hierarchy: \(app.windows.debugDescription)")
+    Logger.log("Current tab structure: \(app.tabs.debugDescription)")
 }
 ```
 
@@ -1208,7 +1557,7 @@ XCTAssertTrue(true, "Test completed - implementation may vary")
 if condition {
     // test logic
 } else {
-    print("Feature not available in test environment") // ❌ NO!
+    print("Feature not available in test environment") // ❌ NO! Use Logger.log() instead
 }
 ```
 

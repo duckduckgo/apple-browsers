@@ -236,22 +236,7 @@ class PrintingTests: UITestCase {
         )
 
         // Click PDF menu button in print dialog
-        let pdfMenuButton = printDialog.menuButtons["PDF"]
-        XCTAssertTrue(
-            pdfMenuButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "PDF menu button did not appear in print dialog in a reasonable timeframe."
-        )
-
-        pdfMenuButton.click()
-
-        // Select "Save as PDF…" from the menu
-        let saveAsPDFMenuItem = app.menuItems["Save as PDF…"]
-        XCTAssertTrue(
-            saveAsPDFMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save as PDF menu item did not appear in a reasonable timeframe."
-        )
-
-        saveAsPDFMenuItem.click()
+        chooseSaveAsPDF(in: printDialog)
 
         // Wait for save dialog to appear
         XCTAssertTrue(
@@ -471,19 +456,7 @@ class PrintingTests: UITestCase {
         )
 
         // Step 11: Save as PDF and validate
-        let pdfMenuButton = printDialogWindow2().menuButtons["PDF"]
-        XCTAssertTrue(
-            pdfMenuButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "PDF menu button should exist in print dialog."
-        )
-        pdfMenuButton.click()
-
-        let saveAsPDFMenuItem = app.menuItems["Save as PDF…"]
-        XCTAssertTrue(
-            saveAsPDFMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Save as PDF menu item should appear."
-        )
-        saveAsPDFMenuItem.click()
+        chooseSaveAsPDF(in: printDialogWindow2())
 
         // Handle save dialog
         let saveDialog = secondWindow.sheets.containing(.button, identifier: "Save").firstMatch
@@ -621,6 +594,30 @@ private extension PrintingTests {
         )
 
         return element
+    }
+
+    func chooseSaveAsPDF(in printDialog: XCUIElement) {
+        let pdfMenuButton = printDialog.menuButtons["PDF"]
+        XCTAssertTrue(
+            pdfMenuButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "PDF menu button did not appear in print dialog in a reasonable timeframe."
+        )
+
+        pdfMenuButton.click()
+
+        // Select "Save as PDF…" from the menu
+        let saveAsPDFMenuItem = app.menuItems["Save as PDF…"]
+        if !saveAsPDFMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            // retry on failure
+            pdfMenuButton.click()
+        }
+
+        XCTAssertTrue(
+            saveAsPDFMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Save as PDF menu item did not appear in a reasonable timeframe."
+        )
+
+        saveAsPDFMenuItem.click()
     }
 
 }

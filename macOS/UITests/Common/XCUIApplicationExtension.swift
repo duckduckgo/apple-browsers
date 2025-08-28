@@ -422,7 +422,6 @@ extension XCUIApplication {
         saveButton.click()
 
         let replaceDialog = sheets.containing(.button, identifier: "Replace").firstMatch
-        XCTAssertTrue(replaceDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         if replaceDialog.waitForExistence(timeout: 0.5) {
             replaceDialog.buttons["Replace"].click()
         }

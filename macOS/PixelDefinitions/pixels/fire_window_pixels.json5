@@ -1,6 +1,6 @@
 // Fire Window configuration pixels
 {
-    'm_mac_fire_window_configuration': {
+    m_mac_fire_window_configuration: {
         description: 'Daily pixel capturing the current state of Fire Window related settings including whether fire window is set for startup, open fire window by default preference, and fire animation setting',
         owners: ['jotaemepereira'],
         triggers: ['other'],

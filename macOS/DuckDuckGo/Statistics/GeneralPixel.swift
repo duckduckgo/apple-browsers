@@ -1273,9 +1273,9 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
             return [
-                "startup_fire_window": startupFireWindow ? "1" : "0",
-                "open_fire_window_by_default": openFireWindowByDefault ? "1" : "0",
-                "fire_animation_enabled": fireAnimationEnabled ? "1" : "0"
+                "startup_fire_window": startupFireWindow ? "true" : "false",
+                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
+                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
             ]
 
         case .navigation(let kind):

@@ -201,6 +201,7 @@ do {
 |12500|com.duckduckgo.subscription.APIServiceError|
 |12600|com.duckduckgo.subscription.StorePurchaseManagerError|
 |12700|com.duckduckgo.subscription.StripePurchaseFlowError|
+|13000|com.duckduckgo.subscription.AppStoreRestoreFlowErrorV2|
 
 ## Additional Resources
 

@@ -20,8 +20,9 @@ import Foundation
 import StoreKit
 import os.log
 import Networking
+import Common
 
-public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
+public enum AppStorePurchaseFlowError: DDGError {
     case noProductsFound
     case activeSubscriptionAlreadyPresent
     case authenticatingWithTransactionFailed
@@ -31,24 +32,40 @@ public enum AppStorePurchaseFlowError: Swift.Error, Equatable, LocalizedError {
     case missingEntitlements
     case internalError(Swift.Error?)
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .noProductsFound:
-            "No products found"
-        case .activeSubscriptionAlreadyPresent:
-            "An active subscription is already present"
-        case .authenticatingWithTransactionFailed:
-            "Authenticating with transaction failed"
-        case .accountCreationFailed(let subError):
-            "Account creation failed: \(subError.localizedDescription)"
-        case .purchaseFailed(let subError):
-            "Purchase failed: \(subError.localizedDescription)"
-        case .cancelledByUser:
-            "Purchase cancelled by user"
-        case .missingEntitlements:
-            "Missing entitlements"
-        case .internalError(let error):
-            "Internal error: \(error?.localizedDescription ?? "<nil>" )"
+        case .noProductsFound: "No subscription products found in the App Store"
+        case .activeSubscriptionAlreadyPresent: "An active subscription is already present on this account"
+        case .authenticatingWithTransactionFailed: "Failed to authenticate the subscription transaction"
+        case .accountCreationFailed(let subError): "Failed to create subscription account: \(subError.localizedDescription)"
+        case .purchaseFailed(let subError): "Subscription purchase failed: \(subError.localizedDescription)"
+        case .cancelledByUser: "Subscription purchase was cancelled by user"
+        case .missingEntitlements: "Subscription completed but entitlements are missing"
+        case .internalError(let error): "An internal error occurred during purchase: \(error?.localizedDescription ?? "unknown error")"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.subscription.AppStorePurchaseFlowError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noProductsFound: 12900
+        case .activeSubscriptionAlreadyPresent: 12901
+        case .authenticatingWithTransactionFailed: 12902
+        case .accountCreationFailed: 12903
+        case .purchaseFailed: 12904
+        case .cancelledByUser: 12905
+        case .missingEntitlements: 12906
+        case .internalError: 12907
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .accountCreationFailed(let error): error
+        case .purchaseFailed(let error): error
+        case .internalError(let error): error
+        default: nil
         }
     }
 

@@ -48,6 +48,17 @@ public enum StripePurchaseFlowError: DDGError {
         default: nil
         }
     }
+
+    public static func == (lhs: StripePurchaseFlowError, rhs: StripePurchaseFlowError) -> Bool {
+        switch (lhs, rhs) {
+        case (.noProductsFound, .noProductsFound):
+            return true
+        case let (.accountCreationFailed(lhsError), .accountCreationFailed(rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
+        default:
+            return false
+        }
+    }
 }
 
 public protocol StripePurchaseFlowV2 {

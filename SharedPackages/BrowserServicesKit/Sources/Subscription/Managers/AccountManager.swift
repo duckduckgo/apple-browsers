@@ -238,18 +238,9 @@ public final class DefaultAccountManager: AccountManager {
         }
     }
 
-    public enum EntitlementsError: DDGError {
+    public enum EntitlementsError: Error {
         case noAccessToken
         case noCachedData
-
-        public var description: String {
-            switch self {
-            case .noAccessToken:
-                return "No access token available."
-            case .noCachedData:
-                return "No cached data available."
-            }
-        }
     }
 
     @discardableResult

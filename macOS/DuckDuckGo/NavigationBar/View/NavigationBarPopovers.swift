@@ -62,7 +62,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var downloadsPopover: DownloadsPopover?
     private(set) var autofillOnboardingPopover: AutofillToolbarOnboardingPopover?
     private(set) var historyViewOnboardingPopover: HistoryViewOnboardingPopover?
-    private(set) var sessionRestorePromptPopover: SessionRestorePromptPopover?
 
     private var privacyDashboardPopover: PrivacyDashboardPopover?
     private var privacyInfoCancellable: AnyCancellable?
@@ -345,9 +344,8 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
                                          ctaCallback: @escaping (Bool) -> Void) {
         guard closeTransientPopovers() else { return }
 
-        let popover = sessionRestorePromptPopover ?? SessionRestorePromptPopover(ctaCallback: ctaCallback)
+        let popover = SessionRestorePromptPopover(ctaCallback: ctaCallback)
         popover.delegate = delegate
-        sessionRestorePromptPopover = popover
         show(popover, positionedBelow: button, simulatingMouseDown: false)
     }
 

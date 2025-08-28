@@ -143,7 +143,6 @@ final class NavigationBarViewController: NSViewController {
     private var navigationButtonsCancellables = Set<AnyCancellable>()
     private var downloadsCancellables = Set<AnyCancellable>()
     private var cancellables = Set<AnyCancellable>()
-    private var sessionRestoreCancellable: AnyCancellable?
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger

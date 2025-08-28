@@ -186,7 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
-    lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(featureFlagger: featureFlagger)
+    private(set) lazy var sessionRestorePromptCoordinator = SessionRestorePromptCoordinator(featureFlagger: featureFlagger)
 
     // MARK: - Freemium DBP
     public let freemiumDBPFeature: FreemiumDBPFeature

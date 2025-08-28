@@ -23,7 +23,7 @@ import PixelKit
 protocol SessionRestorePromptCoordinating {
     func markUIReady()
     func showRestoreSessionPrompt(restoreAction: @escaping (Bool) -> Void)
-    var isPromptShowing: Bool { get }
+    func applicationWillTerminate()
 }
 
 final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
@@ -38,14 +38,6 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
     private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
     private var state: State = .initial
-
-    var isPromptShowing: Bool {
-        if case .promptShown = state {
-            return true
-        } else {
-            return false
-        }
-    }
 
     init(pixelFiring: PixelFiring?,
          featureFlagger: FeatureFlagger) {
@@ -72,6 +64,12 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
             showPrompt(with: restoreAction)
         default:
             break
+        }
+    }
+
+    func applicationWillTerminate() {
+        if case .promptShown = state {
+            pixelFiring?.fire(SessionRestorePromptPixel.appTerminatedWhilePromptShowing)
         }
     }
 

@@ -146,6 +146,13 @@ final class AppStateRestorationManagerTests: XCTestCase {
         XCTAssertEqual(try mockKeyValueStore.object(forKey: terminationFlagKey) as? Bool, true)
     }
 
+    @MainActor
+    func testAppWillTerminate_NotifiesPromptCoordinator() throws {
+        appStateManager.applicationWillTerminate()
+
+        XCTAssertTrue(mockPromptCoordinator.applicationWillTerminateCalled)
+    }
+
     // MARK: - Error Handling Tests
 
     @MainActor
@@ -181,17 +188,16 @@ final class AppStateRestorationManagerTests: XCTestCase {
 
         appStateManager.applicationDidFinishLaunching()
 
-        XCTAssertEqual(mockPixelKit.expectedFireCalls, mockPixelKit.actualFireCalls)
+        mockPixelKit.verifyExpectations()
     }
 
     @MainActor
-    func testWhenAppIsTerminatedWithoutDismissingPrompt_ThenPixelIsFired() {
-        mockPromptCoordinator.isPromptShowing = true
-        mockPixelKit.expectedFireCalls = [.init(pixel: SessionRestorePromptPixel.appTerminatedWhilePromptShowing, frequency: .standard)]
+    func testWhenAppDidNotTerminateUnexpectedly_ThenPixelIsNotFired() throws {
+        try mockKeyValueStore.set(true, forKey: terminationFlagKey)
 
-        appStateManager.applicationWillTerminate()
+        appStateManager.applicationDidFinishLaunching()
 
-        XCTAssertEqual(mockPixelKit.expectedFireCalls, mockPixelKit.actualFireCalls)
+        mockPixelKit.verifyExpectations()
     }
 
     private func addMockSessionData() {

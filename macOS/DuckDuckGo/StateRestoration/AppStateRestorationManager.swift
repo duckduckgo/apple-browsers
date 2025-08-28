@@ -167,9 +167,7 @@ final class AppStateRestorationManager: NSObject {
     func applicationWillTerminate() {
         stateChangedCancellable?.cancel()
         appDidTerminateAsExpected = true
-        if sessionRestorePromptCoordinator.isPromptShowing {
-            pixelFiring?.fire(SessionRestorePromptPixel.appTerminatedWhilePromptShowing)
-        }
+        sessionRestorePromptCoordinator.applicationWillTerminate()
         if Application.appDelegate.windowControllersManager.isInInitialState {
             service.clearState(sync: true)
         } else {

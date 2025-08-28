@@ -21,7 +21,7 @@
 final class SessionRestorePromptCoordinatorMock: SessionRestorePromptCoordinating {
     var uiReady: Bool = false
     var sessionPromptShown: Bool = false
-    var isPromptShowing: Bool = false
+    var applicationWillTerminateCalled: Bool = false
 
     func markUIReady() {
         uiReady = true
@@ -29,5 +29,9 @@ final class SessionRestorePromptCoordinatorMock: SessionRestorePromptCoordinatin
 
     func showRestoreSessionPrompt(restoreAction: @escaping (Bool) -> Void) {
         sessionPromptShown = true
+    }
+
+    func applicationWillTerminate() {
+        applicationWillTerminateCalled = true
     }
 }

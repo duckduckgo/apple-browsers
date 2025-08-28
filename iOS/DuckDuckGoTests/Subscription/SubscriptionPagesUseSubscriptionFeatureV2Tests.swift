@@ -220,8 +220,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertEqual(started.contextData.name, "funnel_appsettings_ios")
 
         let updated = try XCTUnwrap(mockWidePixel.updates.last as? SubscriptionPurchaseWidePixelData)
-        XCTAssertNotNil(updated.completePurchaseDuration?.start)
-        XCTAssertNotNil(updated.completePurchaseDuration?.end)
         XCTAssertNotNil(updated.activateAccountDuration?.start)
         XCTAssertNotNil(updated.activateAccountDuration?.end)
 

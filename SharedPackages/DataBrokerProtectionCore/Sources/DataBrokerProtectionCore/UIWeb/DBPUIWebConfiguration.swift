@@ -23,7 +23,7 @@ import UserScript
 
 public final class DBPUIUserContentController: WKUserContentController {
 
-    public let dbpUIUserScripts: DBPUIUserScript
+    public let dbpUIUserScripts: DBPUIUserScript?
 
     @MainActor
     init(with privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -32,12 +32,21 @@ public final class DBPUIUserContentController: WKUserContentController {
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
          vpnBypassService: VPNBypassServiceProvider?) throws {
 
-        dbpUIUserScripts = try DBPUIUserScript(privacyConfig: privacyConfigurationManager,
-                                               prefs: prefs,
-                                               delegate: delegate,
-                                               webUISettings: webUISettings,
-                                               vpnBypassService: vpnBypassService)
+        let dbpUIUserScripts: DBPUIUserScript
+        do {
+            dbpUIUserScripts = try DBPUIUserScript(privacyConfig: privacyConfigurationManager,
+                                                   prefs: prefs,
+                                                   delegate: delegate,
+                                                   webUISettings: webUISettings,
+                                                   vpnBypassService: vpnBypassService)
+        } catch {
+            // Finish initialization before throwing
+            self.dbpUIUserScripts = nil
+            super.init()
+            throw error
+        }
 
+        self.dbpUIUserScripts = dbpUIUserScripts
         super.init()
 
         dbpUIUserScripts.userScripts.forEach {

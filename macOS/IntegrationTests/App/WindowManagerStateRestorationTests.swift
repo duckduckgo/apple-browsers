@@ -129,5 +129,5 @@ final class MockVisualizeFireAnimationDecider: VisualizeFireSettingsDecider {
 
     var isOpenFireWindowByDefaultEnabled: Bool = false
 
-    var shouldShowOpenFireWindoyByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
 }

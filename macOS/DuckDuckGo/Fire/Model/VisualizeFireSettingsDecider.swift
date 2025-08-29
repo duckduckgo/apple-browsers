@@ -26,7 +26,7 @@ protocol VisualizeFireSettingsDecider {
 
     /// Open Fire Window By Default setting
     var isOpenFireWindowByDefaultEnabled: Bool { get }
-    var shouldShowOpenFireWindoyByDefaultPublisher: AnyPublisher<Bool, Never> { get }
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> { get }
 }
 
 final class DefaultVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
@@ -69,7 +69,7 @@ final class DefaultVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
         }
     }
 
-    var shouldShowOpenFireWindoyByDefaultPublisher: AnyPublisher<Bool, Never> {
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> {
         dataClearingPreferences.$shouldOpenFireWindowbyDefault
             .map { [weak self] openFireWindowByDefault in
                 guard let self = self else { return true }

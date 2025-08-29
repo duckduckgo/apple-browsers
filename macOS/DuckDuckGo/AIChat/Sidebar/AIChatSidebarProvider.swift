@@ -57,6 +57,7 @@ protocol AIChatSidebarProviding: AnyObject {
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
     var sidebarsByTab: AIChatSidebarsByTab { get }
 
+    /// Publishes events whenever `sidebarsByTab` gets updated.
     var sidebarsByTabPublisher: AnyPublisher<AIChatSidebarsByTab, Never> { get }
 
     /// Restores the sidebar provider's state from a previously saved model.

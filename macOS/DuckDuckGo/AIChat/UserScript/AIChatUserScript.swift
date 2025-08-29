@@ -45,9 +45,6 @@ final class AIChatUserScript: NSObject, Subfeature {
             rules.append(.exact(hostname: ddgDomain))
         }
 
-        /// Add a rule for the first-party.example domain
-        rules.append(.exact(hostname: "first-party.example"))
-
         /// Check if a custom hostname is provided in the URL settings
         /// Custom hostnames are used for debugging purposes
         if let customURLHostname = urlSettings.customURLHostname {

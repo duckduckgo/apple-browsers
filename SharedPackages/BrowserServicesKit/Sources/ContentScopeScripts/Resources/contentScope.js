@@ -1311,7 +1311,7 @@
   function isGloballyDisabled(args) {
     return args.site.allowlisted || args.site.isBroken;
   }
-  var platformSpecificFeatures = ["navigatorInterface", "windowsPermissionUsage", "messageBridge", "favicon"];
+  var platformSpecificFeatures = ["navigatorInterface", "duckAiListener", "windowsPermissionUsage", "messageBridge", "favicon"];
   function isPlatformSpecificFeature(featureName) {
     return platformSpecificFeatures.includes(featureName);
   }
@@ -1352,6 +1352,7 @@
       "messageBridge",
       "duckPlayer",
       "duckPlayerNative",
+      "duckAiListener",
       "harmfulApis",
       "webCompat",
       "windowsPermissionUsage",
@@ -1361,11 +1362,18 @@
       "autofillPasswordImport",
       "favicon",
       "webTelemetry",
-      "scriptlets"
+      "scriptlets",
+      "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", "scriptlets", ...baseFeatures],
+    apple: [
+      "webCompat",
+      "duckPlayerNative",
+      "scriptlets",
+      ...baseFeatures,
+      "duckAiListener"
+    ],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -1373,7 +1381,8 @@
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
-      "favicon"
+      "favicon",
+      "pageContext"
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
@@ -11272,6 +11281,158 @@ Only "elements" is supported.`);
     }
   };
 
+  // src/features/duck-ai-listener.js
+  init_define_import_meta_trackerLookup();
+  var DuckAiListener = class extends ContentFeature {
+    constructor() {
+      super(...arguments);
+      /** @type {HTMLInputElement | HTMLTextAreaElement | null} */
+      __publicField(this, "textBox", null);
+      /** @type {Object | null} */
+      __publicField(this, "pageData", null);
+      /** @type {any} */
+      __publicField(this, "bridge", null);
+    }
+    init() {
+      if (!this.shouldActivate()) {
+        return;
+      }
+      console.log("DuckAiListener: Initializing on duckduckgo.com");
+      if (document.readyState === "complete") {
+        this.setup();
+      } else {
+        document.addEventListener("DOMContentLoaded", this.setup.bind(this));
+      }
+    }
+    async setup() {
+      this.setupMessageBridge();
+      this.setupTextBoxDetection();
+      this.startObservingDom();
+    }
+    /**
+     * Check if this feature should be active on the current domain
+     * @returns {boolean}
+     */
+    shouldActivate() {
+      if (isBeingFramed()) {
+        return false;
+      }
+      const hostname = window.location.hostname;
+      return hostname === "duckduckgo.com" || hostname.endsWith(".duckduckgo.com");
+    }
+    /**
+     * Set up message bridge using the same pattern as fake-duck-ai
+     */
+    async setupMessageBridge() {
+      try {
+        if (!navigator.duckduckgo) {
+          console.warn("DuckAiListener: navigator.duckduckgo not available");
+          return;
+        }
+        const featureName = "aiChat";
+        if (!navigator.duckduckgo.createMessageBridge) {
+          console.warn("DuckAiListener: createMessageBridge not available");
+          return;
+        }
+        this.bridge = navigator.duckduckgo.createMessageBridge(featureName);
+        if (!this.bridge) {
+          console.warn("DuckAiListener: Failed to create message bridge");
+          return;
+        }
+        console.log("DuckAiListener: Created message bridge successfully");
+        try {
+          const getPageContext = await this.bridge.request("getPageContext");
+          console.log("DuckAiListener: Initial page context:", getPageContext);
+          if (getPageContext.serializedPageData) {
+            this.handlePageContextData(getPageContext);
+          }
+        } catch (error) {
+          console.log("DuckAiListener: No initial page context available:", error);
+        }
+        this.bridge.subscribe("submitPageContext", (event) => {
+          console.log("DuckAiListener: Received page context update:", event);
+          this.handlePageContextData(event);
+        });
+      } catch (error) {
+        console.error("DuckAiListener: Error setting up message bridge:", error);
+      }
+    }
+    /**
+     * Handle page context data from bridge communication (matches fake-duck-ai exactly)
+     * @param {Object} data - The received page context data
+     */
+    handlePageContextData(data) {
+      try {
+        if (data.serializedPageData) {
+          const pageDataParsed = JSON.parse(data.serializedPageData);
+          console.log("DuckAiListener: Parsed page data:", pageDataParsed);
+          if (pageDataParsed.content) {
+            this.pageData = pageDataParsed;
+            this.insertContextIntoTextBox(pageDataParsed.content);
+          }
+        }
+      } catch (error) {
+        console.error("DuckAiListener: Error parsing page context data:", error);
+      }
+    }
+    /**
+     * Set up detection of the text box on the page
+     */
+    setupTextBoxDetection() {
+      this.findTextBox();
+      if (this.textBox && this.pageData) {
+        this.insertContextIntoTextBox(this.pageData.content);
+      }
+    }
+    /**
+     * Find the AI chat text box
+     */
+    findTextBox() {
+      const element = document.querySelector('textarea[name="user-prompt"]');
+      if (element && element instanceof HTMLTextAreaElement) {
+        if (this.textBox !== element) {
+          this.textBox = element;
+          console.log("DuckAiListener: Found AI text box");
+        }
+      } else if (this.textBox) {
+        this.textBox = null;
+        console.log("DuckAiListener: AI text box not found");
+      }
+    }
+    /**
+     * Insert context into the text box
+     * @param {string} context - The context to insert
+     */
+    insertContextIntoTextBox(context) {
+      if (!context || typeof context !== "string") {
+        console.warn("DuckAiListener: Invalid context provided for insertion");
+        return;
+      }
+      this.findTextBox();
+      if (!this.textBox) {
+        console.log("DuckAiListener: No text box found for context insertion");
+        return;
+      }
+      console.log("DuckAiListener: Inserting context into text box");
+      this.textBox.value = context.slice(0, 2e3);
+      this.textBox.dispatchEvent(new Event("input", { bubbles: true }));
+      this.textBox.dispatchEvent(new Event("change", { bubbles: true }));
+      this.textBox.focus();
+      if (this.textBox instanceof HTMLTextAreaElement) {
+        this.autoResizeTextArea(this.textBox);
+      }
+      console.log("DuckAiListener: Successfully inserted context");
+    }
+    /**
+     * Auto-resize a textarea based on content
+     * @param {HTMLTextAreaElement} textarea
+     */
+    autoResizeTextArea(textarea) {
+      const lines = Math.ceil(textarea.value.length / 50) || 1;
+      textarea.style.height = lines * 24 + "px";
+    }
+  };
+
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
     ddg_feature_webCompat: web_compat_default,
@@ -11289,7 +11450,8 @@ Only "elements" is supported.`);
     ddg_feature_navigatorInterface: NavigatorInterface,
     ddg_feature_elementHiding: ElementHiding,
     ddg_feature_exceptionHandler: ExceptionHandler,
-    ddg_feature_apiManipulation: ApiManipulation
+    ddg_feature_apiManipulation: ApiManipulation,
+    ddg_feature_duckAiListener: DuckAiListener
   };
 
   // src/url-change.js

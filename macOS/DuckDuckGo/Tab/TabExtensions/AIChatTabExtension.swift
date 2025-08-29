@@ -110,7 +110,7 @@ final class AIChatTabExtension {
 
     private var temporaryPageContext: AIChatPageContextData?
     func submitPageContext(_ pageContext: AIChatPageContextData) {
-        guard let aiChatUserScript else {
+        guard isLoadedInSidebar, let aiChatUserScript else {
             // User script not yet loaded, store the payload and set when ready
             temporaryPageContext = pageContext
             return

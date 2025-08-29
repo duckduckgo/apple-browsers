@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import Foundation
 import os.log
 import WebKit
@@ -54,7 +52,7 @@ final class NativeMessagingCoordinator {
     func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {
         // Route to the registered handler for this context
         if let handler = handler(for: extensionContext) {
-            return try handler.handleMessage(message, to: applicationIdentifier, for: extensionContext)
+            return try await handler.handleMessage(message, to: applicationIdentifier, for: extensionContext)
         }
 
         // No handler registered for this context
@@ -72,5 +70,3 @@ final class NativeMessagingCoordinator {
         throw NSError(domain: "NativeMessagingCoordinator", code: 2, userInfo: [NSLocalizedDescriptionKey: "No native messaging handler registered for this extension"])
     }
 }
-
-#endif

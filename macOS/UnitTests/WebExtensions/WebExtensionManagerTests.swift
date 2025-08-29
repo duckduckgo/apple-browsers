@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import XCTest
 import Combine
 import BrowserServicesKit
@@ -152,5 +150,3 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(webExtensionManager.extensions.isEmpty)
     }
 }
-
-#endif

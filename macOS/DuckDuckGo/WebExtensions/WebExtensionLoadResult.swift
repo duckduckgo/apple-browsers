@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import Foundation
 import WebKit
 
@@ -25,11 +23,11 @@ import WebKit
 struct WebExtensionLoadResult {
     let context: WKWebExtensionContext
     let extensionIdentifier: WebExtensionIdentifier?
+    let path: String
 
-    init(context: WKWebExtensionContext, extensionIdentifier: WebExtensionIdentifier? = nil) {
+    init(context: WKWebExtensionContext, path: String, extensionIdentifier: WebExtensionIdentifier? = nil) {
         self.context = context
+        self.path = path
         self.extensionIdentifier = extensionIdentifier
     }
 }
-
-#endif

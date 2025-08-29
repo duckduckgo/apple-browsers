@@ -328,13 +328,11 @@ final class NavigationBarViewController: NSViewController {
         addDebugNotificationListeners()
 #endif
 
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *), !burnerMode.isBurner {
+        if #available(macOS 15.4, *), !burnerMode.isBurner, WebExtensionManager.shared.areExtenstionsEnabled {
             Task { @MainActor in
                 await WebExtensionNavigationBarUpdater(container: menuButtons).runUpdateLoop()
             }
         }
-#endif
     }
 
     override func viewWillAppear() {

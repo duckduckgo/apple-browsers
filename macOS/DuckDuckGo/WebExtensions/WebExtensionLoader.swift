@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import CryptoKit
 import WebKit
 
@@ -52,7 +50,7 @@ final class WebExtensionLoader: WebExtensionLoading {
         let webExtension: WKWebExtension
         var extensionIdentifier: WebExtensionIdentifier?
 
-        if path.hasSuffix(".appex"),
+        if extensionURL.pathExtension == "appex",
            let bundle = Bundle(url: extensionURL) {
 
             // Detect known extension based on bundle
@@ -61,6 +59,8 @@ final class WebExtensionLoader: WebExtensionLoading {
             // Loading from the bundle is best to support native messaging automagically
             webExtension = try await WKWebExtension(appExtensionBundle: bundle)
         } else {
+            // Detect known extension based on bundle
+            extensionIdentifier = WebExtensionIdentifier.bitwarden
             webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
         }
 
@@ -68,7 +68,7 @@ final class WebExtensionLoader: WebExtensionLoading {
         let context = makeContext(for: webExtension, at: path)
         try controller.load(context)
 
-        return WebExtensionLoadResult(context: context, extensionIdentifier: extensionIdentifier)
+        return WebExtensionLoadResult(context: context, path: path, extensionIdentifier: extensionIdentifier)
     }
 
     func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
@@ -127,5 +127,3 @@ final class WebExtensionLoader: WebExtensionLoading {
         return context
     }
 }
-
-#endif

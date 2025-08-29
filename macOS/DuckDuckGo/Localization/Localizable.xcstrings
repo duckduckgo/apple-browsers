@@ -6548,6 +6548,18 @@
         }
       }
     },
+    "autofill.password-manager.bitwarden.extension" : {
+      "comment" : "Autofill password manager row title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bitwarden Extension"
+          }
+        }
+      }
+    },
     "autofill.password-manager.duckduckgo" : {
       "comment" : "Autofill password manager row title",
       "extractionState" : "extracted_with_value",

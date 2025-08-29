@@ -33,11 +33,9 @@ final class TabCollection: NSObject {
     func append(tab: Tab) {
         tabs.append(tab)
 
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didOpenTab(tab)
         }
-#endif
     }
 
     @discardableResult
@@ -48,11 +46,9 @@ final class TabCollection: NSObject {
         }
 
         tabs.insert(tab, at: index)
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didOpenTab(tab)
         }
-#endif
         return true
     }
 
@@ -124,22 +120,18 @@ final class TabCollection: NSObject {
             keepLocalHistory(of: tabs[index])
         }
 
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didCloseTab(tabs[index], windowIsClosing: false)
         }
-#endif
     }
 
     private func tabsWillClose(range: Range<Int>) {
         for i in range {
             keepLocalHistory(of: tabs[i])
 
-#if WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *) {
+            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
                 WebExtensionManager.shared.eventsListener.didCloseTab(tabs[i], windowIsClosing: false)
             }
-#endif
         }
     }
 
@@ -170,11 +162,9 @@ final class TabCollection: NSObject {
         let oldTab = tabs[index]
         tabs[index] = tab
 
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didReplaceTab(oldTab, with: tab)
         }
-#endif
     }
 
     // MARK: - Fire button

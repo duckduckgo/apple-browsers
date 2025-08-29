@@ -78,11 +78,9 @@ final class MainWindowController: NSWindowController {
         subscribeToFullScreenToolbarChanges()
         subscribeToKeyWindow()
 
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didOpenWindow(self)
         }
-#endif
     }
 
     required init?(coder: NSCoder) {
@@ -307,11 +305,9 @@ extension MainWindowController: NSWindowDelegate {
             Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
         }
 
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didFocusWindow(self)
         }
-#endif
     }
 
     private func windowDidResignKeyNotification(_ notification: Notification) {
@@ -442,11 +438,9 @@ extension MainWindowController: NSWindowDelegate {
         _=Unmanaged.passRetained(self).autorelease()
         Application.appDelegate.windowControllersManager.unregister(self)
 
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didCloseWindow(self)
         }
-#endif
     }
 
     func windowShouldClose(_ window: NSWindow) -> Bool {

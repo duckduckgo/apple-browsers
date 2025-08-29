@@ -120,6 +120,15 @@ extension Preferences {
                             bitwardenStatusView(for: bitwardenManager.status)
                         }
                     }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        passwordManagerPicker(passwordManagerBinding) {
+                            Text(UserText.autofillPasswordManagerBitwardenExtension).tag(PasswordManager.bitwarden)
+                        }
+                        if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
+                            bitwardenStatusView(for: bitwardenManager.status)
+                        }
+                    }
                 }
 #endif
 

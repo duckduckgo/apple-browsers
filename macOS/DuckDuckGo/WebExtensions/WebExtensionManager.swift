@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import Foundation
 import Common
 import WebKit
@@ -54,6 +52,8 @@ protocol WebExtensionManaging {
     // Listening of events
     var eventsListener: WebExtensionEventsListening { get }
 
+    func context(forPath path: String) -> WKWebExtensionContext?
+
 }
 
 // Manages the initialization and ownership of key components: web extensions, contexts, and the controller
@@ -73,10 +73,9 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     init(webExtensionPathsCache: WebExtensionPathsCaching = WebExtensionPathsCache(),
          webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
-         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+
         self.pathsCache = webExtensionPathsCache
-        self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
         self.loader = webExtensionLoader
 
@@ -85,11 +84,10 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         internalSiteHandler.dataSource = self
     }
 
-    private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
 
     var areExtenstionsEnabled: Bool {
-        return internalUserDecider.isInternalUser && featureFlagger.isFeatureOn(.webExtensions)
+        return featureFlagger.isFeatureOn(.webExtensions)
     }
 
     // Caches paths to selected web extensions
@@ -220,7 +218,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
             case .failure(let failure):
                 // If this is blocking from starting up the app, disable this
                 // assertion then go to Debug Menu > Web Extensions > Uninstall all extensions
-                assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")
+                // assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")
+                break
             }
         }
     }
@@ -298,6 +297,11 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         return contexts.first { context in
             url.absoluteString.hasPrefix(context.baseURL.absoluteString)
         }
+    }
+
+    func context(forPath path: String) -> WKWebExtensionContext? {
+        let identifierHash = identifierHash(forPath: path)
+        return contexts.first { $0.uniqueIdentifier == identifierHash }
     }
 }
 
@@ -449,5 +453,3 @@ extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
     }
 
 }
-
-#endif

@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import Foundation
 
 @available(macOS 15.4, *)
@@ -41,5 +39,3 @@ enum WebExtensionIdentifier {
         }
     }
 }
-
-#endif

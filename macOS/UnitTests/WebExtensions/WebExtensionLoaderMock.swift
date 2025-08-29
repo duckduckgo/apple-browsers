@@ -16,22 +16,45 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 @testable import DuckDuckGo_Privacy_Browser
+import WebKit
 
 @available(macOS 15.4, *)
 final class WebExtensionLoadingMock: WebExtensionLoading {
 
+    var loadWebExtensionCalled = false
     var loadWebExtensionsCalled = false
     var loadedPaths: [String] = []
-    var mockWebExtensions: [WKWebExtension] = []
+    var mockLoadResult: WebExtensionLoadResult?
+    var mockLoadResults: [Result<WebExtensionLoadResult, Error>] = []
+    var mockError: Error?
 
-    func loadWebExtensions(from paths: [String]) -> [WKWebExtension] {
+    @discardableResult
+    func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WebExtensionLoadResult {
+        loadWebExtensionCalled = true
+        loadedPaths.append(path)
+
+        if let mockError = mockError {
+            throw mockError
+        }
+
+        guard let mockLoadResult = mockLoadResult else {
+            // Create a default mock result for testing
+            let mockExtension = try await WKWebExtension(resourceBaseURL: URL(fileURLWithPath: path))
+            let mockContext = WKWebExtensionContext(webExtension: mockExtension)
+            return WebExtensionLoadResult(context: mockContext, path: path)
+        }
+
+        return mockLoadResult
+    }
+
+    func loadWebExtensions(from paths: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         loadWebExtensionsCalled = true
         loadedPaths = paths
-        return mockWebExtensions
+        return mockLoadResults
+    }
+
+    func unloadExtension(at path: String, from controller: WKWebExtensionController) throws {
+        // Mock implementation
     }
 }
-
-#endif

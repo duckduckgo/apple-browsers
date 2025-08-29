@@ -649,8 +649,7 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             return featureFlagger.isFeatureOn(.newTabPagePerTab) ? tabViewModel.tab.webView : newTabPageWebViewModel.webView
         case .webExtensionUrl(let url):
-#if WEB_EXTENSIONS_ENABLED
-            if #available(macOS 15.4, *),
+            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled,
                let context = WebExtensionManager.shared.extensionContext(for: url),
                let configuration = context.webViewConfiguration {
 
@@ -660,7 +659,6 @@ final class BrowserTabViewController: NSViewController {
                 webView.load(request)
                 return webView
             }
-#endif
             return tabViewModel.tab.webView
         default:
             return tabViewModel.tab.webView
@@ -826,7 +824,7 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             // don‘t steal focus from the address bar at .newtab page
             return
-        case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history, .aiChat:
+        case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history, .aiChat, .webExtensionUrl:
             getView = { [weak self, weak tabViewModel] in
                 guard let self, let tabViewModel else { return nil }
                 return webView(for: tabViewModel, tabContent: tabContent)
@@ -837,8 +835,6 @@ final class BrowserTabViewController: NSViewController {
             getView = { [weak self] in self?.bookmarksViewController?.view }
         case .dataBrokerProtection:
             getView = { [weak self] in self?.dataBrokerProtectionHomeViewController?.view }
-        case .webExtensionUrl:
-            getView = { [weak self] in self?.webExtensionWebView }
         case .none:
             getView = nil
         }

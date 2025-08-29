@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
 import AppKit
 
 @available(macOS 15.4, *)
@@ -50,8 +48,8 @@ final class WebExtensionsDebugMenu: NSMenu {
             addItem(.separator())
             for webExtensionPath in webExtensionManager.webExtensionPaths {
                 let name = webExtensionManager.extensionName(from: webExtensionPath)
-                self.addItem(WebExtensionMenuItem(webExtensionPath: webExtensionPath,
-                                                  webExtensionName: name))
+                let menuItem = WebExtensionMenuItem(webExtensionPath: webExtensionPath, webExtensionName: name)
+                self.addItem(menuItem)
             }
         }
     }
@@ -90,8 +88,8 @@ final class WebExtensionsDebugMenu: NSMenu {
     }
 
     @objc func selectAndLoadWebExtension() {
-        let panel = NSOpenPanel(allowedFileTypes: [.directory], directoryURL: .downloadsDirectory)
-        panel.canChooseFiles = false
+        let panel = NSOpenPanel(allowedFileTypes: [.directory, .applicationExtension], directoryURL: .downloadsDirectory)
+        panel.canChooseFiles = true
         panel.canChooseDirectories = true
         guard case .OK = panel.runModal(),
               let url = panel.url else { return }
@@ -154,6 +152,7 @@ final class WebExtensionSubMenu: NSMenu {
 
         buildItems {
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
+            NSMenuItem(title: "Open Background Inspector", action: #selector(openBackgroundInspector), target: self)
         }
     }
 
@@ -161,6 +160,39 @@ final class WebExtensionSubMenu: NSMenu {
         try? webExtensionManager.uninstallExtension(path: webExtensionPath)
     }
 
-}
+    @MainActor
+    @objc func openBackgroundInspector() {
+        guard let context = webExtensionManager.context(forPath: webExtensionPath) else {
+            print("No context found for path: \(webExtensionPath)")
+            return
+        }
 
-#endif
+        guard let webViewConfiguration = context.webViewConfiguration else {
+            print("No webViewConfiguration available for context")
+            return
+        }
+
+        // Construct the URL for background.html
+        let backgroundURL = context.baseURL.appendingPathComponent("background.html")
+
+        // Use WindowsManager to create a standard popup window
+        let tabCollection = TabCollectionViewModel()
+        if let window = WindowsManager.openNewWindow(with: tabCollection) {
+            let webView = WebView(frame: .zero, configuration: webViewConfiguration)
+            window.contentViewController?.view = webView
+            window.setContentSize(NSSize(width: 800, height: 600))
+            window.title = "Background Inspector"
+            window.makeKeyAndOrderFront(nil)
+
+            // Load the URL in the new WebView
+            let request = URLRequest(url: backgroundURL)
+            webView.load(request)
+
+            // Open the developer tools to show the inspector
+            webView.openDeveloperTools()
+        } else {
+            print("Failed to create a new window using WindowsManager")
+        }
+    }
+
+}

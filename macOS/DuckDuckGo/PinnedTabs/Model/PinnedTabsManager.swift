@@ -40,11 +40,9 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userPinnedTab, frequency: .dailyAndStandard)
         }
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
-#endif
     }
 
     func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
@@ -61,11 +59,9 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
         }
-#if WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
-#endif
         return tab
     }
 

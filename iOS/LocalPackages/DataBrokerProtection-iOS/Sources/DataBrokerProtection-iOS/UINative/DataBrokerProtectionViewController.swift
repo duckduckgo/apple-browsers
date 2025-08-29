@@ -29,7 +29,8 @@ import DataBrokerProtectionCore
 final public class DataBrokerProtectionViewController: UIViewController {
 
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
-    private let dbpUIViewModelDelegate: DBPUIViewModelDelegate
+    private var authenticationDelegate: AuthenticationDelegate
+    private var databaseDelegate: DatabaseDelegate
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
 
@@ -45,7 +46,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
         }
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
 
-        return DBPUIViewModel(delegate: dbpUIViewModelDelegate,
+        return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
+                              databaseDelegate: databaseDelegate,
                               feedbackFormDelegate: self,
                               webUISettings: webUISettings,
                               pixelHandler: sharedPixelsHandler,
@@ -70,7 +72,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
         return activityIndicator
     }()
 
-    public init(dbpUIViewModelDelegate: DBPUIViewModelDelegate,
+    public init(authenticationDelegate: AuthenticationDelegate,
+                databaseDelegate: DatabaseDelegate,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -80,7 +83,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
         self.feedbackViewCreator = feedbackViewCreator
         self.webUISettings = webUISettings
 
-        self.dbpUIViewModelDelegate = dbpUIViewModelDelegate
+        self.authenticationDelegate = authenticationDelegate
+        self.databaseDelegate = databaseDelegate
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
 
@@ -175,10 +179,6 @@ extension DataBrokerProtectionViewController: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         loadingView.stopAnimating()
     }
-}
-
-public protocol DataBrokerProtectionViewControllerProvider {
-    func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController
 }
 
 public struct DataBrokerProtectionViewControllerRepresentation: UIViewControllerRepresentable {

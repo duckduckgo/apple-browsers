@@ -75,11 +75,11 @@ final class DBPService: NSObject {
     }
 
     func onBackground() {
-        dbpIOSManager?.scheduleBGProcessingTask()
+        dbpIOSManager?.appDidEnterBackground()
     }
 
     func resume() {
-        dbpIOSManager?.tryToFireWeeklyPixels()
+        dbpIOSManager?.appWillResume()
     }
 }
 

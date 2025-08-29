@@ -1,5 +1,5 @@
 //
-//  AIChatPromptHandlerTests.swift
+//  AIChatPageContextHandlerTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

@@ -52,19 +52,18 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             return
         }
 
-        let shouldFireNavigationPixel: Bool = {
-            /// Fire navigation pixel on all navigations except for JS redirects and loading error pages
-            if [.redirect(.developer), .redirect(.client), .alternateHtmlLoad].contains(navigation.navigationAction.navigationType) {
-                return false
-            }
-            /// Sometimes navigation type for an error page is reported as `.other`, so checking also target frame URL
-            /// This has a side effect of filtering out also some navigations starting on an error page (e.g. using a reload button,
-            /// that is also reported as `.other`).
-            if navigation.navigationAction.navigationType == .other && navigation.navigationAction.targetFrame?.url == .error {
-                return false
-            }
-            return true
-        }()
+        /// Fire navigation pixel on all navigations except for JS redirects and loading error pages
+        let shouldFireNavigationPixel: Bool = switch navigation.navigationAction.navigationType {
+        case .redirect(.developer), .redirect(.client), .alternateHtmlLoad:
+            false
+        case .other where navigation.navigationAction.targetFrame?.url == .error:
+            // Sometimes navigation type for an error page is reported as `.other`, so checking also target frame URL
+            // This has a side effect of filtering out also some navigations starting on an error page (e.g. using a reload button,
+            // that is also reported as `.other`).
+            false
+        default:
+            true
+        }
 
         if shouldFireNavigationPixel {
             pixelFiring?.fire(GeneralPixel.navigation(.regular))

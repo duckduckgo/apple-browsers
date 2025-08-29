@@ -21,8 +21,6 @@ import XCTest
 final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
     func testContentScopeExperiments() throws {
-        // Initial set up
-        super.setUp()
         let app = XCUIApplication.setUp()
         app.openNewTab()
 

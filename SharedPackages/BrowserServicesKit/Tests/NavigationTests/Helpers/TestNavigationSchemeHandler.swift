@@ -28,7 +28,7 @@ final class TestNavigationSchemeHandler: NSObject, WKURLSchemeHandler {
 
     public var onRequest: ((WKURLSchemeTask) -> Void)?
 
-    init(requestHandlers: [URL : RequestResponse] = [URL: RequestResponse](), onRequest: ((WKURLSchemeTask) -> Void)? = nil) {
+    init(requestHandlers: [URL: RequestResponse] = [URL: RequestResponse](), onRequest: ((WKURLSchemeTask) -> Void)? = nil) {
         self.requestHandlers = requestHandlers
         self.onRequest = onRequest
     }

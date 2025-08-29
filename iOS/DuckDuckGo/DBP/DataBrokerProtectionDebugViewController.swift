@@ -202,13 +202,19 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     // MARK: Lifecycle
 
-    required init?(coder: NSCoder) {
-        let manager = DataBrokerProtectionIOSManager.shared!
-        self.databaseDelegate = manager
-        self.debuggingDelegate = manager
-        self.runPrerequisitesDelegate = manager
+    required init?(coder: NSCoder,
+                   databaseDelegate: DatabaseDelegate?,
+                   debuggingDelegate: DebuggingDelegate?,
+                   runPrequisitesDelegate: RunPrerequisitesDelegate?) {
+        self.databaseDelegate = databaseDelegate
+        self.debuggingDelegate = debuggingDelegate
+        self.runPrerequisitesDelegate = runPrequisitesDelegate
 
         super.init(coder: coder)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
 

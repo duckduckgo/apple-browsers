@@ -131,7 +131,8 @@ struct Launching: LaunchingHandling {
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-                                              daxDialogsManager: daxDialogs)
+                                              daxDialogsManager: daxDialogs,
+                                              dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

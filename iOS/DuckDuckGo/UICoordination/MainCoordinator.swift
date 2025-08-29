@@ -26,6 +26,7 @@ import DDGSync
 import Configuration
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
+import DataBrokerProtection_iOS
 
 @MainActor
 protocol URLHandling {
@@ -73,7 +74,8 @@ final class MainCoordinator {
          keyValueStore: ThrowingKeyValueStoring,
          defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-         daxDialogsManager: DaxDialogsManaging
+         daxDialogsManager: DaxDialogsManaging,
+         dbpIOSPublicInterface: DBPIOSPublicInterface?
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -143,7 +145,8 @@ final class MainCoordinator {
                                         keyValueStore: keyValueStore,
                                         customConfigurationURLProvider: customConfigurationURLProvider,
                                         systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                                        daxDialogsManager: daxDialogsManager)
+                                        daxDialogsManager: daxDialogsManager,
+                                        dbpIOSPublicInterface: dbpIOSPublicInterface)
     }
 
     func start() {

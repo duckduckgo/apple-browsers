@@ -118,8 +118,6 @@ public final class DataBrokerProtectionIOSManager {
 
     private static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
-    public static var shared: DataBrokerProtectionIOSManager?
-
     private let database: DataBrokerProtectionRepository
     private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding

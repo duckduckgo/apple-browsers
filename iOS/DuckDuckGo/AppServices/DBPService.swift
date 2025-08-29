@@ -28,6 +28,9 @@ import Networking
 final class DBPService: NSObject {
 
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
+    public var dbpIOSPublicInterface: DBPIOSPublicInterface? {
+        return dbpIOSManager
+    }
 
     init(appDependencies: DependencyProvider) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
@@ -66,7 +69,6 @@ final class DBPService: NSObject {
                     return view
                 })
 
-            DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil

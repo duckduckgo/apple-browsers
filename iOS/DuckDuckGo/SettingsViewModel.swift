@@ -57,7 +57,7 @@ final class SettingsViewModel: ObservableObject {
     let featureDiscovery: FeatureDiscovery
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: RunPrerequisitesDelegate?
-    weak var dataBrokerProtectionViewControllerProvider: DataBrokerProtectionViewControllerProvider?
+    var dataBrokerProtectionViewControllerProvider: DataBrokerProtectionViewControllerProvider?
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool

@@ -314,7 +314,8 @@ extension MainViewController {
                                                             customConfigurationURLProvider: customConfigurationURLProvider,
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                                                            daxDialogsManager: daxDialogsManager)
+                                                            daxDialogsManager: daxDialogsManager,
+                                                            dbpIOSPublicInterface: dbpIOSPublicInterface)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
@@ -336,8 +337,8 @@ extension MainViewController {
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   keyValueStore: keyValueStore,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-                                                  runPrerequisitesDelegate: DataBrokerProtectionIOSManager.shared,
-                                                  dataBrokerProtectionViewControllerProvider: DataBrokerProtectionIOSManager.shared)
+                                                  runPrerequisitesDelegate: dbpIOSPublicInterface,
+                                                  dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface)
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {
@@ -385,7 +386,10 @@ extension MainViewController {
             customConfigurationURLProvider: customConfigurationURLProvider,
             keyValueStore: self.keyValueStore,
             systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
-            daxDialogManager: self.daxDialogsManager))
+            daxDialogManager: self.daxDialogsManager,
+            databaseDelegate: self.dbpIOSPublicInterface,
+            debuggingDelegate: self.dbpIOSPublicInterface,
+            runPrequisitesDelegate: self.dbpIOSPublicInterface))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

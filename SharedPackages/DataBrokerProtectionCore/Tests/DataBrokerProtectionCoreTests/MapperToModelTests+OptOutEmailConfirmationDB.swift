@@ -20,7 +20,7 @@ import XCTest
 @testable import DataBrokerProtectionCore
 
 final class MapperOptOutEmailConfirmationTests: XCTestCase {
-    
+
     private var mapperToDB = MapperToDB { data in
         ROT13.string(String(data: data, encoding: .utf8)!).data(using: .utf8)!
     }
@@ -40,7 +40,7 @@ final class MapperOptOutEmailConfirmationTests: XCTestCase {
             emailConfirmationLinkObtainedOnBEDate: Date(),
             emailConfirmationAttemptCount: 3
         )
-        
+
         let dbModel = try mapperToDB.mapToDB(original)
         XCTAssertEqual(dbModel.brokerId, original.brokerId)
         XCTAssertEqual(dbModel.profileQueryId, original.profileQueryId)
@@ -61,7 +61,7 @@ final class MapperOptOutEmailConfirmationTests: XCTestCase {
         XCTAssertEqual(result.emailConfirmationLinkObtainedOnBEDate, original.emailConfirmationLinkObtainedOnBEDate)
         XCTAssertEqual(result.emailConfirmationAttemptCount, original.emailConfirmationAttemptCount)
     }
-    
+
     func testMappingOptOutEmailConfirmation_withoutEmailConfirmationLink() throws {
         let original = OptOutEmailConfirmationJobData(
             brokerId: 123,
@@ -73,7 +73,7 @@ final class MapperOptOutEmailConfirmationTests: XCTestCase {
             emailConfirmationLinkObtainedOnBEDate: nil,
             emailConfirmationAttemptCount: 0
         )
-        
+
         let dbModel = try mapperToDB.mapToDB(original)
         XCTAssertNil(dbModel.emailConfirmationLink)
 

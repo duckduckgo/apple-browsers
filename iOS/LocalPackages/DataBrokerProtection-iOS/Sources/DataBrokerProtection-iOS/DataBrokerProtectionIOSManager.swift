@@ -358,12 +358,8 @@ public final class DataBrokerProtectionIOSManager {
                 return
             }
 
-            do {
-                try await emailConfirmationDataService.checkForEmailConfirmationData()
-            } catch {
-                // TODO
-            }
-            
+            await checkForEmailConfirmationData()
+
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 let timeTaken = Date.now.timeIntervalSince(startDate)
@@ -388,6 +384,14 @@ public final class DataBrokerProtectionIOSManager {
                 self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
             }
+        }
+    }
+
+    private func checkForEmailConfirmationData() async {
+        do {
+            try await emailConfirmationDataService.checkForEmailConfirmationData()
+        } catch {
+            // TODO
         }
     }
 
@@ -533,6 +537,7 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
 
         do {
             try await database.save(profile)
+            await checkForEmailConfirmationData()
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 DispatchQueue.main.async {
                     backgroundAssertion.release()

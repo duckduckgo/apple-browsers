@@ -776,6 +776,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
     }
 
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
     public func save(backgroundTaskEvent: BackgroundTaskEvent) throws {
     }
 
@@ -968,6 +971,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func updateOptOutEmailConfirmationLink(_ link: String?, emailConfirmationLinkObtainedOnBEDate: Date?, profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {

@@ -101,6 +101,9 @@ public protocol DataBrokerProtectionRepository {
                                            profileQueryId: Int64,
                                            brokerId: Int64,
                                            extractedProfileId: Int64) throws
+    func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                      brokerId: Int64,
+                                                      extractedProfileId: Int64) throws
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -812,6 +815,21 @@ extension DataBrokerProtectionDatabase {
             )
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.updateOptOutEmailConfirmationLink")
+            throw error
+        }
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                             brokerId: Int64,
+                                                             extractedProfileId: Int64) throws {
+        do {
+            try vault.incrementOptOutEmailConfirmationAttemptCount(
+                profileQueryId: profileQueryId,
+                brokerId: brokerId,
+                extractedProfileId: extractedProfileId
+            )
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.incrementOptOutEmailConfirmationAttemptCount")
             throw error
         }
     }

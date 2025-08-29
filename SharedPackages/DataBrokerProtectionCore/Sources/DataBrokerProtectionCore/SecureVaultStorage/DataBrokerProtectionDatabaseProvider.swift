@@ -596,26 +596,17 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                                             extractedProfileId: Int64,
                                             mapperToDB: MapperToDB) throws {
         try db.write { db in
-            guard let confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
+            if var confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
                 OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
                 OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
                 OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
-            ]) else {
+            ]) {
+                confirmation.emailConfirmationLink = try mapperToDB.mapToDB(emailConfirmationLink)
+                confirmation.emailConfirmationLinkObtainedOnBEDate = emailConfirmationLinkObtainedOnBEDate
+                try confirmation.update(db)
+            } else {
                 throw DataBrokerProtectionDatabaseErrors.elementNotFound
             }
-
-            let updatedConfirmation = OptOutEmailConfirmationDB(
-                brokerId: confirmation.brokerId,
-                profileQueryId: confirmation.profileQueryId,
-                extractedProfileId: confirmation.extractedProfileId,
-                generatedEmail: confirmation.generatedEmail,
-                attemptID: confirmation.attemptID,
-                emailConfirmationLink: try mapperToDB.mapToDB(emailConfirmationLink),
-                emailConfirmationLinkObtainedOnBEDate: emailConfirmationLinkObtainedOnBEDate,
-                emailConfirmationAttemptCount: confirmation.emailConfirmationAttemptCount
-            )
-
-            try updatedConfirmation.update(db)
         }
     }
 
@@ -623,22 +614,13 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                                                        brokerId: Int64,
                                                        extractedProfileId: Int64) throws {
         try db.write { db in
-            if let confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
+            if var confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
                 OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
                 OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
                 OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
             ]) {
-                let updatedConfirmation = OptOutEmailConfirmationDB(
-                    brokerId: confirmation.brokerId,
-                    profileQueryId: confirmation.profileQueryId,
-                    extractedProfileId: confirmation.extractedProfileId,
-                    generatedEmail: confirmation.generatedEmail,
-                    attemptID: confirmation.attemptID,
-                    emailConfirmationLink: confirmation.emailConfirmationLink,
-                    emailConfirmationLinkObtainedOnBEDate: confirmation.emailConfirmationLinkObtainedOnBEDate,
-                    emailConfirmationAttemptCount: confirmation.emailConfirmationAttemptCount + 1
-                )
-                try updatedConfirmation.update(db)
+                confirmation.emailConfirmationAttemptCount += 1
+                try confirmation.update(db)
             } else {
                 throw DataBrokerProtectionDatabaseErrors.elementNotFound
             }

@@ -133,6 +133,9 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
                                            profileQueryId: Int64,
                                            brokerId: Int64,
                                            extractedProfileId: Int64) throws
+    func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                      brokerId: Int64,
+                                                      extractedProfileId: Int64) throws
 }
 
 public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
@@ -596,6 +599,16 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
             brokerId: brokerId,
             extractedProfileId: extractedProfileId,
             mapperToDB: MapperToDB(mechanism: l2Encrypt(data:))
+        )
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                             brokerId: Int64,
+                                                             extractedProfileId: Int64) throws {
+        try self.providers.database.incrementEmailConfirmationAttemptCount(
+            profileQueryId: profileQueryId,
+            brokerId: brokerId,
+            extractedProfileId: extractedProfileId
         )
     }
 }

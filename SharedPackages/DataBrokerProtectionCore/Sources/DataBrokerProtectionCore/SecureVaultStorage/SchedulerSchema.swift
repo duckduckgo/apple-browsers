@@ -323,9 +323,9 @@ public struct OptOutEmailConfirmationDB: Codable {
     let extractedProfileId: Int64
     let generatedEmail: Data
     let attemptID: String
-    let emailConfirmationLink: Data?
-    let emailConfirmationLinkObtainedOnBEDate: Date?
-    let emailConfirmationAttemptCount: Int64
+    var emailConfirmationLink: Data?
+    var emailConfirmationLinkObtainedOnBEDate: Date?
+    var emailConfirmationAttemptCount: Int64
 }
 
 extension OptOutEmailConfirmationDB: PersistableRecord, FetchableRecord {

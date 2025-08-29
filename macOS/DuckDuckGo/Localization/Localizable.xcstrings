@@ -73756,13 +73756,25 @@
       }
     },
     "session.restore.prompt.explanation" : {
-      "comment" : "Explanation of how the user can restore the previous browser session after a crash later",
+      "comment" : "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can also do this later from History → Reopen All Windows From Last Session."
+            "value" : "You can also do this later from %1$@ → %2$@."
+          }
+        }
+      }
+    },
+    "session.restore.prompt.explanation.markdown" : {
+      "comment" : "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can also do this later from **%1$@** → **%2$@**."
           }
         }
       }

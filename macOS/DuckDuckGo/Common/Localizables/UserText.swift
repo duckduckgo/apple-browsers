@@ -1581,7 +1581,16 @@ struct UserText {
     // MARK: Post-Crash Session Restore Prompt
     static let sessionRestorePromptTitle = NSLocalizedString("session.restore.prompt.title", value: "The browser didn’t quit as expected", comment: "Title of the prompt where the user can choose to restore the previous browser session after a crash")
     static let sessionRestorePromptMessage = NSLocalizedString("session.restore.prompt.message", value: "Would you like to restore tabs from your previous session?", comment: "Message of the prompt where the user can choose to restore the previous browser session after a crash")
-    static let sessionRestorePromptExplanation = NSLocalizedString("session.restore.prompt.explanation", value: "You can also do this later from History → Reopen All Windows From Last Session.", comment: "Explanation of how the user can restore the previous browser session after a crash later")
+    static let sessionRestorePromptExplanation: String = {
+        let localized = {
+            if #available(macOS 12, *) {
+                NSLocalizedString("session.restore.prompt.explanation.markdown", value: "You can also do this later from **%1$@** → **%2$@**.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session. Please make sure to keep **%1$@** and **%2$@** intact.")
+            } else {
+                NSLocalizedString("session.restore.prompt.explanation", value: "You can also do this later from %1$@ → %2$@.", comment: "Explanation of how the user can restore the previous browser session after a crash later. Parameters are strings for the menu items where the session can be restored: History → Reopen All Windows From Last Session.")
+            }
+        }()
+        return String(format: localized, mainMenuHistory, mainMenuHistoryReopenAllWindowsFromLastSession)
+    }()
     static let sessionRestorePromptButtonAccept = NSLocalizedString("session.restore.prompt.button.accept", value: "Restore Session", comment: "Button the user can press to restore the previous browser session after a crash")
     static let sessionRestorePromptButtonReject = NSLocalizedString("session.restore.prompt.button.reject", value: "No Thanks", comment: "Button the user can press to not restore the previous browser session after a crash")
 

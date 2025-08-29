@@ -43,7 +43,7 @@ struct SessionRestorePromptView: View {
                 .font(.body)
                 .padding(.bottom, 8)
 
-            Text(UserText.sessionRestorePromptExplanation)
+            Text(.init(UserText.sessionRestorePromptExplanation))
                 .multilineText()
                 .font(.body)
                 .padding(.bottom, 20)

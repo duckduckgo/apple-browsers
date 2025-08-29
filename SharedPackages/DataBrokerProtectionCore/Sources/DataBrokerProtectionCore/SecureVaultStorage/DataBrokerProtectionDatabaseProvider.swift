@@ -585,7 +585,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
         let optOutEmailConfirmation = try mapperToDB.mapToDB(optOutEmailConfirmationJobData)
 
         try db.write { db in
-            try optOutEmailConfirmation.insert(db)
+            try optOutEmailConfirmation.save(db, onConflict: .replace)
         }
     }
 

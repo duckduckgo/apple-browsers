@@ -241,18 +241,21 @@ public final class DataBrokerProtectionAgentManager {
             didStartActivityScheduler = true
 
             fireMonitoringPixels()
-
-            do {
-                try await emailConfirmationDataService.checkForEmailConfirmationData()
-            } catch {
-                // TODO
-            }
+            await checkForEmailConfirmationData()
 
             startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
 
             /// Monitors entitlement changes every 60 minutes to optimize system performance and resource utilization by avoiding unnecessary operations when entitlement is invalid.
             /// While keeping the agent active with invalid entitlement has no significant risk, setting the monitoring interval at 60 minutes is a good balance to minimize backend checks.
             agentStopper.monitorEntitlementAndStopAgentIfEntitlementIsInvalidAndUserIsNotFreemium(interval: .minutes(60))
+        }
+    }
+
+    public func checkForEmailConfirmationData() async {
+        do {
+            try await emailConfirmationDataService.checkForEmailConfirmationData()
+        } catch {
+            // TODO
         }
     }
 }
@@ -351,11 +354,13 @@ extension DataBrokerProtectionAgentManager: BrokerProfileJobQueueManagerDelegate
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
-    public func profileSaved() {
+    public func profileSaved() async {
         let backgroundAgentInitialScanStartTime = Date()
 
         eventsHandler.fire(.profileSaved)
         fireMonitoringPixels()
+        await checkForEmailConfirmationData()
+
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies) { [weak self] errors in
             guard let self = self else { return }
 
@@ -394,8 +399,10 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         }
     }
 
-    public func appLaunched() {
+    public func appLaunched() async {
         fireMonitoringPixels()
+        await checkForEmailConfirmationData()
+
         startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: { [weak self] errors in
             guard let self = self else { return }
 

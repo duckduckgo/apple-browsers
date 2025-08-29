@@ -446,7 +446,8 @@ private extension ContextMenuManager {
             return
         }
 
-        print(" ---(\(selectedText))")
+        let request = AIChatTextTranslationRequest(text: selectedText, websiteURL: webView?.url, websiteTitle: webView?.title, targetLanguage: AIChatNativePrompt.systemLanguageCode, source: .contextMenu)
+        mainViewController?.aiChatTranslator.translate(request)
     }
 
     func openLinkInNewTab(_ sender: NSMenuItem) {

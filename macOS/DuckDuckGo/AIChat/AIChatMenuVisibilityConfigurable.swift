@@ -60,6 +60,12 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if the text summarization menu action should be displayed; otherwise, `false`.
     var shouldDisplaySummarizationMenuItem: Bool { get }
 
+    /// This property validates user settings to determine if the text translation
+    /// feature should be presented to the user.
+    ///
+    /// - Returns: `true` if the text translation menu action should be displayed; otherwise, `false`.
+    var shouldDisplayTranslationMenuItem: Bool { get }
+
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
     /// This allows subscribers to react to changes in the visibility settings of the application menu
@@ -100,6 +106,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     var shouldDisplaySummarizationMenuItem: Bool {
         shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextSummarization) && shouldDisplayApplicationMenuShortcut
+    }
+
+    var shouldDisplayTranslationMenuItem: Bool {
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextTranslation) && shouldDisplayApplicationMenuShortcut
     }
 
     var shouldDisplayApplicationMenuShortcut: Bool {

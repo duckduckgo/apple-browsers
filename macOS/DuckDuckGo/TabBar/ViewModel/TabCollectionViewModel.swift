@@ -46,9 +46,14 @@ final class TabCollectionViewModel: NSObject {
 
     weak var delegate: TabCollectionViewModelDelegate?
     var newTabPageTabPreloader: NewTabPageTabPreloading?
+    weak var windowControllersManager: WindowControllersManagerProtocol?
 
     /// Local tabs collection
     let tabCollection: TabCollection
+
+    var isPopup: Bool {
+        tabCollection.isPopup
+    }
 
     /// Pinned tabs collection (provided via `PinnedTabsManager` instance).
     var pinnedTabsCollection: TabCollection? {
@@ -137,19 +142,35 @@ final class TabCollectionViewModel: NSObject {
     /// it will be set to false when the user selects an existing tab
     private var shouldReturnToPreviousActiveTab: Bool = false
 
+    // MARK: - Popup window handling
+    /// Redirects tab opening out of a popup window to the main window
+    private func redirectOpenOutsidePopup(_ tab: Tab, parentTab: Tab? = nil, selected: Bool = true) {
+        guard let manager = windowControllersManager else { return }
+        if let parentTab = parentTab ?? tab.parentTab ?? tabCollection.tabs.first?.parentTab,
+           parentTab.burnerMode == tab.burnerMode {
+            manager.openTab(tab, afterParentTab: parentTab, selected: selected)
+        } else {
+            let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab], isPopup: false), burnerMode: tab.burnerMode)
+            manager.openNewWindow(with: tabCollectionViewModel, burnerMode: tab.burnerMode, showWindow: true)
+        }
+    }
+
     init(
         tabCollection: TabCollection,
         selectionIndex: TabIndex = .unpinned(0),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding?,
         burnerMode: BurnerMode = .regular,
         startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
-        tabsPreferences: TabsPreferences = TabsPreferences.shared
+        tabsPreferences: TabsPreferences = TabsPreferences.shared,
+        windowControllersManager: WindowControllersManagerProtocol? = nil
     ) {
+        assert(!tabCollection.isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
         self.tabCollection = tabCollection
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.burnerMode = burnerMode
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
+        self.windowControllersManager = windowControllersManager
         super.init()
 
         self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self, forceActive: nil)
@@ -166,18 +187,23 @@ final class TabCollectionViewModel: NSObject {
 
     convenience init(tabCollection: TabCollection,
                      selectionIndex: TabIndex = .unpinned(0),
-                     burnerMode: BurnerMode = .regular) {
+                     burnerMode: BurnerMode = .regular,
+                     windowControllersManager: WindowControllersManagerProtocol? = nil) {
+        assert(!tabCollection.isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
         self.init(tabCollection: tabCollection,
                   selectionIndex: selectionIndex,
                   pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                  burnerMode: burnerMode)
+                  burnerMode: burnerMode,
+                  windowControllersManager: windowControllersManager)
     }
 
-    convenience init(burnerMode: BurnerMode = .regular) {
-        let tabCollection = TabCollection()
+    convenience init(isPopup: Bool, burnerMode: BurnerMode = .regular, windowControllersManager: WindowControllersManagerProtocol? = nil) {
+        assert(!isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
+        let tabCollection = TabCollection(isPopup: isPopup)
         self.init(tabCollection: tabCollection,
                   pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                  burnerMode: burnerMode)
+                  burnerMode: burnerMode,
+                  windowControllersManager: windowControllersManager)
     }
 
     var selectedTabCancellable: AnyCancellable?
@@ -341,11 +367,22 @@ final class TabCollectionViewModel: NSObject {
         if selectDisplayableTabIfPresent(content) {
             return
         }
-        append(tab: Tab(content: content, shouldLoadInBackground: true, burnerMode: burnerMode), selected: selected, forceChange: forceChange)
+        let tab = makeTab(for: content)
+        // Prevent multiple tabs in popup windows: redirect to parent/main window
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, selected: selected)
+            return
+        }
+        append(tab: tab, selected: selected, forceChange: forceChange)
     }
 
     func append(tab: Tab, selected: Bool = true, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
+        // Prevent multiple tabs in popup windows: redirect to parent/main window
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, selected: selected)
+            return
+        }
 
         shouldReturnToPreviousActiveTab = true
         tabCollection.append(tab: tab)
@@ -364,6 +401,15 @@ final class TabCollectionViewModel: NSObject {
     func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
         guard changesEnabled else { return }
 
+        // Prevent multiple tabs in popup windows: redirect each tab to parent/main window
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            for (idx, tab) in tabs.enumerated() {
+                let select = shouldSelectLastTab && idx == tabs.indices.last
+                redirectOpenOutsidePopup(tab, selected: select)
+            }
+            return
+        }
+
         tabs.forEach {
             tabCollection.append(tab: $0)
         }
@@ -376,13 +422,24 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func insertNewTab(after parentTab: Tab, with content: Tab.TabContent = .newtab, selected: Bool = true) {
-        insert(Tab(content: content, shouldLoadInBackground: true, burnerMode: burnerMode), after: parentTab, selected: selected)
+        let tab = makeTab(for: content)
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, parentTab: parentTab, selected: selected)
+            return
+        }
+        insert(tab, after: parentTab, selected: selected)
     }
 
     func insert(_ tab: Tab, at index: TabIndex, selected: Bool = true) {
         guard changesEnabled else { return }
         guard let tabCollection = tabCollection(for: index) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Tab collection for index \(String(describing: index)) not found")
+            return
+        }
+
+        // Prevent multiple tabs in popup windows: redirect to parent/main window
+        if tabCollection.isPopup, !self.tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, selected: selected)
             return
         }
 
@@ -397,6 +454,11 @@ final class TabCollectionViewModel: NSObject {
 
     func insert(_ tab: Tab, after parentTab: Tab?, selected: Bool) {
         guard changesEnabled else { return }
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, parentTab: parentTab, selected: selected)
+            return
+        }
+
         guard let parentTab = parentTab ?? tab.parentTab,
               let parentTabIndex = indexInAllTabs(of: parentTab) else {
             Logger.tabLazyLoading.error("TabCollection: No parent tab")
@@ -410,6 +472,10 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func insert(_ tab: Tab, selected: Bool = true) {
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, selected: selected)
+            return
+        }
         if let parentTab = tab.parentTab {
             self.insert(tab, after: parentTab, selected: selected)
         } else {
@@ -423,10 +489,19 @@ final class TabCollectionViewModel: NSObject {
         }
 
         let tab = makeTab(for: content)
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, selected: selected)
+            return
+        }
+
         insertOrAppend(tab: tab, selected: selected)
     }
 
     func insertOrAppend(tab: Tab, selected: Bool) {
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab, selected: selected)
+            return
+        }
         if tabsPreferences.newTabPosition == .nextToCurrent, let selectionIndex {
             self.insert(tab, at: selectionIndex.makeNextUnpinned(), selected: selected)
         } else {
@@ -664,6 +739,11 @@ final class TabCollectionViewModel: NSObject {
 
         guard let tab = tab(at: tabIndex) else {
             Logger.tabLazyLoading.error("TabCollectionViewModel: Index out of bounds")
+            return
+        }
+
+        if tabCollection.isPopup, !tabCollection.tabs.isEmpty {
+            redirectOpenOutsidePopup(tab)
             return
         }
 

@@ -359,7 +359,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .openFireWindowByDefault:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.openFireWindowByDefault))
         case .restoreSessionPrompt:
             return .disabled
         case .duckAISearchParameter:

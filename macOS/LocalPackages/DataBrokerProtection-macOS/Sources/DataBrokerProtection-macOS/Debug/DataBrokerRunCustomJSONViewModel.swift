@@ -248,7 +248,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                     prefs: self.contentScopeProperties,
                                                     context: queryData,
                                                     emailService: self.emailService,
-                                                    captchaService: self.captchaService) {
+                                                    captchaService: self.captchaService,
+                                                    featureFlagger: self.featureFlagger) {
                         true
                     }
 

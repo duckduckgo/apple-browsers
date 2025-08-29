@@ -53,7 +53,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local3Hashed))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local3Hashed), .other, src: main()),
@@ -99,7 +99,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -144,7 +144,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
         responder(at: 0).clear()
 
         // reload redirecting to localURL#navlink
@@ -153,7 +153,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local, cachePolicy: .reloadRevalidatingCacheData))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(NavAction(req(urls.local, cachePolicy: .reloadIgnoringLocalCacheData), .other, from: history[1], src: main(urls.local))),
@@ -192,7 +192,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -244,7 +244,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -300,7 +300,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -371,7 +371,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -432,7 +432,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -486,7 +486,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -538,7 +538,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -581,7 +581,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -632,7 +632,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -680,7 +680,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         var expected: [TestsNavigationEvent] =  [
 
@@ -728,7 +728,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         var expected: [TestsNavigationEvent] =  [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -776,7 +776,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         XCTAssertFalse(navAct(1).navigationAction.isTargetingNewWindow)
         assertHistory(ofResponderAt: 0, equalsTo: [
@@ -816,7 +816,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         XCTAssertFalse(navAct(1).navigationAction.isTargetingNewWindow)
         assertHistory(ofResponderAt: 0, equalsTo: [
@@ -864,7 +864,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         XCTAssertFalse(navAct(1).navigationAction.isTargetingNewWindow)
         assertHistory(ofResponderAt: 0, equalsTo: [
@@ -904,7 +904,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // sometimes NavigationAction #2 Task is cancelled and doesn‘t get get to responder
         responder(at: 0).history.removeAll(where: {
@@ -963,7 +963,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -993,16 +993,16 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         }]
         try server.start(8084)
 
-        testSchemeHandler.onRequest = { [responseData=data.html] task in
+        let testSchemeHandler = TestNavigationSchemeHandler { [responseData=data.html] task in
             task.didReceive(.response(for: task.request, mimeType: "text/html", expectedLength: responseData.count))
             task.didReceive(responseData.dropLast(5))
         }
 
         responder(at: 0).onNavigationAction = { _, _ in .allow }
-        responder(at: 0).onDidCommit = { [unowned webView=withWebView(do: { $0 }), urls] nav in
+        responder(at: 0).onDidCommit = { [weak self, urls] nav in
             if nav.url.matches(urls.testScheme) {
                 DispatchQueue.main.async {
-                    webView.load(req(urls.local4))
+                    self!._webView!.load(req(urls.local4))
                     lock.unlock()
                 }
             }
@@ -1013,10 +1013,10 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             eOnDidFinish.fulfill()
         }
 
-        withWebView { webView in
+        withWebView(testURLSchemeHandler: testSchemeHandler) { webView in
             _=webView.load(req(urls.testScheme))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.testScheme), .other, src: main(responderIdx: 0)),
@@ -1068,7 +1068,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -1114,7 +1114,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -1159,7 +1159,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -1190,12 +1190,12 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             lock.unlock()
         }
 
-        server.middleware = [{ [unowned webView=withWebView(do: { $0 }), unowned navigationDelegateProxy, urls, data] request in
+        server.middleware = [{ [weak self, unowned navigationDelegateProxy, urls, data] request in
             switch request.path {
             case urls.local3.path:
                 DispatchQueue.main.async {
                     navigationDelegateProxy!.nextNavigationActionShouldBeUserInitiated = true
-                    webView.evaluateJavaScript("window.location.href='\(urls.local2)'")
+                    self!._webView!.evaluateJavaScript("window.location.href='\(urls.local2)'")
                 }
                 lock.lock()
                 lock.unlock()
@@ -1230,7 +1230,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // filter out iframe events
         responder(at: 0).history.removeAll {
@@ -1290,7 +1290,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -1355,7 +1355,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        wait(for: [eDidFinishInitial], timeout: 5)
+        wait(for: [eDidFinishInitial], )
 
         // Click the link to js-redir page (urls.local2), which client-redirects to urls.local3,
         // then developer-redirects to final destination (urls.local4)
@@ -1364,7 +1364,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local2))
         }
-        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], timeout: 5)
+        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], )
 
         withWebView { webView in
             // Validate back/forward history
@@ -1425,7 +1425,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        wait(for: [eDidFinishInitial], timeout: 5)
+        wait(for: [eDidFinishInitial], )
 
         // Click the link to js-redir page (urls.local2), which client-redirects to urls.local3,
         // then developer-redirects to final destination (urls.local4)
@@ -1434,7 +1434,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local2))
         }
-        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], timeout: 5)
+        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], )
 
         withWebView { webView in
             // Validate back/forward history
@@ -1496,7 +1496,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local2))
         }
-        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], timeout: 5)
+        wait(for: [eDidFinishLocal2, eDidFinishFinal, developerRedirectExpectation], )
 
         withWebView { webView in
             // Validate new tab has no back history
@@ -1567,7 +1567,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // Navigate to first client-redirect page (urls.local5), which client-redirects to urls.local3,
         // then developer-redirects to urls.local4, which client-redirects to urls.local2,
@@ -1583,7 +1583,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local5))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         withWebView { webView in
             // Validate back/forward history

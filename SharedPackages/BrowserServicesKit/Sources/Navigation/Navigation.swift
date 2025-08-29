@@ -394,7 +394,7 @@ extension Navigation: CustomDebugStringConvertible {
             assertionFailure("Accessing Navigation from background thread")
             return "<ExpectedNavigation ?>"
         }
-        return MainActor.assumeIsolated {
+        return MainActor.assumeMainThread {
             "<\(identity) #\(navigationAction.identifier): url:\(url.absoluteString) state:\(state)\(isCommitted ? "(committed)" : "") type:\(navigationActions.last?.navigationType.debugDescription ?? "<nil>")\(isCurrent ? "" : " non-current")>"
         }
     }

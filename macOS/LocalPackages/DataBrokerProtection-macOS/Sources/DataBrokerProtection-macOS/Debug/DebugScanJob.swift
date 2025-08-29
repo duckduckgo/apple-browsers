@@ -73,6 +73,7 @@ final class DebugScanJob: SubJobWebRunning {
     let cookieHandler: CookieHandler
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     var postLoadingSiteStartTime: Date?
+    let featureFlagger: DBPFeatureFlagging
 
     private let fileManager = FileManager.default
     private let debugScanContentPath: String?
@@ -82,6 +83,7 @@ final class DebugScanJob: SubJobWebRunning {
          context: SubJobContextProviding,
          emailService: EmailServiceProtocol,
          captchaService: CaptchaServiceProtocol,
+         featureFlagger: DBPFeatureFlagging,
          executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
          operationAwaitTime: TimeInterval = 3,
          clickAwaitTime: TimeInterval = 0,
@@ -96,6 +98,7 @@ final class DebugScanJob: SubJobWebRunning {
         self.operationAwaitTime = operationAwaitTime
         self.shouldRunNextStep = shouldRunNextStep
         self.clickAwaitTime = clickAwaitTime
+        self.featureFlagger = featureFlagger
         if let desktopPath = fileManager.urls(for: .desktopDirectory, in: .userDomainMask).first?.relativePath {
             self.debugScanContentPath = desktopPath + "/PIR-Debug"
         } else {

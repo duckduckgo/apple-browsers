@@ -117,6 +117,14 @@ public class DataBrokerProtectionAgentManagerProvider {
         let emailService = EmailService(authenticationManager: authenticationManager,
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
+        let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
+                                            settings: dbpSettings,
+                                            servicePixel: backendServicePixels)
+        let emailConfirmationDataService = EmailConfirmationDataService(database: dataManager.database,
+                                                                        emailServiceV0: emailService,
+                                                                        emailServiceV1: emailServiceV1,
+                                                                        featureFlagger: featureFlagger,
+                                                                        pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let agentstopper = DefaultDataBrokerProtectionAgentStopper(dataManager: dataManager,
@@ -146,6 +154,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             ipcServer: ipcServer,
             queueManager: queueManager,
             dataManager: dataManager,
+            emailConfirmationDataService: emailConfirmationDataService,
             jobDependencies: jobDependencies,
             sharedPixelsHandler: sharedPixelsHandler,
             pixelHandler: pixelHandler,
@@ -165,6 +174,7 @@ public final class DataBrokerProtectionAgentManager {
     private var ipcServer: DataBrokerProtectionIPCServer
     private var queueManager: BrokerProfileJobQueueManaging
     private let dataManager: DataBrokerProtectionDataManaging
+    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
@@ -185,6 +195,7 @@ public final class DataBrokerProtectionAgentManager {
          ipcServer: DataBrokerProtectionIPCServer,
          queueManager: BrokerProfileJobQueueManaging,
          dataManager: DataBrokerProtectionDataManaging,
+         emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          jobDependencies: BrokerProfileJobDependencyProviding,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
@@ -200,6 +211,7 @@ public final class DataBrokerProtectionAgentManager {
         self.ipcServer = ipcServer
         self.queueManager = queueManager
         self.dataManager = dataManager
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.jobDependencies = jobDependencies
         self.sharedPixelsHandler = sharedPixelsHandler
         self.pixelHandler = pixelHandler
@@ -211,6 +223,7 @@ public final class DataBrokerProtectionAgentManager {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
 
         self.activityScheduler.delegate = self
+        self.activityScheduler.dataSource = self
         self.queueManager.delegate = self
         self.ipcServer.serverDelegate = self
         self.ipcServer.activate()
@@ -224,9 +237,17 @@ public final class DataBrokerProtectionAgentManager {
             // If the agent needs to be stopped, this function will stop it, so the subsequent calls after it will not be made.
             await agentStopper.validateRunPrerequisitesAndStopAgentIfNecessary()
 
-            activityScheduler.startScheduler()
+            await activityScheduler.startScheduler()
             didStartActivityScheduler = true
+
             fireMonitoringPixels()
+
+            do {
+                try await emailConfirmationDataService.checkForEmailConfirmationData()
+            } catch {
+                // TODO
+            }
+
             startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
 
             /// Monitors entitlement changes every 60 minutes to optimize system performance and resource utilization by avoiding unnecessary operations when entitlement is invalid.
@@ -285,15 +306,35 @@ private extension DataBrokerProtectionAgentManager {
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivitySchedulerDelegate {
 
-    public func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler, completion: (() -> Void)?) {
-        startScheduledOperations(completion: completion)
+    public func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) async {
+        do {
+            let emailConfirmationDataService = activityScheduler.dataSource?.emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(activityScheduler)
+            try await emailConfirmationDataService?.checkForEmailConfirmationData()
+        } catch {
+            // TODO
+        }
+        await startScheduledOperations()
     }
 
-    func startScheduledOperations(completion: (() -> Void)?) {
+    func startScheduledOperations() async {
+        await withCheckedContinuation { continuation in
+            startScheduledOperations {
+                continuation.resume()
+            }
+        }
+    }
+
+    private func startScheduledOperations(completion: (() -> Void)?) {
         fireMonitoringPixels()
         startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
             completion?()
         }
+    }
+}
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivitySchedulerDataSource {
+    public func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: any DataBrokerProtectionBackgroundActivityScheduler) -> (any EmailConfirmationDataServiceProvider)? {
+        emailConfirmationDataService
     }
 }
 

@@ -28,11 +28,6 @@ final class DDGErrorTests: XCTestCase {
         case simpleError(code: Int, description: String)
         case errorWithUnderlying(code: Int, description: String)
 
-        static var allCases = {
-            [TestError.simpleError,
-             TestError.errorWithUnderlying]
-        }
-
         static let errorDomain = "TestErrorDomain"
 
         var errorCode: Int {
@@ -173,6 +168,6 @@ final class DDGErrorTests: XCTestCase {
         let userInfo = error.errorUserInfo
 
         XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Main error")
-        XCTAssertNotNil(userInfo[NSUnderlyingErrorKey]) // Should be Any, not nil
+        XCTAssertNil(userInfo[NSUnderlyingErrorKey]) // Should not be present when there is no underlying error
     }
 }

@@ -269,11 +269,12 @@ public extension DDGError /*CustomNSError*/ {
     ///
     /// - Returns: A dictionary suitable for use as NSError userInfo.
     var errorUserInfo: [String: Any] {
-        var result = [
-            NSDebugDescriptionErrorKey: description,
-            NSUnderlyingErrorKey: underlyingError as Any
+        var result: [String: Any] = [
+            NSDebugDescriptionErrorKey: description
         ]
-
+        if let underlying = underlyingError {
+            result[NSUnderlyingErrorKey] = underlying
+        }
         if let localisedError = self as? LocalizedError {
             result[NSLocalizedDescriptionKey] = localisedError.errorDescription
             result[NSLocalizedFailureErrorKey] = localisedError.failureReason as Any

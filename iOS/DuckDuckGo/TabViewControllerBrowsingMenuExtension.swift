@@ -208,6 +208,7 @@ extension TabViewController {
                                                          image: DesignSystemImages.Glyphs.Size16.reload,
                                                          action: { [weak self] in
                 guard let self = self else { return }
+                Pixel.fire(pixel: .browsingMenuRefreshPage)
                 self.reload()
             })
             entries.append(refreshEntry)

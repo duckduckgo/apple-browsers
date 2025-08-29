@@ -150,6 +150,7 @@ extension Pixel {
         case browsingMenuAutofill
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
+        case browsingMenuRefreshPage
 
         case addressBarShare
         case addressBarSettings
@@ -1134,6 +1135,8 @@ extension Pixel {
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
+        case settingsRefreshButtonPositionAddressBar
+        case settingsRefreshButtonPositionMenu
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1426,6 +1429,9 @@ extension Pixel.Event {
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
+        case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_address_bar_daily"
+        case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu_daily"
+            
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1447,6 +1453,7 @@ extension Pixel.Event {
         case .browsingMenuReportBrokenSite: return "mb_rb"
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
+        case .browsingMenuRefreshPage: return "m_menu_refresh_page"
             
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"

@@ -23945,6 +23945,18 @@
         }
       }
     },
+    "duckai.translate.context-menu-action" : {
+      "comment" : "Context menu option that triggers Duck.ai-assisted translation of selected text",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Translate with Duck.ai"
+          }
+        }
+      }
+    },
     "duckai.visibility.section.title" : {
       "comment" : "Section title for Duck.ai visibility settings",
       "extractionState" : "stale",

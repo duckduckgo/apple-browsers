@@ -74,8 +74,6 @@ final class BrowserTabViewController: NSViewController {
     @Published private var webViewSnapshot: NSView?
     private var containerStackView: NSStackView
 
-    private weak var webExtensionWebView: WebView?
-
     weak var delegate: BrowserTabViewControllerDelegate?
     var tabViewModel: TabViewModel?
 
@@ -903,9 +901,8 @@ final class BrowserTabViewController: NSViewController {
         preferencesViewController?.removeCompletely()
         bookmarksViewController?.removeCompletely()
         burnerHomePageViewController?.removeCompletely()
-        webExtensionWebView?.superview?.removeFromSuperview()
-        webExtensionWebView = nil
         dataBrokerProtectionHomeViewController?.removeCompletely()
+
         if includingWebView {
             self.removeWebViewFromHierarchy()
         }

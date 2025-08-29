@@ -36,11 +36,11 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let featureFlagger: DBPFeatureFlagging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
 
-    init(database: DataBrokerProtectionRepository,
-         emailServiceV0: EmailServiceProtocol,
-         emailServiceV1: EmailServiceV1Protocol,
-         featureFlagger: DBPFeatureFlagging,
-         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?) {
+    public init(database: DataBrokerProtectionRepository,
+                emailServiceV0: EmailServiceProtocol,
+                emailServiceV1: EmailServiceV1Protocol,
+                featureFlagger: DBPFeatureFlagging,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?) {
         self.database = database
         self.emailServiceV0 = emailServiceV0
         self.emailServiceV1 = emailServiceV1

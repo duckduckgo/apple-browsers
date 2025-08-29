@@ -323,6 +323,9 @@ public class DDGSync: DDGSyncing {
         let syncQueue = SyncQueue(dataProviders: providers, dependencies: dependencies)
         try syncQueue.prepareDataModelsForSync(needsRemoteDataFetch: account.state == .addingNewDevice)
 
+        //Remove account from keychain to re-apply attributes changes
+        try? dependencies.secureStore.removeAccount()
+
         if account.state != .active {
             let activatedAccount = account.updatingState(.active)
             try dependencies.secureStore.persistAccount(activatedAccount)

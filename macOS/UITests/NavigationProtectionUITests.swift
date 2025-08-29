@@ -124,9 +124,8 @@ class NavigationProtectionUITests: UITestCase {
         guardianAmpLink.click()
 
         // Wait for navigation to complete
-        let navigationTimeout: TimeInterval = 30.0
         let newPageContent = webView.staticTexts.firstMatch
-        XCTAssertTrue(newPageContent.waitForExistence(timeout: navigationTimeout), "Navigation should complete after AMP link click")
+        XCTAssertTrue(newPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Navigation should complete after AMP link click")
 
         // Verify AMP protection worked - should redirect to canonical URL
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
@@ -263,9 +262,8 @@ class NavigationProtectionUITests: UITestCase {
         XCTAssertTrue(crossOriginContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Cross-origin page should load")
 
         // Ensure page is fully loaded before accessing address bar
-        let pageLoadTimeout: TimeInterval = 3.0
         let pageFullyLoaded = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(pageFullyLoaded.waitForExistence(timeout: pageLoadTimeout), "Page should be fully loaded")
+        XCTAssertTrue(pageFullyLoaded.waitForExistence(timeout: UITests.Timeouts.navigation), "Page should be fully loaded")
 
         // Verify cross-site navigation completed (protection allows legitimate navigation)
         let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""

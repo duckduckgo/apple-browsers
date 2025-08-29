@@ -630,6 +630,7 @@ final class MainMenu: NSMenu {
         self.toggleBookmarksBarMenuItem = toggleBookmarksBarMenuItem
         toggleBookmarksBarMenuItem.target = self
         toggleBookmarksBarMenuItem.action = #selector(toggleBookmarksBarFromMenu(_:))
+        toggleBookmarksBarMenuItem.setAccessibilityIdentifier("MainMenu.toggleBookmarksBar")
 
         self.bookmarksMenuToggleBookmarksBarMenuItem = bookmarksMenuToggleBookmarksBarMenuItem
     }

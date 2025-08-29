@@ -22,15 +22,25 @@ import History
 
 final class TabCollection: NSObject {
 
+    /// When true, this collection is used by a popup window and must contain at most one tab
+    let isPopup: Bool
+
     @Published private(set) var tabs: [Tab]
 
     let didRemoveTabPublisher = PassthroughSubject<(Tab, Int), Never>()
 
-    init(tabs: [Tab] = []) {
+    init(tabs: [Tab] = [], isPopup: Bool = false) {
+        assert(!isPopup || tabs.count <= 1, "Popup tab collections must contain at most one tab")
+        self.isPopup = isPopup
         self.tabs = tabs
     }
 
     func append(tab: Tab) {
+        // Enforce single-tab popup: ignore attempts to add more than one tab
+        if isPopup, !tabs.isEmpty {
+            assertionFailure("Popup tab collections must contain at most one tab")
+            return
+        }
         tabs.append(tab)
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
@@ -42,6 +52,11 @@ final class TabCollection: NSObject {
 
     @discardableResult
     func insert(_ tab: Tab, at index: Int) -> Bool {
+        // Enforce single-tab popup: ignore inserts beyond the first slot
+        if isPopup, !tabs.isEmpty {
+            assertionFailure("Popup tab collections must contain at most one tab")
+            return false
+        }
         guard index >= 0, index <= tabs.endIndex else {
             assertionFailure("TabCollection: Index out of bounds")
             return false

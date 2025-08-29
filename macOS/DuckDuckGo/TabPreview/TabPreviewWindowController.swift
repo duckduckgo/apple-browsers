@@ -65,6 +65,8 @@ final class TabPreviewWindowController: NSWindowController {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.animationBehavior = .utilityWindow
+        window.setAccessibilityEnabled(false)
+        window.setAccessibilityElement(false)
 
         return window
     }

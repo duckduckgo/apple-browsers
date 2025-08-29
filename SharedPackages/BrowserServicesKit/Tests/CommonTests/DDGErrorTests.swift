@@ -173,6 +173,6 @@ final class DDGErrorTests: XCTestCase {
         let userInfo = error.errorUserInfo
 
         XCTAssertEqual(userInfo[NSDebugDescriptionErrorKey] as? String, "Main error")
-        XCTAssertNotNil(userInfo[NSUnderlyingErrorKey]) // Should be Any, not nil
+        XCTAssertNil(userInfo[NSUnderlyingErrorKey]) // Should not be present when there is no underlying error
     }
 }

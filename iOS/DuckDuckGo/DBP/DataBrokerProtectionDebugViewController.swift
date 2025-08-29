@@ -158,7 +158,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case metadataDisplay
     }
 
-    // private var manager: DataBrokerProtectionIOSManager
     private weak var databaseDelegate: DatabaseDelegate?
     private weak var debuggingDelegate: DebuggingDelegate?
     private weak var runPrerequisitesDelegate: RunPrerequisitesDelegate?

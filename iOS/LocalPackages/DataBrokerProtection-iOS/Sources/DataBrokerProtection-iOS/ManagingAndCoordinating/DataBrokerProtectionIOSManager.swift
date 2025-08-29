@@ -39,6 +39,12 @@ import SwiftUI // TODO can get rid of this?
 
 // MARK: - Public interface
 
+/*
+ Where possible, avoid using this and prefer to use individual delegates
+ This is only used for injecting through layers of the app that don't care about DBP
+ */
+public typealias DBPIOSPublicInterface = AppLifecycleEventsDelegate & DatabaseDelegate & DebuggingDelegate & RunPrerequisitesDelegate & DataBrokerProtectionViewControllerProvider
+
 public typealias DebuggingDelegate = DebugInformationDelegate & DebugCommandsDelegate
 public typealias DebugInformationDelegate = BackgroundTaskInformationDelegate & JobQueueInformationDelegate & RunPrerequisitesDelegate
 
@@ -84,7 +90,7 @@ public protocol DatabaseDelegate: AnyObject  {
     func matchRemovedByUser(with id: Int64) throws
 }
 
-public protocol DataBrokerProtectionViewControllerProvider {
+public protocol DataBrokerProtectionViewControllerProvider: AnyObject {
     func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController
 }
 

@@ -27,6 +27,7 @@ import PrivacyDashboard
 import Subscription
 import DDGSync
 import os.log
+import DataBrokerProtection_iOS
 
 extension MainViewController {
 
@@ -334,7 +335,9 @@ extension MainViewController {
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
                                                   keyValueStore: keyValueStore,
-                                                  systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager)
+                                                  systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+                                                  runPrerequisitesDelegate: DataBrokerProtectionIOSManager.shared,
+                                                  dataBrokerProtectionViewControllerProvider: DataBrokerProtectionIOSManager.shared)
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {

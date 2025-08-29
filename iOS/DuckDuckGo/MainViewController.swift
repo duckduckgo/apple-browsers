@@ -200,7 +200,7 @@ class MainViewController: UIViewController {
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
-    let dbpIOSPublicInterface: DBPIOSPublicInterface?
+    let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -269,7 +269,7 @@ class MainViewController: UIViewController {
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         daxDialogsManager: DaxDialogsManaging,
         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
-        dbpIOSPublicInterface: DBPIOSPublicInterface?
+        dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner

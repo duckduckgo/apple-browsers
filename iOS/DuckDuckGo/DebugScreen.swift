@@ -41,9 +41,9 @@ enum DebugScreen: Identifiable {
         let keyValueStore: ThrowingKeyValueStoring
         let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
         let daxDialogManager: DaxDialogsManaging
-        let databaseDelegate: DatabaseDelegate?
-        let debuggingDelegate: DebuggingDelegate?
-        let runPrequisitesDelegate: RunPrerequisitesDelegate?
+        let databaseDelegate: DBPIOSInterface.DatabaseDelegate?
+        let debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
+        let runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
 
     }
 

@@ -99,9 +99,9 @@ final class DebugSaveProfileViewModel: ObservableObject {
     @Published var names = [NameUI.empty()]
     @Published var addresses = [AddressUI.empty()]
 
-    private weak var databaseDelegate: DatabaseDelegate?
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
 
-    internal init(databaseDelegate: DatabaseDelegate?) {
+    internal init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?) {
         self.databaseDelegate = databaseDelegate
     }
 

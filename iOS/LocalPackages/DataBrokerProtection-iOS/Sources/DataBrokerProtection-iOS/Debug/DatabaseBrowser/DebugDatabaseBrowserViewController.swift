@@ -23,7 +23,7 @@ import DataBrokerProtectionCore
 
 public final class DebugDatabaseBrowserViewController: UIHostingController<DebugDatabaseBrowserView> {
 
-    public init(databaseDelegate: DatabaseDelegate?) {
+    public init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?) {
         let viewModel = DebugDatabaseBrowserViewModel(databaseDelegate: databaseDelegate)
         let contentView = DebugDatabaseBrowserView(viewModel: viewModel)
         super.init(rootView: contentView)

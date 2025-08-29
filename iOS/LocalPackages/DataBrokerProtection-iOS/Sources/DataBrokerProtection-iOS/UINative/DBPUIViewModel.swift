@@ -32,8 +32,8 @@ public protocol DBPUIViewModelOpenFeedbackFormDelegate: AnyObject {
 
 public final class DBPUIViewModel {
 
-    private weak var authenticationDelegate: AuthenticationDelegate?
-    private weak var databaseDelegate: DatabaseDelegate?
+    private weak var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate?
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
     private weak var feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate?
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
@@ -43,8 +43,8 @@ public final class DBPUIViewModel {
 
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
-    public init(authenticationDelegate: AuthenticationDelegate,
-                databaseDelegate: DatabaseDelegate,
+    public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
+                databaseDelegate: DBPIOSInterface.DatabaseDelegate,
                 feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,

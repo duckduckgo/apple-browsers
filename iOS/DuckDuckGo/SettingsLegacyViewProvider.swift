@@ -49,7 +49,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let daxDialogsManager: DaxDialogsManaging
-    let dbpIOSPublicInterface: DBPIOSPublicInterface?
+    let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -63,7 +63,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
-         dbpIOSPublicInterface: DBPIOSPublicInterface?) {
+         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings

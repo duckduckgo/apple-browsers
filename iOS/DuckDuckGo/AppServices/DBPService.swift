@@ -28,7 +28,7 @@ import Networking
 final class DBPService: NSObject {
 
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
-    public var dbpIOSPublicInterface: DBPIOSPublicInterface? {
+    public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
         return dbpIOSManager
     }
 

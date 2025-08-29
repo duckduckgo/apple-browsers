@@ -29,8 +29,8 @@ import DataBrokerProtectionCore
 final public class DataBrokerProtectionViewController: UIViewController {
 
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
-    private var authenticationDelegate: AuthenticationDelegate
-    private var databaseDelegate: DatabaseDelegate
+    private var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate
+    private var databaseDelegate: DBPIOSInterface.DatabaseDelegate
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
 
@@ -72,8 +72,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
         return activityIndicator
     }()
 
-    public init(authenticationDelegate: AuthenticationDelegate,
-                databaseDelegate: DatabaseDelegate,
+    public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
+                databaseDelegate: DBPIOSInterface.DatabaseDelegate,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -183,9 +183,9 @@ extension DataBrokerProtectionViewController: WKNavigationDelegate {
 
 public struct DataBrokerProtectionViewControllerRepresentation: UIViewControllerRepresentable {
 
-    private let dbpViewControllerProvider: DataBrokerProtectionViewControllerProvider
+    private let dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider
 
-    public init(dbpViewControllerProvider: DataBrokerProtectionViewControllerProvider) {
+    public init(dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider) {
         self.dbpViewControllerProvider = dbpViewControllerProvider
     }
 

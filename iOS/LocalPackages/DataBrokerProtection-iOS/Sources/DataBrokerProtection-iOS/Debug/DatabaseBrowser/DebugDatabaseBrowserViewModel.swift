@@ -25,9 +25,9 @@ import PixelKit
 final class DebugDatabaseBrowserViewModel: ObservableObject {
     @Published var selectedTable: DataBrokerDatabaseBrowserData.Table?
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
-    private weak var databaseDelegate: DatabaseDelegate?
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
 
-    internal init(databaseDelegate: DatabaseDelegate?, tables: [DataBrokerDatabaseBrowserData.Table]? = nil) {
+    internal init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?, tables: [DataBrokerDatabaseBrowserData.Table]? = nil) {
 
         if let tables = tables {
             self.tables = tables

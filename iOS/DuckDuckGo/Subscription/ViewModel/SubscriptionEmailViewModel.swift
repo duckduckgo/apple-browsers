@@ -28,7 +28,7 @@ import DataBrokerProtection_iOS
 final class SubscriptionEmailViewModel: ObservableObject {
     
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    weak var dataBrokerProtectionViewControllerProvider: DataBrokerProtectionViewControllerProvider?
+    weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let userScript: SubscriptionPagesUserScript
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
 
@@ -91,7 +91,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         dataBrokerProtectionViewControllerProvider: DataBrokerProtectionViewControllerProvider?) {
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager

@@ -158,9 +158,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case metadataDisplay
     }
 
-    private weak var databaseDelegate: DatabaseDelegate?
-    private weak var debuggingDelegate: DebuggingDelegate?
-    private weak var runPrerequisitesDelegate: RunPrerequisitesDelegate?
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
+    private weak var debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
+    private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     
@@ -203,9 +203,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     // MARK: Lifecycle
 
     required init?(coder: NSCoder,
-                   databaseDelegate: DatabaseDelegate?,
-                   debuggingDelegate: DebuggingDelegate?,
-                   runPrequisitesDelegate: RunPrerequisitesDelegate?) {
+                   databaseDelegate: DBPIOSInterface.DatabaseDelegate?,
+                   debuggingDelegate: DBPIOSInterface.DebuggingDelegate?,
+                   runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?) {
         self.databaseDelegate = databaseDelegate
         self.debuggingDelegate = debuggingDelegate
         self.runPrerequisitesDelegate = runPrequisitesDelegate

@@ -36,7 +36,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         dataBrokerProtectionViewControllerProvider: DataBrokerProtectionViewControllerProvider?) {
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
 
         self.userScript = userScript
 

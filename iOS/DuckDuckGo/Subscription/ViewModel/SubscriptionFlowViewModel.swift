@@ -31,7 +31,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
     var webViewModel: AsyncHeadlessWebViewViewModel
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    weak var dataBrokerProtectionViewControllerProvider: DataBrokerProtectionViewControllerProvider?
+    weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let purchaseURL: URL
 
     private let urlOpener: URLOpener
@@ -79,7 +79,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         dataBrokerProtectionViewControllerProvider: DataBrokerProtectionViewControllerProvider?) {
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature

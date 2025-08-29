@@ -40,6 +40,11 @@ extension SyncDevice {
     }
 }
 
+/// View model for sync preferences and device management.
+///
+/// Manages sync-related preferences, device lists, sync feature flags, and coordinates
+/// various sync operations. Acts as the main interface between the sync preferences UI
+/// and the underlying sync services.
 @MainActor
 final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel {
     @Published var devices: [SyncDevice] = [] {
@@ -48,6 +53,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         }
     }
 
+    /// Refreshes the list of connected sync devices
     func refreshDevices() {
         syncSettingsHandler.refreshDevices()
     }
@@ -245,12 +251,14 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .store(in: &cancellables)
     }
 
+    /// Presents the bookmarks management interface
     @MainActor
     func manageBookmarks() {
         guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
         mainVC.showManageBookmarks(self)
     }
 
+    /// Presents the password manager interface for managing login credentials
     @MainActor
     func manageLogins() {
         guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }

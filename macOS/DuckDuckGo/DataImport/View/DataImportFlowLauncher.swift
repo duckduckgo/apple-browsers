@@ -21,7 +21,16 @@ import DDGSync
 import BrowserServicesKit
 import FeatureFlags
 
+/// Protocol for launching data import flows.
+///
+/// Provides functionality to initiate data import flows with customizable
+/// presentation options and data type selection.
 protocol DataImportFlowLaunching {
+    /// Launches the data import flow with the specified configuration
+    /// - Parameters:
+    ///   - model: The view model containing import data and state
+    ///   - title: The title to display in the import dialog
+    ///   - isDataTypePickerExpanded: Whether the data type picker should start expanded
     @MainActor
     func launchDataImport(
         model: DataImportViewModel,
@@ -30,6 +39,11 @@ protocol DataImportFlowLaunching {
     )
 }
 
+/// Concrete implementation for launching data import flows.
+///
+/// Manages the presentation of data import dialogs with support for sync feature
+/// integration and customizable UI configurations. Handles the coordination between
+/// data import functionality and sync features when available.
 final class DataImportFlowLauncher: DataImportFlowLaunching {
     @MainActor
     func launchDataImport(

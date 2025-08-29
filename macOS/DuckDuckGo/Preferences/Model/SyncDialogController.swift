@@ -28,27 +28,43 @@ import PixelKit
 import os.log
 import BrowserServicesKit
 
+/// Protocol for handling sync settings view interactions and device management.
+/// 
+/// This protocol defines the interface for managing sync-related user actions,
+/// device operations, and data recovery functionality in the sync settings UI.
 @MainActor
 protocol SyncSettingsViewHandling {
+    /// Initiates the process to turn off sync for the current device
     func turnOffSyncPressed()
 
+    /// Presents the device details view for the specified sync device
+    /// - Parameter device: The sync device to display details for
     func presentDeviceDetails(_ device: SyncDevice)
 
+    /// Presents the remove device confirmation dialog for the specified device
+    /// - Parameter device: The sync device to remove
     func presentRemoveDevice(_ device: SyncDevice)
 
+    /// Presents the delete account confirmation dialog
     func presentDeleteAccount()
 
+    /// Initiates the sync setup flow to connect with another device
     func syncWithAnotherDevicePressed() async
 
+    /// Initiates the sync setup flow to connect with the server
     func syncWithServerPressed() async
 
+    /// Initiates the data recovery flow for restoring sync data
     func recoverDataPressed() async
 
+    /// Saves the recovery code as a PDF document
     func saveRecoveryPDF()
 
     // These two members should probably be split out / moved to DDGSync
+    /// Refreshes the list of connected sync devices
     func refreshDevices()
 
+    /// Publisher that emits updates to the list of connected sync devices
     var devicesPublisher: AnyPublisher<[SyncDevice], Never> { get }
 }
 

@@ -206,6 +206,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
+
+    /// Adds context menu action for translating text selected on a website.
+    case textTranslation
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

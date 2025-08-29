@@ -127,9 +127,10 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 Logger.dataBrokerProtection.error("Email confirmation attempt \(attemptCount) failed: \(error)")
 
                 if attemptCount < Self.maxRetries {
+                    try? await incrementAttemptCount()
+                    
                     let waitTimeBeforeRetry: TimeInterval = 3
                     try? await Task.sleep(nanoseconds: UInt64(waitTimeBeforeRetry) * 1_000_000_000)
-                    try? await updateAttemptCount(attemptCount)
                 }
             }
         }
@@ -217,10 +218,12 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         )
     }
 
-    private func updateAttemptCount(_ count: Int64) async throws {
-        // Note: Current database API doesn't support updating attempt count directly.
-        // This would need to be added to the database layer or handled differently.
-        // For now, we track attempts locally within this job execution.
+    private func incrementAttemptCount() async throws {
+        try jobDependencies.database.incrementOptOutEmailConfirmationAttemptCount(
+            profileQueryId: jobData.profileQueryId,
+            brokerId: jobData.brokerId,
+            extractedProfileId: jobData.extractedProfileId
+        )
     }
 
     private func handleMaxRetriesExceeded(brokerName: String, version: String) async {

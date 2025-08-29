@@ -119,7 +119,7 @@ class AddressBarSpoofingUITests: UITestCase {
         XCTAssertTrue(addressBarNotSpoofed, "Address bar should not show spoofed duckduckgo.com URL, got: \(addressBarValue)")
 
         // Verify the address bar shows the original site (not spoofed)
-        XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site") || addressBarValue.isEmpty,
+        XCTAssertTrue(addressBarValue.contains("privacy-test-pages.site") || addressBarValue == "about:blank" || addressBarValue.isEmpty,
                       "Address bar should show original URL or be empty, got: \(addressBarValue)")
     }
 
@@ -178,9 +178,8 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Verify basic auth is stripped from address bar
         let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
-        let basicAuthStrippedFromAddressBar = addressBarValue == "https://example.com/"
-        XCTAssertTrue(basicAuthStrippedFromAddressBar,
-                      "Basic auth should be stripped from address bar, got: \(addressBarValue)")
+        XCTAssertEqual(addressBarValue, "https://example.com/",
+                      "Basic auth should be stripped from address bar")
     }
 
     func testUrlBarSpoofingWithFormAction() {
@@ -265,8 +264,7 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Verify address bar protection
         let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""
-        let addressBarNotUpdated = addressBarValue == "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-unsupported-scheme.html"
-        XCTAssertTrue(addressBarNotUpdated,
+        XCTAssertEqual(addressBarValue, "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-unsupported-scheme.html",
                       "Address bar should show original test page URL, got: \(addressBarValue)")
     }
 

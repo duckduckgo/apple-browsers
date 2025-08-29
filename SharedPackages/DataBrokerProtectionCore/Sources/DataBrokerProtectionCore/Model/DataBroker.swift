@@ -240,6 +240,14 @@ public struct DataBroker: Codable, Sendable {
         return optOutStep
     }
 
+    public func requiresEmailConfirmationDuringOptOut() -> Bool {
+        guard let optOutStep = optOutStep() else {
+            return false
+        }
+
+        return optOutStep.actions.contains(where: { $0.actionType == .emailConfirmation })
+    }
+
     public func performsOptOutWithinParent() -> Bool {
         guard let optOutStep = optOutStep(), let optOutType = optOutStep.optOutType else { return false }
 

@@ -21,6 +21,7 @@ import Carbon
 import Combine
 import Common
 import SwiftUI
+import PixelKit
 
 protocol BookmarkManagementDetailViewControllerDelegate: AnyObject {
 
@@ -62,7 +63,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         let view = NSHostingView(rootView: BookmarksEmptyStateView(content: .noBookmarks, onImportClicked: { [weak self] in
             self?.onImport()
         }, onSyncClicked: {
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+            let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }))
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isHidden = true
@@ -392,7 +395,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         emptyStateHostingView.rootView = BookmarksEmptyStateView(content: mode, onImportClicked: { [weak self] in
             self?.onImport()
         }, onSyncClicked: {
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+            let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         })
         emptyStateHostingView.isHidden = false
         searchBar.isEnabled = mode != .noBookmarks

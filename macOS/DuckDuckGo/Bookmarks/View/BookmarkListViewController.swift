@@ -20,6 +20,7 @@ import AppKit
 import Carbon
 import Combine
 import SwiftUI
+import PixelKit
 
 protocol BookmarkListViewControllerDelegate: AnyObject {
 
@@ -59,7 +60,9 @@ final class BookmarkListViewController: NSViewController {
         let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks) { [weak self] in
             self?.onImportClicked()
         } onSyncClicked: {
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+            let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         return emptyStateView.embeddedInHostingView()
     }()
@@ -558,7 +561,9 @@ final class BookmarkListViewController: NSViewController {
         let emptyStateView = BookmarksEmptyStateView(content: mode) { [weak self] in
             self?.onImportClicked()
         } onSyncClicked: {
-            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+            let source = SyncDeviceButtonTouchpoint.bookmarksListEmpty
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
         }
         emptyStateHostingView.rootView = emptyStateView
         emptyStateHostingView.isHidden = false

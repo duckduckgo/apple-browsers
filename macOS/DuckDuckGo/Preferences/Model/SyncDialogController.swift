@@ -49,7 +49,7 @@ protocol SyncSettingsViewHandling {
     func presentDeleteAccount()
 
     /// Initiates the sync setup flow to connect with another device
-    func syncWithAnotherDevicePressed() async
+    func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async
 
     /// Initiates the sync setup flow to connect with the server
     func syncWithServerPressed() async
@@ -527,7 +527,10 @@ extension SyncDialogController: SyncSettingsViewHandling {
     }
 
     @MainActor
-    func syncWithAnotherDevicePressed() async {
+    func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async {
+        if let source { // Must be if let so as not to override any existing source with nil
+            syncPromoSource = source.rawValue
+        }
         let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
         guard authenticationResult.authenticated else {
             if authenticationResult == .noAuthAvailable {

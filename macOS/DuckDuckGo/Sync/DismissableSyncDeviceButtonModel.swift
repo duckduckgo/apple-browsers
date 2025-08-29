@@ -22,10 +22,11 @@ import AppKit
 import DDGSync
 import FeatureFlags
 import BrowserServicesKit
+import PixelKit
 
 @MainActor
 public final class DismissableSyncDeviceButtonModel: ObservableObject {
-    enum SyncDevicePromoSource: CaseIterable {
+    enum DismissableSyncDevicePromoSource: CaseIterable {
         case bookmarksBar
         case bookmarkAdded
 
@@ -73,6 +74,15 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
                 return .max
             }
         }
+
+        var pixelSource: SyncDeviceButtonTouchpoint {
+            switch self {
+            case .bookmarksBar:
+                return SyncDeviceButtonTouchpoint.bookmarksBar
+            case .bookmarkAdded:
+                return SyncDeviceButtonTouchpoint.bookmarkAdded
+            }
+        }
     }
 
     @Published var shouldShowSyncButton: Bool = false
@@ -91,7 +101,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         }
     }
 
-    private let source: SyncDevicePromoSource
+    private let source: DismissableSyncDevicePromoSource
     private let keyValueStore: KeyValueStoring
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let featureFlagger: FeatureFlagger
@@ -128,7 +138,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     }
 
     init(
-        source: SyncDevicePromoSource,
+        source: DismissableSyncDevicePromoSource,
         keyValueStore: KeyValueStoring,
         authStatePublisher: AnyPublisher<SyncAuthState, Never>,
         syncLauncher: SyncDeviceFlowLaunching?,
@@ -156,20 +166,23 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             shouldShowSyncButton = false
             return
         }
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
         shouldShowSyncButton = true
     }
 
     func syncButtonAction() {
-        syncLauncher?.startDeviceSyncFlow(completion: nil)
+        syncLauncher?.startDeviceSyncFlow(source: source.pixelSource, completion: nil)
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
     }
 
     func dismissSyncButtonAction() {
         shouldShowSyncButton = false
         keyValueStore.set(true, forKey: source.wasDismissedKey)
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
     }
 
     static func resetAllState(from keyValueStore: KeyValueStoring) {
-        for source in SyncDevicePromoSource.allCases {
+        for source in DismissableSyncDevicePromoSource.allCases {
             keyValueStore.removeObject(forKey: source.wasDismissedKey)
             if let dateKey = source.promoFirstPresentedDateKey {
                 keyValueStore.removeObject(forKey: dateKey)
@@ -206,7 +219,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
 }
 
 extension DismissableSyncDeviceButtonModel {
-    convenience init(source: SyncDevicePromoSource, keyValueStore: KeyValueStoring) {
+    convenience init(source: DismissableSyncDevicePromoSource, keyValueStore: KeyValueStoring) {
         let authStatePublisher: AnyPublisher<SyncAuthState, Never>
         let syncLauncher: SyncDeviceFlowLaunching?
         if let syncService = NSApp.delegateTyped.syncService, let syncPausedStateManager = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler{

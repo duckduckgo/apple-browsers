@@ -20,6 +20,7 @@ import AppKit
 import SwiftUI
 import BrowserServicesKit
 import Common
+import PixelKit
 
 @MainActor
 struct DataImportView: ModalView {
@@ -213,7 +214,9 @@ struct DataImportView: ModalView {
         if case .show(let syncLauncher) = syncFeatureVisibility {
             Button {
                 dismiss.callAsFunction()
-                syncLauncher.startDeviceSyncFlow {
+                let source = SyncDeviceButtonTouchpoint.dataImportStart
+                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
+                syncLauncher.startDeviceSyncFlow(source: source) {
                     importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
                 }
             } label: {
@@ -321,7 +324,9 @@ struct DataImportView: ModalView {
             if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
                 Button(UserText.importDataCompleteSyncButtonTitle) {
                     dismiss.callAsFunction()
-                    syncLauncher.startDeviceSyncFlow(completion: nil)
+                    let source = SyncDeviceButtonTouchpoint.dataImportFinish
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue])
+                    syncLauncher.startDeviceSyncFlow(source: source, completion: nil)
                 }
             }
             Spacer()

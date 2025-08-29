@@ -329,7 +329,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     @MainActor
     func syncWithAnotherDevicePressed() async {
-        await syncSettingsHandler.syncWithAnotherDevicePressed()
+        await syncSettingsHandler.syncWithAnotherDevicePressed(source: nil)
     }
 
     @MainActor

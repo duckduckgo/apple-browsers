@@ -281,7 +281,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
 
-        await syncDialogController.syncWithAnotherDevicePressed()
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
 
         await fulfillment(of: expectations, timeout: 5)
     }
@@ -296,7 +296,7 @@ final class SyncDialogControllerTests: XCTestCase {
 
         let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
 
-        await syncDialogController.syncWithAnotherDevicePressed()
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
 
         await fulfillment(of: expectations, timeout: 5)
     }
@@ -307,7 +307,7 @@ final class SyncDialogControllerTests: XCTestCase {
         ddgSyncing.account = mockAccount
 
         Task {
-            await syncDialogController.syncWithAnotherDevicePressed()
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
         }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
@@ -332,7 +332,7 @@ final class SyncDialogControllerTests: XCTestCase {
         connectionController.startExchangeModeStub = stubbedPairingInfo
 
         Task {
-            await syncDialogController.syncWithAnotherDevicePressed()
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
         }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
@@ -390,7 +390,7 @@ final class SyncDialogControllerTests: XCTestCase {
         ddgSyncing.account = .mock
 
         Task {
-            await syncDialogController.syncWithAnotherDevicePressed()
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
         }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
@@ -412,7 +412,7 @@ final class SyncDialogControllerTests: XCTestCase {
         ddgSyncing.account = .mock
 
         Task {
-            await syncDialogController.syncWithAnotherDevicePressed()
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
         }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
@@ -437,7 +437,7 @@ final class SyncDialogControllerTests: XCTestCase {
             }
         }.store(in: &cancellables)
 
-        await syncDialogController.syncWithAnotherDevicePressed()
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
 
         await fulfillment(of: [expectation], timeout: 5)
     }
@@ -458,7 +458,7 @@ final class SyncDialogControllerTests: XCTestCase {
         }.store(in: &cancellables)
 
         Task {
-            await syncDialogController.syncWithAnotherDevicePressed()
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
         }
 
         await fulfillment(of: [expectation], timeout: 5)
@@ -591,7 +591,7 @@ final class SyncDialogControllerTests: XCTestCase {
             featureFlagger: featureFlagger
         )
 
-        await syncDialogController.syncWithAnotherDevicePressed()
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
 
         XCTAssertEqual(managementDialogModel.currentDialog, .empty)
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)

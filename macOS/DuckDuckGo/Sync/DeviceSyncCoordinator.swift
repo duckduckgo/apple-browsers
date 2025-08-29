@@ -36,7 +36,7 @@ protocol SyncDeviceFlowLaunching {
     /// Starts the device sync flow to connect with another device
     /// - Parameter completion: Optional closure called when the flow completes
     @MainActor
-    func startDeviceSyncFlow(completion: (() -> Void)?)
+    func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?)
 }
 
 /// Delegate protocol for device sync coordination events.
@@ -109,10 +109,10 @@ extension DeviceSyncCoordinator: DeviceSyncCoordinationDelegate {
 }
 
 extension DeviceSyncCoordinator: SyncDeviceFlowLaunching {
-    func startDeviceSyncFlow(completion: (() -> Void)?) {
+    func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
         presentDialog(completion: completion)
         Task {
-            await dialogController.syncWithAnotherDevicePressed()
+            await dialogController.syncWithAnotherDevicePressed(source: source)
         }
     }
 }
@@ -150,9 +150,9 @@ extension DeviceSyncCoordinator: SyncSettingsViewHandling {
         dialogController.presentDeleteAccount()
     }
 
-    func syncWithAnotherDevicePressed() async {
+    func syncWithAnotherDevicePressed(source: SyncDeviceButtonTouchpoint?) async {
         presentDialog()
-        await dialogController.syncWithAnotherDevicePressed()
+        await dialogController.syncWithAnotherDevicePressed(source: nil)
     }
 
     func syncWithServerPressed() async {

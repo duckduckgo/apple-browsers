@@ -25,6 +25,8 @@ class SearchNonexistentDomainUITests: UITestCase {
     private var addressBarTextField: XCUIElement!
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
+
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 

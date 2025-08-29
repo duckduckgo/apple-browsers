@@ -29,6 +29,10 @@ public struct MapperToDB {
         jsonEncoder.dateEncodingStrategy = .millisecondsSince1970
     }
 
+    func mapToDB(_ text: String?) throws -> Data? {
+        try text.encoded(mechanism)
+    }
+
     func mapToDB(id: Int64? = nil, profile: DataBrokerProtectionProfile) throws -> ProfileDB {
         .init(id: id, birthYear: try withUnsafeBytes(of: profile.birthYear) { try mechanism(Data($0)) })
     }
@@ -134,6 +138,19 @@ public struct MapperToDB {
             eventType: event.eventType.rawValue,
             timestamp: event.timestamp,
             metadata: metadata
+        )
+    }
+
+    func mapToDB(_ optOutEmailConfirmation: OptOutEmailConfirmationJobData) throws -> OptOutEmailConfirmationDB {
+        .init(
+            brokerId: optOutEmailConfirmation.brokerId,
+            profileQueryId: optOutEmailConfirmation.profileQueryId,
+            extractedProfileId: optOutEmailConfirmation.extractedProfileId,
+            generatedEmail: try mechanism(optOutEmailConfirmation.generatedEmail.encoded),
+            attemptID: optOutEmailConfirmation.attemptID,
+            emailConfirmationLink: optOutEmailConfirmation.emailConfirmationLink != nil ? try mechanism(optOutEmailConfirmation.emailConfirmationLink!.encoded) : nil,
+            emailConfirmationLinkObtainedOnBEDate: optOutEmailConfirmation.emailConfirmationLinkObtainedOnBEDate,
+            emailConfirmationAttemptCount: optOutEmailConfirmation.emailConfirmationAttemptCount
         )
     }
 }
@@ -301,6 +318,26 @@ struct MapperToModel {
             eventType: eventType,
             timestamp: eventDB.timestamp,
             metadata: metadata
+        )
+    }
+
+    func mapToModel(_ optOutEmailConfirmationDB: OptOutEmailConfirmationDB) throws -> OptOutEmailConfirmationJobData {
+        let emailConfirmationLink: String?
+        if let linkData = optOutEmailConfirmationDB.emailConfirmationLink {
+            emailConfirmationLink = try mechanism(linkData).utf8String()
+        } else {
+            emailConfirmationLink = nil
+        }
+
+        return .init(
+            brokerId: optOutEmailConfirmationDB.brokerId,
+            profileQueryId: optOutEmailConfirmationDB.profileQueryId,
+            extractedProfileId: optOutEmailConfirmationDB.extractedProfileId,
+            generatedEmail: try mechanism(optOutEmailConfirmationDB.generatedEmail).utf8String()!,
+            attemptID: optOutEmailConfirmationDB.attemptID,
+            emailConfirmationLink: emailConfirmationLink,
+            emailConfirmationLinkObtainedOnBEDate: optOutEmailConfirmationDB.emailConfirmationLinkObtainedOnBEDate,
+            emailConfirmationAttemptCount: optOutEmailConfirmationDB.emailConfirmationAttemptCount
         )
     }
 }

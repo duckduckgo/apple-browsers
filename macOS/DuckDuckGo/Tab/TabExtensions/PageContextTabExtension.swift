@@ -103,7 +103,7 @@ final class PageContextTabExtension {
 
     private func handle(_ pageContext: AIChatPageContextData) {
         if let sidebar = aiChatSidebarProvider.getSidebar(for: tabID) {
-//            cachedPageContext = nil
+            cachedPageContext = nil
             sidebar.sidebarViewController.setPageContext(pageContext)
         } else {
             cachedPageContext = pageContext

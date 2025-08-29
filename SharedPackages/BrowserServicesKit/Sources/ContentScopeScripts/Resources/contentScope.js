@@ -11286,7 +11286,7 @@ Only "elements" is supported.`);
   var DuckAiListener = class extends ContentFeature {
     constructor() {
       super(...arguments);
-      /** @type {HTMLInputElement | HTMLTextAreaElement | null} */
+      /** @type {HTMLTextAreaElement | null} */
       __publicField(this, "textBox", null);
       /** @type {Object | null} */
       __publicField(this, "pageData", null);
@@ -11307,7 +11307,6 @@ Only "elements" is supported.`);
     async setup() {
       this.setupMessageBridge();
       this.setupTextBoxDetection();
-      this.startObservingDom();
     }
     /**
      * Check if this feature should be active on the current domain
@@ -11343,9 +11342,7 @@ Only "elements" is supported.`);
         try {
           const getPageContext = await this.bridge.request("getPageContext");
           console.log("DuckAiListener: Initial page context:", getPageContext);
-          if (getPageContext.serializedPageData) {
-            this.handlePageContextData(getPageContext);
-          }
+          this.handlePageContextData(getPageContext);
         } catch (error) {
           console.log("DuckAiListener: No initial page context available:", error);
         }
@@ -11383,6 +11380,25 @@ Only "elements" is supported.`);
       if (this.textBox && this.pageData) {
         this.insertContextIntoTextBox(this.pageData.content);
       }
+      if (!this.textBox) {
+        this.setupTextBoxMutationObserver();
+      }
+    }
+    /**
+     * Set up mutation observer for text box detection
+     */
+    setupTextBoxMutationObserver() {
+      const config = { childList: true, subtree: true };
+      this.mutationObserver = null;
+      const callback = (mutationList, observer) => {
+        this.findTextBox();
+        if (this.textBox && this.pageData) {
+          this.insertContextIntoTextBox(this.pageData.content);
+          observer.disconnect();
+        }
+      };
+      this.mutationObserver = new MutationObserver(callback);
+      this.mutationObserver.observe(document.body, config);
     }
     /**
      * Find the AI chat text box
@@ -11414,14 +11430,40 @@ Only "elements" is supported.`);
         return;
       }
       console.log("DuckAiListener: Inserting context into text box");
-      this.textBox.value = context.slice(0, 2e3);
-      this.textBox.dispatchEvent(new Event("input", { bubbles: true }));
-      this.textBox.dispatchEvent(new Event("change", { bubbles: true }));
+      const contextValue = context.slice(0, 2e3);
+      this.setReactTextAreaValue(this.textBox, contextValue);
       this.textBox.focus();
-      if (this.textBox instanceof HTMLTextAreaElement) {
-        this.autoResizeTextArea(this.textBox);
+      console.log("DuckAiListener: Successfully inserted context", this.textBox.value);
+      console.log(this.textBox);
+    }
+    /**
+     * Set textarea value in a React-compatible way
+     * Based on the approach from broker-protection/actions/fill-form.js
+     * @param {HTMLTextAreaElement} textarea - The textarea element
+     * @param {string} value - The value to set
+     */
+    setReactTextAreaValue(textarea, value) {
+      try {
+        const originalSet = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+        if (!originalSet || typeof originalSet.call !== "function") {
+          console.warn("DuckAiListener: Cannot access original value setter, falling back to direct assignment");
+          textarea.value = value;
+          return;
+        }
+        textarea.dispatchEvent(new Event("keydown", { bubbles: true }));
+        originalSet.call(textarea, value);
+        const events = [
+          new Event("input", { bubbles: true }),
+          new Event("keyup", { bubbles: true }),
+          new Event("change", { bubbles: true })
+        ];
+        events.forEach((ev) => textarea.dispatchEvent(ev));
+        originalSet.call(textarea, value);
+        events.forEach((ev) => textarea.dispatchEvent(ev));
+      } catch (error) {
+        console.error("DuckAiListener: Error setting React textarea value:", error);
+        textarea.value = value;
       }
-      console.log("DuckAiListener: Successfully inserted context");
     }
     /**
      * Auto-resize a textarea based on content

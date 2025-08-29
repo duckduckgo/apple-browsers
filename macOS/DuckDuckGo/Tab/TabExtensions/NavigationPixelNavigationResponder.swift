@@ -54,7 +54,7 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
 
         let shouldFireNavigationPixel: Bool = {
             /// Fire navigation pixel on all navigations except for developer redirects and loading error pages
-            if [.redirect(.developer), .alternateHtmlLoad].contains(navigation.navigationAction.navigationType)  {
+            if [.redirect(.developer), .alternateHtmlLoad].contains(navigation.navigationAction.navigationType) {
                 return false
             }
             /// Sometimes navigation type for an error page is reported as `.other`, so checking also target frame URL

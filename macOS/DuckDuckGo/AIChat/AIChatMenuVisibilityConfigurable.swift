@@ -120,7 +120,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var isPageContextEnabled: Bool {
-        shouldDisplayAnyAIChatFeature && storage.isPageContextEnabled
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatPageContext) && storage.isPageContextEnabled
     }
 
     init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {

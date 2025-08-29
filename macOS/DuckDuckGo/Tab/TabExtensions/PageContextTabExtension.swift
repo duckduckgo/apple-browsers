@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import Navigation
-import Foundation
-import Combine
-import WebKit
 import AIChat
+import Combine
+import Foundation
+import Navigation
+import WebKit
 
 protocol PageContextUserScriptProvider {
     var pageContextUserScript: PageContextUserScript? { get }

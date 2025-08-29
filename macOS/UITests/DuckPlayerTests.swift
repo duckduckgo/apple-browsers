@@ -19,7 +19,6 @@
 import XCTest
 
 class DuckPlayerTests: UITestCase {
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement!
 
     private static let searchURL = "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web"
@@ -87,7 +86,6 @@ class DuckPlayerTests: UITestCase {
         )
 
         // Focus the address bar first, then get its value
-        app.typeKey("l", modifierFlags: [.command])
         let urlValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             urlValue.contains(Self.duckURLForVideo),
@@ -110,7 +108,6 @@ class DuckPlayerTests: UITestCase {
         )
 
         // Focus the address bar first, then get its value
-        app.typeKey("l", modifierFlags: [.command])
         let urlValue = app.addressBarValueActivatingIfNeeded() ?? ""
         XCTAssertTrue(
             urlValue.contains("youtube.com"),

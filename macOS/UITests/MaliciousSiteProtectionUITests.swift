@@ -21,7 +21,6 @@ import Foundation
 
 class MaliciousSiteProtectionUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement { app.addressBar }
     private var webView: XCUIElement!
     private var localization: SpecialErrorPageLocalization!
@@ -48,7 +47,7 @@ class MaliciousSiteProtectionUITests: UITestCase {
         threatProtectionButton.click()
         let scamToggle = settingsWindow.checkBoxes["Preferences.ThreatProtection.ScamBlockerToggle"]
         XCTAssertTrue(scamToggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        scamToggle.toggleCheckboxIfNeeded(to: enabled)
+        scamToggle.toggleCheckboxIfNeeded(to: enabled, ensureHittable: app.ensureHittable)
         app.closePreferencesWindow()
 
         app.enforceSingleWindow()

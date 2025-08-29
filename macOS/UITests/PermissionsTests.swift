@@ -30,7 +30,7 @@ import XCTest
 /// and you want to branch the implementations per macOS version:
 /// https://stackoverflow.com/questions/56559269/adduiinterruptionmonitor-is-not-getting-called-on-macos
 class PermissionsTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var notificationCenter: XCUIApplication!
     private var addressBarTextField: XCUIElement!
     private var permissionsSiteURL: URL!

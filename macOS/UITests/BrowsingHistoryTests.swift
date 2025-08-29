@@ -19,7 +19,7 @@
 import XCTest
 
 class BrowsingHistoryTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var historyMenuBarItem: XCUIElement!
     private var clearAllHistoryMenuItem: XCUIElement!
     private var clearAllHistoryAlertClearButton: XCUIElement!
@@ -153,7 +153,7 @@ class BrowsingHistoryTests: UITestCase {
             app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Restored visited tab 1 wasn't available with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
             app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Restored visited tab 2 wasn't available with the expected title in a reasonable timeframe."

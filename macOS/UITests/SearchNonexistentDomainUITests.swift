@@ -21,7 +21,6 @@ import Foundation
 
 class SearchNonexistentDomainUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var webView: XCUIElement!
     private var addressBarTextField: XCUIElement!
 

@@ -26,11 +26,8 @@ import DesignResourcesKitIcons
 
 struct FavoritesView<Model: FavoritesViewModel>: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    @Environment(\.isLandscapeOrientation) var isLandscape
 
     @ObservedObject var model: Model
-    @Binding var isAddingFavorite: Bool
-    let geometry: GeometryProxy?
 
     private let selectionFeedback = UISelectionFeedbackGenerator()
     private let haptics = UIImpactFeedbackGenerator()
@@ -38,13 +35,10 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
     var body: some View {
         VStack(alignment: .center, spacing: 24) {
 
-            let columns = NewTabPageGrid.columnsCount(for: horizontalSizeClass,
-                                                      isLandscape: isLandscape,
-                                                      isDynamic: model.isNewTabPageCustomizationEnabled)
-            let result = model.prefixedFavorites(for: columns)
+            let columns = NewTabPageGrid.columnsCount(for: horizontalSizeClass)
 
-            NewTabPageGridView(geometry: geometry, isUsingDynamicSpacing: model.isNewTabPageCustomizationEnabled) { _ in
-                ReorderableForEach(result.items, id: \.id, isReorderingEnabled: model.canEditFavorites) { item in
+            NewTabPageGridView {
+                ReorderableForEach(model.allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites) { item in
                     viewFor(item)
                         .previewShape()
                         .transition(.opacity)
@@ -57,22 +51,6 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
                     }
                 }
             }
-
-            if result.isCollapsible {
-                Button(action: {
-                    withAnimation(.easeInOut) {
-                        model.toggleCollapse()
-                    }
-                }, label: {
-                    Image(uiImage: model.isCollapsed ?
-                          DesignSystemImages.Glyphs.Size24.chevronDownSmall :
-                            DesignSystemImages.Glyphs.Size24.chevronUpSmall)
-                        .resizable()
-                })
-                .buttonStyle(ToggleExpandButtonStyle())
-                // Masks the content, which will otherwise shop up underneath while collapsing
-                .background(Color(designSystemColor: .background))
-            }
         }
         // Prevent the content to leak out of bounds while collapsing
         .clipShape(Rectangle())
@@ -80,56 +58,33 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
     }
 
     @ViewBuilder
-    private func previewFor(_ item: FavoriteItem) -> some View {
-        switch item {
-        case .favorite(let favorite):
-            FavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
-                .frame(width: NewTabPageGrid.Item.edgeSize)
-                .previewShape()
-                .transition(.opacity)
-        case .addFavorite, .placeholder:
-            EmptyView()
-        }
+    private func previewFor(_ favorite: Favorite) -> some View {
+        FavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
+            .frame(width: NewTabPageGrid.Item.edgeSize)
+            .previewShape()
+            .transition(.opacity)
     }
 
     @ViewBuilder
-    private func viewFor(_ item: FavoriteItem) -> some View {
-        switch item {
-        case .favorite(let favorite):
-            Button(action: {
-                model.favoriteSelected(favorite)
-                selectionFeedback.selectionChanged()
-            }, label: {
-                FavoriteItemView(
-                    favorite: favorite,
-                    faviconLoading: model.faviconLoader,
-                    isEditable: model.canEditFavorites,
-                    onMenuAction: { action in
-                        switch action {
-                        case .delete: model.deleteFavorite(favorite)
-                        case .edit: model.editFavorite(favorite)
-                        }
-                    })
-                .background(.clear)
-                .frame(width: NewTabPageGrid.Item.edgeSize)
-            })
-            .buttonStyle(.plain)
-        case .addFavorite:
-            Button(action: {
-                isAddingFavorite = true
-            }, label: {
-                FavoriteAddItemView()
-            })
-            .buttonStyle(SecondaryFillButtonStyle(isFreeform: true))
+    private func viewFor(_ favorite: Favorite) -> some View {
+        Button(action: {
+            model.favoriteSelected(favorite)
+            selectionFeedback.selectionChanged()
+        }, label: {
+            FavoriteItemView(
+                favorite: favorite,
+                faviconLoading: model.faviconLoader,
+                isEditable: model.canEditFavorites,
+                onMenuAction: { action in
+                    switch action {
+                    case .delete: model.deleteFavorite(favorite)
+                    case .edit: model.editFavorite(favorite)
+                    }
+                })
+            .background(.clear)
             .frame(width: NewTabPageGrid.Item.edgeSize)
-        case .placeholder:
-            FavoritePlaceholderItemView()
-                .frame(width: NewTabPageGrid.Item.edgeSize, height: NewTabPageGrid.Item.edgeSize)
-                .contentShape(.rect)
-                .onTapGesture {
-                    model.placeholderTapped()
-                }
-        }
+        })
+        .buttonStyle(.plain)
     }
 }
 
@@ -146,6 +101,6 @@ private extension View {
 private struct PreviewWrapperView: View {
     @State var isAddingFavorite = false
     var body: some View {
-        FavoritesView(model: FavoritesPreviewModel(), isAddingFavorite: $isAddingFavorite, geometry: nil)
+        FavoritesView(model: FavoritesPreviewModel())
     }
 }

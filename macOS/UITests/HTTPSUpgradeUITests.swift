@@ -21,7 +21,6 @@ import Foundation
 
 class HTTPSUpgradeUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var addressBarTextField: XCUIElement { app.addressBar }
     private var webView: XCUIElement!
 

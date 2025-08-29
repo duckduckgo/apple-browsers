@@ -127,7 +127,6 @@ final class MainCoordinator {
                                         tabManager: tabManager,
                                         syncPausedStateManager: syncService.syncErrorHandler,
                                         privacyProDataReporter: reportingService.privacyProDataReporter,
-                                        variantManager: variantManager,
                                         contextualOnboardingLogic: daxDialogs,
                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter,
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,

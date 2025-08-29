@@ -55,7 +55,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
-        tabCollectionViewModel = TabCollectionViewModel()
+        tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
         fireproofDomains = MockFireproofDomains(domains: [])
         passwordManagerCoordinator = PasswordManagerCoordinator()
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
@@ -134,7 +134,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                             remoteSettings: MockRemoteAISettings(),
                                             featureFlagger: mockFeatureFlagger
                                           ),
-                                          isFireWindowDefault: isFireWindowDefault)
+                                          isFireWindowDefault: isFireWindowDefault,
+                                          isUsingAuthV2: true)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }

@@ -19,7 +19,7 @@
 import XCTest
 
 class FireWindowTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var settingsGeneralButton: XCUIElement!
     private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
 
@@ -35,21 +35,21 @@ class FireWindowTests: UITestCase {
     }
 
     func testFireWindowDoesNotStoreHistory() {
-        openFireWindow()
+        app.openFireWindow()
         openSite(pageTitle: "Some site")
-        openNormalWindow()
+        app.openNewWindow()
         assertSiteIsNotShowingInNormalWindowHistory()
     }
 
     func testFireWindowStateIsNotSavedAfterRestart() {
-        openNormalWindow()
+        app.openNewWindow()
         // Open settings and enable session restore using helper
         app.openPreferencesWindow()
         app.preferencesSetRestorePreviousSession(enabled: true)
         app.closePreferencesWindow()
 
         openThreeSitesOnNormalWindow()
-        openFireWindow()
+        app.openFireWindow()
         openThreeSitesOnFireWindow()
 
         app.terminate()
@@ -60,7 +60,7 @@ class FireWindowTests: UITestCase {
     }
 
     func testFireWindowDoNotShowPinnedTabs() {
-        openNormalWindow()
+        app.openNewWindow()
         openSite(pageTitle: "Page #1")
         app.menuItems["Pin Tab"].tap()
 
@@ -68,12 +68,12 @@ class FireWindowTests: UITestCase {
         openSite(pageTitle: "Page #2")
         app.menuItems["Pin Tab"].tap()
 
-        openFireWindow()
+        app.openFireWindow()
         assertFireWindowDoesNotHavePinnedTabs()
     }
 
     func testFireWindowTabsCannotBeDragged() {
-        openFireWindow()
+        app.openFireWindow()
         openSite(pageTitle: "Page #1")
 
         app.openNewTab()
@@ -89,7 +89,7 @@ class FireWindowTests: UITestCase {
     }
 
     func testFireWindowsSignInDoesNotShowCredentialsPopup() {
-        openFireWindow()
+        app.openFireWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
         openSignUpSite()
         fillCredentials()
@@ -98,26 +98,26 @@ class FireWindowTests: UITestCase {
     }
 
     func testCrendentialsAreAutoFilledInFireWindows() {
-        openNormalWindow()
+        app.openNewWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
         openLoginSite()
         signIn()
         saveCredentials()
 
         /// Here we start the same flow but in the fire window, but we use the autofill credentials saved in the step before.
-        openFireWindow()
+        app.openFireWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
         openLoginSite()
                 signInUsingAutoFill()
     }
 
     func testDevelopMenuIsDisabledInNewFireWindow() {
-        openFireWindow()
+        app.openFireWindow()
         assertDeveloperToolsEnabled(false)
     }
 
     func testDevelopMenuIsEnabledInFireWindowAfterNavigation() {
-        openFireWindow()
+        app.openFireWindow()
         openSite(pageTitle: "Some site")
         assertDeveloperToolsEnabled(true)
     }
@@ -313,14 +313,6 @@ class FireWindowTests: UITestCase {
     private func assertSiteIsNotShowingInNormalWindowHistory() {
         let siteMenuItemInHistory = app.menuItems["Some site"]
         XCTAssertFalse(siteMenuItemInHistory.exists, "Menu item should not exist because it was not stored in history.")
-    }
-
-    private func openFireWindow() {
-        app.typeKey("n", modifierFlags: [.command, .shift])
-    }
-
-    private func openNormalWindow() {
-        app.typeKey("n", modifierFlags: .command)
     }
 
     private func openSite(pageTitle: String) {

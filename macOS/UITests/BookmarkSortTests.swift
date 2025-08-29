@@ -19,7 +19,6 @@
 import XCTest
 
 class BookmarkSortTests: UITestCase {
-    private var app: XCUIApplication!
 
     private enum AccessibilityIdentifiers {
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"

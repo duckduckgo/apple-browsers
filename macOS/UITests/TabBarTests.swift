@@ -19,14 +19,13 @@
 import XCTest
 
 class TabBarTests: UITestCase {
-    private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 
-        app.typeKey("n", modifierFlags: .command)
+        app.openNewWindow()
         resetPinnedTabs()
     }
 
@@ -44,7 +43,7 @@ class TabBarTests: UITestCase {
 
         /// Move to the next tab and closes it
         app.typeKey("]", modifierFlags: [.command, .shift])
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
 
         /// Asserts that the next child tab is shown
         XCTAssertTrue(app.staticTexts["Print"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -52,9 +51,9 @@ class TabBarTests: UITestCase {
 
     func testClosesChildTabIsSelected_whenParentTabIsClosed() {
         /// We open three empty tabs and then we load the parent privacy site
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
+        app.openNewTab()
+        app.openNewTab()
         openPrivacyTestPagesSite()
 
         /// Opens two child sites (downloads and print)
@@ -78,9 +77,9 @@ class TabBarTests: UITestCase {
 
     func testParentTabIsSelected_whenChildTabIsClosedAndNoOtherChildTabsAreOpened() {
         /// We open three empty tabs and then we load the parent privacy site
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
+        app.openNewTab()
+        app.openNewTab()
         openPrivacyTestPagesSite()
 
         /// Opens one child sites (downloads and print)
@@ -111,7 +110,7 @@ class TabBarTests: UITestCase {
         app.typeKey("1", modifierFlags: [.command])
 
         /// We open a new tab and we close it
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         app.menuItems["Close Tab"].tap()
 
         /// Asserts that the recently active tab is visible
@@ -124,7 +123,7 @@ class TabBarTests: UITestCase {
         app.typeKey("1", modifierFlags: [.command])
 
         /// We open a new tab
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         /// We move to the third tab
         app.typeKey("3", modifierFlags: [.command])
         /// We move to the last tab and we close it

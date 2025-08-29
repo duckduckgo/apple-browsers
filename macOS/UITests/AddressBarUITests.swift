@@ -20,7 +20,6 @@ import XCTest
 import Foundation
 
 class AddressBarUITests: UITestCase {
-    private var app: XCUIApplication!
     private var webView: XCUIElement!
     private var addressBarTextField: XCUIElement { app.addressBar }
 

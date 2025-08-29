@@ -19,7 +19,7 @@
 import Foundation
 import SwiftUI
 
-public enum DevicePlatform {
+public enum DevicePlatform: String {
     public static var isMac: Bool {
         #if os(macOS)
         return true

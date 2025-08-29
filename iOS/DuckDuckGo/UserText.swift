@@ -803,7 +803,7 @@ public struct UserText {
 
     public static let vpnSettingDNSSectionHeader = NSLocalizedString("vpn.settings.dns.section-header", value: "DNS", comment: "Header text for the DNS section on the VPN Settings screen")
     public static let vpnSettingDNSServerTitle = NSLocalizedString("vpn.settings.dns.server.title", value: "DNS Server", comment: "Title for the DNS Server row on the VPN Settings screen")
-    public static var vpnSettingDNSSectionDisclaimer = NSLocalizedString("vpn.settings.dns.section-disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to third parties if the server isn't secure or reliable.", comment: "Disclaimer for the DNS Server section on the DNS Server screen")
+    public static var vpnSettingDNSSectionDisclaimer = NSLocalizedString("vpn.settings.dns.section-disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to 3rd parties if the server isn't secure or reliable.", comment: "Disclaimer for the DNS Server section on the DNS Server screen")
     public static let vpnSettingDNSServerDefaultValue = NSLocalizedString("vpn.settings.dns.server.default.value", value: "DuckDuckGo", comment: "Default value for the DNS Server row on the VPN Settings screen")
     public static let vpnSettingDNSServerOptionRecommended = NSLocalizedString("vpn.settings.dns.server.option.default", value: "DuckDuckGo (Recommended)", comment: "Recommended option for the DNS Server setting")
     public static let vpnSettingDNSServerOptionCustom = NSLocalizedString("vpn.settings.dns.server.option.custom", value: "Custom", comment: "Custom option for the DNS Server setting")
@@ -1263,7 +1263,47 @@ public struct UserText {
     public static let moreSearchSettings = NSLocalizedString("settings.more.search.settings", value: "More Search Settings", comment: "Button navigating to other settings related to search")
     public static let moreSearchSettingsExplanation = NSLocalizedString("settings.more.search.settings.explanation", value: "Customize your language, region, and more", comment: "Subtitle of the 'More Search Settings' button")
 
+    public static let webTrackingProtectionSubtitle = NSLocalizedString("settings.web.tracking.protection.subtitle", value: "How We Protect You", comment: "The title of the web tracking protection grid section")
+    
+    public static let webTrackingProtectionAlwaysOn = NSLocalizedString("settings.web.tracking.protection.always.on", value: "Web tracking protections are always on", comment: "Header text explaining that web tracking protections are always enabled")
+
     public static let webTrackingProtection = NSLocalizedString("settings.web.tracking.protection", value: "Web Tracking Protection", comment: "The name of Settings category in Privacy Features related to configuration of the web tracking protection feature")
+    
+    public static let webTrackingProtectionUpdatedDescription = NSLocalizedString("settings.web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections, which are always active. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)", comment: "Updated description for web tracking protection settings")
+
+    // Web Tracking Protection Features
+    public static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("settings.tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Title for third-party tracker blocking feature")
+    public static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("settings.tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.", comment: "Description for third-party tracker blocking feature")
+
+    public static let trackingProtectionTargetedAdsTitle = NSLocalizedString("settings.tracking.protection.targeted.ads.title", value: "Blocks targeted ads", comment: "Title for targeted ads blocking feature")
+    public static let trackingProtectionTargetedAdsDescription = NSLocalizedString("settings.tracking.protection.targeted.ads.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description for targeted ads blocking feature")
+
+    public static let trackingProtectionLinkTrackingTitle = NSLocalizedString("settings.tracking.protection.link.tracking.title", value: "Blocks link tracking", comment: "Title for link tracking removal feature")
+    public static let trackingProtectionLinkTrackingDescription = NSLocalizedString("settings.tracking.protection.link.tracking.description", value: "Removes tracking parameters in links to prevent 3rd parties from tracking your behavior across sites.", comment: "Description for link tracking removal feature")
+
+    public static let trackingProtectionFingerprintingTitle = NSLocalizedString("settings.tracking.protection.fingerprinting.title", value: "Prevents fingerprint tracking", comment: "Title for fingerprinting protection feature")
+    public static let trackingProtectionFingerprintingDescription = NSLocalizedString("settings.tracking.protection.fingerprinting.description", value: "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.", comment: "Description for fingerprinting protection feature")
+
+    public static let trackingProtectionReferrerTitle = NSLocalizedString("settings.tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Title for referrer tracking protection feature")
+    public static let trackingProtectionReferrerDescription = NSLocalizedString("settings.tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Description for Referer tracking protection feature")
+
+    public static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("settings.tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Title for third-party cookie blocking feature")
+    public static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("settings.tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Description for third-party cookie blocking feature")
+
+    public static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("settings.tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Title for CNAME cloaking protection feature")
+    public static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("settings.tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Description for CNAME cloaking protection feature")
+
+    public static let trackingProtectionGoogleAMPTitle = NSLocalizedString("settings.tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Title for Google AMP protection feature")
+    public static let trackingProtectionGoogleAMPDescription = NSLocalizedString("settings.tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher’s site.", comment: "Description for Google AMP protection feature")
+
+    public static let trackingProtectionGoogleSignInTitle = NSLocalizedString("settings.tracking.protection.google.signin.title", value: "Blocks Google’s sign-in pop-ups", comment: "Title for Google Sign-in pop-up blocking feature")
+    public static let trackingProtectionGoogleSignInDescription = NSLocalizedString("settings.tracking.protection.google.signin.description", value: "Blocks Google sign-in pop-ups on sites Google doesn't own.", comment: "Description for Google Sign-in pop-up blocking feature")
+
+    public static let trackingProtectionFacebookTitle = NSLocalizedString("settings.tracking.protection.facebook.title", value: "Facebook tracking protection", comment: "Title for Facebook tracking protection feature")
+    public static let trackingProtectionFacebookDescription = NSLocalizedString("settings.tracking.protection.facebook.description", value: "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites.", comment: "Description for Facebook tracking protection feature")
+
+    public static let learnMore = NSLocalizedString("settings.learn.more", value: "Learn More", comment: "Link text for learning more about a feature")
+
     public static let cookiePopUpProtection = NSLocalizedString("settings.cookie.pop-up-protection.protection", value: "Cookie Pop-Up Protection", comment: "The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups")
     public static let letDuckDuckGoManageCookieConsentPopups = NSLocalizedString("settings.let.duckduckgo.manage.cookie.consent.popups", value: "Let DuckDuckGo manage cookie consent pop-ups", comment: "Switch button label.")
 
@@ -1657,6 +1697,7 @@ public struct UserText {
     public static let autocompleteHistoryWarningDescription = NSLocalizedString("autocomplete.history.warning.message", value: "Search suggestions now include your recently visited sites. Turn off in Settings, or clear anytime with the 🔥 Fire Button.", comment: "The message text shown in suggestions")
     public static let autocompleteSearchDuckDuckGo = NSLocalizedString("autocomplete.history.search.duckduckgo", value: "Search DuckDuckGo", comment: "Subtitle for search history items")
     public static let autocompleteSwitchToTab = NSLocalizedString("autocomplete.switch.to.tab", value: "Switch to Tab", comment: "Switch to tab hint")
+    public static let autocompleteAskAIChat = NotLocalizedString("autocomplete.ask.duck.ai", value: "Ask Duck.ai", comment: "TODO")
 
     // Site not working
     public static let siteNotWorkingTitle = NSLocalizedString("site.not.working.title", value: "Site not working? Let DuckDuckGo know.", comment: "Prompt asking user to send report to us if we suspect site may be broken")
@@ -1810,33 +1851,6 @@ public struct UserText {
         public static let footerDisabledMessage = NSLocalizedString("malicious-site-protection.settings.footer.message", value: "Disabling this feature can put your personal information at risk.", comment: "Footer text for Malicious Site Protection settings warning the user about the risks of disabling the feature")
     }
 
-    // MARK: - New Tab Page
-
-    // MARK: Shortcuts
-    public static let newTabPageShortcutBookmarks = NSLocalizedString("new.tab.page.shortcut.bookmarks", value: "Bookmarks", comment: "Shortcut title leading to Bookmarks")
-    public static let newTabPageShortcutAIChat = NSLocalizedString("new.tab.page.shortcut.ai.chat", value: "Duck.ai", comment: "Shortcut title leading to AI Chat")
-    public static let newTabPageShortcutPasswords = NSLocalizedString("new.tab.page.shortcut.passwords", value: "Passwords", comment: "Shortcut title leading to Passwords")
-
-    public static let newTabPageShortcutDownloads = NSLocalizedString("new.tab.page.shortcut.downloads", value: "Downloads", comment: "Shortcut title leading to Downloads")
-    public static let newTabPageShortcutSettings = NSLocalizedString("new.tab.page.shortcut.settings", value: "Settings", comment: "Shortcut title leading to app settings")
-
-    // MARK: Tooltip
-    public static let newTabPageTooltipBody = NSLocalizedString("new.tab.page.tooltip.body", value: "On any site, open the ••• menu and select **Add Favorite** to add it to your new tab page.", comment: "Text shown on the favorites info tooltip")
-
-    // MARK: Settings
-
-    public static let newTabPageSettingsTitle = NSLocalizedString("new.tab.page.settings.title", value: "Customize New Tab Page", comment: "Title of New Tab Page preferences page.")
-    public static let newTabPageSettingsSectionsHeaderTitle = NSLocalizedString("new.tab.page.settings.sections.header.title", value: "SECTIONS", comment: "Header title of the group allowing for setting up new tab page sections")
-    public static let newTabPageSettingsSectionsDescription = NSLocalizedString("new.tab.page.settings.sections.description", value: "Show, hide, and reorder sections on the new tab page", comment: "Footer of the group allowing for setting up new tab page sections")
-    public static let newTabPageSettingsShortcutsHeaderTitle = NSLocalizedString("new.tab.page.settings.shortcuts.header.title", value: "SHORTCUTS", comment: "Header title of the shortcuts in New Tab Page preferences.")
-    public static let newTabPageSettingsSectionNameFavorites = NSLocalizedString("new.tab.page.settings.section.name.favorites", value: "Favorites", comment: "Name of favorites section setting")
-    public static let newTabPageSettingsSectionNameShortcuts = NSLocalizedString("new.tab.page.settings.section.name.shortcuts", value: "Shortcuts", comment: "Name of shortcuts section setting")
-
-    // MARK: Intro message
-
-    public static let newTabPageIntroMessageTitle = NSLocalizedString("new.tab.page.intro.message.title", value: "Your New Tab Page is... New!", comment: "Title of information message about New Tab Page redesign")
-    public static let newTabPageIntroMessageBody = NSLocalizedString("new.tab.page.intro.message.body", value: "Customize your Favorites and go-to features. Reorder things or hide them to keep it clean.", comment: "Information message about New Tab Page redesign")
-
 
     // MARK: - Onboarding
     public enum Onboarding {
@@ -1864,7 +1878,7 @@ public struct UserText {
 
             public enum Features {
                 public static let privateSearch = NSLocalizedString("onboarding.browsers.features.privateSearch.title", value: "Search privately by default", comment: "Message to highlight browser capability of private searches")
-                public static let trackerBlockers = NSLocalizedString("onboarding.highlights.browsers.features.trackerBlocker.title", value: "Block 3rd-party trackers", comment: "Message to highlight browser capability of blocking 3rd party trackers")
+                public static let trackerBlockers = NSLocalizedString("onboarding.highlights.browsers.features.trackerBlocker.title", value: "Block 3rd-party trackers", comment: "Message to highlight browser capability of blocking 3rd-party trackers")
                 public static let cookiePopups = NSLocalizedString("onboarding.highlights.browsers.features.cookiePopups.title", value: "Block cookie pop-ups", comment: "Message to highlight how the browser allows you to block cookie pop-ups")
                 public static let creepyAds = NSLocalizedString("onboarding.highlights.browsers.features.creepyAds.title", value: "Block targeted ads", comment: "Message to highlight browser capability of blocking creepy ads")
                 public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")

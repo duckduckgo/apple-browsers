@@ -161,6 +161,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/276630244458377/task/1211090698913983?focus=true
     case openFileMenuAction
+
+    /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
+    case duckAISearchParameter
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -233,6 +236,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .supportsAlternateStripePaymentFlow,
                 .openFireWindowByDefault,
                 .restoreSessionPrompt,
+                .duckAISearchParameter,
                 .openFileMenuAction:
             return true
         case .debugMenu,
@@ -341,7 +345,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         case .newFeedbackForm:
@@ -349,7 +353,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .newTabPagePerTab:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPagePerTab))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .openFireWindowByDefault:
@@ -358,6 +362,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .openFileMenuAction:
             return .internalOnly()
+        case .duckAISearchParameter:
+            return .enabled
         }
     }
 }

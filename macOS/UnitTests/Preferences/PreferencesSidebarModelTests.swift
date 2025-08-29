@@ -87,6 +87,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
+            isUsingAuthV2: true,
             pixelFiring: pixelFiringMock
         )
     }
@@ -100,22 +101,34 @@ final class PreferencesSidebarModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             notificationCenter: testNotificationCenter,
             featureFlagger: mockFeatureFlagger,
+            isUsingAuthV2: true,
             pixelFiring: pixelFiringMock
         )
     }
 
     private func createPreferencesSidebarModelWithDefaults(
         includeDuckPlayer: Bool = false,
-        includeAIChat: Bool = false
+        includeAIChat: Bool = false,
+        isUsingAuthV2: Bool = false
     ) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let loadSections = { currentSubscriptionFeatures in
+            return PreferencesSection.defaultSections(
+                includingDuckPlayer: includeDuckPlayer,
+                includingSync: false,
+                includingAIChat: includeAIChat,
+                subscriptionState: currentSubscriptionFeatures
+            )
+        }
+
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
+            loadSections: loadSections,
+            tabSwitcherTabs: [],
             privacyConfigurationManager: mockPrivacyConfigurationManager,
-            featureFlagger: mockFeatureFlagger,
             syncService: mockSyncService,
-            vpnGatekeeper: mockVPNGatekeeper,
-            includeDuckPlayer: includeDuckPlayer,
-            includeAIChat: includeAIChat,
-            subscriptionManager: mockSubscriptionManager
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            isUsingAuthV2: isUsingAuthV2,
+            pixelFiring: pixelFiringMock
         )
     }
 
@@ -208,7 +221,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
 
         // When
-        let model = createPreferencesSidebarModelWithDefaults(includeAIChat: true)
+        let model = createPreferencesSidebarModelWithDefaults(includeAIChat: true, isUsingAuthV2: true)
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 

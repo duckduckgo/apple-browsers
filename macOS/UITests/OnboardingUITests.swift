@@ -30,8 +30,8 @@ final class OnboardingUITests: UITestCase {
         let app = XCUIApplication.setUp(environment: [
             "UITEST_MODE_ONBOARDING": "1"
         ])
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.closeAllWindows()
+        app.openNewWindow()
         let welcomeWindow = app.windows["Welcome"]
 
         let optionsButton = welcomeWindow.buttons["NavigationBarViewController.optionsButton"]

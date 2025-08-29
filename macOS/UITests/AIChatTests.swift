@@ -20,7 +20,6 @@ import XCTest
 
 class AIChatTests: UITestCase {
     private var addressBarTextField: XCUIElement!
-    private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         try super.setUpWithError()

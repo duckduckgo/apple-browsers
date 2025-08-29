@@ -27,6 +27,7 @@ public enum Suggestion: Equatable {
     case internalPage(title: String, url: URL, score: Int)
     case openTab(title: String, url: URL, tabId: String?, score: Int)
     case unknown(value: String)
+    case askAIChat(value: String)
 
     public var url: URL? {
         switch self {
@@ -36,7 +37,7 @@ public enum Suggestion: Equatable {
              .internalPage(title: _, url: let url, _),
              .openTab(title: _, url: let url, _, _):
             return url
-        case .phrase, .unknown:
+        case .phrase, .unknown, .askAIChat:
             return nil
         }
     }
@@ -49,7 +50,7 @@ public enum Suggestion: Equatable {
              .internalPage(title: let title, url: _, _),
              .openTab(title: let title, url: _, _, _):
             return title
-        case .phrase, .website, .unknown:
+        case .phrase, .website, .unknown, .askAIChat:
             return nil
         }
     }

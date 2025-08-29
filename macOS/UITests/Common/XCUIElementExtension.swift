@@ -127,20 +127,33 @@ extension XCUIElement {
 
     /// Toggles a checkbox or switch element to the desired boolean value if needed.
     /// Supports value types: String ("1"/"on"), NSNumber (non-zero), or falls back to single click.
-    func toggleCheckboxIfNeeded(to enabled: Bool) {
+    func toggleCheckboxIfNeeded(to enabled: Bool, ensureHittable: (XCUIElement) -> Void) {
+        if !exists {
+            ensureHittable(self)
+        }
         XCTAssertTrue(self.exists, "Control should exist before toggling")
         if let valueString = self.value as? String {
             let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn != enabled { self.click() }
-            return
-        }
-        if let valueNumber = self.value as? NSNumber {
+            if isOn == enabled { return }
+        } else if let valueNumber = self.value as? NSNumber {
             let isOn = valueNumber.intValue != 0
-            if isOn != enabled { self.click() }
-            return
+            if isOn == enabled { return }
+        } else {
+            XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
         }
-        // Fallback
+        if !isHittable {
+            ensureHittable(self)
+        }
         self.click()
+    }
+
+    public var tabs: XCUIElementQuery {
+        var element = self
+        if element is XCUIApplication {
+            element = windows.firstMatch
+        }
+
+        return element.tabGroups["TabBarViewController.CollectionView"].radioButtons
     }
 
     func closeTab() throws {
@@ -155,6 +168,13 @@ extension XCUIElement {
 
         let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
         coordinate.click()
+    }
+
+    /// Performs a middle mouse click on the element
+    func middleClick() {
+        UITestCase.$shouldReplaceButtonWithMiddleMouseButton.withValue(true) {
+            rightClick()
+        }
     }
 
     /// Wait for a property of the element to contain a specific substring
@@ -187,4 +207,17 @@ extension XCUIElement {
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         return result == .completed
     }
+
+    /// Wait for a property of the element to equal a specific value
+    /// - Parameters:
+    ///   - predicate: NSPredicate to wait for
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait(for predicate: NSPredicate, timeout: TimeInterval = 30.0) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
+
 }

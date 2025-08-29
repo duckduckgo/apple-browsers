@@ -20,7 +20,6 @@ import XCTest
 
 class DownloadsUITests: UITestCase {
 
-    private var app: XCUIApplication!
     private var webView: XCUIElement!
     private var popover: XCUIElement!
     private var table: XCUIElement!
@@ -156,6 +155,7 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile()
 
         // Open Downloads popover and assert it's visible
+        openDownloadsPopup()
         XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let firstRow = table.cells.firstMatch
         XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -510,8 +510,8 @@ class DownloadsUITests: UITestCase {
         assertDownloadListed(filename: "5GB.bin")
 
         // Immediately close window and open a new one; browser should remain stable
-        app.typeKey("w", modifierFlags: [.command, .shift])
-        app.typeKey("n", modifierFlags: [.command])
+        app.closeWindow()
+        app.openNewWindow()
         XCTAssertTrue(app.exists, "Browser should remain functional after window close during download")
 
         // Downloads UI should still be accessible
@@ -970,28 +970,8 @@ class DownloadsUITests: UITestCase {
 
     /// Save panel variant that first navigates to a target directory using Go To Folder, then saves
     private func saveFileAs(_ fileName: String, in directoryURL: URL) {
-        let saveSheet = app.sheets.firstMatch
-        XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        // Open Go To Folder (Cmd+Shift+G)
-        app.typeKey("g", modifierFlags: [.command, .shift])
-        app.typeKey("a", modifierFlags: [.command])
-
-        // Enter path and confirm
-        app.typeText(directoryURL.path)
-        sleep(1)
-        XCTAssertTrue(saveSheet.sheets.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        app.typeKey(.return, modifierFlags: [])
-        if !saveSheet.sheets.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
-            app.typeKey(.return, modifierFlags: [])
-        }
-
-        // Enter filename and save
-        app.typeKey("a", modifierFlags: [.command])
-        app.typeText(fileName)
-        let saveButton = saveSheet.buttons["Save"].firstMatch
-        XCTAssertTrue(saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        saveButton.click()
+        app.setSaveDialogLocation(to: directoryURL)
+        app.enterSaveDialogFileNameAndConfirm(fileName)
 
         // Track the saved file for cleanup
         let filePath = directoryURL.appendingPathComponent(fileName).path
@@ -1050,6 +1030,7 @@ class DownloadsUITests: UITestCase {
         let clearButton = app.buttons["DownloadsViewController.clearDownloadsButton"]
         XCTAssertTrue(clearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Clear button should exist when downloads are present")
         clearButton.click()
+        app.typeKey(.escape, modifierFlags: [])
     }
 
     private func clearAllDownloadsIfPresent() {
@@ -1060,6 +1041,7 @@ class DownloadsUITests: UITestCase {
         XCTAssertTrue(clearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         clearButton.click()
         verifyNoRecentDownloads()
+        app.typeKey(.escape, modifierFlags: [])
     }
 
     private func verifyNoRecentDownloads() {
@@ -1077,9 +1059,9 @@ class DownloadsUITests: UITestCase {
     }
 
     private func openDownloadsPopup() {
-        app.typeKey("j", modifierFlags: [.command])
+        app.openDownloads()
         if !popover.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
-            app.typeKey("j", modifierFlags: [.command])
+            app.openDownloads()
             XCTAssertTrue(popover.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         }
     }
@@ -1094,10 +1076,10 @@ class DownloadsUITests: UITestCase {
         let prefs = app.preferencesWindow
 
         app.preferencesGoToGeneralPane()
-        app.setAlwaysAskWhereToSaveFiles(enabled: alwaysAskWhereToSave)
-        app.setOpenDownloadsPopupOnCompletion(enabled: openDownloadsPopupOnCompletion)
-        app.setSwitchToNewTabWhenOpened(enabled: switchToNewTabWhenOpened)
         app.preferencesSetRestorePreviousSession(enabled: restorePreviousSession, in: prefs)
+        app.setSwitchToNewTabWhenOpened(enabled: switchToNewTabWhenOpened)
+        app.setOpenDownloadsPopupOnCompletion(enabled: openDownloadsPopupOnCompletion)
+        app.setAlwaysAskWhereToSaveFiles(enabled: alwaysAskWhereToSave)
 
         if !alwaysAskWhereToSave {
             // Verify NSPathControl shows the correct location by inspecting the control and last item

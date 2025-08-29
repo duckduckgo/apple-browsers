@@ -20,22 +20,26 @@
 import AIChat
 import Foundation
 import BrowserServicesKit
+import UIKit
 @testable import DuckDuckGo
 
 struct MockOmnibarDependency: OmnibarDependencyProvider {
+    
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
     var aiChatSettings: AIChatSettingsProvider
     var appSettings: any AppSettings
+    var daxEasterEggPresenter: DaxEasterEggPresenting
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
-         appSettings: AppSettings = AppSettingsMock()) {
+         appSettings: AppSettings = AppSettingsMock(), daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
+        self.daxEasterEggPresenter = daxEasterEggPresenter
     }
 }

@@ -19,7 +19,7 @@
 import XCTest
 
 class StateRestorationTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var firstPageTitle: String!
     private var secondPageTitle: String!
     private var firstURLForBookmarksBar: URL!
@@ -66,7 +66,7 @@ class StateRestorationTests: UITestCase {
             app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         app.typeURL(secondURLForBookmarksBar)
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -80,7 +80,7 @@ class StateRestorationTests: UITestCase {
             app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Second visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
             app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "First visited site wasn't found in a webview with the expected title in a reasonable timeframe."
@@ -102,7 +102,7 @@ class StateRestorationTests: UITestCase {
             app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         app.typeURL(secondURLForBookmarksBar)
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -120,7 +120,7 @@ class StateRestorationTests: UITestCase {
             app.windows.webViews[firstPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "First visited site from previous session should not be in any webview."
         )
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
             app.windows.webViews[firstPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "First visited site from previous session should not be in any webview."

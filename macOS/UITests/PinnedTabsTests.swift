@@ -20,14 +20,13 @@ import XCTest
 
 class PinnedTabsTests: UITestCase {
     private static let failureObserver = TestFailureObserver()
-    private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 
-        app.typeKey("n", modifierFlags: .command)
+        app.openNewWindow()
     }
 
     func testPinnedTabsFunctionality() {
@@ -58,7 +57,7 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func openNewWindowAndLoadSite() {
-        app.typeKey("n", modifierFlags: .command)
+        app.openNewWindow()
         openSite(pageTitle: "Page #4")
     }
 
@@ -125,7 +124,7 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func assertsCommandWFunctionality() {
-        app.typeKey("w", modifierFlags: .command)
+        app.closeCurrentTab()
         XCTAssertTrue(app.staticTexts["Sample text for Page #3"].exists)
     }
 
@@ -149,7 +148,7 @@ class PinnedTabsTests: UITestCase {
         app.typeKey("]", modifierFlags: [.command, .shift])
         XCTAssertFalse(app.staticTexts["Sample text for Page #1"].exists)
 
-        app.typeKey("w", modifierFlags: [.command, .shift]) // Close window
+        app.closeWindow()
     }
 
     private func assertPinnedTabsRestoredState() {

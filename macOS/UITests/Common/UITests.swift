@@ -18,6 +18,7 @@
 
 import Foundation
 import XCTest
+import ObjectiveC
 
 /// Helper values for the UI tests
 enum UITests {
@@ -35,8 +36,13 @@ enum UITests {
 
     /// A page simple enough to test favorite, bookmark, and history storage
     /// - Parameter title: The title of the page to match
+    /// - Parameter body: The body of the page to match
     /// - Returns: A URL that can be served by `tests-server`
     static func simpleServedPage(titled title: String) -> URL {
+        simpleServedPage(titled: title, body: "<p>Sample text for \(title)</p>")
+    }
+
+    static func simpleServedPage(titled title: String, body: String) -> URL {
         return URL.testsServer
             .appendingTestParameters(data: """
             <html>
@@ -44,7 +50,7 @@ enum UITests {
             <title>\(title)</title>
             </head>
             <body>
-            <p>Sample text for \(title)</p>
+            \(body)
             </body>
             </html>
             """.utf8data)
@@ -120,10 +126,13 @@ class TestFailureObserver: NSObject, XCTestObservation {
 }
 
 class UITestCase: XCTestCase {
+    var app: XCUIApplication!
+
     private static let failureObserver = TestFailureObserver()
     private var cleanupPaths: Set<String> = []
 
     override class func setUp() {
+        setupXCPointerEventPathSwizzling()
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
 
@@ -134,6 +143,86 @@ class UITestCase: XCTestCase {
     override class func tearDown() {
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
         super.tearDown()
+    }
+
+    /// Swizzles XCPointerEventPath private methods to call original implementation
+    /// Uses once token pattern to ensure swizzling happens only once
+    private static func setupXCPointerEventPathSwizzling() {
+        // Using static variable for once semantics (equivalent to dispatch_once)
+        struct OnceToken {
+            static let token: Void = {
+                guard let pointerEventPathClass = NSClassFromString("XCPointerEventPath") else {
+                    print("Warning: XCPointerEventPath class not found for swizzling")
+                    return
+                }
+
+                swizzleMethod(
+                    class: pointerEventPathClass,
+                    originalSelector: NSSelectorFromString("pressButton:atOffset:clickCount:"),
+                    swizzledSelector: #selector(swizzled_pressButton)
+                )
+
+                swizzleMethod(
+                    class: pointerEventPathClass,
+                    originalSelector: NSSelectorFromString("releaseButton:atOffset:clickCount:"),
+                    swizzledSelector: #selector(swizzled_releaseButton)
+                )
+            }()
+
+            /// Helper method to perform method swizzling
+            /// - Parameters:
+            ///   - class: The class containing the method to swizzle
+            ///   - originalSelector: The original method selector
+            ///   - swizzledSelector: The replacement method selector
+            private static func swizzleMethod(class: AnyClass, originalSelector: Selector, swizzledSelector: Selector) {
+                guard let originalMethod = class_getInstanceMethod(`class`, originalSelector),
+                      var swizzledMethod = class_getInstanceMethod(UITestCase.self, swizzledSelector) else {
+                    print("Warning: Could not find methods for swizzling \(originalSelector) and \(swizzledSelector)")
+                    return
+                }
+
+                let didAddMethod = class_addMethod(
+                    `class`,
+                    swizzledSelector,
+                    method_getImplementation(swizzledMethod),
+                    method_getTypeEncoding(swizzledMethod)
+                )
+
+                if didAddMethod {
+                    swizzledMethod = class_getInstanceMethod(`class`, swizzledSelector)!
+                }
+                method_exchangeImplementations(originalMethod, swizzledMethod)
+            }
+        }
+
+        // Accessing the static property ensures the closure runs exactly once
+        _ = OnceToken.token
+    }
+
+}
+
+// MARK: - XCPointerEventPath Swizzled Methods
+
+extension UITestCase {
+
+    @TaskLocal static var shouldReplaceButtonWithMiddleMouseButton: Bool = false
+
+    /// Swizzled implementation of pressButton:atOffset:clickCount:
+    @objc dynamic private func swizzled_pressButton(_ button: UInt64, at offset: Double, clickCount: UInt64) {
+        var button = button
+        if Self.shouldReplaceButtonWithMiddleMouseButton {
+            button = 3
+        }
+        self.swizzled_pressButton(button, at: offset, clickCount: clickCount)
+    }
+
+    /// Swizzled implementation of releaseButton:atOffset:clickCount:
+    @objc dynamic private func swizzled_releaseButton(_ button: UInt64, at offset: Double, clickCount: UInt64) {
+        var button = button
+        if Self.shouldReplaceButtonWithMiddleMouseButton {
+            button = 3
+        }
+        self.swizzled_releaseButton(button, at: offset, clickCount: clickCount)
     }
 
     override func tearDown() {
@@ -208,7 +297,10 @@ class UITestCase: XCTestCase {
     private func cleanupTrackedFiles() {
         guard !cleanupPaths.isEmpty else { return }
 
-        let paths = Array(cleanupPaths)
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0].standardizedFileURL.path
+        let paths = cleanupPaths.filter {
+            URL(fileURLWithPath: $0).standardizedFileURL.path != downloadsDir
+        }
         let pathsQuery = paths.joined(separator: ",")
         let cleanupURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: pathsQuery)
 

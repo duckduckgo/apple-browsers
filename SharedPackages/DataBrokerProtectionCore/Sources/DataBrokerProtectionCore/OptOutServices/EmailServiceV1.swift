@@ -108,7 +108,7 @@ public protocol EmailServiceV1Protocol {
 }
 
 public struct EmailServiceV1: EmailServiceV1Protocol {
-    private struct Constants {
+    public struct Constants {
         static let endpointSubPath = "/dbp/em/v1"
         static let maxBatchSize = 100
     }

@@ -26,7 +26,7 @@ public protocol EmailConfirmationDataServiceProvider {
                                    profileQueryId: Int64,
                                    extractedProfileId: Int64,
                                    attemptId: UUID) async throws -> EmailData
-    func checkForEmailConfirmationData(maxBatchSize: Int) async throws
+    func checkForEmailConfirmationData() async throws
 }
 
 public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider {
@@ -64,11 +64,11 @@ public struct EmailConfirmationDataService: EmailConfirmationDataServiceProvider
         return emailData
     }
 
-    public func checkForEmailConfirmationData(maxBatchSize: Int) async throws {
+    public func checkForEmailConfirmationData() async throws {
         let recordsAwaitingLink = try database.fetchOptOutEmailConfirmationsAwaitingLink()
 
         var itemsToDelete: [EmailDataRequestItemV1] = []
-        for chunk in recordsAwaitingLink.chunks(ofCount: maxBatchSize) {
+        for chunk in recordsAwaitingLink.chunks(ofCount: EmailServiceV1.Constants.maxBatchSize) {
             let records = Array(chunk)
             let response = try await emailServiceV1.fetchEmailData(items: records.toEmailDataRequestItems())
 

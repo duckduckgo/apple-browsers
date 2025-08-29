@@ -111,7 +111,7 @@ extension Preferences {
                             ToggleMenuItem(UserText.newTabAIChatSectionTitle, isOn: $aiChatModel.showShortcutOnNewTabPage)
                                 .accessibilityIdentifier("Preferences.AppearanceView.showAIChatToggle")
                                 .padding(.leading, 19)
-                                .visibility(model.isOmnibarVisible ? .visible : .gone)
+                                .disabled(!model.isOmnibarVisible)
                         }
                         ToggleMenuItem(UserText.newTabFavoriteSectionTitle, isOn: $model.isFavoriteVisible).accessibilityIdentifier("Preferences.AppearanceView.showFavoritesToggle")
                         ToggleMenuItem(UserText.newTabProtectionsReportSectionTitle, isOn: $model.isProtectionsReportVisible)

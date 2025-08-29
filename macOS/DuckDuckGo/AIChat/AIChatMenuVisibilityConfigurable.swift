@@ -132,12 +132,13 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     private func subscribeToValuesChanged() {
-        Publishers.Merge5(
+        Publishers.Merge6(
             storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
             storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
             storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
             storage.showShortcutInAddressBarPublisher.removeDuplicates(),
-            storage.openAIChatInSidebarPublisher.removeDuplicates()
+            storage.openAIChatInSidebarPublisher.removeDuplicates(),
+            storage.isPageContextEnabledPublisher.removeDuplicates()
         )
         .sink { [weak self] _ in
             self?.valuesChangedPublisher.send()

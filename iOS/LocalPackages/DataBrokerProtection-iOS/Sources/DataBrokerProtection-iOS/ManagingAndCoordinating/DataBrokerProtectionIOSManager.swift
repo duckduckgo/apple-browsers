@@ -28,7 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
-import SwiftUI // TODO can get rid of this?
+import SwiftUI
 
 /*
  This class functions as the main coordinator for DBP on iOS (and hence the main decision maker).

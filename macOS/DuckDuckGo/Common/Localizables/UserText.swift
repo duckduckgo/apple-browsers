@@ -1330,6 +1330,9 @@ struct UserText {
     static let showDownloadsShortcut = NSLocalizedString("pinning.show-downloads-shortcut", value: "Show Downloads Shortcut", comment: "Menu item for showing the downloads shortcut")
     static let hideDownloadsShortcut = NSLocalizedString("pinning.hide-downloads-shortcut", value: "Hide Downloads Shortcut", comment: "Menu item for hiding the downloads shortcut")
 
+    static let showShareShortcut = NSLocalizedString("pinning.show-share-shortcut", value: "Show Share Shortcut", comment: "Menu item for showing the share shortcut")
+    static let hideShareShortcut = NSLocalizedString("pinning.hide-share-shortcut", value: "Hide Share Shortcut", comment: "Menu item for hiding the share shortcut")
+
     static let showNetworkProtectionShortcut = NSLocalizedString("pinning.show-netp-shortcut", value: "Show VPN Shortcut", comment: "Menu item for showing the NetP shortcut")
     static let hideNetworkProtectionShortcut = NSLocalizedString("pinning.hide-netp-shortcut", value: "Hide VPN Shortcut", comment: "Menu item for hiding the NetP shortcut")
 

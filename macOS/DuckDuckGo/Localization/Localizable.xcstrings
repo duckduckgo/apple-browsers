@@ -56810,6 +56810,66 @@
         }
       }
     },
+    "pinning.hide-share-shortcut" : {
+      "comment" : "Menu item for hiding the share shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freigabe-Shortcut ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Share Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar acceso directo a compartir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le raccourci de partage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi scorciatoia di condivisione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snelkoppeling voor delen verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj skrót do udostępniania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar atalho de partilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть ярлык «Поделиться»"
+          }
+        }
+      }
+    },
     "pinning.show-autofill-shortcut" : {
       "comment" : "Menu item for showing the passwords shortcut",
       "extractionState" : "extracted_with_value",
@@ -57046,6 +57106,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать ярлык VPN"
+          }
+        }
+      }
+    },
+    "pinning.show-share-shortcut" : {
+      "comment" : "Menu item for showing the share shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freigabe-Shortcut anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Share Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar acceso directo a compartir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le raccourci de partage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra scorciatoia Condividi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snelkoppeling voor delen weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż skrót do udostępniania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar atalho de partilha"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать ярлык «Поделиться»"
           }
         }
       }
@@ -70640,7 +70760,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Report a Browser Problem"
+            "value" : "Segnala un problema del browser"
           }
         },
         "nl" : {

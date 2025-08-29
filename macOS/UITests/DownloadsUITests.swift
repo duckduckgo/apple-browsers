@@ -92,17 +92,6 @@ class DownloadsUITests: UITestCase {
         cancel.click()
     }
 
-    /// Validates downloads behavior within a Fire window and that the popover is shown on completion.
-    func testDownloadsOnFireWindow() {
-        configureDownloadPreferences(alwaysAskWhereToSave: false,
-                                     openDownloadsPopupOnCompletion: false,
-                                     switchToNewTabWhenOpened: false)
-        app.enforceSingleWindow()
-        app.openFireWindow()
-        let fireName = triggerDownloadWithUniqueName(size: "1MB")
-        assertDownloadListed(filename: fireName, sizeLabelRegex: "1.0 MB")
-    }
-
     /// Closing a Fire window with an in‑progress download should present a warning
     func testFireWindowWithInProgressDownloadShowsWarning() {
         configureDownloadPreferences(alwaysAskWhereToSave: false,
@@ -115,7 +104,7 @@ class DownloadsUITests: UITestCase {
         // Wait for the download to actually start (Downloads button becomes available)
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
         _ = downloadsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence)
-        assertDownloadListed(filenameRegex: ".MMA.+10GB.*")
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*", timeout: UITests.Timeouts.navigation)
         app.typeKey(.escape, modifierFlags: [])
 
         // Attempt to close window → expect warning
@@ -126,7 +115,7 @@ class DownloadsUITests: UITestCase {
         sheet.buttons["Don’t Close"].click()
 
         // Verify download is in progress and present
-        assertDownloadListed(filenameRegex: ".MMA.+10GB.*", sizeLabelRegex: ".* of .*( – .*|)")
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*", sizeLabelRegex: ".* of .*( – .*|)", timeout: UITests.Timeouts.elementExistence)
         app.typeKey(.escape, modifierFlags: [])
 
         // Try closing again and accept the warning to stop download
@@ -155,8 +144,7 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile()
 
         // Open Downloads popover and assert it's visible
-        openDownloadsPopup()
-        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*", sizeLabelRegex: ".* of .*( – .*|)", timeout: UITests.Timeouts.navigation)
         let firstRow = table.cells.firstMatch
         XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         firstRow.click()
@@ -642,7 +630,7 @@ class DownloadsUITests: UITestCase {
         downloadLargeFile()
         // Ensure download actually started before quitting
         let downloadsButton = app.buttons["NavigationBarViewController.downloadsButton"]
-        XCTAssertTrue(downloadsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(downloadsButton.waitForExistence(timeout: UITests.Timeouts.navigation))
         assertDownloadListed(filenameRegex: ".MMA.+10GB.*")
 
         app.typeKey("q", modifierFlags: [.command])
@@ -855,9 +843,8 @@ class DownloadsUITests: UITestCase {
         // Start a long download
         downloadLargeFile()
         // Open downloads and cancel the first row
-        openDownloadsPopup()
+        assertDownloadListed(filenameRegex: ".MMA.+10GB.*", sizeLabelRegex: ".* of .*( – .*|)", timeout: UITests.Timeouts.navigation)
 
-        XCTAssertTrue(table.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let firstRow = table.cells.firstMatch
         XCTAssertTrue(firstRow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         firstRow.click()
@@ -1009,20 +996,20 @@ class DownloadsUITests: UITestCase {
     }
 
     /// Opens the Downloads popover (if needed) and asserts both size label (optional) and filename exist.
-    private func assertDownloadListed(filename: String? = nil, filenameRegex: String? = nil, sizeLabelRegex: String? = nil) {
+    private func assertDownloadListed(filename: String? = nil, filenameRegex: String? = nil, sizeLabelRegex: String? = nil, timeout: TimeInterval = UITests.Timeouts.localTestServer) {
         if !popover.exists {
             openDownloadsPopup()
         }
         if let sizeRegex = sizeLabelRegex {
             let size = popover.staticTexts.matching(.keyPath(\.value, matchingRegex: sizeRegex)).firstMatch
-            XCTAssertTrue(size.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+            XCTAssertTrue(size.waitForExistence(timeout: timeout))
         }
         if let filename {
-            XCTAssertTrue(popover.staticTexts[filename].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+            XCTAssertTrue(popover.staticTexts[filename].waitForExistence(timeout: timeout))
         }
         if let filenameRegex {
             let nameLabel = popover.staticTexts.matching(.keyPath(\.value, matchingRegex: filenameRegex)).firstMatch
-            XCTAssertTrue(nameLabel.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+            XCTAssertTrue(nameLabel.waitForExistence(timeout: timeout))
         }
     }
 

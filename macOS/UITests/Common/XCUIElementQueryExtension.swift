@@ -91,7 +91,7 @@ extension XCUIElementQuery {
     ///   - timeout: Maximum time to wait (default: 30 seconds)
     /// - Returns: True if the condition is met within the timeout, false otherwise
     @discardableResult
-    func wait(for predicate: NSPredicate, timeout: TimeInterval = 30.0) -> Bool {
+    func wait(for predicate: NSPredicate, timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         return result == .completed
@@ -106,7 +106,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Equatable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                       equals value: V,
-                                      timeout: TimeInterval = 30.0) -> Bool {
+                                      timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, equalTo: value), timeout: timeout)
     }
 
@@ -119,7 +119,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: ClosedRange<V>,
-                                       timeout: TimeInterval = 30.0) -> Bool {
+                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -127,7 +127,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: Range<V>,
-                                       timeout: TimeInterval = 30.0) -> Bool {
+                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -135,7 +135,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: PartialRangeFrom<V>,
-                                       timeout: TimeInterval = 30.0) -> Bool {
+                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -143,7 +143,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: PartialRangeUpTo<V>,
-                                       timeout: TimeInterval = 30.0) -> Bool {
+                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 
@@ -151,7 +151,7 @@ extension XCUIElementQuery {
     @discardableResult
     func wait<V: CVarArg & Comparable>(for keyPath: PartialKeyPath<XCUIElementQuery>,
                                        in range: PartialRangeThrough<V>,
-                                       timeout: TimeInterval = 30.0) -> Bool {
+                                       timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         return wait(for: NSPredicate.keyPath(keyPath, in: range), timeout: timeout)
     }
 }

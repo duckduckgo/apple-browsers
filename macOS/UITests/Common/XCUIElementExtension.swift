@@ -186,7 +186,7 @@ extension XCUIElement {
     @discardableResult
     func wait(for keyPath: PartialKeyPath<XCUIElement>,
               contains substring: String,
-              timeout: TimeInterval = 30.0) -> Bool {
+              timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         let expectation = XCTNSPredicateExpectation(predicate: .keyPath(keyPath, contains: substring), object: self)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         return result == .completed
@@ -201,7 +201,7 @@ extension XCUIElement {
     @discardableResult
     func wait<V: CVarArg>(for keyPath: PartialKeyPath<XCUIElement>,
                           equals value: V,
-                          timeout: TimeInterval = 30.0) -> Bool {
+                          timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         let predicate = NSPredicate.keyPath(keyPath, equalTo: value)
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
@@ -214,7 +214,7 @@ extension XCUIElement {
     ///   - timeout: Maximum time to wait (default: 30 seconds)
     /// - Returns: True if the condition is met within the timeout, false otherwise
     @discardableResult
-    func wait(for predicate: NSPredicate, timeout: TimeInterval = 30.0) -> Bool {
+    func wait(for predicate: NSPredicate, timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         return result == .completed

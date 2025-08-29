@@ -40,7 +40,7 @@ public class DataBrokerProtectionAgentManagerProvider {
     public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                     configurationManager: DefaultConfigurationManager,
                                     privacyConfigurationManager: DBPPrivacyConfigurationManager,
-                                    remoteBrokerDeliveryFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                    featureFlagger: DBPFeatureFlagging,
                                     vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
@@ -92,7 +92,7 @@ public class DataBrokerProtectionAgentManagerProvider {
         }
 
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
-        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: remoteBrokerDeliveryFeatureFlagger,
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: dbpSettings,
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
@@ -137,6 +137,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             dataBrokerProtectionSettings: dbpSettings,
             emailService: emailService,
             captchaService: captchaService,
+            featureFlagger: featureFlagger,
             vpnBypassService: vpnBypassService)
 
         return DataBrokerProtectionAgentManager(

@@ -84,6 +84,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
     case dbpRemoteBrokerDelivery
 
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210764611054383?focus=true
+    case dbpEmailConfirmationDecoupling
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case syncSetupBarcodeIsUrlBased
 
@@ -158,9 +161,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
     case restoreSessionPrompt
-
-    /// https://app.asana.com/1/137249556945/project/276630244458377/task/1211090698913983?focus=true
-    case openFileMenuAction
 
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
     case duckAISearchParameter
@@ -237,7 +237,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .openFireWindowByDefault,
                 .restoreSessionPrompt,
                 .duckAISearchParameter,
-                .openFileMenuAction:
+                .dbpEmailConfirmationDecoupling:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -310,6 +310,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
         case .dbpRemoteBrokerDelivery:
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
+        case .dbpEmailConfirmationDecoupling:
+            return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -360,8 +362,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .restoreSessionPrompt:
             return .disabled
-        case .openFileMenuAction:
-            return .internalOnly()
         case .duckAISearchParameter:
             return .enabled
         }

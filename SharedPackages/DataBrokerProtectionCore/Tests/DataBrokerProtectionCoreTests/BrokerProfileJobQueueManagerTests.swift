@@ -56,7 +56,8 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
                                                         eventsHandler: mockEventsHandler,
                                                         dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
                                                         emailService: EmailServiceMock(),
-                                                        captchaService: CaptchaServiceMock())
+                                                        captchaService: CaptchaServiceMock(),
+                                                        featureFlagger: MockDBPFeatureFlagger())
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {

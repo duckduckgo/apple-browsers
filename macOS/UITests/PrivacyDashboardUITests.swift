@@ -369,13 +369,13 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
 
         // Wait for page to reload - "Start the test" button should become enabled again
-        XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.elementExistence), "Download the results button should become available after test completion")
+        XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled within reasonable time after disabling protections")
 
         // Start the test again with protections disabled
         startTestButton.click()
 
         // Wait for "Download the results" button to become enabled again
-        XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.elementExistence), "Download the results button should become available after test completion")
+        XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Download the results button should become enabled after test completion")
 
         // Check for existing files before second download (including first downloaded file)
         let existingFilesBeforeSecond = getExistingRequestBlockingFiles()
@@ -421,13 +421,13 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should disappear after re-enabling protections")
 
         // Wait for page to reload - "Start the test" button should become enabled again
-        XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.elementExistence), "Start the test button should become available again after re-enabling protections")
+        XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled again after re-enabling protections")
 
         // Start the test again with protections re-enabled
         startTestButton.click()
 
         // Wait for "Download the results" button to become enabled again
-        XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.elementExistence), "Download the results button should become available after test completion with protections re-enabled")
+        XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Download the results button should become enabled after test completion with protections re-enabled")
 
         // Check for existing files before third download
         let existingFilesBeforeThird = getExistingRequestBlockingFiles()

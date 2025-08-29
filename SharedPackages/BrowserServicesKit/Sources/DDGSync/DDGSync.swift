@@ -326,7 +326,7 @@ public class DDGSync: DDGSyncing {
 
         do {
             if try dependencies.keyValueStore.object(forKey: Constants.keychainAttrMigratedKey) == nil {
-                //Remove account from keychain to re-apply attribute changes
+                // Remove account from keychain to re-apply attribute changes
                 try dependencies.secureStore.removeAccount()
 
                 try dependencies.keyValueStore.set(true, forKey: Constants.keychainAttrMigratedKey)

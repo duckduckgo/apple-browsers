@@ -18679,55 +18679,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Deine Sitzung wird nicht wiederhergestellt, wenn die Daten beim Beenden gelöscht werden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your session won't be restored if data is deleted when exiting."
+            "value" : "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Tu sesión no se restaurará si se eliminan los datos al salir."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Votre session ne sera pas rétablie si les données sont supprimées à la fermeture."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "La sessione non sarà ripristinata se i dati vengono eliminati all'uscita."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Je sessie wordt niet hersteld als de gegevens bij het afsluiten worden verwijderd."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Sesja nie zostanie przywrócona, jeśli dane zostaną usunięte przy wychodzeniu."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "A tua sessão não será restaurada se os dados forem eliminados ao sair."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Если данные удаляются при выходе, восстановление сеанса невозможно."
           }
         }
@@ -32169,6 +32169,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выберите сайт, чьи данные вы хотите стереть."
+          }
+        }
+      }
+    },
+    "fire.window.session.restore.warning" : {
+      "comment" : "Warning message explaining that session restoration is not available when using Fire Window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fire Windows won’t be restored with your session."
           }
         }
       }
@@ -67710,6 +67722,18 @@
         }
       }
     },
+    "preferences.open-fire-window-by-default.explanation" : {
+      "comment" : "Explanation for the option to make all new windows Fire Windows. The %@ will be replaced with a keyboard shortcut for opening new Fire Windows and regular Windows (e.g. '⌘N' and '⇧⌘N').",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Fire Windows by default when opening new windows (%1$@). You can still open a regular browser window when this setting is on (%2$@)."
+          }
+        }
+      }
+    },
     "preferences.paidAIChat" : {
       "comment" : "Title of the option to show the Duck.ai Pro preferences",
       "extractionState" : "extracted_with_value",
@@ -68486,6 +68510,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Усовершенствованное шифрование"
+          }
+        }
+      }
+    },
+    "preferences.startup.open-a-new" : {
+      "comment" : "Label for startup window type selection",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open a new"
+          }
+        }
+      }
+    },
+    "preferences.startup.window" : {
+      "comment" : "Option for regular window type",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Window"
           }
         }
       }
@@ -74495,55 +74543,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Einstellungen zum Löschen von Daten öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Data Clearing Settings"
+            "value" : "Go to Data Clearing Settings"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir configuración de borrado de datos"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ouvrir les paramètres d'effacement des données"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Apri Impostazioni cancellazione dati"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Instellingen voor het wissen van open gegevens"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Otwórz ustawienia czyszczenia danych"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir Definições de limpeza de dados"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открыть настройки очистки данных"
           }
         }
@@ -74605,6 +74653,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показать содержимое папки"
+          }
+        }
+      }
+    },
+    "show.startup.settings" : {
+      "comment" : "Button in Data Clearing Settings. It navigates user to Startup Settings.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to Startup Settings"
           }
         }
       }

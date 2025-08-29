@@ -559,7 +559,7 @@ final class KnownBookmarkFolderIdList {
     }
 
     deinit {
-        MainActor.assumeIsolated {
+        MainActor.assumeMainThread {
             for id in knownIds {
                 Self.restorableFolders[id] = nil
             }

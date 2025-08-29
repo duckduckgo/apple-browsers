@@ -55,7 +55,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
-        tabCollectionViewModel = TabCollectionViewModel()
+        tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
         fireproofDomains = MockFireproofDomains(domains: [])
         passwordManagerCoordinator = PasswordManagerCoordinator()
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)

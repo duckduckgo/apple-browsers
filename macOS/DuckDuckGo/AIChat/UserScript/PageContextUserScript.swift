@@ -52,6 +52,7 @@ final class PageContextUserScript: NSObject, Subfeature {
         collectionResultPublisher = collectionResultSubject.eraseToAnyPublisher()
     }
 
+    /// Requests collecting page context
     func collect() {
         guard let webView else {
             return
@@ -70,6 +71,7 @@ final class PageContextUserScript: NSObject, Subfeature {
         }
     }
 
+    /// Receives collected page context
     private func collectionResult(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("\(#function): \(String(reflecting: params))")
         guard

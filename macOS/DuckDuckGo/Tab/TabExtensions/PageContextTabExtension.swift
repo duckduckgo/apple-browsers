@@ -27,6 +27,13 @@ protocol PageContextUserScriptProvider {
 }
 extension UserScripts: PageContextUserScriptProvider {}
 
+/// This tab extension is responsible for managing page context
+/// collected by `PageContextUserScript` and passing it to the
+/// sidebar.
+///
+/// It only works for non-sidebar tabs. When in sidebar, it's not fully initialized
+/// and is a no-op.
+///
 final class PageContextTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
@@ -74,8 +81,13 @@ final class PageContextTabExtension {
 
         aiChatSidebarProvider.sidebarsByTabPublisher
             .receive(on: DispatchQueue.main)
-            .filter { $0[tabID] != nil }
+            .map { $0[tabID] != nil }
+            .removeDuplicates()
+            .filter { $0 }
             .sink { [weak self] _ in
+                /// This closure is responsible for passing cached page context to the newly displayed sidebar.
+                /// It's only called when sidebar for tabID is non-nil.
+                /// Additionally, we're only calling `handle` if there's a cached page context.
                 guard let self, let cachedPageContext else {
                     return
                 }
@@ -93,6 +105,7 @@ final class PageContextTabExtension {
         pageContextUserScript.collectionResultPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
+                /// This closure is responsible for handling page context received from the user script.
                 guard let self, aiChatMenuConfiguration.isPageContextEnabled else {
                     return
                 }
@@ -101,6 +114,9 @@ final class PageContextTabExtension {
             .store(in: &userScriptCancellables)
     }
 
+    /// This is the main place where page context handling happens.
+    /// We always cache the latest context, and if sidebar is open,
+    /// we're passing the context to it.
     private func handle(_ pageContext: AIChatPageContextData) {
         cachedPageContext = pageContext
         if let sidebar = aiChatSidebarProvider.getSidebar(for: tabID) {

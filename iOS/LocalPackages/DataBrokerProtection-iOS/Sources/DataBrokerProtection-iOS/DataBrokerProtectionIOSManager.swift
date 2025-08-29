@@ -124,6 +124,14 @@ public class DataBrokerProtectionIOSManagerProvider {
         let emailService = EmailService(authenticationManager: authenticationManager,
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
+        let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
+                                            settings: dbpSettings,
+                                            servicePixel: backendServicePixels)
+        let emailConfirmationDataService = EmailConfirmationDataService(database: database,
+                                                                        emailServiceV0: emailService,
+                                                                        emailServiceV1: emailServiceV1,
+                                                                        featureFlagger: featureFlagger,
+                                                                        pixelHandler: sharedPixelsHandler)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let executionConfig = BrokerJobExecutionConfig()
         let jobDependencies = BrokerProfileJobDependencies(
@@ -145,6 +153,7 @@ public class DataBrokerProtectionIOSManagerProvider {
         return DataBrokerProtectionIOSManager(
             queueManager: queueManager,
             jobDependencies: jobDependencies,
+            emailConfirmationDataService: emailConfirmationDataService,
             authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
             iOSPixelsHandler: iOSPixelsHandler,
@@ -176,6 +185,7 @@ public final class DataBrokerProtectionIOSManager {
     public let database: DataBrokerProtectionRepository
     private var queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
+    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
@@ -217,6 +227,7 @@ public final class DataBrokerProtectionIOSManager {
 
     init(queueManager: BrokerProfileJobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
+         emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
@@ -232,6 +243,7 @@ public final class DataBrokerProtectionIOSManager {
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
         self.iOSPixelsHandler = iOSPixelsHandler
@@ -345,6 +357,13 @@ public final class DataBrokerProtectionIOSManager {
                 task.setTaskCompleted(success: false)
                 return
             }
+
+            do {
+                try await emailConfirmationDataService.checkForEmailConfirmationData()
+            } catch {
+                // TODO
+            }
+            
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 let timeTaken = Date.now.timeIntervalSince(startDate)

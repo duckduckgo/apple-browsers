@@ -35,6 +35,7 @@ public class DDGSync: DDGSyncing {
 
     enum Constants {
         public static let syncEnabledKey = "com.duckduckgo.sync.enabled"
+        public static let keychainAttrMigratedKey = "com.duckduckgo.sync.keychain.attr.migrated"
     }
 
     @Published public private(set) var authState = SyncAuthState.initializing
@@ -323,8 +324,14 @@ public class DDGSync: DDGSyncing {
         let syncQueue = SyncQueue(dataProviders: providers, dependencies: dependencies)
         try syncQueue.prepareDataModelsForSync(needsRemoteDataFetch: account.state == .addingNewDevice)
 
-        //Remove account from keychain to re-apply attributes changes
-        try? dependencies.secureStore.removeAccount()
+        do {
+            if try dependencies.keyValueStore.object(forKey: Constants.keychainAttrMigratedKey) == nil {
+                //Remove account from keychain to re-apply attribute changes
+                try dependencies.secureStore.removeAccount()
+
+                try dependencies.keyValueStore.set(true, forKey: Constants.keychainAttrMigratedKey)
+            }
+        } catch {}
 
         if account.state != .active {
             let activatedAccount = account.updatingState(.active)

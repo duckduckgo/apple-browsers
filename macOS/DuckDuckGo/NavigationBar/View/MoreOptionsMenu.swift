@@ -352,7 +352,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func startSync(_ sender: NSMenuItem) {
-        DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+        actionDelegate?.optionsButtonMenuRequestedStartSync(self)
     }
 
     @objc func openAutofillWithAllItems(_ sender: NSMenuItem) {

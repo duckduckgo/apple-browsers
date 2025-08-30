@@ -413,6 +413,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
 
+    var userInitiatedSignOut: Bool = false
+
     var cachedUserEntitlements: [SubscriptionEntitlement] {
         get {
             userDefaults.userEntitlements
@@ -425,7 +427,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newValue) {
                 Logger.subscription.debug("Entitlements changed - New \(String(describing: newValue)) Old \(String(describing: currentCachedUserEntitlements))")
                 let payload = EntitlementsDidChangePayload(entitlements: newValue)
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
+
+                var userInfo = payload.notificationUserInfo
+                userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] = userInitiatedSignOut
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
             }
         }
     }
@@ -551,6 +556,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func signOut(notifyUI: Bool) async {
         Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false")")
+        userInitiatedSignOut = true
+
+        defer {
+            userInitiatedSignOut = false
+        }
+
         try? await oAuthClient.logout()
         clearSubscriptionCache()
         if notifyUI {

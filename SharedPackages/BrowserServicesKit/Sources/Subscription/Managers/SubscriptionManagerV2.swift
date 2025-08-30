@@ -413,7 +413,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
 
-    var userInitiatedSignOut: Bool = false
+    private var userInitiatedSignOut: Bool = false
 
     var cachedUserEntitlements: [SubscriptionEntitlement] {
         get {

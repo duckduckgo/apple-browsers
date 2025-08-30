@@ -15,27 +15,32 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import XCTest
-import Combine
+
 import AIChat
+import Combine
+import FeatureFlags
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 class AIChatMenuConfigurationTests: XCTestCase {
     var configuration: AIChatMenuConfiguration!
     var mockStorage: MockAIChatPreferencesStorage!
     var remoteSettings: MockRemoteAISettings!
+    var featureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
         mockStorage = MockAIChatPreferencesStorage()
         remoteSettings = MockRemoteAISettings()
-        configuration = AIChatMenuConfiguration(storage: mockStorage, remoteSettings: remoteSettings, featureFlagger: MockFeatureFlagger())
+        featureFlagger = MockFeatureFlagger()
+        configuration = AIChatMenuConfiguration(storage: mockStorage, remoteSettings: remoteSettings, featureFlagger: featureFlagger)
     }
 
     override func tearDown() {
         configuration = nil
         mockStorage = nil
         remoteSettings = nil
+        featureFlagger = nil
         super.tearDown()
     }
 
@@ -186,7 +191,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertTrue(result, "New Tab Page shortcut should be displayed when storage is true.")
     }
 
-    func testShouldOpenAIChatInSidebarPublisherWhenStorageAreTrue() {
+    func testShouldOpenAIChatInSidebarPublisherWhenStorageIsTrue() {
         mockStorage.openAIChatInSidebar = true
 
         let result = configuration.shouldOpenAIChatInSidebar
@@ -194,12 +199,31 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertTrue(result, "Open AI Chat in sidebar should be displayed when storage is true.")
     }
 
-    func testIsPageContextPublisherPublisherWhenStorageAreTrue() {
+    func testIsPageContextPublisherPublisherWhenFeatureFlagAndStorageAreTrue() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
         mockStorage.isPageContextEnabled = true
 
         let result = configuration.isPageContextEnabled
 
-        XCTAssertTrue(result, "Page Context Enabled should be displayed when storage is true.")
+        XCTAssertTrue(result, "Page Context should be enabled when storage is true.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagIsFalseAndStorageIsTrue() {
+        featureFlagger.featuresStub = [:]
+        mockStorage.isPageContextEnabled = true
+
+        let result = configuration.isPageContextEnabled
+
+        XCTAssertFalse(result, "Page Context should be disabled when storage is true and feature flag is disabled.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagIsTrueAndStorageIsFalse() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
+        mockStorage.isPageContextEnabled = false
+
+        let result = configuration.isPageContextEnabled
+
+        XCTAssertFalse(result, "Page Context should be disabled when storage is false and feature flag is enabled.")
     }
 }
 

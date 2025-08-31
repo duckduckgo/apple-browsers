@@ -839,8 +839,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
-
-        runWidePixelCleanup()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -1133,36 +1131,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
             Self.setUpPixelKit(dryRun: false)
 #endif
-    }
-
-    private func runWidePixelCleanup() {
-        guard featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) else {
-            return
-        }
-
-        Task.detached(priority: .utility) {
-            let widePixel = WidePixel()
-            let pending: [SubscriptionPurchaseWidePixelData] = widePixel.getAllFlowData(SubscriptionPurchaseWidePixelData.self)
-
-            for data in pending {
-                if var interval = data.createAccountDuration, interval.start != nil, interval.end == nil {
-                    interval.complete()
-                    data.createAccountDuration = interval
-                }
-
-                if var interval = data.completePurchaseDuration, interval.start != nil, interval.end == nil {
-                    interval.complete()
-                    data.completePurchaseDuration = interval
-                }
-
-                if var interval = data.activateAccountDuration, interval.start != nil, interval.end == nil {
-                    interval.complete()
-                    data.activateAccountDuration = interval
-                }
-
-                widePixel.completeFlow(data, status: .unknown(reason: SubscriptionPurchaseWidePixelData.StatusReason.partialData.rawValue)) { _, _ in }
-            }
-        }
     }
 
     private static func setUpPixelKit(dryRun: Bool) {

@@ -829,18 +829,18 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         // 3: Configure wide pixel and start the flow
         let experiment = subscriptionSelection.experiment?.name
         let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
-        let data = SubscriptionPurchaseWidePixelData(
-            purchasePlatform: .appStore,
-            subscriptionIdentifier: subscriptionSelection.id,
-            freeTrialEligible: freeTrialEligible,
-            experimentIDs: [experiment].compactMap(\.self),
-            contextData: WidePixelContextData(name: subscriptionAttributionOrigin),
-            appData: WidePixelAppData(internalUser: internalUserDecider.isInternalUser)
-        )
-
-        self.widePixelData = data
 
         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
+            let data = SubscriptionPurchaseWidePixelData(
+                purchasePlatform: .appStore,
+                subscriptionIdentifier: subscriptionSelection.id,
+                freeTrialEligible: freeTrialEligible,
+                experimentIDs: [experiment].compactMap(\.self),
+                contextData: WidePixelContextData(name: subscriptionAttributionOrigin),
+                appData: WidePixelAppData(internalUser: internalUserDecider.isInternalUser)
+            )
+
+            self.widePixelData = data
             widePixel.startFlow(data)
         }
 
@@ -852,8 +852,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.log("Subscription purchased successfully")
             purchaseTransactionJWS = result.transactionJWS
 
-            if let accountCreationDuration = result.accountCreationDuration {
-                data.createAccountDuration = accountCreationDuration
+            if let accountCreationDuration = result.accountCreationDuration, let widePixelData {
+                widePixelData.createAccountDuration = accountCreationDuration
             }
         case .failure(let error):
             Logger.subscription.error("App store purchase error: \(error.localizedDescription)")
@@ -863,22 +863,22 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 setTransactionError(.cancelledByUser)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                    widePixel.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                    widePixel.completeFlow(widePixelData, status: .cancelled, onComplete: { _, _ in })
                 }
 
                 return nil
             case .accountCreationFailed:
                 setTransactionError(.accountCreationFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                    data.markAsFailed(at: .accountCreate, error: error)
-                    widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                    widePixelData.markAsFailed(at: .accountCreate, error: error)
+                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
                 }
             case .activeSubscriptionAlreadyPresent:
                 // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let data = self.widePixelData {
-                    widePixel.discardFlow(data)
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                    widePixel.discardFlow(widePixelData)
                     self.widePixelData = nil
                 }
 
@@ -886,9 +886,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             default:
                 setTransactionError(.purchaseFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                    data.markAsFailed(at: .accountPayment, error: error)
-                    widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                    widePixelData.markAsFailed(at: .accountPayment, error: error)
+                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
                 }
             }
             originalMessage = original
@@ -902,8 +902,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             assertionFailure("Purchase transaction JWS is empty")
             setTransactionStatus(.idle)
             
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
             }
             
             return nil
@@ -914,7 +914,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             subscriptionParameters = frontEndExperiment.asParameters()
         }
 
-        data.activateAccountDuration = WidePixel.MeasuredInterval.startingNow()
+        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+            widePixelData.activateAccountDuration = WidePixel.MeasuredInterval.startingNow()
+        }
 
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
                                                                        additionalParams: subscriptionParameters) {
@@ -927,10 +929,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             setTransactionStatus(.idle)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                data.activateAccountDuration?.complete()
-                widePixel.updateFlow(data)
-                widePixel.completeFlow(data, status: .success, onComplete: { _, _ in })
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                widePixelData.activateAccountDuration?.complete()
+                widePixel.updateFlow(widePixelData)
+                widePixel.completeFlow(widePixelData, status: .success(reason: nil), onComplete: { _, _ in })
             }
 
         case .failure(let error):
@@ -942,10 +944,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             setTransactionError(.missingEntitlements)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                data.markAsFailed(at: .accountActivation, error: error)
-                widePixel.updateFlow(data)
-                widePixel.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                widePixelData.markAsFailed(at: .accountActivation, error: error)
+                widePixel.updateFlow(widePixelData)
+                widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
             }
         }
         return nil

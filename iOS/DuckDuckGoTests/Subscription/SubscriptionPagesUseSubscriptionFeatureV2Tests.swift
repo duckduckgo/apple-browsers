@@ -225,7 +225,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         let completion = try XCTUnwrap(mockWidePixel.completions.first)
         XCTAssertTrue(completion.0 is SubscriptionPurchaseWidePixelData)
-        XCTAssertEqual(completion.1, .success)
+        XCTAssertEqual(completion.1, .success(reason: nil))
     }
 
     @MainActor

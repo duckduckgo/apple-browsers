@@ -19,7 +19,11 @@
 import Foundation
 
 public class SubscriptionPurchaseWidePixelData: WidePixelData {
+    #if DEBUG
     public static let pixelName = "subscription_purchase_debug"
+    #else
+    public static let pixelName = "subscription_purchase"
+    #endif
 
     public var globalData: WidePixelGlobalData
     public var contextData: WidePixelContextData
@@ -76,6 +80,13 @@ extension SubscriptionPurchaseWidePixelData {
         case accountCreate = "ACCOUNT_CREATE"
         case accountPayment = "ACCOUNT_PAYMENT"
         case accountActivation = "ACCOUNT_ACTIVATION"
+    }
+
+    public enum StatusReason: String {
+        case partialData = "partial_data"
+        case missingEntitlements = "missing_entitlements"
+        case networkErrorDelayedActivation = "network_error_delayed_activation"
+        case missingEntitlementsDelayedActivation = "missing_entitlements_delayed_activation"
     }
 
     public func pixelParameters() -> [String: String] {

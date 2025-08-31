@@ -33,6 +33,7 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
     private let paidAIChatFlagStatusProvider: () -> Bool
     private let supportsAlternateStripePaymentFlowStatusProvider: () -> Bool
+    private let isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: () -> Bool
 
     /// Initializes a new instance of `DefaultSubscriptionFeatureAvailability`.
     ///
@@ -44,11 +45,13 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
                 purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
                 paidAIChatFlagStatusProvider: @escaping () -> Bool,
-                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool) {
+                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool,
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: @escaping () -> Bool) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.purchasePlatform = purchasePlatform
         self.paidAIChatFlagStatusProvider = paidAIChatFlagStatusProvider
         self.supportsAlternateStripePaymentFlowStatusProvider = supportsAlternateStripePaymentFlowStatusProvider
+        self.isSubscriptionPurchaseWidePixelMeasurementEnabledProvider = isSubscriptionPurchaseWidePixelMeasurementEnabledProvider
     }
 
     public var isSubscriptionPurchaseAllowed: Bool {
@@ -77,7 +80,7 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     }
 
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement)
+        isSubscriptionPurchaseWidePixelMeasurementEnabledProvider()
     }
 
     // MARK: - Conditions

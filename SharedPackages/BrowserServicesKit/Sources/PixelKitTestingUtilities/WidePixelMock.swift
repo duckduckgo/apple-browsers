@@ -21,10 +21,10 @@ import PixelKit
 import XCTest
 
 public final class WidePixelMock: WidePixelManaging {
-    public private(set) var started: [Any] = []
-    public private(set) var updates: [Any] = []
-    public private(set) var completions: [(Any, WidePixelStatus)] = []
-    public private(set) var discarded: [Any] = []
+    public var started: [Any] = []
+    public var updates: [Any] = []
+    public var completions: [(Any, WidePixelStatus)] = []
+    public var discarded: [Any] = []
 
     public init() {}
 
@@ -43,5 +43,9 @@ public final class WidePixelMock: WidePixelManaging {
 
     public func discardFlow<T>(_ data: T) where T: WidePixelData {
         discarded.append(data)
+    }
+
+    public func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T] {
+        return started.compactMap { $0 as? T }
     }
 }

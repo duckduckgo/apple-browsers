@@ -29,6 +29,7 @@ public protocol WidePixelManaging {
     func updateFlow<T: WidePixelData>(_ data: T)
     func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
     func discardFlow<T: WidePixelData>(_ data: T)
+    func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
 }
 
 public final class WidePixel: WidePixelManaging {
@@ -219,7 +220,7 @@ public final class WidePixel: WidePixelManaging {
             withAdditionalParameters: nil,
             withError: nil,
             allowedQueryReservedCharacters: nil,
-            includeAppVersionParameter: false,
+            includeAppVersionParameter: true,
             includePixelSourceParameter: false,
             onComplete: { success, error in
                 if success {

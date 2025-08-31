@@ -79,7 +79,6 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
-            popUp: false,
             fireViewModel: fireCoordinator.fireViewModel,
             visualStyle: NSApp.delegateTyped.visualStyle
         )

@@ -82,6 +82,7 @@ public enum PrivacyFeature: String {
     case feedbackForm
     case htmlNewTabPage
     case daxEasterEggLogos
+    case openFireWindowByDefault
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -176,6 +177,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
+    case emailConfirmationDecoupling
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

@@ -83,7 +83,7 @@ public final class DefaultAppStoreRestoreFlowV2: AppStoreRestoreFlowV2 {
             } else {
                 Logger.subscriptionAppStoreRestoreFlow.error("Subscription expired")
                 // Removing all traces of the subscription and the account
-                await subscriptionManager.signOut(notifyUI: false)
+                await subscriptionManager.signOut(notifyUI: false, userInitiated: false)
                 return .failure(.subscriptionExpired)
             }
         } catch {

@@ -136,7 +136,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     var userEmail: String? { get }
 
     /// Sign out the user, clear and invalidate the access token and clear the subscription cache
-    func signOut(notifyUI: Bool) async
+    func signOut(notifyUI: Bool, userInitiated: Bool) async
 
     /// Removes the subscription cache, this will trigger a remote fetch the next time `getSubscription(...)` is called
     func clearSubscriptionCache()
@@ -483,7 +483,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.unknownAccount:
 
                 Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
-                await signOut(notifyUI: true)
+                await signOut(notifyUI: true, userInitiated: false)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
@@ -495,7 +495,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     return recoveredTokenContainer
                 } catch {
-                    await signOut(notifyUI: false)
+                    await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
@@ -554,11 +554,16 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         try oAuthClient.removeLocalAccount()
     }
 
-    public func signOut(notifyUI: Bool) async {
-        Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false")")
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false"), User Initiated: \(userInitiated ? "true" : "false")")
 
-        if notifyUI { userInitiatedSignOut = true }
-        defer { userInitiatedSignOut = false }
+        if userInitiated {
+            userInitiatedSignOut = true
+        }
+
+        defer {
+            userInitiatedSignOut = false
+        }
 
         try? await oAuthClient.logout()
         clearSubscriptionCache()

@@ -1598,6 +1598,8 @@
 		4B723E1326B0007A00E14D75 /* CSVLoginExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B723DFD26B0002B00E14D75 /* CSVLoginExporter.swift */; };
 		4B7A57CF279A4EF300B1C70E /* ChromiumPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7A57CE279A4EF300B1C70E /* ChromiumPreferences.swift */; };
 		4B7A60A1273E0BE400BBDFEB /* WKWebsiteDataStoreExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7A60A0273E0BE400BBDFEB /* WKWebsiteDataStoreExtension.swift */; };
+		4B82E4792E64F9AA00DE9F0C /* WidePixelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B82E4782E64F9AA00DE9F0C /* WidePixelService.swift */; };
+		4B82E47A2E64F9AA00DE9F0C /* WidePixelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B82E4782E64F9AA00DE9F0C /* WidePixelService.swift */; };
 		4B85A48028821CC500FC4C39 /* NSPasteboardItemExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B85A47F28821CC500FC4C39 /* NSPasteboardItemExtension.swift */; };
 		4B8A4DFF27C83B29005F40E8 /* SaveIdentityViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8A4DFE27C83B29005F40E8 /* SaveIdentityViewController.swift */; };
 		4B8A4E0127C8447E005F40E8 /* SaveIdentityPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B8A4E0027C8447E005F40E8 /* SaveIdentityPopover.swift */; };
@@ -4579,6 +4581,7 @@
 		4B723E0426B0003E00E14D75 /* CSVLoginExporterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CSVLoginExporterTests.swift; sourceTree = "<group>"; };
 		4B7A57CE279A4EF300B1C70E /* ChromiumPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumPreferences.swift; sourceTree = "<group>"; };
 		4B7A60A0273E0BE400BBDFEB /* WKWebsiteDataStoreExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKWebsiteDataStoreExtension.swift; sourceTree = "<group>"; };
+		4B82E4782E64F9AA00DE9F0C /* WidePixelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidePixelService.swift; sourceTree = "<group>"; };
 		4B85A47F28821CC500FC4C39 /* NSPasteboardItemExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPasteboardItemExtension.swift; sourceTree = "<group>"; };
 		4B8A4DFE27C83B29005F40E8 /* SaveIdentityViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveIdentityViewController.swift; sourceTree = "<group>"; };
 		4B8A4E0027C8447E005F40E8 /* SaveIdentityPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveIdentityPopover.swift; sourceTree = "<group>"; };
@@ -9085,6 +9088,7 @@
 				1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */,
 				1DF798992DBA2A20003148F3 /* AboutPanel.swift */,
 				37B904702E2996F800E5DAF7 /* AppVersionModel.swift */,
+				4B82E4782E64F9AA00DE9F0C /* WidePixelService.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -13517,6 +13521,7 @@
 				379857EE2D721BD6008773F6 /* HistoryViewOnboardingViewModel.swift in Sources */,
 				1DB67F2E2B6FEFDB003DF243 /* ViewSnapshotRenderer.swift in Sources */,
 				3706FC43293F65D500E42796 /* PinnedTabsViewModel.swift in Sources */,
+				4B82E4792E64F9AA00DE9F0C /* WidePixelService.swift in Sources */,
 				85D0327C2B8E3D090041D1FB /* HistoryCoordinatorExtension.swift in Sources */,
 				B6685E4329A61C470043D2EE /* DownloadsTabExtension.swift in Sources */,
 				1DA84D332C119AE70011C80F /* UpdateMenuItemFactory.swift in Sources */,
@@ -15200,6 +15205,7 @@
 				4BE4005527CF3F19007D3161 /* SavePaymentMethodViewController.swift in Sources */,
 				1D2DC009290167A0008083A1 /* BWStatus.swift in Sources */,
 				AAFE068326C7082D005434CC /* WebKitVersionProvider.swift in Sources */,
+				4B82E47A2E64F9AA00DE9F0C /* WidePixelService.swift in Sources */,
 				9FEE98692B85B869002E44E8 /* BookmarksDialogViewModel.swift in Sources */,
 				B63D467A25BFC3E100874977 /* NSCoderExtensions.swift in Sources */,
 				1D2DC00B290167EC008083A1 /* RunningApplicationCheck.swift in Sources */,

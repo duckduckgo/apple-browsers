@@ -99,7 +99,7 @@ final class WidePixelServiceTests: XCTestCase {
         widePixelMock.started = [data]
 
         let expectation = expectation(description: "Completion called")
-        service.sendAbandonedPixels {
+        service.sendDelayedPixels {
             expectation.fulfill()
         }
         
@@ -125,7 +125,7 @@ final class WidePixelServiceTests: XCTestCase {
         widePixelMock.started = [data]
 
         let expectation = expectation(description: "Completion called")
-        service.sendAbandonedPixels {
+        service.sendDelayedPixels {
             expectation.fulfill()
         }
         
@@ -150,7 +150,7 @@ final class WidePixelServiceTests: XCTestCase {
         widePixelMock.started = [data]
 
         let expectation = expectation(description: "Completion called")
-        service.sendAbandonedPixels {
+        service.sendDelayedPixels {
             expectation.fulfill()
         }
         
@@ -176,7 +176,7 @@ final class WidePixelServiceTests: XCTestCase {
         widePixelMock.started = [data]
 
         let expectation = expectation(description: "Completion called")
-        service.sendAbandonedPixels {
+        service.sendDelayedPixels {
             expectation.fulfill()
         }
         
@@ -227,26 +227,28 @@ final class WidePixelServiceTests: XCTestCase {
         widePixelMock.started  = [dataWithActivation, dataWithoutActivation]
 
         let expectation = expectation(description: "Completion called")
+        expectation.expectedFulfillmentCount = 2
+
         service.sendAbandonedPixels {
+            expectation.fulfill()
+        }
+
+        service.sendDelayedPixels {
             expectation.fulfill()
         }
         
         waitForExpectations(timeout: 2.0)
         
         XCTAssertEqual(widePixelMock.completions.count, 2)
-        
-        let firstCompletion = widePixelMock.completions.first
-        if case .success(let reason) = firstCompletion?.1 {
-            XCTAssertEqual(reason, SubscriptionPurchaseWidePixelData.StatusReason.missingEntitlementsDelayedActivation.rawValue)
-        } else {
-            XCTFail("Expected success status for first completion")
-        }
-        
-        let secondCompletion = widePixelMock.completions.last
-        if case .unknown(let reason) = secondCompletion?.1 {
-            XCTAssertEqual(reason, SubscriptionPurchaseWidePixelData.StatusReason.partialData.rawValue)
-        } else {
-            XCTFail("Expected unknown status for second completion")
+
+        for completion in widePixelMock.completions {
+            if case .success(let reason) = completion.1 {
+                XCTAssertEqual(reason, SubscriptionPurchaseWidePixelData.StatusReason.missingEntitlementsDelayedActivation.rawValue)
+            } else if case .unknown(let reason) = completion.1 {
+                XCTAssertEqual(reason, SubscriptionPurchaseWidePixelData.StatusReason.partialData.rawValue)
+            } else {
+                XCTFail("Unhandled status")
+            }
         }
     }
     

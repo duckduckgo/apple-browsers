@@ -236,6 +236,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
     }()
 
+    // MARK: - Wide Pixel Service
+
+    private lazy var widePixelService: WidePixelService = {
+        return WidePixelService(
+            widePixel: WidePixel(),
+            featureFlagger: featureFlagger,
+            subscriptionBridge: subscriptionAuthV1toV2Bridge
+        )
+    }()
+
     private var didFinishLaunching = false
 
 #if SPARKLE
@@ -580,7 +590,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
-                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) }
+                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -992,6 +1003,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
 
+        widePixelService.sendAbandonedPixels { }
+
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
 
@@ -1039,6 +1052,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             vpnAppEventsHandler.applicationDidBecomeActive()
         }
+
+        widePixelService.resume()
     }
 
     private func fireDailyActiveUserPixel() {

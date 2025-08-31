@@ -378,7 +378,8 @@ let package = Package(
             dependencies: [
                 "Common",
                 "Networking",
-                "UserScript"
+                "UserScript",
+                "PixelKit"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

@@ -181,7 +181,7 @@ final class AccountManagerTests: XCTestCase {
         notificationExpectation.isInverted = true
 
         // When
-        accountManager.signOut(skipNotification: true)
+        accountManager.signOut(skipNotification: true, userInitiated: false)
 
         // Then
         XCTAssertFalse(accountManager.isUserAuthenticated)

@@ -77,8 +77,7 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     }
 
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
-        return true
-        // privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement)
+        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement)
     }
 
     // MARK: - Conditions

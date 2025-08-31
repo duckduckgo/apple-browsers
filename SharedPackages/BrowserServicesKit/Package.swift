@@ -700,6 +700,7 @@ let package = Package(
         .testTarget(
             name: "SubscriptionTests",
             dependencies: [
+                "PixelKit",
                 "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",

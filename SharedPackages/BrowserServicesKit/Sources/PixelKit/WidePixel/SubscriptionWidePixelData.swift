@@ -28,6 +28,7 @@ public class SubscriptionPurchaseWidePixelData: WidePixelData {
     public let purchasePlatform: PurchasePlatform
     public var subscriptionIdentifier: String?
     public var freeTrialEligible: Bool
+    public let experimentIDs: [String]
 
     public var createAccountDuration: WidePixel.MeasuredInterval?
     public var completePurchaseDuration: WidePixel.MeasuredInterval?
@@ -40,6 +41,7 @@ public class SubscriptionPurchaseWidePixelData: WidePixelData {
                 failingStep: FailingStep? = nil,
                 subscriptionIdentifier: String?,
                 freeTrialEligible: Bool,
+                experimentIDs: [String] = [],
                 createAccountDuration: WidePixel.MeasuredInterval? = nil,
                 completePurchaseDuration: WidePixel.MeasuredInterval? = nil,
                 activateAccountDuration: WidePixel.MeasuredInterval? = nil,
@@ -51,6 +53,7 @@ public class SubscriptionPurchaseWidePixelData: WidePixelData {
         self.failingStep = failingStep
         self.subscriptionIdentifier = subscriptionIdentifier
         self.freeTrialEligible = freeTrialEligible
+        self.experimentIDs = experimentIDs
         self.createAccountDuration = createAccountDuration
         self.completePurchaseDuration = completePurchaseDuration
         self.activateAccountDuration = activateAccountDuration
@@ -90,6 +93,10 @@ extension SubscriptionPurchaseWidePixelData {
         }
 
         parameters[WidePixelParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
+
+        if !experimentIDs.isEmpty {
+            parameters[WidePixelParameter.Feature.experimentIDs] = experimentIDs.joined(separator: ",")
+        }
 
         if let errorData = errorData {
             parameters[WidePixelParameter.Feature.errorDomain] = errorData.domain

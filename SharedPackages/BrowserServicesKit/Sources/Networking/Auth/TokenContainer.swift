@@ -74,7 +74,7 @@ public enum TokenPayloadError: DDGError {
         }
     }
 
-    public static var errorDomain: String = "com.duckduckgo.networking.TokenPayloadError"
+    public var errorDomain: String { "com.duckduckgo.networking.TokenPayloadError" }
 
     public var errorCode: Int {
         switch self {

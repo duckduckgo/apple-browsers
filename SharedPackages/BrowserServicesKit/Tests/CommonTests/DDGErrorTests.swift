@@ -28,7 +28,7 @@ final class DDGErrorTests: XCTestCase {
         case simpleError(code: Int, description: String)
         case errorWithUnderlying(code: Int, description: String)
 
-        static let errorDomain = "TestErrorDomain"
+        var errorDomain: String { "TestErrorDomain" }
 
         var errorCode: Int {
             switch self {

@@ -55,7 +55,7 @@ public enum StripePurchaseFlowError: DDGError {
         case (.noProductsFound, .noProductsFound):
             return true
         case let (.accountCreationFailed(lhsError), .accountCreationFailed(rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription
+            return String(describing: lhsError) == String(describing: rhsError)
         default:
             return false
         }
@@ -133,7 +133,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
                 return .success((purchaseUpdate: PurchaseUpdate.redirect(withToken: tokenContainer.accessToken), accountCreationDuration: accountCreation))
             } catch {
-                Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(error.localizedDescription, privacy: .public)")
+                Logger.subscriptionStripePurchaseFlow.error("Account creation failed: \(String(describing: error), privacy: .public)")
                 return .failure(.accountCreationFailed(error))
             }
         }

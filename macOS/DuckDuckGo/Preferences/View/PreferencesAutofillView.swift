@@ -92,31 +92,29 @@ extension Preferences {
                 }
 
                 // SECTION 1: Password Manager
-                if isWebExtensionsFeatureEnabled {
+                if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
                     // New logic: Only show if user has choices
                     if shouldShowPasswordManagerSection {
                         PreferencePaneSection(UserText.autofillPasswordManager) {
 
                             // DuckDuckGo Option
-                            if shouldShowDuckDuckGoOption {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    passwordManagerPicker(passwordManagerBinding) {
-                                        Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
-                                    }
+                            VStack(alignment: .leading, spacing: 6) {
+                                passwordManagerPicker(passwordManagerBinding) {
+                                    Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
                                 }
+                            }
 
-                                // Import/Export buttons - only show when DuckDuckGo is selected
-                                if shouldShowImportExportButtons {
-                                    VStack {
-                                        Button(UserText.importPasswords) {
-                                            model.openImportPasswordsWindow()
-                                        }
-                                        Button(UserText.exportLogins) {
-                                            model.openExportLogins()
-                                        }
+                            // Import/Export buttons - only show when DuckDuckGo is selected
+                            if shouldShowImportExportButtons {
+                                VStack {
+                                    Button(UserText.importPasswords) {
+                                        model.openImportPasswordsWindow()
                                     }
-                                    .padding(.leading, 15)
+                                    Button(UserText.exportLogins) {
+                                        model.openExportLogins()
+                                    }
                                 }
+                                .padding(.leading, 15)
                             }
 
                             // Bitwarden Native Option
@@ -252,30 +250,11 @@ extension Preferences {
         }
 
         // MARK: - Password Manager Availability Methods
-        private var isWebExtensionsFeatureEnabled: Bool {
-            if #available(macOS 15.4, *) {
-                return WebExtensionManager.shared.areExtenstionsEnabled
-            }
-            return false
-        }
 
+        @available(macOS 15.4, *)
         private var shouldShowPasswordManagerSection: Bool {
-            if isWebExtensionsFeatureEnabled {
-                // New logic: Show section if there are any alternatives to DuckDuckGo
-                return shouldShowBitwardenNativeOption || shouldShowBitwardenExtensionOption
-            } else {
-                // Old logic: Always show section in non-App Store builds
-                #if !APPSTORE
-                return true
-                #else
-                return false
-                #endif
-            }
-        }
-
-        private var shouldShowDuckDuckGoOption: Bool {
-            // DuckDuckGo is always available as the built-in option
-            true
+            // New logic: Show section if there are any alternatives to DuckDuckGo
+            return shouldShowBitwardenNativeOption || shouldShowBitwardenExtensionOption
         }
 
         private var shouldShowBitwardenNativeOption: Bool {
@@ -286,13 +265,14 @@ extension Preferences {
             #endif
         }
 
+        @available(macOS 15.4, *)
         private var shouldShowBitwardenExtensionOption: Bool {
-            // Only show when web extensions feature is enabled
-            isWebExtensionsFeatureEnabled
+            let url = URL(string: WebExtensionIdentifier.bitwarden.defaultPath)!
+            return WebExtensionManager.shared.areExtenstionsEnabled && FileManager.default.fileExists(atPath: url.path)
         }
 
         private var shouldShowImportExportButtons: Bool {
-            if isWebExtensionsFeatureEnabled {
+            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
                 // New logic: Only when DuckDuckGo is selected
                 return model.passwordManager == .duckduckgo
             } else {

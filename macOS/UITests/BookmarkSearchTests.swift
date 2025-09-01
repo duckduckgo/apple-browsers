@@ -196,33 +196,16 @@ class BookmarkSearchTests: UITestCase {
             searchInBookmarksManager(for: "Bookmark #1")
         }
 
-        // Wait for search results to appear and be accessible
-        let bookmarksContainer = mode == .panel ? app.popovers.firstMatch.outlines.firstMatch : app.tables.firstMatch
-        XCTAssertTrue(bookmarksContainer.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        
         let query = app.staticTexts.matching(identifier: "Bookmark #1")
         guard let result = query.allElementsBoundByIndex.last else {
             XCTFail("Failed to find Bookmark #1")
             return
         }
 
-        // Ensure the bookmark element is accessible before right-clicking
-        XCTAssertTrue(result.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        XCTAssertTrue(result.isHittable, "Bookmark #1 should be hittable for right-click")
-        
         result.rightClick()
-        
-        // Use the robust context menu interaction method for macOS 13/14 compatibility
-        do {
-            try app.clickContextMenuItem { snapshot in
-                snapshot.label == "Show in Folder" || snapshot.title == "Show in Folder"
-            }
-        } catch {
-            // Fallback to traditional method if coordinate-based clicking fails
-            let showInFolderMenuItem = app.menuItems["Show in Folder"]
-            XCTAssertTrue(showInFolderMenuItem.exists)
-            showInFolderMenuItem.tap()
-        }
+        let showInFolderMenuItem = app.menuItems["Show in Folder"]
+        XCTAssertTrue(showInFolderMenuItem.exists)
+        showInFolderMenuItem.tap()
 
         assertSearchBarVisibilityAfterShowInFolder(mode: mode)
         assertFolderStructure(mode: mode)

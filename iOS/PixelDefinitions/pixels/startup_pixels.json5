@@ -23,7 +23,7 @@
             {
                 key: 'is_enabled',
                 description: 'Whether the keyboard on new tab setting is enabled',
-                type: 'string',
+                type: 'boolean',
             },
         ],
     },
@@ -37,7 +37,7 @@
             {
                 key: 'is_enabled',
                 description: 'Whether the keyboard on app launch setting is enabled',
-                type: 'string',
+                type: 'boolean',
             },
         ],
     },

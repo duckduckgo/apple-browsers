@@ -998,15 +998,16 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
+        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
+        // ie remove back/forward and show bookmarks/passwords
+        // but also before any other UI updates so that data from the old tab doesn't find its way into the new one
+        refreshControls()
+
         if isNewTab && allowingKeyboard && KeyboardSettings().onNewTab {
             omniBar.beginEditing(animated: true)
         }
 
         syncService.scheduler.requestSyncImmediately()
-
-        // This has to happen after the new tab controller is created so that it knows to set the buttons correctly
-        // ie remove back/forward and show bookmarks/passwords
-        refreshControls()
 
         // It's possible for this to be called when in the background of the
         //  switcher, and we only want to show the pixel when it's actually

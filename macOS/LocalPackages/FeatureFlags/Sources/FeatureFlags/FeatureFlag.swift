@@ -165,8 +165,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
     case duckAISearchParameter
 
-      /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
     case refactorOfSyncPreferences
+
+    /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1211148305864315?focus=true
+    case newSyncEntryPoints
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -180,7 +183,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .refactorOfSyncPreferences:
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints:
             true
         default:
             false
@@ -242,7 +246,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .openFireWindowByDefault,
                 .duckAISearchParameter,
                 .openFileMenuAction,
-                .refactorOfSyncPreferences:
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -371,6 +376,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
+        case .newSyncEntryPoints:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         }
     }
 }

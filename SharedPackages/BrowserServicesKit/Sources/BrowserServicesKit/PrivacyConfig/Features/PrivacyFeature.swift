@@ -247,6 +247,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canInterceptSyncSetupUrls
     case syncSetupBarcodeIsUrlBased
     case refactorOfSyncPreferences
+    case newSyncEntryPoints
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

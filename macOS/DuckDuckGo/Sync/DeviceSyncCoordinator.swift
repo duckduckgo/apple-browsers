@@ -28,26 +28,39 @@ import PixelKit
 import os.log
 import BrowserServicesKit
 
+/// Protocol for launching device sync flows.
+///
+/// Provides functionality to initiate the device synchronization flow,
+/// allowing users to connect and sync with other devices.
 protocol SyncDeviceFlowLaunching {
+    /// Starts the device sync flow to connect with another device
+    /// - Parameter completion: Optional closure called when the flow completes
     @MainActor
     func startDeviceSyncFlow(completion: (() -> Void)?)
 }
 
+/// Delegate protocol for device sync coordination events.
+///
+/// Provides callbacks for significant events in the device sync coordination lifecycle,
+/// allowing observers to respond to completion of sync flows.
 protocol DeviceSyncCoordinationDelegate: AnyObject {
+    /// Called when the sync flow has ended
     @MainActor
     func didEndFlow()
 }
 
+/// Coordinates device synchronization flows and manages sync dialog presentation.
+///
+/// This class serves as the main coordinator for device sync operations, handling
+/// the presentation of sync dialogs, managing the sync flow lifecycle, and
+/// coordinating between different sync-related components.
 final class DeviceSyncCoordinator {
     var cancellable: AnyCancellable?
 
     @MainActor
-    init?(managementDialogModel: ManagementDialogModel = .init(), dialogController: SyncDialogController? = nil) {
+    init(managementDialogModel: ManagementDialogModel = .init(), syncService: DDGSyncing, syncPausedStateManager: any SyncPausedStateManaging) {
         self.managementDialogModel = managementDialogModel
-        guard let dialogController = dialogController ?? Self.createDialogController(managementDialogModel: managementDialogModel) else {
-            return nil
-        }
-        self.dialogController = dialogController
+        self.dialogController = SyncDialogController(syncService: syncService, managementDialogModel: managementDialogModel, syncPausedStateManager: syncPausedStateManager)
         dialogController.coordinationDelegate = self
     }
 
@@ -77,16 +90,6 @@ final class DeviceSyncCoordinator {
         parentWindowController.window?.beginSheet(syncWindow) { _ in
             completion?()
         }
-    }
-
-    @MainActor
-    private static func createDialogController(managementDialogModel: ManagementDialogModel) -> SyncDialogController? {
-        guard let syncService = NSApp.delegateTyped.syncService, let errorHandler = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler else {
-            assertionFailure("Sync: Core dependencies not available")
-            return nil
-        }
-
-        return SyncDialogController(syncService: syncService, managementDialogModel: managementDialogModel, syncPausedStateManager: errorHandler)
     }
 }
 
@@ -160,5 +163,17 @@ extension DeviceSyncCoordinator: SyncSettingsViewHandling {
     func recoverDataPressed() async {
         presentDialog()
         await dialogController.recoverDataPressed()
+    }
+}
+
+extension DeviceSyncCoordinator {
+
+    @MainActor
+    convenience init?() {
+        guard let syncService = NSApp.delegateTyped.syncService, let errorHandler = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler else {
+            assertionFailure("Sync: Core dependencies not available")
+            return nil
+        }
+        self.init(syncService: syncService, syncPausedStateManager: errorHandler)
     }
 }

@@ -67,7 +67,8 @@ final class PasswordManagementViewController: NSViewController {
     @IBOutlet var emptyStateTitle: NSTextField!
     @IBOutlet var emptyStateMessageHeight: NSLayoutConstraint!
     @IBOutlet var emptyStateMessageContainer: NSView!
-    @IBOutlet var emptyStateButton: NSButton!
+    @IBOutlet var emptyStateImportButton: NSButton!
+    @IBOutlet var emptyStateSyncButton: NSButton!
     @IBOutlet weak var exportLoginItem: NSMenuItem!
     @IBOutlet var lockScreen: NSView!
     @IBOutlet var lockScreenIconImageView: NSImageView! {
@@ -168,6 +169,7 @@ final class PasswordManagementViewController: NSViewController {
     private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
     private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+    private let syncButtonModel = SyncDeviceButtonModel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -219,8 +221,17 @@ final class PasswordManagementViewController: NSViewController {
         ).fixedSize())
 
         hostingView.frame = CGRect(origin: .zero, size: hostingView.intrinsicContentSize)
+        for subview in emptyStateMessageContainer.subviews {
+            subview.removeFromSuperview()
+        }
         emptyStateMessageContainer.addSubview(hostingView)
         emptyStateMessageHeight.constant = hostingView.intrinsicContentSize.height
+
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] shouldShow in
+            if !shouldShow {
+                self?.emptyStateSyncButton.isHidden = true
+            }
+        }.store(in: &cancellables)
     }
 
     private func setupStrings() {
@@ -232,7 +243,8 @@ final class PasswordManagementViewController: NSViewController {
         autofillTitleLabel.stringValue = UserText.passwordManagementTitle
         emptyStateTitle.stringValue = UserText.pmEmptyStateDefaultTitle
         setUpEmptyStateMessageView()
-        emptyStateButton.title = UserText.pmEmptyStateDefaultButtonTitle
+        emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
+        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitle
     }
 
     private func bindSyncDidFinish() -> AnyCancellable? {
@@ -327,7 +339,7 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
-        DataImportView(isDataTypePickerExpanded: true).show()
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
     }
 
     @IBAction func openExportLogins(_ sender: Any) {
@@ -337,7 +349,12 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func onImportClicked(_ sender: NSButton) {
         self.dismiss()
-        DataImportView(isDataTypePickerExpanded: true).show()
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
+    }
+
+    @IBAction func onSyncClicked(_ sender: Any) {
+        self.dismiss()
+        DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
     }
 
     @IBAction func onDeleteAllPasswordsClicked(_ sender: Any) {
@@ -1073,8 +1090,11 @@ final class PasswordManagementViewController: NSViewController {
         if !hideMessage {
             setUpEmptyStateMessageView()
         }
-        emptyStateButton.isHidden = hideButton
+        emptyStateImportButton.isHidden = hideButton
+        emptyStateSyncButton.isHidden = hideButton || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
+        emptyStateImportButton.title = listModel?.emptyStateImportButtonText ?? UserText.pmEmptyStateDefaultButtonTitle
+        emptyStateSyncButton.title = listModel?.emptyStateSyncButtonText ?? UserText.pmEmptyStateSecondaryButtonTitle
     }
 
     private func requestSync() {
@@ -1158,9 +1178,12 @@ struct PasswordManagementEmptyStateMessage: View {
 
     var body: some View {
         (
-            Text(Image(image)).baselineOffset(-1.0)
+            Text(Image(image))
+                .baselineOffset(-1.0)
+                .foregroundColor(.textSecondary)
             +
             Text(.init(message))
+                .foregroundColor(.textSecondary)
         )
         .multilineTextAlignment(.center)
         .frame(width: 280)

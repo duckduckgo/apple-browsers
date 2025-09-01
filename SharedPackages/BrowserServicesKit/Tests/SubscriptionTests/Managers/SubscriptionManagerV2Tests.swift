@@ -161,14 +161,14 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testConfirmPurchase_ErrorHandling() async throws {
         let testSignature = "invalidSignature"
-        mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2.Error.invalidResponse)
+        mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2Error.invalidResponse)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         mockOAuthClient.migrateV1TokenResponseError = OAuthClientError.authMigrationNotPerformed
         do {
             _ = try await subscriptionManager.confirmPurchase(signature: testSignature, additionalParams: nil)
             XCTFail("Error expected")
         } catch {
-            XCTAssertEqual(error as? APIRequestV2.Error, APIRequestV2.Error.invalidResponse)
+            XCTAssertEqual(error as? APIRequestV2Error, APIRequestV2Error.invalidResponse)
         }
     }
 

@@ -151,7 +151,7 @@ public protocol DDGError: Error, Equatable, CustomNSError {
     /// }
     /// ```
     ///
-    /// - Note: For user-facing error messages, implement `DDGErrorUIPresentable`.
+    /// - Note: For user-facing error messages, implement `LocalizedError`.
     var description: String { get }
 }
 

@@ -100,9 +100,28 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         Picker(selection: $startupModel.restorePreviousSession, content: {
-                            Text(UserText.showHomePage).tag(false)
+                            if featureFlagger.isFeatureOn(.openFireWindowByDefault) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 0) {
+                                        Text(UserText.openANew)
+                                        Picker("", selection: $startupModel.startupWindowType) {
+                                            ForEach(StartupWindowType.allCases, id: \.self) { windowType in
+                                                Text(windowType.displayName).tag(windowType)
+                                            }
+                                        }
+                                        .pickerStyle(.menu)
+                                        .fixedSize()
+                                        .disabled(startupModel.restorePreviousSession)
+                                    }
+                                }
+                                .tag(false)
                                 .padding(.bottom, 4)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.openANewWindow")
+                            } else {
+                                Text(UserText.showHomePage).tag(false)
+                                    .padding(.bottom, 4)
+                                    .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.openANewWindow")
+                            }
                             Text(UserText.reopenAllWindowsFromLastSession).tag(true)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})
@@ -110,7 +129,7 @@ extension Preferences {
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
 
-                        if dataClearingModel.isAutoClearEnabled && startupModel.restorePreviousSession {
+                        if (dataClearingModel.isAutoClearEnabled || dataClearingModel.shouldOpenFireWindowbyDefault) && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
@@ -127,6 +146,7 @@ extension Preferences {
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.preferNewTabsToWindows, isOn: $tabsModel.preferNewTabsToWindows)
                         ToggleMenuItem(UserText.switchToNewTabWhenOpened, isOn: $tabsModel.switchToNewTabWhenOpened)
+                            .accessibilityIdentifier("PreferencesGeneralView.switchToNewTabWhenOpened")
                     }
 
                     PreferencePaneSubSection {
@@ -231,8 +251,8 @@ extension Preferences {
                 // SECTION: Downloads
                 PreferencePaneSection(UserText.downloads) {
                     PreferencePaneSubSection {
-                        ToggleMenuItem(UserText.downloadsOpenPopupOnCompletion,
-                                       isOn: $downloadsModel.shouldOpenPopupOnCompletion)
+                        ToggleMenuItem(UserText.downloadsOpenPopupOnCompletion, isOn: $downloadsModel.shouldOpenPopupOnCompletion)
+                            .accessibilityIdentifier("PreferencesGeneralView.openPopupOnDownloadCompletion")
                     }.padding(.bottom, 5)
 
                     // MARK: Location
@@ -247,8 +267,8 @@ extension Preferences {
                         }
                         .disabled(downloadsModel.alwaysRequestDownloadLocation)
 
-                        ToggleMenuItem(UserText.downloadsAlwaysAsk,
-                                       isOn: $downloadsModel.alwaysRequestDownloadLocation).accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
+                        ToggleMenuItem(UserText.downloadsAlwaysAsk, isOn: $downloadsModel.alwaysRequestDownloadLocation)
+                            .accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
                     }
                 }
             }

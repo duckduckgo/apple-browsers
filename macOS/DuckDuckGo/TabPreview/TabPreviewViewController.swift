@@ -63,6 +63,8 @@ final class TabPreviewViewController: NSViewController {
         snapshotImageView.setContentHuggingPriority(.init(rawValue: 251), for: .vertical)
         snapshotImageView.translatesAutoresizingMaskIntoConstraints = false
         snapshotImageView.imageScaling = .scaleProportionallyDown
+        snapshotImageView.cell?.setAccessibilityEnabled(false)
+        snapshotImageView.cell?.setAccessibilityElement(false)
 
         box.boxType = .separator
         box.setContentHuggingPriority(.defaultHigh, for: .vertical)
@@ -77,6 +79,8 @@ final class TabPreviewViewController: NSViewController {
         urlTextField.font = .systemFont(ofSize: 13)
         urlTextField.lineBreakMode = .byTruncatingTail
         urlTextField.textColor = .tabPreviewSecondaryTint
+        urlTextField.cell?.setAccessibilityEnabled(false)
+        urlTextField.cell?.setAccessibilityElement(false)
 
         titleTextField.isEditable = false
         titleTextField.isBordered = false
@@ -88,8 +92,12 @@ final class TabPreviewViewController: NSViewController {
         titleTextField.textColor = .tabPreviewTint
         titleTextField.maximumNumberOfLines = 3
         titleTextField.cell?.truncatesLastVisibleLine = true
+        titleTextField.cell?.setAccessibilityEnabled(false)
+        titleTextField.cell?.setAccessibilityElement(false)
 
         viewColorView.translatesAutoresizingMaskIntoConstraints = false
+        viewColorView.setAccessibilityEnabled(false)
+        viewColorView.setAccessibilityElement(false)
 
         setupLayout()
     }

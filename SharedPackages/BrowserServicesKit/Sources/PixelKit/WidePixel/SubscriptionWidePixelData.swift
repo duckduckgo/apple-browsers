@@ -18,8 +18,12 @@
 
 import Foundation
 
-public struct SubscriptionPurchaseWidePixelData: WidePixelData {
+public class SubscriptionPurchaseWidePixelData: WidePixelData {
+    #if DEBUG
     public static let pixelName = "subscription_purchase_debug"
+    #else
+    public static let pixelName = "subscription_purchase"
+    #endif
 
     public var globalData: WidePixelGlobalData
     public var contextData: WidePixelContextData
@@ -27,7 +31,8 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
 
     public let purchasePlatform: PurchasePlatform
     public var subscriptionIdentifier: String?
-    public var freeTrialEligible: Bool?
+    public var freeTrialEligible: Bool
+    public let experimentIDs: [String]
 
     public var createAccountDuration: WidePixel.MeasuredInterval?
     public var completePurchaseDuration: WidePixel.MeasuredInterval?
@@ -38,8 +43,9 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
 
     public init(purchasePlatform: PurchasePlatform,
                 failingStep: FailingStep? = nil,
-                subscriptionIdentifier: String? = nil,
-                freeTrialEligible: Bool? = nil,
+                subscriptionIdentifier: String?,
+                freeTrialEligible: Bool,
+                experimentIDs: [String] = [],
                 createAccountDuration: WidePixel.MeasuredInterval? = nil,
                 completePurchaseDuration: WidePixel.MeasuredInterval? = nil,
                 activateAccountDuration: WidePixel.MeasuredInterval? = nil,
@@ -51,6 +57,7 @@ public struct SubscriptionPurchaseWidePixelData: WidePixelData {
         self.failingStep = failingStep
         self.subscriptionIdentifier = subscriptionIdentifier
         self.freeTrialEligible = freeTrialEligible
+        self.experimentIDs = experimentIDs
         self.createAccountDuration = createAccountDuration
         self.completePurchaseDuration = completePurchaseDuration
         self.activateAccountDuration = activateAccountDuration
@@ -75,9 +82,16 @@ extension SubscriptionPurchaseWidePixelData {
         case accountActivation = "ACCOUNT_ACTIVATION"
     }
 
+    public enum StatusReason: String {
+        case partialData = "partial_data"
+        case missingEntitlements = "missing_entitlements"
+        case missingEntitlementsDelayedActivation = "missing_entitlements_delayed_activation"
+    }
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
+        parameters[WidePixelParameter.Feature.name] = "subscription-purchase"
         parameters[WidePixelParameter.SubscriptionFeature.purchasePlatform] = purchasePlatform.rawValue
 
         if let failingStep = failingStep {
@@ -88,8 +102,10 @@ extension SubscriptionPurchaseWidePixelData {
             parameters[WidePixelParameter.SubscriptionFeature.subscriptionIdentifier] = subscriptionIdentifier
         }
 
-        if let freeTrialEligible = freeTrialEligible {
-            parameters[WidePixelParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
+        parameters[WidePixelParameter.SubscriptionFeature.freeTrialEligible] = freeTrialEligible ? "true" : "false"
+
+        if !experimentIDs.isEmpty {
+            parameters[WidePixelParameter.Feature.experimentIDs] = experimentIDs.joined(separator: ",")
         }
 
         if let errorData = errorData {
@@ -118,7 +134,7 @@ extension SubscriptionPurchaseWidePixelData {
         return parameters
     }
 
-    public mutating func markAsFailed(at step: FailingStep, error: Error) {
+    public func markAsFailed(at step: FailingStep, error: Error) {
         self.failingStep = step
         self.errorData = WidePixelErrorData(error: error)
     }

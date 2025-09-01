@@ -50,6 +50,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var homeButton: MouseOverButton!
     @IBOutlet weak var homeButtonSeparator: NSView!
     @IBOutlet weak var downloadsButton: MouseOverButton!
+    @IBOutlet weak var shareButton: MouseOverButton!
     @IBOutlet weak var networkProtectionButton: NetworkProtectionButton!
     @IBOutlet weak var navigationButtons: NSStackView!
     @IBOutlet weak var addressBarContainer: NSView!
@@ -79,6 +80,8 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var homeButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var downloadsButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var downloadsButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var shareButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var shareButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var passwordsButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var passwordsButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarksButtonWidthConstraint: NSLayoutConstraint!
@@ -351,6 +354,7 @@ final class NavigationBarViewController: NSViewController {
         updatePasswordManagementButton()
         updateBookmarksButton()
         updateHomeButton()
+        updateShareButton()
 
         if view.window?.isPopUpWindow == true {
             goBackButton.isHidden = true
@@ -590,6 +594,11 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionButtonModel.updateVisibility()
     }
 
+    private func updateShareButton() {
+        let isPinned = LocalPinningManager.shared.isPinned(.share)
+        shareButton.isHidden = !isPinned
+    }
+
     private enum DownloadsButtonUpdateSource {
         case pinnedViewsNotification
         case popoverDidClose
@@ -750,6 +759,8 @@ final class NavigationBarViewController: NSViewController {
                     self.updateHomeButton()
                 case .networkProtection:
                     self.updateNetworkProtectionButton()
+                case .share:
+                    self.updateShareButton()
                 }
             } else {
                 assertionFailure("Failed to get changed pinned view type")
@@ -851,6 +862,11 @@ final class NavigationBarViewController: NSViewController {
         downloadsButton.setAccessibilityTitle(ShortcutTooltip.downloads.value)
         downloadsButton.toolTip = ShortcutTooltip.downloads.value
 
+        shareButton.sendAction(on: .leftMouseDown)
+        shareButton.setAccessibilityIdentifier("NavigationBarViewController.shareButton")
+        shareButton.setAccessibilityTitle(UserText.shareMenuItem)
+        shareButton.toolTip = UserText.shareMenuItem
+
         passwordManagementButton.sendAction(on: .leftMouseDown)
         passwordManagementButton.setAccessibilityIdentifier("NavigationBarViewController.passwordsButton")
         passwordManagementButton.setAccessibilityTitle(UserText.passwordsShortcutTooltip)
@@ -880,6 +896,7 @@ final class NavigationBarViewController: NSViewController {
         homeButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.homeButtonImage
 
         downloadsButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage
+        shareButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.shareButtonImage
         passwordManagementButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage
         bookmarkListButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.bookmarksButtonImage
         optionsButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.moreOptionsbuttonImage
@@ -889,7 +906,7 @@ final class NavigationBarViewController: NSViewController {
     private func setupNavigationButtonColors() {
         let allButtons: [MouseOverButton] = [
             goBackButton, goForwardButton, refreshOrStopButton, homeButton,
-            downloadsButton, passwordManagementButton, bookmarkListButton, optionsButton]
+            downloadsButton, shareButton, passwordManagementButton, bookmarkListButton, optionsButton]
 
         allButtons.forEach { button in
             button.normalTintColor = visualStyle.colorsProvider.iconsColor
@@ -908,6 +925,8 @@ final class NavigationBarViewController: NSViewController {
         homeButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         downloadsButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         downloadsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        shareButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        shareButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         passwordsButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         passwordsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         bookmarksButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
@@ -942,6 +961,7 @@ final class NavigationBarViewController: NSViewController {
         homeButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
 
         downloadsButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        shareButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
         passwordManagementButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
         bookmarkListButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
         networkProtectionButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
@@ -1057,6 +1077,11 @@ final class NavigationBarViewController: NSViewController {
                 refreshOrStopButton?.setAccessibilityTitle(isLoading ? UserText.mainMenuViewStop : UserText.reloadPage)
                 refreshOrStopButton?.toolTip = isLoading ? ShortcutTooltip.stopLoading.value : ShortcutTooltip.reload.value
             }
+            .store(in: &navigationButtonsCancellables)
+
+        selectedTabViewModel.$canShare
+            .removeDuplicates()
+            .assign(to: \.isEnabled, onWeaklyHeld: shareButton)
             .store(in: &navigationButtonsCancellables)
     }
 
@@ -1233,6 +1258,13 @@ final class NavigationBarViewController: NSViewController {
         PixelKit.fire(NavigationBarPixel.downloadsButtonClicked, frequency: .daily)
     }
 
+    @IBAction func shareButtonAction(_ sender: NSButton) {
+        let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .navigationBar)
+        let location = NSPoint(x: -sharingMenu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
+        sharingMenu.popUp(positioning: nil, at: location, in: sender)
+        PixelKit.fire(NavigationBarPixel.shareButtonClicked, frequency: .daily)
+    }
+
     @objc private func showVPNUninstalledFeedback() {
         // Only show the popover if we aren't already presenting one:
         guard view.window?.isKeyWindow == true, (self.presentedViewControllers ?? []).isEmpty else { return }
@@ -1378,7 +1410,7 @@ final class NavigationBarViewController: NSViewController {
     // MARK: - Overflow menu
 
     var pinnedViews: [PinnableView] {
-        let allButtons: [PinnableView] = [.downloads, .autofill, .bookmarks, .networkProtection, .homeButton]
+        let allButtons: [PinnableView] = [.share, .downloads, .autofill, .bookmarks, .networkProtection, .homeButton]
         return allButtons.filter(LocalPinningManager.shared.isPinned)
     }
 
@@ -1538,6 +1570,8 @@ final class NavigationBarViewController: NSViewController {
             return [bookmarkListButton]
         case .downloads:
             return [downloadsButton]
+        case .share:
+            return [shareButton]
         case .homeButton where Self.homeButtonPosition == .left:
             return [homeButton, homeButtonSeparator]
         case .homeButton:
@@ -1563,6 +1597,10 @@ final class NavigationBarViewController: NSViewController {
             return NSMenuItem(title: UserText.downloads, action: #selector(overflowMenuRequestedDownloadsPopover), keyEquivalent: "")
                 .targetting(self)
                 .withImage(style.iconsProvider.navigationToolbarIconsProvider.downloadsButtonImage)
+        case .share:
+            return NSMenuItem(title: UserText.shareMenuItem, action: #selector(overflowMenuRequestedSharePopover), keyEquivalent: "")
+                .targetting(self)
+                .withImage(style.iconsProvider.navigationToolbarIconsProvider.shareButtonImage)
         case .homeButton:
             return NSMenuItem(title: UserText.homeButtonTooltip, action: #selector(overflowMenuRequestedHomeButton), keyEquivalent: "")
                 .targetting(self)
@@ -1625,6 +1663,13 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @objc
+    func overflowMenuRequestedSharePopover(_ menu: NSMenu) {
+        makeSpaceInNavBarIfNeeded(for: .share)
+        updateNavBarViews(with: .share, isHidden: false)
+        shareButtonAction(shareButton)
+    }
+
+    @objc
     func overflowMenuRequestedAIChat(_ menu: NSMenu) {
         addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(menu)
     }
@@ -1641,14 +1686,17 @@ extension NavigationBarViewController: NSMenuDelegate {
 
         HomeButtonMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences)
 
+        let shareTitle = LocalPinningManager.shared.shortcutTitle(for: .share)
+        menu.addItem(withTitle: shareTitle, action: #selector(toggleSharePanelPinning), keyEquivalent: "")
+
+        let downloadsTitle = LocalPinningManager.shared.shortcutTitle(for: .downloads)
+        menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
+
         let autofillTitle = LocalPinningManager.shared.shortcutTitle(for: .autofill)
         menu.addItem(withTitle: autofillTitle, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "A")
 
         let bookmarksTitle = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
         menu.addItem(withTitle: bookmarksTitle, action: #selector(toggleBookmarksPanelPinning), keyEquivalent: "K")
-
-        let downloadsTitle = LocalPinningManager.shared.shortcutTitle(for: .downloads)
-        menu.addItem(withTitle: downloadsTitle, action: #selector(toggleDownloadsPanelPinning), keyEquivalent: "J")
 
         let isPopUpWindow = view.window?.isPopUpWindow ?? false
 
@@ -1671,6 +1719,11 @@ extension NavigationBarViewController: NSMenuDelegate {
     @objc
     private func toggleDownloadsPanelPinning(_ sender: NSMenuItem) {
         LocalPinningManager.shared.togglePinning(for: .downloads)
+    }
+
+    @objc
+    private func toggleSharePanelPinning(_ sender: NSMenuItem) {
+        LocalPinningManager.shared.togglePinning(for: .share)
     }
 
     @objc

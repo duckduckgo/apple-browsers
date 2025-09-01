@@ -5,8 +5,12 @@ defaults:
     working-directory: iOS
 
 on:
-  schedule:
-    - cron: '0 5 * * 2-5' # Run at 05:00 UTC, Tuesday through Friday
+  push:
+    branches:
+      - 'release/ios/**'
+    paths:
+      - 'SharedPackages/**'
+      - 'iOS/**'
   workflow_dispatch:
     inputs:
       asana-task-url:
@@ -19,7 +23,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: 'ios-release'
   cancel-in-progress: false
 
 jobs:

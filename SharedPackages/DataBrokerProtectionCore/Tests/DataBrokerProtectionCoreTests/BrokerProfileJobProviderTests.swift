@@ -46,7 +46,8 @@ final class BrokerProfileJobProviderTests: XCTestCase {
                                                         eventsHandler: mockEventsHandler,
                                                         dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
                                                         emailService: EmailServiceMock(),
-                                                        captchaService: CaptchaServiceMock())
+                                                        captchaService: CaptchaServiceMock(),
+                                                        featureFlagger: MockDBPFeatureFlagger())
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {

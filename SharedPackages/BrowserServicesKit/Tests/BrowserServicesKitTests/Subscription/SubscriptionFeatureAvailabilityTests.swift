@@ -56,7 +56,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -71,7 +72,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -84,7 +86,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -96,7 +99,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertFalse(subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
@@ -108,7 +112,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
@@ -123,7 +128,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
                                                                                      paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -138,7 +144,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
                                                                                      paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -151,7 +158,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
                                                                                      paidAIChatFlagStatusProvider: { true },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -161,7 +169,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertFalse(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
@@ -169,8 +178,29 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
                                                                                      paidAIChatFlagStatusProvider: { false },
-                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { true })
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { true },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
         XCTAssertTrue(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
+    }
+
+    // MARK: - Tests for Wide Pixel Measurement
+
+    func testIsSubscriptionPurchaseWidePixelMeasurementDisabledWhenProviderReturnsFalse() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+        XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
+    }
+
+    func testIsSubscriptionPurchaseWidePixelMeasurementEnabledWhenProviderReturnsTrue() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { true })
+        XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
     }
 
     // MARK: - Helper

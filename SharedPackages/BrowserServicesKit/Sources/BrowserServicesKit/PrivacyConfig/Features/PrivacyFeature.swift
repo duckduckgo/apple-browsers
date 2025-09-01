@@ -82,6 +82,7 @@ public enum PrivacyFeature: String {
     case feedbackForm
     case htmlNewTabPage
     case daxEasterEggLogos
+    case openFireWindowByDefault
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -124,6 +125,10 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case defaultBrowserTutorial
 
     case widgetReporting
+
+    /// Add ask AI chat to end of autocomplete suggestions
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
+    case askAIChatSuggestion
 
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
@@ -172,6 +177,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
+    case emailConfirmationDecoupling
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -285,6 +291,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionRebranding
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
+    case subscriptionPurchaseWidePixelMeasurement
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

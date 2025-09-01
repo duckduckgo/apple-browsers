@@ -43,7 +43,7 @@ public enum SubscriptionServiceError: DDGError {
         }
     }
 
-    public static var errorDomain: String { "com.duckduckgo.subscription.SubscriptionServiceError" }
+    public var errorDomain: String { "com.duckduckgo.subscription.SubscriptionServiceError" }
 
     public var errorCode: Int {
         switch self {

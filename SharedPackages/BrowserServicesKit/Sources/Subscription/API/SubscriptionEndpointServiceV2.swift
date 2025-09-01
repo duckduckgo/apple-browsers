@@ -55,7 +55,7 @@ public enum SubscriptionEndpointServiceError: DDGError {
         }
     }
 
-    public static var errorDomain: String { "com.duckduckgo.subscription.SubscriptionEndpointServiceError" }
+    public var errorDomain: String { "com.duckduckgo.subscription.SubscriptionEndpointServiceError" }
 
     public var errorCode: Int {
         switch self {

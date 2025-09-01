@@ -248,6 +248,7 @@ extension TabExtensionsBuilder {
         add {
             PageContextTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                     webViewPublisher: args.webViewFuture,
+                                    contentPublisher: args.contentPublisher,
                                     tabID: args.tabID,
                                     aiChatSidebarProvider: dependencies.aiChatSidebarProvider,
                                     aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,

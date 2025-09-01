@@ -139,7 +139,6 @@ extension Pixel {
         case browsingMenuShare
         case browsingMenuCopy
         case browsingMenuPrint
-        case browsingMenuReload
         case browsingMenuListPrint
         case browsingMenuFindInPage
         case browsingMenuZoom
@@ -1429,8 +1428,8 @@ extension Pixel.Event {
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
-        case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_address_bar_daily"
-        case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu_daily"
+        case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_address_bar"
+        case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
             
 
         case .browsingMenuOpened: return "mb"
@@ -1444,7 +1443,6 @@ extension Pixel.Event {
         case .browsingMenuToggleBrowsingMode: return "mb_dm"
         case .browsingMenuCopy: return "mb_cp"
         case .browsingMenuPrint: return "mb_pr"
-        case .browsingMenuReload: return "m_nav_menu_reload"
 
         case .browsingMenuFindInPage: return "mb_fp"
         case .browsingMenuZoom: return "m_menu_page_zoom_taps"

@@ -2,8 +2,8 @@
     m_menu_refresh_page: {
         description: 'Fires when the user taps the refresh page option from the browsing menu',
         owners: ['pikorddg'],
-        triggers: ['other']
-        suffixes: [],
-        parameters: [],
+        triggers: ['user_submitted'],
+        suffixes: [platform, form_factor],
+        parameters: []
     }
 }

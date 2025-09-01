@@ -249,7 +249,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .restoreSessionPrompt,
                 .openFireWindowByDefault,
                 .duckAISearchParameter,
-                .openFileMenuAction,
                 .refactorOfSyncPreferences,
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,

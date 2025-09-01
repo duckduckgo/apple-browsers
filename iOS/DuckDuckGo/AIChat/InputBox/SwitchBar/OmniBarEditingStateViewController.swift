@@ -201,7 +201,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
                 guard let self = self else { return }
-                defer { self.switchBarHandler.clearText() }
 
                 let text = submission.text
 

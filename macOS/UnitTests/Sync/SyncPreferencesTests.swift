@@ -67,7 +67,6 @@ class MockSyncFeatureFlagger: FeatureFlagger {
 final class SyncPreferencesTests: XCTestCase {
 
     var scheduler: CapturingScheduler! = CapturingScheduler()
-    var managementDialogModel: ManagementDialogModel! = ManagementDialogModel()
     var ddgSyncing: MockDDGSyncing!
     var syncBookmarksAdapter: SyncBookmarksAdapter!
     var syncCredentialsAdapter: SyncCredentialsAdapter!
@@ -102,7 +101,6 @@ final class SyncPreferencesTests: XCTestCase {
             syncBookmarksAdapter: syncBookmarksAdapter,
             syncCredentialsAdapter: syncCredentialsAdapter,
             appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
             userAuthenticator: MockUserAuthenticator(),
             syncPausedStateManager: pausedStateManager,
             connectionControllerFactory: { [weak self] _, _ in
@@ -123,7 +121,6 @@ final class SyncPreferencesTests: XCTestCase {
         appearancePreferences = nil
         connectionController = nil
         featureFlagger = nil
-        managementDialogModel = nil
         scheduler = nil
         syncBookmarksAdapter = nil
         syncCredentialsAdapter = nil
@@ -145,10 +142,6 @@ final class SyncPreferencesTests: XCTestCase {
         try? bookmarksDatabase.tearDown(deleteStores: true)
         bookmarksDatabase = nil
         try? FileManager.default.removeItem(at: location)
-    }
-
-    func testOnInitDelegateIsSet() {
-        XCTAssertNotNil(managementDialogModel.delegate)
     }
 
     func testSyncIsEnabledReturnsCorrectValue() {

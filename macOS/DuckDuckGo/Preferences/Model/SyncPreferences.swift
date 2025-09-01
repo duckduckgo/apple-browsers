@@ -179,7 +179,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncBookmarksAdapter: SyncBookmarksAdapter,
         syncCredentialsAdapter: SyncCredentialsAdapter,
         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-        managementDialogModel: ManagementDialogModel = ManagementDialogModel(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
         connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,

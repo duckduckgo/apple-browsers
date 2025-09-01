@@ -13,4 +13,39 @@
             },
         ],
     },
+    'm_keyboard_settings_on_new_tab_enabled': {
+        description: 'Fires daily to track the status of the "Show keyboard on new tab" setting',
+        owners: ['bunn'],
+        triggers: ['other'],
+        suffixes: ['daily', 'platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'is_enabled',
+                description: 'Whether the keyboard on new tab setting is enabled',
+                type: 'string',
+            },
+        ],
+    },
+    'm_keyboard_settings_on_app_launch_enabled': {
+        description: 'Fires daily to track the status of the "Show keyboard on app launch" setting',
+        owners: ['bunn'],
+        triggers: ['other'],
+        suffixes: ['daily', 'platform', 'form_factor'],
+        parameters: [
+            'appVersion',
+            {
+                key: 'is_enabled',
+                description: 'Whether the keyboard on app launch setting is enabled',
+                type: 'string',
+            },
+        ],
+    },
+    'm_keyboard_on_app_launch_used': {
+        description: 'Fires daily when the app is launched and the keyboard is shown due to the "Show keyboard on app launch" setting being enabled',
+        owners: ['bunn'],
+        triggers: ['other'],
+        suffixes: ['daily', 'platform', 'form_factor'],
+        parameters: ['appVersion'],
+    },
 }

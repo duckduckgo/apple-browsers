@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Стирает данные браузера одним нажатием";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Блокировка сторонних трекеров";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Узнать больше";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Разрешить DuckDuckGo управлять окнами выбора куки-файлов";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Настройки";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Помогает блокировать сторонние трекеры, которые пытаются маскироваться на сайтах с помощью DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Защита от маскировки CNAME в DNS";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Пресекает отслеживание контента из Facebook (например, через виджеты с комментариями, размещенные на других сайтах).";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Защита от трекеров Facebook";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Не позволяет компаниям собирать уникальные идентификаторы вашего браузера и устройства для дальнейшей слежки за вами в cети.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Защита от отслеживания по цифровому отпечатку";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Автоматически завершает срок действия собственных куки-файлов сайтов по истечении 30 дней, чтобы они не могли бесконечно отслеживать вас после выхода из учетной записи.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Остановка действия куки-файлов";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Заменяет ссылки Google AMP на ссылки источника.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Блокировка отслеживания через Google AMP";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Блокирует всплывающие окна входа в Google на сайтах, не принадлежащих компании.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Блокировка всплывающих окон входа в Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Удаляет параметры отслеживания в ссылках, чтобы сторонние компании не могли считывать ваши действия на разных сайтах.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Блокировка отслеживания ссылок";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Не позволяет компаниям идентифицировать последний посещенный вами сайт.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Защита от отслеживания источников трафика";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Пресекает загрузку непрошенных трекеров, эффективно избавляя вас от рекламы, которая полагается на отслеживание.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Блокирует целевую рекламу";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Не дает сторонним трекерам даже загрузиться, чтобы они не отслеживали ваши перемещения с сайта на сайт.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Блокировка сторонних трекеров";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Незащищенные сайты";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Защита от отслеживания онлайн";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections всегда на страже";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo автоматически блокирует скрытые трекеры, пока вы посещаете сайты.\n[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Как мы вас защищаем";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Функции защиты от отслеживания в составе DuckDuckGo работают без остановки. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Выберите наиболее точное описание проблемы, с которой вы столкнулись.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Управление VPN с помощью Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Использование собственного DNS-сервера может снизить скорость просмотра веб-страниц и обнаружить ваши действия для третьих лиц, если сервер плохо защищен или работает ненадежно.";
+"vpn.settings.dns.section-disclaimer" = "Использование собственного DNS-сервера может снизить скорость просмотра веб-страниц и раскрыть ваши действия третьим лицам, если сервер плохо защищен или работает ненадежно.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

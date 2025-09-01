@@ -162,12 +162,12 @@ extension ReleaseNotesValues {
                 formatter.dateFormat = "MMMM dd yyyy"
                 let releaseTitle = formatter.string(from: cached.date)
 
-                let cachedVersion = "\(cached.version) \(cached.build)"
+                let cachedVersion = "\(cached.version) (\(cached.build))"
                 let status = currentVersion == cachedVersion ? ReleaseNotesValues.Status.loaded : ReleaseNotesValues.Status.updateReady
 
                 self.init(status: status,
                           currentVersion: currentVersion,
-                          latestVersion: "\(cached.version) \(cached.build)",
+                          latestVersion: cachedVersion,
                           lastUpdate: lastUpdate,
                           releaseTitle: releaseTitle,
                           releaseNotes: cached.releaseNotes,
@@ -226,7 +226,7 @@ extension ReleaseNotesValues {
 
 private extension Update {
     var versionString: String? {
-        "\(version) \(build)"
+        "\(version) (\(build))"
     }
 }
 

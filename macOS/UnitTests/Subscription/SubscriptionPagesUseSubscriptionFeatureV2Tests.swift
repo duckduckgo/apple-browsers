@@ -23,6 +23,8 @@ import SubscriptionTestingUtilities
 import WebKit
 import XCTest
 import UserScript
+import PixelKit
+import PixelKitTestingUtilities
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
@@ -40,6 +42,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
+    private var mockWidePixel: WidePixelMock!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -71,6 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
+        mockWidePixel = WidePixelMock()
 
         sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -81,7 +85,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         notificationCenter: mockNotificationCenter,
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                         featureFlagger: mockFeatureFlagger,
-                                                        aiChatURL: URL.duckDuckGo)
+                                                        aiChatURL: URL.duckDuckGo,
+                                                        widePixel: mockWidePixel)
         sut.with(broker: broker)
     }
 
@@ -93,6 +98,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStorePurchaseManager = nil
         mockSubscriptionFeatureAvailability = nil
         mockUIHandler = nil
+        mockWidePixel = nil
         subscriptionManagerV2 = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
@@ -405,4 +411,33 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertNil(result)
         await fulfillment(of: [uiHandlerExpectation], timeout: 0.1)
     }
+
+    @MainActor
+    func testAppStoreSuccess_EmitsWidePixelWithContext() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_macos")!
+        let webView = MockURLWebView(url: originURL)
+        let message = MockWKScriptMessage(name: "subscriptionSelected", body: [:], webView: webView)
+
+        subscriptionManagerV2.resultURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        mockStorePurchaseManager.isEligibleForFreeTrialResult = true
+        mockUIHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+
+        _ = try await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        XCTAssertEqual(mockWidePixel.started.count, 1)
+        XCTAssertEqual(mockWidePixel.completions.count, 1)
+        let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
+        XCTAssertEqual(started.contextData.name, "funnel_appsettings_macos")
+    }
+
+}
+
+final class MockURLWebView: WKWebView {
+    private let mockedURL: URL
+    init(url: URL) {
+        self.mockedURL = url
+        super.init(frame: .zero, configuration: WKWebViewConfiguration())
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override var url: URL? { mockedURL }
 }

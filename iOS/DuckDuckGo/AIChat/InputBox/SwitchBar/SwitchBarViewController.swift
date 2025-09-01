@@ -193,6 +193,6 @@ private struct PickerWrapper: View {
 
     var body: some View {
         ImageSegmentedPickerView(viewModel: viewModel)
-            .frame(width: 230)
+            .frame(width: 216)
     }
 }

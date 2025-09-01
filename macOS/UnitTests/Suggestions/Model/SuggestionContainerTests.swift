@@ -375,57 +375,6 @@ extension SuggestionContainerTests {
         let isNav: Bool?
     }
 
-    class WindowControllersManagerMock: WindowControllersManagerProtocol {
-        var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
-
-        var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
-
-        var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
-
-        var pinnedTabsManagerProvider: any DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding
-
-        var didRegisterWindowController = PassthroughSubject<(DuckDuckGo_Privacy_Browser.MainWindowController), Never>()
-
-        var didUnregisterWindowController = PassthroughSubject<(DuckDuckGo_Privacy_Browser.MainWindowController), Never>()
-
-        func register(_ windowController: DuckDuckGo_Privacy_Browser.MainWindowController) {
-        }
-
-        func unregister(_ windowController: DuckDuckGo_Privacy_Browser.MainWindowController) {
-        }
-
-        func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {
-        }
-
-        func showBookmarksTab() {
-        }
-
-        func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) {
-        }
-
-        func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
-        }
-
-        var allTabCollectionViewModels: [TabCollectionViewModel] = []
-        var selectedWindowIndex: Int
-        var selectedTab: Tab? {
-            allTabCollectionViewModels[selectedWindowIndex].selectedTab
-        }
-
-        func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
-            nil
-        }
-
-        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
-        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
-
-        init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
-            self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
-            self.allTabCollectionViewModels = tabCollectionViewModels
-            self.selectedWindowIndex = selectedWindow
-        }
-    }
-
     @MainActor
     private func tabCollection(_ openTabs: [OpenTab], burnerMode: BurnerMode = .regular) -> TabCollection {
         let contentBlockingMock = ContentBlockingMock()
@@ -585,7 +534,7 @@ private extension Suggestion {
             return .init(type: .openTab, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: tabId.flatMap(UUID.init(uuidString:)), score: score)
         case .internalPage(title: let title, url: let url, score: let score):
             return .init(type: .internalPage, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: score)
-        case .unknown:
+        case .unknown, .askAIChat:
             return nil
         }
     }

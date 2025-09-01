@@ -74,9 +74,12 @@ final class MockDependencyProvider {
 final class ConfigurationManagerTests: XCTestCase {
 
     // Shared "UserDefaults" to mock app group defaults
-    var sharedDefaults = MockKeyValueStore()
+    var sharedDefaults: MockKeyValueStore!
+    private var configurationManagers: [DefaultConfigurationManager] = []
 
     override func setUp() {
+        sharedDefaults = MockKeyValueStore()
+
         APIRequest.Headers.setUserAgent("")
         sharedDefaults.clearAll()
         MockStoreWithStorage.clearTempConfigs()
@@ -85,6 +88,9 @@ final class ConfigurationManagerTests: XCTestCase {
     override func tearDown() {
         MockURLProtocol.lastRequest = nil
         MockURLProtocol.requestHandler = nil
+        sharedDefaults = nil
+        configurationManagers.forEach { $0.tearDown() }
+        configurationManagers = []
     }
 
     func makeConfigurationFetcher(store: ConfigurationStoring,
@@ -103,6 +109,8 @@ final class ConfigurationManagerTests: XCTestCase {
                                                store: configStore,
                                                defaults: sharedDefaults)
         manager.name = name
+
+        configurationManagers.append(manager)
         return manager
     }
 

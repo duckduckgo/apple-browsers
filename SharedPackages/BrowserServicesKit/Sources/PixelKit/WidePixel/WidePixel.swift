@@ -28,6 +28,8 @@ public protocol WidePixelManaging {
     func startFlow<T: WidePixelData>(_ data: T)
     func updateFlow<T: WidePixelData>(_ data: T)
     func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock)
+    func discardFlow<T: WidePixelData>(_ data: T)
+    func getAllFlowData<T: WidePixelData>(_ type: T.Type) -> [T]
 }
 
 public final class WidePixel: WidePixelManaging {
@@ -72,11 +74,11 @@ public final class WidePixel: WidePixelManaging {
 
     public func startFlow<T: WidePixelData>(_ data: T) {
         if !shouldSampleFlow(data) {
-            Self.logger.info("Wide pixel flow dropped at start due to sample rate for \(T.pixelName, privacy: .public), context ID: \(data.contextData.id, privacy: .public)")
+            Self.logger.info("Wide pixel flow dropped at start due to sample rate for \(T.pixelName, privacy: .public), global ID: \(data.globalData.id, privacy: .public)")
             return
         }
 
-        Self.logger.info("Starting wide pixel flow '\(T.pixelName, privacy: .public)' with context ID: \(data.contextData.id, privacy: .public)")
+        Self.logger.info("Starting wide pixel flow '\(T.pixelName, privacy: .public)' with global ID: \(data.globalData.id, privacy: .public)")
         do {
             try Self.storageQueue.sync { try storage.save(data) }
         } catch {
@@ -85,20 +87,21 @@ public final class WidePixel: WidePixelManaging {
     }
 
     public func updateFlow<T: WidePixelData>(_ data: T) {
-        let contextID = data.contextData.id
+        let globalID = data.globalData.id
+
         do {
             try Self.storageQueue.sync { try storage.update(data) }
         } catch {
             if case WidePixelError.flowNotFound = error {
                 // Expected if the flow wasn't sampled when it was started
-                Self.logger.info("Wide pixel update ignored for non-existent flow: \(T.pixelName, privacy: .public), context ID: \(contextID, privacy: .public)")
+                Self.logger.info("Wide pixel update ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(globalID, privacy: .public)")
             } else {
                 report(.updateFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
             }
             return
         }
 
-        Self.logger.info("Wide pixel with context ID \(contextID, privacy: .public) updated: \(T.pixelName, privacy: .public)")
+        Self.logger.info("Wide pixel with global ID \(globalID, privacy: .public) updated: \(data.pixelParameters())")
     }
 
     public func getFlowData<T: WidePixelData>(_ type: T.Type, globalID: String) -> T? {
@@ -112,7 +115,13 @@ public final class WidePixel: WidePixelManaging {
     // MARK: - Flow Completion
 
     public func completeFlow<T: WidePixelData>(_ data: T, status: WidePixelStatus, onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
-        Self.logger.info("Completing wide pixel '\(T.pixelName, privacy: .public)' with status \(status.description, privacy: .public) and context ID: \(data.contextData.id, privacy: .public)")
+        guard getFlowData(T.self, globalID: data.globalData.id) != nil else {
+            Self.logger.info("Attempted to complete non-existent wide pixel '\(T.pixelName, privacy: .public)' with global ID: \(data.globalData.id, privacy: .public)")
+            onComplete(false, nil)
+            return
+        }
+
+        Self.logger.info("Completing wide pixel '\(T.pixelName, privacy: .public)' with status \(status.description, privacy: .public) and global ID: \(data.globalData.id, privacy: .public)")
 
         do {
             try storage.update(data)
@@ -122,17 +131,38 @@ public final class WidePixel: WidePixelManaging {
 
             try firePixel(named: T.pixelName, parameters: parameters, onComplete: onComplete)
 
-            Self.logger.info("Completed wide pixel flow: \(T.pixelName, privacy: .public) with context ID: \(data.contextData.id, privacy: .public)")
+            Self.logger.info("Completed wide pixel flow: \(T.pixelName, privacy: .public) with global ID: \(data.globalData.id, privacy: .public)")
         } catch {
             if case WidePixelError.flowNotFound = error {
                 // Expected if the flow wasn't sampled when it was started
-                Self.logger.info("Wide pixel completion ignored for non-existent flow: \(T.pixelName, privacy: .public), context ID: \(data.contextData.id, privacy: .public)")
+                Self.logger.info("Wide pixel completion ignored for non-existent flow: \(T.pixelName, privacy: .public), global ID: \(data.globalData.id, privacy: .public)")
                 onComplete(true, nil)
             } else {
                 Self.logger.error("Failed to complete wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 report(.completeFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
                 storage.delete(data)
                 onComplete(false, error)
+            }
+        }
+    }
+
+    public func discardFlow<T: WidePixelData>(_ data: T) {
+        do {
+            let current: T = try Self.storageQueue.sync {
+                try storage.load(globalID: data.globalData.id)
+            }
+
+            Self.storageQueue.sync {
+                storage.delete(current)
+            }
+
+            Self.logger.info("Discarded wide pixel flow '\(T.pixelName, privacy: .public)' with global ID: \(data.globalData.id, privacy: .public)")
+        } catch {
+            if case WidePixelError.flowNotFound = error {
+                // No-op
+            } else {
+                Self.logger.error("Failed to discard wide pixel flow \(T.pixelName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                report(.discardFailed(pixelName: T.pixelName, error: error), error: error, params: nil)
             }
         }
     }
@@ -144,12 +174,6 @@ public final class WidePixel: WidePixelManaging {
         )
     }
 
-    private func handleDroppedFlow(for contextID: String, sampleRate: Double) {
-        // Best-effort cleanup for any stored flow with this contextID across known types is not feasible here
-        // without the concrete type; rely on completion paths to call delete where appropriate.
-        Self.logger.info("Wide pixel dropped due to sample rate (\(sampleRate, privacy: .public)) for context ID: \(contextID, privacy: .public)")
-    }
-
     private func generateFinalParameters<T: WidePixelData>(from typed: T, status: WidePixelStatus) throws -> [String: String] {
         var parameters: [String: String] = [:]
 
@@ -158,7 +182,6 @@ public final class WidePixel: WidePixelManaging {
         parameters.merge(typed.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
         parameters.merge(typed.pixelParameters(), uniquingKeysWith: { _, new in new })
 
-        parameters[WidePixelParameter.Feature.name] = T.pixelName
         parameters[WidePixelParameter.Feature.status] = status.description
 
         if case let .unknown(reason) = status {
@@ -197,7 +220,8 @@ public final class WidePixel: WidePixelManaging {
             withAdditionalParameters: nil,
             withError: nil,
             allowedQueryReservedCharacters: nil,
-            includeAppVersionParameter: false,
+            includeAppVersionParameter: true,
+            includePixelSourceParameter: false,
             onComplete: { success, error in
                 if success {
                     Self.logger.info("Wide pixel fired successfully: \(finalPixelName, privacy: .public)")

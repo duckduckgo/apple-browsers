@@ -1,8 +1,8 @@
 ---
 alwaysApply: false
 title: "Testing Guidelines & Best Practices"
-description: "Comprehensive testing practices and patterns for DuckDuckGo browser development across iOS and macOS platforms including unit tests, mocks, memory management, and advanced testing techniques"
-keywords: ["testing", "unit tests", "XCTest", "mocks", "async testing", "UI tests", "performance tests", "memory management", "snapshot testing", "MockFeatureFlagger", "Tab Extensions", "BSK tests"]
+description: "Comprehensive testing practices and patterns for DuckDuckGo browser development across iOS and macOS platforms including unit tests, mocks, memory management, advanced testing techniques, time/date testing patterns, and critical async testing anti-patterns to avoid"
+keywords: ["testing", "unit tests", "XCTest", "mocks", "async testing", "UI tests", "performance tests", "memory management", "snapshot testing", "MockFeatureFlagger", "Tab Extensions", "BSK tests", "event-driven testing", "timing anti-patterns", "DispatchQueue", "Timer", "expectations", "TestClock", "MockDateProvider", "TimeTraveller", "Sleeper", "time injection", "date provider"]
 ---
 
 # Testing Guidelines & Best Practices
@@ -617,228 +617,17 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
 
 ## UI Tests
 
-UI Tests verify the end-to-end user experience and interface behavior.
+For comprehensive UI testing guidelines, patterns, and best practices specifically for the DuckDuckGo macOS browser, see **[UI Testing Guidelines & Best Practices](ui-testing.md)**.
 
-### Setting Up UI Tests
+The UI testing documentation covers:
 
-#### ❗Always Use UITestCase Base Class
-
-```swift
-class FeatureUITests: UITestCase {  // ✅ Use UITestCase, not XCTestCase
-    private var app: XCUIApplication!
-    
-    override func setUpWithError() throws {
-        continueAfterFailure = false
-        app = XCUIApplication.setUp()  // ✅ Use setUp(), never launch() directly
-        // app is already launched and configured by setUp()
-    }
-}
-```
-
-#### Feature Flag Configuration
-
-```swift
-// Configure feature flags during test setup
-override func setUpWithError() throws {
-    app = XCUIApplication.setUp(featureFlags: [
-        "contextualOnboarding": true,
-        "visualUpdates": false,
-        "duckPlayer": true
-    ])
-    // Feature flags are automatically applied via FEATURE_FLAGS environment variable
-}
-
-// Alternative: Custom environment
-app = XCUIApplication.setUp(environment: [
-    "UITEST_MODE_ONBOARDING": "1"
-], featureFlags: [
-    "newTabPageSections": true
-])
-```
-
-**❗Why Feature Flag Configuration is Critical**:
-- UI tests run against notarized builds - feature flags can't be changed at runtime
-- MockFeatureFlagger is NOT available in UI tests (only real DefaultFeatureFlagger)
-- Feature flags must be configured via FEATURE_FLAGS environment variable before app launch
-- Incorrect feature state will cause UI tests to fail when expected UI elements don't appear
-
-### Best Practices for UI Tests
-
-#### Use Existing Element Queries and Helper Methods
-
-```swift
-// ✅ GOOD - Use existing element queries
-let addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-let historyMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
-
-// ✅ GOOD - Add popular queries to extensions when appropriate
-extension XCUIApplication {
-    var addressBar: XCUIElement {
-        windows.textFields["AddressBarViewController.addressBarTextField"]
-    }
-    
-    var fakeFireButton: XCUIElement {
-        buttons["FireViewController.fakeFireButton"]
-    }
-}
-```
-
-#### Available XCUIElement Helper Methods
-
-```swift
-// ✅ GOOD - Use existing helper methods that solve real problems
-
-// 1. Safe element interaction with existence checks
-element.clickAfterExistenceTestSucceeds()
-element.hoverAfterExistenceTestSucceeds()
-element.typeURLAfterExistenceTestSucceeds(testURL)
-
-// 2. URL handling with colon workaround
-element.typeURL(url, pressingEnter: true)  // Handles colon typing issues
-element.pasteURL(url, pressingEnter: true) // Faster than typing
-
-// 3. Element disappearance tracking  
-element.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
-
-// 4. Proper existence checking patterns
-XCTAssertTrue(mainElement.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-XCTAssertTrue(relatedButton.exists)  // ✅ Good after waitForExistence passed
-XCTAssertTrue(anotherComponent.exists)  // ✅ Good for checking multiple components
-
-// ❌ BAD - Avoid these patterns
-XCTAssertTrue(element.exists)  // Without waitForExistence first - may fail due to timing
-XCTAssertTrue(element1.waitForExistence(timeout: 5))
-XCTAssertTrue(element2.waitForExistence(timeout: 5))  // Consecutive waits slow down tests
-Thread.sleep(forTimeInterval: 2.0)  // Unreliable, use waitForExistence
-Task.sleep(nanoseconds: 2_000_000_000)  // Same issue, avoid
-```
-
-#### Timing and Existence Guidelines
-
-- Use `waitForExistence(timeout:)` first for the main element/view that needs to appear
-- Then use `XCTAssertTrue(element.exists)` to check related components that should already be present
-- Avoid consecutive `waitForExistence` calls - they slow down test execution unnecessarily
-- Avoid `Thread.sleep()` or `Task.sleep()` - they're unreliable and slow tests down
-- Use helper methods that combine existence checks with actions - they're more reliable
-- Use `UITests.Timeouts` constants for consistent timeout values across tests
-
-#### Context Menu Interaction Workaround
-
-```swift
-// Use coordinate-based context menu clicking for reliability across macOS versions
-func testContextMenuAction() {
-    let webView = app.webViews.firstMatch
-    webView.rightClick()
-    
-    // ✅ Use the coordinate-based context menu hack
-    try app.clickContextMenuItem(matching: { $0.identifier == "PDFContextMenu.print" })
-    
-    // This method uses coordinate-based clicking instead of direct element interaction
-    // because context menu detection fails on older macOS systems (13/14) in CI
-}
-```
-
-### Local Test Server Setup
-
-UI tests use a local test server running on `http://localhost:8085/` for reliable page loading and content simulation.
-
-#### How It Works:
-- Test server runs on port 8085 (not 8080)
-- Uses `TestsURLExtension.swift` shared with Integration Tests
-- Provides `URL.testsServer` and `.appendingTestParameters()` methods
-- Supports dynamic content generation via query parameters
-
-#### Creating Test URLs:
-
-```swift
-// Static content from test files
-let url = URL.testsServer.appendingPathComponent("test-page.html")
-
-// Dynamic content with custom HTML
-let url = UITests.simpleServedPage(titled: "Test Page")
-// Creates: http://localhost:8085/?data=<html>...<title>Test Page</title>...</html>
-
-// Custom responses with headers and status codes
-let url = URL.testsServer
-    .appendingPathComponent("test-endpoint")
-    .appendingTestParameters(
-        status: 404,
-        reason: "Not Found",
-        headers: ["Content-Type": "application/json"]
-    )
-```
-
-#### URL Parameter Options:
-- `status`: HTTP status code (default: 200)
-- `reason`: HTTP status string (default: "OK") 
-- `data`: Response body (Data or String, base64 encoded if binary)
-- `headers`: HTTP response headers
-
-#### Best Practices:
-- Use `UITests.simpleServedPage(titled:)` for basic HTML pages
-- Use `URL.testsServer.appendingTestParameters()` for custom responses
-- Test various HTTP status codes and response types
-- Keep test content simple and predictable
-
-### Using Pasteboard for Speed
-
-```swift
-func testAddressBarInput() {
-    // Instead of typing character by character
-    let testURL = "https://example.com"
-    UIPasteboard.general.string = testURL
-    
-    addressBar.press(forDuration: 1.0)
-    app.menuItems["Paste"].tap()
-    
-    // Much faster than: addressBar.typeText(testURL)
-}
-```
-
-### UI Test Build Architecture
-
-UI tests use a unique build architecture:
-- **App Binary**: Built using notarized build action (latest Xcode/toolchain)
-- **UI Test Bundle**: Built on target macOS version (macOS 13/14/15 runners)
-- **Testing**: UI Test bundle tests the notarized app binary across macOS 13/14/15
-
-#### Critical UI Test Code Compatibility Requirements:
-
-```swift
-// ✅ GOOD - UI Test code must compile on older Xcode versions
-func testFeature() {
-    let app = XCUIApplication.setUp()
-    app.addressBar.typeText("test")
-    // Uses APIs available in minimum supported Xcode
-}
-
-// ❌ BAD - Don't use newest APIs that aren't available on older Xcode
-@available(macOS 14.0, *)
-func testNewAPI() {
-    // This won't compile on macOS 13 UI test runners
-}
-```
-
-**Compatibility Guidelines**:
-- UI Test code must compile on oldest supported Xcode version (for macOS 13 runner)
-- App code can use latest Swift/Xcode features (built with latest toolchain)
-- Test only stable APIs - avoid beta/preview APIs in UI test code
-- Use `@available` checks carefully - must work across all test runners
-
-### Screenshot Management
-
-- **Automatic Screenshots**: Screenshots are taken automatically on test failures
-- **Manual Screenshots**: Use `XCTAttachment` for custom screenshots
-
-```swift
-func takeScreenshot(name: String) {
-    let screenshot = XCUIScreen.main.screenshot()
-    let attachment = XCTAttachment(screenshot: screenshot)
-    attachment.name = name
-    attachment.lifetime = .keepAlways
-    add(attachment)
-}
-```
+- **Element Access Patterns**: Accessibility IDs, element variables, extension usage
+- **Window and Tab Management**: Multi-window operations, navigation modifiers, validation patterns
+- **Element Interaction**: Timing best practices, middle-click handling, context menus
+- **Test Server Integration**: Local test server setup and content creation
+- **Performance Optimizations**: Pasteboard usage, avoiding slow operations
+- **Build Architecture**: Compatibility requirements across macOS versions
+- **Advanced Patterns**: Tab extensions, settings testing, bookmark/history workflows
 
 ## Snapshot Testing
 
@@ -972,20 +761,34 @@ func testComplexView() {
 
 ### Using Logger.tests for Test Information
 
-All tests should use `Logger.tests` for logging instead of print statements or debug prints:
+**NEVER use `print()` in tests. ALWAYS use `Logger.tests` for debug output:**
 
 ```swift
 import os.log
 
+✅ // GOOD: Use Logger.tests for test debugging
 func testComplexFlow() {
     Logger.tests.info("Starting complex flow test")
     Logger.tests.debug("Setting up test data with \(testData.count) items")
+    Logger.tests.debug("DEBUG: requestCount = \(requestCount), currentState = \(service.currentState)")
     
     // Perform test operations
     
     Logger.tests.log("Test completed successfully")
 }
+
+❌ // BAD: Using print() statements
+func testComplexFlow() {
+    print("Starting test")  // Never use print()
+    print("DEBUG: requestCount = \(requestCount)")  // Use Logger.tests.debug() instead
+}
 ```
+
+**Benefits of Logger.tests:**
+- Structured logging that integrates with Xcode and CI systems
+- Proper log levels (info, debug, error)
+- Automatic collection in CI artifacts
+- Better performance than print() statements
 
 ### Comprehensive Failure Logging
 
@@ -1093,13 +896,30 @@ func testPublisherWithTimeout() async throws {
     // Use timeout extension for publishers
     let future = subject.timeout(2.0, "Publisher timeout").first().promise()
     
-    // Simulate delayed value
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+    DispatchQueue.main.async {
         subject.send("test value")
     }
     
     let result = try await future.get()
     XCTAssertEqual(result, "test value")
+}
+
+// For testing actual async behavior, use proper event-driven patterns:
+func testPublisherWithAsyncBehavior() {
+    let expectation = expectation(description: "Should receive published value")
+    let subject = PassthroughSubject<String, Never>()
+    
+    let cancellable = subject
+        .sink { value in
+            XCTAssertEqual(value, "test value")
+            expectation.fulfill()
+        }
+    
+    // Trigger the real event that should cause publication
+    service.performActionThatPublishes() // This internally calls subject.send()
+    
+    wait(for: [expectation], timeout: 1.0)
+    cancellable.cancel()
 }
 ```
 
@@ -1109,6 +929,495 @@ func testPublisherWithTimeout() async throws {
 - Choose appropriate timeout values: Short for unit tests (1-5s), longer for integration tests (10s+)
 - Always test timeout scenarios - ensure your code handles timeouts properly
 - Use descriptive timeout messages - helps with debugging when timeouts occur
+
+## 🚨 CRITICAL: Async Testing Anti-Patterns
+
+### ❌ NEVER Use These Timing Patterns in Tests
+
+**NEVER use arbitrary delays in tests - they make tests flaky, slow, and unreliable:**
+
+```swift
+❌ // BAD: Arbitrary time delays
+func testBadPattern() {
+    // NEVER DO THIS
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        expectation.fulfill()
+    }
+    
+    // OR THIS
+    Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
+        expectation.fulfill()
+    }
+    
+    // OR THIS
+    Thread.sleep(forTimeInterval: 0.5)
+    
+    wait(for: [expectation], timeout: 5.0)
+}
+```
+
+### ✅ Use Event-Driven Testing Instead
+
+**Replace timing delays with event-driven expectations:**
+
+#### Pattern 1: Callback-Based Expectations
+```swift
+✅ // GOOD: Event-driven testing with callbacks
+class MockService {
+    var onEventTriggered: (() -> Void)?
+    
+    func triggerEvent() {
+        // Do work...
+        onEventTriggered?() // Signal completion
+    }
+}
+
+func testGoodPattern() {
+    let expectation = expectation(description: "Event should be triggered")
+    
+    mockService.onEventTriggered = {
+        expectation.fulfill()
+    }
+    
+    // Trigger the actual event
+    mockService.triggerEvent()
+    
+    wait(for: [expectation], timeout: 1.0) // Short timeout for deterministic events
+}
+```
+
+#### Pattern 2: Publisher-Based Expectations
+```swift
+✅ // GOOD: Combine publisher testing
+func testPublisherPattern() {
+    let expectation = expectation(description: "Publisher should emit value")
+    
+    let cancellable = service.statePublisher
+        .compactMap { $0 }
+        .first()
+        .sink { value in
+            XCTAssertEqual(value, .expectedState)
+            expectation.fulfill()
+        }
+    
+    // Trigger the state change
+    service.updateState(.expectedState)
+    
+    wait(for: [expectation], timeout: 1.0)
+    cancellable.cancel()
+}
+```
+
+#### Pattern 3: Predicate-Based Expectations
+```swift
+✅ // GOOD: Condition-based waiting
+func testPredicatePattern() {
+    // Trigger the operation
+    service.startOperation()
+    
+    // Wait for specific condition to be true
+    let predicate = NSPredicate { _, _ in
+        service.isOperationComplete
+    }
+    let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+    wait(for: [expectation], timeout: 2.0)
+    
+    XCTAssertTrue(service.isOperationComplete)
+}
+```
+
+#### Pattern 4: Inverted Expectations for "Should Not Happen"
+```swift
+✅ // GOOD: Testing that something should NOT happen
+func testShouldNotHappen() {
+    let expectation = expectation(description: "Should not trigger unwanted behavior")
+    expectation.isInverted = true // Test passes if expectation is NOT fulfilled
+    
+    mockService.onUnwantedEvent = {
+        expectation.fulfill() // This would fail the test
+    }
+    
+    // Trigger some action
+    service.performAction()
+    
+    wait(for: [expectation], timeout: 1.0) // Short timeout for negative tests
+    
+    // Verify expected behavior occurred instead
+    XCTAssertTrue(service.didPerformExpectedBehavior)
+}
+```
+
+### Why Event-Driven Testing Is Superior
+
+1. **Deterministic**: Tests wait for actual events, not arbitrary time
+2. **Fast**: No unnecessary delays - tests complete as soon as events occur  
+3. **Reliable**: Eliminates race conditions and timing-dependent failures
+4. **Maintainable**: Clear relationship between triggers and expectations
+5. **Debuggable**: Failures point to actual logic issues, not timing problems
+
+### Migration Strategy
+
+When you see these patterns in existing tests:
+1. **Identify the real event** the test is waiting for
+2. **Add callback/publisher** to the mock or service to signal that event
+3. **Replace arbitrary delays** with event-driven expectations
+4. **Use shorter timeouts** (1-2s) since events are deterministic
+
+**Remember: Good tests are event-driven, not time-driven!**
+
+## ⏰ Time/Date Testing Patterns
+
+### Critical Design Principle
+**ALWAYS inject time/date dependencies into your classes - NEVER use `Date()` or `Task.sleep()` directly in production code that needs testing.**
+
+### 🚫 **FORBIDDEN: Task.sleep() in Tests**
+
+**NEVER use `Task.sleep()` in any test code:**
+
+```swift
+// ❌ NEVER DO THIS
+try await Task.sleep(nanoseconds: 100_000_000) // Creates flaky tests
+try await Task.sleep(for: .seconds(1))         // Unreliable timing
+try? await Task.sleep(interval: 0.1)           // Arbitrary delays
+
+// ✅ DO THIS INSTEAD
+let expectation = expectation(description: "Wait for async operation")
+someAsyncOperation {
+    expectation.fulfill()
+}
+await fulfillment(of: [expectation], timeout: 1.0)
+```
+
+**Why `Task.sleep()` is banned:**
+1. **Flaky tests** - Real-world timing varies
+2. **Slow tests** - Fixed delays waste time 
+3. **Unreliable** - May not wait long enough or wait too long
+4. **Hides race conditions** - Masks real timing issues
+
+### Timeout Guidelines
+
+- Keep test timeouts reasonable: **maximum 5 seconds** for most async operations
+- Use shorter timeouts (1-3 seconds) when possible to catch issues faster
+- Only use longer timeouts for truly slow operations (network requests, file I/O)
+
+### 🚫 **NEVER Change Tests to Match Wrong Behavior**
+
+**When tests fail, fix the code, not the test:**
+
+```swift
+// ❌ WRONG: Changing test to match broken behavior
+XCTAssertEqual(result.count, 3, "Should return 3 items") // Changed from 5 to 3 to make test pass
+
+// ✅ RIGHT: Fix the actual code issue
+// Fix the logic to properly return all expected items
+XCTAssertEqual(result.count, 5, "Should return all 5 items as originally designed")
+```
+
+**Tests should verify correct behavior, not accommodate bugs. If a test fails:**
+1. **First** - Check if the production code has a bug
+2. **Fix the bug** in the production code  
+3. **Only then** update the test if the expected behavior has legitimately changed
+
+**Never adjust tests to hide problems in the implementation.**
+
+When a class needs current time or sleep functionality, inject these dependencies through the initializer:
+
+```swift
+✅ // GOOD: Injectable time dependencies
+class MyService {
+    private let dateProvider: () -> Date
+    private let sleeper: Sleeper
+    
+    init(dateProvider: @escaping () -> Date = Date.init,
+         sleeper: Sleeper = .default) {
+        self.dateProvider = dateProvider
+        self.sleeper = sleeper
+    }
+    
+    func performOperation() async throws {
+        let now = dateProvider() // ✅ Testable
+        // ... do work ...
+        try await sleeper.sleep(for: 1.0) // ✅ Testable
+    }
+}
+
+❌ // BAD: Hard-coded time dependencies
+class MyService {
+    func performOperation() async throws {
+        let now = Date() // ❌ Not testable
+        // ... do work ...
+        try await Task.sleep(nanoseconds: 1_000_000_000) // ❌ Not testable
+    }
+}
+```
+
+### Pattern 1: TestClock for Async Sleep Testing
+
+**Use `TestClock<Duration>` for testing code that uses `Task.sleep()` or periodic operations:**
+
+```swift
+✅ // GOOD: TestClock pattern for async sleep testing
+func testPeriodicUpdates() async throws {
+    let clock = TestClock<Duration>()
+    let sleeper = Sleeper(clock: clock)
+    
+    // Inject the test sleeper
+    let service = MyPeriodicService(sleeper: sleeper, interval: 2.0)
+    
+    let expectation1 = expectation(description: "First update")
+    let expectation2 = expectation(description: "Second update")
+    
+    var updateCount = 0
+    service.onUpdate = {
+        updateCount += 1
+        if updateCount == 1 {
+            expectation1.fulfill()
+        } else if updateCount == 2 {
+            expectation2.fulfill()
+        }
+    }
+    
+    // Start the periodic task
+    let task = service.startPeriodicUpdates()
+    
+    // Wait for first update (immediate)
+    await fulfillment(of: [expectation1], timeout: 1.0)
+    XCTAssertEqual(updateCount, 1)
+    
+    // Advance clock by 2 seconds to trigger next update
+    await clock.advance(by: .seconds(2))
+    await fulfillment(of: [expectation2], timeout: 1.0)
+    XCTAssertEqual(updateCount, 2)
+    
+    task.cancel()
+}
+
+// Production service with injectable sleeper
+class MyPeriodicService {
+    private let sleeper: Sleeper
+    private let interval: TimeInterval
+    var onUpdate: (() -> Void)?
+    
+    init(sleeper: Sleeper = .default, interval: TimeInterval) {
+        self.sleeper = sleeper
+        self.interval = interval
+    }
+    
+    func startPeriodicUpdates() -> Task<Void, Error> {
+        Task.periodic(interval: interval, sleeper: sleeper) {
+            await self.performUpdate()
+        }
+    }
+    
+    private func performUpdate() async {
+        // Do work...
+        onUpdate?()
+    }
+}
+```
+
+#### TestClock Best Practices
+
+**ALWAYS use `Task.megaYield(count: N)` after `clock.advance()` to allow async processing:**
+
+```swift
+✅ // GOOD: Proper megaYield usage
+await clock.advance(by: .seconds(5))
+await Task.megaYield(count: 5)  // Allow async tasks to process
+
+❌ // BAD: Multiple consecutive megaYield calls
+await clock.advance(by: .seconds(5))
+await Task.megaYield()
+await Task.megaYield()
+await Task.megaYield()
+
+❌ // BAD: No megaYield after clock advance
+await clock.advance(by: .seconds(5))
+// Missing yield - async tasks may not complete
+```
+
+**Why `megaYield` is critical:**
+- TestClock advancement is synchronous, but triggered async tasks need time to process
+- `megaYield(count: N)` ensures async operations complete before assertions
+- Use `count: 5` as a standard (allows multiple yield cycles)
+
+### Pattern 2: MockDateProvider for Date Testing
+
+**Use `MockDateProvider` or `TimeTraveller` for testing code that needs current date:**
+
+```swift
+✅ // GOOD: MockDateProvider pattern
+class MockDateProvider {
+    private var date: Date
+    
+    init(date: Date = Date()) {
+        self.date = date
+    }
+    
+    func setNowDate(_ date: Date) {
+        self.date = date
+    }
+    
+    func advanceBy(_ timeInterval: TimeInterval) {
+        date.addTimeInterval(timeInterval)
+    }
+    
+    func getDate() -> Date {
+        date
+    }
+}
+
+func testDateBasedLogic() {
+    let mockDateProvider = MockDateProvider(date: Date(timeIntervalSince1970: 0))
+    let service = MyService(dateProvider: mockDateProvider.getDate)
+    
+    // Test with specific date
+    let result1 = service.processData()
+    XCTAssertEqual(result1.timestamp, Date(timeIntervalSince1970: 0))
+    
+    // Advance time and test again
+    mockDateProvider.advanceBy(TimeInterval.days(1))
+    let result2 = service.processData()
+    XCTAssertEqual(result2.timestamp, Date(timeIntervalSince1970: 86400))
+}
+
+// Production service with injectable date provider
+class MyService {
+    private let dateProvider: () -> Date
+    
+    init(dateProvider: @escaping () -> Date = Date.init) {
+        self.dateProvider = dateProvider
+    }
+    
+    func processData() -> DataResult {
+        return DataResult(timestamp: dateProvider(), data: "...")
+    }
+}
+```
+
+### Pattern 3: Protocol-Based Date Injection
+
+**For more complex date/time scenarios, use protocol injection:**
+
+```swift
+✅ // GOOD: Protocol-based date injection
+protocol CurrentDateProviding {
+    var currentDate: Date { get }
+}
+
+extension Date: CurrentDateProviding {
+    public var currentDate: Date { self }
+}
+
+class MockDateProvider: CurrentDateProviding {
+    var currentDate: Date
+    
+    init(currentDate: Date = Date()) {
+        self.currentDate = currentDate
+    }
+}
+
+class MyService {
+    private let dateProvider: CurrentDateProviding
+    
+    init(dateProvider: CurrentDateProviding = Date()) {
+        self.dateProvider = dateProvider
+    }
+    
+    func isExpired(_ item: Item) -> Bool {
+        return item.expiryDate < dateProvider.currentDate
+    }
+}
+
+func testExpiryLogic() {
+    let mockDateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: 1000))
+    let service = MyService(dateProvider: mockDateProvider)
+    
+    let expiredItem = Item(expiryDate: Date(timeIntervalSince1970: 500))
+    let validItem = Item(expiryDate: Date(timeIntervalSince1970: 1500))
+    
+    XCTAssertTrue(service.isExpired(expiredItem))
+    XCTAssertFalse(service.isExpired(validItem))
+}
+```
+
+### Pattern 4: Combined TestClock and MockDateProvider
+
+**For services that need both current time and sleep capabilities:**
+
+```swift
+✅ // GOOD: Combined time and sleep mocking
+func testServiceWithTimeAndSleep() async throws {
+    let mockDateProvider = MockDateProvider(date: Date(timeIntervalSince1970: 0))
+    let clock = TestClock<Duration>()
+    let sleeper = Sleeper(clock: clock)
+    
+    let service = MyTimedService(
+        dateProvider: mockDateProvider.getDate,
+        sleeper: sleeper
+    )
+    
+    let expectation = expectation(description: "Operation should complete")
+    
+    service.onOperationComplete = { result in
+        // Verify the result includes the correct timestamp
+        XCTAssertEqual(result.startTime, Date(timeIntervalSince1970: 0))
+        expectation.fulfill()
+    }
+    
+    // Start operation
+    let task = service.startOperation()
+    
+    // Advance mock time (affects dateProvider)
+    mockDateProvider.advanceBy(5.0)
+    
+    // Advance test clock (affects sleeper)
+    await clock.advance(by: .seconds(1))
+    
+    await fulfillment(of: [expectation], timeout: 1.0)
+    task.cancel()
+}
+```
+
+### Time Testing Best Practices
+
+1. **Always inject time dependencies** - Never use `Date()` or `Task.sleep()` directly in production code
+2. **Use TestClock for async operations** - When testing `Task.sleep()`, `Task.periodic`, or `Sleeper`
+3. **Use MockDateProvider for date logic** - When testing date comparisons, timestamps, or date-based decisions
+4. **Test time progression** - Use `advance()` methods to test how your code behaves over time
+5. **Test boundary conditions** - Test behavior at midnight, month boundaries, leap years, etc.
+6. **Keep time control granular** - Advance time by specific amounts rather than arbitrary delays
+
+### Common Time Testing Mistakes
+
+❌ **Don't use real time in tests:**
+```swift
+// BAD: Unreliable and slow
+func testBadTimePattern() async {
+    service.scheduleTask()
+    try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+    XCTAssertTrue(service.taskCompleted)
+}
+```
+
+✅ **Use mock time instead:**
+```swift
+// GOOD: Fast and deterministic
+func testGoodTimePattern() async {
+    let clock = TestClock<Duration>()
+    let service = MyService(sleeper: Sleeper(clock: clock))
+    
+    let expectation = expectation(description: "Task should complete")
+    service.onTaskComplete = { expectation.fulfill() }
+    
+    service.scheduleTask()
+    await clock.advance(by: .seconds(2))
+    
+    await fulfillment(of: [expectation], timeout: 1.0)
+}
+```
+
+**Remember: Control time in tests, don't wait for it!**
 
 ### Error Testing
 Test both success and failure cases:
@@ -1158,16 +1467,78 @@ Download log artifacts from GitHub Actions
 ### 2. Reproduce Locally
 Use command line tools for consistent reproduction:
 
-```bash
-# Use xcodebuild, set same environment variables as CI
-xcodebuild -project macOS/DuckDuckGo.xcodeproj -scheme 'DuckDuckGo (macOS)' -configuration Debug -destination 'platform=macOS' test -only-testing:DuckDuckGo_Privacy_BrowserTests/TabViewModelTests/testDisplayedFaviconForAIChat
-
-# Use swift test for BSK and shared packages
-cd SharedPackages/BrowserServicesKit
-swift test --filter NavigationTests.DistributedNavigationDelegateTests.testWhenCustomHeadersAreSet_headersAreSent
+# Run macOS tests
+xcodebuild test \
+  -scheme "macOS Browser" \
+  -configuration "Debug" \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
+  -allowProvisioningUpdates=NO \
+  -only-testing:Unit\ Tests
 ```
 
-> ⚠️ **AI Assistant Note**: These commands are examples for manual execution only. Never run test commands automatically without explicit user permission.
+```bash
+# Run specific macOS Unit Test (e.g., HotspotDetectionServiceTests)
+xcodebuild test \
+  -scheme "macOS Browser" \
+  -configuration "Debug" \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
+  -only-testing:Unit\ Tests/HotspotDetectionServiceTests \
+  -allowProvisioningUpdates=NO
+```
+
+### Integration Tests
+```bash
+# Run specific macOS Integration Test (e.g., DownloadsIntegrationTests)
+xcodebuild test \
+  -scheme "macOS Browser" \
+  -configuration "Debug" \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
+  -only-testing:Integration\ Tests/DownloadsIntegrationTests \
+  -allowProvisioningUpdates=NO
+
+# Run all Integration Tests
+xcodebuild test \
+  -scheme "macOS Browser" \
+  -configuration "Debug" \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
+  -only-testing:Integration\ Tests \
+  -allowProvisioningUpdates=NO
+```
+
+### UI Tests
+```bash
+# Run iOS UI tests
+xcodebuild test \
+  -scheme "iOS Browser" \
+  -workspace DuckDuckGo.xcworkspace \
+  -destination "platform=iOS Simulator,name=iPhone 15 Pro" \
+  -only-testing:UITests
+
+# Run macOS UI tests
+xcodebuild test \
+  -scheme "macOS UI Tests" \
+  -configuration "Review" \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
+  -allowProvisioningUpdates=NO \
+  -only-testing:UI\ Tests
+```
+
+# Run specific macOS UI test case
+xcodebuild test \
+  -scheme "macOS UI Tests" \
+  -configuration "Review" \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
+  -allowProvisioningUpdates=NO \
+  -only-testing:UI\ Tests/DownloadsUITests
+```
+
+> ⚠️ **AI Assistant Note**: Never run test commands automatically without explicit user permission.
 
 ### 3. Reproduce Flaky Tests
 Reduce timeouts to increase failure rate locally:
@@ -1205,3 +1576,84 @@ xcodebuild test -scheme YourScheme
 ---
 
 **For questions or improvements to this guide, please contribute to the documentation or reach out to the iOS/macOS team.**
+
+### Recovering UI Automation Mode (MANDATORY when runner fails to initialize)
+
+When every UI test fails immediately with errors like:
+
+- "The test runner failed to initialize for UI testing. (Underlying Error: Timed out while enabling automation mode.)"
+
+Follow these steps in order:
+
+1) Verify and re-grant Privacy permissions
+- System Settings → Privacy & Security → Accessibility: enable Terminal and Xcode/Xcode-beta
+- System Settings → Privacy & Security → Automation: under Xcode/Xcode-beta, allow controlling “System Events” and Finder
+
+2) Refresh the user session
+- Quit Xcode and Terminal
+- Log out and back in (preferred) or reboot the machine
+- After login, open Xcode once to re-establish automation trust prompts
+
+3) Optional: Reset TCC entries (you will need to re-grant prompts)
+```bash
+tccutil reset Accessibility com.apple.dt.Xcode com.apple.dt.Xcode-Beta com.apple.Terminal
+tccutil reset AppleEvents com.apple.dt.Xcode com.apple.dt.Xcode-Beta com.apple.Terminal
+```
+
+4) Sanity-check with a minimal known-green test
+- Run a single previously passing UI test/class (e.g., HTTPSUpgradeUITests) before running failing classes
+
+Notes:
+- Restarting `testmanagerd` is restricted by SIP on recent macOS versions and usually not necessary once you refresh the session.
+- Record environment-related failures in `failing-ui-tests.md` and resume class-by-class once automation is restored.
+
+### Parsing xcresult Failures (MANDATORY)
+
+Always extract failures from `.xcresult` to drive fixes. Use these exact steps:
+
+1) Dump legacy JSON to a temp file
+
+```bash
+xcrun xcresulttool get object --format json --legacy --path \
+"/Users/admin/Library/Developer/Xcode/DerivedData/DuckDuckGo-<HASH>/Logs/Test/Test-macOS UI Tests-YYYY.MM.DD_HH-MM-SS-+ZZZZ.xcresult" \
+> /tmp/xc_root.json
+```
+
+2) Pull top-level failure summaries from ActionResult.issues.testFailureSummaries
+
+```bash
+python3 - << 'PY'
+import json, re
+j=json.load(open('/tmp/xc_root.json'))
+vals = j.get('actions',{}).get('_values') or []
+if not vals:
+    raise SystemExit('no actions in xcresult json')
+act = vals[0]
+fails = ((act.get('actionResult',{})
+           .get('issues',{})
+           .get('testFailureSummaries',{})
+           .get('_values')) or [])
+
+def decode_url(url):
+    if not url: return ('','')
+    m = re.match(r'^file:\/\/(.*?)#.*StartingLineNumber=(\d+)', url)
+    return (m.group(1), m.group(2)) if m else (url,'')
+
+for f in fails:
+    name = (f.get('testCaseName') or {}).get('_value','')
+    msg  = (f.get('message') or {}).get('_value','')
+    url  = (f.get('documentLocationInCreatingWorkspace') or {}).get('url',{}).get('_value','')
+    filePath, line = decode_url(url)
+    print(f"{name}\t{' '.join(msg.split())}\t{filePath}\t{line}")
+PY
+```
+
+Notes:
+- Use `--legacy`; the non-legacy command is deprecated and returns no JSON here.
+- If per-test details aren't under the top-level summaries, traverse `actions._values[].actionResult.testsRef` and follow `summaryRef` ids for each leaf test to collect `failureSummaries`.
+- Never guess failures by console output; always parse `.xcresult`.
+
+3) Update `failing-ui-tests.md` with a flat list of ❌ tests and exact reasons (include `file:line` when available). Then fix tests one by one, marking progress as:
+- ❓ fixed/unchecked
+- ✅ validated
+- ❌ still failing — reason

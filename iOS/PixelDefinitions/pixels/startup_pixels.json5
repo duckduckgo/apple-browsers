@@ -14,7 +14,7 @@
         ],
     },
     'm_keyboard_settings_on_new_tab_enabled': {
-        description: 'Fires daily to track the status of the "Show keyboard on new tab" setting',
+        description: 'Fires daily to measure the status of the "Show keyboard on new tab" setting',
         owners: ['bunn'],
         triggers: ['other'],
         suffixes: ['daily', 'platform', 'form_factor'],
@@ -28,7 +28,7 @@
         ],
     },
     'm_keyboard_settings_on_app_launch_enabled': {
-        description: 'Fires daily to track the status of the "Show keyboard on app launch" setting',
+        description: 'Fires daily to measure the status of the "Show keyboard on app launch" setting',
         owners: ['bunn'],
         triggers: ['other'],
         suffixes: ['daily', 'platform', 'form_factor'],

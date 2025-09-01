@@ -107,6 +107,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
+    private var hasFiredImpressionPixel = false
 
     private var wasDimissed: Bool {
         guard let wasDismissed = keyValueStore.object(forKey: source.wasDismissedKey) as? Bool else {
@@ -141,6 +142,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         source: DismissableSyncDevicePromoSource,
         keyValueStore: KeyValueStoring,
         authStatePublisher: AnyPublisher<SyncAuthState, Never>,
+        initialAuthState: SyncAuthState,
         syncLauncher: SyncDeviceFlowLaunching?,
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     ) {
@@ -148,6 +150,7 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         self.keyValueStore = keyValueStore
         self.syncLauncher = syncLauncher
         self.featureFlagger = featureFlagger
+        self.authState = initialAuthState
         authStatePublisher
             .receive(on: DispatchQueue.main)
             .assign(to: \.authState, onWeaklyHeld: self)
@@ -166,7 +169,10 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             shouldShowSyncButton = false
             return
         }
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
+        if !hasFiredImpressionPixel {
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
+            hasFiredImpressionPixel = true
+        }
         shouldShowSyncButton = true
     }
 
@@ -222,14 +228,17 @@ extension DismissableSyncDeviceButtonModel {
     convenience init(source: DismissableSyncDevicePromoSource, keyValueStore: KeyValueStoring) {
         let authStatePublisher: AnyPublisher<SyncAuthState, Never>
         let syncLauncher: SyncDeviceFlowLaunching?
-        if let syncService = NSApp.delegateTyped.syncService, let syncPausedStateManager = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler{
+        let initialAuthState: SyncAuthState
+        if let syncService = NSApp.delegateTyped.syncService, let syncPausedStateManager = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler {
             authStatePublisher = syncService.authStatePublisher
             syncLauncher = DeviceSyncCoordinator(syncService: syncService, syncPausedStateManager: syncPausedStateManager)
+            initialAuthState = syncService.authState
         } else {
             authStatePublisher = Just<SyncAuthState>(.initializing).eraseToAnyPublisher()
             syncLauncher = nil
+            initialAuthState = .initializing
         }
-        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher, syncLauncher: syncLauncher)
+        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher, initialAuthState: initialAuthState, syncLauncher: syncLauncher)
     }
 }
 

@@ -298,6 +298,7 @@ final class DismissableSyncDeviceButtonModelTests: XCTestCase {
             source: source,
             keyValueStore: mockKeyValueStore,
             authStatePublisher: authStateSubject.eraseToAnyPublisher(),
+            initialAuthState: .initializing,
             syncLauncher: mockSyncLauncher,
             featureFlagger: mockFeatureFlagger
         )

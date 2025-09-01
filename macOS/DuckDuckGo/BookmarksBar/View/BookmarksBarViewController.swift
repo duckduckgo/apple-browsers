@@ -149,12 +149,6 @@ final class BookmarksBarViewController: NSViewController {
         syncButtonDivider.fillColor = .textPrimary
         syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
         syncDismissButton.contentTintColor = .textPrimary
-
-        syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
-            self?.syncButton.isHidden = !$0
-            self?.syncButtonZeroWidthConstraint.priority = $0 ? .defaultLow : .required
-        }
-        .store(in: &cancellables)
     }
 
     private func setUpImportBookmarksButton() {
@@ -253,6 +247,12 @@ final class BookmarksBarViewController: NSViewController {
                 mouseDidHover(over: clippedItemsIndicator)
             }
             .store(in: &cancellables)
+
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
+            self?.syncButton.isHidden = !$0
+            self?.syncButtonZeroWidthConstraint.priority = $0 ? .defaultLow : .required
+        }
+        .store(in: &cancellables)
     }
 
     private func unsubscribeFromEvents() {

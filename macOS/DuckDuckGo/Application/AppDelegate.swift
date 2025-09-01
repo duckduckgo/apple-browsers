@@ -1052,8 +1052,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             vpnAppEventsHandler.applicationDidBecomeActive()
         }
-
-        widePixelService.resume()
     }
 
     private func fireDailyActiveUserPixel() {

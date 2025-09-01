@@ -868,11 +868,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 }
 
                 return nil
-            case .accountCreationFailed:
+            case .accountCreationFailed(let accountCreationError):
                 setTransactionError(.accountCreationFailed)
 
                 if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
-                    widePixelData.markAsFailed(at: .accountCreate, error: error)
+                    widePixelData.markAsFailed(at: .accountCreate, error: accountCreationError)
                     widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
                 }
             case .activeSubscriptionAlreadyPresent:
@@ -883,6 +883,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 }
 
                 setTransactionError(.activeSubscriptionAlreadyPresent)
+            case .internalError(let internalError):
+                setTransactionError(.purchaseFailed)
+
+                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+                    widePixelData.markAsFailed(at: .accountPayment, error: internalError ?? error)
+                    widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })
+                }
             default:
                 setTransactionError(.purchaseFailed)
 

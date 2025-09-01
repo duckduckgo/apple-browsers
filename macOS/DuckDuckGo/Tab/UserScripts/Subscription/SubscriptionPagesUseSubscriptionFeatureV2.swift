@@ -411,7 +411,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         completeWidePixelFlow(with: error)
                     case .cancelledByUser:
                         subscriptionErrorReporter.report(subscriptionActivationError: .cancelledByUser)
-                        completeWidePixelFlow(with: error)
+
+                        if let widePixelData {
+                            widePixel.completeFlow(widePixelData, status: .cancelled, onComplete: { _, _ in })
+                        }
                     case .missingEntitlements:
                         // This case deliberately avoids sending a failure wide pixel in case activation succeeds later
                         subscriptionErrorReporter.report(subscriptionActivationError: .missingEntitlements)
@@ -420,8 +423,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         }
                         await uiHandler.dismissProgressViewController()
                         return nil
-                    case .internalError:
-                        completeWidePixelFlow(with: error)
+                    case .internalError(let internalError):
+                        completeWidePixelFlow(with: internalError ?? error)
                         assertionFailure("Internal error")
                     }
 

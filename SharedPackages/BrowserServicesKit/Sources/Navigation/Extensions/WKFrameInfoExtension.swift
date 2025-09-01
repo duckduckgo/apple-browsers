@@ -68,8 +68,10 @@ public extension WKFrameInfo {
             return "\(("\(file)" as NSString).lastPathComponent):\(line + 1)"
         }
 
+        let symbol = callingSymbol()
+
         // don‘t break twice
-        if Self.ignoredRequestUsageSymbols.insert(callingSymbol()).inserted {
+        if !symbol.contains("WebExtensionDynamicScripts") && Self.ignoredRequestUsageSymbols.insert(symbol).inserted {
             breakByRaisingSigInt("Don‘t use `WKFrameInfo.request` as it has incorrect nullability\n" +
                                  "Use `WKFrameInfo.safeRequest` instead")
         }

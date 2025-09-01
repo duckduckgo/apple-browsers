@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 /// New version of this protocol that allows us to maintain backwards-compatibility with PixelKitEvent
 ///
@@ -28,7 +29,12 @@ import Foundation
 /// pixels, and to allow us to migrate towards this incrementally.
 ///
 public protocol PixelKitEventV2: PixelKitEvent {
-    var error: Error? { get }
+    var error: (any DDGError)? { get }
+}
+
+public extension PixelKitEventV2 {
+
+    var error: (any DDGError)? { nil }
 }
 
 /// Protocol to support mocking pixel firing.

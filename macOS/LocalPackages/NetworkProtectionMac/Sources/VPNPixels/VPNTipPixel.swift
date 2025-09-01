@@ -42,10 +42,6 @@ public enum VPNTipPixel: VPNPixel {
         }
     }
 
-    public var error: (any Error)? {
-        nil
-    }
-
     public var parameters: [String: String]? {
         nil
     }

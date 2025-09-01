@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 public extension PixelKit {
 
@@ -89,37 +90,50 @@ public extension PixelKit {
 
 }
 
+@available(*, deprecated, message: "Please, with PixelKit use DDGError instead of a generic Error")
 public protocol ErrorWithPixelParameters {
 
     var errorParameters: [String: String] { get }
-
 }
 
-public extension Error {
+extension DDGError {
 
     var pixelParameters: [String: String] {
+
+        var errorToProcess: Error = self
+        if self is PixelKit.DDGErrorPixelKitWrapper,
+           let underlyingError = self.underlyingError{
+            // The first error in the chain is just a wrapper because the error passed was not a DDGError. We discard it
+            errorToProcess = underlyingError
+        }
+
         var params = [String: String]()
 
-        if let errorWithUserInfo = self as? ErrorWithPixelParameters {
-            params = errorWithUserInfo.errorParameters
-        }
+        if let ddgError = underlyingError as? any DDGError {
+            params[PixelKit.Parameters.errorCode] = String(ddgError.errorCode)
+            params[PixelKit.Parameters.errorDomain] = ddgError.e
+        } else {
+            if let errorWithUserInfo = errorToProcess as? ErrorWithPixelParameters {
+                params = errorWithUserInfo.errorParameters
+            }
 
-        let nsError = self as NSError
+            let nsError = errorToProcess as NSError
 
-        params[PixelKit.Parameters.errorCode] = "\(nsError.code)"
-        params[PixelKit.Parameters.errorDomain] = nsError.domain
+            params[PixelKit.Parameters.errorCode] = "\(nsError.code)"
+            params[PixelKit.Parameters.errorDomain] = nsError.domain
 
-        let underlyingErrorParameters = self.underlyingErrorParameters(for: nsError)
-        params.merge(underlyingErrorParameters) { first, _ in
-            return first
-        }
+            let underlyingErrorParameters = self.underlyingErrorParameters(for: nsError)
+            params.merge(underlyingErrorParameters) { first, _ in
+                return first
+            }
 
-        if let sqlErrorCode = nsError.userInfo["SQLiteResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
-        }
+            if let sqlErrorCode = nsError.userInfo["SQLiteResultCode"] as? NSNumber {
+                params[PixelKit.Parameters.underlyingErrorSQLiteCode] = "\(sqlErrorCode.intValue)"
+            }
 
-        if let sqlExtendedErrorCode = nsError.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
-            params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
+            if let sqlExtendedErrorCode = nsError.userInfo["SQLiteExtendedResultCode"] as? NSNumber {
+                params[PixelKit.Parameters.underlyingErrorSQLiteExtendedCode] = "\(sqlExtendedErrorCode.intValue)"
+            }
         }
 
         return params
@@ -127,7 +141,7 @@ public extension Error {
 
     /// Recursive call to add underlying error information
     ///
-    func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
+    private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
             let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
             let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))

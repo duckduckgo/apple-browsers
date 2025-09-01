@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import Common
 
 /// Pixels to understand domain exclusion engagement
 ///
@@ -56,9 +57,5 @@ public enum DomainExclusionsEngagementPixel: VPNPixel {
         case .exclusionRemoved:
             return [:]
         }
-    }
-
-    public var error: Error? {
-        return nil
     }
 }

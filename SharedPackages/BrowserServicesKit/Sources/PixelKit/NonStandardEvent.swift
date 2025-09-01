@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 /// This custom event is used for special cases, like pixels with non-standard names and uses, these pixels are sent as is and the names remain unchanged
 public final class NonStandardEvent: PixelKitEventV2 {
@@ -35,7 +36,7 @@ public final class NonStandardEvent: PixelKitEventV2 {
         event.parameters
     }
 
-    public var error: Error? {
+    public var error: (any DDGError)? {
         event.error
     }
 }

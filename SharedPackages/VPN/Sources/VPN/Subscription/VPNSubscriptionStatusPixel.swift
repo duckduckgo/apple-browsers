@@ -77,10 +77,6 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         }
     }
 
-    public var error: (any Error)? {
-        nil
-    }
-
     static func sourceClass(from sourceObject: Any?) -> String {
         guard let sourceObject else {
             return "nil"

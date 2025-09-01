@@ -218,7 +218,7 @@ public final class WidePixel: WidePixelManaging {
             frequency: .standard,
             withHeaders: nil,
             withAdditionalParameters: nil,
-            withError: nil,
+            withDDGError: nil,
             allowedQueryReservedCharacters: nil,
             includeAppVersionParameter: true,
             includePixelSourceParameter: false,

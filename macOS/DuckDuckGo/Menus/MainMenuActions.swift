@@ -999,6 +999,10 @@ extension MainViewController {
         LocalPinningManager.shared.togglePinning(for: .downloads)
     }
 
+    @objc func toggleShareShortcut(_ sender: Any) {
+        LocalPinningManager.shared.togglePinning(for: .share)
+    }
+
     @objc func toggleNetworkProtectionShortcut(_ sender: Any) {
         LocalPinningManager.shared.togglePinning(for: .networkProtection)
     }

@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Kustuta sirvimisandmed ühe nupuga";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokeeri kolmanda poole jälgurid";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatuur";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Loe edasi";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Luba DuckDuckGo'l hallata küpsiste nõusoleku hüpikaknaid";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Seaded";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Aitab blokeerida kolmanda poole jälgureid, mis üritavad end DNS-i abil veebisaidil maskeerida.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Kaitseb DNS CNAME varjamise eest";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Keelab Facebooki sisu, näiteks Facebooki kommentaaride vidinate jälgimise Facebooki-välistel saitidel.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebooki jälgimise kaitse";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Aitab takistada jälgimisfirmadel hankida sinu brauseri ja seadme kohta kordumatuid tunnuseid, mida nad kasutavad sinu jälgimiseks veebis.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Takistab sõrmejälje jälgimist";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Muudab 30 päeva pärast automaatselt esimese poole küpsised kehtetuks, tagades, et veebilehed ei saa sind piiramatult jälgida, kui oled välja loginud.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Muudab esimese poole küpsised aegunuks";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Asendab Google AMPi lingid algse avaldaja saidiga.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokeerib Google'i AMP jälgimise";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokeerib Google'i sisselogimise hüpikaknad saitidel, mida Google ei oma.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokeerib Google'i sisselogimise hüpikaknad";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Eemaldab linkide jälgimisparameetrid, et vältida kolmandate osapoolte jälgimist sinu käitumise jälgimisel saitidel.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokeerib linkide jälgimise";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Aitab blokeerida ettevõtetel tuvastada viimast külastatud veebisaiti.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Kaitseb suunaja jälgimise eest";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blokeerib invasiivsed jälgijad enne nende laadimist, kõrvaldades tõhusalt reklaamid, mis tuginevad jälgimisele.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokeerib suunatud reklaamid";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Aitab blokeerida kolmanda poole küpsiseid, mis jälgivad sind lehelt lehele, takistades kolmanda poole jälgijate laadimist.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokeerib kolmanda poole jälgurid";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Kaitseta saidid";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Veebijälgimise kaitse";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Veebi jälgimiskaitse on alati sisse lülitatud";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blokeerib automaatselt peidetud jälgijaid, kui sa veebis sirvid.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Kuidas me sind kaitseme";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo brauser pakub jälgimiskaitseid, mis on alati aktiivsed. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vali suvand, mis kirjeldab sinu probleemi kõige paremini.";

@@ -200,7 +200,8 @@ final class UserScripts: UserScriptsProvider {
             delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                  stripePurchaseFlow: stripePurchaseFlow,
                                                                  uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL)
+                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL,
+                                                                 widePixel: WidePixel())
         }
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)

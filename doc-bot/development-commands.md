@@ -111,7 +111,8 @@ Replace the placeholders with your detected values:
   -configuration Debug \
   -workspace <REPLACE_WITH_WORKSPACE_PATH> \
   -destination "platform=macOS,arch=<REPLACE_WITH_ARCHITECTURE>" \
-  -allowProvisioningUpdates \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
   -disableAutomaticPackageResolution \
   -parallelizeTargets \
   build | xcbeautify'
@@ -313,8 +314,6 @@ Understanding what each flag does:
 ### Available Schemes
 - `iOS Browser` - Main iOS app
 - `macOS Browser` - Main macOS app (sometimes called "DuckDuckGo")
-- `iOS Unit Tests` - iOS test suite
-- `macOS Unit Tests` - macOS test suite
 
 ### Useful Commands
 ```bash

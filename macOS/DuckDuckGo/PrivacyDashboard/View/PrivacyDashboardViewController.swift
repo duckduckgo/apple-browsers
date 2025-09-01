@@ -151,6 +151,7 @@ final class PrivacyDashboardViewController: NSViewController {
 #endif
         let webView = PrivacyDashboardWebView(frame: .zero, configuration: configuration)
         webView.setValue(false, forKey: "drawsBackground")
+        webView.setAccessibilityIdentifier("PrivacyDashboard")
         self.webView = webView
         view.addAndLayout(webView)
 

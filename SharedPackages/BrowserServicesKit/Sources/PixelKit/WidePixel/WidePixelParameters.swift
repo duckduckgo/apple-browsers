@@ -92,6 +92,7 @@ public enum WidePixelParameter {
         static let name = "feature.name"
         static let status = "feature.status"
         static let statusReason = "feature.status_reason"
+        static let experimentIDs = "feature.experiment_ids"
 
         static let errorDomain = "feature.data.error.domain"
         static let errorCode = "feature.data.error.code"

@@ -107,7 +107,7 @@ class AutoClearHandlerTests: XCTestCase {
 final class MockVisualizeFireAnimationDecider: VisualizeFireSettingsDecider {
     var isOpenFireWindowByDefaultEnabled: Bool = false
 
-    var shouldShowOpenFireWindoyByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false)
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false)
         .eraseToAnyPublisher()
 
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true)

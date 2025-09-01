@@ -104,8 +104,8 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
 
         var purchaseTransactionJWS: String?
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
-        case .success(let transactionJWS):
-            purchaseTransactionJWS = transactionJWS
+        case .success(let payload):
+            purchaseTransactionJWS = payload.transactionJWS
         case .failure(let error):
             XCTFail("Purchase failed with error: \(error)")
         }
@@ -206,8 +206,8 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
 
         var purchaseTransactionJWS: String?
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
-        case .success(let transactionJWS):
-            purchaseTransactionJWS = transactionJWS
+        case .success(let payload):
+            purchaseTransactionJWS = payload.transactionJWS
         case .failure(let error):
             XCTFail("Purchase failed with error: \(error)")
         }
@@ -237,8 +237,8 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
 
         var purchaseTransactionJWS: String?
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
-        case .success(let transactionJWS):
-            purchaseTransactionJWS = transactionJWS
+        case .success(let payload):
+            purchaseTransactionJWS = payload.transactionJWS
         case .failure(let error):
             XCTFail("Purchase failed with error: \(error)")
         }
@@ -266,9 +266,9 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         let email = "test@duck.com"
         let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: email)
         switch result {
-        case .success(let success):
-            XCTAssertNotNil(success.type)
-            XCTAssertNotNil(success.token)
+        case .success(let payload):
+            XCTAssertNotNil(payload.purchaseUpdate.type)
+            XCTAssertNotNil(payload.purchaseUpdate.token)
         case .failure(let error):
             XCTFail("Purchase failed with error: \(error)")
         }

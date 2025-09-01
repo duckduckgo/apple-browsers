@@ -24,6 +24,7 @@ public protocol SubscriptionFeatureAvailability {
     var isPaidAIChatEnabled: Bool { get }
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
     var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
+    var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
@@ -32,6 +33,7 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
     private let paidAIChatFlagStatusProvider: () -> Bool
     private let supportsAlternateStripePaymentFlowStatusProvider: () -> Bool
+    private let isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: () -> Bool
 
     /// Initializes a new instance of `DefaultSubscriptionFeatureAvailability`.
     ///
@@ -43,11 +45,13 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
                 purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
                 paidAIChatFlagStatusProvider: @escaping () -> Bool,
-                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool) {
+                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool,
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: @escaping () -> Bool) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.purchasePlatform = purchasePlatform
         self.paidAIChatFlagStatusProvider = paidAIChatFlagStatusProvider
         self.supportsAlternateStripePaymentFlowStatusProvider = supportsAlternateStripePaymentFlowStatusProvider
+        self.isSubscriptionPurchaseWidePixelMeasurementEnabledProvider = isSubscriptionPurchaseWidePixelMeasurementEnabledProvider
     }
 
     public var isSubscriptionPurchaseAllowed: Bool {
@@ -75,7 +79,11 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
         supportsAlternateStripePaymentFlowStatusProvider()
     }
 
-// MARK: - Conditions
+    public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
+        isSubscriptionPurchaseWidePixelMeasurementEnabledProvider()
+    }
+
+    // MARK: - Conditions
 
     private var isInternalUser: Bool {
         privacyConfigurationManager.internalUserDecider.isInternalUser

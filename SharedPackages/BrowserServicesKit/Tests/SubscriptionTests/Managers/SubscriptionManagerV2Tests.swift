@@ -124,7 +124,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         do {
             try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
         } catch SubscriptionEndpointServiceError.noData {
-            
+
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

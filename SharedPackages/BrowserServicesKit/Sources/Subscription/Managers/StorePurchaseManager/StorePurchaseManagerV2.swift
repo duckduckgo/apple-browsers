@@ -94,7 +94,7 @@ public enum StorePurchaseManagerError: DDGError {
 
     public static func == (lhs: StorePurchaseManagerError, rhs: StorePurchaseManagerError) -> Bool {
         switch (lhs, rhs) {
-            case (.unknownError, .unknownError),
+        case (.unknownError, .unknownError),
             (.externalIDisNotAValidUUID, .externalIDisNotAValidUUID),
             (.transactionCannotBeVerified, .transactionCannotBeVerified),
             (.transactionPendingAuthentication, .transactionPendingAuthentication),

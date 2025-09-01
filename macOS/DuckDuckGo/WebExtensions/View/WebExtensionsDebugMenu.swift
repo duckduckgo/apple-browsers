@@ -67,10 +67,6 @@ final class WebExtensionsDebugMenu: NSMenu {
         bitwardenItem.target = self
         submenu.addItem(bitwardenItem)
 
-        let onePasswordItem = NSMenuItem(title: "1Password", action: #selector(installOnePasswordExtension))
-        onePasswordItem.target = self
-        submenu.addItem(onePasswordItem)
-
         return submenu
     }
 
@@ -105,13 +101,6 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     @objc func installBitwardenExtension() {
         let path = WebExtensionIdentifier.bitwarden.defaultPath
-        Task {
-            await webExtensionManager.installExtension(path: path)
-        }
-    }
-
-    @objc func installOnePasswordExtension() {
-        let path = WebExtensionIdentifier.onePassword.defaultPath
         Task {
             await webExtensionManager.installExtension(path: path)
         }

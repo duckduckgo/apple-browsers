@@ -2237,8 +2237,6 @@
 		7BD504CB2E606097008A0646 /* WebExtensionLoadResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504C92E606097008A0646 /* WebExtensionLoadResult.swift */; };
 		7BD504CD2E606996008A0646 /* WebExtensionIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504CC2E606996008A0646 /* WebExtensionIdentifier.swift */; };
 		7BD504CE2E606996008A0646 /* WebExtensionIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504CC2E606996008A0646 /* WebExtensionIdentifier.swift */; };
-		7BD504D02E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504CF2E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift */; };
-		7BD504D12E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504CF2E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift */; };
 		7BD7B0012C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
 		7BD7B0022C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
 		7BD7B0032C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
@@ -4902,7 +4900,6 @@
 		7BD504C02E5FC791008A0646 /* NativeMessagingHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandling.swift; sourceTree = "<group>"; };
 		7BD504C92E606097008A0646 /* WebExtensionLoadResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionLoadResult.swift; sourceTree = "<group>"; };
 		7BD504CC2E606996008A0646 /* WebExtensionIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionIdentifier.swift; sourceTree = "<group>"; };
-		7BD504CF2E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnePasswordNativeMessagingHandler.swift; sourceTree = "<group>"; };
 		7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNIPCResources.swift; sourceTree = "<group>"; };
 		7BD8679A2A9E9E000063B9F7 /* VPNFeatureGatekeeper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNFeatureGatekeeper.swift; sourceTree = "<group>"; };
 		7BDA36E52B7E037100AD5388 /* VPNProxyExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VPNProxyExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -8389,7 +8386,6 @@
 				7BD504B22E5FC740008A0646 /* NativeMessagingCoordinator.swift */,
 				7BD504B32E5FC740008A0646 /* NativeMessagingHandlerFactory.swift */,
 				7BD504C02E5FC791008A0646 /* NativeMessagingHandling.swift */,
-				7BD504CF2E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift */,
 			);
 			path = NativeMessaging;
 			sourceTree = "<group>";
@@ -12689,7 +12685,6 @@
 				84F1C8DF2C774D4200716446 /* NSTableViewExtension.swift in Sources */,
 				3706FA88293F65D500E42796 /* Logger+Multiple.swift in Sources */,
 				3745DE0C2D53969300024FC8 /* HistoryDebugMenu.swift in Sources */,
-				7BD504D12E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift in Sources */,
 				3706FA89293F65D500E42796 /* CrashReportPromptPresenter.swift in Sources */,
 				1DBFD9122D6C7387003F8D98 /* PinnedTabsManagerProvider.swift in Sources */,
 				3706FA8B293F65D500E42796 /* PreferencesRootView.swift in Sources */,
@@ -15614,7 +15609,6 @@
 				4B92928B26670D1700AD2C21 /* BookmarksOutlineView.swift in Sources */,
 				4BF01C00272AE74C00884A61 /* CountryList.swift in Sources */,
 				37CD54CC27F2FDD100F1F7B9 /* PreferencesSection.swift in Sources */,
-				7BD504D02E6071C1008A0646 /* OnePasswordNativeMessagingHandler.swift in Sources */,
 				F1CA67062C7DCA2300264E6A /* Logger+BitWarden.swift in Sources */,
 				4B4D60B62A0C847D00BCD287 /* NetworkProtectionNavBarButtonModel.swift in Sources */,
 				FD23FD2D2886A81D007F6985 /* AutoconsentManagement.swift in Sources */,

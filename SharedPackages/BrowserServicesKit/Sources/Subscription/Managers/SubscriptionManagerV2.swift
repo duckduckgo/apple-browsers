@@ -551,15 +551,15 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func signOut(notifyUI: Bool) async {
         Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false")")
-        try? await oAuthClient.logout()
-        clearSubscriptionCache()
         if notifyUI {
-                cachedIsUserAuthenticated = false
+            cachedIsUserAuthenticated = false
         } else {
             // skipping cached setter for avoiding notification
-                userDefaults.isUserAuthenticated = false
-                userDefaults.userEntitlements = []
-            }
+            userDefaults.isUserAuthenticated = false
+            userDefaults.userEntitlements = []
+        }
+        try? await oAuthClient.logout()
+        clearSubscriptionCache()
         Logger.subscription.log("Removing V1 Account")
         try? legacyAccountStorage?.clearAuthenticationState()
     }

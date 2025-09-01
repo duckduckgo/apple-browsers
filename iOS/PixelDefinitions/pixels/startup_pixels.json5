@@ -42,10 +42,10 @@
         ],
     },
     'm_keyboard_on_app_launch_used': {
-        description: 'Fires daily when the app is launched and the keyboard is shown due to the "Show keyboard on app launch" setting being enabled',
+        description: 'Fires daily and count when the app is launched and the keyboard is shown due to the "Show keyboard on app launch" setting being enabled',
         owners: ['bunn'],
         triggers: ['other'],
-        suffixes: ['daily', 'platform', 'form_factor'],
+        suffixes: ['first_daily_count', 'platform', 'form_factor'],
         parameters: ['appVersion'],
     },
 }

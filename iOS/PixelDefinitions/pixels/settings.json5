@@ -4,13 +4,13 @@
         owners: ['pikorddg'],
         triggers: ['user_submitted'],
         suffixes: ['platform', 'form_factor', 'daily'],
-        parameters: []
+        parameters: [],
     },
     m_settings_refresh_button_position_menu: {
         description: 'Fires when the user sets the refresh button position to the menu in settings',
         owners: ['pikorddg'],
         triggers: ['user_submitted'],
         suffixes: ['platform', 'form_factor', 'daily'],
-        parameters: []
+        parameters: [],
     },
 }

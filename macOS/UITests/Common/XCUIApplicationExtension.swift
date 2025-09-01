@@ -44,6 +44,7 @@ extension XCUIApplication {
         static let mainMenuUnpinTabMenuItem = "Unpin Tab"
         static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
 
+        static let settingsScrollView = "Settings.ScrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
         static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
@@ -394,7 +395,7 @@ extension XCUIApplication {
     }
 
     func ensureHittable(_ element: XCUIElement) {
-        let scrollView = preferencesWindow.scrollViews.containing(element.elementType, where: NSPredicate(value: true)).firstMatch
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
 
         if !element.isHittable {
             // Get the element's frame and scroll view's frame

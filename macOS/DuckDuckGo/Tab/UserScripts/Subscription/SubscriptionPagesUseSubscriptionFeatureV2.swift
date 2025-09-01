@@ -346,6 +346,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                         switch error {
                         case .accountCreationFailed(let creationError):
                             data.markAsFailed(at: .accountCreate, error: creationError)
+                        case .purchaseFailed(let purchaseError):
+                            data.markAsFailed(at: .accountPayment, error: purchaseError)
+                        case .internalError(let internalError):
+                            data.markAsFailed(at: .accountCreate, error: internalError ?? error)
                         default:
                             data.markAsFailed(at: .accountPayment, error: error)
                         }

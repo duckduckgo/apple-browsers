@@ -5,5 +5,5 @@
         triggers: ['user_submitted'],
         suffixes: ['platform', 'form_factor'],
         parameters: [],
-    }
+    },
 }

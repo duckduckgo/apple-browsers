@@ -199,7 +199,7 @@ extension XCUIApplication {
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(url)
+        addressBarTextField.pasteURL(url)
         XCTAssertTrue(
             windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."

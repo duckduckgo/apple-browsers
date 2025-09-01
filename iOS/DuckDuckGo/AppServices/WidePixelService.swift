@@ -88,7 +88,7 @@ final class WidePixelService {
         // Any pixels that aren't pending activation are considered abandoned at launch.
         // Pixels that are pending activation will be handled in the delayed function, in the case that activation takes
         // a while.
-        for data in pending where !(data.activateAccountDuration?.start != nil && data.activateAccountDuration?.end == nil) {
+        for data in pending {
             //  Pending pixels are identified by having an activation start but no end - skip them in this case.
             if data.activateAccountDuration?.start != nil && data.activateAccountDuration?.end == nil {
                 continue

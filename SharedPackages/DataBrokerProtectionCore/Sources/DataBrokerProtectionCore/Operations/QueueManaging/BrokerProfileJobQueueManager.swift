@@ -247,19 +247,16 @@ private extension BrokerProfileJobQueueManager {
             jobQueue.cancelAllOperations()
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
-            resetMode(clearErrors: true)
-            completion?()
             resetMode()
+            completion?()
         default:
             break
         }
     }
 
-    func resetMode(clearErrors: Bool = false) {
+    func resetMode() {
         mode = .idle
-        if clearErrors {
-            operationErrors = []
-        }
+        operationErrors = []
     }
 
     func addJobs(for jobType: JobType,
@@ -293,9 +290,8 @@ private extension BrokerProfileJobQueueManager {
         jobQueue.addBarrierBlock1 { [weak self] in
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self?.operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
-            self?.resetMode(clearErrors: true)
-            completion?()
             self?.resetMode()
+            completion?()
         }
     }
 

@@ -69,7 +69,7 @@ import Foundation
 /// 
 /// // Inspect the complete error chain
 /// print(networkError.errorsChain) // [NetworkError, SimpleError]
-/// print(networkError.errorsChainDebugDescription)
+/// print(networkError.errorsChainDescription)
 /// // Output:
 /// // - Invalid network response received
 /// // - Database unavailable
@@ -77,7 +77,7 @@ import Foundation
 ///
 /// ## Privacy & Security Considerations
 /// - Error descriptions should not contain sensitive user data
-/// - Use `errorsChainDebugDescription` only for debugging/logging purposes
+/// - Use `errorsChainDescription` only for debugging/logging purposes
 /// - Consider implementing privacy-safe descriptions for user-facing errors
 ///
 /// ## Thread Safety
@@ -151,7 +151,7 @@ public protocol DDGError: Error, Equatable, CustomNSError {
     /// }
     /// ```
     ///
-    /// - Note: For user-facing error messages, implement `DDGErrorUIPresentable`.
+    /// - Note: For user-facing error messages, implement `LocalizedError`.
     var description: String { get }
 }
 
@@ -201,7 +201,7 @@ public extension DDGError {
         return errors
     }
 
-    /// Returns a formatted debug string representation of the complete error chain.
+    /// Returns a formatted string representation of the complete error chain.
     ///
     /// This property creates a multi-line string showing all errors in the chain,
     /// with each error on its own line prefixed with a dash. It's designed for
@@ -218,9 +218,8 @@ public extension DDGError {
     /// - For DDGError instances: Uses the `description` property
     /// - For other Error types: Uses Swift's default string representation
     ///
-    /// - Important: This is intended for debugging only. Do not display this to users.
     /// - Returns: A formatted multi-line string representing the error chain.
-    var errorsChainDebugDescription: String {
+    var errorsChainDescription: String {
         let errorsDescriptions = errorsChain.map({ error in
             if let ddgError = error as? (any DDGError) {
                 return ddgError.description

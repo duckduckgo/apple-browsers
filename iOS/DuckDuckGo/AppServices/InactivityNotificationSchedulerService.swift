@@ -40,6 +40,16 @@ final class InactivityNotificationSchedulerService {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let userNotificationCenter: UNUserNotificationCenterRepresentable
     
+    /// Flag for use in playground
+    private var playgroundMode: Bool = false
+#if DEBUG
+    enum DEBUG_VARIABLES {
+        static var secondsInactive: Int = 7
+        static var title: String = UserText.inactivityNotificationTitle
+        static var body: String = UserText.inactivityNotificationBody
+    }
+#endif
+    
     init(featureFlagger: FeatureFlagger,
          notificationServiceManager: NotificationServiceManaging,
          privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -52,6 +62,18 @@ final class InactivityNotificationSchedulerService {
         
         self.userNotificationCenter.delegate = notificationServiceManager
     }
+    
+#if DEBUG
+    /// Playground Initializer
+    convenience init() {
+        self.init(
+            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+            notificationServiceManager: NotificationServiceManager(),
+            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
+        )
+        self.playgroundMode = true
+    }
+#endif
     
     // MARK: - Public
     
@@ -98,6 +120,16 @@ final class InactivityNotificationSchedulerService {
     
     func makeUNNotificationContent(with daysInactive: Int = Constants.defaultDaysInactive) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
+        
+        #if DEBUG
+        if playgroundMode {
+            content.title = DEBUG_VARIABLES.title
+            content.body  = DEBUG_VARIABLES.body
+            content.userInfo = ["secondsInactive": DEBUG_VARIABLES.secondsInactive]
+            return content
+        }
+        #endif
+        
         content.title = UserText.inactivityNotificationTitle
         content.body = UserText.inactivityNotificationBody
         content.userInfo = [Constants.daysInactiveSettingKey: daysInactive]
@@ -132,6 +164,16 @@ final class InactivityNotificationSchedulerService {
     }
     
     private func buildUNNotificationRequest() -> UNNotificationRequest {
+        #if DEBUG
+        if playgroundMode {
+            return UNNotificationRequest(
+                identifier: Constants.notificationIdentifier,
+                content: makeUNNotificationContent(),
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: .seconds(DEBUG_VARIABLES.secondsInactive), repeats: false)
+            )
+        }
+        #endif
+        
         let daysInactive = makeDaysInactive()
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: .days(daysInactive), repeats: false)
         return UNNotificationRequest(
@@ -141,6 +183,20 @@ final class InactivityNotificationSchedulerService {
         )
     }
 }
+
+#if DEBUG
+/// Playground Scheduler
+extension InactivityNotificationSchedulerService {
+    func schedule(with title: String, body: String, secondsInactive: Int) {
+        DEBUG_VARIABLES.title = title
+        DEBUG_VARIABLES.body = body
+        DEBUG_VARIABLES.secondsInactive = secondsInactive
+        Task {
+            await schedule()
+        }
+    }
+}
+#endif
 
 extension Logger {
     static var pushNotification = { Logger(subsystem: "Push Notification", category: "") }()

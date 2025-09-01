@@ -1,5 +1,5 @@
 //
-//  InacitivityNotificationSchedulerDebugView.swift
+//  LocalNotificationsPlaygroundView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -27,25 +27,40 @@ struct LocalNotificationsPlaygroundView: View {
     var body: some View {
         List {
             Section {
+                Toggle(isOn: $model.useScheduler) {
+                    Text("Use Scheduler")
+                        .bold()
+                }
+            } header: {
+                Text(verbatim: "Mode:")
+            } footer: {
+                (Text("Test through ") + Text(model.useScheduler ? "InactivityNotificationScheduler" : "UNUserNotificationCenter").bold())
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+            
+            Section {
                 Text(model.notificationAuthStatus.description)
             } header: {
                 Text(verbatim: "Authorization Status:")
             } footer: {
                 switch model.notificationAuthStatus {
                 case .granted:
-                    Text(verbatim: "The user accepted receiving notifications when prompted or upon deciding to keep provisional notifications.")
+                    Text(verbatim: model.useScheduler ? "InacitivityNotificationScheduler only schedules provisional notification for .provisional or .notDetermined status. The notification will not be delivered" : "The user accepted receiving notifications when prompted or upon deciding to keep provisional notifications.")
                         .font(.caption)
                 case .provisional:
                     Text(verbatim: "The system has automatically granted the app temporary permission to post noninterruptive notifications. They will be delivered silently in control")
                         .font(.caption)
                 case .denied:
                     VStack(alignment: .leading)  {
-                        Text(verbatim: "Ensure Notifications are Enabled in Settings")
+                        Text(verbatim: model.useScheduler ? "InacitivityNotificationScheduler only schedules provisional notification for .provisional or .notDeterimed status. The notification will not be delivered" : "Ensure Notifications are Enabled in Settings")
                             .font(.caption)
                             .foregroundStyle(.red)
                         Button(
                             action: {
-                                UIApplication.shared.openAppNotificationSettings()
+                                Task {
+                                    await UIApplication.shared.openAppNotificationSettings()
+                                }
                             },
                             label: {
                                 Text(verbatim: "Open Settings...")
@@ -53,7 +68,7 @@ struct LocalNotificationsPlaygroundView: View {
                         )
                     }
                 case .notDetermined:
-                    Text(verbatim: "The system will automatically prompt for permission when scheduling an alert notification. For provisional notifications, no prompt is shown, and the notification is delivered silently.")
+                    Text(verbatim: model.useScheduler ? "InacitivityNotificationScheduler only schedules provisional notification. No prompt will be shown, and the notification is delivered silently." : "The system will automatically prompt for permission when scheduling an alert notification. For provisional notifications, no prompt is shown, and the notification is delivered silently.")
                         .font(.caption)
                 }
             }
@@ -72,6 +87,14 @@ struct LocalNotificationsPlaygroundView: View {
                 }
             } header: {
                 Text(verbatim: "Content:")
+            } footer: {
+                HStack {
+                    Button("Clear", action: model.clearAllContent)
+
+                    Spacer()
+
+                    Button("Default", action: model.fillDefaultContent)
+                }
             }
 
             Section {
@@ -86,6 +109,12 @@ struct LocalNotificationsPlaygroundView: View {
                         Text(verbatim: "Type:")
                     }
                 )
+                .disabled(model.useScheduler)
+                .onChange(of: model.useScheduler) { useScheduler in
+                    if useScheduler {
+                        model.notificationType = .provisional
+                    }
+                }
 
                 Picker(
                     selection: $model.notificationSchedulingTime,
@@ -122,14 +151,19 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     private static let testNotificationIdentifier = "com.duckduckgo.ios.testLocalNotification"
 
     private let center = UNUserNotificationCenter.current()
+    private let scheduler = InactivityNotificationSchedulerService()
+    
+    private static let defaultTitle = "Tracker Blocked"
+    private static let defaultBody = "We stopped 5 trackers from following you."
 
     @Published private(set) var isSchedulingNotification = false
-    @Published var notificationTitle: String = "Tracker Blocked"
-    @Published var notificationMessage: String = "We stopped 5 trackers from following you."
+    @Published var notificationTitle: String = defaultTitle
+    @Published var notificationMessage: String = defaultBody
     @Published var notificationAuthStatus: NotificationAuthStatus = .notDetermined
 
     @Published var notificationType: NotificationType = .provisional
     @Published var notificationSchedulingTime: Int = 5
+    @Published var useScheduler: Bool = false
 
     private var cancellable: AnyCancellable?
 
@@ -144,6 +178,10 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
     }
 
     func sendLocalNotification() {
+        if useScheduler {
+            scheduler.schedule(with: notificationTitle, body: notificationMessage, secondsInactive: notificationSchedulingTime)
+            return
+        }
         Task {
             let options: UNAuthorizationOptions = notificationType == .provisional ? [.provisional] : [.alert]
             do {
@@ -154,6 +192,21 @@ private final class LocalNotificationsPlaygroundViewModel: ObservableObject {
                 print("~~~FAILED TO SEND NOTIFICATION TYPE: \(notificationType.description)")
             }
         }
+    }
+    
+    func fillDefaultContent() {
+        if useScheduler {
+            notificationTitle = UserText.inactivityNotificationTitle
+            notificationMessage = UserText.inactivityNotificationBody
+        } else {
+            notificationTitle = Self.defaultTitle
+            notificationMessage = Self.defaultBody
+        }
+    }
+    
+    func clearAllContent() {
+        notificationTitle = ""
+        notificationMessage = ""
     }
 
     private func bind() {

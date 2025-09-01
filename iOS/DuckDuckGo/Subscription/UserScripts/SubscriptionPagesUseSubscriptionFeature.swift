@@ -923,6 +923,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
             widePixelData.activateAccountDuration = WidePixel.MeasuredInterval.startingNow()
+            widePixel.updateFlow(widePixelData)
         }
 
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
@@ -951,7 +952,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             setTransactionError(.missingEntitlements)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData {
+            // Send the wide pixel error as long as the account isn't missing entitlements
+            // If entitlements are missing, the app will check again later and send the pixel as a success if
+            // they were fetched, or `unknown` if not
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let widePixelData, error != .missingEntitlements {
                 widePixelData.markAsFailed(at: .accountActivation, error: error)
                 widePixel.updateFlow(widePixelData)
                 widePixel.completeFlow(widePixelData, status: .failure, onComplete: { _, _ in })

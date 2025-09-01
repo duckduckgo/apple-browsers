@@ -368,6 +368,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 // 8: Attempt to complete the purchase, measuring the duration
                 var accountActivationDuration = WidePixel.MeasuredInterval.startingNow()
                 data.activateAccountDuration = accountActivationDuration
+                widePixel.updateFlow(data)
+
                 let completePurchaseResult = await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: nil)
 
                 func completeWidePixelFlow(with error: Error) {

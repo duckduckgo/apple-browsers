@@ -59,7 +59,6 @@ class BookmarkSearchTests: UITestCase {
     func testFilteredResultsInPanel() {
         addThreeBookmarks()
         closeShowBookmarksBarAlert()
-        app.enforceSingleWindow()
         app.openBookmarksPanel()
         searchInBookmarksPanel(for: "Bookmark #2")
         assertOnlyBookmarkExists(on: app.outlines.firstMatch, bookmarkTitle: "Bookmark #2")
@@ -67,7 +66,6 @@ class BookmarkSearchTests: UITestCase {
 
     func testFilteredResultsInManager() {
         addThreeBookmarks()
-        app.enforceSingleWindow()
         openBookmarksManager()
         searchInBookmarksManager(for: "Bookmark #2")
         assertOnlyBookmarkExists(on: app.tables.firstMatch, bookmarkTitle: "Bookmark #2")
@@ -187,7 +185,6 @@ class BookmarkSearchTests: UITestCase {
         openNewTab()
         addBookmark(pageTitle: "Bookmark #1", in: "Folder #2")
         closeShowBookmarksBarAlert()
-        app.enforceSingleWindow()
 
         if mode == .panel {
             app.openBookmarksPanel()
@@ -237,7 +234,6 @@ class BookmarkSearchTests: UITestCase {
 
     private func testDragAndDropToReorder(in mode: BookmarkMode) {
         addThreeBookmarks()
-        app.enforceSingleWindow()
         if mode == .panel {
             closeShowBookmarksBarAlert()
             app.openBookmarksPanel()

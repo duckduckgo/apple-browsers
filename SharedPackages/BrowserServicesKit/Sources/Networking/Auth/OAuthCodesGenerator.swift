@@ -38,7 +38,7 @@ struct OAuthCodesGenerator {
         public var errorCode: Int {
             switch self {
             case .failedToLoadRandomBytes:
-                return 11000
+                return 11100
             }
         }
     }

@@ -285,6 +285,7 @@ private extension BrokerProfileJobQueueManager {
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerProtectionProcessor error: addOperations, error: \(error.localizedDescription, privacy: .public)")
             errorHandler?(DataBrokerProtectionJobsErrorCollection(oneTimeError: error))
+            resetMode()
             completion?()
             return
         }

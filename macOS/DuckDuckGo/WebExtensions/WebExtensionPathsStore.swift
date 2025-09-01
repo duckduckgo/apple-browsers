@@ -1,5 +1,5 @@
 //
-//  WebExtensionPathsCache.swift
+//  WebExtensionPathsStore.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,36 +17,33 @@
 //
 
 @available(macOS 15.4, *)
-protocol WebExtensionPathsCaching: AnyObject {
-
-    var cache: [String] { get }
+protocol WebExtensionPathsStoring: AnyObject {
+    var paths: [String] { get }
     func add(_ url: String)
     func remove(_ url: String)
-
 }
 
 @available(macOS 15.4, *)
-final class WebExtensionPathsCache: WebExtensionPathsCaching {
+final class WebExtensionPathsStore: WebExtensionPathsStoring {
 
-    @UserDefaultsWrapper(key: .webExtensionPathsCache, defaultValue: [])
-    var cache: [String]
+    @UserDefaultsWrapper(key: .webExtensionStoredPaths, defaultValue: [])
+    var paths: [String]
 
     func add(_ url: String) {
-        guard !cache.contains(url) else {
-            assertionFailure("Already cached: \(url)")
+        guard !paths.contains(url) else {
+            assertionFailure("Cannot add path as it is already stored: \(url)")
             return
         }
 
-        cache.append(url)
+        paths.append(url)
     }
 
     func remove(_ url: String) {
-        guard cache.contains(url) else {
-            assertionFailure("Not cached: \(url)")
+        guard paths.contains(url) else {
+            assertionFailure("Cannot remove path as it is already absent: \(url)")
             return
         }
 
-        cache.removeAll(where: { $0 == url })
+        paths.removeAll(where: { $0 == url })
     }
-
 }

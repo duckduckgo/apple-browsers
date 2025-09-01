@@ -64,22 +64,29 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         case failedToUnloadWebExtension(_ error: Error)
     }
 
-    static let shared = WebExtensionManager()
+    static let shared = WebExtensionManager(featureFlagger: NSApp.delegateTyped.featureFlagger)
 
     private var continuation: AsyncStream<Void>.Continuation?
     private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
         self?.continuation = continuation
     }
 
-    init(webExtensionPathsCache: WebExtensionPathsCaching = WebExtensionPathsCache(),
+    init(installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
          webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger) {
 
-        self.pathsCache = webExtensionPathsCache
+        self.installationStore = installationStore
         self.featureFlagger = featureFlagger
         self.loader = webExtensionLoader
 
         super.init()
+
+        Task { @MainActor in
+            // Try to ensure the controller is initialized in the main actor, because otherwise
+            // the Main thread checker complains:
+            // Main Thread Checker: UI API called on a background thread: -[WKProcessPool .cxx_construct]
+            _ = controller
+        }
 
         internalSiteHandler.dataSource = self
     }
@@ -90,8 +97,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         return featureFlagger.isFeatureOn(.webExtensions)
     }
 
-    // Caches paths to selected web extensions
-    var pathsCache: WebExtensionPathsCaching
+    // Registers extension installation paths for persistence
+    var installationStore: WebExtensionPathsStoring
 
     // Loads web extensions after selection or application start
     var loader: WebExtensionLoading
@@ -121,11 +128,11 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     // MARK: - Adding and removing extensions
     var webExtensionPaths: [String] {
-        pathsCache.cache
+        installationStore.paths
     }
 
     var hasInstalledExtensions: Bool {
-        pathsCache.cache.count > 0
+        installationStore.paths.count > 0
     }
 
     var loadedExtensions: Set<WKWebExtensionContext> {
@@ -133,7 +140,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     func installExtension(path: String) async {
-        pathsCache.add(path)
+        installationStore.add(path)
 
         do {
             let loadResult = try await loader.loadWebExtension(path: path, into: controller)
@@ -153,7 +160,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>] {
-        pathsCache.cache.map { path in
+        installationStore.paths.map { path in
             do {
                 try uninstallExtension(path: path)
                 return .success(())
@@ -164,7 +171,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     func uninstallExtension(path: String) throws {
-        pathsCache.remove(path)
+        installationStore.remove(path)
 
         // Find the context to unregister from coordinator before unloading
         let identifierHash = identifierHash(forPath: path)
@@ -205,7 +212,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
         eventsListener.controller = controller
 
-        let results = await loader.loadWebExtensions(from: pathsCache.cache, into: controller)
+        let results = await loader.loadWebExtensions(from: installationStore.paths, into: controller)
         continuation?.yield()
 
         for result in results {
@@ -423,7 +430,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
     }
-
+/*
     func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {
 
         try await nativeMessagingCoordinator.webExtensionController(controller,
@@ -431,7 +438,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                                           to: applicationIdentifier,
                                                           for: extensionContext)
     }
-/*
+
     func webExtensionController(_ controller: WKWebExtensionController, connectUsing port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) async throws {
 
         try nativeMessagingCoordinator.webExtensionController(controller, connectUsingMessagePort: port, for: extensionContext)

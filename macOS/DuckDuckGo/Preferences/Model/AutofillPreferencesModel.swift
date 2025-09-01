@@ -66,15 +66,45 @@ final class AutofillPreferencesModel: ObservableObject {
     @MainActor
     @Published private(set) var passwordManager: PasswordManager {
         didSet {
+            guard oldValue != passwordManager else { return }
+
             persistor.passwordManager = passwordManager
 
-            let enabled = passwordManager == .bitwarden
-            PasswordManagerCoordinator.shared.setEnabled(enabled)
-            if enabled {
-                presentBitwardenSetupFlow()
-                showSyncPromo = false
+            if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+                // New logic with web extensions support
+
+                // Handle cleanup from previous value
+                switch oldValue {
+                case .duckduckgo:
+                    showSyncPromo = false
+                case .bitwarden:
+                    PasswordManagerCoordinator.shared.setEnabled(false)
+                case .bitwardenExtension:
+                    uninstallBitwardenExtension()
+                }
+
+                // Handle setup for new value
+                switch passwordManager {
+                case .bitwarden:
+                    PasswordManagerCoordinator.shared.setEnabled(true)
+                    presentBitwardenSetupFlow()
+
+                case .bitwardenExtension:
+                    installBitwardenExtensionIfNeeded()
+
+                case .duckduckgo:
+                    setShouldShowSyncPromo()
+                }
             } else {
-                setShouldShowSyncPromo()
+                // Original logic (preserved ad-verbatim)
+                let enabled = passwordManager == .bitwarden
+                PasswordManagerCoordinator.shared.setEnabled(enabled)
+                if enabled {
+                    presentBitwardenSetupFlow()
+                    showSyncPromo = false
+                } else {
+                    setShouldShowSyncPromo()
+                }
             }
         }
     }
@@ -127,6 +157,33 @@ final class AutofillPreferencesModel: ObservableObject {
 
     func openExportLogins() {
         NSApp.sendAction(#selector(AppDelegate.openExportLogins(_:)), to: nil, from: nil)
+    }
+
+    @MainActor
+    private func installBitwardenExtensionIfNeeded() {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+            let bitwardenExtensionPath = "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"
+
+            // Only install if not already installed
+            if !WebExtensionManager.shared.webExtensionPaths.contains(bitwardenExtensionPath) {
+                Task {
+                    await WebExtensionManager.shared.installExtension(path: bitwardenExtensionPath)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func uninstallBitwardenExtension() {
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+            let bitwardenExtensionPath = "file:///Applications/Bitwarden.app/Contents/PlugIns/safari.appex"
+
+            if WebExtensionManager.shared.webExtensionPaths.contains(bitwardenExtensionPath) {
+                Task {
+                    try? WebExtensionManager.shared.uninstallExtension(path: bitwardenExtensionPath)
+                }
+            }
+        }
     }
 
     @MainActor

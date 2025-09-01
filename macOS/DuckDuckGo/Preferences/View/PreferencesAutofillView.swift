@@ -91,46 +91,91 @@ extension Preferences {
 
                 }
 
-#if !APPSTORE
                 // SECTION 1: Password Manager
-                PreferencePaneSection(UserText.autofillPasswordManager) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        passwordManagerPicker(passwordManagerBinding) {
-                            Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
-                        }
-                    }
+                if isWebExtensionsFeatureEnabled {
+                    // New logic: Only show if user has choices
+                    if shouldShowPasswordManagerSection {
+                        PreferencePaneSection(UserText.autofillPasswordManager) {
 
-                    if model.passwordManager != .bitwarden {
-                        VStack {
-                            Button(UserText.importPasswords) {
-                                model.openImportPasswordsWindow()
+                            // DuckDuckGo Option
+                            if shouldShowDuckDuckGoOption {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    passwordManagerPicker(passwordManagerBinding) {
+                                        Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
+                                    }
+                                }
+
+                                // Import/Export buttons - only show when DuckDuckGo is selected
+                                if shouldShowImportExportButtons {
+                                    VStack {
+                                        Button(UserText.importPasswords) {
+                                            model.openImportPasswordsWindow()
+                                        }
+                                        Button(UserText.exportLogins) {
+                                            model.openExportLogins()
+                                        }
+                                    }
+                                    .padding(.leading, 15)
+                                }
                             }
-                            Button(UserText.exportLogins) {
-                                model.openExportLogins()
+
+                            // Bitwarden Native Option
+                            if shouldShowBitwardenNativeOption {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    passwordManagerPicker(passwordManagerBinding) {
+                                        Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
+                                    }
+                                    if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
+                                        bitwardenStatusView(for: bitwardenManager.status)
+                                    }
+                                }
+                            }
+
+                            // Bitwarden Extension Option
+                            if shouldShowBitwardenExtensionOption {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    passwordManagerPicker(passwordManagerBinding) {
+                                        Text(UserText.autofillPasswordManagerBitwardenExtension).tag(PasswordManager.bitwardenExtension)
+                                    }
+                                }
                             }
                         }
-                        .padding(.leading, 15)
                     }
+                } else {
+                    // Original logic: Preserve existing behavior when web extensions are disabled
+                    #if !APPSTORE
+                        // SECTION 1: Password Manager
+                        PreferencePaneSection(UserText.autofillPasswordManager) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                passwordManagerPicker(passwordManagerBinding) {
+                                    Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
+                                }
+                            }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        passwordManagerPicker(passwordManagerBinding) {
-                            Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
-                        }
-                        if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
-                            bitwardenStatusView(for: bitwardenManager.status)
-                        }
-                    }
+                            if shouldShowImportExportButtons {
+                                VStack {
+                                    Button(UserText.importPasswords) {
+                                        model.openImportPasswordsWindow()
+                                    }
+                                    Button(UserText.exportLogins) {
+                                        model.openExportLogins()
+                                    }
+                                }
+                                .padding(.leading, 15)
+                            }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        passwordManagerPicker(passwordManagerBinding) {
-                            Text(UserText.autofillPasswordManagerBitwardenExtension).tag(PasswordManager.bitwarden)
+                            VStack(alignment: .leading, spacing: 6) {
+                                passwordManagerPicker(passwordManagerBinding) {
+                                    Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
+                                }
+                                if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
+                                    bitwardenStatusView(for: bitwardenManager.status)
+                                }
+                            }
+
                         }
-                        if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
-                            bitwardenStatusView(for: bitwardenManager.status)
-                        }
-                    }
+                    #endif
                 }
-#endif
 
                 // SECTION 2: Ask to Save:
                 PreferencePaneSection {
@@ -204,6 +249,56 @@ extension Preferences {
             }, label: {})
             .pickerStyle(.radioGroup)
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+        }
+
+        // MARK: - Password Manager Availability Methods
+        private var isWebExtensionsFeatureEnabled: Bool {
+            if #available(macOS 15.4, *) {
+                return WebExtensionManager.shared.areExtenstionsEnabled
+            }
+            return false
+        }
+
+        private var shouldShowPasswordManagerSection: Bool {
+            if isWebExtensionsFeatureEnabled {
+                // New logic: Show section if there are any alternatives to DuckDuckGo
+                return shouldShowBitwardenNativeOption || shouldShowBitwardenExtensionOption
+            } else {
+                // Old logic: Always show section in non-App Store builds
+                #if !APPSTORE
+                return true
+                #else
+                return false
+                #endif
+            }
+        }
+
+        private var shouldShowDuckDuckGoOption: Bool {
+            // DuckDuckGo is always available as the built-in option
+            true
+        }
+
+        private var shouldShowBitwardenNativeOption: Bool {
+            #if !APPSTORE
+            return true
+            #else
+            return false
+            #endif
+        }
+
+        private var shouldShowBitwardenExtensionOption: Bool {
+            // Only show when web extensions feature is enabled
+            isWebExtensionsFeatureEnabled
+        }
+
+        private var shouldShowImportExportButtons: Bool {
+            if isWebExtensionsFeatureEnabled {
+                // New logic: Only when DuckDuckGo is selected
+                return model.passwordManager == .duckduckgo
+            } else {
+                // Old logic: When not using Bitwarden native
+                return model.passwordManager != .bitwarden
+            }
         }
 
         @ViewBuilder private func bitwardenStatusView(for status: BWStatus) -> some View {

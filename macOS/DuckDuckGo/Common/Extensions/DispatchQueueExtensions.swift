@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 
 extension DispatchQueue {
@@ -32,7 +33,7 @@ extension DispatchQueue {
     func asyncOrNow(execute workItem: @escaping @MainActor () -> Void) {
         assert(self == .main)
         if Thread.isMainThread {
-            MainActor.assumeIsolated(workItem)
+            MainActor.assumeMainThread(workItem)
         } else {
             DispatchQueue.main.async {
                 workItem()

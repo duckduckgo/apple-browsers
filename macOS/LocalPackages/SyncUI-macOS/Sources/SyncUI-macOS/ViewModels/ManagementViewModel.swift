@@ -18,6 +18,7 @@
 
 import Foundation
 
+@MainActor
 public protocol ManagementViewModel: ObservableObject {
 
     var isDataSyncingAvailable: Bool { get }
@@ -27,9 +28,6 @@ public protocol ManagementViewModel: ObservableObject {
     var isAppVersionNotSupported: Bool { get }
 
     var isSyncEnabled: Bool { get }
-    var isCreatingAccount: Bool { get }
-    var shouldShowErrorMessage: Bool { get set }
-    var syncErrorMessage: SyncErrorMessage? { get }
     var isSyncPaused: Bool { get }
     var isSyncBookmarksPaused: Bool { get }
     var isSyncCredentialsPaused: Bool { get }
@@ -49,9 +47,6 @@ public protocol ManagementViewModel: ObservableObject {
     var invalidBookmarksTitles: [String] { get }
     var invalidCredentialsTitles: [String] { get }
 
-    var recoveryCode: String? { get }
-    var stringForQR: String? { get }
-    var codeForDisplayOrPasting: String? { get }
     var devices: [SyncDevice] { get }
     var isFaviconsFetchingEnabled: Bool { get set }
     var isUnifiedFavoritesEnabled: Bool { get set }
@@ -130,6 +125,7 @@ public enum SyncErrorType {
         }
     }
 
+    @MainActor
     func onButtonPressed(delegate: ManagementDialogModelDelegate?) {
         switch self {
         case .unableToAuthenticateOnDevice:

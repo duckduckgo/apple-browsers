@@ -457,7 +457,7 @@ protocol NewWindowPolicyDecisionMaker {
     /// Publishes currently active main frame Navigation state
     var navigationStatePublisher: some Publisher<NavigationState?, Never> {
         navigationDelegate.$currentNavigation.map { currentNavigation -> AnyPublisher<NavigationState?, Never> in
-            MainActor.assumeIsolated {
+            MainActor.assumeMainThread {
                 currentNavigation?.$state.map { $0 }.eraseToAnyPublisher() ?? Just(nil).eraseToAnyPublisher()
             }
         }.switchToLatest()
@@ -480,7 +480,7 @@ protocol NewWindowPolicyDecisionMaker {
                 guard let currentNavigation = currentNavigation else {
                     return false
                 }
-                return MainActor.assumeIsolated {
+                return MainActor.assumeMainThread {
                     let isSameDocumentNavigation = (currentNavigation.redirectHistory.first ?? currentNavigation.navigationAction).navigationType.isSameDocumentNavigation
                     return !isSameDocumentNavigation
                 }

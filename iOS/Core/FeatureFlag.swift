@@ -168,6 +168,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210989706758207?focus=true
     case daxEasterEggLogos
+
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
+    case subscriptionPurchaseWidePixelMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -181,7 +184,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .daxEasterEggLogos:
+             .daxEasterEggLogos,
+             .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
             false
@@ -230,7 +234,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
-             .dbpEmailConfirmationDecoupling:
+             .dbpEmailConfirmationDecoupling,
+             .subscriptionPurchaseWidePixelMeasurement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -417,6 +422,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
             return .remoteReleasable(.feature(.daxEasterEggLogos))
+        case .subscriptionPurchaseWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         }
     }
 }

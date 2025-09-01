@@ -55,14 +55,14 @@ final class BookmarkListViewController: NSViewController {
     private lazy var scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 420, height: 408))
     private lazy var outlineView = BookmarksOutlineView(frame: scrollView.frame)
 
-    private lazy var emptyState = NSView()
-    private lazy var emptyStateTitle = NSTextField()
-        .withAccessibilityIdentifier(BookmarksEmptyStateContent.titleAccessibilityIdentifier)
-    private lazy var emptyStateMessage = NSTextField()
-        .withAccessibilityIdentifier(BookmarksEmptyStateContent.descriptionAccessibilityIdentifier)
-    private lazy var emptyStateImageView = NSImageView(image: .bookmarksEmpty)
-        .withAccessibilityIdentifier(BookmarksEmptyStateContent.imageAccessibilityIdentifier)
-    private lazy var importButton = NSButton(title: UserText.importBookmarksButtonTitle, target: self, action: #selector(onImportClicked))
+    private lazy var emptyStateHostingView: NSHostingView<BookmarksEmptyStateView> = {
+        let emptyStateView = BookmarksEmptyStateView(content: .noBookmarks) { [weak self] in
+            self?.onImportClicked()
+        } onSyncClicked: {
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+        }
+        return emptyStateView.embeddedInHostingView()
+    }()
     private lazy var searchBar = NSSearchField()
         .withAccessibilityIdentifier("BookmarkListViewController.searchBar")
     private var boxDividerTopConstraint = NSLayoutConstraint()
@@ -182,7 +182,7 @@ final class BookmarkListViewController: NSViewController {
         view.addSubview(boxDivider)
         view.addSubview(stackView)
         view.addSubview(scrollView)
-        view.addSubview(emptyState)
+        view.addSubview(emptyStateHostingView)
 
         view.autoresizesSubviews = false
 
@@ -311,39 +311,8 @@ final class BookmarkListViewController: NSViewController {
             scrollView.contentView = clipView
         }
 
-        emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
-        emptyState.addSubview(emptyStateImageView)
-        emptyState.addSubview(emptyStateTitle)
-        emptyState.addSubview(emptyStateMessage)
-        emptyState.addSubview(importButton)
-
-        emptyState.isHidden = true
-        emptyState.translatesAutoresizingMaskIntoConstraints = false
-
-        emptyStateTitle.translatesAutoresizingMaskIntoConstraints = false
-        emptyStateTitle.alignment = .center
-        emptyStateTitle.drawsBackground = false
-        emptyStateTitle.isBordered = false
-        emptyStateTitle.isEditable = false
-        emptyStateTitle.font = .systemFont(ofSize: 15, weight: .semibold)
-        emptyStateTitle.textColor = .labelColor
-        emptyStateTitle.attributedStringValue = NSAttributedString.make(UserText.bookmarksEmptyStateTitle,
-                                                                        lineHeight: 1.14,
-                                                                        kern: -0.23)
-
-        emptyStateMessage.translatesAutoresizingMaskIntoConstraints = false
-        emptyStateMessage.alignment = .center
-        emptyStateMessage.drawsBackground = false
-        emptyStateMessage.isBordered = false
-        emptyStateMessage.isEditable = false
-        emptyStateMessage.font = .systemFont(ofSize: 13)
-        emptyStateMessage.textColor = .labelColor
-        emptyStateMessage.attributedStringValue = NSAttributedString.make(UserText.bookmarksEmptyStateMessage,
-                                                                          lineHeight: 1.05,
-                                                                          kern: -0.08)
-
-        importButton.translatesAutoresizingMaskIntoConstraints = false
-        importButton.isHidden = true
+        emptyStateHostingView.isHidden = true
+        emptyStateHostingView.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(KeyEquivalentView(keyEquivalents: [
             [.command, "f"]: { [weak self] in
@@ -360,15 +329,6 @@ final class BookmarkListViewController: NSViewController {
     private func setupLayout() {
         titleTextField.setContentHuggingPriority(.defaultHigh, for: .vertical)
         titleTextField.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
-
-        emptyStateImageView.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
-        emptyStateImageView.setContentHuggingPriority(.init(rawValue: 251), for: .vertical)
-
-        emptyStateTitle.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        emptyStateTitle.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
-
-        emptyStateMessage.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        emptyStateMessage.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
 
         NSLayoutConstraint.activate([
             titleTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
@@ -412,27 +372,10 @@ final class BookmarkListViewController: NSViewController {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-            emptyState.topAnchor.constraint(equalTo: boxDivider.bottomAnchor),
-            emptyState.centerXAnchor.constraint(equalTo: boxDivider.centerXAnchor),
-            emptyState.widthAnchor.constraint(equalToConstant: 342),
-            emptyState.heightAnchor.constraint(equalToConstant: 383),
-
-            emptyStateImageView.topAnchor.constraint(equalTo: emptyState.topAnchor, constant: 94.5),
-            emptyStateImageView.widthAnchor.constraint(equalToConstant: 128),
-            emptyStateImageView.heightAnchor.constraint(equalToConstant: 96),
-            emptyStateImageView.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
-
-            emptyStateTitle.topAnchor.constraint(equalTo: emptyStateImageView.bottomAnchor, constant: 8),
-            emptyStateTitle.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
-            emptyStateTitle.widthAnchor.constraint(equalToConstant: 192),
-
-            emptyStateMessage.topAnchor.constraint(equalTo: emptyStateTitle.bottomAnchor, constant: 8),
-            emptyStateMessage.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
-
-            emptyStateMessage.widthAnchor.constraint(equalToConstant: 192),
-
-            importButton.topAnchor.constraint(equalTo: emptyStateMessage.bottomAnchor, constant: 8),
-            importButton.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
+            emptyStateHostingView.topAnchor.constraint(equalTo: boxDivider.bottomAnchor),
+            emptyStateHostingView.centerXAnchor.constraint(equalTo: boxDivider.centerXAnchor),
+            emptyStateHostingView.widthAnchor.constraint(equalToConstant: 342),
+            emptyStateHostingView.heightAnchor.constraint(equalToConstant: 383),
         ])
     }
 
@@ -520,7 +463,7 @@ final class BookmarkListViewController: NSViewController {
         }
 
         let isEmpty = (outlineView.numberOfRows == 0)
-        self.emptyState.isHidden = !isEmpty
+        self.emptyStateHostingView.isHidden = !isEmpty
         self.searchBookmarksButton.isEnabled = !isEmpty
         self.sortBookmarksButton.isEnabled = !isEmpty
         self.searchBar.isEnabled = !isEmpty
@@ -585,7 +528,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func showTreeView() {
-        emptyState.isHidden = true
+        emptyStateHostingView.isHidden = true
         outlineView.isHidden = false
         dataSource.reloadData(with: sortBookmarksViewModel.selectedSortMode)
         outlineView.reloadData()
@@ -612,15 +555,17 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func showEmptyStateView(for mode: BookmarksEmptyStateContent) {
-        emptyState.isHidden = false
+        let emptyStateView = BookmarksEmptyStateView(content: mode) { [weak self] in
+            self?.onImportClicked()
+        } onSyncClicked: {
+            DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+        }
+        emptyStateHostingView.rootView = emptyStateView
+        emptyStateHostingView.isHidden = false
         outlineView.isHidden = true
         if !isSearchVisible {
             view.makeMeFirstResponder()
         }
-        emptyStateTitle.stringValue = mode.title
-        emptyStateMessage.stringValue = mode.description
-        emptyStateImageView.image = mode.image
-        importButton.isHidden = mode.shouldHideImportButton
         updateDocumentViewHeight()
     }
 
@@ -740,7 +685,11 @@ final class BookmarkListViewController: NSViewController {
     }
 
     @objc func onImportClicked(_ sender: NSButton) {
-        DataImportView(isDataTypePickerExpanded: true).show()
+        onImportClicked()
+    }
+
+    private func onImportClicked() {
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true)
     }
 
     private func showManageBookmarks() {
@@ -882,7 +831,7 @@ extension BookmarkListViewController: NSSearchFieldDelegate {
         if treeController.rootNode.childNodes.isEmpty {
             showEmptyStateView(for: .noSearchResults)
         } else {
-            emptyState.isHidden = true
+            emptyStateHostingView.isHidden = true
             outlineView.isHidden = false
             outlineView.reloadData()
 
@@ -977,7 +926,7 @@ extension BookmarkListViewController {
     }
 
     private func shouldShowSyncPromo() -> Bool {
-        return emptyState.isHidden
+        return emptyStateHostingView.isHidden
                && !dataSource.isSearching
                && !outlineView.isHidden
                && (bookmarkManager.list?.bookmarks().count ?? 0) > 0

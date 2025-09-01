@@ -24,6 +24,7 @@ extension Preferences {
 
     struct DataClearingView: View {
         @ObservedObject var model: DataClearingPreferences
+        @ObservedObject var startupModel: StartupPreferences
 
         var body: some View {
             PreferencePane(UserText.dataClearing) {
@@ -45,8 +46,22 @@ extension Preferences {
                 if model.shouldShowOpenFirewindowByDefaultSection {
                     PreferencePaneSection(UserText.fireWindow) {
                         PreferencePaneSubSection {
-                            ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.openFireWindowByDefault)
+                            ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.shouldOpenFireWindowbyDefault)
                                 .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
+
+                            if model.shouldOpenFireWindowbyDefault && startupModel.restorePreviousSession {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    TextMenuItemCaption(UserText.fireWindowSessionRestoreWarning)
+                                    TextButton(UserText.showStartupSettings) {
+                                        model.show(url: .settingsPane(.general))
+                                    }
+                                }
+                                .padding(.leading, 19)
+                            }
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.openFireWindowByDefaultExplanation(newFireWindowShortcut: "⌘N", newRegularWindowShortcut: "⇧⌘N"))
+                            }
                         }
                     }
                 }

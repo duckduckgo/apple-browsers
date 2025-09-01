@@ -181,7 +181,8 @@ enum SubscriptionContainerViewFactory {
                                                                          subscriptionAttributionOrigin: origin,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         privacyProDataReporter: privacyProDataReporter),
+                                                                         privacyProDataReporter: privacyProDataReporter,
+                                                                         internalUserDecider: internalUserDecider),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -204,7 +205,8 @@ enum SubscriptionContainerViewFactory {
                                                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                                                        subscriptionAttributionOrigin: nil,
                                                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                                       internalUserDecider: internalUserDecider)
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
                                                        userScript: SubscriptionPagesUserScript(),
@@ -235,7 +237,8 @@ enum SubscriptionContainerViewFactory {
                                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                          subscriptionAttributionOrigin: nil,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow),
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                         internalUserDecider: internalUserDecider),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
 

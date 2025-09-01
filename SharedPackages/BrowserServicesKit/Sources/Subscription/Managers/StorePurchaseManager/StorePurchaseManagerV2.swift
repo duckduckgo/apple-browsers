@@ -75,13 +75,13 @@ public enum StorePurchaseManagerError: DDGError {
 
     public var errorCode: Int {
         switch self {
-        case .unknownError: 12600
+        case .productNotFound: 12600
         case .externalIDisNotAValidUUID: 12601
         case .purchaseFailed: 12602
         case .transactionCannotBeVerified: 12603
         case .transactionPendingAuthentication: 12604
         case .purchaseCancelledByUser: 12605
-        case .productNotFound: 12606
+        case .unknownError: 12606
         }
     }
 

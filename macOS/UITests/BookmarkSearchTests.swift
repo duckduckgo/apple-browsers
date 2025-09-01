@@ -19,11 +19,9 @@
 import XCTest
 
 class BookmarkSearchTests: UITestCase {
-    private var app: XCUIApplication!
 
     private enum AccessibilityIdentifiers {
         static let bookmarkButton = "AddressBarButtonsViewController.bookmarkButton"
-        static let addressBarTextField = "AddressBarViewController.addressBarTextField"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let bookmarksMenu = "MainMenu.bookmarks"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
@@ -38,12 +36,8 @@ class BookmarkSearchTests: UITestCase {
         static let newFolderButton = "BookmarkListViewController.newFolderButton"
     }
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
         app.resetBookmarks()
@@ -102,8 +96,7 @@ class BookmarkSearchTests: UITestCase {
     // MARK: - Utilities
 
     private func enforceSingleWindow() {
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 
     private func addBookmarkAndOpenBookmarksPanel(bookmarkPageTitle: String, in folder: String? = nil) {
@@ -184,7 +177,7 @@ class BookmarkSearchTests: UITestCase {
     }
 
     private func openNewTab() {
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
     }
 
     private func testShowInFolderFunctionality(in mode: BookmarkMode) {

@@ -36,6 +36,13 @@ custom_rules:
       - keyword
     message: "Classes should be `final` by default, use explicit `internal` or `public` for non-final classes."
     severity: error
+  
+  use_main_actor_assume_main_thread:
+    included: ".*\\.swift"
+    name: "Use MainActor.assumeMainThread instead of assumeIsolated"
+    regex: "MainActor\\.assumeIsolated"
+    message: "`MainActor.assumeIsolated` may crash on the main thread."
+    severity: error
 
 # Rule Config
 cyclomatic_complexity:

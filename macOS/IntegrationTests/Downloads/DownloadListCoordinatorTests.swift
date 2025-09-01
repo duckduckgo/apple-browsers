@@ -116,7 +116,6 @@ final class DownloadListCoordinatorTests: XCTestCase {
             )
             let mainWindowController = MainWindowController(
                 mainViewController: mainViewController,
-                popUp: false,
                 fireWindowSession: .init(),
                 fireViewModel: fireCoordinator.fireViewModel,
                 visualStyle: NSApp.delegateTyped.visualStyle

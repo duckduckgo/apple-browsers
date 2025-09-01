@@ -168,6 +168,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210989706758207?focus=true
     case daxEasterEggLogos
+
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
+    case subscriptionPurchaseWidePixelMeasurement
     
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
@@ -184,7 +187,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .daxEasterEggLogos:
+             .daxEasterEggLogos,
+             .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
             false
@@ -234,6 +238,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .inactivityNotification,
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
+             .subscriptionPurchaseWidePixelMeasurement,
              .refreshButtonPosition:
             return true
         case .showSettingsCompleteSetupSection:
@@ -421,6 +426,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
             return .remoteReleasable(.feature(.daxEasterEggLogos))
+        case .subscriptionPurchaseWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .refreshButtonPosition:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         }

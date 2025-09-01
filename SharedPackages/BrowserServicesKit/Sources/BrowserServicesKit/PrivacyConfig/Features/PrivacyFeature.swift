@@ -82,6 +82,7 @@ public enum PrivacyFeature: String {
     case feedbackForm
     case htmlNewTabPage
     case daxEasterEggLogos
+    case openFireWindowByDefault
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -268,6 +269,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canScanUrlBasedSyncSetupBarcodes
     case canInterceptSyncSetupUrls
     case syncSetupBarcodeIsUrlBased
+    case refactorOfSyncPreferences
+    case newSyncEntryPoints
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -293,6 +296,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionRebranding
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
+    case subscriptionPurchaseWidePixelMeasurement
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

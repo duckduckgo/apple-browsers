@@ -36,6 +36,7 @@ protocol MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage { get }
     var historyIcon: NSImage { get }
     var passwordsIcon: NSImage { get }
+    var syncIcon: NSImage { get }
     var deleteBrowsingDataIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
     var privacyProIcon: NSImage { get }
@@ -104,6 +105,7 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let reportBrokenSiteIcon: NSImage = .siteBreakage
     let sendPrivacyProFeedbackIcon: NSImage = .pProFeedback
     let passwordsSubMenuIcon: NSImage = .loginGlyph
+    var syncIcon: NSImage = DesignSystemImages.Glyphs.Size16.sync
     let identitiesIcon: NSImage = .identityGlyph
     let creditCardsIcon: NSImage = .creditCardGlyph
     let vpnIcon: NSImage? = .image(for: .vpnIcon)
@@ -134,6 +136,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size16.downloads
     let historyIcon: NSImage = DesignSystemImages.Glyphs.Size16.history
     let passwordsIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
+    var syncIcon: NSImage = DesignSystemImages.Glyphs.Size16.sync
     let deleteBrowsingDataIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
     let emailProtectionIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
     let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro

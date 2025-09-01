@@ -85,11 +85,18 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
         }
     }
 
-    @Published var shouldShowSyncButton: Bool = false
+    @Published var shouldShowSyncButton: Bool = false {
+        didSet {
+            guard !hasFiredImpressionPixel else { return }
+            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
+            hasFiredImpressionPixel = true
+        }
+    }
 
     private var authState: SyncAuthState = .initializing {
         didSet {
             guard
+                syncLauncher != nil,
                 case .inactive = authState,
                 !wasDimissed,
                 !wasPresentationCountLimitReached,
@@ -105,6 +112,8 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
     private let keyValueStore: KeyValueStoring
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let featureFlagger: FeatureFlagger
+
+    private var hasFiredImpressionPixel = false
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -166,7 +175,6 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
             shouldShowSyncButton = false
             return
         }
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": source.pixelSource.rawValue])
         shouldShowSyncButton = true
     }
 

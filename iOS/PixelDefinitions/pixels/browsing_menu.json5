@@ -3,7 +3,7 @@
         description: 'Fires when the user taps the refresh page option from the browsing menu',
         owners: ['pikorddg'],
         triggers: ['user_submitted'],
-        suffixes: [],
+        suffixes: ['platform', 'form_factor'],
         parameters: []
     }
 }

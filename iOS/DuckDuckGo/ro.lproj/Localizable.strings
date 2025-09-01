@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Șterge datele de navigare cu un singur buton";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blochează tehnologiile de urmărire terțe";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatură";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Află mai multe";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Lasă DuckDuckGo să gestioneze ferestrele pop-up de solicitare a consimțământului cu privire la modulele cookie";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Setări";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Ajută la blocarea tehnologiilor de urmărire externe care încearcă să se deghizeze pe un site web folosind DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Protejează împotriva disimulării DNS CNAME";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Dezactivează urmărirea conținutului de pe Facebook, cum ar fi widgeturile de comentarii Facebook pe site-urile ce nu țin de Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Protecție împotriva urmăririi Facebook";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Ajută la împiedicarea companiilor de urmărire să obțină identificatori unici despre browserul și dispozitivul tău, pe care să îl folosească pentru a te urmări pe web.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Împiedică urmărirea amprentelor digitale";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Expiră automat modulele cookie originale după 30 de zile, asigurând faptul că site-urile nu te pot urmări la nesfârșit atunci când ești deconectat.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Expiră modulele cookie originale";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Înlocuiește linkurile Google AMP cu site-ul editorului original.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blochează urmărirea AMP de la Google";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blochează ferestrele pop-up de conectare Google pe site-urile pe care nu le deține Google.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blochează ferestrele pop-up de conectare Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Elimină parametrii de urmărire din linkuri pentru a împiedica terții să-ți urmărească comportamentul pe site-uri.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blochează urmărirea linkurilor";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Ajută la blocarea identificării de către companii a ultimului site pe care l-ai vizitat.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Protejează împotriva urmăririi numelui de gazdă de referință";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blochează tehnologiile de urmărire invazive înainte de a se încărca, eliminând eficient reclamele care se bazează pe urmărire.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blochează reclamele direcționate";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Ajută la blocarea modulelor cookie terțe care te urmăresc de la un site la altul, împiedicând încărcarea instrumentelor de urmărire terțe de la bun început.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blochează tehnologiile de urmărire terță parte";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Site-uri neprotejate";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Protecție împotriva urmăririi pe web";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections sunt întotdeauna activate";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blochează automat tehnologiile de urmărire ascunse în timp ce navighezi pe web.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Cum te protejăm";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Browserul DuckDuckGo oferă instrumente de protecție împotriva urmăririi, care sunt mereu active. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selectează opțiunea care descrie cel mai bine problema cu care te-ai confruntat.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Controlează VPN-ul cu Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Folosirea unui server DNS personalizat poate afecta viteza de navigare și îți poate expune activitatea unor terțe părți, dacă serverul nu este sigur sau de încredere.";
+"vpn.settings.dns.section-disclaimer" = "Folosirea unui server DNS personalizat poate afecta viteza de navigare și îți poate expune activitatea unor terțe părți dacă serverul nu este sigur sau de încredere.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

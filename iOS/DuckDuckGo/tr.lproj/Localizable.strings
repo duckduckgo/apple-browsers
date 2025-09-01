@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini tek bir düğmeyle silin";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Üçüncü taraf izleyicileri engelleyin";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klavye";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Daha Fazla Bilgi";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "DuckDuckGo'nun çerez izni açılır pencerelerini yönetmesine izin verin";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Ayarlar";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "DNS kullanarak bir web sitesinde kendilerini gizlemeye çalışan üçüncü taraf izleyicileri engellemeye yardımcı olur.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "DNS CNAME gizlemesine karşı koruma sağlar";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Facebook dışındaki sitelerde Facebook yorum widget'ları gibi Facebook içeriklerinin izlenmesini devre dışı bırakır.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebook İzleme Koruması";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "İzleme şirketlerinin, tarayıcınız ve cihazınız hakkında sizi web'de takip etmek için kullandıkları benzersiz tanımlayıcılar edinmelerini engellemeye yardımcı olur.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Parmak izi izlemeyi önler";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Çıkış yaptığınızda sitelerin sizi süresiz olarak izleyememesi için birinci taraf çerezlerini 30 gün sonra otomatik olarak sonlandırır.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Birinci taraf çerezleri kaldırır";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Google AMP bağlantılarını orijinal yayıncının sitesiyle değiştirir.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Google'ın AMP İzlemesini Engeller";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Google'ın sahibi olmadığı sitelerdeki Google oturum açma açılır pencerelerini engeller.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Google'ın oturum açma açılır pencerelerini engeller";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Üçüncü tarafların sitelerde yaptıklarınızı izlemesini önlemek için bağlantılardaki izleme parametrelerini kaldırır.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Bağlantı izlemeyi engeller";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Şirketlerin ziyaret ettiğiniz son web sitesini tanımlamasını engellemeye yardımcı olur.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Yönlendiren izlemesine karşı koruma sağlar";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "İstilacı izleyicileri yüklenmeden önce engelleyerek, izlemeye dayalı reklamları etkili bir şekilde ortadan kaldırır.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Hedefli reklamları engeller";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Üçüncü taraf izleyicilerin yüklenmesini baştan engelleyerek, sizi siteden siteye takip eden üçüncü taraf çerezlerini engellemeye yardımcı olur.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Üçüncü taraf izleyicileri engeller";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Korumasız Siteler";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web İzleme Koruması";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web tracking protections her zaman açıktır";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo, web'de gezinirken gizli izleyicileri otomatik olarak engeller.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Sizi Nasıl Koruyoruz?";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGo tarayıcısı, her zaman etkin olan izleme korumaları sunar. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "VPN'i Siri ile Kontrol Edin";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Özel bir DNS sunucusu kullanmak, tarama hızlarını etkileyebilir ve sunucu güvenli veya güvenilir değilse etkinliğini üçüncü taraflara ifşa edebilir.";
+"vpn.settings.dns.section-disclaimer" = "Özel bir DNS sunucusu kullanmak, tarama hızlarını etkileyebilir ve sunucu güvenli veya güvenilir değilse etkinliğinizi üçüncü taraflara ifşa edebilir.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

@@ -34,7 +34,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         database: CoreDataDatabase,
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        startupPreferences: StartupPreferences,
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
@@ -45,7 +45,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.init(
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
-            startupPreferencesPersistor: startupPreferencesPersistor(),
+            startupPreferences: startupPreferences,
             duckPlayerPreferencesPersistor: duckPlayerPreferencesPersistor(),
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             internalUserDecider: internalUserDecider,
@@ -60,7 +60,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     init(
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        startupPreferences: StartupPreferences,
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
@@ -72,7 +72,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
-        self.startupPreferencesPersistor = startupPreferencesPersistor
+        self.startupPreferences = startupPreferences
         self.duckPlayerPreferencesPersistor = duckPlayerPreferencesPersistor
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.internalUserDecider = internalUserDecider
@@ -85,7 +85,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
     let bookmarksDatabase: CoreDataDatabase
     let appearancePreferences: AppearancePreferences
-    let startupPreferencesPersistor: () -> StartupPreferencesPersistor
+    let startupPreferences: StartupPreferences
     let duckPlayerPreferencesPersistor: () -> DuckPlayerPreferencesPersistor
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
     let internalUserDecider: InternalUserDecider
@@ -202,7 +202,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        pinnedTabsCount: pinnedTabsCount,
-                                                       hasCustomHomePage: startupPreferencesPersistor().launchToCustomHomePage,
+                                                       hasCustomHomePage: startupPreferences.launchToCustomHomePage,
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,

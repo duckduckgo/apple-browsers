@@ -117,7 +117,7 @@ public final class PixelKit {
     public static let duckDuckGoMorePrivacyInfo = URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/atb/")!
     private let defaults: UserDefaults
 
-    private let logger = Logger(subsystem: "com.duckduckgo.PixelKit", category: "PixelKit")
+    private let logger = Logger(subsystem: "PixelKit", category: "PixelKit")
 
     private static let defaultDailyPixelCalendar: Calendar = {
         var calendar = Calendar.current
@@ -194,11 +194,12 @@ public final class PixelKit {
                       withError error: Error?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
+                      includePixelSourceParameter: Bool,
                       onComplete: @escaping CompletionBlock) {
 
         var newParams = params ?? [:]
         if includeAppVersionParameter { newParams[Parameters.appVersion] = appVersion }
-        if let source { newParams[Parameters.pixelSource] = source }
+        if includePixelSourceParameter, let source { newParams[Parameters.pixelSource] = source }
         if let error { newParams.appendErrorPixelParams(error: error) }
 
         #if DEBUG
@@ -421,8 +422,13 @@ public final class PixelKit {
     }
 
     private func printDebugInfo(pixelName: String, frequency: Frequency, parameters: [String: String], skipped: Bool = false) {
-        let params = parameters.filter { key, _ in !["test"].contains(key) }
-        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public) \(params, privacy: .public)")
+        let params = parameters
+            .filter { key, _ in key != "test" }
+            .sorted { $0.key < $1.key }
+
+        // Sort the params before logging them in debug mode to make it easier to compare multiple subsequent calls
+        let sortedParamsString = params.map { "\"\($0.key)\": \"\($0.value)\"" }.joined(separator: ", ")
+        logger.debug("👾[\(frequency.description, privacy: .public)-\(skipped ? "Skipped" : "Fired", privacy: .public)] \(pixelName, privacy: .public) [\(sortedParamsString, privacy: .public)]")
     }
 
     private func fireRequestWrapper(
@@ -512,6 +518,7 @@ public final class PixelKit {
                      withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
+                     includePixelSourceParameter: Bool = true,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix)
@@ -567,6 +574,7 @@ public final class PixelKit {
              withError: newError,
              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
              includeAppVersionParameter: includeAppVersionParameter,
+             includePixelSourceParameter: includePixelSourceParameter,
              onComplete: onComplete)
     }
 
@@ -578,6 +586,7 @@ public final class PixelKit {
                             withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
+                            includePixelSourceParameter: Bool = true,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         Self.shared?.fire(event,
@@ -588,6 +597,7 @@ public final class PixelKit {
                           withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
+                          includePixelSourceParameter: includePixelSourceParameter,
                           onComplete: onComplete)
     }
 

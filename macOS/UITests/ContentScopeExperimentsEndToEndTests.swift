@@ -21,9 +21,6 @@ import XCTest
 final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
     func testContentScopeExperiments() throws {
-        // Initial set up
-        super.setUp()
-        UITests.firstRun()
         let app = XCUIApplication.setUp()
         app.openNewTab()
 
@@ -39,18 +36,17 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
         let configURL = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
         let textField = app.dialogs["alert"].children(matching: .textField).element
-        XCTAssertTrue(textField.waitForExistence(timeout: 3), "Custom config alert did not appear.")
+        XCTAssertTrue(textField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
         textField.typeURL(configURL, pressingEnter: false)
         app.typeKey(.return, modifierFlags: [])
 
         // Step 2: Load test page
         let testPageUrl = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html")!
-        let addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(testPageUrl)
+        app.typeURL(testPageUrl)
         XCTAssertTrue(
             app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Test page didn't load with the expected title in a reasonable timeframe."

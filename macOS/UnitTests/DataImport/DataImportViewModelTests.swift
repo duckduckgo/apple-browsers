@@ -1253,6 +1253,26 @@ final class DataImportViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSummaryShown_shouldShowSyncFooterButton() async throws {
+        let model = DataImportViewModel(importSource: .chrome, screen: .summary([.bookmarks], isFileImport: true), summary: [])
+        XCTAssertTrue(model.shouldShowSyncFooterButton)
+    }
+
+    @MainActor
+    func testWhenShortcutsShown_shouldShowSyncFooterButton() async throws {
+        let model = DataImportViewModel(importSource: .chrome, screen: .shortcuts([.bookmarks]), summary: [])
+        XCTAssertTrue(model.shouldShowSyncFooterButton)
+    }
+
+    @MainActor
+    func testWhenAllOtherScreensShow_shouldNotShowSyncFooterButton() async throws {
+        for screen: DataImportViewModel.Screen in [.profileAndDataTypesPicker, .moreInfo, .getReadPermission(.aboutDuckDuckGo), .fileImport(dataType: .bookmarks), .feedback] {
+            let model = DataImportViewModel(importSource: .chrome, screen: screen, summary: [])
+            XCTAssertFalse(model.shouldShowSyncFooterButton)
+        }
+    }
+
+    @MainActor
     func testWhenBrowsersBookmarksFileImportFailsAndNoPasswordsFileImportNeeded_feedbackShown() async throws {
         for source in Source.allCases where source.initialScreen == .profileAndDataTypesPicker && source.supportedDataTypes.contains(.passwords) {
             for bookmarksSummary in bookmarksSummaries

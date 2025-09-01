@@ -854,6 +854,14 @@ extension SettingsViewModel {
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
+    
+    func openWebTrackingProtectionLearnMore() {
+        urlOpener.open(URL.webTrackingProtection)
+    }
+    
+    func openGPCLearnMore() {
+        urlOpener.open(URL.gpcLearnMore)
+    }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
         duckPlayerContingencyHandler.shouldDisplayContingencyMessage

@@ -2359,7 +2359,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Διαγράψτε τα δεδομένα περιήγησης με ένα κουμπί";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Αποκλείστε εφαρμογές παρακολούθησης τρίτων";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2884,6 +2884,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Πληκτρολόγιο";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Μάθετε περισσότερα";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Επιτρέψτε στο DuckDuckGo να διαχειρίζεται τα αναδυόμενα παράθυρα συναίνεσης για cookies";
 
@@ -3034,6 +3037,66 @@
 /* Title for the Settings View */
 "settings.title" = "Ρυθμίσεις";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Βοηθά στον αποκλεισμό των εφαρμογών παρακολούθησης τρίτων που προσπαθούν να συγκαλυφθούν μέσα σε έναν ιστότοπο χρησιμοποιώντας DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Προστατεύει από την απόκρυψη DNS CNAME cloaking";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Απενεργοποιεί την παρακολούθηση για το περιεχόμενο του Facebook, όπως τις μικροεφαρμογές σχολίων του Facebook σε ιστότοπους εκτός Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Προστασία παρακολούθησης από το Facebook";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Βοηθά στο να σταματήσουν οι εταιρείες παρακολούθησης να αποκτούν μοναδικά αναγνωριστικά για το πρόγραμμα περιήγησης και τη συσκευή σας, τα οποία χρησιμοποιούν για να σας παρακολουθούν στο διαδίκτυο.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Αποτρέπει την παρακολούθηση δακτυλικών αποτυπωμάτων";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Λήγει αυτόματα τα cookie πρώτου μέρους μετά από 30 ημέρες, διασφαλίζοντας ότι οι ιστότοποι δεν μπορούν να σας παρακολουθούν επ' αόριστον όταν έχετε αποσυνδεθεί.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Λήγει τα cookie 1ου μέρους";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Αντικαθιστά τους συνδέσμους Google AMP με τον ιστότοπο του αρχικού εκδότη.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Αποκλείει την παρακολούθηση AMP της Google";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Αποκλείει αναδυόμενα παράθυρα σύνδεσης Google σε ιστότοπους που δεν ανήκουν στην Google.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Αποκλείει αναδυόμενα παράθυρα σύνδεσης της Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Αφαιρεί τις παραμέτρους παρακολούθησης στους συνδέσμους για να αποτρέψει τα τρίτα μέρη από την παρακολούθηση της συμπεριφοράς σας σε όλους τους ιστότοπους.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Αποκλείει την παρακολούθηση συνδέσμων";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Βοηθά στον αποκλεισμό των εταιριών από το να εντοπίζουν τον τελευταίο ιστότοπο που επισκεφθήκατε.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Προστατεύει από την παρακολούθηση παραπομπών";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Αποκλείει επεμβατικά προγράμματα παρακολούθησης προτού φορτώσουν, εξαλείφοντας αποτελεσματικά διαφημίσεις που βασίζονται σε παρακολούθηση.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Αποκλείει στοχευμένες διαφημίσεις";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Βοηθά στον αποκλεισμό των cookie τρίτων μερών που σας παρακολουθούν από ιστότοπο σε ιστότοπο, εμποδίζοντας εξαρχής τη φόρτωση των εφαρμογών παρακολούθησης τρίτων μερών.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Αποκλείει τις εφαρμογές παρακολούθησης τρίτων";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Μη προστατευόμενοι ιστότοποι";
 
@@ -3046,8 +3109,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Προστασία παρακολούθησης ιστού";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Οι προστασίες παρακολούθησης ιστού είναι πάντα ενεργοποιημένες";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "Το DuckDuckGo αποκλείει αυτόματα κρυφές εφαρμογές παρακολούθησης καθώς περιηγείστε στο διαδίκτυο.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Πώς σας προστατεύουμε";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Το πρόγραμμα περιήγησης DuckDuckGo παρέχει προστασίες παρακολούθησης, οι οποίες είναι πάντα ενεργές. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Επιλέξτε αυτό που περιγράφει καλύτερα το πρόβλημα που αντιμετωπίσατε.";
@@ -3608,7 +3680,7 @@
 "vpn.settings.control.with.siri" = "Έλεγχος VPN μέσω Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Η χρήση ενός προσαρμοσμένου διακομιστή DNS μπορεί να επηρεάσει τις ταχύτητες περιήγησης και να εκθέσει τη δραστηριότητά σας σε τρίτους, αν ο διακομιστής δεν είναι ασφαλής ή αξιόπιστος.";
+"vpn.settings.dns.section-disclaimer" = "Η χρήση ενός προσαρμοσμένου διακομιστή DNS μπορεί να επηρεάσει τις ταχύτητες περιήγησης και να εκθέσει τη δραστηριότητά σας σε τρίτα μέρη, αν ο διακομιστής δεν είναι ασφαλής ή αξιόπιστος.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";

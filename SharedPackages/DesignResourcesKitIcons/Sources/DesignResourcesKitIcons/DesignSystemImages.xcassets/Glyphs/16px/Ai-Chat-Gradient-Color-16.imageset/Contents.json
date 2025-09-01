@@ -3,6 +3,16 @@
     {
       "filename" : "Ai-Chat-Gradient-Color-16.pdf",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Ai-Chat-OnDark-Color-16.svg",
+      "idiom" : "universal"
     }
   ],
   "info" : {

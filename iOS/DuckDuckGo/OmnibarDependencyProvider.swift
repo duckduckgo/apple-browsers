@@ -30,6 +30,7 @@ protocol OmnibarDependencyProvider {
     var aiChatSettings: AIChatSettingsProvider { get }
     var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
     var appSettings: AppSettings { get }
+    var daxEasterEggPresenter: DaxEasterEggPresenting { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -38,4 +39,5 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     let aiChatSettings: AIChatSettingsProvider
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     let appSettings: any AppSettings
+    let daxEasterEggPresenter: DaxEasterEggPresenting
 }

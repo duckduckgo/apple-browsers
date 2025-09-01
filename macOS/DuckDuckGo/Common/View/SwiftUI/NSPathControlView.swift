@@ -35,6 +35,9 @@ struct NSPathControlView: NSViewRepresentable {
         newPathControl.layer?.cornerRadius = 3.0
         newPathControl.layer?.borderWidth = 1.0
 
+        // Expose a stable accessibility identifier for UI tests to locate the control
+        newPathControl.setAccessibilityIdentifier("PreferencesGeneralView.downloadsLocation.pathControl")
+
         newPathControl.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         newPathControl.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
@@ -56,6 +59,7 @@ struct NSPathControlView: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSPathControl, context: NSViewRepresentableContext<NSPathControlView>) {
         nsView.url = url
+        nsView.setAccessibilityValue(url?.path ?? "")
     }
 
     func makeCoordinator() -> Coordinator {

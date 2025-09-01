@@ -64,7 +64,9 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
             nil,
             nil,
             nil,
-            true, { _, _ in }
+            true,
+            true,
+            { _, _ in }
         )
     }
 }
@@ -94,6 +96,7 @@ extension GenericAttributionPixelHandler {
         _ namePrefix: String?,
         _ allowedQueryReservedCharacters: CharacterSet?,
         _ includeAppVersionParameter: Bool,
+        _ includePixelSourceParameter: Bool,
         _ onComplete: @escaping (Bool, Error?) -> Void
     ) -> Void
 }

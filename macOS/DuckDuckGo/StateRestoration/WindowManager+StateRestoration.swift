@@ -63,7 +63,7 @@ extension WindowsManager {
     }
 
     private class func setUpWindow(from item: WindowRestorationItem, includeRegularTabs: Bool) {
-        let tabCollectionViewModel = includeRegularTabs ? item.model : TabCollectionViewModel()
+        let tabCollectionViewModel = includeRegularTabs ? item.model : TabCollectionViewModel(tabCollection: TabCollection())
         guard let window = openNewWindow(with: tabCollectionViewModel, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
         window.setContentSize(item.frame.size)
         window.setFrameOrigin(item.frame.origin)

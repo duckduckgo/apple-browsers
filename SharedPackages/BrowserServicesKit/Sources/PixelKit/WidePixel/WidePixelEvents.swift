@@ -23,4 +23,5 @@ public enum WidePixelEvent {
     case updateFailed(pixelName: String, error: Error)
     case loadFailed(pixelName: String, error: Error)
     case completeFailed(pixelName: String, error: Error)
+    case discardFailed(pixelName: String, error: Error)
 }

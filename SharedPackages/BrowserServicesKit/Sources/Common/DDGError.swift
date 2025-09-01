@@ -268,8 +268,12 @@ public extension DDGError /*CustomNSError*/ {
         }
         if let localisedError = self as? LocalizedError {
             result[NSLocalizedDescriptionKey] = localisedError.errorDescription
-            result[NSLocalizedFailureErrorKey] = localisedError.failureReason as Any
-            result[NSLocalizedRecoverySuggestionErrorKey] = localisedError.recoverySuggestion as Any
+            if let failureReason = localisedError.failureReason {
+                result[NSLocalizedFailureErrorKey] = failureReason
+            }
+            if let recoverySuggestion = localisedError.recoverySuggestion {
+                result[NSLocalizedRecoverySuggestionErrorKey] = recoverySuggestion
+            }
         }
         return result
     }

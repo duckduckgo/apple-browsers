@@ -1824,7 +1824,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedStartSync(_ menu: NSMenu) {
-        DeviceSyncCoordinator()?.startDeviceSyncFlow(completion: nil)
+        DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .moreMenu, completion: nil)
     }
 
     func optionsButtonMenuRequestedNetworkProtectionPopover(_ menu: NSMenu) {

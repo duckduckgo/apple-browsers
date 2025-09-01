@@ -165,6 +165,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
     case duckAISearchParameter
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
+    case refactorOfSyncPreferences
+
+    /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1211148305864315?focus=true
+    case newSyncEntryPoints
+
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
     case subscriptionPurchaseWidePixelMeasurement
 }
@@ -180,6 +186,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints,
                 .subscriptionPurchaseWidePixelMeasurement:
             true
         default:
@@ -238,9 +246,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newFeedbackForm,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
-                .openFireWindowByDefault,
                 .restoreSessionPrompt,
+                .openFireWindowByDefault,
                 .duckAISearchParameter,
+                .refactorOfSyncPreferences,
+                .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
                 .subscriptionPurchaseWidePixelMeasurement:
             return true
@@ -371,6 +381,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
+        case .refactorOfSyncPreferences:
+            return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
+        case .newSyncEntryPoints:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newSyncEntryPoints))
         }
     }
 }

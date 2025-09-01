@@ -118,7 +118,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
                                      startupModel: NSApp.delegateTyped.startupPreferences)
@@ -361,7 +361,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared)
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .privacyPro:

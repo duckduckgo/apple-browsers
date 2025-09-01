@@ -40,7 +40,23 @@ extension SyncDevice {
     }
 }
 
+/// View model for sync preferences and device management.
+///
+/// Manages sync-related preferences, device lists, sync feature flags, and coordinates
+/// various sync operations. Acts as the main interface between the sync preferences UI
+/// and the underlying sync services.
+@MainActor
 final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel {
+    @Published var devices: [SyncDevice] = [] {
+        didSet {
+            syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding = devices.count > 1
+        }
+    }
+
+    /// Refreshes the list of connected sync devices
+    func refreshDevices() {
+        syncSettingsHandler.refreshDevices()
+    }
 
     var syncPausedTitle: String? {
         return syncPausedStateManager.syncPausedMessageData?.title
@@ -98,22 +114,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncService.account != nil
     }
 
-    @Published var stringForQR: String?
-    @Published var codeForDisplayOrPasting: String?
-
-    let managementDialogModel: ManagementDialogModel
-
-    @Published var devices: [SyncDevice] = [] {
-        didSet {
-            syncBookmarksAdapter.isEligibleForFaviconsFetcherOnboarding = devices.count > 1
-        }
-    }
-
-    @Published var shouldShowErrorMessage: Bool = false
-    @Published private(set) var syncErrorMessage: SyncErrorMessage?
-
-    @Published var isCreatingAccount: Bool = false
-
     @Published var isFaviconsFetchingEnabled: Bool {
         didSet {
             syncBookmarksAdapter.isFaviconsFetchingEnabled = isFaviconsFetchingEnabled
@@ -142,8 +142,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var invalidCredentialsTitles: [String] = []
 
     private var shouldRequestSyncOnFavoritesOptionChange: Bool = true
-    private var isScreenLocked: Bool = false
-    private var recoveryKey: SyncCode.RecoveryKey?
 
     @Published var syncFeatureFlags: SyncFeatureFlags {
         didSet {
@@ -158,6 +156,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAppVersionNotSupported: Bool = true
 
     private let syncPausedStateManager: any SyncPausedStateManaging
+    let syncSettingsHandler: SyncSettingsViewHandling
 
     private func updateSyncFeatureFlags(_ syncFeatureFlags: SyncFeatureFlags) {
         isDataSyncingAvailable = syncFeatureFlags.contains(.dataSyncing)
@@ -167,29 +166,22 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         isAppVersionNotSupported = syncFeatureFlags.unavailableReason == .appVersionNotSupported
     }
 
-    var recoveryCode: String? {
-        syncService.account?.recoveryCode
-    }
-
-    private let featureFlagger: FeatureFlagger
+    private let syncService: DDGSyncing
+    private let syncBookmarksAdapter: SyncBookmarksAdapter
+    private let syncCredentialsAdapter: SyncCredentialsAdapter
+    private let appearancePreferences: AppearancePreferences
+    private var cancellables = Set<AnyCancellable>()
 
     private let diagnosisHelper: SyncDiagnosisHelper
-
-    private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
-        syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: delegate)
-    }
-    private let connectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling
-    private lazy var connectionController: SyncConnectionControlling = connectionControllerFactory(syncService, self)
 
     init(
         syncService: DDGSyncing,
         syncBookmarksAdapter: SyncBookmarksAdapter,
         syncCredentialsAdapter: SyncCredentialsAdapter,
         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-        managementDialogModel: ManagementDialogModel = ManagementDialogModel(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
-        connectionControllerFactory: @escaping (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = SyncPreferences.defaultConnectionControllerFactory,
+        connectionControllerFactory: ((DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling)? = nil,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.syncService = syncService
@@ -197,17 +189,14 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncCredentialsAdapter = syncCredentialsAdapter
         self.appearancePreferences = appearancePreferences
         self.syncFeatureFlags = syncService.featureFlags
-        self.userAuthenticator = userAuthenticator
         self.syncPausedStateManager = syncPausedStateManager
-        self.connectionControllerFactory = connectionControllerFactory
-        self.featureFlagger = featureFlagger
 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
         self.isUnifiedFavoritesEnabled = appearancePreferences.favoritesDisplayMode.isDisplayUnified
 
-        self.managementDialogModel = managementDialogModel
+        self.syncSettingsHandler = DeviceSyncCoordinator(syncService: syncService, syncPausedStateManager: syncPausedStateManager)
+
         diagnosisHelper = SyncDiagnosisHelper(syncService: syncService)
-        self.managementDialogModel.delegate = self
 
         updateSyncFeatureFlags(self.syncFeatureFlags)
         setUpObservables()
@@ -238,15 +227,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .assign(to: \.syncFeatureFlags, onWeaklyHeld: self)
             .store(in: &cancellables)
 
-        syncService.authStatePublisher
-            .removeDuplicates()
-            .asVoid()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.refreshDevices()
-            }
-            .store(in: &cancellables)
-
         syncService.isSyncInProgressPublisher
             .removeDuplicates()
             .filter { !$0 }
@@ -257,21 +237,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             }
             .store(in: &cancellables)
 
-        $syncErrorMessage
-            .map { $0 != nil }
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.shouldShowErrorMessage, onWeaklyHeld: self)
-            .store(in: &cancellables)
-
-        managementDialogModel.$currentDialog
-            .removeDuplicates()
-            .filter { $0 == nil }
-            .asVoid()
-            .sink { [weak self] _ in
-                self?.onEndFlow()
-            }
-            .store(in: &cancellables)
-
         syncPausedStateManager.syncPausedChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -279,45 +244,20 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             }
             .store(in: &cancellables)
 
-        let screenIsLockedPublisher = DistributedNotificationCenter.default
-            .publisher(for: .init(rawValue: "com.apple.screenIsLocked"))
-            .map { _ in true }
-        let screenIsUnlockedPublisher = DistributedNotificationCenter.default
-            .publisher(for: .init(rawValue: "com.apple.screenIsUnlocked"))
-            .map { _ in false }
-
-        Publishers.Merge(screenIsLockedPublisher, screenIsUnlockedPublisher)
+        syncSettingsHandler.devicesPublisher
             .receive(on: DispatchQueue.main)
-            .assign(to: \.isScreenLocked, onWeaklyHeld: self)
+            .assign(to: \.devices, onWeaklyHeld: self)
             .store(in: &cancellables)
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(launchedFromSyncPromo(_:)),
-                                               name: SyncPromoManager.SyncPromoManagerNotifications.didGoToSync,
-                                               object: nil)
     }
 
-    @MainActor
-    func turnOffSyncPressed() {
-        presentDialog(for: .turnOffSync)
-    }
-
-    @MainActor
-    func presentDeviceDetails(_ device: SyncDevice) {
-        presentDialog(for: .deviceDetails(device))
-    }
-
-    @MainActor
-    func presentRemoveDevice(_ device: SyncDevice) {
-        presentDialog(for: .removeDevice(device))
-    }
-
+    /// Presents the bookmarks management interface
     @MainActor
     func manageBookmarks() {
         guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
         mainVC.showManageBookmarks(self)
     }
 
+    /// Presents the password manager interface for managing login credentials
     @MainActor
     func manageLogins() {
         guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
@@ -337,18 +277,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
                 }
             }
             .store(in: &cancellables)
-        apperancePreferences.$favoritesDisplayMode
-            .map(\.isDisplayUnified)
-            .sink { [weak self] isUnifiedFavoritesEnabled in
-                guard let self else {
-                    return
-                }
-                if self.isUnifiedFavoritesEnabled != isUnifiedFavoritesEnabled {
-                    self.shouldRequestSyncOnFavoritesOptionChange = false
-                    self.isUnifiedFavoritesEnabled = isUnifiedFavoritesEnabled
-                }
-            }
-            .store(in: &cancellables)
 
         apperancePreferences.$favoritesDisplayMode
             .map(\.isDisplayUnified)
@@ -362,609 +290,60 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
                 }
             }
             .store(in: &cancellables)
-    }
 
-    // MARK: - Private
-
-    @MainActor
-    private func mapDevices(_ registeredDevices: [RegisteredDevice]) {
-        guard let deviceId = syncService.account?.deviceId else { return }
-        self.devices = registeredDevices.map {
-            deviceId == $0.id ? SyncDevice(kind: .current, name: $0.name, id: $0.id) : SyncDevice($0)
-        }.sorted(by: { item, _ in
-            item.isCurrent
-        })
-    }
-
-    func refreshDevices() {
-        guard !isScreenLocked else {
-            Logger.sync.debug("Screen is locked, skipping devices refresh")
-            return
-        }
-        guard syncService.account != nil else {
-            devices = []
-            return
-        }
-        Task { @MainActor in
-            do {
-                let registeredDevices = try await syncService.fetchDevices()
-                mapDevices(registeredDevices)
-            } catch {
-                if case SyncError.unauthenticatedWhileLoggedIn = error {
-                    // Ruling this out as it's a predictable event likely caused by disabling on another device
-                    diagnosisHelper.didManuallyDisableSync()
-                }
-                PixelKit.fire(DebugEvent(GeneralPixel.syncRefreshDevicesError(error: error), error: error))
-                Logger.sync.debug("Failed to refresh devices: \(error)")
-            }
-        }
-    }
-
-    @MainActor
-    private func presentDialog(for currentDialog: ManagementDialogKind) {
-        let shouldBeginSheet = managementDialogModel.currentDialog == nil
-        managementDialogModel.currentDialog = currentDialog
-
-        guard shouldBeginSheet else {
-            return
-        }
-
-        guard [AppVersion.AppRunType.normal, .uiTests].contains(AppVersion.runType) else {
-            return
-        }
-
-        let syncViewController = SyncManagementDialogViewController(managementDialogModel)
-        let syncWindowController = syncViewController.wrappedInWindowController()
-
-        guard let syncWindow = syncWindowController.window,
-              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
-        else {
-            assertionFailure("Sync: Failed to present SyncManagementDialogViewController")
-            return
-        }
-
-        onEndFlow = { [weak self] in
-            self?.connector?.stopPolling()
-            self?.connector = nil
-
-            Task { @MainActor in
-                await self?.connectionController.cancel()
-                guard let window = syncWindowController.window, let sheetParent = window.sheetParent else {
-                    assertionFailure("window or sheet parent not present")
+        apperancePreferences.$favoritesDisplayMode
+            .map(\.isDisplayUnified)
+            .sink { [weak self] isUnifiedFavoritesEnabled in
+                guard let self else {
                     return
                 }
-                sheetParent.endSheet(window)
-            }
-        }
-
-        parentWindowController.window?.beginSheet(syncWindow)
-    }
-
-    @objc
-    private func launchedFromSyncPromo(_ sender: Notification) {
-        syncPromoSource = sender.userInfo?[SyncPromoManager.Constants.syncPromoSourceKey] as? String
-    }
-
-    private func waitForDevicesToChangeThenPresentSyncing() {
-        $devices.removeDuplicates()
-            .dropFirst()
-            .prefix(1)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                Task {
-                    await self.presentDialog(for: .nowSyncing)
+                if self.isUnifiedFavoritesEnabled != isUnifiedFavoritesEnabled {
+                    self.shouldRequestSyncOnFavoritesOptionChange = false
+                    self.isUnifiedFavoritesEnabled = isUnifiedFavoritesEnabled
                 }
-            }.store(in: &cancellables)
-    }
-
-    private var onEndFlow: () -> Void = {}
-
-    private let syncService: DDGSyncing
-    private let syncBookmarksAdapter: SyncBookmarksAdapter
-    private let syncCredentialsAdapter: SyncCredentialsAdapter
-    private let appearancePreferences: AppearancePreferences
-    private var cancellables = Set<AnyCancellable>()
-    private var connector: RemoteConnecting?
-    private let userAuthenticator: UserAuthenticating
-    private var syncPromoSource: String?
-}
-
-extension SyncPreferences: ManagementDialogModelDelegate {
-
-    func turnOffSync() {
-        Task { @MainActor in
-            do {
-                try await syncService.disconnect()
-                PixelKit.fire(SyncFeatureUsagePixels.syncDisabled)
-                managementDialogModel.endFlow()
-                syncPausedStateManager.syncDidTurnOff()
-                diagnosisHelper.didManuallyDisableSync()
-            } catch {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToTurnSyncOff, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncLogoutError(error: error)))
             }
-        }
+            .store(in: &cancellables)
     }
 
-    func deleteAccount() {
-        Task { @MainActor in
-            do {
-                let connectedDevices = devices.count
-                try await syncService.deleteAccount()
-                PixelKit.fire(SyncFeatureUsagePixels.syncDisabledAndDeleted(connectedDevices: connectedDevices))
-                managementDialogModel.endFlow()
-                syncPausedStateManager.syncDidTurnOff()
-                diagnosisHelper.didManuallyDisableSync()
-            } catch {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToDeleteData, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncDeleteAccountError(error: error)))
-            }
-        }
-    }
+    // MARK: - Delegation to syncSettingsHandler
 
-    func updateDeviceName(_ name: String) {
-        Task { @MainActor in
-            self.devices = []
-            syncService.scheduler.cancelSyncAndSuspendSyncQueue()
-            do {
-                let devices = try await syncService.updateDeviceName(name)
-                managementDialogModel.endFlow()
-                mapDevices(devices)
-            } catch {
-                if case SyncError.unauthenticatedWhileLoggedIn = error {
-                    // Ruling this out as it's a predictable event likely caused by disabling on another device
-                    diagnosisHelper.didManuallyDisableSync()
-                }
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToUpdateDeviceName, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncUpdateDeviceError(error: error)))
-            }
-            syncService.scheduler.resumeSyncQueue()
-        }
-    }
-
-    static private func deviceInfo() -> (name: String, type: String) {
-        let hostname = SCDynamicStoreCopyComputerName(nil, nil) as? String ?? ProcessInfo.processInfo.hostName
-        return (name: hostname, type: "desktop")
+    @MainActor
+    func turnOffSyncPressed() {
+        syncSettingsHandler.turnOffSyncPressed()
     }
 
     @MainActor
-    private func loginAndShowPresentedDialog(_ recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
-        let device = Self.deviceInfo()
-        let devices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
-        mapDevices(devices)
-        PixelKit.fire(GeneralPixel.syncLogin)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if isRecovery {
-                self.showDevicesSynced()
-            } else {
-                self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
-            }
-            self.stopPollingForRecoveryKey()
-        }
+    func presentDeviceDetails(_ device: SyncDevice) {
+        syncSettingsHandler.presentDeviceDetails(device)
     }
 
-    func turnOnSync() {
-        Task { @MainActor in
-            managementDialogModel.endFlow()
-            isCreatingAccount = true
-            defer {
-                isCreatingAccount = false
-            }
-            do {
-                let device = Self.deviceInfo()
-                presentDialog(for: .prepareToSync)
-                try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
-                let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
-                PixelKit.fire(GeneralPixel.syncSignupDirect, withAdditionalParameters: additionalParameters)
-                presentDialog(for: .saveRecoveryCode(recoveryCode ?? ""))
-            } catch {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToServer, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncSignupError(error: error)))
-            }
-        }
-    }
-
-    func startPollingForRecoveryKey(isRecovery: Bool) {
-        newStartPollingForRecoveryKey(isRecovery: isRecovery)
-    }
-
-    private func newStartPollingForRecoveryKey(isRecovery: Bool) {
-        Task { @MainActor in
-            do {
-                let pairingInfo = try await connectionController.startConnectMode()
-                let codeForDisplayOrPasting = pairingInfo.base64Code
-                let stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
-                self.codeForDisplayOrPasting = codeForDisplayOrPasting
-                self.stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
-                if isRecovery {
-                    self.presentDialog(for: .enterRecoveryCode(stringForQRCode: stringForQR))
-                } else {
-                    self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
-                }
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect).withoutMacPrefix)
-            } catch {
-                if syncService.account == nil {
-                    if isRecovery {
-                        managementDialogModel.syncErrorMessage = SyncErrorMessage(
-                            type: .unableToSyncToServer,
-                            description: error.localizedDescription
-                        )
-                    } else {
-                        managementDialogModel.syncErrorMessage = SyncErrorMessage(
-                            type: .unableToSyncToOtherDevice,
-                            description: error.localizedDescription
-                        )
-                    }
-                    PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
-                }
-            }
-        }
-    }
-
-    func stopPollingForRecoveryKey() {
-        self.connector?.stopPolling()
-        self.connector = nil
-    }
-
-    func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool, codeSource: SyncCodeSource) {
-        Task {
-            await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false, codeSource: codeSource)
-        }
+    @MainActor
+    func presentRemoveDevice(_ device: SyncDevice) {
+        syncSettingsHandler.presentRemoveDevice(device)
     }
 
     @MainActor
     func presentDeleteAccount() {
-        presentDialog(for: .deleteAccount(devices))
-    }
-
-    @MainActor
-    func saveRecoveryPDF() {
-        guard let recoveryCode = syncService.account?.recoveryCode else {
-            assertionFailure()
-            return
-        }
-
-        Task { @MainActor in
-            let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-            guard authenticationResult.authenticated else {
-                if authenticationResult == .noAuthAvailable {
-                    presentDialog(for: .empty)
-                    managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-                }
-                return
-            }
-
-            let data = RecoveryPDFGenerator()
-                .generate(recoveryCode)
-
-            let panel = NSSavePanel.savePanelWithFileTypeChooser(fileTypes: [.pdf], suggestedFilename: "Sync Data Recovery - DuckDuckGo.pdf")
-            let response = await panel.begin()
-
-            guard response == .OK,
-                  let location = panel.url else { return }
-
-            do {
-                try Progress.withPublishedProgress(url: location) {
-                    try data.write(to: location)
-                }
-            } catch {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableCreateRecoveryPDF, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncCannotCreateRecoveryPDF))
-            }
-        }
-
-    }
-
-    @MainActor
-    func removeDevice(_ device: SyncDevice) {
-        Task { @MainActor in
-            do {
-                try await syncService.disconnect(deviceId: device.id)
-                refreshDevices()
-                managementDialogModel.endFlow()
-            } catch {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToRemoveDevice, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncRemoveDeviceError(error: error)))
-            }
-        }
-    }
-
-    @MainActor
-    func enterRecoveryCodePressed() {
-        startPollingForRecoveryKey(isRecovery: true)
+        syncSettingsHandler.presentDeleteAccount()
     }
 
     @MainActor
     func syncWithAnotherDevicePressed() async {
-        let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-        guard authenticationResult.authenticated else {
-            if authenticationResult == .noAuthAvailable {
-                presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-            }
-            return
-        }
-        if isSyncEnabled {
-            self.startExchangeOrRecovery()
-        } else {
-            self.startPollingForRecoveryKey(isRecovery: false)
-        }
+        await syncSettingsHandler.syncWithAnotherDevicePressed()
     }
 
     @MainActor
     func syncWithServerPressed() async {
-        let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-        guard authenticationResult.authenticated else {
-            if authenticationResult == .noAuthAvailable {
-                presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-            }
-            return
-        }
-        presentDialog(for: .syncWithServer)
+        await syncSettingsHandler.syncWithServerPressed()
     }
 
     @MainActor
     func recoverDataPressed() async {
-        let authenticationResult = await userAuthenticator.authenticateUser(reason: .syncSettings)
-        guard authenticationResult.authenticated else {
-            if authenticationResult == .noAuthAvailable {
-                presentDialog(for: .empty)
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToAuthenticateOnDevice, description: "")
-            }
-            return
-        }
-        presentDialog(for: .recoverSyncedData)
+        await syncSettingsHandler.recoverDataPressed()
     }
 
     @MainActor
-    func copyCode() {
-        var code: String?
-        code = codeForDisplayOrPasting ?? recoveryCode
-        guard let code else { return }
-        let pasteboard = NSPasteboard.general
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString(code, forType: .string)
-        fireCodeCopiedPixel(code: code)
-    }
-
-    @MainActor
-    func recoveryCodeNextPressed() {
-        showDevicesSynced()
-    }
-
-    @MainActor
-    func openSystemPasswordSettings() {
-        NSWorkspace.shared.open(URL.touchIDAndPassword)
-    }
-
-    @MainActor
-    private func showDevicesSynced() {
-        presentDialog(for: .nowSyncing)
-    }
-
-    func recoveryCodePasted(_ code: String) {
-        recoverDevice(recoveryCode: code, fromRecoveryScreen: true, codeSource: .pastedCode)
-    }
-
-    func recoveryCodePasted(_ code: String, fromRecoveryScreen: Bool) {
-        recoverDevice(recoveryCode: code, fromRecoveryScreen: fromRecoveryScreen, codeSource: .pastedCode)
-    }
-
-    func userConfirmedSwitchAccounts(recoveryCode: String) {
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserAcceptedSwitchingAccount.withoutMacPrefix)
-        guard let recoveryKey = try? SyncCode.decodeBase64String(recoveryCode).recovery else {
-            return
-        }
-        Task {
-            await switchAccounts(recoveryKey: recoveryKey)
-            await managementDialogModel.endFlow()
-        }
-    }
-
-    private func switchAccounts(recoveryKey: SyncCode.RecoveryKey) async {
-        do {
-            try await syncService.disconnect()
-        } catch {
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLogoutError.withoutMacPrefix)
-        }
-
-        do {
-            let device = Self.deviceInfo()
-            let registeredDevices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
-            await mapDevices(registeredDevices)
-        } catch {
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError.withoutMacPrefix)
-        }
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount.withoutMacPrefix)
-    }
-
-    func userPressedCancel(from dialog: ManagementDialogKind) {
-        switch dialog {
-        case .syncWithAnotherDevice(_, let stringForQRCode), .enterRecoveryCode(let stringForQRCode):
-            guard let url = URL(string: stringForQRCode),
-                  let pairingInfo = PairingInfo(url: url),
-                  let syncCode = try? SyncCode.decodeBase64String(pairingInfo.base64Code) else {
-                return
-            }
-            if syncCode.connect != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.connect).withoutMacPrefix)
-            } else if syncCode.exchangeKey != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange).withoutMacPrefix)
-            }
-        default:
-            break
-        }
-    }
-
-    func switchAccountsCancelled() {
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
-    }
-
-    func enterCodeViewDidAppear() {
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown.withoutMacPrefix)
-    }
-
-    private func startExchangeOrRecovery() {
-        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
-            startLegacyRecoveryFlow()
-            return
-        }
-        startPollingForPublicKey()
-    }
-
-    private func startLegacyRecoveryFlow() {
-        let recoveryCode = recoveryCode ?? "" // Only called if Sync enabled therefore will never be blank
-        codeForDisplayOrPasting = recoveryCode
-        stringForQR = recoveryCode
-        Task {
-            await presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: recoveryCode, stringForQRCode: recoveryCode))
-        }
-    }
-
-    private func startPollingForPublicKey() {
-        Task { @MainActor in
-            do {
-                let pairingInfo = try await connectionController.startExchangeMode()
-                let codeForDisplayOrPasting = pairingInfo.base64Code
-                let stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
-                self.codeForDisplayOrPasting = codeForDisplayOrPasting
-                self.stringForQR = stringForQR
-                self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange).withoutMacPrefix)
-            } catch {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
-                PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
-            }
-        }
-    }
-
-    @MainActor
-    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) async {
-        if devices.count > 1 {
-            managementDialogModel.showSwitchAccountsMessage()
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount.withoutMacPrefix)
-        } else {
-            await switchAccounts(recoveryKey: recoveryKey)
-            managementDialogModel.endFlow()
-        }
-        PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
-    }
-
-    private func handleError(_ syncErrorType: SyncErrorType, error: Error?, pixelEvent: PixelKitEvent?) {
-        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: syncErrorType)
-        if let pixelEvent {
-            PixelKit.fire(DebugEvent(pixelEvent, error: error))
-        }
-    }
-
-    private func fireCodeCopiedPixel(code: String) {
-        guard let syncCode = try? SyncCode.decodeBase64String(code) else { return }
-        if syncCode.exchangeKey != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange).withoutMacPrefix)
-        } else if syncCode.connect != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.connect).withoutMacPrefix)
-        }
-    }
-}
-
-@MainActor
-extension SyncPreferences: SyncConnectionControllerDelegate {
-
-    func controllerWillBeginTransmittingRecoveryKey() async {
-        // no-op
-    }
-
-    func controllerDidFinishTransmittingRecoveryKey() {
-        waitForDevicesToChangeThenPresentSyncing()
-    }
-
-    func controllerDidReceiveRecoveryKey() {
-        presentDialog(for: .prepareToSync)
-    }
-
-    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
-        sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
-    }
-
-    func controllerDidCreateSyncAccount() {
-        let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
-        PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
-        guard let code = recoveryCode else {
-            return
-        }
-        presentDialog(for: .saveRecoveryCode(code))
-    }
-
-    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
-        guard shouldShowSyncEnabled else { return }
-        self.$devices
-            .removeDuplicates()
-            .dropFirst()
-            .prefix(1)
-            .sink { [weak self] _ in
-                guard let self,
-                      let code = recoveryCode else { return }
-                self.presentDialog(for: .saveRecoveryCode(code))
-            }.store(in: &cancellables)
-    }
-
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
-        self.codeForDisplayOrPasting = self.recoveryCode
-        self.stringForQR = self.recoveryCode
-        mapDevices(registeredDevices)
-        PixelKit.fire(GeneralPixel.syncLogin)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
-            self.stopPollingForRecoveryKey()
-        }
-        guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
-            return
-        }
-        sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource, codeSource: syncCodeSource)
-    }
-
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
-        await handleAccountAlreadyExists(recoveryKey)
-    }
-
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
-        switch error {
-        case .unableToRecognizeCode:
-            handleError(.unableToRecognizeCode, error: underlyingError, pixelEvent: nil)
-            sendCodeParsingFailedPixel(setupRole: setupRole)
-        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
-            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
-        case .failedToCreateAccount:
-            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
-        case .pollingForRecoveryKeyTimedOut:
-            managementDialogModel.endFlow()
-        }
-    }
-
-    private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard case .pastedCode = codeSource else {
-            // Others not supported by macOS
-            return
-        }
-        guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource).withoutMacPrefix)
-    }
-
-    private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
-        guard case .receiver(_, let codeSource) = setupRole, case .pastedCode = codeSource else {
-            return
-        }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed.withoutMacPrefix)
-    }
-
-    private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard case .pastedCode = codeSource else {
-            // Others not supported by macOS
-            return
-        }
-        guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource).withoutMacPrefix)
+    func saveRecoveryPDF() {
+        syncSettingsHandler.saveRecoveryPDF()
     }
 }

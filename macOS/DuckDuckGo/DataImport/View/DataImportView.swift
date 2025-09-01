@@ -23,6 +23,10 @@ import Common
 
 @MainActor
 struct DataImportView: ModalView {
+    enum SyncFeatureVisibility {
+        case show(syncLauncher: SyncDeviceFlowLaunching)
+        case hide
+    }
 
     private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
@@ -30,13 +34,19 @@ struct DataImportView: ModalView {
     @State var model: DataImportViewModel
     let title: String
 
+    let importFlowLauncher: DataImportFlowLaunching
+
     @State private var isInternalUser = false
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
-    init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool) {
+    private let syncFeatureVisibility: SyncFeatureVisibility
+
+    init(model: DataImportViewModel = DataImportViewModel(), importFlowLauncher: DataImportFlowLaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
         self._model = State(initialValue: model)
+        self.importFlowLauncher = importFlowLauncher
         self.title = title
         self.isDataTypePickerExpanded = isDataTypePickerExpanded
+        self.syncFeatureVisibility = syncFeatureVisibility
     }
 
     struct ProgressState {
@@ -58,17 +68,27 @@ struct DataImportView: ModalView {
 #endif
     }
 
+    private var alignment: HorizontalAlignment {
+        if case .summary = model.screen {
+            return .leading
+        } else {
+            return .center
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: alignment, spacing: 0) {
             viewHeader()
-                .padding(.top, 20)
+                .padding(.top, 30)
                 .padding(.leading, 20)
                 .padding(.trailing, 20)
+                .padding(.bottom, 0)
 
             viewBody()
                 .padding(.leading, 20)
                 .padding(.trailing, 20)
                 .padding(.bottom, 20)
+                .padding(.top, 0)
 
             // if import in progress…
             if let importProgress = model.importProgress {
@@ -81,7 +101,7 @@ struct DataImportView: ModalView {
             viewFooter()
                 .padding(.top, 16)
                 .padding(.bottom, 16)
-                .padding(.trailing, 20)
+                .padding(.horizontal, 20)
 
             if shouldShowDebugView {
                 debugView()
@@ -148,7 +168,7 @@ struct DataImportView: ModalView {
 
     @ViewBuilder
     private func viewBody() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .center, spacing: 0) {
             // body
             switch model.screen {
             case .profileAndDataTypesPicker:
@@ -173,6 +193,7 @@ struct DataImportView: ModalView {
 
     @ViewBuilder
     private var profileAndDataTypesPickerBody: some View {
+        passwordsExplainerView().padding(.bottom, 20).padding(.horizontal, 20).frame(alignment: .center)
         importPickerPanel {
             VStack(alignment: .leading, spacing: 8) {
                 // Browser Profile picker
@@ -188,7 +209,21 @@ struct DataImportView: ModalView {
                 .padding(.top, 8)
             }
         }
-        passwordsExplainerView().padding(.top, 12)
+
+        if case .show(let syncLauncher) = syncFeatureVisibility {
+            Button {
+                dismiss.callAsFunction()
+                syncLauncher.startDeviceSyncFlow {
+                    importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                }
+            } label: {
+                Text(UserText.importDataSelectionSyncButtonTitle)
+                    .fontWeight(.semibold)
+                    .foregroundColor(Color(.linkBlue))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 20)
+        }
     }
 
     @ViewBuilder
@@ -245,9 +280,7 @@ struct DataImportView: ModalView {
                 }
             }
         }
-        if dataType == .passwords {
-            passwordsExplainerView().padding(.top, 20)
-        }
+
     }
 
     private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
@@ -285,6 +318,12 @@ struct DataImportView: ModalView {
     // under line buttons
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
+            if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
+                Button(UserText.importDataCompleteSyncButtonTitle) {
+                    dismiss.callAsFunction()
+                    syncLauncher.startDeviceSyncFlow(completion: nil)
+                }
+            }
             Spacer()
 
             ForEach(model.buttons.indices, id: \.self) { idx in
@@ -310,9 +349,10 @@ struct DataImportView: ModalView {
                 +
                 Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
             )
-            .font(.system(size: 10))
+            .font(.system(size: 12))
             .foregroundColor(.secondary)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
@@ -680,7 +720,7 @@ extension DataImportViewModel {
 
 #Preview {
     VStack(alignment: .leading, spacing: 0) { @MainActor in
-        DataImportView(model: ._mockPreviewViewModel(), isDataTypePickerExpanded: false)
+        DataImportView(importFlowLauncher: StubDataImportFlowLaunching(), isDataTypePickerExpanded: true, syncFeatureVisibility: .hide)
             // swiftlint:disable:next force_cast
             .environment(\EnvironmentValues.presentationMode as! WritableKeyPath,
                           Binding<PresentationMode> {
@@ -692,4 +732,10 @@ extension DataImportViewModel {
     }
     .frame(minHeight: 666)
 }
+
+private final class StubDataImportFlowLaunching: DataImportFlowLaunching {
+    func launchDataImport(model: DataImportViewModel, title: String, isDataTypePickerExpanded: Bool) {
+    }
+}
+
 #endif
